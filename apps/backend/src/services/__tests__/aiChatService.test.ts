@@ -36,6 +36,8 @@ import {
   loadConversationMessages,
   saveConversationMessages,
   autoGenerateTitle,
+  truncateToolResults,
+  MAX_TOOL_RESULT_CHARS,
 } from '../aiChatService.js';
 
 beforeEach(() => vi.clearAllMocks());
@@ -138,9 +140,9 @@ describe('loadConversationMessages', () => {
     expect(result).toEqual([]);
   });
 
-  it('returns at most 20 messages in ascending order', async () => {
-    // Simulate Prisma returning 20 messages in desc order (newest first)
-    const fakeMessages = Array.from({ length: 20 }, (_, i) => ({
+  it('returns at most 10 messages in ascending order', async () => {
+    // Simulate Prisma returning 10 messages in desc order (newest first)
+    const fakeMessages = Array.from({ length: 10 }, (_, i) => ({
       data: { id: `msg-${i}`, role: 'user', content: `message ${i}`, parts: [] },
     }));
     (prisma.aIChatMessage.findMany as any).mockResolvedValue(fakeMessages);
@@ -150,13 +152,13 @@ describe('loadConversationMessages', () => {
     expect(prisma.aIChatMessage.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         orderBy: { createdAt: 'desc' },
-        take: 20,
+        take: 10,
       })
     );
-    expect(result).toHaveLength(20);
-    // After reverse(), first element should be the last from the desc array (msg-19)
-    expect((result[0] as any).id).toBe('msg-19');
-    expect((result[19] as any).id).toBe('msg-0');
+    expect(result).toHaveLength(10);
+    // After reverse(), first element should be the last from the desc array (msg-9)
+    expect((result[0] as any).id).toBe('msg-9');
+    expect((result[9] as any).id).toBe('msg-0');
   });
 
   it('returns all messages when fewer than 20 exist', async () => {
@@ -278,5 +280,101 @@ describe('autoGenerateTitle', () => {
         setTimeout(resolve, 50);
       })
     ).resolves.toBeUndefined();
+  });
+});
+
+describe('truncateToolResults', () => {
+  it('passes through non-assistant messages unchanged', () => {
+    const msgs = [
+      { id: 'u1', role: 'user', content: 'x'.repeat(MAX_TOOL_RESULT_CHARS + 100), parts: [] },
+    ] as any[];
+    expect(truncateToolResults(msgs)).toStrictEqual(msgs);
+  });
+
+  it('passes through assistant messages without tool-invocation parts unchanged', () => {
+    const msgs = [
+      { id: 'a1', role: 'assistant', content: 'hello', parts: [{ type: 'text', text: 'hello' }] },
+    ] as any[];
+    expect(truncateToolResults(msgs)).toStrictEqual(msgs);
+  });
+
+  it('leaves short tool-invocation result unchanged', () => {
+    const shortResult = 'short result';
+    const msgs = [
+      {
+        id: 'a1', role: 'assistant', content: '', parts: [
+          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'result', result: shortResult } },
+        ],
+      },
+    ] as any[];
+    const out = truncateToolResults(msgs);
+    expect(out[0].parts[0].toolInvocation.result).toBe(shortResult);
+  });
+
+  it('truncates string tool-invocation result exceeding MAX_TOOL_RESULT_CHARS', () => {
+    const bigResult = 'x'.repeat(MAX_TOOL_RESULT_CHARS + 500);
+    const msgs = [
+      {
+        id: 'a1', role: 'assistant', content: '', parts: [
+          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'result', result: bigResult } },
+        ],
+      },
+    ] as any[];
+    const out = truncateToolResults(msgs);
+    const result = out[0].parts[0].toolInvocation.result as string;
+    expect(result.length).toBeLessThanOrEqual(MAX_TOOL_RESULT_CHARS + 20); // budget + truncation suffix
+    expect(result).toContain('[truncated]');
+    expect(result.startsWith('x'.repeat(MAX_TOOL_RESULT_CHARS))).toBe(true);
+  });
+
+  it('truncates object tool-invocation result by JSON-stringifying first', () => {
+    const bigObj = { fields: Array.from({ length: 300 }, (_, i) => ({ id: `f${i}`, label: `Field ${i} with a fairly long label` })) };
+    const serialized = JSON.stringify(bigObj);
+    const msgs = [
+      {
+        id: 'a1', role: 'assistant', content: '', parts: [
+          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'result', result: bigObj } },
+        ],
+      },
+    ] as any[];
+
+    if (serialized.length <= MAX_TOOL_RESULT_CHARS) {
+      // Object is small — no truncation expected, just verify pass-through
+      const out = truncateToolResults(msgs);
+      expect(out[0].parts[0].toolInvocation.result).toStrictEqual(bigObj);
+    } else {
+      const out = truncateToolResults(msgs);
+      const result = out[0].parts[0].toolInvocation.result as string;
+      expect(typeof result).toBe('string');
+      expect(result).toContain('[truncated]');
+    }
+  });
+
+  it('does not truncate tool-invocation parts with state other than result', () => {
+    const msgs = [
+      {
+        id: 'a1', role: 'assistant', content: '', parts: [
+          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'call' } },
+        ],
+      },
+    ] as any[];
+    const out = truncateToolResults(msgs);
+    expect(out[0].parts[0].toolInvocation.state).toBe('call');
+    expect(out[0].parts[0].toolInvocation.result).toBeUndefined();
+  });
+
+  it('only truncates tool-invocation parts, leaving text parts in the same message intact', () => {
+    const bigResult = 'y'.repeat(MAX_TOOL_RESULT_CHARS + 100);
+    const msgs = [
+      {
+        id: 'a1', role: 'assistant', content: '', parts: [
+          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'result', result: bigResult } },
+          { type: 'text', text: 'Here are the fields.' },
+        ],
+      },
+    ] as any[];
+    const out = truncateToolResults(msgs);
+    expect(out[0].parts[1]).toStrictEqual({ type: 'text', text: 'Here are the fields.' });
+    expect((out[0].parts[0].toolInvocation.result as string)).toContain('[truncated]');
   });
 });

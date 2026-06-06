@@ -254,6 +254,9 @@ export function createFormEditTools(
           pageTitle: page.title ?? 'Untitled page',
           fieldCount: fieldIds.length,
           responseCount,
+            ...(fieldIds.length > 0 && {
+            warning: `This page has ${fieldIds.length} field(s) that will be permanently deleted. If you are merging pages, call relocateField for each field first, then call removePage on the now-empty page.`,
+          }),
         };
       },
     }),

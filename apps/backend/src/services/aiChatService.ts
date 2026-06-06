@@ -4,7 +4,31 @@ import { prisma } from '../lib/prisma.js';
 import { getFastModel } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
-const MAX_HISTORY_MESSAGES = 20;
+const MAX_HISTORY_MESSAGES = 10;
+
+export const MAX_TOOL_RESULT_CHARS = 8_000;
+
+export function truncateToolResults(messages: UIMessage[]): UIMessage[] {
+  return messages.map((msg) => {
+    if (msg.role !== 'assistant') return msg;
+    const parts = msg.parts as any[];
+    if (!parts?.some((p: any) => p.type === 'tool-invocation')) return msg;
+    const truncatedParts = parts.map((part: any) => {
+      if (part.type !== 'tool-invocation' || part.toolInvocation?.state !== 'result') return part;
+      const raw = part.toolInvocation.result;
+      const serialized = typeof raw === 'string' ? raw : JSON.stringify(raw);
+      if (serialized.length <= MAX_TOOL_RESULT_CHARS) return part;
+      return {
+        ...part,
+        toolInvocation: {
+          ...part.toolInvocation,
+          result: serialized.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]',
+        },
+      };
+    });
+    return { ...msg, parts: truncatedParts };
+  });
+}
 
 export async function createConversation(
   formId: string,

@@ -288,6 +288,30 @@ describe('removePage (propose, no immediate delete)', () => {
     expect(result).toHaveProperty('error');
     expect(result.error).toMatch(/not found/i);
   });
+
+  it('includes a warning when the page still has fields, to prevent data loss during merge', async () => {
+    const tools = createFormEditTools(mockSchema);
+    // page-2 has 1 field in mockSchema
+    const result = await tools.removePage.execute!({ pageId: 'page-2' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.type).toBe('PROPOSE_DELETE_PAGE');
+    expect(result.fieldCount).toBeGreaterThan(0);
+    expect(typeof result.warning).toBe('string');
+    expect(result.warning).toMatch(/relocateField/i);
+  });
+
+  it('does not include a warning when the page is already empty', async () => {
+    const emptyPageSchema = {
+      pages: [
+        { id: 'p1', title: 'Page 1', fields: [{ id: 'f1', type: 'text_input_field', label: 'Name' }] },
+        { id: 'p2', title: 'Empty Page', fields: [] },
+      ],
+    };
+    const tools = createFormEditTools(emptyPageSchema);
+    const result = await tools.removePage.execute!({ pageId: 'p2' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.type).toBe('PROPOSE_DELETE_PAGE');
+    expect(result.fieldCount).toBe(0);
+    expect(result.warning).toBeUndefined();
+  });
 });
 
 describe('proposeFieldTypeChange (propose, no immediate change)', () => {

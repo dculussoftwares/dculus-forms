@@ -63,6 +63,8 @@ vi.mock('../../services/aiChatService.js', () => ({
   loadConversationMessages: vi.fn().mockResolvedValue([]),
   saveConversationMessages: vi.fn().mockResolvedValue(undefined),
   autoGenerateTitle: vi.fn(),
+  truncateToolResults: vi.fn().mockImplementation((msgs: any[]) => msgs),
+  MAX_TOOL_RESULT_CHARS: 8_000,
 }));
 
 vi.mock('../../services/aiUsageService.js', () => ({
@@ -121,7 +123,7 @@ import {
 } from '../aiChat.js';
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { createFormEditAgent } from '../../lib/formEditAgent.js';
-import { getConversation, saveConversationMessages } from '../../services/aiChatService.js';
+import { getConversation, saveConversationMessages, truncateToolResults } from '../../services/aiChatService.js';
 import { pruneMessages, validateUIMessages } from 'ai';
 import { requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 
@@ -282,6 +284,34 @@ describe('POST /chat', () => {
     expect(vi.mocked(saveConversationMessages)).toHaveBeenCalled();
     expect(vi.mocked(recordAITokenUsage)).toHaveBeenCalledWith('org-1', 42);
   });
+
+  it('applies truncateToolResults before saving messages in onFinish', async () => {
+    let capturedOnFinish: ((args: { messages: any[] }) => Promise<void>) | undefined;
+    const totalUsage = Promise.resolve({ totalTokens: 10 });
+
+    (createFormEditAgent as any).mockReturnValue({
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        totalUsage,
+        toUIMessageStreamResponse: vi.fn().mockImplementation(({ onFinish }: any) => {
+          capturedOnFinish = onFinish;
+          return makeUIMessageStreamResponse([]);
+        }),
+      }),
+    });
+
+    await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: 'Hi', parts: [{ type: 'text', text: 'Hi' }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    const newMessages = [{ id: 'a1', role: 'assistant', content: 'Hi', parts: [] }];
+    await capturedOnFinish!({ messages: newMessages });
+
+    expect(vi.mocked(truncateToolResults)).toHaveBeenCalledWith(expect.any(Array));
+    expect(vi.mocked(saveConversationMessages)).toHaveBeenCalled();
+  });
 });
 
 describe('context pruning', () => {
@@ -381,6 +411,15 @@ describe('STATIC_SYSTEM_PROMPT', () => {
     expect(STATIC_SYSTEM_PROMPT).not.toContain('bulkRemoveFields');
     expect(STATIC_SYSTEM_PROMPT).not.toContain('copyField');
     expect(STATIC_SYSTEM_PROMPT).toContain('<current_context>');
+  });
+
+  it('contains explicit merge-pages workflow instruction to prevent field data loss', () => {
+    // Root cause fix: the AI was calling removePage without relocating fields first,
+    // causing all fields on merged pages to be permanently deleted.
+    expect(STATIC_SYSTEM_PROMPT).toMatch(/merge|consolidat/i);
+    expect(STATIC_SYSTEM_PROMPT).toContain('relocateField');
+    // Must explicitly say to move fields BEFORE deleting the page
+    expect(STATIC_SYSTEM_PROMPT).toMatch(/relocateField.{0,200}removePage|move.{0,200}fields.{0,200}before.{0,200}delet/is);
   });
 });
 

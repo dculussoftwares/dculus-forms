@@ -12,6 +12,7 @@ import {
   loadConversationMessages,
   saveConversationMessages,
   autoGenerateTitle,
+  truncateToolResults,
 } from '../services/aiChatService.js';
 import {
   checkAITokenBudget,
@@ -126,6 +127,7 @@ The current form structure (pages, fields, and the current page) is provided in 
 - updateFields and removeFields take an array of field IDs — pass one ID for a single field, or many for a batch. Always prefer one batched call over many single calls.
 - Use reorder with scope "fields" (and a pageId) to change field order within a page; use reorder with scope "pages" to reorder pages.
 - Use relocateField with mode "move" to move a field to a different page, or mode "copy" to duplicate it onto another page (the copy gets a new ID; all other properties are preserved). Not for same-page reordering.
+- When the user asks to "merge pages", "combine pages", "consolidate into one page", or "put all fields on one page": call relocateField (mode "move") for EVERY field from the source pages to the target page FIRST, then call removePage on each now-empty source page. NEVER call removePage while fields remain on that page during a merge — they will be lost permanently.
 - When asked to "remix", "transform", or "convert" the form: read the current structure, remove fields that don't fit (removeFields), add fields that belong (addField), keep fields that work for both and relabel via updateFields, then updateLayout for the title and CTA. Add new fields before removing the last field on a page.`;
 
 /**
@@ -285,7 +287,7 @@ aiChatRouter.post('/chat', async (req, res) => {
       onFinish: async ({ messages: finalMessages }: { messages: UIMessage[] }) => {
         // The ephemeral context is not in originalMessages, so the new messages are exactly
         // the user turn + assistant response — no snapshot leaks into persisted history.
-        const newMessages = finalMessages.slice(previous.length);
+        const newMessages = truncateToolResults(finalMessages.slice(previous.length));
         const usage = await result.totalUsage;
         const tokensUsed = usage?.totalTokens ?? 0;
         await saveConversationMessages(conversationId, newMessages, tokensUsed);
