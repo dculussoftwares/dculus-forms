@@ -175,7 +175,7 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
                 </linearGradient>
               ))}
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--tf-border-faint)" />
+            <CartesianGrid strokeDasharray="0" stroke="var(--tf-border-faint)" vertical={false} />
             <XAxis dataKey="date" tickFormatter={formatXAxisDate} tick={{ fontSize: 11, fill: 'var(--tf-muted)' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 11, fill: 'var(--tf-muted)' }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip t={t} />} />

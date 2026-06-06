@@ -31,14 +31,14 @@ interface GeographicChartProps {
 }
 
 const COLORS = [
-  '#3b82f6', // blue-500
-  '#6050DC', // emerald-500
-  '#f59e0b', // amber-500
-  '#ef4444', // red-500
-  '#8b5cf6', // violet-500
-  '#06b6d4', // cyan-500
-  '#84cc16', // lime-500
-  '#f97316', // orange-500
+  '#7C3AAE', // violet  — matches --chart-1
+  '#0E8C70', // emerald — matches --chart-2
+  '#2563EB', // blue    — matches --chart-3
+  '#D97706', // amber
+  '#E85D4A', // coral   — matches --chart-5
+  '#9B5CB5', // soft violet
+  '#1D7A64', // deep emerald
+  '#1E50C8', // deep blue
 ];
 
 const CustomTooltip = ({ active, payload, dataMode, t }: any) => {
@@ -47,7 +47,7 @@ const CustomTooltip = ({ active, payload, dataMode, t }: any) => {
     const metricLabel =
       dataMode === 'submissions' ? t('submissions') : t('views');
     return (
-      <div className="bg-white p-3 border rounded-lg shadow-lg">
+      <div className="bg-card px-3 py-2.5 border border-[var(--tf-border-medium)] rounded-xl shadow-[var(--shadow-md)] text-sm min-w-[120px]">
         <p className="font-semibold text-primary">{data.name}</p>
         <p className="text-sm text-foreground">
           {metricLabel}: {data.count} ({data.percentage.toFixed(1)}%)
@@ -262,7 +262,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              <Globe className="h-4 w-4 mr-2 text-[#7C3AAE]" />
               {t('title')}
             </div>
             <div className="flex items-center gap-3">
@@ -279,7 +279,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         </CardHeader>
         <CardContent>
           <div className="h-64 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7C3AAE]"></div>
           </div>
         </CardContent>
       </Card>
@@ -297,7 +297,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              <Globe className="h-4 w-4 mr-2 text-[#7C3AAE]" />
               {t('title')}
             </div>
             <div className="flex items-center gap-3">
@@ -353,7 +353,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              <Globe className="h-4 w-4 mr-2 text-[#7C3AAE]" />
               {t('title')}
             </div>
             <div className="flex items-center gap-3">
@@ -383,7 +383,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
                   labelLine={false}
                   label={renderCustomLabel}
                   outerRadius={80}
-                  fill="#8884d8"
+                  fill="#7C3AAE"
                   dataKey="count"
                 >
                   {chartData.map((entry, index) => (
@@ -399,22 +399,22 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
 
           {/* Top Country Summary */}
           {topCountry && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <div className="mt-4 p-3 bg-[#f0ebff] rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-blue-900">
+                  <p className="text-sm font-medium text-[#3c323e]">
                     {t('topCountry')}
                   </p>
-                  <p className="text-lg font-bold text-blue-800">
+                  <p className="text-lg font-bold text-[#3c323e]">
                     {topCountry.name}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm text-blue-600">
+                  <p className="text-sm text-[#7C3AAE]">
                     {topCountry.count}{' '}
                     {dataMode === 'submissions' ? t('submissions') : t('views')}
                   </p>
-                  <p className="text-lg font-bold text-blue-800">
+                  <p className="text-lg font-bold text-[#3c323e]">
                     {topCountry.percentage.toFixed(1)}%
                   </p>
                 </div>

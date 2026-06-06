@@ -18,8 +18,8 @@ interface BrowserOSChartsProps {
 const CustomTooltip = ({ active, payload, label, dataMode, t }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border rounded-lg shadow-lg">
-        <p className="font-semibold text-primary">{label}</p>
+      <div className="bg-card px-3 py-2.5 border border-[var(--tf-border-medium)] rounded-xl shadow-[var(--shadow-md)] text-sm min-w-[140px]">
+        <p className="font-semibold text-xs uppercase tracking-wide text-muted-foreground mb-1.5">{label}</p>
         <div className="space-y-1">
           {payload.map((entry: any, index: number) => {
             let color = entry.color;
@@ -29,17 +29,16 @@ const CustomTooltip = ({ active, payload, label, dataMode, t }: any) => {
 
             if (entry.dataKey === 'views' || (dataMode === 'views' && entry.dataKey === 'count')) {
               metricLabel = t('dataMode.views');
-              color = '#3b82f6';
+              color = '#7C3AAE';
             } else if (entry.dataKey === 'submissions' || (dataMode === 'submissions' && entry.dataKey === 'count')) {
               metricLabel = t('dataMode.submissions');
-              color = '#f59e0b';
+              color = '#D97706';
             } else if (entry.dataKey === 'count' && dataMode === 'combined') {
-              // For combined mode, we need to check the data structure
               metricLabel = t('dataMode.views');
-              color = '#3b82f6';
+              color = '#7C3AAE';
             } else if (entry.dataKey === 'submissionCount') {
               metricLabel = t('dataMode.submissions');
-              color = '#f59e0b';
+              color = '#D97706';
               percentage = entry.payload.submissionPercentage;
             }
 
@@ -70,7 +69,7 @@ const EmptyState = ({ icon: Icon, title, subtitle }: {
 
 const LoadingState = () => (
   <div className="h-48 flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7C3AAE]"></div>
   </div>
 );
 
@@ -178,27 +177,29 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                     data={currentOSData}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fontSize: 12 }}
+                    <CartesianGrid stroke="rgba(81,76,84,0.06)" strokeDasharray="0" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 11, fill: '#a09aa2' }}
+                      axisLine={false}
+                      tickLine={false}
                       angle={-45}
                       textAnchor="end"
                       height={60}
                     />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#a09aa2' }} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip dataMode={dataMode} t={t} />} />
                     {dataMode === 'combined' ? (
                       <>
                         <Bar
                           dataKey="count"
-                          fill="#3b82f6"
+                          fill="#7C3AAE"
                           radius={[4, 4, 0, 0]}
                           name={t('dataMode.views')}
                         />
                         <Bar
                           dataKey="submissionCount"
-                          fill="#f59e0b"
+                          fill="#D97706"
                           radius={[4, 4, 0, 0]}
                           name={t('dataMode.submissions')}
                         />
@@ -206,7 +207,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                     ) : (
                       <Bar 
                         dataKey="count" 
-                        fill={dataMode === 'submissions' ? '#f59e0b' : '#10b981'} 
+                        fill={dataMode === 'submissions' ? '#D97706' : '#7C3AAE'} 
                         radius={[4, 4, 0, 0]} 
                       />
                     )}
@@ -220,7 +221,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                   <div key={os.name} className="flex items-center justify-between py-1">
                     <div className="flex items-center">
                       <div className={`w-3 h-3 rounded mr-3 ${
-                        dataMode === 'submissions' ? 'bg-orange-500' : 'bg-primary'
+                        dataMode === 'submissions' ? 'bg-[#D97706]' : 'bg-[#7C3AAE]'
                       }`} />
                       <span className="text-sm text-foreground">{os.name}</span>
                     </div>
@@ -228,13 +229,13 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                       {dataMode === 'combined' ? (
                         <div className="space-y-1">
                           <div>
-                            <span className="text-sm font-medium text-blue-600">{os.count}</span>
+                            <span className="text-sm font-medium text-[#7C3AAE]">{os.count}</span>
                             <span className="text-xs text-muted-foreground ml-2">
                               ({os.percentage.toFixed(1)}%) {t('metrics.views')}
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-orange-600">{os.submissionCount || 0}</span>
+                            <span className="text-sm font-medium text-[#D97706]">{os.submissionCount || 0}</span>
                             <span className="text-xs text-muted-foreground ml-2">
                               ({(os.submissionPercentage || 0).toFixed(1)}%) {t('metrics.submissions')}
                             </span>
@@ -262,7 +263,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              <Globe className="h-4 w-4 mr-2 text-[#7C3AAE]" />
               {t('sections.browsers')}
             </div>
             {currentBrowserData && currentBrowserData.length > 0 && (
@@ -293,27 +294,29 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                     data={currentBrowserData}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fontSize: 12 }}
+                    <CartesianGrid stroke="rgba(81,76,84,0.06)" strokeDasharray="0" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 11, fill: '#a09aa2' }}
+                      axisLine={false}
+                      tickLine={false}
                       angle={-45}
                       textAnchor="end"
                       height={60}
                     />
-                    <YAxis tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#a09aa2' }} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip dataMode={dataMode} t={t} />} />
                     {dataMode === 'combined' ? (
                       <>
                         <Bar
                           dataKey="count"
-                          fill="#3b82f6"
+                          fill="#7C3AAE"
                           radius={[4, 4, 0, 0]}
                           name={t('dataMode.views')}
                         />
                         <Bar
                           dataKey="submissionCount"
-                          fill="#f59e0b"
+                          fill="#D97706"
                           radius={[4, 4, 0, 0]}
                           name={t('dataMode.submissions')}
                         />
@@ -321,7 +324,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                     ) : (
                       <Bar 
                         dataKey="count" 
-                        fill={dataMode === 'submissions' ? '#f59e0b' : '#3b82f6'} 
+                        fill={dataMode === 'submissions' ? '#D97706' : '#7C3AAE'} 
                         radius={[4, 4, 0, 0]} 
                       />
                     )}
@@ -335,7 +338,7 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                   <div key={browser.name} className="flex items-center justify-between py-1">
                     <div className="flex items-center">
                       <div className={`w-3 h-3 rounded mr-3 ${
-                        dataMode === 'submissions' ? 'bg-orange-500' : 'bg-blue-500'
+                        dataMode === 'submissions' ? 'bg-[#D97706]' : 'bg-[#7C3AAE]'
                       }`} />
                       <span className="text-sm text-foreground">{browser.name}</span>
                     </div>
@@ -343,13 +346,13 @@ export const BrowserOSCharts: React.FC<BrowserOSChartsProps> = ({
                       {dataMode === 'combined' ? (
                         <div className="space-y-1">
                           <div>
-                            <span className="text-sm font-medium text-blue-600">{browser.count}</span>
+                            <span className="text-sm font-medium text-[#7C3AAE]">{browser.count}</span>
                             <span className="text-xs text-muted-foreground ml-2">
                               ({browser.percentage.toFixed(1)}%) {t('metrics.views')}
                             </span>
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-orange-600">{browser.submissionCount || 0}</span>
+                            <span className="text-sm font-medium text-[#D97706]">{browser.submissionCount || 0}</span>
                             <span className="text-xs text-muted-foreground ml-2">
                               ({(browser.submissionPercentage || 0).toFixed(1)}%) {t('metrics.submissions')}
                             </span>

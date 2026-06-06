@@ -10,19 +10,19 @@ interface CompletionTimeChartProps {
 }
 
 const COLORS = [
-  '#10B981', // green-500 - fast completion
-  '#3B82F6', // blue-500 - normal completion  
-  '#F59E0B', // yellow-500 - moderate completion
-  '#EF4444', // red-500 - slow completion
-  '#8B5CF6', // purple-500 - very slow completion
-  '#6B7280'  // gray-500 - extremely slow completion
+  '#0E8C70', // fast completion  — emerald
+  '#7C3AAE', // normal           — violet
+  '#2563EB', // moderate         — blue
+  '#D97706', // slow             — amber
+  '#E85D4A', // very slow        — coral
+  '#a09aa2', // extremely slow   — muted
 ];
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-3 border border-[var(--tf-border-medium)] rounded-lg shadow-lg">
+      <div className="bg-card px-3 py-2.5 border border-[var(--tf-border-medium)] rounded-xl shadow-[var(--shadow-md)] text-sm">
         <p className="font-medium text-primary">{data.label}</p>
         <p className="text-sm text-foreground">
           <span className="font-medium">{data.count}</span> submissions ({data.percentage.toFixed(1)}%)
@@ -37,7 +37,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-3 border border-[var(--tf-border-medium)] rounded-lg shadow-lg">
+      <div className="bg-card px-3 py-2.5 border border-[var(--tf-border-medium)] rounded-xl shadow-[var(--shadow-md)] text-sm">
         <p className="font-medium text-primary">{data.label}</p>
         <p className="text-sm text-foreground">
           <span className="font-medium">{data.count}</span> submissions ({data.percentage.toFixed(1)}%)
@@ -127,20 +127,22 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis 
-                  dataKey="label" 
-                  fontSize={12}
+                <CartesianGrid stroke="rgba(81,76,84,0.06)" strokeDasharray="0" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: '#a09aa2' }}
+                  axisLine={false}
+                  tickLine={false}
                   angle={-45}
                   textAnchor="end"
                   height={80}
                   interval={0}
                 />
-                <YAxis fontSize={12} />
+                <YAxis tick={{ fontSize: 11, fill: '#a09aa2' }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar 
-                  dataKey="count" 
-                  fill="#3B82F6"
+                <Bar
+                  dataKey="count"
+                  fill="#7C3AAE"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>

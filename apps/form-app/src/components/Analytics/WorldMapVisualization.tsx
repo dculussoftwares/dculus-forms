@@ -61,7 +61,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              <Globe className="h-4 w-4 mr-2 text-[#7C3AAE]" />
               {t('title')}
             </div>
             {(headerActions || onDataModeChange) && (
@@ -80,7 +80,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         </CardHeader>
         <CardContent>
           <div className="h-80 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7C3AAE]"></div>
           </div>
         </CardContent>
       </Card>
@@ -98,7 +98,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between text-base">
             <div className="flex items-center">
-              <Globe className="h-4 w-4 mr-2 text-blue-600" />
+              <Globe className="h-4 w-4 mr-2 text-[#7C3AAE]" />
               {t('title')}
             </div>
             {(headerActions || onDataModeChange) && (
@@ -142,7 +142,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center">
-            <Globe className="h-4 w-4 mr-2 text-blue-600" />
+            <Globe className="h-4 w-4 mr-2 text-[#7C3AAE]" />
             {t('title')}
           </div>
           <div className="flex items-center gap-3">
@@ -162,7 +162,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         <div className="relative mb-6 bg-gradient-to-br from-blue-50 to-slate-50 rounded-lg border p-4">
           <div className="w-full h-80 flex items-center justify-center">
             <WorldMap
-              color={dataMode === 'submissions' ? '#f59e0b' : '#3b82f6'}
+              color={dataMode === 'submissions' ? '#D97706' : '#7C3AAE'}
               title=""
               value-suffix={` ${metricLabel}`}
               size="lg"
@@ -193,8 +193,8 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                     className={cn(
                       'w-3 h-3 rounded-sm border',
                       dataMode === 'submissions'
-                        ? 'bg-orange-300 border-orange-500'
-                        : 'bg-blue-300 border-blue-500'
+                        ? 'bg-[#fcd34d] border-[#D97706]'
+                        : 'bg-[#c4b5fd] border-[#7C3AAE]'
                     )}
                   ></div>
                   <span className="text-xs text-foreground font-medium">
@@ -206,8 +206,8 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                     className={cn(
                       'w-3 h-3 rounded-sm border',
                       dataMode === 'submissions'
-                        ? 'bg-orange-600 border-orange-700'
-                        : 'bg-blue-600 border-blue-700'
+                        ? 'bg-[#D97706] border-[#b45309]'
+                        : 'bg-[#7C3AAE] border-[#5b2882]'
                     )}
                   ></div>
                   <span className="text-xs text-foreground font-medium">
@@ -233,27 +233,27 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
 
         {/* Top Country Summary */}
         {topCountry && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+          <div className="mb-6 p-4 bg-[#f0ebff] rounded-xl border border-[#ede9fe]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Globe className="h-5 w-5 text-blue-600" />
+                <div className="p-2 bg-[#ede9fe] rounded-xl">
+                  <Globe className="h-5 w-5 text-[#7C3AAE]" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-blue-900">
+                  <p className="text-sm font-medium text-primary">
                     {t('topPerformingCountry')}
                   </p>
-                  <p className="text-xl font-bold text-blue-800">
+                  <p className="text-xl font-bold text-primary">
                     {topCountry.name}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-blue-800">
+                  <span className="text-2xl font-bold text-primary">
                     {topCountry.count}
                   </span>
-                  <span className="text-sm text-blue-600">
+                  <span className="text-sm text-[#7C3AAE]">
                     {metricLabel.toLowerCase()}
                   </span>
                 </div>
@@ -273,7 +273,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-base font-semibold text-primary flex items-center gap-2">
-              <Globe className="h-4 w-4 text-blue-600" />
+              <Globe className="h-4 w-4 text-[#7C3AAE]" />
               {t('countryBreakdown')}
             </h4>
             <div className="text-xs text-muted-foreground bg-background px-2 py-1 rounded-full">
@@ -290,9 +290,9 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                 <div
                   key={country.code || country.name}
                   className={cn(
-                    'flex items-center justify-between p-3 rounded-lg border transition-all duration-200 hover:shadow-sm hover:border-blue-200',
+                    'flex items-center justify-between p-3 rounded-lg border transition-all duration-200 hover:shadow-sm hover:border-[#c4b5fd]',
                     isTopCountry
-                      ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+                      ? 'bg-gradient-to-r [#f0ebff] border-[#c4b5fd]'
                       : 'bg-background border-[var(--tf-border-medium)] hover:bg-background'
                   )}
                 >
@@ -306,7 +306,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                               ? `rgba(245, 158, 11, ${intensity})`
                               : `rgba(59, 130, 246, ${intensity})`,
                           borderColor:
-                            dataMode === 'submissions' ? '#f59e0b' : '#3b82f6',
+                            dataMode === 'submissions' ? '#D97706' : '#7C3AAE',
                         }}
                       />
                       {isTopCountry && (
@@ -317,13 +317,13 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                       <span
                         className={cn(
                           'font-medium',
-                          isTopCountry ? 'text-blue-900' : 'text-primary'
+                          isTopCountry ? 'text-primary' : 'text-primary'
                         )}
                       >
                         {country.name}
                       </span>
                       {isTopCountry && (
-                        <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                        <span className="ml-2 text-xs bg-[#ede9fe] text-[#7C3AAE] px-2 py-0.5 rounded-full font-medium">
                           #1
                         </span>
                       )}
@@ -335,7 +335,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                       <span
                         className={cn(
                           'font-bold',
-                          isTopCountry ? 'text-blue-800 text-lg' : 'text-primary'
+                          isTopCountry ? 'text-primary text-lg' : 'text-primary'
                         )}
                       >
                         {country.count}
@@ -345,11 +345,11 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
                       </span>
                     </div>
                     <div className="flex items-center justify-end gap-1 mt-1">
-                      <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="w-12 h-1.5 bg-[#ebe9ec] rounded-full overflow-hidden">
                         <div
                           className={cn(
                             'h-full rounded-full transition-all duration-500',
-                            dataMode === 'submissions' ? 'bg-orange-500' : 'bg-blue-500'
+                            dataMode === 'submissions' ? 'bg-[#D97706]' : 'bg-[#7C3AAE]'
                           )}
                           style={{ width: `${country.percentage}%` }}
                         />
@@ -368,7 +368,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
             <div className="pt-4 mt-4 border-t border-[var(--tf-border-medium)]">
               <Button
                 variant="ghost"
-                className="w-full text-sm hover:text-blue-600 flex items-center justify-center gap-1"
+                className="w-full text-sm hover:text-[#7C3AAE] flex items-center justify-center gap-1"
               >
                 <span>
                   {t('showMoreCountries', {
