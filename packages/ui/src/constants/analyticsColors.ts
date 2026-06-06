@@ -19,38 +19,36 @@
  */
 export const ANALYTICS_COLORS = {
   /**
-   * Primary color palette - Used for main data series in charts
-   * Vibrant, high-contrast colors suitable for categorical data
+   * Primary color palette - Typeform design system aligned, vivid and chart-readable.
+   * Hue angles match --chart-1…5 CSS variables, boosted saturation for legibility.
    */
   primary: [
-    '#3b82f6', // Blue
-    '#8b5cf6', // Purple
-    '#06d6a0', // Teal
-    '#f59e0b', // Amber
-    '#ef4444', // Red
-    '#10b981', // Green
-    '#f97316', // Orange
-    '#8b5a2b', // Brown
+    '#7C3AAE', // Violet  (matches --chart-1 hue)
+    '#0E8C70', // Emerald (matches --chart-2 hue)
+    '#2563EB', // Blue    (matches --chart-3 hue)
+    '#D97706', // Amber
+    '#E85D4A', // Coral   (matches --chart-5 hue)
+    '#9B5CB5', // Soft violet (6th+ series)
+    '#1D7A64', // Deep emerald
+    '#1E50C8', // Deep blue
   ],
 
   /**
-   * Secondary color palette - Used for backgrounds, hover states, and secondary data
-   * Lighter, softer versions of primary colors
+   * Secondary color palette - Light tints of primary colors for backgrounds/hover states.
    */
   secondary: [
-    '#dbeafe', // Light Blue
-    '#e7d3ff', // Light Purple
-    '#ccfbf1', // Light Teal
-    '#fef3c7', // Light Amber
-    '#fecaca', // Light Red
-    '#d1fae5', // Light Green
-    '#fed7aa', // Light Orange
-    '#e7e5e4', // Light Gray
+    '#f0ebff', // Light violet
+    '#e6f7f4', // Light emerald
+    '#e8f0fe', // Light blue
+    '#fef3e2', // Light amber
+    '#fdecea', // Light coral
+    '#ede9fe', // Soft violet
+    '#d1fae5', // Soft emerald
+    '#dbeafe', // Soft blue
   ],
 
   /**
-   * Gradient color palette - Used for heat maps, trend lines, and visual interest
-   * Creates smooth transitions between related data points
+   * Gradient color palette - Used for heat maps, trend lines, and visual interest.
    */
   gradient: [
     '#667eea', // Blue-purple start
@@ -64,47 +62,44 @@ export const ANALYTICS_COLORS = {
   ],
 
   /**
-   * Mini chart color palette - Used for small preview charts and sparklines
-   * Subset of primary colors optimized for small visualizations
+   * Mini chart color palette - Subset of primary palette for small preview charts.
    */
   mini: [
-    '#3B82F6', // Blue (capitalized for consistency with legacy)
-    '#8B5CF6', // Purple
-    '#10B981', // Green
-    '#F59E0B', // Amber
-    '#EF4444', // Red
-    '#6B7280', // Gray
+    '#7C3AAE', // Violet
+    '#0E8C70', // Emerald
+    '#2563EB', // Blue
+    '#D97706', // Amber
+    '#E85D4A', // Coral
+    '#9B5CB5', // Soft violet
   ],
 
   /**
-   * Monochrome palette - Used for single-series charts and minimalist designs
-   * Shades of blue from light to dark
+   * Monochrome palette - Aubergine tonal ramp derived from --primary for single-series charts.
    */
   monochrome: [
-    '#eff6ff', // Blue-50
-    '#dbeafe', // Blue-100
-    '#bfdbfe', // Blue-200
-    '#93c5fd', // Blue-300
-    '#60a5fa', // Blue-400
-    '#3b82f6', // Blue-500
-    '#2563eb', // Blue-600
-    '#1d4ed8', // Blue-700
+    '#f7f4f8', // aubergine-50
+    '#ebe7ec', // aubergine-100
+    '#c9c0cc', // aubergine-200
+    '#a99aad', // aubergine-300
+    '#7d6a82', // aubergine-400
+    '#5c4d60', // aubergine-500
+    '#3c323e', // aubergine-600 (--primary)
+    '#2a2230', // aubergine-700
   ],
 
   /**
-   * Semantic colors - Used for status indicators and meaningful data
+   * Semantic colors - Status indicators aligned to the Typeform design system.
    */
   semantic: {
-    success: '#10b981',     // Green
-    warning: '#f59e0b',     // Amber
-    error: '#ef4444',       // Red
-    info: '#3b82f6',        // Blue
-    neutral: '#6b7280',     // Gray
+    success: '#0E8C70', // Emerald
+    warning: '#D97706', // Amber
+    error:   '#E85D4A', // Coral
+    info:    '#2563EB', // Blue
+    neutral: '#a09aa2', // Muted foreground
   },
 
   /**
-   * Heatmap colors - Used for density visualizations and heatmaps
-   * Progressive intensity from low to high
+   * Heatmap colors - Used for density visualizations and heatmaps.
    */
   heatmap: [
     '#f0fdf4', // Very low
@@ -118,22 +113,21 @@ export const ANALYTICS_COLORS = {
   ],
 
   /**
-   * Diverging palette - Used for showing positive/negative variance
-   * Useful for comparison charts and deviation analysis
+   * Diverging palette - Aligned to Typeform semantic colors for variance charts.
    */
   diverging: {
     negative: [
-      '#fecaca', // Light red
-      '#f87171', // Medium red
-      '#ef4444', // Red
-      '#dc2626', // Dark red
+      '#fdecea', // Light coral
+      '#f4a79e', // Medium coral
+      '#E85D4A', // Coral
+      '#c0392b', // Dark red
     ],
-    neutral: '#f3f4f6', // Gray
+    neutral: '#f3f4f6',
     positive: [
-      '#d1fae5', // Light green
-      '#6ee7b7', // Medium green
-      '#10b981', // Green
-      '#059669', // Dark green
+      '#e6f7f4', // Light emerald
+      '#6ee7b7', // Medium emerald
+      '#0E8C70', // Emerald
+      '#065f46', // Dark emerald
     ],
   },
 } as const;
