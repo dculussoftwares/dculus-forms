@@ -51,8 +51,8 @@ export const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: numbe
         return (
           <span
             key={word.word}
-            className="px-1 py-0.5 text-blue-600 font-semibold transition-transform cursor-default max-w-full truncate"
-            style={{ fontSize: `${size}px`, opacity }}
+            className="px-1 py-0.5 font-semibold transition-transform cursor-default max-w-full truncate"
+            style={{ fontSize: `${size}px`, opacity, color: '#7C3AAE' }}
             title={t('tooltips.wordAppears', { values: { word: word.word, count: word.count } })}
           >
             {word.word}
@@ -87,20 +87,20 @@ export const MiniBarChart: React.FC<{ data: Array<{ name: string; value: number 
         <BarChart data={data.slice(0, 6)} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
           <XAxis
             dataKey="name"
-            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tick={{ fontSize: 10, fill: '#a09aa2' }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 12, fill: '#6B7280' }}
+            tick={{ fontSize: 10, fill: '#a09aa2' }}
             axisLine={false}
             tickLine={false}
           />
           <Bar
             dataKey="value"
-            fill="#3B82F6"
+            fill={MINI_CHART_COLORS[0]}
             radius={[4, 4, 0, 0]}
-            style={{ filter: 'drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3))' }}
+            style={{ filter: 'drop-shadow(0 2px 4px rgba(124, 58, 174, 0.25))' }}
           />
         </BarChart>
       </ResponsiveContainer>
