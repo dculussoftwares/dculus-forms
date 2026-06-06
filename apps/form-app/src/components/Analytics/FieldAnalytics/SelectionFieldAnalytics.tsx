@@ -142,12 +142,12 @@ const OptionPerformanceTable: React.FC<{
                   <div className="text-lg font-bold text-primary">
                     {option.percentage.toFixed(1)}%
                   </div>
-                  <div className="w-24 bg-gray-200 rounded-full h-2 mt-1">
+                  <div className="w-24 bg-[#ebe9ec] rounded-full h-2 mt-1">
                     <div 
                       className={`h-2 rounded-full transition-all duration-500
                         ${isTopOption ? 'bg-primary' :
                           isLowPerforming ? 'bg-red-500' : 
-                          'bg-blue-500'
+                          'bg-[#7C3AAE]'
                         }`}
                       style={{ width: `${Math.max(5, option.percentage)}%` }}
                     />
@@ -209,7 +209,7 @@ const SelectionTrend: React.FC<{
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -316,7 +316,7 @@ const QuickInsights: React.FC<{
               <span className="text-2xl">{insight.icon}</span>
               <div>
                 <div className="font-semibold text-primary">{insight.title}</div>
-                <div className="text-lg font-bold text-blue-600">{insight.value}</div>
+                <div className="text-lg font-bold text-[#7C3AAE]">{insight.value}</div>
                 <div className="text-sm text-foreground">{insight.subtitle}</div>
               </div>
             </div>
@@ -351,7 +351,7 @@ export const SelectionFieldAnalytics: React.FC<SelectionFieldAnalyticsProps> = (
   if (!data || !data.options || data.options.length === 0) {
     return (
       <FieldAnalyticsEmpty
-        icon={<CheckCircle className="h-8 w-8 text-blue-600" />}
+        icon={<CheckCircle className="h-8 w-8 text-[#7C3AAE]" />}
         title={t('emptyState.title')}
         subtitle={t('emptyState.subtitle', { values: { fieldType } })}
       />

@@ -31,9 +31,9 @@ const SEVERITY_STYLES: Record<Severity, { card: string; label: string; button: s
     button: 'bg-green-500 hover:bg-green-600 text-white',
   },
   info: {
-    card: 'bg-blue-50 border-blue-200',
+    card: 'bg-[#f0ebff] border-[#c4b5fd]',
     label: 'text-blue-800',
-    button: 'bg-blue-500 hover:bg-blue-600 text-white',
+    button: 'bg-[#7C3AAE] hover:bg-[#6d30a0] text-white',
   },
 };
 

@@ -78,10 +78,10 @@ const ValidationIndicator: React.FC<{
                 fill="none"
                 stroke={
                   isHighValidation
-                    ? '#10b981'
+                    ? '#0E8C70'
                     : isMediumValidation
                       ? '#f59e0b'
-                      : '#ef4444'
+                      : '#E85D4A'
                 }
                 strokeWidth="8"
                 strokeLinecap="round"
@@ -196,9 +196,9 @@ const CorporatePersonalBreakdown: React.FC<{
                 icon={<Building className="h-8 w-8 text-blue-500" />}
                 value={corporateVsPersonal.corporate}
                 label={`${t('corporatePersonal.corporate')} (${corporatePercentage.toFixed(1)}%)`}
-                className="bg-blue-50"
+                className="bg-[#ede9fe]"
                 progress={corporatePercentage}
-                progressColor="bg-blue-500"
+                progressColor="bg-[#ede9fe]0"
               />
 
               <MetricItem
@@ -235,7 +235,7 @@ const CorporatePersonalBreakdown: React.FC<{
 
         <div className="mt-6 p-4 bg-background rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="h-4 w-4 text-blue-600" />
+            <Shield className="h-4 w-4 text-[#7C3AAE]" />
             <span className="font-medium text-primary">
               {t('emailTypeComparison.insights')}
             </span>
@@ -358,7 +358,7 @@ const PopularProviders: React.FC<{
   const getProviderColor = (index: number) => {
     const colors = [
       'bg-[var(--tf-error-bg)] border-red-300',
-      'bg-blue-100 border-blue-300',
+      'bg-[#f0ebff] border-[#c4b5fd]',
       'bg-primary/10 border-primary/30',
       'bg-yellow-100 border-yellow-300',
       'bg-purple-100 border-purple-300',
@@ -397,9 +397,9 @@ const PopularProviders: React.FC<{
                 <div className="text-lg font-bold text-primary">
                   {provider.percentage.toFixed(1)}%
                 </div>
-                <div className="w-20 bg-gray-200 rounded-full h-2 mt-1">
+                <div className="w-20 bg-[#ebe9ec] rounded-full h-2 mt-1">
                   <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                    className="bg-[#ede9fe]0 h-2 rounded-full transition-all duration-500"
                     style={{ width: `${Math.max(5, provider.percentage)}%` }}
                   />
                 </div>
@@ -444,7 +444,7 @@ export const EmailFieldAnalytics: React.FC<EmailFieldAnalyticsProps> = ({
   if (!data || (data.validEmails === 0 && data.invalidEmails === 0)) {
     return (
       <FieldAnalyticsEmpty
-        icon={<Mail className="h-8 w-8 text-blue-600" />}
+        icon={<Mail className="h-8 w-8 text-[#2563EB]" />}
         title={t('emptyState.title')}
         subtitle={t('emptyState.subtitle')}
       />
@@ -730,7 +730,7 @@ export const FileUploadFieldAnalytics: React.FC<
             />
           ))}
         </div>
-        <div className="animate-pulse h-64 bg-gray-200 rounded" />
+        <div className="animate-pulse h-64 bg-[#ebe9ec] rounded" />
       </div>
     );
   }
@@ -740,8 +740,8 @@ export const FileUploadFieldAnalytics: React.FC<
       <Card className="w-full">
         <CardContent className="p-8">
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-              <Upload className="h-8 w-8 text-blue-600" />
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#f0ebff] mb-4">
+              <Upload className="h-8 w-8 text-[#0E8C70]" />
             </div>
             <h3 className="text-lg font-semibold text-primary mb-2">
               No files uploaded yet
@@ -792,9 +792,9 @@ export const FileUploadFieldAnalytics: React.FC<
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <div className="flex-1 bg-gray-200 rounded-full h-4">
+            <div className="flex-1 bg-[#ebe9ec] rounded-full h-4">
               <div
-                className="bg-blue-500 h-4 rounded-full transition-all duration-500"
+                className="bg-[#ede9fe]0 h-4 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, responseRate)}%` }}
               />
             </div>
@@ -824,7 +824,7 @@ export const FileUploadFieldAnalytics: React.FC<
                   </span>
                   <div className="flex-1 bg-background rounded-full h-3">
                     <div
-                      className="bg-blue-500 h-3 rounded-full"
+                      className="bg-[#ede9fe]0 h-3 rounded-full"
                       style={{ width: `${Math.max(2, ext.percentage)}%` }}
                     />
                   </div>

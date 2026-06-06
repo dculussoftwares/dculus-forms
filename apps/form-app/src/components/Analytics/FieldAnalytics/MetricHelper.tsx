@@ -50,9 +50,9 @@ export const MetricHelper: React.FC<MetricHelperProps> = ({
   }
 
   return (
-    <div className="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+    <div className="mb-4 p-3 bg-[#f0ebff] border-l-4 border-[#7C3AAE] rounded-r-lg">
       <div className="flex items-start">
-        <Info className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+        <Info className="h-5 w-5 text-[#7C3AAE] mt-0.5 mr-2 flex-shrink-0" />
         <div>
           <h4 className="font-medium text-blue-900 mb-1">{displayTitle}</h4>
           <p className="text-sm text-blue-800 leading-relaxed">{displayDescription}</p>

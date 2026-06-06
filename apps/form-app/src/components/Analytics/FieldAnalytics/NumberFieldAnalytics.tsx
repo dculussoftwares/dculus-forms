@@ -43,7 +43,7 @@ const PercentilesChart: React.FC<{
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -70,7 +70,7 @@ const PercentilesChart: React.FC<{
                   <span className="text-sm font-medium text-foreground">{item.name}</span>
                   <span className="text-sm font-bold text-primary">{item.value.toFixed(2)}</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-[#ebe9ec] rounded-full h-2">
                   <div 
                     className="h-2 rounded-full transition-all duration-500"
                     style={{ 
@@ -113,7 +113,7 @@ const BoxPlot: React.FC<{
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-48 bg-gray-200 rounded"></div>
+            <div className="h-48 bg-[#ebe9ec] rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -167,7 +167,7 @@ const BoxPlot: React.FC<{
             
             {/* Box */}
             <div 
-              className="absolute top-4 h-8 bg-blue-200 border-2 border-blue-400 rounded"
+              className="absolute top-4 h-8 bg-[#c4b5fd] border-2 border-[#7C3AAE] rounded"
               style={{
                 left: `${getPosition(data.percentiles.p25)}%`,
                 width: `${getPosition(data.percentiles.p75) - getPosition(data.percentiles.p25)}%`
@@ -301,7 +301,7 @@ export const NumberFieldAnalytics: React.FC<NumberFieldAnalyticsProps> = ({
   if (!data) {
     return (
       <FieldAnalyticsEmpty
-        icon={<Calculator className="h-8 w-8 text-blue-600" />}
+        icon={<Calculator className="h-8 w-8 text-[#D97706]" />}
         title={t('emptyState.title')}
         subtitle={t('emptyState.subtitle')}
       />

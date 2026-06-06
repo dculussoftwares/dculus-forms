@@ -229,13 +229,13 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
               <CardContent className="p-4">
                 <div className="animate-pulse">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                    <div className="w-10 h-10 bg-[#ebe9ec] rounded-lg"></div>
                     <div>
-                      <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
-                      <div className="h-3 bg-gray-200 rounded w-16"></div>
+                      <div className="h-4 bg-[#ebe9ec] rounded w-24 mb-1"></div>
+                      <div className="h-3 bg-[#ebe9ec] rounded w-16"></div>
                     </div>
                   </div>
-                  <div className="h-16 bg-gray-200 rounded"></div>
+                  <div className="h-16 bg-[#ebe9ec] rounded"></div>
                 </div>
               </CardContent>
             </Card>
@@ -358,7 +358,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
           )}
 
           {totalResponses > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f0ebff] text-[#7C3AAE] rounded-lg text-sm">
               <Eye className="h-4 w-4" />
               {t('responseCount', { values: { count: totalResponses } })}
             </div>
@@ -391,7 +391,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                    <div className="p-2 bg-[#f0ebff] text-[#7C3AAE] rounded-lg">
                       <BarChart3 className="h-5 w-5" />
                     </div>
                     <div>

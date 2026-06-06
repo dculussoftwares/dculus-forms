@@ -28,7 +28,7 @@ const SimpleWordCloud: React.FC<{
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -117,7 +117,7 @@ const RecentResponses: React.FC<{
         <CardContent>
           <div className="animate-pulse space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              <div key={i} className="h-16 bg-[#ebe9ec] rounded"></div>
             ))}
           </div>
         </CardContent>
@@ -266,7 +266,7 @@ export const TextFieldAnalytics: React.FC<TextFieldAnalyticsProps> = ({
   if (!data) {
     return (
       <FieldAnalyticsEmpty
-        icon={<FileText className="h-8 w-8 text-blue-600" />}
+        icon={<FileText className="h-8 w-8 text-[#0E8C70]" />}
         title={t('emptyState.title')}
         subtitle={t('emptyState.subtitle')}
       />

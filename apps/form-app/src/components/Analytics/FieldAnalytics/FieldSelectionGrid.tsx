@@ -86,7 +86,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     <div className={`p-2.5 rounded-lg flex-shrink-0 ${
-                      isSelected ? 'bg-blue-100 text-blue-600' : 'bg-background text-foreground'
+                      isSelected ? 'bg-[#f0ebff] text-[#7C3AAE]' : 'bg-background text-foreground'
                     }`}>
                       {React.createElement(getAnalyticsIcon(field.fieldType as any), { className: 'h-5 w-5' })}
                     </div>

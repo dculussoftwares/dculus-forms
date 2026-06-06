@@ -66,10 +66,10 @@ const CalendarHeatmap: React.FC<{
     if (maxCount === 0) return 'bg-background';
     const intensity = count / maxCount;
     if (intensity === 0) return 'bg-background';
-    if (intensity <= 0.25) return 'bg-blue-200';
-    if (intensity <= 0.5) return 'bg-blue-400';
-    if (intensity <= 0.75) return 'bg-blue-600';
-    return 'bg-blue-800';
+    if (intensity <= 0.25) return 'bg-[#c4b5fd]';
+    if (intensity <= 0.5) return 'bg-[#9B5CB5]';
+    if (intensity <= 0.75) return 'bg-[#7C3AAE]';
+    return 'bg-[#5b2882]';
   };
 
   if (loading) {
@@ -80,7 +80,7 @@ const CalendarHeatmap: React.FC<{
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -149,7 +149,7 @@ const CalendarHeatmap: React.FC<{
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground">{t('calendar.less')}</span>
             <div className="flex gap-1">
-              {['bg-background', 'bg-blue-200', 'bg-blue-400', 'bg-blue-600', 'bg-blue-800'].map((color, index) => (
+              {['bg-background', 'bg-[#c4b5fd]', 'bg-[#9B5CB5]', 'bg-[#7C3AAE]', 'bg-[#5b2882]'].map((color, index) => (
                 <div key={index} className={`w-3 h-3 ${color} rounded`} />
               ))}
             </div>
@@ -183,7 +183,7 @@ const SeasonalAnalysis: React.FC<{
       case 'spring': return 'bg-primary/10 border-primary/30';
       case 'summer': return 'bg-yellow-100 border-yellow-300';
       case 'fall': case 'autumn': return 'bg-orange-100 border-orange-300';
-      case 'winter': return 'bg-blue-100 border-blue-300';
+      case 'winter': return 'bg-[#f0ebff] border-[#c4b5fd]';
       default: return 'bg-background border-[var(--tf-border-strong)]';
     }
   };
@@ -209,7 +209,7 @@ const SeasonalAnalysis: React.FC<{
               <div 
                 key={season.season}
                 className={`border-2 rounded-lg p-4 transition-all ${
-                  isTopSeason ? 'border-blue-400 bg-blue-50' : getSeasonColor(season.season)
+                  isTopSeason ? 'border-[#c4b5fd] bg-[#ede9fe]' : getSeasonColor(season.season)
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -218,7 +218,7 @@ const SeasonalAnalysis: React.FC<{
                     <span className="font-medium text-primary">{season.season}</span>
                   </div>
                   {isTopSeason && (
-                    <div className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
+                    <div className="text-xs bg-[#ede9fe]0 text-white px-2 py-1 rounded-full">
                       {t('seasonal.peak')}
                     </div>
                   )}
@@ -229,10 +229,10 @@ const SeasonalAnalysis: React.FC<{
                 <div className="text-sm text-foreground">
                   {season.count} {t('seasonal.selections')}
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <div className="w-full bg-[#ebe9ec] rounded-full h-2 mt-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-500 ${
-                      isTopSeason ? 'bg-blue-500' : 
+                      isTopSeason ? 'bg-[#ede9fe]0' : 
                       season.season.toLowerCase() === 'spring' ? 'bg-primary' :
                       season.season.toLowerCase() === 'summer' ? 'bg-yellow-500' :
                       season.season.toLowerCase() === 'fall' ? 'bg-orange-500' :
@@ -248,7 +248,7 @@ const SeasonalAnalysis: React.FC<{
         
         <div className="p-4 bg-background rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <TrendingUp className="h-4 w-4 text-[#7C3AAE]" />
             <span className="font-medium text-primary">{t('seasonal.insightsTitle')}</span>
           </div>
           <div className="text-sm text-foreground space-y-1">
@@ -306,8 +306,8 @@ const DateRangeAnalysis: React.FC<{
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <Calendar className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+            <div className="text-center p-4 bg-[#ede9fe] rounded-lg">
+              <Calendar className="h-8 w-8 mx-auto mb-2 text-[#7C3AAE]" />
               <div className="text-sm font-medium text-foreground mb-1">{t('rangeOverview.earliest')}</div>
               <div className="text-sm text-primary">{dateRange.earliest}</div>
             </div>
@@ -405,7 +405,7 @@ export const DateFieldAnalytics: React.FC<DateFieldAnalyticsProps> = ({
   if (!data || !data.dateDistribution || data.dateDistribution.length === 0) {
     return (
       <FieldAnalyticsEmpty
-        icon={<Calendar className="h-8 w-8 text-blue-600" />}
+        icon={<Calendar className="h-8 w-8 text-[#E85D4A]" />}
         title={t('emptyState.title')}
         subtitle={t('emptyState.subtitle')}
       />

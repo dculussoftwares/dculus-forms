@@ -30,7 +30,7 @@ const CorrelationMatrix: React.FC<{
         </CardHeader>
         <CardContent>
           <div className="animate-pulse">
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-[#ebe9ec] rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -55,7 +55,7 @@ const CorrelationMatrix: React.FC<{
   const getCorrelationColor = (correlation: number) => {
     if (correlation >= 2.0) return 'bg-primary';
     if (correlation >= 1.5) return 'bg-yellow-500';
-    return 'bg-blue-500';
+    return 'bg-[#ede9fe]0';
   };
 
   const getCorrelationDescription = (correlation: number) => {
@@ -98,7 +98,7 @@ const CorrelationMatrix: React.FC<{
           ))}
         </div>
         
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+        <div className="mt-6 p-4 bg-[#ede9fe] rounded-lg">
           <h4 className="font-medium text-blue-900 mb-2">{t('correlations.understandingTitle')}</h4>
           <div className="text-sm text-blue-800 space-y-1">
             <p>• {t('correlations.strongDescription')}</p>
@@ -127,7 +127,7 @@ const PopularCombinations: React.FC<{
         <CardContent>
           <div className="animate-pulse space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              <div key={i} className="h-16 bg-[#ebe9ec] rounded"></div>
             ))}
           </div>
         </CardContent>
@@ -153,7 +153,7 @@ const PopularCombinations: React.FC<{
   const getComboColor = (percentage: number) => {
     if (percentage >= 20) return 'border-primary/30 bg-primary/5';
     if (percentage >= 10) return 'border-yellow-300 bg-yellow-50';
-    return 'border-blue-300 bg-blue-50';
+    return 'border-[#c4b5fd] bg-[#ede9fe]';
   };
 
   return (
@@ -272,7 +272,7 @@ const SelectionDistribution: React.FC<{
                             {t('selectionCount.responses')}: {data.value} ({data.percentage.toFixed(1)}%)
                           </span>
                           {isAverage && (
-                            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-1 rounded">
+                            <span className="text-xs text-[#7C3AAE] font-medium bg-[#ede9fe] px-1 rounded">
                               {t('selectionDistribution.average')}
                             </span>
                           )}
@@ -308,8 +308,8 @@ const SelectionDistribution: React.FC<{
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">
+            <div className="text-center p-4 bg-[#ede9fe] rounded-lg">
+              <div className="text-2xl font-bold text-[#7C3AAE]">
                 {averageSelections.toFixed(1)}
               </div>
               <div className="text-sm text-blue-800">
@@ -324,11 +324,11 @@ const SelectionDistribution: React.FC<{
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm text-foreground">{item.name}:</span>
                     <div className="flex items-center gap-2">
-                      <span className={`font-medium ${isAverage ? 'text-blue-600' : 'text-primary'}`}>
+                      <span className={`font-medium ${isAverage ? 'text-[#7C3AAE]' : 'text-primary'}`}>
                         {item.percentage.toFixed(1)}%
                       </span>
                       {isAverage && (
-                        <span className="text-xs text-blue-600 font-medium">
+                        <span className="text-xs text-[#7C3AAE] font-medium">
                           (avg)
                         </span>
                       )}
@@ -377,7 +377,7 @@ const IndividualOptionAnalysis: React.FC<{
                 </div>
               </div>
               <div className="flex items-center gap-4 flex-shrink-0">
-                <div className="w-24 bg-gray-200 rounded-full h-2">
+                <div className="w-24 bg-[#ebe9ec] rounded-full h-2">
                   <div 
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${option.percentage}%` }}
@@ -413,7 +413,7 @@ export const CheckboxFieldAnalytics: React.FC<CheckboxFieldAnalyticsProps> = ({
   if (!data || !data.individualOptions || data.individualOptions.length === 0) {
     return (
       <FieldAnalyticsEmpty
-        icon={<CheckSquare className="h-8 w-8 text-blue-600" />}
+        icon={<CheckSquare className="h-8 w-8 text-[#2563EB]" />}
         title={t('emptyState.title')}
         subtitle={t('emptyState.subtitle')}
       />
