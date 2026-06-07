@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "3.0.195",
-    "@apollo/client": "^3.13.8",
+    "@apollo/client": "^4.2.2",
     "@dculus/plugins": "workspace:*",
     "@dculus/types": "workspace:*",
     "@dculus/ui": "workspace:*",

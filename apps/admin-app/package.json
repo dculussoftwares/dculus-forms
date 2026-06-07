@@ -13,7 +13,7 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
-    "@apollo/client": "^3.13.8",
+    "@apollo/client": "^4.2.2",
     "@dculus/types": "workspace:*",
     "@dculus/ui": "workspace:*",
     "@dculus/utils": "workspace:*",
