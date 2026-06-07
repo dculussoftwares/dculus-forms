@@ -7,8 +7,6 @@ import {
   FillableFormField,
   NumberField,
   DateField,
-  SelectField,
-  RadioField,
   CheckboxField,
   FileUploadField,
 } from '@dculus/types';
@@ -124,7 +122,7 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
         .union([
           z.string().length(0), // Allow empty string
           z.number({
-            invalid_type_error: `${fillableField.label} must be a valid number`,
+            message: `${fillableField.label} must be a valid number`,
           }),
         ])
         .transform((val) => {
@@ -182,7 +180,8 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
 
       // Convert string to date for validation — use local midnight to avoid UTC day shift
       schema = schema.refine(
-        (dateStr: string) => {
+        (dateStr: unknown) => {
+          if (typeof dateStr !== 'string') return false;
           if (!dateStr && !isRequired) return true;
           if (!dateStr && isRequired) return false;
 
@@ -206,7 +205,8 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
         }
 
         schema = (schema as any).refine(
-          (dateStr: string) => {
+          (dateStr: unknown) => {
+            if (typeof dateStr !== 'string') return false;
             if (!dateStr) return !isRequired;
 
             const date = parseCalendarDate(dateStr);
@@ -405,7 +405,7 @@ export const validatePageData = (
     };
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
-      const validationErrors: ValidationError[] = error.errors.map(
+      const validationErrors: ValidationError[] = error.issues.map(
         (err: any) => ({
           field: err.path.join('.'),
           message: err.message,
