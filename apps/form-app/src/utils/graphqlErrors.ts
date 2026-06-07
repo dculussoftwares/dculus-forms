@@ -1,4 +1,5 @@
 import type { ErrorLike } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client';
 import {
   GRAPHQL_ERROR_CODES,
   isGraphQLErrorCode,
@@ -38,9 +39,9 @@ export const extractGraphQLErrorCode = (
     return undefined;
   }
 
-  // Try to extract from graphQLErrors first (duck-type for CombinedGraphQLErrors compatibility)
-  if ('graphQLErrors' in error) {
-    const code = extractFromList((error as { graphQLErrors?: ReadonlyArray<{ extensions?: { code?: unknown } }> }).graphQLErrors);
+  // Try to extract from errors[] (Apollo Client v4 CombinedGraphQLErrors)
+  if (CombinedGraphQLErrors.is(error)) {
+    const code = extractFromList(error.errors);
     if (code) {
       return code;
     }

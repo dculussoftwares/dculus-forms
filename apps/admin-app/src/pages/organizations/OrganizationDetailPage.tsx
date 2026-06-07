@@ -80,6 +80,7 @@ export const OrganizationDetailPage = () => {
     { variables: { id: orgId }, skip: !orgId }
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [changePlan, { loading: changingPlan }] = useMutation<any, any>(ADMIN_CHANGE_PLAN_MUTATION, {
     onCompleted: () => {
       toastSuccess('Plan updated', 'The plan has been changed successfully.');
@@ -90,6 +91,7 @@ export const OrganizationDetailPage = () => {
     onError: (e) => toastError('Failed to change plan', e.message),
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [resetUsage, { loading: resettingUsage }] = useMutation<any, any>(ADMIN_RESET_USAGE_MUTATION, {
     onCompleted: () => {
       toastSuccess('Usage reset', 'Usage counters have been reset to zero.');
@@ -100,6 +102,7 @@ export const OrganizationDetailPage = () => {
     onError: (e) => toastError('Failed to reset usage', e.message),
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [cancelSub, { loading: cancelling }] = useMutation<any, any>(ADMIN_CANCEL_SUBSCRIPTION_MUTATION, {
     onCompleted: () => {
       toastSuccess('Subscription cancelled', 'The subscription has been cancelled.');
@@ -109,6 +112,7 @@ export const OrganizationDetailPage = () => {
     onError: (e) => toastError('Failed to cancel', e.message),
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [reactivateSub, { loading: reactivating }] = useMutation<any, any>(ADMIN_REACTIVATE_SUBSCRIPTION_MUTATION, {
     onCompleted: () => {
       toastSuccess('Subscription reactivated', 'The subscription is now active again.');

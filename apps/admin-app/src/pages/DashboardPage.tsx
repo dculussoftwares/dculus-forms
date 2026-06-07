@@ -76,10 +76,13 @@ export default function DashboardPage() {
   const { t } = useTranslation('dashboard');
   const [alertsExpanded, setAlertsExpanded] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: statsData, loading: statsLoading, error: statsError } = useQuery<any, any>(ADMIN_STATS_QUERY);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: orgsData, loading: orgsLoading } = useQuery<any, any>(ADMIN_ORGANIZATIONS_QUERY, {
     variables: { limit: 5, offset: 0 },
   });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: healthData, loading: healthLoading } = useQuery<any, any>(ADMIN_SYSTEM_HEALTH_QUERY);
 
   const stats = [

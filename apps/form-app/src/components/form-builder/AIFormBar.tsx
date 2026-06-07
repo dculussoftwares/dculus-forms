@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import { CombinedGraphQLErrors } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { Send, Loader2 } from 'lucide-react';
 import AIIcon from '../icons/AIIcon';
@@ -119,9 +120,11 @@ const AIFormBar: React.FC<AIFormBarProps> = ({ organizationId, className }) => {
       setPrompt('');
     },
     onError(error) {
-      const isLimitError = (error as any).graphQLErrors?.some(
-        (e: any) => e.extensions?.code === 'AI_TOKEN_LIMIT_EXCEEDED'
-      );
+      const isLimitError =
+        CombinedGraphQLErrors.is(error) &&
+        error.errors.some(
+          (e) => e.extensions?.code === 'AI_TOKEN_LIMIT_EXCEEDED'
+        );
       toastError(
         t('error.title'),
         isLimitError ? t('error.limitReached') : t('error.description')
