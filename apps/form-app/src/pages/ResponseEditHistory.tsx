@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { format } from 'date-fns';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID, GET_RESPONSE_BY_ID } from '../graphql/queries';
@@ -34,13 +34,13 @@ export const ResponseEditHistory: React.FC = () => {
   // const [selectedEditId, setSelectedEditId] = useState<string | null>(null);
 
   // Fetch form data
-  const { data: formData, loading: formLoading } = useQuery(GET_FORM_BY_ID, {
+  const { data: formData, loading: formLoading } = useQuery<any, any>(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId
   });
 
   // Fetch response data
-  const { data: responseData, loading: responseLoading } = useQuery(GET_RESPONSE_BY_ID, {
+  const { data: responseData, loading: responseLoading } = useQuery<any, any>(GET_RESPONSE_BY_ID, {
     variables: { id: responseId },
     skip: !responseId
   });

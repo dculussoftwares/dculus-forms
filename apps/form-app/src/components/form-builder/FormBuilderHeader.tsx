@@ -27,7 +27,7 @@ import {
     Sparkles,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { useNavigate } from 'react-router-dom';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -82,8 +82,8 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     const [duplicateProgress, setDuplicateProgress] = useState(0);
     const permissions = useFormPermissions();
     const navigate = useNavigate();
-    const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
-    const [updateFormMutation] = useMutation(UPDATE_FORM);
+    const [duplicateFormMutation, { loading: isDuplicating }] = useMutation<any, any>(DUPLICATE_FORM);
+    const [updateFormMutation] = useMutation<any, any>(UPDATE_FORM);
 
     useEffect(() => {
         if (initialFormTitle) setFormTitle(initialFormTitle);

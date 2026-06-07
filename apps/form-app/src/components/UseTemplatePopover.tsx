@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import {
@@ -47,7 +47,7 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
 
   const navigate = useNavigate();
   const { organizationId } = useAppConfig();
-  const [createForm, { loading }] = useMutation(CREATE_FORM);
+  const [createForm, { loading }] = useMutation<any, any>(CREATE_FORM);
 
   useEffect(() => {
     if (loading) {

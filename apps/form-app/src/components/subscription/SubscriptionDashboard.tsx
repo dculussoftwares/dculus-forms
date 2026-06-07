@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { GET_SUBSCRIPTION, CREATE_PORTAL_SESSION } from '../../graphql/subscription';
 import { Card, Button, Badge, Alert, AlertTitle, AlertDescription, toastSuccess, toastError } from '@dculus/ui';
 import { CreditCard, TrendingUp, Eye, FileText, Calendar, AlertTriangle, Info, ExternalLink } from 'lucide-react';
@@ -10,8 +10,8 @@ import { AITokenUsageCard } from './AITokenUsageCard';
 
 export const SubscriptionDashboard = () => {
   const { t } = useTranslation('subscriptionDashboard');
-  const { data, loading } = useQuery(GET_SUBSCRIPTION);
-  const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
+  const { data, loading } = useQuery<any, any>(GET_SUBSCRIPTION);
+  const [createPortalSession, { loading: portalLoading }] = useMutation<any, any>(CREATE_PORTAL_SESSION);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const subscription = data?.activeOrganization?.subscription;

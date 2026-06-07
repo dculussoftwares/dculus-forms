@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { useSession } from '../lib/auth-client';
 import { gql } from '@apollo/client';
 import { toastError } from '@dculus/ui';
@@ -82,7 +82,7 @@ export const AuthProvider = ({
   const [organizationError, setOrganizationError] = useState<string | null>(null);
   const [organizationErrorCode, setOrganizationErrorCode] = useState<GraphQLErrorCode | null>(null);
 
-  const { data: orgData, error: orgError, refetch: refetchOrg } = useQuery(ACTIVE_ORGANIZATION, {
+  const { data: orgData, error: orgError, refetch: refetchOrg } = useQuery<any, any>(ACTIVE_ORGANIZATION, {
     skip: !session?.user,
     errorPolicy: 'all',
   });
@@ -91,7 +91,7 @@ export const AuthProvider = ({
   useEffect(() => {
     if (orgError) {
       const errorMessage =
-        orgError.graphQLErrors?.[0]?.message ||
+        (orgError as any).graphQLErrors?.[0]?.message ||
         orgError.message ||
         'Failed to load organization';
       const errorCode = extractGraphQLErrorCode(orgError);

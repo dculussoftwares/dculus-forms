@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { ChevronDown, AlertTriangle, Eye, FileText, Sparkles } from 'lucide-react';
 import { Card, Button, toastSuccess, toastError } from '@dculus/ui';
 import { cn } from '@dculus/utils';
@@ -84,13 +84,13 @@ export function BillingSettings() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showChart, setShowChart] = useState(false);
 
-  const { data: subData, loading: subLoading } = useQuery(GET_SUBSCRIPTION);
-  const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
+  const { data: subData, loading: subLoading } = useQuery<any, any>(GET_SUBSCRIPTION);
+  const [createPortalSession, { loading: portalLoading }] = useMutation<any, any>(CREATE_PORTAL_SESSION);
 
   const subscription = subData?.activeOrganization?.subscription;
   const organizationId = subData?.activeOrganization?.id ?? '';
 
-  const { data: tokenData } = useQuery(GET_AI_TOKEN_USAGE, {
+  const { data: tokenData } = useQuery<any, any>(GET_AI_TOKEN_USAGE, {
     variables: { organizationId },
     skip: !organizationId,
   });

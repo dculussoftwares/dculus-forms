@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { AlertTriangle, X } from 'lucide-react';
 import {
@@ -80,13 +80,13 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     data: formData,
     loading: formLoading,
     error: formError,
-  } = useQuery(GET_FORM_BY_ID, {
+  } = useQuery<any, any>(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
     errorPolicy: 'all',
   });
 
-  const [updateForm, { loading: updateLoading }] = useMutation(UPDATE_FORM);
+  const [updateForm, { loading: updateLoading }] = useMutation<any, any>(UPDATE_FORM);
 
   const {
     isConnected,

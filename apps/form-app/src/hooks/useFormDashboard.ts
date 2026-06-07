@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { DELETE_FORM, UPDATE_FORM } from '../graphql/mutations';
 import { getFormViewerUrl } from '@/lib/config';
@@ -29,13 +29,13 @@ export const useFormDashboard = (formId: string | undefined) => {
     data: formData,
     loading: formLoading,
     error: formError,
-  } = useQuery(GET_FORM_BY_ID, {
+  } = useQuery<any, any>(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });
 
 
-  const [deleteForm, { loading: deleteLoading }] = useMutation(DELETE_FORM, {
+  const [deleteForm, { loading: deleteLoading }] = useMutation<any, any>(DELETE_FORM, {
     update: (cache, { data }) => {
       if (!data?.deleteForm || !formId) return;
       cache.evict({ id: cache.identify({ __typename: 'Form', id: formId }) });
@@ -51,7 +51,7 @@ export const useFormDashboard = (formId: string | undefined) => {
     },
   });
 
-  const [updateForm, { loading: updateLoading }] = useMutation(UPDATE_FORM, {
+  const [updateForm, { loading: updateLoading }] = useMutation<any, any>(UPDATE_FORM, {
     onCompleted: (data) => {
       // Show celebration animation when form is published
       if (data?.updateForm?.isPublished) {

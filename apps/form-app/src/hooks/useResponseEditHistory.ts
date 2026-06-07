@@ -1,5 +1,7 @@
-import { useQuery, useMutation, ApolloError } from '@apollo/client';
-import { useApolloClient } from '@apollo/client';
+import type { ErrorLike } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { useApolloClient } from '@apollo/client/react';
+import { useEffect } from 'react';
 import {
   GET_RESPONSE_EDIT_HISTORY,
   UPDATE_RESPONSE_WITH_TRACKING
@@ -21,7 +23,7 @@ interface UseResponseEditHistoryReturn {
   isLoadingHistory: boolean;
 
   // Error states
-  historyError: ApolloError | undefined;
+  historyError: ErrorLike | undefined;
 
   // Mutations
   updateResponseWithTracking: (input: UpdateResponseInput) => Promise<void>;
@@ -46,22 +48,25 @@ export const useResponseEditHistory = ({
     loading: isLoadingHistory,
     error: historyError,
     refetch: refetchHistory
-  } = useQuery(GET_RESPONSE_EDIT_HISTORY, {
+  } = useQuery<any, any>(GET_RESPONSE_EDIT_HISTORY, {
     variables: { responseId },
     skip: !enabled || !responseId,
     errorPolicy: 'all',
     notifyOnNetworkStatusChange: true,
-    onError: (error) => {
-      console.error('Failed to fetch edit history:', error);
+  });
+
+  useEffect(() => {
+    if (historyError) {
+      console.error('Failed to fetch edit history:', historyError);
       toastError(
         'Failed to load edit history',
         'Please try refreshing the page'
       );
     }
-  });
+  }, [historyError]);
 
   // Update response with tracking mutation
-  const [updateResponseMutation, { loading: isUpdating }] = useMutation(
+  const [updateResponseMutation, { loading: isUpdating }] = useMutation<any, any>(
     UPDATE_RESPONSE_WITH_TRACKING,
     {
       onCompleted: () => {
@@ -137,7 +142,7 @@ interface ResponseEditInfo {
 interface UseResponseEditInfoReturn {
   editInfo: ResponseEditInfo | null;
   isLoading: boolean;
-  error: ApolloError | undefined;
+  error: ErrorLike | undefined;
   refetch: () => void;
 }
 
@@ -150,7 +155,7 @@ export const useResponseEditInfo = ({
     loading: isLoading,
     error,
     refetch
-  } = useQuery(GET_RESPONSE_EDIT_HISTORY, {
+  } = useQuery<any, any>(GET_RESPONSE_EDIT_HISTORY, {
     variables: { responseId },
     skip: !enabled || !responseId,
     errorPolicy: 'all'

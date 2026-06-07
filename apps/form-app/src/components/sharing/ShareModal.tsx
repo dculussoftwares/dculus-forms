@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Dialog,
   DialogContent,
@@ -74,7 +74,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [linkCopied, setLinkCopied] = useState(false);
 
   // GraphQL queries and mutations
-  const { data: permissionsData, refetch: refetchPermissions } = useQuery(
+  const { data: permissionsData, refetch: refetchPermissions } = useQuery<any, any>(
     GET_FORM_PERMISSIONS,
     { 
       variables: { formId },
@@ -82,7 +82,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   );
 
-  const { data: membersData } = useQuery(
+  const { data: membersData } = useQuery<any, any>(
     GET_ORGANIZATION_MEMBERS,
     { 
       variables: { organizationId },
@@ -90,7 +90,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   );
 
-  const [shareForm, { loading: sharing }] = useMutation(SHARE_FORM, {
+  const [shareForm, { loading: sharing }] = useMutation<any, any>(SHARE_FORM, {
     onCompleted: () => {
       toastSuccess(t('toast.success.settingsUpdated'));
       refetchPermissions();
@@ -100,7 +100,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   });
 
-  const [updatePermission] = useMutation(UPDATE_FORM_PERMISSION, {
+  const [updatePermission] = useMutation<any, any>(UPDATE_FORM_PERMISSION, {
     onCompleted: () => {
       toastSuccess(t('toast.success.permissionUpdated'));
       refetchPermissions();
@@ -110,7 +110,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   });
 
-  const [removeAccess] = useMutation(REMOVE_FORM_ACCESS, {
+  const [removeAccess] = useMutation<any, any>(REMOVE_FORM_ACCESS, {
     onCompleted: () => {
       toastSuccess(t('toast.success.accessRemoved'));
       refetchPermissions();

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Palette, Image, Search } from 'lucide-react';
 import { FormLayout, LayoutCode } from '@dculus/types';
 import { Tabs, TabsList, TabsTrigger, TabsContent, Button, Checkbox, Input, Label } from '@dculus/ui';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { LayoutThumbnails } from './LayoutThumbnails';
 import { LayoutOptions } from './LayoutOptions';
@@ -38,7 +38,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
   const { t } = useTranslation('layoutSidebar');
 
   // Fetch form background images
-  const { data: formFilesData, refetch: refetchFormFiles } = useQuery(GET_FORM_FILES, {
+  const { data: formFilesData, refetch: refetchFormFiles } = useQuery<any, any>(GET_FORM_FILES, {
     variables: {
       formId,
       type: 'FormBackground'

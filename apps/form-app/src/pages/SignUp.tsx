@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useMutation, useApolloClient } from '@apollo/client';
+import { useMutation, useApolloClient } from '@apollo/client/react';
 import { Button, Input, Label, OTPInput } from '@dculus/ui';
 import { FileText } from 'lucide-react';
 import { slugify } from '@dculus/utils';
@@ -36,7 +36,7 @@ export const SignUp = () => {
   const { t } = useTranslation('signUp');
 
   // GraphQL mutation for initializing organization subscription
-  const [initializeSubscription] = useMutation(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
+  const [initializeSubscription] = useMutation<any, any>(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
 
   // Check for invitation context
   const invitationEmail = location.state?.email;

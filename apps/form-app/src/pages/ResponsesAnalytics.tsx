@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
@@ -13,7 +13,7 @@ const ResponsesAnalytics: React.FC = () => {
   const navigate = useNavigate();
   const actualFormId = formId || id;
 
-  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
+  const { data: formData, loading: formLoading, error: formError } = useQuery<any, any>(GET_FORM_BY_ID, {
     variables: { id: actualFormId },
     skip: !actualFormId,
   });

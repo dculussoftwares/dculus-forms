@@ -9,7 +9,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { ColumnSizingState, OnChangeFn, RowSelectionState, VisibilityState } from '@tanstack/react-table';
 import { FormResponse } from '@dculus/types';
 import { FilterState } from '../components/Filters';
@@ -232,8 +232,8 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
   const clearRowSelection = () => setRowSelection({});
 
   // Mutations
-  const [generateReport, { loading: exportLoading }] = useMutation(GENERATE_FORM_RESPONSE_REPORT);
-  const [bulkDeleteMutation, { loading: bulkDeleteLoading }] = useMutation(DELETE_RESPONSES);
+  const [generateReport, { loading: exportLoading }] = useMutation<any, any>(GENERATE_FORM_RESPONSE_REPORT);
+  const [bulkDeleteMutation, { loading: bulkDeleteLoading }] = useMutation<any, any>(DELETE_RESPONSES);
   const isExporting = exportLoading;
   const isBulkDeleting = bulkDeleteLoading;
 

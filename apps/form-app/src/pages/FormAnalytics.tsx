@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
@@ -25,7 +25,7 @@ const FormAnalytics: React.FC = () => {
   const activeTab = (searchParams.get('tab') as 'overview' | 'fields') || 'overview';
   const selectedFieldId = searchParams.get('field') || null;
 
-  const { data, loading, error } = useQuery(GET_FORM_BY_ID, {
+  const { data, loading, error } = useQuery<any, any>(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });

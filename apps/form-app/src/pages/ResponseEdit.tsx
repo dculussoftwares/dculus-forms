@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
 import { FormRenderer } from '@dculus/ui';
 import { RendererMode } from '@dculus/utils';
@@ -68,7 +68,7 @@ const ResponseEdit: React.FC = () => {
     data: formData,
     loading: formLoading,
     error: formError,
-  } = useQuery(GET_FORM_BY_ID, {
+  } = useQuery<any, any>(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });
@@ -78,13 +78,13 @@ const ResponseEdit: React.FC = () => {
     data: responseData,
     loading: responseLoading,
     error: responseError,
-  } = useQuery(GET_RESPONSE_BY_ID, {
+  } = useQuery<any, any>(GET_RESPONSE_BY_ID, {
     variables: { id: responseId },
     skip: !responseId,
   });
 
   // Update response mutation
-  const [updateResponseMutation] = useMutation(UPDATE_RESPONSE, {
+  const [updateResponseMutation] = useMutation<any, any>(UPDATE_RESPONSE, {
     // Refetch queries to update the cache after successful update
     refetchQueries: [
       {
@@ -102,7 +102,7 @@ const ResponseEdit: React.FC = () => {
     awaitRefetchQueries: true,
   });
 
-  const [deleteFileMutation] = useMutation(DELETE_FILE);
+  const [deleteFileMutation] = useMutation<any, any>(DELETE_FILE);
 
   const handleResponseUpdate = async (
     responseId: string,

@@ -1,4 +1,4 @@
-import type { ApolloError } from '@apollo/client';
+import type { ErrorLike } from '@apollo/client';
 import {
   GRAPHQL_ERROR_CODES,
   isGraphQLErrorCode,
@@ -32,26 +32,22 @@ const extractFromList = (
  * Returns the explicit code from extensions.code if available.
  */
 export const extractGraphQLErrorCode = (
-  error?: ApolloError | Error | null
+  error?: ErrorLike | null
 ): GraphQLErrorCode | undefined => {
   if (!error) {
     return undefined;
   }
 
-  // Try to extract from graphQLErrors first
+  // Try to extract from graphQLErrors first (duck-type for CombinedGraphQLErrors compatibility)
   if ('graphQLErrors' in error) {
-    const code = extractFromList(error.graphQLErrors);
+    const code = extractFromList((error as { graphQLErrors?: ReadonlyArray<{ extensions?: { code?: unknown } }> }).graphQLErrors);
     if (code) {
       return code;
     }
   }
 
   // Try to extract from network error
-  const networkErrors = (error as ApolloError).networkError as
-    | (Error & {
-      result?: { errors?: Array<{ extensions?: { code?: unknown } }> };
-    })
-    | undefined;
+  const networkErrors = (error as { networkError?: Error & { result?: { errors?: Array<{ extensions?: { code?: unknown } }> } } }).networkError;
 
   const networkCode = extractFromList(networkErrors?.result?.errors);
   if (networkCode) {
@@ -87,7 +83,7 @@ export const getErrorTranslationKey = (
  * Get error details (code and translation keys) from an error.
  * Convenience function combining extraction and key generation.
  */
-export const getErrorDetails = (error?: ApolloError | Error | null) => {
+export const getErrorDetails = (error?: ErrorLike | null) => {
   const code = extractGraphQLErrorCode(error);
   const effectiveCode = code || GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR;
 

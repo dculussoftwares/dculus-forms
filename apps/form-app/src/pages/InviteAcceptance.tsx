@@ -5,7 +5,7 @@ import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '@dculus/utils';
 import { authClient, organization } from '../lib/auth-client';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { GET_INVITATION_PUBLIC } from '../graphql/queries';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button } from '@dculus/ui';
@@ -56,7 +56,7 @@ const InviteAcceptance: React.FC = () => {
   const [acceptLoading, setAcceptLoading] = useState(false);
   const { t } = useTranslation('inviteAcceptance');
 
-  const { data: invitationData, loading: invitationLoading, error: invitationError } = useQuery(
+  const { data: invitationData, loading: invitationLoading, error: invitationError } = useQuery<any, any>(
     GET_INVITATION_PUBLIC,
     { variables: { id: invitationId || '' }, skip: !invitationId, errorPolicy: 'all' }
   );

@@ -1,6 +1,6 @@
-import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
-import { onError } from '@apollo/client/link/error';
+import { ApolloClient, InMemoryCache, createHttpLink, CombinedGraphQLErrors } from '@apollo/client';
+import { SetContextLink } from '@apollo/client/link/context';
+import { ErrorLink } from '@apollo/client/link/error';
 import { getGraphQLUrl } from '../lib/config';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql';
 import { getBearerToken } from '../lib/auth-client';
@@ -9,10 +9,13 @@ const graphqlUrl = getGraphQLUrl();
 
 const httpLink = createHttpLink({
   uri: graphqlUrl,
+  credentials: 'include', // Include cookies for authentication
 });
 
-const authLink = setContext((_, { headers }) => {
+// SetContextLink: prevContext is first arg, operation is second (v4 change)
+const authLink = new SetContextLink((prevContext) => {
   const token = getBearerToken();
+  const headers = (prevContext as Record<string, unknown>).headers as Record<string, string> | undefined;
 
   // If we have a token, include it in the authorization header
   if (token) {
@@ -37,10 +40,10 @@ const authLink = setContext((_, { headers }) => {
  * Business logic errors (FORM_NOT_FOUND, FORBIDDEN, etc.) are NOT handled here;
  * individual mutations/queries handle those via onError or AuthorizationErrorBoundary.
  */
-const errorLink = onError(({ graphQLErrors }) => {
-  if (!graphQLErrors) return;
+const errorLink = new ErrorLink(({ error }) => {
+  if (!CombinedGraphQLErrors.is(error)) return;
 
-  for (const { extensions } of graphQLErrors) {
+  for (const { extensions } of error.errors) {
     const code = extensions?.code;
     if (
       code === GRAPHQL_ERROR_CODES.UNAUTHENTICATED ||
@@ -62,12 +65,14 @@ const errorLink = onError(({ graphQLErrors }) => {
 export const client = new ApolloClient({
   link: errorLink.concat(authLink).concat(httpLink),
   cache: new InMemoryCache(),
-  credentials: 'include', // Include cookies for authentication
   defaultOptions: {
     watchQuery: {
       errorPolicy: 'all',
     },
     query: {
+      errorPolicy: 'all',
+    },
+    mutate: {
       errorPolicy: 'all',
     },
   },

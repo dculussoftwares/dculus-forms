@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import {
   Button,
   toastSuccess,
@@ -67,9 +67,9 @@ export const PluginCard: React.FC<PluginCardProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const [updatePlugin] = useMutation(UPDATE_FORM_PLUGIN);
-  const [deletePlugin] = useMutation(DELETE_FORM_PLUGIN);
-  const [testPlugin] = useMutation(TEST_FORM_PLUGIN);
+  const [updatePlugin] = useMutation<any, any>(UPDATE_FORM_PLUGIN);
+  const [deletePlugin] = useMutation<any, any>(DELETE_FORM_PLUGIN);
+  const [testPlugin] = useMutation<any, any>(TEST_FORM_PLUGIN);
 
   const handleToggleEnabled = async (enabled: boolean) => {
     setIsTogglingEnabled(true);

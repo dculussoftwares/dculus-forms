@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { Button, toastSuccess, toastError } from '@dculus/ui';
 import {
   Check,
@@ -24,9 +24,9 @@ export const Pricing = () => {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [currency, setCurrency] = useState<Currency>('USD');
 
-  const { data, loading } = useQuery(GET_AVAILABLE_PLANS);
+  const { data, loading } = useQuery<any, any>(GET_AVAILABLE_PLANS);
   const [createCheckoutSession, { loading: checkoutLoading }] =
-    useMutation(CREATE_CHECKOUT_SESSION);
+    useMutation<any, any>(CREATE_CHECKOUT_SESSION);
 
   const plans = data?.availablePlans || [];
 

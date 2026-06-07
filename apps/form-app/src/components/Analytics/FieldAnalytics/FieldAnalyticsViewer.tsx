@@ -7,7 +7,7 @@
 
 import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { Card, CardContent, Button, toastError } from '@dculus/ui';
 import { useFieldAnalyticsManager } from '@/hooks/useFieldAnalytics.ts';
 import { usePerformanceMonitor, useMemoryTracker } from '@/hooks/usePerformanceMonitor.ts';
@@ -73,16 +73,16 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
     loading
   } = useFieldAnalyticsManager(formId);
 
-  const { data: insightsData, refetch: refetchInsights, error: insightsError } = useQuery(GET_FIELD_INSIGHTS, {
+  const { data: insightsData, refetch: refetchInsights, error: insightsError } = useQuery<any, any>(GET_FIELD_INSIGHTS, {
     variables: { formId, organizationId },
     skip: !formId || !organizationId,
   });
 
-  const [generateInsights, { loading: generatingInsights }] = useMutation(GENERATE_FIELD_INSIGHTS, {
+  const [generateInsights, { loading: generatingInsights }] = useMutation<any, any>(GENERATE_FIELD_INSIGHTS, {
     variables: { formId, organizationId },
     onCompleted: () => refetchInsights(),
     onError: (err) => {
-      const msg = err.graphQLErrors?.[0]?.message ?? err.message ?? 'AI field insights generation failed.';
+      const msg = (err as any).graphQLErrors?.[0]?.message ?? err.message ?? 'AI field insights generation failed.';
       const isLimit = msg.toLowerCase().includes('token limit');
       toastError(
         isLimit ? 'AI Token Limit Reached' : 'Analysis Failed',

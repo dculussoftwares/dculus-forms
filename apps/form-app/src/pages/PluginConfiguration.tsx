@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { LoadingSpinner, Button, toastSuccess, toastError, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
@@ -21,19 +21,19 @@ const PluginConfiguration: React.FC = () => {
 
   const [isSaving, setIsSaving] = useState(false);
 
-  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
+  const { data: formData, loading: formLoading, error: formError } = useQuery<any, any>(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
     fetchPolicy: 'cache-and-network',
   });
 
-  const { data: pluginData, loading: pluginLoading } = useQuery(GET_FORM_PLUGIN, {
+  const { data: pluginData, loading: pluginLoading } = useQuery<any, any>(GET_FORM_PLUGIN, {
     variables: { id: pluginId },
     skip: !pluginId,
   });
 
-  const [createPlugin] = useMutation(CREATE_FORM_PLUGIN);
-  const [updatePlugin] = useMutation(UPDATE_FORM_PLUGIN);
+  const [createPlugin] = useMutation<any, any>(CREATE_FORM_PLUGIN);
+  const [updatePlugin] = useMutation<any, any>(UPDATE_FORM_PLUGIN);
 
   const mode = pluginId ? 'edit' : 'create';
   const currentPluginType = pluginId ? pluginData?.formPlugin?.type : pluginType;

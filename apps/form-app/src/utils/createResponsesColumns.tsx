@@ -12,7 +12,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import type { Column, Row } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { gql, useApolloClient } from '@apollo/client';
+import { gql } from '@apollo/client'
+import { useApolloClient } from '@apollo/client/react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -367,7 +368,7 @@ const FileDownloadLink: React.FC<{ s3Key: string }> = ({ s3Key }) => {
         variables: { key: s3Key },
         fetchPolicy: 'no-cache', // always get a fresh signed URL
       });
-      const signedUrl = data.getResponseFileDownloadUrl;
+      const signedUrl = data?.getResponseFileDownloadUrl ?? '';
       // Trigger browser download via a temporary anchor
       const anchor = document.createElement('a');
       anchor.href = signedUrl;

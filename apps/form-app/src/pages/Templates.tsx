@@ -5,7 +5,7 @@ import {
   LoadingSpinner,
   Button
 } from '@dculus/ui';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { GET_TEMPLATES } from '../graphql/templates';
 import { UseTemplatePopover } from '../components/UseTemplatePopover';
 import { useTranslation } from '../hooks/useTranslation';
@@ -16,7 +16,7 @@ import { getCdnEndpoint } from '../lib/config';
  */
 
 const Templates: React.FC = () => {
-  const { data, loading, error } = useQuery(GET_TEMPLATES);
+  const { data, loading, error } = useQuery<any, any>(GET_TEMPLATES);
   const cdnEndpoint = getCdnEndpoint();
   const { t, locale } = useTranslation('templates');
 

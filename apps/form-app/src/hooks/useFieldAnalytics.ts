@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { gql } from '@apollo/client'
+import { useQuery } from '@apollo/client/react';
 import { usePerformanceMonitor } from './usePerformanceMonitor';
 
 // GraphQL queries for field analytics
@@ -477,7 +478,7 @@ export interface AllFieldsAnalyticsData {
 
 // Hook for single field analytics
 export const useFieldAnalytics = (formId: string, fieldId: string) => {
-  const { data, loading, error, refetch } = useQuery(GET_FIELD_ANALYTICS, {
+  const { data, loading, error, refetch } = useQuery<any, any>(GET_FIELD_ANALYTICS, {
     variables: { formId, fieldId },
     skip: !formId || !fieldId,
     errorPolicy: 'all',
@@ -520,7 +521,7 @@ export const useFieldAnalytics = (formId: string, fieldId: string) => {
 
 // Hook for all fields analytics
 export const useAllFieldsAnalytics = (formId: string) => {
-  const { data, loading, error, refetch } = useQuery(GET_ALL_FIELDS_ANALYTICS, {
+  const { data, loading, error, refetch } = useQuery<any, any>(GET_ALL_FIELDS_ANALYTICS, {
     variables: { formId },
     skip: !formId,
     errorPolicy: 'all',

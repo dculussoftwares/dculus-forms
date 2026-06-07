@@ -1,6 +1,6 @@
 // apps/form-app/src/components/form-builder/AITokenMeter.tsx
 import React from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { cn } from '@dculus/utils';
 import { AI_TOKEN_USAGE } from '../../graphql/aiChat';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -11,7 +11,7 @@ interface Props {
 
 const AITokenMeter: React.FC<Props> = ({ organizationId }) => {
   const { t } = useTranslation('aiEditDrawer');
-  const { data } = useQuery(AI_TOKEN_USAGE, {
+  const { data } = useQuery<any, any>(AI_TOKEN_USAGE, {
     variables: { organizationId },
     pollInterval: 30_000,
     fetchPolicy: 'cache-and-network',

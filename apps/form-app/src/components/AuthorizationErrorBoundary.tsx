@@ -1,5 +1,5 @@
 import React from 'react';
-import { ApolloError } from '@apollo/client';
+import type { ErrorLike } from '@apollo/client';
 import { Alert, AlertDescription, Card, CardContent, CardHeader, CardTitle, Button, ScrollArea } from '@dculus/ui';
 import { AlertTriangle, RefreshCw, LogIn, Home } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
@@ -8,7 +8,7 @@ import { getErrorDetails } from '../utils/graphqlErrors';
 
 interface AuthorizationErrorBoundaryProps {
   children: React.ReactNode;
-  error?: ApolloError | Error | null;
+  error?: ErrorLike | null;
   onRetry?: () => void;
   fallbackTitle?: string;
   fallbackDescription?: string;
@@ -130,7 +130,7 @@ export const withAuthorizationErrorBoundary = <P extends object>(
     fallbackDescription?: string;
   }
 ) => {
-  return (props: P & { error?: ApolloError | Error; onRetry?: () => void }) => {
+  return (props: P & { error?: ErrorLike; onRetry?: () => void }) => {
     const { error, onRetry, ...componentProps } = props;
 
     return (

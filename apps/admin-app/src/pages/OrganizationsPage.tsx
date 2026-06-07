@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { useNavigate } from 'react-router-dom';
 import { Button, LoadingSpinner } from '@dculus/ui';
 import { Building2, Search, AlertTriangle } from 'lucide-react';
@@ -69,7 +69,7 @@ export default function OrganizationsPage() {
     debounceRef.current = setTimeout(() => setDebouncedSearch(value), 300);
   }, []);
 
-  const { data, loading, error, refetch } = useQuery(ADMIN_ORGANIZATIONS_QUERY, {
+  const { data, loading, error, refetch } = useQuery<any, any>(ADMIN_ORGANIZATIONS_QUERY, {
     variables: { limit: 50, offset: 0, search: debouncedSearch || undefined },
   });
 

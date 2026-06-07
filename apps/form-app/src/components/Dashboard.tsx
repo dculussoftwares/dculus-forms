@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, Routes, Route, useSearchParams } from 'react-router-dom';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { GET_ACTIVE_ORGANIZATION, GET_FORMS } from '../graphql/queries';
 import { GET_TEMPLATES } from '../graphql/templates';
 import Templates from '../pages/Templates';
@@ -85,7 +85,7 @@ function FormsListDashboard() {
   const [isPageChanging, setIsPageChanging] = useState(false);
   const [jumpToPageInput, setJumpToPageInput] = useState('');
 
-  const { data: orgData } = useQuery(GET_ACTIVE_ORGANIZATION);
+  const { data: orgData } = useQuery<any, any>(GET_ACTIVE_ORGANIZATION);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 500);
@@ -107,19 +107,19 @@ function FormsListDashboard() {
   const organizationId = orgData?.activeOrganization?.id;
   const filtersInput = debouncedSearchTerm.trim() ? { search: debouncedSearchTerm.trim() } : undefined;
 
-  const { data: ownerFormsData, loading: ownerFormsLoading, error: ownerFormsError } = useQuery(GET_FORMS, {
+  const { data: ownerFormsData, loading: ownerFormsLoading, error: ownerFormsError } = useQuery<any, any>(GET_FORMS, {
     variables: { organizationId, category: 'OWNER', page: currentPage, limit: pageSize, filters: filtersInput },
     skip: !organizationId || activeFilter !== 'my-forms',
     notifyOnNetworkStatusChange: true,
   });
 
-  const { data: sharedFormsData, loading: sharedFormsLoading, error: sharedFormsError } = useQuery(GET_FORMS, {
+  const { data: sharedFormsData, loading: sharedFormsLoading, error: sharedFormsError } = useQuery<any, any>(GET_FORMS, {
     variables: { organizationId, category: 'SHARED', page: currentPage, limit: pageSize, filters: filtersInput },
     skip: !organizationId || activeFilter !== 'shared-with-me',
     notifyOnNetworkStatusChange: true,
   });
 
-  const { data: allFormsData, loading: allFormsLoading, error: allFormsError } = useQuery(GET_FORMS, {
+  const { data: allFormsData, loading: allFormsLoading, error: allFormsError } = useQuery<any, any>(GET_FORMS, {
     variables: { organizationId, category: 'ALL', page: currentPage, limit: pageSize, filters: filtersInput },
     skip: !organizationId || activeFilter !== 'all',
     notifyOnNetworkStatusChange: true,
@@ -407,7 +407,7 @@ function FormsListDashboard() {
 function TemplatesStrip() {
   const navigate = useNavigate();
   const cdnEndpoint = getCdnEndpoint();
-  const { data, loading } = useQuery(GET_TEMPLATES);
+  const { data, loading } = useQuery<any, any>(GET_TEMPLATES);
   const templates: any[] = data?.templates?.slice(0, 8) ?? [];
 
   if (loading) {

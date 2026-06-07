@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
 import {
   Button,
   LoadingSpinner,
@@ -34,7 +34,7 @@ const FormSettings: React.FC = () => {
     loading: formLoading,
     error: formError,
     refetch,
-  } = useQuery(GET_FORM_BY_ID, {
+  } = useQuery<any, any>(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });
@@ -60,7 +60,7 @@ const FormSettings: React.FC = () => {
     },
   });
 
-  const [updateForm] = useMutation(UPDATE_FORM, {
+  const [updateForm] = useMutation<any, any>(UPDATE_FORM, {
     onCompleted: () => {
       setIsSaving(false);
       setErrors({});
@@ -75,7 +75,7 @@ const FormSettings: React.FC = () => {
     },
   });
 
-  const [regenerateShortUrl] = useMutation(REGENERATE_SHORT_URL, {
+  const [regenerateShortUrl] = useMutation<any, any>(REGENERATE_SHORT_URL, {
     onCompleted: () => {
       setIsSaving(false);
       setErrors({});

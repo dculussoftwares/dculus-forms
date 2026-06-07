@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { X, Check } from 'lucide-react';
 import { cn } from '@dculus/utils';
 import { toastSuccess, toastError } from '@dculus/ui';
@@ -51,8 +51,8 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
     currentPlan === 'free' ? 'starter' : currentPlan === 'starter' ? 'advanced' : null
   );
 
-  const { data, loading } = useQuery(GET_AVAILABLE_PLANS);
-  const [createCheckoutSession, { loading: checkoutLoading }] = useMutation(CREATE_CHECKOUT_SESSION);
+  const { data, loading } = useQuery<any, any>(GET_AVAILABLE_PLANS);
+  const [createCheckoutSession, { loading: checkoutLoading }] = useMutation<any, any>(CREATE_CHECKOUT_SESSION);
 
   const plans: any[] = data?.availablePlans || [];
 

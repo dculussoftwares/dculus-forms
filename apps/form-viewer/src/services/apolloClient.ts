@@ -18,5 +18,8 @@ export const client = new ApolloClient({
     query: {
       errorPolicy: 'all',
     },
+    mutate: {
+      errorPolicy: 'all',
+    },
   },
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,7 @@ export const PluginDeliveryLog: React.FC<PluginDeliveryLogProps> = ({
   pluginName,
 }) => {
   const { t } = useTranslation('pluginDeliveryLog');
-  const { data, loading, error, refetch } = useQuery(GET_PLUGIN_DELIVERIES, {
+  const { data, loading, error, refetch } = useQuery<any, any>(GET_PLUGIN_DELIVERIES, {
     variables: { pluginId, limit: 50 },
     skip: !open,
     fetchPolicy: 'network-only',

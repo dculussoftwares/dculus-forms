@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { GET_FORM_ANALYTICS, GET_FORM_SUBMISSION_ANALYTICS } from '../graphql/queries';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -138,7 +138,7 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
     return timeRangePreset === 'custom' ? customTimeRange : getTimeRangeFromPreset(timeRangePreset);
   }, [timeRangePreset, customTimeRange]);
   
-  const { data, loading, error, refetch } = useQuery(GET_FORM_ANALYTICS, {
+  const { data, loading, error, refetch } = useQuery<any, any>(GET_FORM_ANALYTICS, {
     variables: {
       formId,
       timeRange
@@ -154,7 +154,7 @@ export const useFormAnalytics = ({ formId, initialTimeRange = '30d' }: UseFormAn
     loading: submissionLoading, 
     error: submissionError, 
     refetch: refetchSubmissions 
-  } = useQuery(GET_FORM_SUBMISSION_ANALYTICS, {
+  } = useQuery<any, any>(GET_FORM_SUBMISSION_ANALYTICS, {
     variables: {
       formId,
       timeRange

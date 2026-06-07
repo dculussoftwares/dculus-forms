@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { toastError } from '@dculus/ui';
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
 import {
@@ -55,19 +55,19 @@ export function useAIChat({
   const currentPageIdRef = useRef<string | undefined>(undefined);
 
   // ── Conversation management (Apollo) ─────────────────────────────────────
-  const { data: conversationsData, loading: conversationsLoading, refetch: refetchConversations } = useQuery(
+  const { data: conversationsData, loading: conversationsLoading, refetch: refetchConversations } = useQuery<any, any>(
     LIST_AI_CHAT_CONVERSATIONS,
     { variables: { formId, organizationId }, skip: !formId }
   );
 
-  const { data: activeConvData, loading: activeConvLoading } = useQuery(GET_AI_CHAT_CONVERSATION, {
+  const { data: activeConvData, loading: activeConvLoading } = useQuery<any, any>(GET_AI_CHAT_CONVERSATION, {
     variables: { id: activeConversationId!, organizationId },
     skip: !activeConversationId,
   });
 
-  const [createConvMutation] = useMutation(CREATE_AI_CHAT_CONVERSATION);
-  const [deleteConvMutation] = useMutation(DELETE_AI_CHAT_CONVERSATION);
-  const [renameConvMutation] = useMutation(RENAME_AI_CHAT_CONVERSATION);
+  const [createConvMutation] = useMutation<any, any>(CREATE_AI_CHAT_CONVERSATION);
+  const [deleteConvMutation] = useMutation<any, any>(DELETE_AI_CHAT_CONVERSATION);
+  const [renameConvMutation] = useMutation<any, any>(RENAME_AI_CHAT_CONVERSATION);
 
   // ── Build initialMessages from Apollo conversation data ───────────────────
   const apolloMessages = activeConvData?.getAIChatConversation?.messages;

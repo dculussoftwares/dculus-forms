@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Users as UsersIcon, AlertCircle } from 'lucide-react';
 import { Button } from '@dculus/ui';

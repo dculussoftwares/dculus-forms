@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
-import { useMutation, gql } from '@apollo/client';
+import { gql } from '@apollo/client'
+import { useMutation } from '@apollo/client/react';
 import { getOrCreateSessionId } from '../lib/sessionId';
 
 const TRACK_FORM_VIEW = gql`
@@ -24,11 +25,11 @@ interface UseFormAnalyticsOptions {
 }
 
 export const useFormAnalytics = ({ formId, enabled = true }: UseFormAnalyticsOptions) => {
-  const [trackFormView] = useMutation(TRACK_FORM_VIEW, {
+  const [trackFormView] = useMutation<any, any>(TRACK_FORM_VIEW, {
     errorPolicy: 'ignore' // Don't fail form viewing if analytics fails
   });
 
-  const [updateFormStartTime] = useMutation(UPDATE_FORM_START_TIME, {
+  const [updateFormStartTime] = useMutation<any, any>(UPDATE_FORM_START_TIME, {
     errorPolicy: 'ignore' // Don't fail form interaction if analytics fails
   });
 

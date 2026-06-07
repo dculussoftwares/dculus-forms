@@ -13,7 +13,7 @@
     "test:unit:watch": "vitest"
   },
   "dependencies": {
-    "@apollo/client": "^3.14.1",
+    "@apollo/client": "^4.2.2",
     "@dculus/types": "workspace:*",
     "@dculus/ui": "workspace:*",
     "@dculus/utils": "workspace:*",

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, LoadingSpinner } from '@dculus/ui';
 import { FileText, Plus, Edit2, Trash2, Eye } from 'lucide-react';
@@ -34,8 +34,8 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
 
-  const { data, loading, error, refetch } = useQuery(GET_TEMPLATES);
-  const [deleteTemplate] = useMutation(DELETE_TEMPLATE);
+  const { data, loading, error, refetch } = useQuery<any, any>(GET_TEMPLATES);
+  const [deleteTemplate] = useMutation<any, any>(DELETE_TEMPLATE);
 
   const templates: Template[] = data?.templates || [];
 

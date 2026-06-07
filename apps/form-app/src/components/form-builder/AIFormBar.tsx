@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { Send, Loader2 } from 'lucide-react';
 import AIIcon from '../icons/AIIcon';
 import { cn } from '@dculus/utils';
@@ -89,7 +89,7 @@ const AIFormBar: React.FC<AIFormBarProps> = ({ organizationId, className }) => {
   const targetPageId =
     selectedPageId ?? pages[0]?.id ?? null;
 
-  const [generateForm, { loading }] = useMutation(GENERATE_FORM_WITH_AI, {
+  const [generateForm, { loading }] = useMutation<any, any>(GENERATE_FORM_WITH_AI, {
     onCompleted(data) {
       const generated = data?.generateFormWithAI;
       if (!generated || !targetPageId) return;
@@ -119,8 +119,8 @@ const AIFormBar: React.FC<AIFormBarProps> = ({ organizationId, className }) => {
       setPrompt('');
     },
     onError(error) {
-      const isLimitError = error.graphQLErrors?.some(
-        (e) => e.extensions?.code === 'AI_TOKEN_LIMIT_EXCEEDED'
+      const isLimitError = (error as any).graphQLErrors?.some(
+        (e: any) => e.extensions?.code === 'AI_TOKEN_LIMIT_EXCEEDED'
       );
       toastError(
         t('error.title'),

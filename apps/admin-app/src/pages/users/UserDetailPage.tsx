@@ -1,4 +1,4 @@
-import { useQuery } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Card, CardContent } from '@dculus/ui';
 import { ArrowLeft, Mail, CheckCircle2, XCircle, Building2, Calendar } from 'lucide-react';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { 
   Button, 
   Input, 
@@ -39,7 +39,7 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { organizationId } = useAppConfig();
-  const [createForm, { loading: isCreating }] = useMutation(CREATE_FORM, {
+  const [createForm, { loading: isCreating }] = useMutation<any, any>(CREATE_FORM, {
     refetchQueries: ['GetForms'],
     onCompleted: (data) => {
       setIsOpen(false);

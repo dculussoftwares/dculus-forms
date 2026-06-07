@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { useMutation, useApolloClient } from '@apollo/client';
+import { useMutation, useApolloClient } from '@apollo/client/react';
 import {
   Popover,
   PopoverContent,
@@ -57,9 +57,9 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
 
   const refetchAll = () => client.refetchQueries({ include: 'active' });
 
-  const [addTag, { loading: adding }] = useMutation(ADD_TAG_TO_RESPONSE, { onCompleted: refetchAll });
-  const [removeTag, { loading: removing }] = useMutation(REMOVE_TAG_FROM_RESPONSE, { onCompleted: refetchAll });
-  const [createTag, { loading: creating }] = useMutation(CREATE_TAG);
+  const [addTag, { loading: adding }] = useMutation<any, any>(ADD_TAG_TO_RESPONSE, { onCompleted: refetchAll });
+  const [removeTag, { loading: removing }] = useMutation<any, any>(REMOVE_TAG_FROM_RESPONSE, { onCompleted: refetchAll });
+  const [createTag, { loading: creating }] = useMutation<any, any>(CREATE_TAG);
 
   const loading = adding || removing || creating;
 

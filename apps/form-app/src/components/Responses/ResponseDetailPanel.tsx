@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApolloClient, useQuery } from '@apollo/client';
+import { useApolloClient, useQuery } from '@apollo/client/react';
 import { gql } from '@apollo/client';
 import {
   Button,
@@ -45,7 +45,7 @@ const FileDownloadCell: React.FC<{ s3Key: string }> = ({ s3Key }) => {
         fetchPolicy: 'no-cache',
       });
       const a = document.createElement('a');
-      a.href = data.getResponseFileDownloadUrl;
+      a.href = data?.getResponseFileDownloadUrl ?? '';
       a.download = filename;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
@@ -104,7 +104,7 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const { data: tagsData } = useQuery(GET_FORM_TAGS, {
+  const { data: tagsData } = useQuery<any, any>(GET_FORM_TAGS, {
     variables: { formId },
     skip: !open || !formId,
   });

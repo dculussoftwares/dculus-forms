@@ -27,7 +27,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAppConfig } from '@/hooks';
 import { AlertCircle } from 'lucide-react';
 import { useTranslation } from '../hooks/useTranslation';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { DUPLICATE_FORM } from '../graphql/mutations';
 import { getFormViewerUrl } from '@/lib/config';
 
@@ -40,7 +40,7 @@ const FormDashboard: React.FC = () => {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [duplicateProgress, setDuplicateProgress] = useState(0);
   const { t } = useTranslation('formDashboard');
-  const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
+  const [duplicateFormMutation, { loading: isDuplicating }] = useMutation<any, any>(DUPLICATE_FORM);
 
   const {
     form,

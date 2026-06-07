@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { UPDATE_FORM } from '../graphql/mutations';
 import type { SubmissionLimitsSettings } from '@dculus/types';
 import { toastSuccess, toastError } from '@dculus/ui';
@@ -39,7 +39,7 @@ export const useFormSettings = ({
 
   const { t: tErr } = useTranslation('graphqlErrors');
 
-  const [updateForm] = useMutation(UPDATE_FORM, {
+  const [updateForm] = useMutation<any, any>(UPDATE_FORM, {
     onCompleted: () => {
       setIsSaving(false);
       onSuccess?.();

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
 import {
   Button,
   Input,
@@ -240,12 +240,12 @@ const CreateFormWizard: React.FC = () => {
   const [isCreatingFromTemplate, setIsCreatingFromTemplate] = useState(false);
 
   // ── GraphQL ──────────────────────────────────────────────────────────────
-  const { data: templatesData, loading: templatesLoading } = useQuery(GET_TEMPLATES, {
+  const { data: templatesData, loading: templatesLoading } = useQuery<any, any>(GET_TEMPLATES, {
     skip: step !== 'template',
   });
 
-  const [generateForm] = useMutation(GENERATE_FORM_WITH_AI);
-  const [createForm] = useMutation(CREATE_FORM);
+  const [generateForm] = useMutation<any, any>(GENERATE_FORM_WITH_AI);
+  const [createForm] = useMutation<any, any>(CREATE_FORM);
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const templates: any[] = templatesData?.templates ?? [];

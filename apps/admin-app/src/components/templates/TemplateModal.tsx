@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { Button, Input, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, LoadingSpinner } from '@dculus/ui';
 import { X, FileText, Layout, Code, Loader2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -104,14 +104,14 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'basic' | 'schema' | 'layout'>('basic');
 
-  const { data: categoriesData } = useQuery(GET_TEMPLATE_CATEGORIES);
-  const { data: templateData, loading: templateLoading } = useQuery(GET_TEMPLATE, {
+  const { data: categoriesData } = useQuery<any, any>(GET_TEMPLATE_CATEGORIES);
+  const { data: templateData, loading: templateLoading } = useQuery<any, any>(GET_TEMPLATE, {
     variables: { id: template?.id },
     skip: !template?.id || mode === 'create',
   });
 
-  const [createTemplate, { loading: creating }] = useMutation(CREATE_TEMPLATE);
-  const [updateTemplate, { loading: updating }] = useMutation(UPDATE_TEMPLATE);
+  const [createTemplate, { loading: creating }] = useMutation<any, any>(CREATE_TEMPLATE);
+  const [updateTemplate, { loading: updating }] = useMutation<any, any>(UPDATE_TEMPLATE);
 
   const categories = categoriesData?.templateCategories || [];
   const isLoading = creating || updating || templateLoading;
