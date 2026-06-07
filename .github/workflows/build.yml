@@ -208,6 +208,10 @@ jobs:
           PUBLIC_S3_BUCKET_NAME: test-public-bucket
           PRIVATE_S3_BUCKET_NAME: test-private-bucket
           PUBLIC_S3_CDN_URL: http://localhost:9000
+          CHARGEBEE_API_KEY: test-chargebee-key
+          CHARGEBEE_SITE: test-site
+          EMAIL_HOST: test-smtp
+          EMAIL_USER: test-user
         run: pnpm --filter backend test:coverage
 
       - name: Build backend
