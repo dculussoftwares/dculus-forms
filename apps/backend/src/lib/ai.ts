@@ -2,51 +2,68 @@ import { createAzure } from '@ai-sdk/azure';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
 
-type ProviderName = 'azure' | 'openai';
-
-const provider: ProviderName = (process.env.AI_PROVIDER as ProviderName) ?? 'azure';
-
-function buildAzureModel(deployment: string): LanguageModel {
-  const azure = createAzure({
-    baseURL: `${process.env.AZURE_OPENAI_ENDPOINT}openai`,
-    apiKey: process.env.AZURE_OPENAI_API_KEY!,
-  });
-  return azure.chat(deployment);
+// Returns the env var value only when it is a non-empty, non-"undefined" string.
+// process.env coerces undefined values to the literal string "undefined", so we
+// treat that the same as absent.
+function env(key: string): string | undefined {
+  const val = process.env[key];
+  return val === undefined || val === 'undefined' || val === '' ? undefined : val;
 }
 
-function buildOpenAIModel(model: string): LanguageModel {
-  const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+// Builds a LanguageModel from generic env-var-driven config.
+// When apiVersion is provided the endpoint is Azure OpenAI (needs api-version
+// query param) so we use @ai-sdk/azure. Otherwise it is an OpenAI-compatible
+// MaaS endpoint (DeepSeek on Azure Foundry, etc.) and we use @ai-sdk/openai
+// with a custom baseURL.
+function buildModel(
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  apiVersion?: string,
+): LanguageModel {
+  if (apiVersion) {
+    const azure = createAzure({ baseURL: baseUrl, apiKey, apiVersion });
+    return azure.chat(model);
+  }
+  const openai = createOpenAI({ baseURL: baseUrl, apiKey });
   return openai(model) as LanguageModel;
 }
 
-// Primary model — form editing chat (streaming + tool calls) and form generation (structured output)
+// Primary model — form editing chat (streaming + tool calls) and form
+// generation / field insights (structured output).
+// Configured via AI_PRIMARY_BASE_URL / AI_PRIMARY_API_KEY / AI_PRIMARY_MODEL.
 export function getPrimaryModel(): LanguageModel {
-  if (provider === 'openai') return buildOpenAIModel(process.env.OPENAI_PRIMARY_MODEL ?? 'gpt-5.4-mini');
-  return buildAzureModel(process.env.AZURE_OPENAI_PRIMARY_DEPLOYMENT ?? 'gpt-5.4-mini');
+  return buildModel(
+    env('AI_PRIMARY_BASE_URL')!,
+    env('AI_PRIMARY_API_KEY')!,
+    env('AI_PRIMARY_MODEL') ?? 'DeepSeek-V3-0324',
+  );
 }
 
-// Fast model — lightweight fire-and-forget tasks (auto-title generation, etc.)
+// Fast model — lightweight fire-and-forget tasks (auto-title generation).
+// Configured via AI_FAST_BASE_URL / AI_FAST_API_KEY / AI_FAST_MODEL.
+// Set AI_FAST_API_VERSION for Azure OpenAI deployments; omit for MaaS endpoints.
 export function getFastModel(): LanguageModel {
-  if (provider === 'openai') return buildOpenAIModel(process.env.OPENAI_FAST_MODEL ?? 'gpt-5.4-nano');
-  return buildAzureModel(process.env.AZURE_OPENAI_FAST_DEPLOYMENT ?? 'gpt-5.4-nano');
+  return buildModel(
+    env('AI_FAST_BASE_URL')!,
+    env('AI_FAST_API_KEY')!,
+    env('AI_FAST_MODEL') ?? 'gpt-4.1-nano',
+    env('AI_FAST_API_VERSION'),
+  );
 }
 
-// Standardized deployments: both dev and prod use gpt-5.4-mini (primary) + gpt-5.4-nano (fast).
-// Returns the resolved primary model/deployment id — used for telemetry, not for model construction.
+// Returns the resolved primary model id — used for telemetry only.
 export function getPrimaryModelId(): string {
-  if (provider === 'openai') return process.env.OPENAI_PRIMARY_MODEL ?? 'gpt-5.4-mini';
-  return process.env.AZURE_OPENAI_PRIMARY_DEPLOYMENT ?? 'gpt-5.4-mini';
+  return env('AI_PRIMARY_MODEL') ?? 'DeepSeek-V3-0324';
 }
 
-// Prompt-cache provider options. The Azure chat model is an OpenAIChatLanguageModel under the
-// hood and reads provider options under the "openai" namespace (verified in @ai-sdk/openai@3 —
-// getArgs() parses providerOptions with a hardcoded provider:"openai"). So even for Azure the
-// key MUST live under `openai`, not `azure`. A stable key (the conversation id) maximizes the
-// prefix-cache hit rate across a conversation's turns.
+// DeepSeek on Azure Foundry uses implicit prefix caching — no explicit cache
+// key is needed or supported. Always returns undefined; callers handle this
+// with `...(providerOptions ? { providerOptions } : {})`.
 export function buildPromptCacheOptions(
-  cacheKey: string | undefined
-): { openai: { promptCacheKey: string } } | undefined {
-  return cacheKey ? { openai: { promptCacheKey: cacheKey } } : undefined;
+  _cacheKey: string | undefined,
+): undefined {
+  return undefined;
 }
 
 export const AI_TOKEN_LIMITS: Record<string, number> = {
