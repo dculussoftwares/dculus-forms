@@ -231,29 +231,41 @@ resource "azurerm_container_app" "backend" {
         value = var.sentry_dsn
       }
 
+      // Primary model (DeepSeek-V3-0324 via Azure AI Foundry MaaS)
       env {
-        name  = "AI_PROVIDER"
-        value = var.ai_provider
+        name  = "AI_PRIMARY_BASE_URL"
+        value = "https://${azurerm_cognitive_account.ai.custom_subdomain_name}.services.ai.azure.com/models/${var.ai_primary_model}"
       }
 
       env {
-        name  = "AZURE_OPENAI_ENDPOINT"
-        value = "https://${azurerm_cognitive_account.ai.custom_subdomain_name}.services.ai.azure.com/"
-      }
-
-      env {
-        name  = "AZURE_OPENAI_API_KEY"
+        name  = "AI_PRIMARY_API_KEY"
         value = azurerm_cognitive_account.ai.primary_access_key
       }
 
       env {
-        name  = "AZURE_OPENAI_PRIMARY_DEPLOYMENT"
-        value = var.azure_openai_primary_deployment
+        name  = "AI_PRIMARY_MODEL"
+        value = var.ai_primary_model
+      }
+
+      // Fast model (gpt-4.1-nano via Azure OpenAI — same account, different endpoint)
+      env {
+        name  = "AI_FAST_BASE_URL"
+        value = azurerm_cognitive_account.ai.endpoint
       }
 
       env {
-        name  = "AZURE_OPENAI_FAST_DEPLOYMENT"
-        value = var.azure_openai_fast_deployment
+        name  = "AI_FAST_API_KEY"
+        value = azurerm_cognitive_account.ai.primary_access_key
+      }
+
+      env {
+        name  = "AI_FAST_MODEL"
+        value = var.ai_fast_model
+      }
+
+      env {
+        name  = "AI_FAST_API_VERSION"
+        value = "2024-12-01-preview"
       }
 
       env {
