@@ -4,7 +4,8 @@ import * as Sentry from '@sentry/node';
 import express from 'express';
 import { createServer } from 'http';
 import { ApolloServer } from '@apollo/server';
-import { expressMiddleware } from '@apollo/server/express4';
+import { expressMiddleware } from '@as-integrations/express4';
+import type { ExpressContextFunctionArgument } from '@as-integrations/express4';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { ApolloServerPluginLandingPageDisabled } from '@apollo/server/plugin/disabled';
 import cors from 'cors';
@@ -295,7 +296,7 @@ async function startServer() {
   app.use(
     '/graphql',
     expressMiddleware(server, {
-      context: async ({ req }) => {
+      context: async ({ req }: ExpressContextFunctionArgument) => {
         const authContext = await createBetterAuthContext(req);
         return {
           user: authContext.user,
