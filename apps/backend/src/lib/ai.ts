@@ -3,11 +3,12 @@ import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
 
 // Returns the env var value only when it is a non-empty, non-"undefined" string.
-// process.env coerces undefined values to the literal string "undefined", so we
-// treat that the same as absent.
+// process.env coerces undefined to the literal string "undefined" (via Object.assign
+// in tests), and empty string means "not configured", so both are treated as absent.
 function env(key: string): string | undefined {
   const val = process.env[key];
-  return val === undefined || val === 'undefined' || val === '' ? undefined : val;
+  if (!val || val === 'undefined') return undefined;
+  return val;
 }
 
 // Builds a LanguageModel from generic env-var-driven config.

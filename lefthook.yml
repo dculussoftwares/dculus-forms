@@ -12,8 +12,8 @@ pre-push:
       name: Type check (all packages)
       run: pnpm type-check
     test-backend:
-      name: Backend unit tests
-      run: pnpm --filter backend test
+      name: Backend unit tests + coverage thresholds
+      run: pnpm --filter backend test:coverage
     test-form-viewer:
       name: Form-viewer unit tests
       run: pnpm --filter form-viewer test:unit

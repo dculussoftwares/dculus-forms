@@ -80,6 +80,14 @@ describe('getFastModel', () => {
     expect(model).toMatchObject({ kind: 'openai', model: 'gpt-4.1-nano' });
   });
 
+  it('uses createOpenAI when AI_FAST_API_VERSION is empty string', async () => {
+    setEnv();
+    process.env.AI_FAST_API_VERSION = '';
+    const { getFastModel } = await import('../ai.js');
+    const model = getFastModel();
+    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-4.1-nano' });
+  });
+
   it('falls back to gpt-4.1-nano when AI_FAST_MODEL is unset', async () => {
     setEnv({ AI_FAST_MODEL: undefined });
     const { getFastModel } = await import('../ai.js');
