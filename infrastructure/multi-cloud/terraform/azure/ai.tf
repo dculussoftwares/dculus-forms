@@ -28,14 +28,15 @@ resource "azurerm_cognitive_account" "ai" {
   tags                          = var.tags
 }
 
-resource "azurerm_cognitive_deployment" "gpt54mini" {
-  name                 = var.azure_openai_primary_deployment
+// Primary model — DeepSeek-V3-0324 via Azure AI Foundry MaaS (GlobalStandard = pay-per-token)
+resource "azurerm_cognitive_deployment" "primary" {
+  name                 = var.ai_primary_model
   cognitive_account_id = azurerm_cognitive_account.ai.id
 
   model {
-    format  = "OpenAI"
-    name    = "gpt-5.4-mini"
-    version = "2026-03-17"
+    format  = "DeepSeek"
+    name    = "DeepSeek-V3-0324"
+    version = "1"
   }
 
   sku {
@@ -44,14 +45,15 @@ resource "azurerm_cognitive_deployment" "gpt54mini" {
   }
 }
 
-resource "azurerm_cognitive_deployment" "gpt54nano" {
-  name                 = var.azure_openai_fast_deployment
+// Fast model — gpt-4.1-nano via Azure OpenAI (same account, different endpoint path)
+resource "azurerm_cognitive_deployment" "fast" {
+  name                 = var.ai_fast_model
   cognitive_account_id = azurerm_cognitive_account.ai.id
 
   model {
     format  = "OpenAI"
-    name    = "gpt-5.4-nano"
-    version = "2026-03-17"
+    name    = "gpt-4.1-nano"
+    version = "2025-04-14"
   }
 
   sku {
