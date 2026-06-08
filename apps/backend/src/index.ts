@@ -327,7 +327,18 @@ async function startServer() {
   const wss = new WebSocketServer({ noServer: true });
   wss.on('connection', (ws, request) => {
     logger.info('🔌 WebSocket connection established');
-    hocuspocusServer.handleConnection(ws, request);
+    // v4 handleConnection expects a Fetch API Request; bridge from Node IncomingMessage
+    const host = (request.headers.host ?? 'localhost');
+    const url = `http://${host}${request.url ?? '/'}`;
+    const fetchHeaders = new Headers();
+    const rawHeaders = request.headers as Record<string, string | string[] | undefined>;
+    for (const [key, val] of Object.entries(rawHeaders)) {
+      if (val === undefined) continue;
+      const values = Array.isArray(val) ? val : [val];
+      for (const v of values) fetchHeaders.append(key, v);
+    }
+    const fetchRequest = new Request(url, { headers: fetchHeaders });
+    hocuspocusServer.handleConnection(ws, fetchRequest);
   });
 
   // GraphQL real-time subscriptions (graphql-ws) — separate path from Hocuspocus
