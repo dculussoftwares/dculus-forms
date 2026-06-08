@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client/react';
+import { CombinedGraphQLErrors } from '@apollo/client';
 import { Button, FormRenderer, useFormResponseStore, LoadingSpinner } from '@dculus/ui';
 import { deserializeFormSchema, FieldType } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
@@ -94,12 +95,14 @@ const FormViewer: React.FC = () => {
   } | null>(null);
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
 
-  const { loading, error, data } = useQuery(GET_FORM_BY_SHORT_URL, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { loading, error, data } = useQuery<any, any>(GET_FORM_BY_SHORT_URL, {
     variables: { shortUrl: shortUrl || '' },
     skip: !shortUrl,
   });
 
-  const [submitResponse] = useMutation(SUBMIT_RESPONSE);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [submitResponse] = useMutation<any, any>(SUBMIT_RESPONSE);
 
   // Track form analytics when form is loaded
   const { trackFormStartTime } = useFormAnalytics({
@@ -245,7 +248,7 @@ const FormViewer: React.FC = () => {
   }
 
   if (error) {
-    const errorCode = error.graphQLErrors?.[0]?.extensions?.code as string | undefined;
+    const errorCode = (CombinedGraphQLErrors.is(error) ? error.errors[0]?.extensions?.code : undefined) as string | undefined;
     const limitError = isSubmissionLimitError(errorCode);
 
     return (
