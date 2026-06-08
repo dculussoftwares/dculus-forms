@@ -273,7 +273,7 @@ const FormViewer: React.FC = () => {
 
   if (!data?.formByShortUrl) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Form Not Found
@@ -291,7 +291,7 @@ const FormViewer: React.FC = () => {
   // Check if form schema exists
   if (!form.formSchema) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
+      <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Form Not Ready

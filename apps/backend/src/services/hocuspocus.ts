@@ -350,9 +350,14 @@ export const getFormSchemaFromHocuspocus = async (
   try {
     logger.info(`🔍 Getting form schema from Hocuspocus for form: ${formId}`);
 
-    // Get the collaborative document from database
-    const collabDoc =
-      await collaborativeDocumentRepository.fetchDocumentWithState(formId);
+    // Get the collaborative document from database (with 8s timeout to prevent
+    // indefinite hangs under PgBouncer pool pressure during CI test runs)
+    const collabDoc = await Promise.race([
+      collaborativeDocumentRepository.fetchDocumentWithState(formId),
+      new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('getFormSchemaFromHocuspocus: DB query timeout after 8s')), 8000)
+      ),
+    ]);
 
     if (!collabDoc || !collabDoc.state) {
       logger.info(`❌ No collaborative document found for form: ${formId}`);
