@@ -94,12 +94,12 @@ const FormViewer: React.FC = () => {
   } | null>(null);
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
 
-  const { loading, error, data } = useQuery<any, any>(GET_FORM_BY_SHORT_URL, {
+  const { loading, error, data } = useQuery(GET_FORM_BY_SHORT_URL, {
     variables: { shortUrl: shortUrl || '' },
     skip: !shortUrl,
   });
 
-  const [submitResponse] = useMutation<any, any>(SUBMIT_RESPONSE);
+  const [submitResponse] = useMutation(SUBMIT_RESPONSE);
 
   // Track form analytics when form is loaded
   const { trackFormStartTime } = useFormAnalytics({

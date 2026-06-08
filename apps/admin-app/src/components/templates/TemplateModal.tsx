@@ -186,7 +186,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
       const parsed = JSON.parse(formData[field]);
       const formatted = JSON.stringify(parsed, null, 2);
       setFormData(prev => ({ ...prev, [field]: formatted }));
-    } catch (error) {
+    } catch {
       // JSON is invalid, don't format
     }
   };

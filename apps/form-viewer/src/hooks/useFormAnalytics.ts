@@ -25,11 +25,11 @@ interface UseFormAnalyticsOptions {
 }
 
 export const useFormAnalytics = ({ formId, enabled = true }: UseFormAnalyticsOptions) => {
-  const [trackFormView] = useMutation<any, any>(TRACK_FORM_VIEW, {
+  const [trackFormView] = useMutation(TRACK_FORM_VIEW, {
     errorPolicy: 'ignore' // Don't fail form viewing if analytics fails
   });
 
-  const [updateFormStartTime] = useMutation<any, any>(UPDATE_FORM_START_TIME, {
+  const [updateFormStartTime] = useMutation(UPDATE_FORM_START_TIME, {
     errorPolicy: 'ignore' // Don't fail form interaction if analytics fails
   });
 
