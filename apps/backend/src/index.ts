@@ -233,9 +233,10 @@ const server = new ApolloServer({
   validationRules: [depthLimit(8)],
   plugins: [
     ...(sentryEnabled ? [sentryApolloPlugin] : []),
-    ...(appConfig.isProduction
-      ? [ApolloServerPluginLandingPageDisabled()]
-      : [ApolloServerPluginLandingPageLocalDefault({
+    // Only show Apollo Sandbox in local development — disable in production and
+    // test/CI environments where the CDN request in v5's serverWillStart hangs.
+    ...(process.env.NODE_ENV === 'development'
+      ? [ApolloServerPluginLandingPageLocalDefault({
           footer: false,
           includeCookies: true,
           embed: {
@@ -246,7 +247,8 @@ const server = new ApolloServer({
               sharedHeaders: { 'content-type': 'application/json' },
             },
           },
-        })]),
+        })]
+      : [ApolloServerPluginLandingPageDisabled()]),
   ],
   formatError: (formattedError, error) => {
     const code = deriveGraphQLErrorCode(formattedError);
