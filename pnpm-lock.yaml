@@ -552,8 +552,8 @@ importers:
         specifier: 3.2.2
         version: 3.2.2(react@18.3.1)
       '@hocuspocus/provider':
-        specifier: 3.2.3
-        version: 3.2.3(y-protocols@1.0.6)(yjs@13.6.27)
+        specifier: ^4.1.0
+        version: 4.1.0(y-protocols@1.0.6)(yjs@13.6.27)
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.62.0)
@@ -4049,12 +4049,6 @@ packages:
       graphql: 16.14.1
     dev: false
 
-  /@hocuspocus/common@3.4.4:
-    resolution: {integrity: sha512-RykIJ0tsHHMP4Xk+4UCbc7SO5LgGxGUSTdbh6anJEsaALAyqinf1Nn5HYuMjLPolAmsar1v++m9zufR09NLpXA==}
-    dependencies:
-      lib0: 0.2.117
-    dev: false
-
   /@hocuspocus/common@4.1.0:
     resolution: {integrity: sha512-SOBbu0GcBMbLo7IYRDZC6gvEcoATbEFIC5KqzvLanC6dZZLkv91pYEBli+Exs/G71ELL3iUjSwnaf+gksxcjFA==}
     dependencies:
@@ -4073,21 +4067,17 @@ packages:
       - y-protocols
     dev: false
 
-  /@hocuspocus/provider@3.2.3(y-protocols@1.0.6)(yjs@13.6.27):
-    resolution: {integrity: sha512-M62Fly7s6sKKGGFze46fypjV3jv2Y2l8PA6/+IgbQRWH275p8NjGP1U7yMOxi52PLFrgaEoy+fQyW93iJ2jqaw==}
+  /@hocuspocus/provider@4.1.0(y-protocols@1.0.6)(yjs@13.6.27):
+    resolution: {integrity: sha512-K80V2yX4AMdpqgjIkexJioyI2Oq8pu8hjdFqY0INXKSpH8TQv9NMaDzJmlrZMYmUeKyRO2t7VhGyFK9jZQPnNw==}
     peerDependencies:
       y-protocols: ^1.0.6
       yjs: ^13.6.8
     dependencies:
-      '@hocuspocus/common': 3.4.4
+      '@hocuspocus/common': 4.1.0
       '@lifeomic/attempt': 3.1.0
-      lib0: 0.2.117
-      ws: 8.21.0
+      lib0: 0.2.114
       y-protocols: 1.0.6(yjs@13.6.27)
       yjs: 13.6.27
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
     dev: false
 
   /@hocuspocus/server@4.1.0(y-protocols@1.0.6)(yjs@13.6.27):
