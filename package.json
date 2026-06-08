@@ -143,7 +143,9 @@
       "better-auth": ">=1.6.14",
       "effect": ">=3.20.0",
       "lodash": ">=4.17.23",
-      "nodemailer": ">=8.0.5"
+      "nodemailer": ">=8.0.5",
+      "drizzle-orm": ">=0.45.2",
+      "tar": ">=7.5.11"
     }
   },
   "dependencies": {
