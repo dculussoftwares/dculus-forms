@@ -340,7 +340,15 @@ async function startServer() {
       for (const v of values) fetchHeaders.append(key, v);
     }
     const fetchRequest = new Request(url, { headers: fetchHeaders });
-    hocuspocusServer.handleConnection(ws, fetchRequest);
+    // v4 no longer auto-wires WS events; caller must forward message/close to the ClientConnection
+    const clientConnection = hocuspocusServer.handleConnection(ws, fetchRequest);
+    ws.on('message', (data: Buffer) => clientConnection.handleMessage(data));
+    ws.on('close', (code: number, reason: Buffer) =>
+      clientConnection.handleClose({ code, reason: reason.toString() })
+    );
+    ws.on('error', (err: Error) =>
+      logger.error('[Hocuspocus] WebSocket error:', err)
+    );
   });
 
   // GraphQL real-time subscriptions (graphql-ws) — separate path from Hocuspocus
