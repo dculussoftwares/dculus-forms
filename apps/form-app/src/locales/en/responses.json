@@ -52,6 +52,17 @@
       "deleting": "Deleting...",
       "deleteSuccess": "Responses deleted successfully",
       "deleteError": "Failed to delete responses"
+    },
+    "preview": {
+      "clearButton": "Clear {{count}} preview responses",
+      "clearConfirmTitle": "Clear Preview Responses",
+      "clearConfirmDescription": "Delete {{count}} preview responses? This cannot be undone.",
+      "clearConfirmCancel": "Cancel",
+      "clearConfirmConfirm": "Delete",
+      "clearConfirmDeleting": "Deleting...",
+      "clearSuccess": "Preview responses cleared",
+      "clearSuccessDetail": "{{count}} preview responses deleted",
+      "clearError": "Failed to clear preview responses"
     }
   },
   "table": {

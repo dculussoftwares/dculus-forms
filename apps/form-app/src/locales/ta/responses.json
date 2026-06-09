@@ -52,6 +52,17 @@
       "deleting": "நீக்குகிறது...",
       "deleteSuccess": "பதில்கள் வெற்றிகரமாக நீக்கப்பட்டன",
       "deleteError": "பதில்களை நீக்க முடியவில்லை"
+    },
+    "preview": {
+      "clearButton": "{{count}} முன்னோட்ட பதில்களை அழிக்கவும்",
+      "clearConfirmTitle": "முன்னோட்ட பதில்களை அழிக்கவும்",
+      "clearConfirmDescription": "{{count}} முன்னோட்ட பதில்களை நீக்கவும்? இதை செயல்தவிர்க்க முடியாது.",
+      "clearConfirmCancel": "ரத்துசெய்",
+      "clearConfirmConfirm": "நீக்கு",
+      "clearConfirmDeleting": "நீக்குகிறது...",
+      "clearSuccess": "முன்னோட்ட பதில்கள் அழிக்கப்பட்டன",
+      "clearSuccessDetail": "{{count}} முன்னோட்ட பதில்கள் நீக்கப்பட்டன",
+      "clearError": "முன்னோட்ட பதில்களை அழிக்க முடியவில்லை"
     }
   },
   "table": {
