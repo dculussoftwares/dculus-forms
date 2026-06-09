@@ -58,9 +58,12 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
     set({ isConnected });
 
     if (isConnected) {
-      // Successful (re)connection — reset backoff counter and failure flag
+      // Transport connected — clear failure flag and any pending reconnect timer.
+      // Do NOT reset reconnectAttempts here: the transport connect fires before
+      // authentication, so a failed-auth cycle would reset the counter on every
+      // attempt, creating an infinite loop. The counter resets only after a
+      // successful sync (see loadingCallback below).
       set({ isCollaborationFailed: false });
-      reconnectAttempts = 0;
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
         reconnectTimer = null;
@@ -97,10 +100,15 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
   };
 
   /**
-   * Callback when loading state changes
+   * Callback when loading state changes.
+   * A transition to isLoading=false means the document successfully synced,
+   * so we can reset the reconnect backoff counter here.
    */
   const loadingCallback = (isLoading: boolean) => {
     set({ isLoading });
+    if (!isLoading) {
+      reconnectAttempts = 0;
+    }
   };
 
   return {

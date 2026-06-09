@@ -17,27 +17,31 @@ import { logger } from '../lib/logger.js';
 const METADATA_UPDATE_DEBOUNCE_MS = 5000; // 5 seconds
 const metadataUpdateTimeouts = new Map<string, NodeJS.Timeout>();
 
-// Helper function to validate user session and form access
+// Helper function to validate user session and form access.
+// Accepts either a bearer token OR a cookie string (WebSocket upgrade
+// requests send session cookies automatically; this is the fallback when
+// sessionStorage doesn't have a bearer token, e.g. direct URL navigation).
 const validateUserAccess = async (
-  token: string,
+  token: string | null,
   formId: string,
-  requiredPermission: string = PermissionLevel.VIEWER
+  requiredPermission: string = PermissionLevel.VIEWER,
+  cookieHeader?: string,
 ) => {
   try {
-    // Parse bearer token
-    const authToken = token?.replace('Bearer ', '');
-    if (!authToken) {
+    const authHeaders = new Headers();
+    authHeaders.set('content-type', 'application/json');
+
+    const bearerToken = token?.replace('Bearer ', '');
+    if (bearerToken) {
+      authHeaders.set('authorization', `Bearer ${bearerToken}`);
+    } else if (cookieHeader) {
+      // Cookie-based fallback: WebSocket upgrade requests carry session cookies
+      authHeaders.set('cookie', cookieHeader);
+    } else {
       throw new Error('No authentication token provided');
     }
 
-    // Validate session with better-auth
-    const headers = new Headers();
-    headers.set('authorization', `Bearer ${authToken}`);
-    headers.set('content-type', 'application/json');
-
-    const sessionData = await auth.api.getSession({
-      headers: headers,
-    });
+    const sessionData = await auth.api.getSession({ headers: authHeaders });
 
     if (!sessionData?.user) {
       throw new Error('Invalid or expired session');
@@ -205,15 +209,31 @@ export const createHocuspocusServer = () => {
           }
         }
 
+        // Cookie fallback: extract session cookie from the WebSocket upgrade
+        // request headers when no bearer token is available.
+        let cookieHeader: string | undefined;
+        if (!authToken && requestHeaders) {
+          try {
+            cookieHeader =
+              (requestHeaders as any).get?.('cookie') ||
+              (requestHeaders as any)['cookie'] ||
+              undefined;
+          } catch {
+            // ignore header extraction errors
+          }
+        }
+
         logger.info('🔐 [onAuthenticate] Final token status:', {
           hasToken: !!authToken,
+          hasCookie: !!cookieHeader,
         });
 
         // Validate user authentication and form access
         const userAccess = await validateUserAccess(
-          authToken,
+          authToken || null,
           formId,
-          PermissionLevel.VIEWER
+          PermissionLevel.VIEWER,
+          cookieHeader,
         );
 
         if (connectionConfig) {
