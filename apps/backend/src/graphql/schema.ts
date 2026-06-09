@@ -370,6 +370,7 @@ export const typeDefs = gql`
     timezone: String
     language: String
     completionTimeSeconds: Int # Time taken to complete form in seconds
+    isPreview: Boolean
   }
 
   input UpdateResponseInput {
@@ -1155,6 +1156,7 @@ export const typeDefs = gql`
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
     deleteResponses(formId: ID!, ids: [ID!]!): Boolean!
+    deletePreviewResponses(formId: ID!): Int!
 
     # Response Tag Mutations
     createTag(formId: ID!, name: String!, color: String): ResponseTag!
