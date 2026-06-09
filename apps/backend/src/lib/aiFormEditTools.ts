@@ -55,6 +55,10 @@ export function createFormEditTools(
   const includeReadTools = opts?.includeReadTools !== false;
   const formId = opts?.formId;
 
+  // Deep-clone so in-turn mutations don't corrupt the shared schema cache, and so later tool
+  // calls in the same AI turn (e.g. removePage after relocateField) see accurate field counts.
+  const workingSchema: { pages: any[] } = JSON.parse(JSON.stringify(schema));
+
   // Per-field response count for delete/convert warnings (0 when formId is unavailable).
   const responseCountFor = async (fieldId: string): Promise<number> => {
     if (!formId) return 0;
@@ -70,7 +74,7 @@ export function createFormEditTools(
         pageId: z.string().optional().describe('Filter to this page; omit to list all pages'),
       }),
       execute: async ({ pageId }) => {
-        const pages: any[] = schema.pages ?? [];
+        const pages: any[] = workingSchema.pages ?? [];
         const filtered = pageId ? pages.filter((p: any) => p.id === pageId) : pages;
 
         const TYPE_MAP: Record<string, string> = {
@@ -105,7 +109,7 @@ export function createFormEditTools(
         fieldId: z.string().describe('The field ID from listFields'),
       }),
       execute: async ({ fieldId }) => {
-        for (const page of (schema.pages ?? []) as any[]) {
+        for (const page of (workingSchema.pages ?? []) as any[]) {
           const field = (page.fields ?? []).find((f: any) => f.id === fieldId);
           if (field) {
             return {
@@ -161,7 +165,7 @@ export function createFormEditTools(
       execute: async ({ fieldIds }) => {
         const counts = formId ? await countResponsesPerField(formId, fieldIds) : {};
         const fields = fieldIds.map((fieldId) => {
-          const found = findFieldInSchema(schema, fieldId);
+          const found = findFieldInSchema(workingSchema, fieldId);
           return {
             fieldId,
             label: found?.field?.label ?? fieldId,
@@ -181,7 +185,30 @@ export function createFormEditTools(
         insertAfterFieldId: z.string().nullable().describe('Insert after this field ID on the target page; null to append'),
         mode: z.enum(['move', 'copy']).describe('"move" relocates the field; "copy" duplicates it'),
       }),
-      execute: async (args) => ({ type: 'RELOCATE_FIELD' as const, ...args }),
+      execute: async (args) => {
+        if (args.mode === 'move') {
+          // Reflect the move in workingSchema so subsequent tools (e.g. removePage) see
+          // accurate field counts instead of the stale pre-move snapshot.
+          for (const page of workingSchema.pages as any[]) {
+            const idx = (page.fields ?? []).findIndex((f: any) => f.id === args.fieldId);
+            if (idx !== -1) {
+              const [field] = page.fields.splice(idx, 1);
+              const targetPage = workingSchema.pages.find((p: any) => p.id === args.targetPageId);
+              if (targetPage) {
+                if (!targetPage.fields) targetPage.fields = [];
+                if (args.insertAfterFieldId) {
+                  const insertIdx = targetPage.fields.findIndex((f: any) => f.id === args.insertAfterFieldId);
+                  targetPage.fields.splice(insertIdx + 1, 0, field);
+                } else {
+                  targetPage.fields.push(field);
+                }
+              }
+              break;
+            }
+          }
+        }
+        return { type: 'RELOCATE_FIELD' as const, ...args };
+      },
     }),
 
     reorder: tool({
@@ -225,12 +252,17 @@ export function createFormEditTools(
         title: z.string().max(50).describe('Title for the new page'),
         insertAfterPageId: z.string().nullable().describe('Insert after this page ID; null to append at end'),
       }),
-      execute: async (args) => ({
-        type: 'ADD_PAGE' as const,
-        // Generate the page ID here so the AI can reference it in subsequent addField calls
-        pageId: `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        ...args,
-      }),
+      execute: async (args) => {
+        const pageId = `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        const newPage = { id: pageId, title: args.title, fields: [] };
+        if (args.insertAfterPageId) {
+          const insertIdx = workingSchema.pages.findIndex((p: any) => p.id === args.insertAfterPageId);
+          workingSchema.pages.splice(insertIdx + 1, 0, newPage);
+        } else {
+          workingSchema.pages.push(newPage);
+        }
+        return { type: 'ADD_PAGE' as const, pageId, ...args };
+      },
     }),
 
     removePage: tool({
@@ -240,7 +272,7 @@ export function createFormEditTools(
         pageId: z.string().describe('The page ID from listFields'),
       }),
       execute: async ({ pageId }) => {
-        const pages = (schema.pages ?? []) as any[];
+        const pages = (workingSchema.pages ?? []) as any[];
         if (pages.length <= 1) return { error: 'Cannot remove the last page' };
         const page = pages.find((p) => p.id === pageId);
         if (!page) return { error: `Page ${pageId} not found` };
@@ -305,7 +337,7 @@ export function createFormEditTools(
         newFieldType: z.enum(FIELD_TYPE_TOKENS).describe('The target field type'),
       }),
       execute: async ({ fieldId, newFieldType }) => {
-        const found = findFieldInSchema(schema, fieldId);
+        const found = findFieldInSchema(workingSchema, fieldId);
         if (!found) return { error: `Field ${fieldId} not found` };
         const currentType = STORED_TYPE_TO_TOKEN[found.field.type] ?? found.field.type;
         if (currentType === newFieldType) {
