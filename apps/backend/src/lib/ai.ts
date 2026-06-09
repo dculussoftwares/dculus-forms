@@ -26,7 +26,7 @@ export function getPrimaryModel(): LanguageModel {
   return buildModel(
     env('AI_PRIMARY_BASE_URL')!,
     env('AI_PRIMARY_API_KEY')!,
-    env('AI_PRIMARY_MODEL') ?? 'DeepSeek-V3-0324',
+    env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini',
   );
 }
 
@@ -36,17 +36,17 @@ export function getFastModel(): LanguageModel {
   return buildModel(
     env('AI_FAST_BASE_URL')!,
     env('AI_FAST_API_KEY')!,
-    env('AI_FAST_MODEL') ?? 'gpt-4.1-nano',
+    env('AI_FAST_MODEL') ?? 'gpt-5.4-nano',
   );
 }
 
 // Returns the resolved primary model id — used for telemetry only.
 export function getPrimaryModelId(): string {
-  return env('AI_PRIMARY_MODEL') ?? 'DeepSeek-V3-0324';
+  return env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini';
 }
 
-// DeepSeek on Azure AI Services uses implicit prefix caching — no explicit cache
-// key is needed or supported. Always returns undefined; callers handle this
+// GPT models on Azure AI Services use automatic prompt caching — no explicit
+// cache key is needed. Always returns undefined; callers handle this
 // with `...(providerOptions ? { providerOptions } : {})`.
 export function buildPromptCacheOptions(
   _cacheKey: string | undefined,

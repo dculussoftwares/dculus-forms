@@ -270,7 +270,7 @@ variable "tags" {
 # ── Azure AI Foundry ──────────────────────────────────────────────────────────
 
 variable "ai_location" {
-  description = "Azure region for AI Foundry. East US has broadest gpt-4o GlobalStandard availability."
+  description = "Azure region for AI Foundry. East US has broadest GPT GlobalStandard availability."
   type        = string
   default     = "eastus"
 }
@@ -290,11 +290,11 @@ variable "ai_fast_tpm" {
 variable "ai_primary_model" {
   description = "Primary model deployment name for complex tasks (form edit agent, form generation)"
   type        = string
-  default     = "DeepSeek-V3-0324"
+  default     = "gpt-5.4-mini"
 }
 
 variable "ai_fast_model" {
   description = "Fast model deployment name for lightweight tasks (auto-title generation)"
   type        = string
-  default     = "gpt-4.1-nano"
+  default     = "gpt-5.4-nano"
 }
