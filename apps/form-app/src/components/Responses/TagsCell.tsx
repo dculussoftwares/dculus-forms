@@ -20,6 +20,8 @@ import {
   CREATE_TAG,
 } from '../../graphql/mutations';
 
+const PREVIEW_TAG_NAME = '__preview__';
+
 const PRESET_COLORS = [
   '#6366f1', // indigo (default)
   '#3b82f6', // blue
@@ -63,11 +65,14 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
 
   const loading = adding || removing || creating;
 
-  const filtered = formTags.filter((t) =>
-    t.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = formTags
+    .filter((t) => t.name !== PREVIEW_TAG_NAME)
+    .filter((t) => t.name.toLowerCase().includes(search.toLowerCase()));
   const trimmed = search.trim();
-  const canCreate = trimmed.length > 0 && !formTags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase());
+  const canCreate =
+    trimmed.length > 0 &&
+    trimmed !== PREVIEW_TAG_NAME &&
+    !formTags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase());
 
   const handleToggle = async (tag: ResponseTagItem) => {
     if (assignedIds.has(tag.id)) {
@@ -96,25 +101,37 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
       className="flex items-center gap-1 flex-wrap min-h-[24px]"
       onClick={(e) => e.stopPropagation()}
     >
-      {tags.map((tag) => (
-        <span
-          key={tag.id}
-          className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-medium text-white select-none"
-          style={{ backgroundColor: tag.color }}
-        >
-          {tag.name}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              removeTag({ variables: { responseId: response.id, tagId: tag.id } });
-            }}
-            className="ml-0.5 opacity-70 hover:opacity-100 transition-opacity"
-            disabled={loading}
+      {tags.map((tag) => {
+        if (tag.name === PREVIEW_TAG_NAME) {
+          return (
+            <span
+              key={tag.id}
+              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-amber-300 bg-amber-100 text-amber-700 select-none"
+            >
+              Preview
+            </span>
+          );
+        }
+        return (
+          <span
+            key={tag.id}
+            className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-medium text-white select-none"
+            style={{ backgroundColor: tag.color }}
           >
-            <X className="h-2.5 w-2.5" />
-          </button>
-        </span>
-      ))}
+            {tag.name}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                removeTag({ variables: { responseId: response.id, tagId: tag.id } });
+              }}
+              className="ml-0.5 opacity-70 hover:opacity-100 transition-opacity"
+              disabled={loading}
+            >
+              <X className="h-2.5 w-2.5" />
+            </button>
+          </span>
+        );
+      })}
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
