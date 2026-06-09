@@ -10,6 +10,7 @@ import * as pluginEvents from '../../../plugins/core/events.js';
 import * as usageService from '../../../subscriptions/usageService.js';
 import * as subscriptionEvents from '../../../subscriptions/events.js';
 import * as editTrackingService from '../../../services/responseEditTrackingService.js';
+import * as tagService from '../../../services/tagService.js';
 
 // Shared tx client for $transaction tests
 const mockTxClient = {
@@ -57,6 +58,7 @@ vi.mock('@dculus/utils', async () => {
     generateId: vi.fn(() => 'generated-response-id'),
   };
 });
+vi.mock('../../../services/tagService.js');
 // Mock the dynamic import used by getEditHistoryMemoised
 vi.mock('../../../services/responseEditTrackingService.js', () => ({
   ResponseEditTrackingService: {
@@ -373,6 +375,14 @@ describe('Responses Resolvers', () => {
       vi.mocked(responseService.submitResponse).mockResolvedValue(mockResponse as any);
       vi.mocked(pluginEvents.emitFormSubmitted).mockReturnValue(undefined);
       vi.mocked(subscriptionEvents.emitFormSubmitted).mockReturnValue(undefined);
+      vi.mocked(tagService.upsertPreviewTag).mockResolvedValue({
+        id: 'preview-tag-id',
+        formId: 'form-123',
+        name: '__preview__',
+        color: '#f59e0b',
+        createdAt: new Date(),
+      });
+      vi.mocked(tagService.addTagToResponse).mockResolvedValue(true);
     });
 
     it('should submit response successfully', async () => {
@@ -692,6 +702,79 @@ describe('Responses Resolvers', () => {
         expect.any(Object),
         '10.0.0.1'
       );
+    });
+
+    describe('isPreview flag', () => {
+      it('auto-tags response with __preview__ when isPreview is true', async () => {
+        const mockInput = {
+          formId: 'form-123',
+          data: { field1: 'value1' },
+          isPreview: true,
+        };
+
+        vi.mocked(formService.getFormById).mockResolvedValue({
+          id: 'form-123',
+          organizationId: 'org-123',
+          isPublished: true,
+          settings: {},
+          formSchema: null,
+        } as any);
+        vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+          submissionsExceeded: false,
+          viewsExceeded: false,
+        } as any);
+        vi.mocked(responseService.submitResponse).mockResolvedValue({
+          id: 'response-abc',
+          formId: 'form-123',
+          data: { field1: 'value1' },
+          submittedAt: new Date(),
+        } as any);
+
+        await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: mockInput },
+          mockContext
+        );
+
+        expect(tagService.upsertPreviewTag).toHaveBeenCalledWith('form-123');
+        expect(tagService.addTagToResponse).toHaveBeenCalledWith(
+          'response-abc',
+          'preview-tag-id'
+        );
+      });
+
+      it('does NOT call upsertPreviewTag when isPreview is falsy', async () => {
+        const mockInput = {
+          formId: 'form-123',
+          data: { field1: 'value1' },
+        };
+
+        vi.mocked(formService.getFormById).mockResolvedValue({
+          id: 'form-123',
+          organizationId: 'org-123',
+          isPublished: true,
+          settings: {},
+          formSchema: null,
+        } as any);
+        vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+          submissionsExceeded: false,
+          viewsExceeded: false,
+        } as any);
+        vi.mocked(responseService.submitResponse).mockResolvedValue({
+          id: 'response-xyz',
+          formId: 'form-123',
+          data: {},
+          submittedAt: new Date(),
+        } as any);
+
+        await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: mockInput },
+          mockContext
+        );
+
+        expect(tagService.upsertPreviewTag).not.toHaveBeenCalled();
+      });
     });
   });
 
