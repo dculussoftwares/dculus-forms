@@ -1,4 +1,3 @@
-import { createAzure } from '@ai-sdk/azure';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
 
@@ -11,24 +10,13 @@ function env(key: string): string | undefined {
   return val;
 }
 
-
-// Builds a LanguageModel from generic env-var-driven config.
-// When apiVersion is provided the endpoint is Azure OpenAI (needs api-version
-// query param) so we use @ai-sdk/azure. Otherwise it is an OpenAI-compatible
-// MaaS endpoint (DeepSeek on Azure Foundry, etc.) and we use @ai-sdk/openai
-// with a custom baseURL.
-function buildModel(
-  baseUrl: string,
-  apiKey: string,
-  model: string,
-  apiVersion?: string,
-): LanguageModel {
-  if (apiVersion) {
-    const azure = createAzure({ baseURL: baseUrl, apiKey, apiVersion });
-    return azure.chat(model);
-  }
-  const openai = createOpenAI({ baseURL: baseUrl, apiKey });
-  return openai(model) as LanguageModel;
+// Both models are served via the Azure AI Services OpenAI-compatible endpoint:
+//   https://{resource}.openai.azure.com/openai/v1
+// This endpoint accepts Bearer auth and requires no api-version query param.
+// .chat() forces Chat Completions (/chat/completions); the default provider call
+// uses the newer Responses API (/responses) which Azure does not support.
+function buildModel(baseUrl: string, apiKey: string, model: string): LanguageModel {
+  return createOpenAI({ baseURL: baseUrl, apiKey }).chat(model) as LanguageModel;
 }
 
 // Primary model — form editing chat (streaming + tool calls) and form
@@ -44,13 +32,11 @@ export function getPrimaryModel(): LanguageModel {
 
 // Fast model — lightweight fire-and-forget tasks (auto-title generation).
 // Configured via AI_FAST_BASE_URL / AI_FAST_API_KEY / AI_FAST_MODEL.
-// Set AI_FAST_API_VERSION for Azure OpenAI deployments; omit for MaaS endpoints.
 export function getFastModel(): LanguageModel {
   return buildModel(
     env('AI_FAST_BASE_URL')!,
     env('AI_FAST_API_KEY')!,
     env('AI_FAST_MODEL') ?? 'gpt-4.1-nano',
-    env('AI_FAST_API_VERSION'),
   );
 }
 
@@ -59,7 +45,7 @@ export function getPrimaryModelId(): string {
   return env('AI_PRIMARY_MODEL') ?? 'DeepSeek-V3-0324';
 }
 
-// DeepSeek on Azure Foundry uses implicit prefix caching — no explicit cache
+// DeepSeek on Azure AI Services uses implicit prefix caching — no explicit cache
 // key is needed or supported. Always returns undefined; callers handle this
 // with `...(providerOptions ? { providerOptions } : {})`.
 export function buildPromptCacheOptions(
