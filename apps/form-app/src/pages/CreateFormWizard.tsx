@@ -426,7 +426,7 @@ const CreateFormWizard: React.FC = () => {
       </header>
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex items-start justify-center p-6 py-8 overflow-y-auto">
 
         {/* ── Step 1: Choice ─────────────────────────────────────────────── */}
         {step === 'choice' && (
@@ -581,7 +581,7 @@ const CreateFormWizard: React.FC = () => {
                 <LayoutThumbnails
                   currentLayoutCode={selectedLayoutCode}
                   onLayoutSelect={setSelectedLayoutCode}
-                  scrollAreaClassName="h-auto"
+                  scrollAreaClassName="h-[320px]"
                 />
               </div>
 
@@ -718,7 +718,7 @@ const CreateFormWizard: React.FC = () => {
             </div>
 
             {/* Footer: status + create button */}
-            <div className="mt-8 flex items-center justify-between pt-4 border-t border-border">
+            <div className="mt-4 flex items-center justify-between pt-4 border-t border-border">
               <div className="text-sm text-muted-foreground">
                 {selectedImage ? (
                   <span className="flex items-center gap-1.5 text-primary">
