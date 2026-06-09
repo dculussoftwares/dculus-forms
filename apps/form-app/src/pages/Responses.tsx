@@ -1,8 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
-import { Button, LoadingSpinner, EmptyState, toastSuccess, toastError } from '@dculus/ui';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  LoadingSpinner,
+  EmptyState,
+  toastSuccess,
+  toastError,
+} from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { FilterModal } from '../components/Filters';
 import { QuizResultsDialog } from '../plugins/quiz/ResultsDialog';
@@ -13,7 +27,7 @@ import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
-import { DELETE_RESPONSE } from '../graphql/mutations';
+import { DELETE_RESPONSE, DELETE_PREVIEW_RESPONSES } from '../graphql/mutations';
 import { deserializeFormSchema, FillableFormField, FormSchema } from '@dculus/types';
 import { AlertCircle, ArrowLeft, FileSpreadsheet, FileText, RotateCcw, Trash2, X } from 'lucide-react';
 
@@ -127,6 +141,30 @@ const Responses: React.FC = () => {
     ],
   });
 
+  const [clearingPreview, setClearingPreview] = useState(false);
+  const [showClearPreviewDialog, setShowClearPreviewDialog] = useState(false);
+
+  const [deletePreviewResponsesMutation] = useMutation<any, any>(DELETE_PREVIEW_RESPONSES, {
+    refetchQueries: [
+      {
+        query: GET_FORM_RESPONSES,
+        variables: {
+          formId: actualFormId,
+          page: responsesState.currentPage,
+          limit: responsesState.pageSize,
+          sortBy: responsesState.sortBy,
+          sortOrder: responsesState.sortOrder,
+          filters: responsesState.graphqlFilters,
+          filterLogic:
+            responsesState.graphqlFilters &&
+            responsesState.graphqlFilters.length > 1
+              ? responsesState.filterLogic
+              : undefined,
+        },
+      },
+    ],
+  });
+
   const handleDeleteResponse = async (responseId: string) => {
     try {
       await deleteResponseMutation({ variables: { id: responseId } });
@@ -151,6 +189,10 @@ const Responses: React.FC = () => {
     skip: !actualFormId,
   });
   const formTags = tagsData?.formTags ?? [];
+  const PREVIEW_TAG_NAME = '__preview__';
+  const userFormTags = formTags.filter(
+    (t: { name: string }) => t.name !== PREVIEW_TAG_NAME
+  );
 
   const { data: responsesData, loading: responsesLoading, error: responsesError } = useQuery<any, any>(GET_FORM_RESPONSES, {
     variables: {
@@ -184,7 +226,7 @@ const Responses: React.FC = () => {
       formId: actualFormId!,
       pluginsData,
       locale,
-      formTags,
+      formTags: userFormTags,
       onPluginClick: (pluginType, metadata, responseId) => {
         responsesState.setPluginDialogState({ pluginType, metadata, responseId });
       },
@@ -215,6 +257,30 @@ const Responses: React.FC = () => {
   const error = formError || responsesError;
   const responsePagination = responsesData?.responsesByForm;
   const responses = responsePagination?.data || [];
+
+  const previewResponseCount = responses.filter((r: any) =>
+    r.tags?.some((tag: any) => tag.name === PREVIEW_TAG_NAME)
+  ).length;
+
+  const handleClearPreviewResponses = async () => {
+    if (!actualFormId) return;
+    setClearingPreview(true);
+    try {
+      const result = await deletePreviewResponsesMutation({
+        variables: { formId: actualFormId },
+      });
+      const count = result.data?.deletePreviewResponses ?? 0;
+      toastSuccess(
+        t('toolbar.preview.clearSuccess'),
+        t('toolbar.preview.clearSuccessDetail', { values: { count } })
+      );
+    } catch {
+      toastError(t('toolbar.preview.clearError'));
+    } finally {
+      setClearingPreview(false);
+      setShowClearPreviewDialog(false);
+    }
+  };
 
   const getColumnLabel = (columnId: string): string => {
     if (columnId.startsWith('field-')) {
@@ -355,6 +421,21 @@ const Responses: React.FC = () => {
 
             {/* Toolbar */}
             <div className="flex-shrink-0">
+              {/* Clear preview responses button — only shown when preview responses exist */}
+              {previewResponseCount > 0 && (
+                <div className="flex-shrink-0 flex items-center px-3 py-1.5 border-b" style={{ borderColor: 'var(--tf-border-medium)' }}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs gap-1.5 border-red-200 text-red-600 hover:bg-red-50 ml-auto"
+                    onClick={() => setShowClearPreviewDialog(true)}
+                    disabled={clearingPreview}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    {t('toolbar.preview.clearButton', { values: { count: previewResponseCount } })}
+                  </Button>
+                </div>
+              )}
               <ResponsesToolbar
                 globalFilter={responsesState.globalFilter}
                 onGlobalFilterChange={responsesState.setGlobalFilter}
@@ -370,7 +451,7 @@ const Responses: React.FC = () => {
                 onSubmittedAtRangeChange={responsesState.setSubmittedAtRange}
                 rowDensity={responsesState.rowDensity}
                 onRowDensityChange={responsesState.setRowDensity}
-                formTags={formTags}
+                formTags={userFormTags}
                 selectedTagIds={responsesState.selectedTagIds}
                 onToggleTagFilter={responsesState.toggleTagFilter}
                 onClearTagFilters={responsesState.clearTagFilters}
@@ -446,6 +527,27 @@ const Responses: React.FC = () => {
             responseId={responsesState.pluginDialogState.responseId || undefined}
           />
         )}
+
+      {/* Clear preview responses confirmation */}
+      <AlertDialog open={showClearPreviewDialog} onOpenChange={setShowClearPreviewDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('toolbar.preview.clearConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('toolbar.preview.clearConfirmDescription', { values: { count: previewResponseCount } })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('toolbar.preview.clearConfirmCancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearPreviewResponses}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {clearingPreview ? t('toolbar.preview.clearConfirmDeleting') : t('toolbar.preview.clearConfirmConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };
