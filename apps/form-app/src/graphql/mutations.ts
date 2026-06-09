@@ -217,3 +217,22 @@ export const GENERATE_FIELD_INSIGHTS = gql`
     }
   }
 `;
+
+export const SUBMIT_RESPONSE = gql`
+  mutation SubmitResponse($input: SubmitResponseInput!) {
+    submitResponse(input: $input) {
+      id
+      formId
+      data
+      submittedAt
+      thankYouMessage
+      showCustomThankYou
+    }
+  }
+`;
+
+export const DELETE_PREVIEW_RESPONSES = gql`
+  mutation DeletePreviewResponses($formId: ID!) {
+    deletePreviewResponses(formId: $formId)
+  }
+`;
