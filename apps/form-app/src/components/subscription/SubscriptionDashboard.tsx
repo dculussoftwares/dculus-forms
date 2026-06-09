@@ -20,7 +20,8 @@ export const SubscriptionDashboard = () => {
   const safeOpen = (url: string) => {
     try {
       const parsed = new URL(url);
-      if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('chargebee.com')) {
+      const host = parsed.hostname;
+      if (parsed.protocol !== 'https:' || (host !== 'chargebee.com' && !host.endsWith('.chargebee.com'))) {
         toastError(t('toast.failedToOpenPortal'), 'Invalid redirect URL');
         return;
       }

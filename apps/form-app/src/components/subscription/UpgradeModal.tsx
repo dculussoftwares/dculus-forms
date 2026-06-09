@@ -34,7 +34,8 @@ const PLAN_META: Record<string, { tagline: string; planSize: string[]; benefits:
 function safeRedirect(url: string, onError: (msg: string) => void) {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('chargebee.com')) {
+    const host = parsed.hostname;
+    if (parsed.protocol !== 'https:' || (host !== 'chargebee.com' && !host.endsWith('.chargebee.com'))) {
       onError('Invalid redirect URL');
       return;
     }
