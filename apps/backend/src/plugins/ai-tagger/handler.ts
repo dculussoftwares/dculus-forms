@@ -81,7 +81,8 @@ Rules:
 - For choice fields (radio, select), the "[all options: ...]" hint lists every option for that field. Use the full list to understand relative meaning. For example, if options are "Weekly | Bi-weekly | Monthly | Only major updates", then Weekly/Bi-weekly represent frequent contact and Monthly/Only major updates represent infrequent contact.
 - Apply your best interpretation of each tag definition, even if the wording is imperfect or informal.
 - When two tags have similar definitions, pick the single best-fitting one based on the response. Apply both only if the response independently satisfies each definition.
-- Return an empty array only if no tag has any reasonable match.`,
+- Return an empty array only if no tag has any reasonable match.
+- You MUST respond with valid JSON matching exactly: {"tagIds": ["id1", "id2"]}`,
       prompt: `Tags to consider:\n${tagList}\n\nForm response:\n${responseFields}`,
     });
 

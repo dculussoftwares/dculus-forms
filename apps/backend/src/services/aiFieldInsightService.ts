@@ -159,7 +159,7 @@ export async function generateFieldInsights(
     model: getPrimaryModel(),
     output: Output.object({ schema: InsightsOutputSchema }),
     system:
-      'You are a form analytics expert. Analyse the field stats and generate concise, actionable insights to improve form completion and data quality. Return ONLY valid JSON matching the schema.',
+      'You are a form analytics expert. Analyse the field stats and generate concise, actionable insights to improve form completion and data quality.\n\nYou MUST respond with valid JSON matching EXACTLY this structure:\n{"insights":[{"fieldId":"...","tip":"1-2 sentence insight (max 180 chars)","fixPrompt":"direct instruction for AI editor (max 220 chars)","severity":"error|warning|success|info"}]}\n\nRules:\n- Include one insight per field.\n- "fieldId" MUST match the field IDs from the stats.\n- "severity" MUST be one of: error, warning, success, info.\n- "tip" and "fixPrompt" MUST be strings — never null or omitted.',
     prompt,
   });
 

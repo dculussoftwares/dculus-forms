@@ -23,8 +23,7 @@ const AIFieldSchema = z.object({
     'file',
   ]),
   label: z.string().describe('The question or field label shown to users'),
-  // Azure OpenAI structured output requires all properties in the required array;
-  // use nullable instead of optional so every key is always present.
+  // Use nullable instead of optional so every key is always present in the JSON output.
   placeholder: z.string().nullable().describe('Helper text inside the input, or null'),
   required: z.boolean(),
   options: z
@@ -60,10 +59,33 @@ export type AIGeneratedField = z.infer<typeof AIFieldSchema>;
 export type AIGeneratedLayout = z.infer<typeof AILayoutSchema>;
 export type AIGeneratedForm = z.infer<typeof AIFormSchema> & { tokensUsed: number };
 
-const LAYOUT_PROMPT = `
-Also generate a layout object:
-- content: HTML intro shown above the form. Use <h1> for the form title and one <p> with a 1-2 sentence description relevant to the form's purpose. No other HTML tags.
-- customCTAButtonName: A short (max 4 words) action-oriented button label to start the form, matching the form's context (e.g. "Submit Application", "Book My Spot", "Start Survey", "Get Started").`;
+const JSON_SCHEMA_RULES = `
+You MUST respond with valid JSON matching EXACTLY this structure — no extra keys, no wrapping object:
+{
+  "suggestedTitle": "Short form title",
+  "fields": [
+    {
+      "type": "text",
+      "label": "Field label",
+      "placeholder": "Hint text or null",
+      "required": true,
+      "options": null
+    }
+  ],
+  "layout": {
+    "content": "<h1>Title</h1><p>One or two sentence description.</p>",
+    "customCTAButtonName": "Submit"
+  }
+}
+
+Strict rules:
+- "suggestedTitle" MUST be a short descriptive title string.
+- Each field MUST have: type, label, placeholder (string or null), required (boolean), options (array or null).
+- "required" MUST be true or false — never omit it.
+- "placeholder" MUST be a string or null — never omit it.
+- "options" MUST be an array of {"value": "...", "label": "..."} objects for select/radio/checkbox fields; null for all other field types.
+- "layout.content" MUST use only <h1> and <p> tags — no other HTML.
+- "layout.customCTAButtonName" MUST be a short action-oriented label (max 4 words).`;
 
 const MODE_SYSTEM_PROMPTS: Record<AIFormMode, string> = {
   quick: `You are a form builder assistant. Create MINIMAL forms with at most 5 fields.
@@ -71,21 +93,21 @@ Focus only on the most essential information — nothing extra.
 Use simple field types (text, email, number, textarea).
 Keep labels short and direct. Set placeholder to null unless it genuinely helps.
 Set options to null for non-choice fields.
-${LAYOUT_PROMPT}`,
+${JSON_SCHEMA_RULES}`,
 
   standard: `You are a form builder assistant. Create well-balanced forms with 6–10 fields.
 Include appropriate field types (text, email, number, date, select, radio, checkbox, textarea, file).
 Mix field types naturally — use radio or select for categorical choices, textarea for long answers.
 Keep labels concise and user-friendly. Set placeholder to null if not needed.
 Set options to null for non-choice fields.
-${LAYOUT_PROMPT}`,
+${JSON_SCHEMA_RULES}`,
 
   professional: `You are a form builder assistant. Create comprehensive, professional forms with 10–20 fields.
 Use a rich variety of field types. Include detailed labels and helpful placeholder text where appropriate.
 Group related fields logically. Use radio/select for categorical choices, checkboxes for multi-select,
 textarea for open-ended answers, and specialized types (date, file, number) where natural.
 Set options to null for non-choice fields. Set placeholder to null only if truly unnecessary.
-${LAYOUT_PROMPT}`,
+${JSON_SCHEMA_RULES}`,
 };
 
 export async function generateFormWithAI(
