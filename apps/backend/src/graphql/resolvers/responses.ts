@@ -31,6 +31,7 @@ import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { logger } from '../../lib/logger.js';
 import { audit } from '../../lib/audit.js';
+import { upsertPreviewTag, addTagToResponse } from '../../services/tagService.js';
 
 interface ResponseParent {
   id: string;
@@ -269,6 +270,16 @@ export const responsesResolvers = {
       }
       // At this point response is guaranteed non-null — both branches above set it.
       const savedResponse = response!;
+
+      // Auto-assign __preview__ system tag when submitted from the builder preview panel
+      if (input.isPreview) {
+        try {
+          const previewTag = await upsertPreviewTag(input.formId);
+          await addTagToResponse(savedResponse.id, previewTag.id);
+        } catch (error) {
+          logger.error('Error auto-tagging preview response:', error);
+        }
+      }
 
       // Track submission analytics if analytics data is provided
       if (input.sessionId && input.userAgent) {
