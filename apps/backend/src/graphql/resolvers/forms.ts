@@ -114,7 +114,9 @@ export const formsResolvers = {
     },
     formSchema: async (parent: any) => {
       const formId = parent.id;
-      return await getFormSchemaFromHocuspocus(formId);
+      const schema = await getFormSchemaFromHocuspocus(formId);
+      // Fall back to the DB column when Hocuspocus is unavailable (e.g. pool pressure timeout)
+      return schema ?? parent.formSchema ?? null;
     },
     settings: (parent: any) => {
       // Parse JSON settings from database or return null if no settings

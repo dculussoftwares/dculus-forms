@@ -120,6 +120,10 @@ export const createForm = async (
   // Generate unique short URL
   const shortUrl = await generateUniqueShortUrl();
 
+  // Determine schema upfront so it can be stored in both the DB column (fallback)
+  // and the Hocuspocus document (primary source for the form-viewer).
+  const schemaToInitialize = templateFormSchema || defaultFormSchema;
+
   // P2-03: Wrap form creation and owner permission in a single transaction so a
   // failure in createOwnerPermission never leaves an orphan form without an owner,
   // and a form record is never created without a corresponding OWNER permission row.
@@ -133,7 +137,7 @@ export const createForm = async (
       title: formData.title,
       description: formData.description,
       shortUrl,
-      formSchema: {}, // Store empty object as placeholder
+      formSchema: schemaToInitialize as any,
       isPublished: formData.isPublished || false,
       organizationId: formData.organizationId,
       createdById: formData.createdById,
@@ -153,7 +157,6 @@ export const createForm = async (
   });
 
   // Initialize Hocuspocus document for collaborative editing
-  const schemaToInitialize = templateFormSchema || defaultFormSchema;
   logger.info(`🔄 Initializing Hocuspocus document for form: ${result.id}`);
 
   try {

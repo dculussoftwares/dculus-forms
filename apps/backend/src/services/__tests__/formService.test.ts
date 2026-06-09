@@ -235,7 +235,7 @@ describe('Form Service', () => {
         expect.objectContaining({
           title: 'New Form',
           shortUrl: 'abc12345',
-          formSchema: {},
+          formSchema: expect.objectContaining({ pages: expect.any(Array) }),
         })
       );
       expect(result.id).toBe('form-123');
