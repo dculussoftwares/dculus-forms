@@ -11,6 +11,7 @@ function env(key: string): string | undefined {
   return val;
 }
 
+
 // Builds a LanguageModel from generic env-var-driven config.
 // When apiVersion is provided the endpoint is Azure OpenAI (needs api-version
 // query param) so we use @ai-sdk/azure. Otherwise it is an OpenAI-compatible
