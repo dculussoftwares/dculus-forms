@@ -1,6 +1,8 @@
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 
+export const PREVIEW_TAG_NAME = '__preview__';
+
 export const getFormTags = async (formId: string) => {
   return prisma.responseTag.findMany({
     where: { formId },
@@ -72,4 +74,31 @@ export const batchLoadTagsForResponses = async (responseIds: string[]) => {
     if (map[a.responseId]) map[a.responseId].push(a.tag);
   }
   return map;
+};
+
+export const upsertPreviewTag = async (formId: string) => {
+  return prisma.responseTag.upsert({
+    where: { formId_name: { formId, name: PREVIEW_TAG_NAME } },
+    update: {},
+    create: { formId, name: PREVIEW_TAG_NAME, color: '#f59e0b' },
+  });
+};
+
+export const deletePreviewResponses = async (formId: string): Promise<number> => {
+  const previewTag = await prisma.responseTag.findFirst({
+    where: { formId, name: PREVIEW_TAG_NAME },
+  });
+  if (!previewTag) return 0;
+
+  const assignments = await prisma.responseTagAssignment.findMany({
+    where: { tagId: previewTag.id },
+    select: { responseId: true },
+  });
+  if (!assignments.length) return 0;
+
+  const responseIds = assignments.map((a) => a.responseId);
+  const { count } = await prisma.response.deleteMany({
+    where: { id: { in: responseIds } },
+  });
+  return count;
 };
