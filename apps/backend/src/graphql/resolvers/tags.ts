@@ -5,6 +5,7 @@ import {
   addTagToResponse,
   removeTagFromResponse,
   getTagsForResponse,
+  deletePreviewResponses,
 } from '../../services/tagService.js';
 import { getResponseById } from '../../services/responseService.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
@@ -79,6 +80,19 @@ export const tagResolvers = {
       const access = await checkFormAccess(context.auth.user!.id, response.formId, PermissionLevel.EDITOR);
       if (!access.hasAccess) throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
       return removeTagFromResponse(responseId, tagId);
+    },
+
+    deletePreviewResponses: async (
+      _: any,
+      { formId }: { formId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+      const access = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
+      if (!access.hasAccess) {
+        throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+      return deletePreviewResponses(formId);
     },
   },
 
