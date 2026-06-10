@@ -34,6 +34,17 @@ export interface UpdateTemplateInput {
 }
 
 /**
+ * Strip soft-deleted fields from a form schema before saving to template
+ */
+const stripDeletedFields = (schema: FormSchema): FormSchema => ({
+  ...schema,
+  pages: schema.pages.map((page) => ({
+    ...page,
+    fields: page.fields.filter((f) => !f.deleted),
+  })),
+});
+
+/**
  * Get all active templates, optionally filtered by category
  */
 export const getAllTemplates = async (
@@ -79,7 +90,7 @@ export const createTemplate = async (templateData: CreateTemplateInput): Promise
     name: templateData.name,
     description: templateData.description,
     category: templateData.category,
-    formSchema: serializeFormSchema(templateData.formSchema) as any,
+    formSchema: serializeFormSchema(stripDeletedFields(templateData.formSchema)) as any,
     isActive: true,
   });
 
@@ -100,11 +111,11 @@ export const updateTemplate = async (
 ): Promise<FormTemplate | null> => {
   try {
     const updateData: any = {};
-    
+
     if (templateData.name) updateData.name = templateData.name;
     if (templateData.description !== undefined) updateData.description = templateData.description;
     if (templateData.category !== undefined) updateData.category = templateData.category;
-    if (templateData.formSchema) updateData.formSchema = serializeFormSchema(templateData.formSchema);
+    if (templateData.formSchema) updateData.formSchema = serializeFormSchema(stripDeletedFields(templateData.formSchema));
     if (templateData.isActive !== undefined) updateData.isActive = templateData.isActive;
     
     const updatedTemplate = await formTemplateRepository.updateTemplate(
