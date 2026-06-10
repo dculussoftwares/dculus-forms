@@ -460,7 +460,7 @@ const createFieldColumns = (
         cell: ({ row }) => {
           const value = row.original.data[field.id];
 
-          if (!isDeleted && field.type === FieldType.FILE_UPLOAD_FIELD) {
+          if (field.type === FieldType.FILE_UPLOAD_FIELD) {
             const keys: string[] = Array.isArray(value) ? value : [];
             if (keys.length === 0) {
               return (
