@@ -122,6 +122,7 @@ export const typeDefs = gql`
     description: String
     shortUrl: String!
     formSchema: JSON
+    formSchemaPublic: JSON
     settings: FormSettings
     isPublished: Boolean!
     organization: Organization!

@@ -118,6 +118,19 @@ export const formsResolvers = {
       // Fall back to the DB column when Hocuspocus is unavailable (e.g. pool pressure timeout)
       return schema ?? parent.formSchema ?? null;
     },
+    formSchemaPublic: async (parent: any) => {
+      const formId = parent.id;
+      const schema = await getFormSchemaFromHocuspocus(formId);
+      const raw = schema ?? parent.formSchema ?? null;
+      if (!raw?.pages) return raw;
+      return {
+        ...raw,
+        pages: raw.pages.map((page: any) => ({
+          ...page,
+          fields: (page.fields || []).filter((f: any) => !f.deleted),
+        })),
+      };
+    },
     settings: (parent: any) => {
       // Parse JSON settings from database or return null if no settings
       if (parent.settings) {

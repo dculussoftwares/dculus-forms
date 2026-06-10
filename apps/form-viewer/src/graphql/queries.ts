@@ -9,7 +9,7 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
       title
       description
       shortUrl
-      formSchema
+      formSchemaPublic
       settings {
         submissionLimits {
           timeWindow {

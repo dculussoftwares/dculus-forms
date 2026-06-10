@@ -117,7 +117,7 @@ const FormViewer: React.FC = () => {
   });
 
   // Memoized deserialization — placed here (before any early returns) to satisfy Rules of Hooks
-  const rawSchema = data?.formByShortUrl?.formSchema;
+  const rawSchema = data?.formByShortUrl?.formSchemaPublic;
   const formSchema = useMemo(
     () => (rawSchema ? deserializeFormSchema(rawSchema) : null),
     [rawSchema]
@@ -289,7 +289,7 @@ const FormViewer: React.FC = () => {
   const form = data.formByShortUrl;
 
   // Check if form schema exists
-  if (!form.formSchema) {
+  if (!form.formSchemaPublic) {
     return (
       <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
         <div className="text-center p-8">

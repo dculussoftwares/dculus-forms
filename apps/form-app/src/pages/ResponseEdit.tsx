@@ -128,7 +128,7 @@ const ResponseEdit: React.FC = () => {
         const schema = deserializeFormSchema(formData.form.formSchema);
         for (const page of schema.pages) {
           for (const field of page.fields) {
-            if (field.type === FieldType.FILE_UPLOAD_FIELD) {
+            if (!field.deleted && field.type === FieldType.FILE_UPLOAD_FIELD) {
               fileFieldIds.add(field.id);
             }
           }
@@ -318,8 +318,15 @@ const ResponseEdit: React.FC = () => {
     );
   }
 
-  // Deserialize the form schema from the backend
-  const formSchema = deserializeFormSchema(form.formSchema);
+  // Deserialize the form schema — strip deleted fields so they don't appear as editable inputs
+  const rawSchema = deserializeFormSchema(form.formSchema);
+  const formSchema = {
+    ...rawSchema,
+    pages: rawSchema.pages.map((page) => ({
+      ...page,
+      fields: page.fields.filter((f) => !f.deleted),
+    })),
+  };
   const cdnEndpoint = getCdnEndpoint();
 
   return (
