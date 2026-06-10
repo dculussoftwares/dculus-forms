@@ -21,7 +21,7 @@ export function AITokenUsageCard({ organizationId, currentPlan }: AITokenUsageCa
   const { t } = useTranslation('subscriptionDashboard');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const { data, loading } = useQuery<any, any>(GET_AI_TOKEN_USAGE, {
+  const { data, loading } = useQuery(GET_AI_TOKEN_USAGE, {
     variables: { organizationId },
     skip: !organizationId,
   });

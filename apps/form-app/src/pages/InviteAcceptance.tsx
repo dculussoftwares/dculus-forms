@@ -56,7 +56,7 @@ const InviteAcceptance: React.FC = () => {
   const [acceptLoading, setAcceptLoading] = useState(false);
   const { t } = useTranslation('inviteAcceptance');
 
-  const { data: invitationData, loading: invitationLoading, error: invitationError } = useQuery<any, any>(
+  const { data: invitationData, loading: invitationLoading, error: invitationError } = useQuery(
     GET_INVITATION_PUBLIC,
     { variables: { id: invitationId || '' }, skip: !invitationId, errorPolicy: 'all' }
   );

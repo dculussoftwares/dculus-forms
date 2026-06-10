@@ -34,7 +34,7 @@ const FormSettings: React.FC = () => {
     loading: formLoading,
     error: formError,
     refetch,
-  } = useQuery<any, any>(GET_FORM_BY_ID, {
+  } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });

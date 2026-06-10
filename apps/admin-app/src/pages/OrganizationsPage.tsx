@@ -70,7 +70,7 @@ export default function OrganizationsPage() {
   }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, loading, error, refetch } = useQuery<any, any>(ADMIN_ORGANIZATIONS_QUERY, {
+  const { data, loading, error, refetch } = useQuery(ADMIN_ORGANIZATIONS_QUERY, {
     variables: { limit: 50, offset: 0, search: debouncedSearch || undefined },
   });
 

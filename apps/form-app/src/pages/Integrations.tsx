@@ -20,12 +20,12 @@ const Integrations: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [deliveryLogPlugin, setDeliveryLogPlugin] = useState<{ id: string; name: string } | null>(null);
 
-  const { data: formData, loading: formLoading, error: formError } = useQuery<any, any>(GET_FORM_BY_ID, {
+  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });
 
-  const { data: pluginsData, loading: pluginsLoading, refetch: refetchPlugins } = useQuery<any, any>(GET_FORM_PLUGINS, {
+  const { data: pluginsData, loading: pluginsLoading, refetch: refetchPlugins } = useQuery(GET_FORM_PLUGINS, {
     variables: { formId },
     skip: !formId,
     fetchPolicy: 'cache-and-network',

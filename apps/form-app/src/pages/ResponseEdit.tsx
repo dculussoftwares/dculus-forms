@@ -68,7 +68,7 @@ const ResponseEdit: React.FC = () => {
     data: formData,
     loading: formLoading,
     error: formError,
-  } = useQuery<any, any>(GET_FORM_BY_ID, {
+  } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
   });
@@ -78,7 +78,7 @@ const ResponseEdit: React.FC = () => {
     data: responseData,
     loading: responseLoading,
     error: responseError,
-  } = useQuery<any, any>(GET_RESPONSE_BY_ID, {
+  } = useQuery(GET_RESPONSE_BY_ID, {
     variables: { id: responseId },
     skip: !responseId,
   });

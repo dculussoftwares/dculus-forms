@@ -21,13 +21,13 @@ const PluginConfiguration: React.FC = () => {
 
   const [isSaving, setIsSaving] = useState(false);
 
-  const { data: formData, loading: formLoading, error: formError } = useQuery<any, any>(GET_FORM_BY_ID, {
+  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
     fetchPolicy: 'cache-and-network',
   });
 
-  const { data: pluginData, loading: pluginLoading } = useQuery<any, any>(GET_FORM_PLUGIN, {
+  const { data: pluginData, loading: pluginLoading } = useQuery(GET_FORM_PLUGIN, {
     variables: { id: pluginId },
     skip: !pluginId,
   });

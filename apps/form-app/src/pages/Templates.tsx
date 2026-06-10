@@ -16,7 +16,7 @@ import { getCdnEndpoint } from '../lib/config';
  */
 
 const Templates: React.FC = () => {
-  const { data, loading, error } = useQuery<any, any>(GET_TEMPLATES);
+  const { data, loading, error } = useQuery(GET_TEMPLATES);
   const cdnEndpoint = getCdnEndpoint();
   const { t, locale } = useTranslation('templates');
 

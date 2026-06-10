@@ -74,7 +74,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [linkCopied, setLinkCopied] = useState(false);
 
   // GraphQL queries and mutations
-  const { data: permissionsData, refetch: refetchPermissions } = useQuery<any, any>(
+  const { data: permissionsData, refetch: refetchPermissions } = useQuery(
     GET_FORM_PERMISSIONS,
     { 
       variables: { formId },
@@ -82,7 +82,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   );
 
-  const { data: membersData } = useQuery<any, any>(
+  const { data: membersData } = useQuery(
     GET_ORGANIZATION_MEMBERS,
     { 
       variables: { organizationId },

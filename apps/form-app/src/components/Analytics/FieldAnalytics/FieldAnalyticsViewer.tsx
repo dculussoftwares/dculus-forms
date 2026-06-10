@@ -73,7 +73,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
     loading
   } = useFieldAnalyticsManager(formId);
 
-  const { data: insightsData, refetch: refetchInsights, error: insightsError } = useQuery<any, any>(GET_FIELD_INSIGHTS, {
+  const { data: insightsData, refetch: refetchInsights, error: insightsError } = useQuery(GET_FIELD_INSIGHTS, {
     variables: { formId, organizationId },
     skip: !formId || !organizationId,
   });

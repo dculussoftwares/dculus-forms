@@ -105,9 +105,9 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
   const [activeTab, setActiveTab] = useState<'basic' | 'schema' | 'layout'>('basic');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: categoriesData } = useQuery<any, any>(GET_TEMPLATE_CATEGORIES);
+  const { data: categoriesData } = useQuery(GET_TEMPLATE_CATEGORIES);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: templateData, loading: templateLoading } = useQuery<any, any>(GET_TEMPLATE, {
+  const { data: templateData, loading: templateLoading } = useQuery(GET_TEMPLATE, {
     variables: { id: template?.id },
     skip: !template?.id || mode === 'create',
   });

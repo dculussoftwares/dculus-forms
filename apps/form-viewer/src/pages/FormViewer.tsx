@@ -96,7 +96,7 @@ const FormViewer: React.FC = () => {
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { loading, error, data } = useQuery<any, any>(GET_FORM_BY_SHORT_URL, {
+  const { loading, error, data } = useQuery(GET_FORM_BY_SHORT_URL, {
     variables: { shortUrl: shortUrl || '' },
     skip: !shortUrl,
   });

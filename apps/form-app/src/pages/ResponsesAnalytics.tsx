@@ -13,7 +13,7 @@ const ResponsesAnalytics: React.FC = () => {
   const navigate = useNavigate();
   const actualFormId = formId || id;
 
-  const { data: formData, loading: formLoading, error: formError } = useQuery<any, any>(GET_FORM_BY_ID, {
+  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: actualFormId },
     skip: !actualFormId,
   });

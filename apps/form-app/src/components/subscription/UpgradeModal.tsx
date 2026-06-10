@@ -52,7 +52,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
     currentPlan === 'free' ? 'starter' : currentPlan === 'starter' ? 'advanced' : null
   );
 
-  const { data, loading } = useQuery<any, any>(GET_AVAILABLE_PLANS);
+  const { data, loading } = useQuery(GET_AVAILABLE_PLANS);
   const [createCheckoutSession, { loading: checkoutLoading }] = useMutation(CREATE_CHECKOUT_SESSION);
 
   const plans: any[] = data?.availablePlans || [];

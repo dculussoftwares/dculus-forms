@@ -77,13 +77,13 @@ export default function DashboardPage() {
   const [alertsExpanded, setAlertsExpanded] = useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: statsData, loading: statsLoading, error: statsError } = useQuery<any, any>(ADMIN_STATS_QUERY);
+  const { data: statsData, loading: statsLoading, error: statsError } = useQuery(ADMIN_STATS_QUERY);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: orgsData, loading: orgsLoading } = useQuery<any, any>(ADMIN_ORGANIZATIONS_QUERY, {
+  const { data: orgsData, loading: orgsLoading } = useQuery(ADMIN_ORGANIZATIONS_QUERY, {
     variables: { limit: 5, offset: 0 },
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: healthData, loading: healthLoading } = useQuery<any, any>(ADMIN_SYSTEM_HEALTH_QUERY);
+  const { data: healthData, loading: healthLoading } = useQuery(ADMIN_SYSTEM_HEALTH_QUERY);
 
   const stats = [
     { name: t('stats.totalOrganizations'), value: statsData?.adminStats?.organizationCount?.toString() || '0', icon: Building2, ...STAT_COLORS[0] },

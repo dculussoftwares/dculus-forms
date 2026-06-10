@@ -174,17 +174,17 @@ const Responses: React.FC = () => {
     }
   };
 
-  const { data: formData, loading: formLoading, error: formError } = useQuery<any, any>(GET_FORM_BY_ID, {
+  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: actualFormId },
     skip: !actualFormId,
   });
 
-  const { data: pluginsData } = useQuery<any, any>(GET_FORM_PLUGINS, {
+  const { data: pluginsData } = useQuery(GET_FORM_PLUGINS, {
     variables: { formId: actualFormId },
     skip: !actualFormId,
   });
 
-  const { data: tagsData } = useQuery<any, any>(GET_FORM_TAGS, {
+  const { data: tagsData } = useQuery(GET_FORM_TAGS, {
     variables: { formId: actualFormId },
     skip: !actualFormId,
   });
@@ -194,7 +194,7 @@ const Responses: React.FC = () => {
     (t: { name: string }) => t.name !== PREVIEW_TAG_NAME
   );
 
-  const { data: responsesData, loading: responsesLoading, error: responsesError } = useQuery<any, any>(GET_FORM_RESPONSES, {
+  const { data: responsesData, loading: responsesLoading, error: responsesError } = useQuery(GET_FORM_RESPONSES, {
     variables: {
       formId: actualFormId,
       page: responsesState.currentPage,

@@ -16,7 +16,7 @@ export const CheckoutSuccess = () => {
   const startTimeRef = useRef(Date.now());
 
   // Fetch subscription to get updated details
-  const { data, loading, stopPolling } = useQuery<any, any>(GET_SUBSCRIPTION, {
+  const { data, loading, stopPolling } = useQuery(GET_SUBSCRIPTION, {
     pollInterval: 3000, // Poll every 3 seconds for Chargebee webhook to sync
     fetchPolicy: 'network-only',
   });

@@ -35,7 +35,7 @@ export default function TemplatesPage() {
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, loading, error, refetch } = useQuery<any, any>(GET_TEMPLATES);
+  const { data, loading, error, refetch } = useQuery(GET_TEMPLATES);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deleteTemplate] = useMutation(DELETE_TEMPLATE);
 

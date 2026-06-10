@@ -80,7 +80,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     data: formData,
     loading: formLoading,
     error: formError,
-  } = useQuery<any, any>(GET_FORM_BY_ID, {
+  } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
     errorPolicy: 'all',

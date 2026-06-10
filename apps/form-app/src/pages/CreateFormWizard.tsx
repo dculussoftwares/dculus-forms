@@ -240,7 +240,7 @@ const CreateFormWizard: React.FC = () => {
   const [isCreatingFromTemplate, setIsCreatingFromTemplate] = useState(false);
 
   // ── GraphQL ──────────────────────────────────────────────────────────────
-  const { data: templatesData, loading: templatesLoading } = useQuery<any, any>(GET_TEMPLATES, {
+    const { data: templatesData, loading: templatesLoading } = useQuery(GET_TEMPLATES, {
     skip: step !== 'template',
   });
 

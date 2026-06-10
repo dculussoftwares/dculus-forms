@@ -55,12 +55,12 @@ export function useAIChat({
   const currentPageIdRef = useRef<string | undefined>(undefined);
 
   // ── Conversation management (Apollo) ─────────────────────────────────────
-  const { data: conversationsData, loading: conversationsLoading, refetch: refetchConversations } = useQuery<any, any>(
+  const { data: conversationsData, loading: conversationsLoading, refetch: refetchConversations } = useQuery(
     LIST_AI_CHAT_CONVERSATIONS,
     { variables: { formId, organizationId }, skip: !formId }
   );
 
-  const { data: activeConvData, loading: activeConvLoading } = useQuery<any, any>(GET_AI_CHAT_CONVERSATION, {
+  const { data: activeConvData, loading: activeConvLoading } = useQuery(GET_AI_CHAT_CONVERSATION, {
     variables: { id: activeConversationId!, organizationId },
     skip: !activeConversationId,
   });

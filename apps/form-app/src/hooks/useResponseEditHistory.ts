@@ -48,7 +48,7 @@ export const useResponseEditHistory = ({
     loading: isLoadingHistory,
     error: historyError,
     refetch: refetchHistory
-  } = useQuery<any, any>(GET_RESPONSE_EDIT_HISTORY, {
+  } = useQuery(GET_RESPONSE_EDIT_HISTORY, {
     variables: { responseId },
     skip: !enabled || !responseId,
     errorPolicy: 'all',
@@ -155,7 +155,7 @@ export const useResponseEditInfo = ({
     loading: isLoading,
     error,
     refetch
-  } = useQuery<any, any>(GET_RESPONSE_EDIT_HISTORY, {
+  } = useQuery(GET_RESPONSE_EDIT_HISTORY, {
     variables: { responseId },
     skip: !enabled || !responseId,
     errorPolicy: 'all'

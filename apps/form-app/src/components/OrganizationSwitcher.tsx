@@ -44,7 +44,7 @@ export const OrganizationSwitcher: React.FC = () => {
   const { activeOrganization, user, organizationError } = useAuth();
   const [isLoading] = useState(false);
 
-  const { data: userOrgsData, loading: orgsLoading } = useQuery<any, any>(GET_USER_ORGANIZATIONS, {
+  const { data: userOrgsData, loading: orgsLoading } = useQuery(GET_USER_ORGANIZATIONS, {
     skip: !user,
     errorPolicy: 'all',
   });

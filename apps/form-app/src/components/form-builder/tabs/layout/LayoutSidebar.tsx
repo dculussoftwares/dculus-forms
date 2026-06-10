@@ -38,7 +38,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
   const { t } = useTranslation('layoutSidebar');
 
   // Fetch form background images
-  const { data: formFilesData, refetch: refetchFormFiles } = useQuery<any, any>(GET_FORM_FILES, {
+  const { data: formFilesData, refetch: refetchFormFiles } = useQuery(GET_FORM_FILES, {
     variables: {
       formId,
       type: 'FormBackground'

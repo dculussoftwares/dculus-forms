@@ -38,7 +38,7 @@ export const AiTaggerConfigForm: React.FC<ConfigFormProps> = ({
   const [pluginName, setPluginName] = useState(initialData?.name || 'AI Auto-Tagger');
   const [nameError, setNameError] = useState('');
 
-  const { data: tagsData, loading: tagsLoading } = useQuery<any, any>(GET_FORM_TAGS, {
+  const { data: tagsData, loading: tagsLoading } = useQuery(GET_FORM_TAGS, {
     variables: { formId: form?.id },
     skip: !form?.id,
     fetchPolicy: 'cache-and-network',

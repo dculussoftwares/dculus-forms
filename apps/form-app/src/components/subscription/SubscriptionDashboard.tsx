@@ -10,7 +10,7 @@ import { AITokenUsageCard } from './AITokenUsageCard';
 
 export const SubscriptionDashboard = () => {
   const { t } = useTranslation('subscriptionDashboard');
-  const { data, loading } = useQuery<any, any>(GET_SUBSCRIPTION);
+  const { data, loading } = useQuery(GET_SUBSCRIPTION);
   const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
