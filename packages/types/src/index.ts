@@ -161,6 +161,7 @@ export enum PageModeType {
 export class FormField {
   id: string;
   type: FieldType;
+  deleted?: boolean;
   constructor(id: string) {
     this.id = id;
     this.type = FieldType.FORM_FIELD;
@@ -736,9 +737,10 @@ export const deserializeFormField = (data: any): FormField | null => {
         data.maxFileSizeMb,
         data.maxFiles
       );
-    case FieldType.RICH_TEXT_FIELD:
+    case FieldType.RICH_TEXT_FIELD: {
       const richTextContent = data.content || '';
       return new RichTextFormField(data.id, richTextContent);
+    }
     default:
       console.warn(
         `[deserializeFormField] Unknown field type "${(data as { type?: string }).type}" for id "${data.id}". Skipping field.`
@@ -764,7 +766,13 @@ export const deserializeFormSchema = (data: any): FormSchema => {
     layout: data.layout, // Explicitly preserve layout object
     pages: (data.pages || []).map((page: any) => ({
       ...page,
-      fields: (page.fields || []).map(deserializeFormField).filter((f: FormField | null): f is FormField => f !== null),
+      fields: (page.fields || [])
+        .map((fieldData: any) => {
+          const field = deserializeFormField(fieldData);
+          if (field && fieldData.deleted) field.deleted = true;
+          return field;
+        })
+        .filter((f: FormField | null): f is FormField => f !== null),
     })),
   };
 };
