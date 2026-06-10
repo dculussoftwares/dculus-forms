@@ -155,19 +155,30 @@ const extractFieldInfo = (
       'fields'
     );
   } else {
-    // Extract field info from form schema
+    // Active and soft-deleted fields from schema
     formSchema.pages.forEach((page) => {
       page.fields.forEach((field) => {
-        if (
-          field.type &&
-          field.id &&
-          'label' in field &&
-          (field as any).label
-        ) {
-          fieldInfo[field.id] = (field as any).label;
+        if (field.type && field.id && 'label' in field && (field as any).label) {
+          const label = (field as any).label;
+          fieldInfo[field.id] = field.deleted
+            ? `${label} (deleted)`
+            : label;
           orderedFieldIds.push(field.id);
         }
       });
+    });
+
+    // Orphan field IDs: in response data but not in schema at all
+    const knownIds = new Set(orderedFieldIds);
+    const orphanIds = new Set<string>();
+    responses.forEach((response) => {
+      Object.keys(response.data).forEach((id) => {
+        if (!knownIds.has(id)) orphanIds.add(id);
+      });
+    });
+    orphanIds.forEach((id) => {
+      fieldInfo[id] = 'Unknown field (deleted)';
+      orderedFieldIds.push(id);
     });
   }
 
