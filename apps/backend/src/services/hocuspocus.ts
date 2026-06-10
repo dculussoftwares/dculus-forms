@@ -432,6 +432,9 @@ export const getFormSchemaFromHocuspocus = async (
                       type: fieldType,
                       content: fieldMap.get('content') || '',
                     };
+                    if (fieldMap.get('deleted') === true) {
+                      field.deleted = true;
+                    }
                     page.fields.push(field);
                   } else if (fieldType === 'file_upload_field') {
                     // File upload fields: extract base fillable props + upload constraints
@@ -467,6 +470,9 @@ export const getFormSchemaFromHocuspocus = async (
                       maxFileSizeMb: fieldMap.get('maxFileSizeMb'),
                       maxFiles: fieldMap.get('maxFiles'),
                     };
+                    if (fieldMap.get('deleted') === true) {
+                      field.deleted = true;
+                    }
                     page.fields.push(field);
                   } else {
                     // Handle all other field types with fillable properties
@@ -523,6 +529,9 @@ export const getFormSchemaFromHocuspocus = async (
                     if (fieldMap.has('maxDate'))
                       field.maxDate = fieldMap.get('maxDate');
 
+                    if (fieldMap.get('deleted') === true) {
+                      field.deleted = true;
+                    }
                     page.fields.push(field);
                   }
                 }

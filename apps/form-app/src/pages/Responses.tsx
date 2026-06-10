@@ -214,7 +214,7 @@ const Responses: React.FC = () => {
     const fields: FillableFormField[] = [];
     formSchema.pages.forEach((page) => {
       page.fields.forEach((field) => {
-        if (field instanceof FillableFormField) fields.push(field);
+        if (field instanceof FillableFormField && !field.deleted) fields.push(field);
       });
     });
     return fields;
@@ -292,6 +292,8 @@ const Responses: React.FC = () => {
           .find((f) => `field-${f.id}` === columnId);
         return field instanceof FillableFormField ? field.label : columnId;
       }
+    } else if (columnId.startsWith('orphan-')) {
+      return 'Unknown field (deleted)';
     } else if (columnId === 'id') return t('table.columns.responseId');
     else if (columnId === 'submittedAt') return t('table.columns.submittedAt');
     else if (columnId === 'hasBeenEdited') return t('table.columns.editStatus');

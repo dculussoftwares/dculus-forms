@@ -54,8 +54,9 @@ describe('Form Metadata Service', () => {
       const pagesArray = new Y.Array();
       const page1 = new Y.Map();
       const fields1 = new Y.Array();
-      fields1.push([{}]);
-      fields1.push([{}]);
+      const field1 = new Y.Map();
+      const field2 = new Y.Map();
+      fields1.push([field1, field2]);
       page1.set('fields', fields1);
       pagesArray.push([page1]);
       formSchemaMap.set('pages', pagesArray);

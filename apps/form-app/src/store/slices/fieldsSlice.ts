@@ -468,36 +468,47 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         return;
       }
 
-      if (
-        oldIndex < 0 ||
-        oldIndex >= fieldsArray.length ||
-        newIndex < 0 ||
-        newIndex >= fieldsArray.length
-      ) {
+      // Helper to convert visual (filtered, non-deleted) index to raw Y.Array index
+      const toRawIndex = (visualIndex: number): number => {
+        let count = -1;
+        for (let i = 0; i < fieldsArray.length; i++) {
+          const fm = fieldsArray.get(i);
+          if (fm instanceof Y.Map && fm.get('deleted') === true) continue;
+          count++;
+          if (count === visualIndex) return i;
+        }
+        return -1;
+      };
+
+      const rawOldIndex = toRawIndex(oldIndex);
+      const rawNewIndex = toRawIndex(newIndex);
+
+      if (rawOldIndex === -1 || rawNewIndex === -1) {
         console.warn(
-          `Invalid field reorder indices: oldIndex=${oldIndex}, newIndex=${newIndex}, fieldsLength=${fieldsArray.length}`
+          `Invalid field reorder indices: oldIndex=${oldIndex} (raw=${rawOldIndex}), newIndex=${newIndex} (raw=${rawNewIndex}), fieldsLength=${fieldsArray.length}`
         );
         return;
       }
 
-      if (oldIndex === newIndex) return;
+      if (rawOldIndex === rawNewIndex) return;
 
       console.log(
-        `Reordering field from index ${oldIndex} to ${newIndex} in page ${pageId}`
+        `Reordering field from visual index ${oldIndex} (raw ${rawOldIndex}) to visual index ${newIndex} (raw ${rawNewIndex}) in page ${pageId}`
       );
 
       // Atomic move operation wrapped in transaction
       // This is CRDT-safe and produces only 2 observer events (1 delete + 1 insert)
       ydoc.transact(() => {
         // Extract the field data from old position
-        const fieldData = extractFieldData(fieldsArray.get(oldIndex));
+        const fieldData = extractFieldData(fieldsArray.get(rawOldIndex));
 
         // Remove from old position
-        fieldsArray.delete(oldIndex, 1);
+        fieldsArray.delete(rawOldIndex, 1);
 
-        // Insert at new position
+        // Insert at new position (re-compute rawNewIndex after deletion)
+        const adjustedNewIndex = rawOldIndex < rawNewIndex ? rawNewIndex - 1 : rawNewIndex;
         const fieldMap = createYJSFieldMap(fieldData);
-        fieldsArray.insert(newIndex, [fieldMap]);
+        fieldsArray.insert(adjustedNewIndex, [fieldMap]);
       });
     },
 
