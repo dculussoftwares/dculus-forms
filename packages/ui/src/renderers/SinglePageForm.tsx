@@ -7,7 +7,7 @@ import { FormFieldRenderer } from './FormFieldRenderer';
 import { createPageSchema } from '../utils/zodSchemaBuilder';
 import { FormValidationState } from '../types/validation';
 import { useFormInitialization, useFormValidation, useStoreSync, useFormSubmission } from '../hooks';
-import { FormControls } from '../components';
+import { ValidationErrorSummary, FormControls } from '../components';
 import { DEFAULT_LAYOUT_STYLES, FORM_CONSTANTS } from '../constants/formStyles';
 import { useFormResponseStore } from '../stores/useFormResponseStore';
 
@@ -74,6 +74,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   const {
     isValid,
     isSubmitting,
+    validationStates,
     validatePage,
     getValidationState,
     showAllValidationErrors,
@@ -89,7 +90,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   );
 
   // Initialize store synchronization
-  useStoreSync(control, page.id, store, (_values) => {
+  useStoreSync(control, page.id, store, (values) => {
     reset(getInitialValues());
   });
 
@@ -105,7 +106,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   const styles = layoutStyles || DEFAULT_LAYOUT_STYLES;
 
   // Early return for empty pages
-  if (!page.fields || page.fields.filter((f: any) => !f.deleted).length === 0) {
+  if (!page.fields || page.fields.length === 0) {
     return (
       <div className={`text-center py-8 ${className}`}>
         <p className="text-gray-500 text-sm">
@@ -119,7 +120,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
     <FormProvider {...methods}>
       <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 ${className}`}>
         <div className="space-y-4">
-          {page.fields.filter((field: any) => !field.deleted).map((field) => (
+          {page.fields.map((field) => (
             <FormFieldRenderer
               key={field.id}
               field={field}

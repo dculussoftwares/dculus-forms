@@ -56,7 +56,6 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   const [initializationKey, setInitializationKey] = useState<string>('');
 
   // Initialize form with existing response data when in EDIT mode - SYNCHRONOUSLY
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isInitialized = useMemo(() => {
     // Only initialize in EDIT mode with valid data
     if (mode !== RendererMode.EDIT || !existingResponseData || Object.keys(existingResponseData).length === 0) {
@@ -77,7 +76,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         const fieldToPageMap: Record<string, string> = {};
         formSchema.pages.forEach((page: any) => {
           page.fields?.forEach((field: any) => {
-            if (field.id && !field.deleted) {
+            if (field.id) {
               fieldToPageMap[field.id] = page.id;
             }
           });
