@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
-export const GET_ACTIVE_ORGANIZATION = gql`
+export const GET_ACTIVE_ORGANIZATION : TypedDocumentNode<any, any> = gql`
   query GetActiveOrganization {
     activeOrganization {
       id
@@ -10,7 +11,7 @@ export const GET_ACTIVE_ORGANIZATION = gql`
   }
 `;
 
-export const FORM_LIST_FIELDS = gql`
+export const FORM_LIST_FIELDS : TypedDocumentNode<any, any> = gql`
   fragment FormListFields on Form {
     id
     title
@@ -44,7 +45,7 @@ export const FORM_LIST_FIELDS = gql`
   }
 `;
 
-export const GET_FORMS = gql`
+export const GET_FORMS : TypedDocumentNode<any, any> = gql`
   query GetForms(
     $organizationId: ID!
     $category: FormCategory!
@@ -73,7 +74,7 @@ export const GET_FORMS = gql`
   ${FORM_LIST_FIELDS}
 `;
 
-export const GET_FORM_BY_ID = gql`
+export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
   query GetFormById($id: ID!) {
     form(id: $id) {
       id
@@ -136,7 +137,7 @@ export const GET_FORM_BY_ID = gql`
   }
 `;
 
-export const GET_FORM_RESPONSES = gql`
+export const GET_FORM_RESPONSES : TypedDocumentNode<any, any> = gql`
   query GetFormResponses($formId: ID!, $page: Int = 1, $limit: Int = 10, $sortBy: String = "submittedAt", $sortOrder: String = "desc", $filters: [ResponseFilterInput!], $filterLogic: FilterLogic) {
     responsesByForm(formId: $formId, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder, filters: $filters, filterLogic: $filterLogic) {
       data {
@@ -167,7 +168,7 @@ export const GET_FORM_RESPONSES = gql`
   }
 `;
 
-export const GET_FORM_TAGS = gql`
+export const GET_FORM_TAGS : TypedDocumentNode<any, any> = gql`
   query GetFormTags($formId: ID!) {
     formTags(formId: $formId) {
       id
@@ -177,7 +178,7 @@ export const GET_FORM_TAGS = gql`
   }
 `;
 
-export const GENERATE_FORM_RESPONSE_REPORT = gql`
+export const GENERATE_FORM_RESPONSE_REPORT : TypedDocumentNode<any, any> = gql`
   mutation GenerateFormResponseReport($formId: ID!, $format: ExportFormat!, $filters: [ResponseFilterInput!], $filterLogic: FilterLogic, $ids: [ID!]) {
     generateFormResponseReport(formId: $formId, format: $format, filters: $filters, filterLogic: $filterLogic, ids: $ids) {
       downloadUrl
@@ -188,7 +189,7 @@ export const GENERATE_FORM_RESPONSE_REPORT = gql`
   }
 `;
 
-export const GET_RESPONSE_BY_ID = gql`
+export const GET_RESPONSE_BY_ID : TypedDocumentNode<any, any> = gql`
   query GetResponseById($id: ID!) {
     response(id: $id) {
       id
@@ -200,7 +201,7 @@ export const GET_RESPONSE_BY_ID = gql`
   }
 `;
 
-export const UPDATE_RESPONSE = gql`
+export const UPDATE_RESPONSE : TypedDocumentNode<any, any> = gql`
   mutation UpdateResponse($input: UpdateResponseInput!) {
     updateResponse(input: $input) {
       id
@@ -211,7 +212,7 @@ export const UPDATE_RESPONSE = gql`
   }
 `;
 
-export const GET_FORM_ANALYTICS = gql`
+export const GET_FORM_ANALYTICS : TypedDocumentNode<any, any> = gql`
   query GetFormAnalytics($formId: ID!, $timeRange: TimeRangeInput) {
     formAnalytics(formId: $formId, timeRange: $timeRange) {
       totalViews
@@ -255,7 +256,7 @@ export const GET_FORM_ANALYTICS = gql`
   }
 `;
 
-export const GET_FORM_SUBMISSION_ANALYTICS = gql`
+export const GET_FORM_SUBMISSION_ANALYTICS : TypedDocumentNode<any, any> = gql`
   query GetFormSubmissionAnalytics($formId: ID!, $timeRange: TimeRangeInput) {
     formSubmissionAnalytics(formId: $formId, timeRange: $timeRange) {
       totalSubmissions
@@ -313,7 +314,7 @@ export const GET_FORM_SUBMISSION_ANALYTICS = gql`
   }
 `;
 
-export const GET_INVITATION_PUBLIC = gql`
+export const GET_INVITATION_PUBLIC : TypedDocumentNode<any, any> = gql`
   query GetInvitationPublic($id: ID!) {
     getInvitationPublic(id: $id) {
       id
@@ -336,7 +337,7 @@ export const GET_INVITATION_PUBLIC = gql`
   }
 `;
 
-export const GET_USER_ORGANIZATIONS = gql`
+export const GET_USER_ORGANIZATIONS : TypedDocumentNode<any, any> = gql`
   query GetUserOrganizations {
     me {
       id
@@ -360,7 +361,7 @@ export const GET_USER_ORGANIZATIONS = gql`
 `;
 
 // Response Edit History Queries
-export const GET_RESPONSE_EDIT_HISTORY = gql`
+export const GET_RESPONSE_EDIT_HISTORY : TypedDocumentNode<any, any> = gql`
   query GetResponseEditHistory($responseId: ID!) {
     responseEditHistory(responseId: $responseId) {
       id
@@ -393,7 +394,7 @@ export const GET_RESPONSE_EDIT_HISTORY = gql`
 `;
 
 // Response Edit History Mutations
-export const UPDATE_RESPONSE_WITH_TRACKING = gql`
+export const UPDATE_RESPONSE_WITH_TRACKING : TypedDocumentNode<any, any> = gql`
   mutation UpdateResponseWithTracking($input: UpdateResponseInput!) {
     updateResponse(input: $input) {
       id
@@ -408,7 +409,7 @@ export const UPDATE_RESPONSE_WITH_TRACKING = gql`
 `;
 
 // Enhanced response query with edit tracking fields
-export const GET_RESPONSE_WITH_EDIT_INFO = gql`
+export const GET_RESPONSE_WITH_EDIT_INFO : TypedDocumentNode<any, any> = gql`
   query GetResponseWithEditInfo($id: ID!) {
     response(id: $id) {
       id
@@ -432,7 +433,7 @@ export const GET_RESPONSE_WITH_EDIT_INFO = gql`
   }
 `;
 
-export const GET_FIELD_INSIGHTS = gql`
+export const GET_FIELD_INSIGHTS : TypedDocumentNode<any, any> = gql`
   query GetFieldInsights($formId: ID!, $organizationId: ID!) {
     fieldInsights(formId: $formId, organizationId: $organizationId) {
       insights {

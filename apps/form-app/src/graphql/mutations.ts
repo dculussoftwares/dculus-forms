@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
-export const CREATE_ORGANIZATION = gql`
+export const CREATE_ORGANIZATION : TypedDocumentNode<any, any> = gql`
   mutation CreateOrganization($name: String!) {
     createOrganization(name: $name) {
       id
@@ -19,7 +20,7 @@ export const CREATE_ORGANIZATION = gql`
   }
 `;
 
-export const CREATE_FORM = gql`
+export const CREATE_FORM : TypedDocumentNode<any, any> = gql`
   mutation CreateForm($input: CreateFormInput!) {
     createForm(input: $input) {
       id
@@ -43,7 +44,7 @@ export const CREATE_FORM = gql`
   }
 `;
 
-export const UPDATE_FORM = gql`
+export const UPDATE_FORM : TypedDocumentNode<any, any> = gql`
   mutation UpdateForm($id: ID!, $input: UpdateFormInput!) {
     updateForm(id: $id, input: $input) {
       id
@@ -85,13 +86,13 @@ export const UPDATE_FORM = gql`
   }
 `;
 
-export const DELETE_FORM = gql`
+export const DELETE_FORM : TypedDocumentNode<any, any> = gql`
   mutation DeleteForm($id: ID!) {
     deleteForm(id: $id)
   }
 `;
 
-export const REGENERATE_SHORT_URL = gql`
+export const REGENERATE_SHORT_URL : TypedDocumentNode<any, any> = gql`
   mutation RegenerateShortUrl($id: ID!) {
     regenerateShortUrl(id: $id) {
       id
@@ -115,7 +116,8 @@ export const REGENERATE_SHORT_URL = gql`
   }
 `;
 
-export const DUPLICATE_FORM = gql`
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const DUPLICATE_FORM: TypedDocumentNode<any, any> = gql`
   mutation DuplicateForm($id: ID!) {
     duplicateForm(id: $id) {
       id
@@ -139,19 +141,19 @@ export const DUPLICATE_FORM = gql`
   }
 `;
 
-export const DELETE_RESPONSE = gql`
+export const DELETE_RESPONSE : TypedDocumentNode<any, any> = gql`
   mutation DeleteResponse($id: ID!) {
     deleteResponse(id: $id)
   }
 `;
 
-export const DELETE_RESPONSES = gql`
+export const DELETE_RESPONSES : TypedDocumentNode<any, any> = gql`
   mutation DeleteResponses($formId: ID!, $ids: [ID!]!) {
     deleteResponses(formId: $formId, ids: $ids)
   }
 `;
 
-export const CREATE_TAG = gql`
+export const CREATE_TAG : TypedDocumentNode<any, any> = gql`
   mutation CreateTag($formId: ID!, $name: String!, $color: String) {
     createTag(formId: $formId, name: $name, color: $color) {
       id
@@ -161,25 +163,25 @@ export const CREATE_TAG = gql`
   }
 `;
 
-export const DELETE_TAG = gql`
+export const DELETE_TAG : TypedDocumentNode<any, any> = gql`
   mutation DeleteTag($id: ID!, $formId: ID!) {
     deleteTag(id: $id, formId: $formId)
   }
 `;
 
-export const ADD_TAG_TO_RESPONSE = gql`
+export const ADD_TAG_TO_RESPONSE : TypedDocumentNode<any, any> = gql`
   mutation AddTagToResponse($responseId: ID!, $tagId: ID!) {
     addTagToResponse(responseId: $responseId, tagId: $tagId)
   }
 `;
 
-export const REMOVE_TAG_FROM_RESPONSE = gql`
+export const REMOVE_TAG_FROM_RESPONSE : TypedDocumentNode<any, any> = gql`
   mutation RemoveTagFromResponse($responseId: ID!, $tagId: ID!) {
     removeTagFromResponse(responseId: $responseId, tagId: $tagId)
   }
 `;
 
-export const GENERATE_FORM_WITH_AI = gql`
+export const GENERATE_FORM_WITH_AI : TypedDocumentNode<any, any> = gql`
   mutation GenerateFormWithAI($prompt: String!, $organizationId: ID!, $mode: AIFormMode) {
     generateFormWithAI(prompt: $prompt, organizationId: $organizationId, mode: $mode) {
       suggestedTitle
@@ -202,7 +204,7 @@ export const GENERATE_FORM_WITH_AI = gql`
   }
 `;
 
-export const GENERATE_FIELD_INSIGHTS = gql`
+export const GENERATE_FIELD_INSIGHTS : TypedDocumentNode<any, any> = gql`
   mutation GenerateFieldInsights($formId: ID!, $organizationId: ID!) {
     generateFieldInsights(formId: $formId, organizationId: $organizationId) {
       insights {
@@ -218,7 +220,7 @@ export const GENERATE_FIELD_INSIGHTS = gql`
   }
 `;
 
-export const SUBMIT_RESPONSE = gql`
+export const SUBMIT_RESPONSE : TypedDocumentNode<any, any> = gql`
   mutation SubmitResponse($input: SubmitResponseInput!) {
     submitResponse(input: $input) {
       id
@@ -231,7 +233,8 @@ export const SUBMIT_RESPONSE = gql`
   }
 `;
 
-export const DELETE_PREVIEW_RESPONSES = gql`
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const DELETE_PREVIEW_RESPONSES: TypedDocumentNode<any, any> = gql`
   mutation DeletePreviewResponses($formId: ID!) {
     deletePreviewResponses(formId: $formId)
   }

@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
 /**
  * GraphQL Queries and Mutations for Plugin System
@@ -11,7 +12,7 @@ import { gql } from '@apollo/client';
 /**
  * Get all plugins for a form
  */
-export const GET_FORM_PLUGINS = gql`
+export const GET_FORM_PLUGINS : TypedDocumentNode<any, any> = gql`
   query GetFormPlugins($formId: ID!) {
     formPlugins(formId: $formId) {
       id
@@ -30,7 +31,7 @@ export const GET_FORM_PLUGINS = gql`
 /**
  * Get a single plugin by ID
  */
-export const GET_FORM_PLUGIN = gql`
+export const GET_FORM_PLUGIN : TypedDocumentNode<any, any> = gql`
   query GetFormPlugin($id: ID!) {
     formPlugin(id: $id) {
       id
@@ -49,7 +50,7 @@ export const GET_FORM_PLUGIN = gql`
 /**
  * Get plugin delivery history
  */
-export const GET_PLUGIN_DELIVERIES = gql`
+export const GET_PLUGIN_DELIVERIES : TypedDocumentNode<any, any> = gql`
   query GetPluginDeliveries($pluginId: ID!, $limit: Int) {
     pluginDeliveries(pluginId: $pluginId, limit: $limit) {
       id
@@ -71,7 +72,7 @@ export const GET_PLUGIN_DELIVERIES = gql`
 /**
  * Create a new plugin for a form
  */
-export const CREATE_FORM_PLUGIN = gql`
+export const CREATE_FORM_PLUGIN : TypedDocumentNode<any, any> = gql`
   mutation CreateFormPlugin($input: CreateFormPluginInput!) {
     createFormPlugin(input: $input) {
       id
@@ -90,7 +91,7 @@ export const CREATE_FORM_PLUGIN = gql`
 /**
  * Update an existing plugin
  */
-export const UPDATE_FORM_PLUGIN = gql`
+export const UPDATE_FORM_PLUGIN : TypedDocumentNode<any, any> = gql`
   mutation UpdateFormPlugin($id: ID!, $input: UpdateFormPluginInput!) {
     updateFormPlugin(id: $id, input: $input) {
       id
@@ -109,7 +110,7 @@ export const UPDATE_FORM_PLUGIN = gql`
 /**
  * Delete a plugin
  */
-export const DELETE_FORM_PLUGIN = gql`
+export const DELETE_FORM_PLUGIN : TypedDocumentNode<any, any> = gql`
   mutation DeleteFormPlugin($id: ID!) {
     deleteFormPlugin(id: $id) {
       success
@@ -121,7 +122,7 @@ export const DELETE_FORM_PLUGIN = gql`
 /**
  * Test a plugin by triggering a test event
  */
-export const TEST_FORM_PLUGIN = gql`
+export const TEST_FORM_PLUGIN : TypedDocumentNode<any, any> = gql`
   mutation TestFormPlugin($id: ID!) {
     testFormPlugin(id: $id) {
       success

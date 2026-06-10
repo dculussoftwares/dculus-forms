@@ -1,6 +1,7 @@
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
-export const LIST_AI_CHAT_CONVERSATIONS = gql`
+export const LIST_AI_CHAT_CONVERSATIONS : TypedDocumentNode<any, any> = gql`
   query ListAIChatConversations($formId: ID!, $organizationId: ID!) {
     listAIChatConversations(formId: $formId, organizationId: $organizationId) {
       id
@@ -12,7 +13,7 @@ export const LIST_AI_CHAT_CONVERSATIONS = gql`
   }
 `;
 
-export const GET_AI_CHAT_CONVERSATION = gql`
+export const GET_AI_CHAT_CONVERSATION : TypedDocumentNode<any, any> = gql`
   query GetAIChatConversation($id: ID!, $organizationId: ID!) {
     getAIChatConversation(id: $id, organizationId: $organizationId) {
       id
@@ -31,7 +32,7 @@ export const GET_AI_CHAT_CONVERSATION = gql`
   }
 `;
 
-export const CREATE_AI_CHAT_CONVERSATION = gql`
+export const CREATE_AI_CHAT_CONVERSATION : TypedDocumentNode<any, any> = gql`
   mutation CreateAIChatConversation($formId: ID!, $organizationId: ID!) {
     createAIChatConversation(formId: $formId, organizationId: $organizationId) {
       id
@@ -50,13 +51,13 @@ export const CREATE_AI_CHAT_CONVERSATION = gql`
   }
 `;
 
-export const DELETE_AI_CHAT_CONVERSATION = gql`
+export const DELETE_AI_CHAT_CONVERSATION : TypedDocumentNode<any, any> = gql`
   mutation DeleteAIChatConversation($id: ID!, $organizationId: ID!) {
     deleteAIChatConversation(id: $id, organizationId: $organizationId)
   }
 `;
 
-export const RENAME_AI_CHAT_CONVERSATION = gql`
+export const RENAME_AI_CHAT_CONVERSATION : TypedDocumentNode<any, any> = gql`
   mutation RenameAIChatConversation($id: ID!, $organizationId: ID!, $title: String!) {
     renameAIChatConversation(id: $id, organizationId: $organizationId, title: $title) {
       id
@@ -65,7 +66,7 @@ export const RENAME_AI_CHAT_CONVERSATION = gql`
   }
 `;
 
-export const AI_TOKEN_USAGE = gql`
+export const AI_TOKEN_USAGE : TypedDocumentNode<any, any> = gql`
   query AITokenUsage($organizationId: ID!) {
     aiTokenUsage(organizationId: $organizationId) {
       used

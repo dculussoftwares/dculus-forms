@@ -1,7 +1,8 @@
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
 // Fragments
-export const FORM_PERMISSION_FRAGMENT = gql`
+export const FORM_PERMISSION_FRAGMENT : TypedDocumentNode<any, any> = gql`
   fragment FormPermissionFragment on FormPermission {
     id
     formId
@@ -23,7 +24,7 @@ export const FORM_PERMISSION_FRAGMENT = gql`
   }
 `;
 
-export const FORM_SHARING_SETTINGS_FRAGMENT = gql`
+export const FORM_SHARING_SETTINGS_FRAGMENT : TypedDocumentNode<any, any> = gql`
   fragment FormSharingSettingsFragment on FormSharingSettings {
     sharingScope
     defaultPermission
@@ -35,7 +36,7 @@ export const FORM_SHARING_SETTINGS_FRAGMENT = gql`
 `;
 
 // Queries
-export const GET_FORM_PERMISSIONS = gql`
+export const GET_FORM_PERMISSIONS : TypedDocumentNode<any, any> = gql`
   query GetFormPermissions($formId: ID!) {
     formPermissions(formId: $formId) {
       ...FormPermissionFragment
@@ -44,7 +45,7 @@ export const GET_FORM_PERMISSIONS = gql`
   ${FORM_PERMISSION_FRAGMENT}
 `;
 
-export const GET_ORGANIZATION_MEMBERS = gql`
+export const GET_ORGANIZATION_MEMBERS : TypedDocumentNode<any, any> = gql`
   query GetOrganizationMembers($organizationId: ID!) {
     organizationMembers(organizationId: $organizationId) {
       id
@@ -57,7 +58,7 @@ export const GET_ORGANIZATION_MEMBERS = gql`
 
 
 // Mutations
-export const SHARE_FORM = gql`
+export const SHARE_FORM : TypedDocumentNode<any, any> = gql`
   mutation ShareForm($input: ShareFormInput!) {
     shareForm(input: $input) {
       ...FormSharingSettingsFragment
@@ -66,7 +67,7 @@ export const SHARE_FORM = gql`
   ${FORM_SHARING_SETTINGS_FRAGMENT}
 `;
 
-export const UPDATE_FORM_PERMISSION = gql`
+export const UPDATE_FORM_PERMISSION : TypedDocumentNode<any, any> = gql`
   mutation UpdateFormPermission($input: UpdateFormPermissionInput!) {
     updateFormPermission(input: $input) {
       ...FormPermissionFragment
@@ -75,7 +76,7 @@ export const UPDATE_FORM_PERMISSION = gql`
   ${FORM_PERMISSION_FRAGMENT}
 `;
 
-export const REMOVE_FORM_ACCESS = gql`
+export const REMOVE_FORM_ACCESS : TypedDocumentNode<any, any> = gql`
   mutation RemoveFormAccess($formId: ID!, $userId: ID!) {
     removeFormAccess(formId: $formId, userId: $userId)
   }
