@@ -83,6 +83,7 @@ interface CreateResponsesColumnsOptions {
     responseId: string
   ) => void;
   onDeleteResponse: (responseId: string) => void;
+  responses?: FormResponse[];
   t: (
     key: string,
     options?: {
@@ -415,90 +416,138 @@ function extractFileName(key: string): string {
 }
 
 /**
- * Create field columns based on form schema
+ * Create field columns based on form schema — three groups:
+ * 1. Active fields (sortable)
+ * 2. Soft-deleted fields (amber "deleted" badge, no sort)
+ * 3. Orphan field IDs present in response data but absent from schema (historical deletions)
  */
 const createFieldColumns = (
   formSchema: FormSchema,
+  responses: FormResponse[],
   t: CreateResponsesColumnsOptions['t']
 ): ColumnDef<FormResponse>[] => {
-  const fieldColumns: ColumnDef<FormResponse>[] = [];
+  const activeColumns: ColumnDef<FormResponse>[] = [];
+  const deletedColumns: ColumnDef<FormResponse>[] = [];
 
+  // --- Group 1: active fields; Group 2: soft-deleted fields ---
   formSchema.pages.forEach((page) => {
     page.fields.forEach((field) => {
-      if (field instanceof FillableFormField) {
-        fieldColumns.push({
-          accessorKey: `data.${field.id}`,
-          id: `field-${field.id}`,
-          header: ({ column }) => (
-            <TFColumnHeader
-              column={column}
-              icon={<FieldIconChip fieldType={field.type} />}
-              title={field.label}
-            />
-          ),
-          cell: ({ row }) => {
-            const value = row.original.data[field.id];
+      if (!(field instanceof FillableFormField)) return;
 
-            // File upload fields: render clickable download links
-            if (field.type === FieldType.FILE_UPLOAD_FIELD) {
-              const keys: string[] = Array.isArray(value) ? value : [];
-              if (keys.length === 0) {
-                return (
-                  <div className="flex items-center space-x-2 text-muted-foreground">
-                    <Upload className="h-4 w-4" />
-                    <span className="text-sm italic">
-                      {t('table.fieldResponses.noResponse')}
-                    </span>
-                  </div>
-                );
-              }
-              return (
-                <div className="flex flex-col gap-1">
-                  {keys.map((key, idx) => (
-                    <FileDownloadLink key={idx} s3Key={key} />
-                  ))}
-                </div>
-              );
-            }
+      const isDeleted = field.deleted === true;
 
-            const formattedValue = formatFieldValueUtil(value, field.type);
+      // TFColumnHeader only accepts title: string, so deleted columns use a custom header
+      const col: ColumnDef<FormResponse> = {
+        accessorKey: `data.${field.id}`,
+        id: `field-${field.id}`,
+        header: isDeleted
+          ? () => (
+              <div className="flex items-center gap-1.5">
+                <FieldIconChip fieldType={field.type} />
+                <span className="text-[13px] text-muted-foreground italic truncate">{field.label}</span>
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                  deleted
+                </span>
+              </div>
+            )
+          : ({ column }) => (
+              <TFColumnHeader
+                column={column}
+                icon={<FieldIconChip fieldType={field.type} />}
+                title={field.label}
+              />
+            ),
+        cell: ({ row }) => {
+          const value = row.original.data[field.id];
 
-            if (!formattedValue) {
+          if (!isDeleted && field.type === FieldType.FILE_UPLOAD_FIELD) {
+            const keys: string[] = Array.isArray(value) ? value : [];
+            if (keys.length === 0) {
               return (
                 <div className="flex items-center space-x-2 text-muted-foreground">
-                  {getFieldIcon(field.type)}
-                  <span className="text-sm italic">
-                    {t('table.fieldResponses.noResponse')}
-                  </span>
+                  <Upload className="h-4 w-4" />
+                  <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
                 </div>
               );
             }
-
             return (
-              <div className="flex items-center space-x-2">
-                <div className="text-muted-foreground">
-                  {getFieldIcon(field.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span
-                    className="text-sm font-medium truncate block"
-                    title={formattedValue}
-                  >
-                    {formattedValue}
-                  </span>
-                </div>
+              <div className="flex flex-col gap-1">
+                {keys.map((key, idx) => (
+                  <FileDownloadLink key={idx} s3Key={key} />
+                ))}
               </div>
             );
-          },
-          enableSorting: true,
-          enableHiding: true,
-          size: 200,
-        });
+          }
+
+          const formattedValue = formatFieldValueUtil(value, field.type);
+          if (!formattedValue) {
+            return (
+              <div className="flex items-center space-x-2 text-muted-foreground">
+                {getFieldIcon(field.type)}
+                <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
+              </div>
+            );
+          }
+          return (
+            <div className="flex items-center space-x-2">
+              <div className="text-muted-foreground">{getFieldIcon(field.type)}</div>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium truncate block" title={formattedValue}>
+                  {formattedValue}
+                </span>
+              </div>
+            </div>
+          );
+        },
+        enableSorting: !isDeleted,
+        enableHiding: true,
+        size: 200,
+      };
+
+      if (isDeleted) {
+        deletedColumns.push(col);
+      } else {
+        activeColumns.push(col);
       }
     });
   });
 
-  return fieldColumns;
+  // --- Group 3: orphan field IDs (historical deletions before this feature) ---
+  const knownFieldIds = new Set(
+    formSchema.pages.flatMap((p) => p.fields.map((f) => f.id))
+  );
+  const orphanIds = new Set(
+    responses.flatMap((r) => Object.keys(r.data)).filter((id) => !knownFieldIds.has(id))
+  );
+
+  const orphanColumns: ColumnDef<FormResponse>[] = Array.from(orphanIds).map((fieldId) => ({
+    accessorKey: `data.${fieldId}`,
+    id: `orphan-${fieldId}`,
+    header: () => (
+      <span className="text-muted-foreground italic flex items-center gap-1.5">
+        Unknown field
+        <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 not-italic">
+          deleted
+        </span>
+      </span>
+    ),
+    cell: ({ row }) => {
+      const value = row.original.data[fieldId];
+      if (value === undefined || value === null || value === '') {
+        return <span className="text-sm italic text-muted-foreground">—</span>;
+      }
+      return (
+        <span className="text-sm font-medium truncate block" title={String(value)}>
+          {String(value)}
+        </span>
+      );
+    },
+    enableSorting: false,
+    enableHiding: true,
+    size: 200,
+  }));
+
+  return [...activeColumns, ...deletedColumns, ...orphanColumns];
 };
 
 const ResponsesActionsCell: React.FC<{
@@ -650,6 +699,7 @@ export const createResponsesColumns = ({
   formTags = [],
   onPluginClick,
   onDeleteResponse,
+  responses = [],
   t,
 }: CreateResponsesColumnsOptions): ColumnDef<FormResponse>[] => {
   if (!formSchema) return [];
@@ -711,7 +761,7 @@ export const createResponsesColumns = ({
   };
 
   // Field columns
-  const fieldColumns = createFieldColumns(deserializedSchema, t);
+  const fieldColumns = createFieldColumns(deserializedSchema, responses, t);
 
   // Plugin columns — pass full plugin instances so column titles can be
   // derived from each plugin's stored config (e.g. quiz columnName setting)

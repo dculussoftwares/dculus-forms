@@ -28,7 +28,7 @@ import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { DELETE_RESPONSE, DELETE_PREVIEW_RESPONSES } from '../graphql/mutations';
-import { deserializeFormSchema, FillableFormField, FormSchema } from '@dculus/types';
+import { deserializeFormSchema, FillableFormField, FormResponse, FormSchema } from '@dculus/types';
 import { AlertCircle, ArrowLeft, FileSpreadsheet, FileText, RotateCcw, Trash2, X } from 'lucide-react';
 
 interface BulkActionBarProps {
@@ -220,6 +220,8 @@ const Responses: React.FC = () => {
     return fields;
   }, [formData]);
 
+  const responses: FormResponse[] = responsesData?.responsesByForm?.data ?? [];
+
   const columns = useMemo(
     () => createResponsesColumns({
       formSchema: formData?.form?.formSchema,
@@ -227,13 +229,14 @@ const Responses: React.FC = () => {
       pluginsData,
       locale,
       formTags: userFormTags,
+      responses,
       onPluginClick: (pluginType, metadata, responseId) => {
         responsesState.setPluginDialogState({ pluginType, metadata, responseId });
       },
       onDeleteResponse: handleDeleteResponse,
       t,
     }),
-    [formData, pluginsData, formTags, locale, actualFormId, t]
+    [formData, pluginsData, formTags, locale, actualFormId, responses, t]
   );
 
   // Apply stored column order: fixed cols keep their positions; hideable cols are reordered
@@ -256,7 +259,6 @@ const Responses: React.FC = () => {
   const loading = formLoading;
   const error = formError || responsesError;
   const responsePagination = responsesData?.responsesByForm;
-  const responses = responsePagination?.data || [];
 
   const previewResponseCount = responses.filter((r: any) =>
     r.tags?.some((tag: any) => tag.name === PREVIEW_TAG_NAME)
