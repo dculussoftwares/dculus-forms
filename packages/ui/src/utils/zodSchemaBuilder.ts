@@ -342,7 +342,7 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
 export const createPageSchema = (page: FormPage): z.ZodObject<any> => {
   const schemaFields: Record<string, z.ZodTypeAny> = {};
 
-  page.fields.forEach((field) => {
+  page.fields.filter((field: any) => !field.deleted).forEach((field) => {
     schemaFields[field.id] = createFieldSchema(field);
   });
 
@@ -357,7 +357,7 @@ export const createPageDefaultValues = (
 ): Record<string, any> => {
   const defaultValues: Record<string, any> = {};
 
-  page.fields.forEach((field) => {
+  page.fields.filter((field: any) => !field.deleted).forEach((field) => {
     const fillableField = isFillableField(field)
       ? (field as FillableFormField)
       : null;

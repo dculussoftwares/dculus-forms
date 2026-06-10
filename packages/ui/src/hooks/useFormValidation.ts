@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useEffect } from 'react';
-import { FormState, UseFormReturn } from 'react-hook-form';
+import { UseFormReturn } from 'react-hook-form';
 import { FieldValues } from 'react-hook-form';
 import { FormPage } from '@dculus/types';
 import { FormValidationState } from '../types/validation';
@@ -55,7 +55,7 @@ export const useFormValidation = (
     await trigger();
 
     // Focus each field briefly to mark it as touched and show errors
-    for (const field of page.fields) {
+    for (const field of page.fields.filter((f: any) => !f.deleted)) {
       try {
         setFocus(field.id);
         // Small delay to ensure the field is properly focused and touched

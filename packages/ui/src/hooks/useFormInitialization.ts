@@ -35,7 +35,7 @@ export const useFormInitialization = (page: FormPage) => {
     // Ensure no undefined values in the merged object
     const cleanedValues: Record<string, any> = {};
 
-    page.fields.forEach((field) => {
+    page.fields.filter((field: any) => !field.deleted).forEach((field) => {
       const value = merged[field.id];
       cleanedValues[field.id] =
         value !== undefined ? value : getFieldDefaultValue(field.type);
