@@ -1,9 +1,11 @@
 import { useEffect, useCallback } from 'react';
-import { gql } from '@apollo/client'
+import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { getOrCreateSessionId } from '../lib/sessionId';
 
-const TRACK_FORM_VIEW = gql`
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TRACK_FORM_VIEW: TypedDocumentNode<any, any> = gql`
   mutation TrackFormView($input: TrackFormViewInput!) {
     trackFormView(input: $input) {
       success
@@ -11,7 +13,8 @@ const TRACK_FORM_VIEW = gql`
   }
 `;
 
-const UPDATE_FORM_START_TIME = gql`
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const UPDATE_FORM_START_TIME: TypedDocumentNode<any, any> = gql`
   mutation UpdateFormStartTime($input: UpdateFormStartTimeInput!) {
     updateFormStartTime(input: $input) {
       success

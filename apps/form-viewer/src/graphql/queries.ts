@@ -1,6 +1,8 @@
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
-export const GET_FORM_BY_SHORT_URL = gql`
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
   query GetFormByShortUrl($shortUrl: String!) {
     formByShortUrl(shortUrl: $shortUrl) {
       id
@@ -32,7 +34,8 @@ export const GET_FORM_BY_SHORT_URL = gql`
   }
 `;
 
-export const SUBMIT_RESPONSE = gql`
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const SUBMIT_RESPONSE: TypedDocumentNode<any, any> = gql`
   mutation SubmitResponse($input: SubmitResponseInput!) {
     submitResponse(input: $input) {
       id

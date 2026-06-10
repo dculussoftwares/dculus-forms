@@ -4,16 +4,22 @@ pre-commit:
     lint:
       run: pnpm lint-staged
 
-# pre-push: catches what would break CI — runs in parallel (~20-30s)
+# pre-push: mirrors CI — runs in parallel (~2-3 min)
 pre-push:
   parallel: true
   commands:
-    type-check:
-      name: Type check (all packages)
-      run: pnpm type-check
     test-backend:
       name: Backend unit tests + coverage thresholds
       run: pnpm --filter backend test:coverage
     test-form-viewer:
       name: Form-viewer unit tests
       run: pnpm --filter form-viewer test:unit
+    build-form-viewer:
+      name: Build form-viewer (tsc -b + vite)
+      run: pnpm --filter form-viewer build
+    build-form-app:
+      name: Build form-app (tsc -b + vite)
+      run: pnpm --filter form-app build
+    build-admin-app:
+      name: Build admin-app (tsc -b + vite)
+      run: pnpm --filter admin-app build
