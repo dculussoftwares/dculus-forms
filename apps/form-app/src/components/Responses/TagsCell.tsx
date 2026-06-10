@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { useMutation, useApolloClient } from '@apollo/client/react';
+import { useMutation } from '@apollo/client/react';
+import { gql } from '@apollo/client';
 import {
   Popover,
   PopoverContent,
@@ -19,6 +20,15 @@ import {
   REMOVE_TAG_FROM_RESPONSE,
   CREATE_TAG,
 } from '../../graphql/mutations';
+import { GET_FORM_TAGS } from '../../graphql/queries';
+
+const TAG_FRAGMENT = gql`
+  fragment TagCellFields on ResponseTag {
+    id
+    name
+    color
+  }
+`;
 
 const PREVIEW_TAG_NAME = '__preview__';
 
@@ -53,15 +63,54 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
   const [search, setSearch] = useState('');
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const client = useApolloClient();
 
   const assignedIds = new Set((response.tags ?? []).map((t) => t.id));
 
-  const refetchAll = () => client.refetchQueries({ include: 'active' });
+  const [addTag, { loading: adding }] = useMutation<any, any>(ADD_TAG_TO_RESPONSE, {
+    update(cache, _result, { variables }) {
+      const { responseId, tagId } = variables ?? {};
+      const tagData = cache.readFragment<{ id: string; name: string; color: string }>({
+        id: cache.identify({ __typename: 'ResponseTag', id: tagId }),
+        fragment: TAG_FRAGMENT,
+      });
+      if (!tagData) return;
+      cache.modify({
+        id: cache.identify({ __typename: 'FormResponse', id: responseId }),
+        fields: {
+          tags(existingRefs = [], { readField }) {
+            if (existingRefs.some((ref: any) => readField('id', ref) === tagId)) return existingRefs;
+            const newRef = cache.writeFragment({ data: { __typename: 'ResponseTag', ...tagData }, fragment: TAG_FRAGMENT });
+            return [...existingRefs, newRef];
+          },
+        },
+      });
+    },
+  });
 
-  const [addTag, { loading: adding }] = useMutation<any, any>(ADD_TAG_TO_RESPONSE, { onCompleted: refetchAll });
-  const [removeTag, { loading: removing }] = useMutation<any, any>(REMOVE_TAG_FROM_RESPONSE, { onCompleted: refetchAll });
-  const [createTag, { loading: creating }] = useMutation<any, any>(CREATE_TAG);
+  const [removeTag, { loading: removing }] = useMutation<any, any>(REMOVE_TAG_FROM_RESPONSE, {
+    update(cache, _result, { variables }) {
+      const { responseId, tagId } = variables ?? {};
+      cache.modify({
+        id: cache.identify({ __typename: 'FormResponse', id: responseId }),
+        fields: {
+          tags(existingRefs = [], { readField }) {
+            return existingRefs.filter((ref: any) => readField('id', ref) !== tagId);
+          },
+        },
+      });
+    },
+  });
+
+  const [createTag, { loading: creating }] = useMutation<any, any>(CREATE_TAG, {
+    update(cache, { data }) {
+      if (!data?.createTag) return;
+      const newTag = { __typename: 'ResponseTag', ...data.createTag };
+      cache.updateQuery<{ formTags: { id: string; name: string; color: string }[] }>(
+        { query: GET_FORM_TAGS, variables: { formId } },
+        (existing) => ({ formTags: [...(existing?.formTags ?? []), newTag] }),
+      );
+    },
+  });
 
   const loading = adding || removing || creating;
 
@@ -87,8 +136,6 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
     const { data } = await createTag({ variables: { formId, name: trimmed, color: selectedColor } });
     if (data?.createTag?.id) {
       await addTag({ variables: { responseId: response.id, tagId: data.createTag.id } });
-    } else {
-      await refetchAll();
     }
     setSearch('');
     setSelectedColor(PRESET_COLORS[0]);
