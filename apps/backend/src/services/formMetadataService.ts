@@ -28,8 +28,12 @@ export const extractFormStatsFromYDoc = (ydoc: Y.Doc): FormMetadataStats => {
     let fieldCount = 0;
     if (pagesArray) {
       pagesArray.forEach((pageMap) => {
-        const fieldsArray = pageMap.get('fields') as Y.Array<any>;
-        fieldCount += fieldsArray?.length || 0;
+        const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
+        if (fieldsArray) {
+          fieldsArray.forEach((fieldMap) => {
+            if (fieldMap.get('deleted') !== true) fieldCount++;
+          });
+        }
       });
     }
 
