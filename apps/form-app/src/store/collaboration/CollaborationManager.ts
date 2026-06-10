@@ -30,6 +30,7 @@ export type FieldData = {
   allowedMimeTypes?: string[];
   maxFileSizeMb?: number;
   maxFiles?: number;
+  deleted?: boolean;
 };
 
 export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
@@ -88,6 +89,7 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
       : undefined,
     maxFileSizeMb: fieldMap.get('maxFileSizeMb'),
     maxFiles: fieldMap.get('maxFiles'),
+    deleted: fieldMap.get('deleted') || undefined,
   };
 
   if (fieldType === FieldType.RICH_TEXT_FIELD) {
@@ -149,12 +151,14 @@ const deserializePagesFromYJS = (
             };
           }
 
-          return deserializeFormField({
+          const field = deserializeFormField({
             ...fieldData,
             validation: validationObj,
           });
+          if (field && fieldData.deleted) field.deleted = true;
+          return field;
         })
-        .filter((f): f is FormField => f !== null)
+        .filter((f): f is FormField => f !== null && !f.deleted)
       : [];
 
     return {
