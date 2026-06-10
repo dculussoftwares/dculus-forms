@@ -151,8 +151,8 @@ export const responsesResolvers = {
         throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
 
-      // Check if form is published - critical business rule
-      if (!form.isPublished) {
+      // Check if form is published — preview submissions bypass this so builders can test draft forms
+      if (!form.isPublished && !input.isPreview) {
         throw createGraphQLError('Form is not published and cannot accept responses', GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
       }
 

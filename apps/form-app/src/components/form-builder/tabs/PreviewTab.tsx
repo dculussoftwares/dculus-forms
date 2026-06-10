@@ -40,9 +40,13 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
     async (_formId: string, data: Record<string, any>) => {
       if (!formId) return;
       try {
-        await submitResponse({
+        const result = await submitResponse({
           variables: { input: { formId, data, isPreview: true } },
         });
+        if (result.error) {
+          toastError('Submission failed', result.error.message);
+          return;
+        }
         toastSuccess('Preview submitted', 'Response saved with a Preview tag');
         setSubmitCount((c) => c + 1);
       } catch (err: unknown) {
