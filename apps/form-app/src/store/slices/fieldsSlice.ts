@@ -341,7 +341,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         .findIndex((fieldMap) => fieldMap.get('id') === fieldId);
 
       if (fieldIndex !== -1) {
-        fieldsArray.delete(fieldIndex, 1);
+        ydoc.transact(() => {
+          fieldsArray.get(fieldIndex).set('deleted', true);
+        });
       }
     },
 
