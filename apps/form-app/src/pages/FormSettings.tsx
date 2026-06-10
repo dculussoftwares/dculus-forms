@@ -60,7 +60,7 @@ const FormSettings: React.FC = () => {
     },
   });
 
-  const [updateForm] = useMutation<any, any>(UPDATE_FORM, {
+  const [updateForm] = useMutation(UPDATE_FORM, {
     onCompleted: () => {
       setIsSaving(false);
       setErrors({});
@@ -75,7 +75,7 @@ const FormSettings: React.FC = () => {
     },
   });
 
-  const [regenerateShortUrl] = useMutation<any, any>(REGENERATE_SHORT_URL, {
+  const [regenerateShortUrl] = useMutation(REGENERATE_SHORT_URL, {
     onCompleted: () => {
       setIsSaving(false);
       setErrors({});

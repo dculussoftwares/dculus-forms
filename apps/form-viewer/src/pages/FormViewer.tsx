@@ -102,7 +102,7 @@ const FormViewer: React.FC = () => {
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [submitResponse] = useMutation<any, any>(SUBMIT_RESPONSE);
+  const [submitResponse] = useMutation(SUBMIT_RESPONSE);
 
   // Track form analytics when form is loaded
   const { trackFormStartTime } = useFormAnalytics({

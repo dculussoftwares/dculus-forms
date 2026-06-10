@@ -244,8 +244,8 @@ const CreateFormWizard: React.FC = () => {
     skip: step !== 'template',
   });
 
-  const [generateForm] = useMutation<any, any>(GENERATE_FORM_WITH_AI);
-  const [createForm] = useMutation<any, any>(CREATE_FORM);
+  const [generateForm] = useMutation(GENERATE_FORM_WITH_AI);
+  const [createForm] = useMutation(CREATE_FORM);
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const templates: any[] = templatesData?.templates ?? [];

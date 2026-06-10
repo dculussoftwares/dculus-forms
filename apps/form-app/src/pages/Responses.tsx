@@ -120,7 +120,7 @@ const Responses: React.FC = () => {
     }
   };
 
-  const [deleteResponseMutation] = useMutation<any, any>(DELETE_RESPONSE, {
+  const [deleteResponseMutation] = useMutation(DELETE_RESPONSE, {
     refetchQueries: [
       {
         query: GET_FORM_RESPONSES,
@@ -144,7 +144,7 @@ const Responses: React.FC = () => {
   const [clearingPreview, setClearingPreview] = useState(false);
   const [showClearPreviewDialog, setShowClearPreviewDialog] = useState(false);
 
-  const [deletePreviewResponsesMutation] = useMutation<any, any>(DELETE_PREVIEW_RESPONSES, {
+  const [deletePreviewResponsesMutation] = useMutation(DELETE_PREVIEW_RESPONSES, {
     refetchQueries: [
       {
         query: GET_FORM_RESPONSES,

@@ -39,7 +39,7 @@ export const useFormSettings = ({
 
   const { t: tErr } = useTranslation('graphqlErrors');
 
-  const [updateForm] = useMutation<any, any>(UPDATE_FORM, {
+  const [updateForm] = useMutation(UPDATE_FORM, {
     onCompleted: () => {
       setIsSaving(false);
       onSuccess?.();

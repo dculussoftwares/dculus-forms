@@ -82,8 +82,8 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     const [duplicateProgress, setDuplicateProgress] = useState(0);
     const permissions = useFormPermissions();
     const navigate = useNavigate();
-    const [duplicateFormMutation, { loading: isDuplicating }] = useMutation<any, any>(DUPLICATE_FORM);
-    const [updateFormMutation] = useMutation<any, any>(UPDATE_FORM);
+    const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
+    const [updateFormMutation] = useMutation(UPDATE_FORM);
 
     useEffect(() => {
         if (initialFormTitle) setFormTitle(initialFormTitle);

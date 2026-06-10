@@ -113,9 +113,9 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [createTemplate, { loading: creating }] = useMutation<any, any>(CREATE_TEMPLATE);
+  const [createTemplate, { loading: creating }] = useMutation(CREATE_TEMPLATE);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [updateTemplate, { loading: updating }] = useMutation<any, any>(UPDATE_TEMPLATE);
+  const [updateTemplate, { loading: updating }] = useMutation(UPDATE_TEMPLATE);
 
   const categories = categoriesData?.templateCategories || [];
   const isLoading = creating || updating || templateLoading;

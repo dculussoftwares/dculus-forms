@@ -90,7 +90,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   );
 
-  const [shareForm, { loading: sharing }] = useMutation<any, any>(SHARE_FORM, {
+  const [shareForm, { loading: sharing }] = useMutation(SHARE_FORM, {
     onCompleted: () => {
       toastSuccess(t('toast.success.settingsUpdated'));
       refetchPermissions();
@@ -100,7 +100,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   });
 
-  const [updatePermission] = useMutation<any, any>(UPDATE_FORM_PERMISSION, {
+  const [updatePermission] = useMutation(UPDATE_FORM_PERMISSION, {
     onCompleted: () => {
       toastSuccess(t('toast.success.permissionUpdated'));
       refetchPermissions();
@@ -110,7 +110,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     }
   });
 
-  const [removeAccess] = useMutation<any, any>(REMOVE_FORM_ACCESS, {
+  const [removeAccess] = useMutation(REMOVE_FORM_ACCESS, {
     onCompleted: () => {
       toastSuccess(t('toast.success.accessRemoved'));
       refetchPermissions();

@@ -37,7 +37,7 @@ export default function TemplatesPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, loading, error, refetch } = useQuery<any, any>(GET_TEMPLATES);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [deleteTemplate] = useMutation<any, any>(DELETE_TEMPLATE);
+  const [deleteTemplate] = useMutation(DELETE_TEMPLATE);
 
   const templates: Template[] = data?.templates || [];
 

@@ -86,7 +86,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     errorPolicy: 'all',
   });
 
-  const [updateForm, { loading: updateLoading }] = useMutation<any, any>(UPDATE_FORM);
+  const [updateForm, { loading: updateLoading }] = useMutation(UPDATE_FORM);
 
   const {
     isConnected,

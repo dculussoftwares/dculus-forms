@@ -65,9 +65,9 @@ export function useAIChat({
     skip: !activeConversationId,
   });
 
-  const [createConvMutation] = useMutation<any, any>(CREATE_AI_CHAT_CONVERSATION);
-  const [deleteConvMutation] = useMutation<any, any>(DELETE_AI_CHAT_CONVERSATION);
-  const [renameConvMutation] = useMutation<any, any>(RENAME_AI_CHAT_CONVERSATION);
+  const [createConvMutation] = useMutation(CREATE_AI_CHAT_CONVERSATION);
+  const [deleteConvMutation] = useMutation(DELETE_AI_CHAT_CONVERSATION);
+  const [renameConvMutation] = useMutation(RENAME_AI_CHAT_CONVERSATION);
 
   // ── Build initialMessages from Apollo conversation data ───────────────────
   const apolloMessages = activeConvData?.getAIChatConversation?.messages;

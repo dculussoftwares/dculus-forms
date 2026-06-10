@@ -86,7 +86,7 @@ export function BillingSettings() {
   const [showChart, setShowChart] = useState(false);
 
   const { data: subData, loading: subLoading } = useQuery<any, any>(GET_SUBSCRIPTION);
-  const [createPortalSession, { loading: portalLoading }] = useMutation<any, any>(CREATE_PORTAL_SESSION);
+  const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
 
   const subscription = subData?.activeOrganization?.subscription;
   const organizationId = subData?.activeOrganization?.id ?? '';

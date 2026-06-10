@@ -40,7 +40,7 @@ const FormDashboard: React.FC = () => {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [duplicateProgress, setDuplicateProgress] = useState(0);
   const { t } = useTranslation('formDashboard');
-  const [duplicateFormMutation, { loading: isDuplicating }] = useMutation<any, any>(DUPLICATE_FORM);
+  const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
 
   const {
     form,

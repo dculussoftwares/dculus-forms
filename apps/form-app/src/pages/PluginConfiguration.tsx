@@ -32,8 +32,8 @@ const PluginConfiguration: React.FC = () => {
     skip: !pluginId,
   });
 
-  const [createPlugin] = useMutation<any, any>(CREATE_FORM_PLUGIN);
-  const [updatePlugin] = useMutation<any, any>(UPDATE_FORM_PLUGIN);
+  const [createPlugin] = useMutation(CREATE_FORM_PLUGIN);
+  const [updatePlugin] = useMutation(UPDATE_FORM_PLUGIN);
 
   const mode = pluginId ? 'edit' : 'create';
   const currentPluginType = pluginId ? pluginData?.formPlugin?.type : pluginType;

@@ -66,7 +66,7 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
 
   const assignedIds = new Set((response.tags ?? []).map((t) => t.id));
 
-  const [addTag, { loading: adding }] = useMutation<any, any>(ADD_TAG_TO_RESPONSE, {
+  const [addTag, { loading: adding }] = useMutation(ADD_TAG_TO_RESPONSE, {
     update(cache, _result, { variables }) {
       const { responseId, tagId } = variables ?? {};
       const tagData = cache.readFragment<{ id: string; name: string; color: string }>({
@@ -87,7 +87,7 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
     },
   });
 
-  const [removeTag, { loading: removing }] = useMutation<any, any>(REMOVE_TAG_FROM_RESPONSE, {
+  const [removeTag, { loading: removing }] = useMutation(REMOVE_TAG_FROM_RESPONSE, {
     update(cache, _result, { variables }) {
       const { responseId, tagId } = variables ?? {};
       cache.modify({
@@ -101,7 +101,7 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
     },
   });
 
-  const [createTag, { loading: creating }] = useMutation<any, any>(CREATE_TAG, {
+  const [createTag, { loading: creating }] = useMutation(CREATE_TAG, {
     update(cache, { data }) {
       if (!data?.createTag) return;
       const newTag = { __typename: 'ResponseTag', ...data.createTag };

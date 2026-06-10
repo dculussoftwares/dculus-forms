@@ -78,7 +78,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
     skip: !formId || !organizationId,
   });
 
-  const [generateInsights, { loading: generatingInsights }] = useMutation<any, any>(GENERATE_FIELD_INSIGHTS, {
+  const [generateInsights, { loading: generatingInsights }] = useMutation(GENERATE_FIELD_INSIGHTS, {
     variables: { formId, organizationId },
     onCompleted: () => refetchInsights(),
     onError: (err) => {

@@ -84,7 +84,7 @@ const ResponseEdit: React.FC = () => {
   });
 
   // Update response mutation
-  const [updateResponseMutation] = useMutation<any, any>(UPDATE_RESPONSE, {
+  const [updateResponseMutation] = useMutation(UPDATE_RESPONSE, {
     // Refetch queries to update the cache after successful update
     refetchQueries: [
       {
@@ -102,7 +102,7 @@ const ResponseEdit: React.FC = () => {
     awaitRefetchQueries: true,
   });
 
-  const [deleteFileMutation] = useMutation<any, any>(DELETE_FILE);
+  const [deleteFileMutation] = useMutation(DELETE_FILE);
 
   const handleResponseUpdate = async (
     responseId: string,

@@ -60,7 +60,7 @@ export function TeamSwitcher() {
   });
 
   // Mutation to set active organization
-  const [setActiveOrganization] = useMutation<any, any>(SET_ACTIVE_ORGANIZATION, {
+  const [setActiveOrganization] = useMutation(SET_ACTIVE_ORGANIZATION, {
     onCompleted: async () => {
       await apolloClient.resetStore();
       setIsLoading(false);

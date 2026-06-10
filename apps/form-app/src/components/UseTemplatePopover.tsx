@@ -47,7 +47,7 @@ export const UseTemplatePopover: React.FC<UseTemplatePopoverProps> = ({
 
   const navigate = useNavigate();
   const { organizationId } = useAppConfig();
-  const [createForm, { loading }] = useMutation<any, any>(CREATE_FORM);
+  const [createForm, { loading }] = useMutation(CREATE_FORM);
 
   useEffect(() => {
     if (loading) {

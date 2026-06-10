@@ -16,7 +16,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
   const cdnEndpoint = getCdnEndpoint();
   const [submitCount, setSubmitCount] = useState(0);
 
-  const [submitResponse] = useMutation<any, any>(SUBMIT_RESPONSE);
+  const [submitResponse] = useMutation(SUBMIT_RESPONSE);
 
   const formSchema: FormSchema = React.useMemo(
     () => ({

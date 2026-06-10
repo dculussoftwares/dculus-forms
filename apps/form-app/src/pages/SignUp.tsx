@@ -36,7 +36,7 @@ export const SignUp = () => {
   const { t } = useTranslation('signUp');
 
   // GraphQL mutation for initializing organization subscription
-  const [initializeSubscription] = useMutation<any, any>(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
+  const [initializeSubscription] = useMutation(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
 
   // Check for invitation context
   const invitationEmail = location.state?.email;

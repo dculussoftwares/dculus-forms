@@ -35,7 +35,7 @@ export const useFormDashboard = (formId: string | undefined) => {
   });
 
 
-  const [deleteForm, { loading: deleteLoading }] = useMutation<any, any>(DELETE_FORM, {
+  const [deleteForm, { loading: deleteLoading }] = useMutation(DELETE_FORM, {
     update: (cache, { data }) => {
       if (!data?.deleteForm || !formId) return;
       cache.evict({ id: cache.identify({ __typename: 'Form', id: formId }) });
@@ -51,7 +51,7 @@ export const useFormDashboard = (formId: string | undefined) => {
     },
   });
 
-  const [updateForm, { loading: updateLoading }] = useMutation<any, any>(UPDATE_FORM, {
+  const [updateForm, { loading: updateLoading }] = useMutation(UPDATE_FORM, {
     onCompleted: (data) => {
       // Show celebration animation when form is published
       if (data?.updateForm?.isPublished) {

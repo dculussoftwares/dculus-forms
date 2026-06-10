@@ -232,8 +232,8 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
   const clearRowSelection = () => setRowSelection({});
 
   // Mutations
-  const [generateReport, { loading: exportLoading }] = useMutation<any, any>(GENERATE_FORM_RESPONSE_REPORT);
-  const [bulkDeleteMutation, { loading: bulkDeleteLoading }] = useMutation<any, any>(DELETE_RESPONSES);
+  const [generateReport, { loading: exportLoading }] = useMutation(GENERATE_FORM_RESPONSE_REPORT);
+  const [bulkDeleteMutation, { loading: bulkDeleteLoading }] = useMutation(DELETE_RESPONSES);
   const isExporting = exportLoading;
   const isBulkDeleting = bulkDeleteLoading;
 

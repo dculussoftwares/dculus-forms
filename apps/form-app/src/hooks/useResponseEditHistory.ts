@@ -66,7 +66,7 @@ export const useResponseEditHistory = ({
   }, [historyError]);
 
   // Update response with tracking mutation
-  const [updateResponseMutation, { loading: isUpdating }] = useMutation<any, any>(
+  const [updateResponseMutation, { loading: isUpdating }] = useMutation(
     UPDATE_RESPONSE_WITH_TRACKING,
     {
       onCompleted: () => {

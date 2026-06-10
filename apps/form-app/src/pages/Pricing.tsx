@@ -26,7 +26,7 @@ export const Pricing = () => {
 
   const { data, loading } = useQuery<any, any>(GET_AVAILABLE_PLANS);
   const [createCheckoutSession, { loading: checkoutLoading }] =
-    useMutation<any, any>(CREATE_CHECKOUT_SESSION);
+    useMutation(CREATE_CHECKOUT_SESSION);
 
   const plans = data?.availablePlans || [];
 

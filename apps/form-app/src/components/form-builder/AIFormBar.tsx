@@ -90,7 +90,7 @@ const AIFormBar: React.FC<AIFormBarProps> = ({ organizationId, className }) => {
   const targetPageId =
     selectedPageId ?? pages[0]?.id ?? null;
 
-  const [generateForm, { loading }] = useMutation<any, any>(GENERATE_FORM_WITH_AI, {
+  const [generateForm, { loading }] = useMutation(GENERATE_FORM_WITH_AI, {
     onCompleted(data) {
       const generated = data?.generateFormWithAI;
       if (!generated || !targetPageId) return;

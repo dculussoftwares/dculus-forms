@@ -53,7 +53,7 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
   );
 
   const { data, loading } = useQuery<any, any>(GET_AVAILABLE_PLANS);
-  const [createCheckoutSession, { loading: checkoutLoading }] = useMutation<any, any>(CREATE_CHECKOUT_SESSION);
+  const [createCheckoutSession, { loading: checkoutLoading }] = useMutation(CREATE_CHECKOUT_SESSION);
 
   const plans: any[] = data?.availablePlans || [];
 
