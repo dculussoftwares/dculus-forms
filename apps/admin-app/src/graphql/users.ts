@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
-export const ADMIN_USERS_QUERY = gql`
+export const ADMIN_USERS_QUERY : TypedDocumentNode<any, any> = gql`
   query AdminUsers($page: Int, $limit: Int, $search: String) {
     adminUsers(page: $page, limit: $limit, search: $search) {
       users {
@@ -26,7 +28,7 @@ export const ADMIN_USERS_QUERY = gql`
   }
 `;
 
-export const ADMIN_USER_BY_ID_QUERY = gql`
+export const ADMIN_USER_BY_ID_QUERY : TypedDocumentNode<any, any> = gql`
   query AdminUserById($id: String!) {
     adminUserById(id: $id) {
       id

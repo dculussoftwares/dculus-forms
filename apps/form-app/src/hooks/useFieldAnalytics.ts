@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { gql } from '@apollo/client'
+import type { TypedDocumentNode } from '@apollo/client';
 import { useQuery } from '@apollo/client/react';
 import { usePerformanceMonitor } from './usePerformanceMonitor';
 
 // GraphQL queries for field analytics
-const GET_FIELD_ANALYTICS = gql`
+const GET_FIELD_ANALYTICS : TypedDocumentNode<any, any> = gql`
   query GetFieldAnalytics($formId: ID!, $fieldId: ID!) {
     fieldAnalytics(formId: $formId, fieldId: $fieldId) {
       fieldId
@@ -170,7 +171,7 @@ const GET_FIELD_ANALYTICS = gql`
   }
 `;
 
-const GET_ALL_FIELDS_ANALYTICS = gql`
+const GET_ALL_FIELDS_ANALYTICS : TypedDocumentNode<any, any> = gql`
   query GetAllFieldsAnalytics($formId: ID!) {
     allFieldsAnalytics(formId: $formId) {
       formId
@@ -478,7 +479,7 @@ export interface AllFieldsAnalyticsData {
 
 // Hook for single field analytics
 export const useFieldAnalytics = (formId: string, fieldId: string) => {
-  const { data, loading, error, refetch } = useQuery<any, any>(GET_FIELD_ANALYTICS, {
+  const { data, loading, error, refetch } = useQuery(GET_FIELD_ANALYTICS, {
     variables: { formId, fieldId },
     skip: !formId || !fieldId,
     errorPolicy: 'all',
@@ -521,7 +522,7 @@ export const useFieldAnalytics = (formId: string, fieldId: string) => {
 
 // Hook for all fields analytics
 export const useAllFieldsAnalytics = (formId: string) => {
-  const { data, loading, error, refetch } = useQuery<any, any>(GET_ALL_FIELDS_ANALYTICS, {
+  const { data, loading, error, refetch } = useQuery(GET_ALL_FIELDS_ANALYTICS, {
     variables: { formId },
     skip: !formId,
     errorPolicy: 'all',

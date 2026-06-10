@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
-export const ADMIN_ORGANIZATION_BY_ID_QUERY = gql`
+export const ADMIN_ORGANIZATION_BY_ID_QUERY : TypedDocumentNode<any, any> = gql`
   query AdminOrganizationById($id: String!) {
     adminOrganizationById(id: $id) {
       id
@@ -36,25 +38,25 @@ export const ADMIN_ORGANIZATION_BY_ID_QUERY = gql`
   }
 `;
 
-export const ADMIN_CHANGE_PLAN_MUTATION = gql`
+export const ADMIN_CHANGE_PLAN_MUTATION : TypedDocumentNode<any, any> = gql`
   mutation AdminChangePlan($orgId: ID!, $planId: String!) {
     adminChangePlan(orgId: $orgId, planId: $planId)
   }
 `;
 
-export const ADMIN_RESET_USAGE_MUTATION = gql`
+export const ADMIN_RESET_USAGE_MUTATION : TypedDocumentNode<any, any> = gql`
   mutation AdminResetUsage($orgId: ID!) {
     adminResetUsage(orgId: $orgId)
   }
 `;
 
-export const ADMIN_CANCEL_SUBSCRIPTION_MUTATION = gql`
+export const ADMIN_CANCEL_SUBSCRIPTION_MUTATION : TypedDocumentNode<any, any> = gql`
   mutation AdminCancelSubscription($orgId: ID!) {
     adminCancelSubscription(orgId: $orgId)
   }
 `;
 
-export const ADMIN_REACTIVATE_SUBSCRIPTION_MUTATION = gql`
+export const ADMIN_REACTIVATE_SUBSCRIPTION_MUTATION : TypedDocumentNode<any, any> = gql`
   mutation AdminReactivateSubscription($orgId: ID!) {
     adminReactivateSubscription(orgId: $orgId)
   }

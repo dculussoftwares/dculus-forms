@@ -13,6 +13,7 @@ import type { Column, Row } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { gql } from '@apollo/client'
+import type { TypedDocumentNode } from '@apollo/client';
 import { useApolloClient } from '@apollo/client/react';
 import {
   AlertDialog,
@@ -341,7 +342,7 @@ const createBaseColumns = (
   ];
 };
 
-const GET_RESPONSE_FILE_DOWNLOAD_URL = gql`
+const GET_RESPONSE_FILE_DOWNLOAD_URL : TypedDocumentNode<any, any> = gql`
   query GetResponseFileDownloadUrl($key: String!) {
     getResponseFileDownloadUrl(key: $key)
   }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronsUpDown, Plus, Building2 } from 'lucide-react';
 import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
 
-const GET_USER_ORGANIZATIONS = gql`
+const GET_USER_ORGANIZATIONS : TypedDocumentNode<any, any> = gql`
   query GetUserOrganizations {
     me {
       id
@@ -35,7 +36,7 @@ const GET_USER_ORGANIZATIONS = gql`
   }
 `;
 
-const SET_ACTIVE_ORGANIZATION = gql`
+const SET_ACTIVE_ORGANIZATION : TypedDocumentNode<any, any> = gql`
   mutation SetActiveOrganization($organizationId: ID!) {
     setActiveOrganization(organizationId: $organizationId) {
       id
@@ -55,7 +56,7 @@ export function TeamSwitcher() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Query user's organizations
-  const { data: orgsData } = useQuery<any, any>(GET_USER_ORGANIZATIONS, {
+  const { data: orgsData } = useQuery(GET_USER_ORGANIZATIONS, {
     fetchPolicy: 'cache-and-network',
   });
 

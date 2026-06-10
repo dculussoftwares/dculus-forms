@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 import {
   Popover,
   PopoverContent,
@@ -22,7 +23,7 @@ import {
 } from '../../graphql/mutations';
 import { GET_FORM_TAGS } from '../../graphql/queries';
 
-const TAG_FRAGMENT = gql`
+const TAG_FRAGMENT : TypedDocumentNode<any, any> = gql`
   fragment TagCellFields on ResponseTag {
     id
     name

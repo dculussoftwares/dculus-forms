@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
-export const ADMIN_ORGANIZATIONS_QUERY = gql`
+export const ADMIN_ORGANIZATIONS_QUERY : TypedDocumentNode<any, any> = gql`
   query AdminOrganizations($limit: Int, $offset: Int, $search: String) {
     adminOrganizations(limit: $limit, offset: $offset, search: $search) {
       organizations {
@@ -23,7 +25,7 @@ export const ADMIN_ORGANIZATIONS_QUERY = gql`
   }
 `;
 
-export const ADMIN_ORGANIZATION_QUERY = gql`
+export const ADMIN_ORGANIZATION_QUERY : TypedDocumentNode<any, any> = gql`
   query AdminOrganization($id: ID!) {
     adminOrganization(id: $id) {
       id
@@ -54,7 +56,7 @@ export const ADMIN_ORGANIZATION_QUERY = gql`
   }
 `;
 
-export const ADMIN_STATS_QUERY = gql`
+export const ADMIN_STATS_QUERY : TypedDocumentNode<any, any> = gql`
   query AdminStats {
     adminStats {
       organizationCount

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApolloClient, useQuery } from '@apollo/client/react';
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 import {
   Button,
   Sheet,
@@ -15,7 +16,7 @@ import { Download, Edit2, Trash2 } from 'lucide-react';
 import { TagsCell } from './TagsCell';
 import { GET_FORM_TAGS } from '../../graphql/queries';
 
-const GET_RESPONSE_FILE_DOWNLOAD_URL = gql`
+const GET_RESPONSE_FILE_DOWNLOAD_URL : TypedDocumentNode<any, any> = gql`
   query GetResponseFileDownloadUrl($key: String!) {
     getResponseFileDownloadUrl(key: $key)
   }
@@ -104,7 +105,7 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const { data: tagsData } = useQuery<any, any>(GET_FORM_TAGS, {
+  const { data: tagsData } = useQuery(GET_FORM_TAGS, {
     variables: { formId },
     skip: !open || !formId,
   });

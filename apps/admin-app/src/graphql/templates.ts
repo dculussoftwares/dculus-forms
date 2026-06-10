@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { gql } from '@apollo/client';
+import type { TypedDocumentNode } from '@apollo/client';
 
-export const GET_TEMPLATES = gql`
+export const GET_TEMPLATES : TypedDocumentNode<any, any> = gql`
   query GetTemplates($category: String) {
     templates(category: $category) {
       id
@@ -14,7 +16,7 @@ export const GET_TEMPLATES = gql`
   }
 `;
 
-export const GET_TEMPLATE = gql`
+export const GET_TEMPLATE : TypedDocumentNode<any, any> = gql`
   query GetTemplate($id: ID!) {
     template(id: $id) {
       id
@@ -29,13 +31,13 @@ export const GET_TEMPLATE = gql`
   }
 `;
 
-export const GET_TEMPLATE_CATEGORIES = gql`
+export const GET_TEMPLATE_CATEGORIES : TypedDocumentNode<any, any> = gql`
   query GetTemplateCategories {
     templateCategories
   }
 `;
 
-export const CREATE_TEMPLATE = gql`
+export const CREATE_TEMPLATE : TypedDocumentNode<any, any> = gql`
   mutation CreateTemplate($input: CreateTemplateInput!) {
     createTemplate(input: $input) {
       id
@@ -49,7 +51,7 @@ export const CREATE_TEMPLATE = gql`
   }
 `;
 
-export const UPDATE_TEMPLATE = gql`
+export const UPDATE_TEMPLATE : TypedDocumentNode<any, any> = gql`
   mutation UpdateTemplate($id: ID!, $input: UpdateTemplateInput!) {
     updateTemplate(id: $id, input: $input) {
       id
@@ -63,7 +65,7 @@ export const UPDATE_TEMPLATE = gql`
   }
 `;
 
-export const DELETE_TEMPLATE = gql`
+export const DELETE_TEMPLATE : TypedDocumentNode<any, any> = gql`
   mutation DeleteTemplate($id: ID!) {
     deleteTemplate(id: $id)
   }
