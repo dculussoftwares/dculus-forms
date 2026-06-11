@@ -23,6 +23,7 @@ import {
   Layers,
   ArrowRight,
   ChevronRight,
+  Inbox,
 } from 'lucide-react';
 import { useNavigate, Routes, Route, useSearchParams } from 'react-router-dom';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -516,10 +517,11 @@ interface FormCardProps {
 
 function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardProps) {
   const { t, locale } = useTranslation('dashboard');
-  const metadata   = form.metadata;
-  const bgImageUrl  = metadata?.backgroundImageUrl ?? null;
-  const pageCount   = metadata?.pageCount ?? 0;
-  const fieldCount  = metadata?.fieldCount ?? 0;
+  const metadata      = form.metadata;
+  const bgImageUrl    = metadata?.backgroundImageUrl ?? null;
+  const pageCount     = metadata?.pageCount ?? 0;
+  const fieldCount    = metadata?.fieldCount ?? 0;
+  const responseCount = form.responseCount ?? 0;
 
   const pageCountLabel =
     pageCount === 0 ? t('counts.pages.zero') :
@@ -530,6 +532,11 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
     fieldCount === 0 ? t('counts.fields.zero') :
     fieldCount === 1 ? t('counts.fields.one') :
     t('counts.fields.other', { values: { count: fieldCount } });
+
+  const responseCountLabel =
+    responseCount === 0 ? t('counts.responses.zero') :
+    responseCount === 1 ? t('counts.responses.one') :
+    t('counts.responses.other', { values: { count: responseCount } });
 
   const permissionLabel = (() => {
     switch (form.userPermission) {
@@ -549,9 +556,10 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
     return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
   })();
 
-  const handleCardClick = () => onNavigate(`/dashboard/form/${form.id}`);
-  const handlePreview   = (e: React.MouseEvent) => { e.stopPropagation(); window.open(getFormViewerUrl(form.shortUrl), '_blank'); };
-  const handleEdit      = (e: React.MouseEvent) => { e.stopPropagation(); onNavigate(`/dashboard/form/${form.id}/builder/page-builder`); };
+  const handleCardClick     = () => onNavigate(`/dashboard/form/${form.id}`);
+  const handlePreview       = (e: React.MouseEvent) => { e.stopPropagation(); window.open(getFormViewerUrl(form.shortUrl), '_blank'); };
+  const handleEdit          = (e: React.MouseEvent) => { e.stopPropagation(); onNavigate(`/dashboard/form/${form.id}/builder/page-builder`); };
+  const handleResponseClick = (e: React.MouseEvent) => { e.stopPropagation(); onNavigate(`/dashboard/form/${form.id}/responses`); };
 
   return (
     <div
@@ -634,6 +642,15 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
               <FileText className="h-3 w-3" />
               {fieldCountLabel}
             </span>
+            {responseCount > 0 && (
+              <button
+                onClick={handleResponseClick}
+                className="flex items-center gap-1 hover:text-primary transition-colors duration-150"
+              >
+                <Inbox className="h-3 w-3" />
+                {responseCountLabel}
+              </button>
+            )}
           </div>
           {showPermissionBadge && form.userPermission && (
             <span

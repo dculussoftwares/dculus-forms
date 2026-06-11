@@ -54,6 +54,11 @@
       "zero": "No fields",
       "one": "1 field",
       "other": "{{count}} fields"
+    },
+    "responses": {
+      "zero": "No responses",
+      "one": "1 response",
+      "other": "{{count}} responses"
     }
   },
   "created": {
