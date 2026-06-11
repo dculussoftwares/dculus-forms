@@ -79,3 +79,13 @@ export const emailConfig: EmailConfig = {
 export const chargebeeConfig: ChargebeeConfig = {
   webhookPassword: optionalEnv('CHARGEBEE_WEBHOOK_PASSWORD'),
 };
+
+export interface GoogleConfig {
+  clientId: string | undefined;
+  clientSecret: string | undefined;
+}
+
+export const googleConfig: GoogleConfig = {
+  clientId: optionalEnv('GOOGLE_CLIENT_ID'),
+  clientSecret: optionalEnv('GOOGLE_CLIENT_SECRET'),
+};

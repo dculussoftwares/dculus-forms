@@ -3,7 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { admin, bearer, emailOTP, haveIBeenPwned, magicLink, organization } from 'better-auth/plugins';
 import { adminAc } from 'better-auth/plugins/admin/access';
 import { prisma } from './prisma.js';
-import { authConfig } from './env.js';
+import { authConfig, googleConfig } from './env.js';
 import { logger } from '../lib/logger.js';
 import {
   sendInvitationEmail,
@@ -58,6 +58,13 @@ export const auth = betterAuth({
     cookieCache: {
       enabled: true,
       maxAge: 60 * 60 * 24 * 7, // 7 days
+    },
+  },
+
+  socialProviders: {
+    google: {
+      clientId: googleConfig.clientId as string,
+      clientSecret: googleConfig.clientSecret as string,
     },
   },
 
