@@ -179,3 +179,27 @@
 svg.lucide {
   stroke-width: 1.5;
 }
+
+/* ── AI Floating Button — spinning conic-gradient border ── */
+@property --ai-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ai-spin-gradient {
+  to { --ai-angle: 360deg; }
+}
+
+.ai-gradient-ring {
+  will-change: background;
+  background: conic-gradient(
+    from var(--ai-angle),
+    #7c3aed,
+    #2563eb,
+    #06b6d4,
+    #a855f7,
+    #7c3aed
+  );
+  animation: ai-spin-gradient 3s linear infinite;
+}
