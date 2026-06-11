@@ -22,6 +22,7 @@ import {
     Eye,
     EyeOff,
     ExternalLink,
+    Inbox,
     MoreVertical,
     Share2,
 } from 'lucide-react';
@@ -235,6 +236,17 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
 
                 {/* ── Right: publish + view + share + more ── */}
                 <div className="flex items-center gap-1.5 px-3 w-72 shrink-0 justify-end">
+                    {/* Responses */}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/dashboard/form/${_formId}/responses`)}
+                        className="h-8 px-3 text-xs"
+                    >
+                        <Inbox className="w-3.5 h-3.5 mr-1.5" />
+                        {t('buttons.viewResponses')}
+                    </Button>
+
                     {/* Publish / Unpublish */}
                     {permissions.canEdit && (
                         isPublished ? (
