@@ -12,7 +12,6 @@ import {
 import { cn } from '@dculus/utils';
 import type { LayoutCode } from '@dculus/types';
 import {
-  Sparkles,
   LayoutTemplate,
   ArrowLeft,
   Zap,
@@ -39,6 +38,7 @@ import type { PexelsPhoto } from '../services/pexelsService';
 import { searchPixabayImages, downloadPixabayImage } from '../services/pixabayService';
 import type { PixabayImage } from '../services/pixabayService';
 import AIIcon from '../components/icons/AIIcon';
+import { GradientSparkles } from '../components/form-builder/GradientSparkles.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -743,7 +743,7 @@ const CreateFormWizard: React.FC = () => {
                 {isCreatingForm ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('appearance.creating')}</>
                 ) : (
-                  <><Sparkles className="mr-2 h-4 w-4" />{t('appearance.create')}</>
+                  <><GradientSparkles size={16} className="mr-2" />{t('appearance.create')}</>
                 )}
               </Button>
             </div>

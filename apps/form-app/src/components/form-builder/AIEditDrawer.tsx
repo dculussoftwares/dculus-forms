@@ -1,7 +1,8 @@
 // apps/form-app/src/components/form-builder/AIEditDrawer.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Sparkles, Send, Plus, Trash2, ChevronDown, X, Undo2 } from 'lucide-react';
+import { Send, Plus, Trash2, ChevronDown, X, Undo2 } from 'lucide-react';
+import { GradientSparkles } from './GradientSparkles.js';
 import { cn } from '@dculus/utils';
 import {
   Button,
@@ -99,7 +100,7 @@ function AssistantMessage({
     <div className="flex justify-start">
       <div className="flex max-w-[90%] items-start gap-2">
         <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <Sparkles className="h-3 w-3 text-primary" />
+          <GradientSparkles size={12} />
         </div>
         <div className="space-y-1.5">
           {combinedText && <TextBubble text={combinedText} isStreaming={isStreaming && !inFlightPart} />}
@@ -160,7 +161,7 @@ function StatusIndicator({ text }: { text?: string }) {
     <div className="flex justify-start">
       <div className="flex items-center gap-2">
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
-          <Sparkles className="h-3 w-3 text-primary" />
+          <GradientSparkles size={12} />
         </div>
         {text ? (
           <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2 text-xs italic text-muted-foreground">
@@ -270,7 +271,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
     <div className="flex h-full w-[380px] shrink-0 flex-col border-l border-border bg-background">
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
-        <Sparkles className="h-4 w-4 text-primary" />
+        <GradientSparkles size={16} />
         <span className="flex-1 text-sm font-semibold">{t('title')}</span>
 
         {canUndo && (
@@ -397,7 +398,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
                 )}
               >
                 {['analyseForm', 'generateFields', 'suggestValidation', 'remixForm'].includes(chip.key) && (
-                  <Sparkles className="h-3 w-3" />
+                  <GradientSparkles size={12} />
                 )}
                 {chip.label}
               </button>

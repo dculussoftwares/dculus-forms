@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { GradientSparkles } from '../../form-builder/GradientSparkles.js';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 
@@ -52,7 +52,7 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className={cn('flex items-center gap-1 text-xs font-bold uppercase tracking-wide mb-1', styles.label)}>
-            <Sparkles className="h-3 w-3" />
+            <GradientSparkles size={12} />
             {insightLabel}
           </div>
           <p className={cn('text-xs leading-relaxed', styles.label)}>{tip}</p>
