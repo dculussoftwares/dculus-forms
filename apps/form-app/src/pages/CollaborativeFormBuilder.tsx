@@ -23,7 +23,7 @@ import {
   type FieldTypeConfig,
 } from '../components/form-builder/FieldTypesPanel';
 import { FormField } from '@dculus/types';
-import { FormBuilderHeader, CompactFieldCard } from '@/components/form-builder';
+import { FormBuilderHeader, CompactFieldCard, AIFloatingButton } from '@/components/form-builder';
 import { LoadingState } from '../components/form-builder/LoadingState';
 import { ErrorState } from '../components/form-builder/ErrorState';
 import {
@@ -446,8 +446,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               onPublish={handlePublish}
               onUnpublish={handleUnpublish}
               updateLoading={updateLoading}
-              isAIDrawerOpen={isAIDrawerOpen}
-              onToggleAIDrawer={() => setIsAIDrawerOpen((prev) => !prev)}
               centerContent={
                 <TabNavigation
                   activeTab={activeTab}
@@ -500,6 +498,10 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           {activeTab === 'page-builder' && (
             <DragOverlay>{renderDragOverlay}</DragOverlay>
           )}
+          <AIFloatingButton
+            isOpen={isAIDrawerOpen}
+            onClick={() => setIsAIDrawerOpen((prev) => !prev)}
+          />
         </div>
       </DndContext>
     </FormPermissionProvider>
