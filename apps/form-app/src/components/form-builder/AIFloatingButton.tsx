@@ -48,7 +48,7 @@ export const AIFloatingButton: React.FC<AIFloatingButtonProps> = ({ isOpen, onCl
           onClick={onClick}
           aria-label="Open AI assistant"
           aria-expanded={false}
-          className="flex items-center gap-1.5 rounded-full bg-black px-5 h-12 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors"
+          className="flex items-center gap-1 rounded-full bg-black px-5 h-12 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors"
         >
           <GradientSparkles />
           Ask AI
