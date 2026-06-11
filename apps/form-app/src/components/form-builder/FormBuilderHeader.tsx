@@ -24,7 +24,6 @@ import {
     ExternalLink,
     MoreVertical,
     Share2,
-    Sparkles,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
@@ -52,8 +51,6 @@ interface FormBuilderHeaderProps {
     updateLoading?: boolean;
     /** Centered tab navigation — pass <TabNavigation position="inline" /> */
     centerContent?: React.ReactNode;
-    isAIDrawerOpen?: boolean;
-    onToggleAIDrawer?: () => void;
 }
 
 export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
@@ -71,8 +68,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     onUnpublish,
     updateLoading = false,
     centerContent,
-    isAIDrawerOpen = false,
-    onToggleAIDrawer,
 }) => {
     const { t } = useTranslation('formBuilderHeader');
     const [formTitle, setFormTitle] = useState(initialFormTitle || t('defaultTitle'));
@@ -240,19 +235,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
 
                 {/* ── Right: publish + view + share + more ── */}
                 <div className="flex items-center gap-1.5 px-3 w-72 shrink-0 justify-end">
-                    {/* AI Edit */}
-                    {onToggleAIDrawer && (
-                        <Button
-                            variant={isAIDrawerOpen ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={onToggleAIDrawer}
-                            className="gap-1.5"
-                        >
-                            <Sparkles className="h-3.5 w-3.5" />
-                            AI
-                        </Button>
-                    )}
-
                     {/* Publish / Unpublish */}
                     {permissions.canEdit && (
                         isPublished ? (
