@@ -21,8 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowLeft,
-  Sparkles,
 } from 'lucide-react';
+import { GradientSparkles } from '../../form-builder/GradientSparkles.js';
 import { FieldSelectionGrid } from './FieldSelectionGrid';
 import { FieldAnalyticsPanel } from './FieldAnalyticsPanel';
 import { GET_FIELD_INSIGHTS } from '../../../graphql/queries';
@@ -320,16 +320,17 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
 
           {/* AI analyze controls — grid view only */}
           {view === 'grid' && !hasInsights && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleGenerateInsights}
-              disabled={generatingInsights}
-              className="gap-1.5"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {generatingInsights ? t('aiInsights.loading') : t('aiInsights.analyzeButton')}
-            </Button>
+            <div className="ai-gradient-ring rounded-full p-[2px]">
+              <button
+                type="button"
+                onClick={handleGenerateInsights}
+                disabled={generatingInsights}
+                className="flex items-center gap-1 rounded-full bg-black px-4 h-9 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors disabled:opacity-50"
+              >
+                <GradientSparkles size={16} />
+                {generatingInsights ? t('aiInsights.loading') : t('aiInsights.analyzeButton')}
+              </button>
+            </div>
           )}
           {view === 'grid' && hasInsights && (
             <button
