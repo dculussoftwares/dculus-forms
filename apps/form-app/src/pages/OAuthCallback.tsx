@@ -27,7 +27,8 @@ export const OAuthCallback = () => {
         const hasOrg = !!data.session.activeOrganizationId;
 
         if (!hasOrg) {
-          const orgName = `${user.name}'s Organization`;
+          const displayName = user.name?.trim() || user.email?.split('@')[0] || 'my';
+          const orgName = `${displayName}'s Organization`;
           const orgSlug = slugify(orgName);
 
           const orgResult = await authClient.organization.create({
@@ -51,7 +52,9 @@ export const OAuthCallback = () => {
           await organization.setActive({ organizationId: orgResult.data.id });
         }
 
-        window.location.replace('/');
+        const redirect = sessionStorage.getItem('redirectAfterAuth') ?? '/';
+        sessionStorage.removeItem('redirectAfterAuth');
+        window.location.replace(redirect);
       } catch {
         setError(true);
       }
