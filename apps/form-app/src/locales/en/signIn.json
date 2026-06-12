@@ -57,5 +57,9 @@
     "sentDescription": "We sent a sign-in link to {{email}}. It expires in 5 minutes.",
     "tryDifferentEmail": "Try a different email",
     "noAccountError": "No account found for this email. Please sign up first."
+  },
+  "google": {
+    "button": "Continue with Google",
+    "divider": "or"
   }
 }

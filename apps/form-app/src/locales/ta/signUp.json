@@ -94,5 +94,9 @@
   "links": {
     "signInPrompt": "ஏற்கனவே கணக்கு உள்ளதா?",
     "signIn": "உள்நுழைக"
+  },
+  "google": {
+    "button": "Google மூலம் தொடரவும்",
+    "divider": "அல்லது"
   }
 }

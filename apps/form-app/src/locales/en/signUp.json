@@ -94,5 +94,9 @@
   "links": {
     "signInPrompt": "Already have an account?",
     "signIn": "Sign in"
+  },
+  "google": {
+    "button": "Continue with Google",
+    "divider": "or"
   }
 }

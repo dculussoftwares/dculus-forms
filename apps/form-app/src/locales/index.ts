@@ -225,6 +225,8 @@ import enAccountSettings from './en/accountSettings.json';
 import taAccountSettings from './ta/accountSettings.json';
 import enMagicLinkCallback from './en/magicLinkCallback.json';
 import taMagicLinkCallback from './ta/magicLinkCallback.json';
+import enOauthCallback from './en/oauthCallback.json';
+import taOauthCallback from './ta/oauthCallback.json';
 import enAIFormBar from './en/aiFormBar.json';
 import taAIFormBar from './ta/aiFormBar.json';
 import enCreateFormWizard from './en/createFormWizard.json';
@@ -349,6 +351,7 @@ const enTranslations = {
   emailVerification: enEmailVerification,
   accountSettings: enAccountSettings,
   magicLinkCallback: enMagicLinkCallback,
+  oauthCallback: enOauthCallback,
   aiFormBar: enAIFormBar,
   createFormWizard: enCreateFormWizard,
   aiEditDrawer: enAIEditDrawer,
@@ -470,6 +473,7 @@ const taTranslations = {
   emailVerification: taEmailVerification,
   accountSettings: taAccountSettings,
   magicLinkCallback: taMagicLinkCallback,
+  oauthCallback: taOauthCallback,
   aiFormBar: taAIFormBar,
   createFormWizard: taCreateFormWizard,
   aiEditDrawer: taAIEditDrawer,

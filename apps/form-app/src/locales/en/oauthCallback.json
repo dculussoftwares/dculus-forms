@@ -1,0 +1,11 @@
+{
+  "loading": {
+    "title": "Signing you in...",
+    "subtitle": "Please wait while we set up your account."
+  },
+  "error": {
+    "title": "Sign-in failed",
+    "message": "Something went wrong while signing you in with Google. Please try again.",
+    "action": "Back to sign in"
+  }
+}
