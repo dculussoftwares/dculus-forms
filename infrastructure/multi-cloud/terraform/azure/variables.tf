@@ -251,6 +251,20 @@ variable "pixabay_api_key" {
   default     = ""
 }
 
+variable "google_client_id" {
+  description = "Google OAuth client ID (enables Sign in with Google)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth client secret (enables Sign in with Google)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "run_seed" {
   description = "Whether to run database seeding on container startup"
   type        = bool

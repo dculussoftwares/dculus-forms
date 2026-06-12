@@ -272,6 +272,16 @@ resource "azurerm_container_app" "backend" {
         value = var.pixabay_api_key
       }
 
+      env {
+        name  = "GOOGLE_CLIENT_ID"
+        value = var.google_client_id
+      }
+
+      env {
+        name  = "GOOGLE_CLIENT_SECRET"
+        value = var.google_client_secret
+      }
+
       liveness_probe {
         transport               = "HTTP"
         port                    = var.container_port
