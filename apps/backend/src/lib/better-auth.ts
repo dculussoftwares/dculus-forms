@@ -61,12 +61,16 @@ export const auth = betterAuth({
     },
   },
 
-  socialProviders: {
-    google: {
-      clientId: googleConfig.clientId as string,
-      clientSecret: googleConfig.clientSecret as string,
-    },
-  },
+  ...(googleConfig.clientId && googleConfig.clientSecret
+    ? {
+        socialProviders: {
+          google: {
+            clientId: googleConfig.clientId,
+            clientSecret: googleConfig.clientSecret,
+          },
+        },
+      }
+    : {}),
 
   plugins: [
     bearer(),
