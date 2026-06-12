@@ -221,7 +221,7 @@ export const SignIn = () => {
               onClick={() => {
                 const from = (location.state as { from?: { pathname?: string } })?.from?.pathname;
                 if (from && from !== '/') sessionStorage.setItem('redirectAfterAuth', from);
-                signIn.social({ provider: 'google', callbackURL: '/oauth/callback' });
+                signIn.social({ provider: 'google', callbackURL: `${window.location.origin}/oauth/callback` });
               }}
               className="w-full h-10 flex items-center justify-center gap-2 text-xs font-medium rounded-lg border border-border bg-white text-foreground hover:shadow-sm transition-all mb-4"
             >
