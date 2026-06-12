@@ -4,6 +4,7 @@ import { Button, Input, Label } from "@dculus/ui";
 import { signIn, emailOtp } from "../lib/auth-client";
 import { useTranslation } from "../hooks/useTranslation";
 import { FileText, CheckCircle, BarChart3, Users, Mail } from "lucide-react";
+import { GoogleIcon } from "../components/icons/GoogleIcon";
 
 /* ── Left panel feature list ── */
 const FEATURES = [
@@ -212,6 +213,23 @@ export const SignIn = () => {
               >
                 {t("authMode.magicLink")}
               </button>
+            </div>
+
+            {/* Google sign-in */}
+            <button
+              type="button"
+              onClick={() => signIn.social({ provider: 'google', callbackURL: '/oauth/callback' })}
+              className="w-full h-10 flex items-center justify-center gap-2 text-xs font-medium rounded-lg border border-border bg-white text-foreground hover:shadow-sm transition-all mb-4"
+            >
+              <GoogleIcon size={16} />
+              {t('google.button')}
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-2 mb-5">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">{t('google.divider')}</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
 
             {/* Password sign-in form */}
