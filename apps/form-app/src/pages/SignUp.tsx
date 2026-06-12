@@ -6,6 +6,7 @@ import { FileText } from 'lucide-react';
 import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
 import { ArrowLeft, Timer } from 'lucide-react';
+import { GoogleIcon } from '../components/icons/GoogleIcon';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -376,6 +377,23 @@ export const SignUp = () => {
 
             {step === 'form' ? (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Google sign-up */}
+                <button
+                  type="button"
+                  onClick={() => signIn.social({ provider: 'google', callbackURL: '/oauth/callback' })}
+                  className="w-full h-10 flex items-center justify-center gap-2 text-xs font-medium rounded-lg border border-border bg-white text-foreground hover:shadow-sm transition-all mb-4"
+                >
+                  <GoogleIcon size={16} />
+                  {t('google.button')}
+                </button>
+
+                {/* Divider */}
+                <div className="flex items-center gap-2 mb-5">
+                  <div className="flex-1 h-px bg-border" />
+                  <span className="text-xs text-muted-foreground">{t('google.divider')}</span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+
                 <Field id="name" label={t('form.fields.name.label')} error={errors.name}>
                   <Input id="name" name="name" type="text" placeholder={t('form.fields.name.placeholder')} value={formData.name} onChange={handleInputChange} disabled={isLoading} className={errors.name ? 'border-destructive' : ''} />
                 </Field>
