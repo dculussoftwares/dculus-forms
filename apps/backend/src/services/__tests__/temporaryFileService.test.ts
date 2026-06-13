@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
 import {
   uploadTemporaryFile,
   deleteTemporaryFile,
@@ -300,6 +302,101 @@ describe('Temporary File Service', () => {
     it('should complete without errors', async () => {
       mockSend.mockResolvedValue({ Contents: [], IsTruncated: false });
       await expect(cleanupExpiredFiles()).resolves.toEqual({ deleted: 0, errors: 0 });
+    });
+
+    it('should delete expired files and increment deleted count', async () => {
+      const now = 1_700_000_000_000;
+      vi.setSystemTime(now);
+      const expiredTs = now - 6 * 60 * 60 * 1000;
+      const expiredKey = `temp-exports/${expiredTs}-uuid-report.xlsx`;
+
+      // First call: ListObjectsV2Command returns expired file
+      mockSend.mockResolvedValueOnce({ Contents: [{ Key: expiredKey }], IsTruncated: false });
+      // Second call: DeleteObjectCommand from deleteTemporaryFile
+      mockSend.mockResolvedValueOnce({});
+
+      const result = await cleanupExpiredFiles();
+
+      expect(result.deleted).toBe(1);
+      expect(result.errors).toBe(0);
+    });
+
+    it('should skip non-expired files', async () => {
+      const now = 1_700_000_000_000;
+      vi.setSystemTime(now);
+      const freshTs = now - 1 * 60 * 60 * 1000; // only 1 hour old
+      const freshKey = `temp-exports/${freshTs}-uuid-recent.xlsx`;
+
+      mockSend.mockResolvedValue({ Contents: [{ Key: freshKey }], IsTruncated: false });
+
+      const result = await cleanupExpiredFiles();
+
+      expect(result.deleted).toBe(0);
+      expect(result.errors).toBe(0);
+    });
+
+    it('should skip objects with no Key', async () => {
+      mockSend.mockResolvedValue({ Contents: [{}], IsTruncated: false });
+
+      const result = await cleanupExpiredFiles();
+
+      expect(result.deleted).toBe(0);
+      expect(result.errors).toBe(0);
+    });
+
+    it('should increment errors when deleteTemporaryFile fails', async () => {
+      const now = 1_700_000_000_000;
+      vi.setSystemTime(now);
+      const expiredTs = now - 6 * 60 * 60 * 1000;
+      const expiredKey = `temp-exports/${expiredTs}-uuid-report.xlsx`;
+
+      mockSend.mockResolvedValueOnce({ Contents: [{ Key: expiredKey }], IsTruncated: false });
+      // DeleteObjectCommand fails
+      mockSend.mockRejectedValueOnce(new Error('Delete failed'));
+
+      const result = await cleanupExpiredFiles();
+
+      expect(result.deleted).toBe(0);
+      expect(result.errors).toBe(1);
+    });
+
+    it('should follow pagination via NextContinuationToken', async () => {
+      const now = 1_700_000_000_000;
+      vi.setSystemTime(now);
+      const expiredTs = now - 6 * 60 * 60 * 1000;
+
+      // Page 1: one expired file, truncated
+      mockSend.mockResolvedValueOnce({
+        Contents: [{ Key: `temp-exports/${expiredTs}-uuid-page1.xlsx` }],
+        IsTruncated: true,
+        NextContinuationToken: 'token1',
+      });
+      // DeleteObjectCommand for page-1 file
+      mockSend.mockResolvedValueOnce({});
+      // Page 2: one expired file, not truncated
+      mockSend.mockResolvedValueOnce({
+        Contents: [{ Key: `temp-exports/${expiredTs}-uuid-page2.xlsx` }],
+        IsTruncated: false,
+      });
+      // DeleteObjectCommand for page-2 file
+      mockSend.mockResolvedValueOnce({});
+
+      const result = await cleanupExpiredFiles();
+
+      expect(result.deleted).toBe(2);
+      expect(result.errors).toBe(0);
+    });
+
+    it('should capture exception via Sentry when list command throws', async () => {
+      const { captureException } = await import('@sentry/node');
+      mockSend.mockRejectedValue(new Error('S3 list error'));
+
+      const result = await cleanupExpiredFiles();
+
+      expect(captureException).toHaveBeenCalledWith(expect.any(Error));
+      // Still returns counts even on error
+      expect(result.deleted).toBe(0);
+      expect(result.errors).toBe(0);
     });
   });
 });

@@ -764,5 +764,271 @@ describe('Response Filter Service', () => {
       expect(result).toHaveLength(0);
     });
   });
+
+  describe('__submittedAt scope filter', () => {
+    const now = new Date('2024-06-01T12:00:00Z');
+    const yesterday = new Date('2024-05-31T12:00:00Z');
+    const lastWeek = new Date('2024-05-25T12:00:00Z');
+
+    const scopeResponses = [
+      { id: 'r-today', submittedAt: now },
+      { id: 'r-yesterday', submittedAt: yesterday },
+      { id: 'r-lastweek', submittedAt: lastWeek },
+    ];
+
+    it('DATE_EQUALS matches responses submitted on the same day', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_EQUALS', value: now.toISOString() },
+      ];
+      const result = applyResponseFilters(scopeResponses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r-today');
+    });
+
+    it('DATE_EQUALS returns nothing when value is missing', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_EQUALS' },
+      ];
+      const result = applyResponseFilters(scopeResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('DATE_BEFORE matches responses submitted before the given date', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_BEFORE', value: now.toISOString() },
+      ];
+      const result = applyResponseFilters(scopeResponses, filters);
+      expect(result).toHaveLength(2);
+      expect(result.map(r => r.id)).not.toContain('r-today');
+    });
+
+    it('DATE_BEFORE returns nothing when value is missing', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_BEFORE' },
+      ];
+      const result = applyResponseFilters(scopeResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('DATE_AFTER matches responses submitted after the given date', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_AFTER', value: yesterday.toISOString() },
+      ];
+      const result = applyResponseFilters(scopeResponses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r-today');
+    });
+
+    it('DATE_AFTER returns nothing when value is missing', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_AFTER' },
+      ];
+      const result = applyResponseFilters(scopeResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('DATE_BETWEEN matches responses within the range', () => {
+      const filters: ResponseFilter[] = [
+        {
+          fieldId: '__submittedAt',
+          operator: 'DATE_BETWEEN',
+          dateRange: { from: lastWeek.toISOString(), to: yesterday.toISOString() },
+        },
+      ];
+      const result = applyResponseFilters(scopeResponses, filters);
+      expect(result).toHaveLength(2);
+      expect(result.map(r => r.id)).not.toContain('r-today');
+    });
+
+    it('DATE_BETWEEN returns nothing when no range provided', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_BETWEEN', dateRange: {} },
+      ];
+      const result = applyResponseFilters(scopeResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('DATE_TODAY matches only responses submitted today', () => {
+      const today = new Date();
+      const responses = [
+        { id: 'r-now', submittedAt: today },
+        { id: 'r-old', submittedAt: new Date('2020-01-01') },
+      ];
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_TODAY' },
+      ];
+      const result = applyResponseFilters(responses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r-now');
+    });
+
+    it('DATE_LAST_N_DAYS matches responses within N days', () => {
+      const recent = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+      const old = new Date('2020-01-01');
+      const responses = [
+        { id: 'r-recent', submittedAt: recent },
+        { id: 'r-old', submittedAt: old },
+      ];
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_LAST_N_DAYS', value: '7' },
+      ];
+      const result = applyResponseFilters(responses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r-recent');
+    });
+
+    it('scope filter uses createdAt as fallback when submittedAt is absent', () => {
+      const responses = [
+        { id: 'r1', createdAt: now },
+        { id: 'r2', createdAt: lastWeek },
+      ];
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_EQUALS', value: now.toISOString() },
+      ];
+      const result = applyResponseFilters(responses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r1');
+    });
+
+    it('scope filter always ANDs even when filterLogic is OR', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__submittedAt', operator: 'DATE_EQUALS', value: now.toISOString() },
+        { fieldId: 'field-name', operator: 'EQUALS', value: 'anyone' },
+      ];
+      // With OR logic, without the scope-AND rule all 3 would match (none have field-name).
+      // The scope filter eliminates all except r-today, then user filter finds no match.
+      const result = applyResponseFilters(scopeResponses, filters, 'OR');
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('__tags scope filter', () => {
+    const taggedResponses = [
+      { id: 'r1', tags: [{ id: 'tag-bug' }, { id: 'tag-urgent' }] },
+      { id: 'r2', tags: [{ id: 'tag-feature' }] },
+      { id: 'r3', tags: [] },
+      { id: 'r4' }, // no tags property
+    ];
+
+    it('matches responses that have at least one of the specified tag IDs', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__tags', operator: 'HAS_TAG', values: ['tag-bug'] },
+      ];
+      const result = applyResponseFilters(taggedResponses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r1');
+    });
+
+    it('matches responses with any of multiple tag IDs', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__tags', operator: 'HAS_TAG', values: ['tag-bug', 'tag-feature'] },
+      ];
+      const result = applyResponseFilters(taggedResponses, filters);
+      expect(result).toHaveLength(2);
+    });
+
+    it('returns nothing when values array is empty', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__tags', operator: 'HAS_TAG', values: [] },
+      ];
+      const result = applyResponseFilters(taggedResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('returns nothing when no responses have the tag', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: '__tags', operator: 'HAS_TAG', values: ['tag-nonexistent'] },
+      ];
+      const result = applyResponseFilters(taggedResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('CONTAINS_ALL operator', () => {
+    const arrayResponses = [
+      { id: 'r1', responseData: { 'field-skills': ['js', 'ts', 'react'] } },
+      { id: 'r2', responseData: { 'field-skills': ['js', 'python'] } },
+      { id: 'r3', responseData: { 'field-skills': ['java'] } },
+      { id: 'r4', responseData: { 'field-skills': 'js' } }, // string, not array
+    ];
+
+    it('matches responses whose array contains ALL specified values', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-skills', operator: 'CONTAINS_ALL', values: ['js', 'ts'] },
+      ];
+      const result = applyResponseFilters(arrayResponses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r1');
+    });
+
+    it('returns nothing when field value is not an array', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-skills', operator: 'CONTAINS_ALL', values: ['js'] },
+      ];
+      const result = applyResponseFilters([{ id: 'r4', responseData: { 'field-skills': 'js' } }], filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('returns nothing when values array is empty', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-skills', operator: 'CONTAINS_ALL', values: [] },
+      ];
+      const result = applyResponseFilters(arrayResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('returns nothing when values is not provided', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-skills', operator: 'CONTAINS_ALL' },
+      ];
+      const result = applyResponseFilters(arrayResponses, filters);
+      expect(result).toHaveLength(0);
+    });
+
+    it('is case-insensitive', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-skills', operator: 'CONTAINS_ALL', values: ['JS', 'TS'] },
+      ];
+      const result = applyResponseFilters(arrayResponses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r1');
+    });
+  });
+
+  describe('EQUALS with array fieldValue', () => {
+    it('matches when array values exactly equal the filter values (order-independent)', () => {
+      const responses = [
+        { id: 'r1', responseData: { 'field-multi': ['a', 'b', 'c'] } },
+        { id: 'r2', responseData: { 'field-multi': ['a', 'b'] } },
+      ];
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-multi', operator: 'EQUALS', values: ['c', 'a', 'b'] },
+      ];
+      const result = applyResponseFilters(responses, filters);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('r1');
+    });
+
+    it('returns nothing when array length differs', () => {
+      const responses = [
+        { id: 'r1', responseData: { 'field-multi': ['a', 'b'] } },
+      ];
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-multi', operator: 'EQUALS', values: ['a'] },
+      ];
+      const result = applyResponseFilters(responses, filters);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('NOT_CONTAINS edge cases', () => {
+    it('returns all responses when filter value is empty (nothing is contained)', () => {
+      const filters: ResponseFilter[] = [
+        { fieldId: 'field-name', operator: 'NOT_CONTAINS', value: '' },
+      ];
+      const result = applyResponseFilters(mockResponses, filters);
+      expect(result).toHaveLength(3);
+    });
+  });
 });
 

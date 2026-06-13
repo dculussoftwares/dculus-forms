@@ -4,6 +4,7 @@ vi.mock('../../lib/prisma.js', () => ({
   prisma: {
     responseTag: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       upsert: vi.fn(),
       delete: vi.fn(),
     },
@@ -11,6 +12,9 @@ vi.mock('../../lib/prisma.js', () => ({
       upsert: vi.fn(),
       delete: vi.fn(),
       findMany: vi.fn(),
+    },
+    response: {
+      deleteMany: vi.fn(),
     },
   },
 }));
@@ -28,6 +32,9 @@ import {
   removeTagFromResponse,
   getTagsForResponse,
   batchLoadTagsForResponses,
+  upsertPreviewTag,
+  deletePreviewResponses,
+  PREVIEW_TAG_NAME,
 } from '../tagService.js';
 
 beforeEach(() => vi.clearAllMocks());
@@ -145,5 +152,59 @@ describe('batchLoadTagsForResponses', () => {
     const result = await batchLoadTagsForResponses(['r1']);
     expect(result['r1']).toHaveLength(1);
     expect(result['r-unknown']).toBeUndefined();
+  });
+});
+
+describe('upsertPreviewTag', () => {
+  it('upserts tag with preview name and amber color', async () => {
+    const tag = { id: 'preview-tag', name: PREVIEW_TAG_NAME, color: '#f59e0b' };
+    (prisma.responseTag.upsert as any).mockResolvedValue(tag);
+
+    const result = await upsertPreviewTag('form-1');
+
+    expect(prisma.responseTag.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { formId_name: { formId: 'form-1', name: PREVIEW_TAG_NAME } },
+        create: expect.objectContaining({ name: PREVIEW_TAG_NAME, color: '#f59e0b' }),
+      })
+    );
+    expect(result).toEqual(tag);
+  });
+});
+
+describe('deletePreviewResponses', () => {
+  it('returns 0 when no preview tag exists for the form', async () => {
+    (prisma.responseTag.findFirst as any).mockResolvedValue(null);
+
+    const count = await deletePreviewResponses('form-1');
+
+    expect(count).toBe(0);
+    expect(prisma.responseTagAssignment.findMany).not.toHaveBeenCalled();
+  });
+
+  it('returns 0 when the preview tag has no assignments', async () => {
+    (prisma.responseTag.findFirst as any).mockResolvedValue({ id: 'tag-1' });
+    (prisma.responseTagAssignment.findMany as any).mockResolvedValue([]);
+
+    const count = await deletePreviewResponses('form-1');
+
+    expect(count).toBe(0);
+    expect(prisma.response.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('deletes responses assigned to the preview tag and returns count', async () => {
+    (prisma.responseTag.findFirst as any).mockResolvedValue({ id: 'tag-1' });
+    (prisma.responseTagAssignment.findMany as any).mockResolvedValue([
+      { responseId: 'r1' },
+      { responseId: 'r2' },
+    ]);
+    (prisma.response.deleteMany as any).mockResolvedValue({ count: 2 });
+
+    const count = await deletePreviewResponses('form-1');
+
+    expect(prisma.response.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: ['r1', 'r2'] } },
+    });
+    expect(count).toBe(2);
   });
 });
