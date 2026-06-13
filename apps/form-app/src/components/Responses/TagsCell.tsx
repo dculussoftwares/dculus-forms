@@ -14,7 +14,6 @@ import {
   CommandItem,
 } from '@dculus/ui';
 import { Check, Plus, Tag, X } from 'lucide-react';
-import { cn } from '@dculus/utils';
 import { FormResponse } from '@dculus/types';
 import {
   ADD_TAG_TO_RESPONSE,
@@ -184,10 +183,7 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
-            className={cn(
-              'opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-5 h-5 rounded-full border border-dashed text-muted-foreground hover:text-foreground hover:border-solid',
-              tags.length > 0 && 'opacity-0 group-hover:opacity-100'
-            )}
+            className="flex items-center justify-center w-5 h-5 rounded-full border border-dashed text-muted-foreground hover:text-foreground hover:border-solid transition-colors"
             onClick={(e) => { e.stopPropagation(); setOpen(true); }}
             title={t('table.tags.addTag')}
           >
