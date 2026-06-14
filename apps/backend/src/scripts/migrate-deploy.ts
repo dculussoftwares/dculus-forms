@@ -4,6 +4,12 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
 
+// Migrations require a direct PostgreSQL connection — not PgBouncer.
+// PgBouncer transaction mode does not support the session-level advisory locks
+// that Prisma uses internally during migrate deploy / $queryRaw calls.
+// DIRECT_URL always points directly to PostgreSQL (set in CI and .env).
+const MIGRATION_URL = process.env.DIRECT_URL || process.env.DATABASE_URL;
+
 /**
  * Safe migration runner for CI and production deployments.
  *
@@ -38,7 +44,9 @@ function getAllMigrationNames(): string[] {
 }
 
 async function main() {
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({
+    datasources: { db: { url: MIGRATION_URL } },
+  });
 
   try {
     const [{ has_migration_table }] = await prisma.$queryRaw<[{ has_migration_table: boolean }]>`
