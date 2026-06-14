@@ -1,0 +1,97 @@
+{
+  "tabs": {
+    "overview": "கண்ணோட்டம்",
+    "settings": "அமைப்புகள்",
+    "log": "டெலிவரி பதிவு"
+  },
+  "overview": {
+    "stats": {
+      "totalDeliveries": "மொத்த டெலிவரிகள்",
+      "successRate": "வெற்றி விகிதம்",
+      "failed": "தோல்வி",
+      "lastDelivery": "கடைசி டெலிவரி",
+      "never": "இல்லை"
+    },
+    "recentActivity": "சமீபத்திய செயல்பாடு",
+    "noActivity": "டெலிவரிகள் இல்லை",
+    "noActivityDescription": "இணைப்பு தூண்டப்பட்டதும் டெலிவரிகள் இங்கே தோன்றும்.",
+    "loadingDeliveries": "ஏற்றுகிறது...",
+    "errorDeliveries": "டெலிவரி வரலாற்றை ஏற்ற முடியவில்லை."
+  },
+  "settings": {
+    "saveSuccess": "அமைப்புகள் சேமிக்கப்பட்டன",
+    "saveSuccessDescription": "\"{{name}}\" புதுப்பிக்கப்பட்டது."
+  },
+  "footer": {
+    "delete": "நீக்கு",
+    "enable": "இயக்கு",
+    "disable": "முடக்கு",
+    "test": "சோதனை",
+    "close": "மூடு"
+  },
+  "deleteDialog": {
+    "title": "ஒருங்கிணைப்பை நீக்கு",
+    "description": "\"{{name}}\" ஐ நிச்சயமாக நீக்க விரும்புகிறீர்களா? இந்த செயலை மீட்டமைக்க முடியாது.",
+    "cancel": "ரத்துசெய்",
+    "confirm": "நீக்கு"
+  },
+  "toasts": {
+    "enabled": "ஒருங்கிணைப்பு இயக்கப்பட்டது",
+    "enabledDescription": "\"{{name}}\" இப்போது செயலில் உள்ளது.",
+    "disabled": "ஒருங்கிணைப்பு முடக்கப்பட்டது",
+    "disabledDescription": "\"{{name}}\" இடைநிறுத்தப்பட்டது.",
+    "toggleError": "புதுப்பிப்பு தோல்வி",
+    "testTriggered": "சோதனை தூண்டப்பட்டது",
+    "testFailed": "சோதனை தோல்வி",
+    "deleted": "ஒருங்கிணைப்பு நீக்கப்பட்டது",
+    "deletedDescription": "\"{{name}}\" அகற்றப்பட்டது.",
+    "deleteError": "நீக்குதல் தோல்வி",
+    "saveError": "சேமிப்பு தோல்வி"
+  },
+  "types": {
+    "webhook": "வெப்ஹூக்",
+    "email": "மின்னஞ்சல்",
+    "quiz-grading": "வினாடி வினா மதிப்பீடு",
+    "ai-tagger": "AI தானியங்கி குறிச்சொல்",
+    "google-sheets": "Google தாள்கள்",
+    "slack": "Slack"
+  },
+  "pluginSummary": {
+    "webhook": {
+      "endpoint": "முனைப்புள்ளி",
+      "secret": "கையொப்பம் ரகசியம்",
+      "secretEnabled": "இயக்கப்பட்டது",
+      "secretDisabled": "கட்டமைக்கப்படவில்லை",
+      "customHeaders": "தனிப்பயன் தலைப்புகள்",
+      "headersCount": "{{count}} தலைப்பு(கள்)"
+    },
+    "email": {
+      "recipient": "பெறுநர்",
+      "subject": "பொருள்"
+    },
+    "quiz": {
+      "passThreshold": "தேர்ச்சி வரம்பு",
+      "questionsConfigured": "கேள்விகள்",
+      "exportColumn": "ஏற்றுமதி நெடுவரிசை",
+      "defaultColumn": "வினாடி வினா மதிப்பெண்"
+    },
+    "googleSheets": {
+      "connectedAs": "இவராக இணைக்கப்பட்டது",
+      "spreadsheet": "விரிதாள்",
+      "openSheet": "தாளைத் திறக்கவும்",
+      "notConnected": "இணைக்கப்படவில்லை",
+      "notConnectedHint": "உங்கள் Google கணக்கை இணைக்க அமைப்புகளைத் திறக்கவும்."
+    },
+    "aiTagger": {
+      "tagsConfigured": "கட்டமைக்கப்பட்ட குறிச்சொற்கள்",
+      "noTags": "குறிச்சொற்கள் கட்டமைக்கப்படவில்லை. அமைப்புகளைத் திறக்கவும்."
+    }
+  },
+  "deliveryLog": {
+    "payload": "பேலோட்",
+    "response": "பதில்",
+    "deliveryId": "டெலிவரி ஐடி",
+    "empty": "டெலிவரிகள் இல்லை",
+    "emptyDescription": "இணைப்பு தூண்டப்பட்டதும் டெலிவரிகள் இங்கே தோன்றும்."
+  }
+}

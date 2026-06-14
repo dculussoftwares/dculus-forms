@@ -27,7 +27,7 @@ dculus-forms is a form builder SaaS with:
 
 **Plugin events available**: `form.submitted`, `plugin.test`
 
-**Existing plugin types**: `webhook`, `email`, `quiz-grading`
+**Existing plugin types**: `webhook`, `email`, `quiz-grading`, `google-sheets`
 
 ---
 
@@ -49,9 +49,11 @@ dculus-forms is a form builder SaaS with:
    - Use `registerPluginExport({ pluginType, getColumns(), getValues(metadata) })`
    - Results stored in `Response.metadata` keyed by plugin type
 
-### Frontend Config UI
+### Frontend Plugin Files
 
-4. **Plugin config component**: `apps/form-app/src/components/plugins/{PluginType}Config.tsx`
+All frontend plugin files live under `apps/form-app/src/plugins/{pluginType}/` — NOT under `src/components/plugins/`. Each plugin owns a self-contained folder.
+
+4. **Plugin config component**: `apps/form-app/src/plugins/{pluginType}/ConfigForm.tsx`
    - Uses shadcn/ui components imported exclusively from `@dculus/ui`
    - Uses `generateId`, `cn` from `@dculus/utils`
    - Follows the icon-in-card pattern: `<div className="bg-{color}-50 p-3 rounded-xl"><Icon className="h-5 w-5 text-{color}-600" /></div>`
@@ -59,7 +61,16 @@ dculus-forms is a form builder SaaS with:
    - Toast notifications use `toastSuccess` / `toastError` from `@dculus/ui`
    - Form state managed with React hooks (no external form libraries unless already used)
 
-5. **i18n translation files** (mandatory):
+5. **Plugin overview summary component**: `apps/form-app/src/plugins/{pluginType}/OverviewSummary.tsx`
+   - Receives `{ config: Record<string, any> }` — typed by `OverviewSummaryProps` from `apps/form-app/src/plugins/core/registry.tsx`
+   - Renders a compact read-only summary of the plugin's current configuration for the plugin dashboard modal's Overview tab
+   - Must handle unconfigured/empty config state gracefully (show a "not configured" placeholder instead of crashing)
+   - Examples of what to show: connected account name, target URL, pass threshold, spreadsheet link
+
+6. **Plugin frontend registration**: `apps/form-app/src/plugins/{pluginType}/index.ts`
+   - Calls `registerFrontendPlugin({ type: '{pluginType}', ConfigForm, OverviewSummary })` from `'../core/registry'`
+
+7. **i18n translation files** (mandatory):
    - `apps/form-app/src/locales/en/plugin{PluginType}.json`
    - `apps/form-app/src/locales/ta/plugin{PluginType}.json`
    - Register both in `apps/form-app/src/locales/index.ts`
@@ -107,10 +118,13 @@ Before delivering output, verify you have produced ALL of the following:
 - [ ] Updated `apps/backend/src/plugins/registry.ts` — import + registerPlugin call
 - [ ] `apps/backend/src/plugins/{type}/types.ts` — TypeScript interface for plugin configuration
 - [ ] (If applicable) Updated `apps/backend/src/plugins/exportRegistry.ts` — export columns
-- [ ] `apps/form-app/src/components/plugins/{Type}Config.tsx` — frontend config UI
+- [ ] `apps/form-app/src/plugins/{type}/ConfigForm.tsx` — frontend config UI
+- [ ] `apps/form-app/src/plugins/{type}/OverviewSummary.tsx` — read-only config summary for the Overview tab
+- [ ] `apps/form-app/src/plugins/{type}/index.ts` — calls `registerFrontendPlugin({ type, ConfigForm, OverviewSummary })`
 - [ ] `apps/form-app/src/locales/en/plugin{Type}.json` — English strings
 - [ ] `apps/form-app/src/locales/ta/plugin{Type}.json` — Tamil strings (translate properly)
 - [ ] Updated `apps/form-app/src/locales/index.ts` — both locale registrations
+- [ ] Also register the plugin's `index.ts` in `apps/form-app/src/plugins/index.ts` (if that barrel file exists)
 - [ ] Brief explanation of how to wire the config component into the existing `Plugins` page
 
 ---

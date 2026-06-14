@@ -16,7 +16,9 @@
     "email": "Email",
     "webhook": "Webhook",
     "slack": "Slack",
-    "quiz-grading": "Quiz Grading"
+    "quiz-grading": "Quiz Grading",
+    "google-sheets": "Google Sheets",
+    "ai-tagger": "AI Auto-Tagger"
   },
   "toasts": {
     "enabledTitle": "Integration enabled",

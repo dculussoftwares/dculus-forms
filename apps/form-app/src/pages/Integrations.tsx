@@ -8,7 +8,6 @@ import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { AlertCircle, Search, X } from 'lucide-react';
 import { PluginCard } from '../components/plugins/shared/PluginCard';
-import { PluginDeliveryLog } from '../components/plugins/shared/PluginDeliveryLog';
 import { AVAILABLE_PLUGIN_TYPES, PLUGIN_ICON_MAP } from '../components/plugins/shared/PluginGallery';
 
 const Integrations: React.FC = () => {
@@ -18,7 +17,6 @@ const Integrations: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [deliveryLogPlugin, setDeliveryLogPlugin] = useState<{ id: string; name: string } | null>(null);
 
   const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
@@ -31,11 +29,6 @@ const Integrations: React.FC = () => {
     fetchPolicy: 'cache-and-network',
   });
 
-  const handleEditPlugin = (plugin: any) =>
-    navigate(`/dashboard/form/${formId}/integrations/${plugin.id}/edit`);
-  const handleViewDeliveries = (plugin: any) =>
-    setDeliveryLogPlugin({ id: plugin.id, name: plugin.name });
-  const handleCloseDeliveryLog = () => setDeliveryLogPlugin(null);
   const handleConnect = (pluginTypeId: string) =>
     navigate(`/dashboard/form/${formId}/integrations/configure/${pluginTypeId}`);
 
@@ -220,9 +213,9 @@ const Integrations: React.FC = () => {
                       >
                         <PluginCard
                           plugin={plugin}
-                          onEdit={() => handleEditPlugin(plugin)}
-                          onViewDeliveries={() => handleViewDeliveries(plugin)}
+                          form={form}
                           onDeleted={refetchPlugins}
+                          onUpdated={refetchPlugins}
                         />
                       </div>
                     ))}
@@ -343,16 +336,6 @@ const Integrations: React.FC = () => {
         </div>
       </div>
 
-      {deliveryLogPlugin && (
-        <PluginDeliveryLog
-          open={true}
-          onOpenChange={(open) => {
-            if (!open) handleCloseDeliveryLog();
-          }}
-          pluginId={deliveryLogPlugin.id}
-          pluginName={deliveryLogPlugin.name}
-        />
-      )}
     </MainLayout>
   );
 };

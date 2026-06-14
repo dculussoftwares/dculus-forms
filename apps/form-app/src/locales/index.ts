@@ -237,6 +237,8 @@ import enAiTaggerPluginConfig from './en/aiTaggerPluginConfig.json';
 import taAiTaggerPluginConfig from './ta/aiTaggerPluginConfig.json';
 import enPluginGoogleSheets from './en/pluginGoogleSheets.json';
 import taPluginGoogleSheets from './ta/pluginGoogleSheets.json';
+import enPluginDashboard from './en/pluginDashboard.json';
+import taPluginDashboard from './ta/pluginDashboard.json';
 
 const enTranslations = {
   common: enCommon,
@@ -359,6 +361,7 @@ const enTranslations = {
   aiEditDrawer: enAIEditDrawer,
   aiTaggerPluginConfig: enAiTaggerPluginConfig,
   pluginGoogleSheets: enPluginGoogleSheets,
+  pluginDashboard: enPluginDashboard,
 } as const;
 
 const taTranslations = {
@@ -482,6 +485,7 @@ const taTranslations = {
   aiEditDrawer: taAIEditDrawer,
   aiTaggerPluginConfig: taAiTaggerPluginConfig,
   pluginGoogleSheets: taPluginGoogleSheets,
+  pluginDashboard: taPluginDashboard,
 } as const;
 
 export const translations = {

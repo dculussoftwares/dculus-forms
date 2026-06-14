@@ -1,0 +1,97 @@
+{
+  "tabs": {
+    "overview": "Overview",
+    "settings": "Settings",
+    "log": "Delivery Log"
+  },
+  "overview": {
+    "stats": {
+      "totalDeliveries": "Total Deliveries",
+      "successRate": "Success Rate",
+      "failed": "Failed",
+      "lastDelivery": "Last Delivery",
+      "never": "Never"
+    },
+    "recentActivity": "Recent Activity",
+    "noActivity": "No deliveries yet",
+    "noActivityDescription": "Deliveries will appear here once the plugin is triggered.",
+    "loadingDeliveries": "Loading...",
+    "errorDeliveries": "Could not load delivery history."
+  },
+  "settings": {
+    "saveSuccess": "Settings saved",
+    "saveSuccessDescription": "\"{{name}}\" has been updated."
+  },
+  "footer": {
+    "delete": "Delete",
+    "enable": "Enable",
+    "disable": "Disable",
+    "test": "Test",
+    "close": "Close"
+  },
+  "deleteDialog": {
+    "title": "Delete Integration",
+    "description": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
+  "toasts": {
+    "enabled": "Integration enabled",
+    "enabledDescription": "\"{{name}}\" is now active.",
+    "disabled": "Integration disabled",
+    "disabledDescription": "\"{{name}}\" has been paused.",
+    "toggleError": "Update failed",
+    "testTriggered": "Test triggered",
+    "testFailed": "Test failed",
+    "deleted": "Integration deleted",
+    "deletedDescription": "\"{{name}}\" has been removed.",
+    "deleteError": "Delete failed",
+    "saveError": "Save failed"
+  },
+  "types": {
+    "webhook": "Webhook",
+    "email": "Email",
+    "quiz-grading": "Quiz Grading",
+    "ai-tagger": "AI Auto-Tagger",
+    "google-sheets": "Google Sheets",
+    "slack": "Slack"
+  },
+  "pluginSummary": {
+    "webhook": {
+      "endpoint": "Endpoint",
+      "secret": "Signing Secret",
+      "secretEnabled": "Enabled",
+      "secretDisabled": "Not configured",
+      "customHeaders": "Custom Headers",
+      "headersCount": "{{count}} header(s)"
+    },
+    "email": {
+      "recipient": "Recipient",
+      "subject": "Subject"
+    },
+    "quiz": {
+      "passThreshold": "Pass Threshold",
+      "questionsConfigured": "Questions",
+      "exportColumn": "Export Column",
+      "defaultColumn": "Quiz Score"
+    },
+    "googleSheets": {
+      "connectedAs": "Connected as",
+      "spreadsheet": "Spreadsheet",
+      "openSheet": "Open sheet",
+      "notConnected": "Not connected",
+      "notConnectedHint": "Open Settings to connect your Google account."
+    },
+    "aiTagger": {
+      "tagsConfigured": "Tags Configured",
+      "noTags": "No tags configured yet. Open Settings to configure."
+    }
+  },
+  "deliveryLog": {
+    "payload": "Payload",
+    "response": "Response",
+    "deliveryId": "Delivery ID",
+    "empty": "No deliveries yet",
+    "emptyDescription": "Deliveries will appear here after the plugin is triggered."
+  }
+}

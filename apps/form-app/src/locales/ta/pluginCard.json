@@ -16,7 +16,9 @@
     "email": "மின்னஞ்சல்",
     "webhook": "வெப்ஹூக்",
     "slack": "மந்தமான",
-    "quiz-grading": "வினாடி வினா மதிப்பீடு"
+    "quiz-grading": "வினாடி வினா மதிப்பீடு",
+    "google-sheets": "Google தாள்கள்",
+    "ai-tagger": "AI தானியங்கி குறிச்சொல்"
   },
   "toasts": {
     "enabledTitle": "ஒருங்கிணைப்பு இயக்கப்பட்டது",

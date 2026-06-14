@@ -4,6 +4,10 @@ import { DataTableColumnHeader } from '@dculus/ui';
 
 // ─── Props contracts ────────────────────────────────────────────────────────
 
+export interface OverviewSummaryProps {
+  config: Record<string, any>;
+}
+
 export interface ConfigFormProps {
   form?: any;
   initialData?: any;
@@ -29,8 +33,10 @@ export interface MetadataViewerProps {
 
 export interface FrontendPlugin {
   type: string;
-  /** Config form rendered in PluginConfiguration page */
+  /** Config form rendered in PluginConfiguration page and Settings tab of the dashboard modal */
   ConfigForm: React.ComponentType<ConfigFormProps>;
+  /** Optional: plugin-specific config summary shown on the Overview tab of the dashboard modal */
+  OverviewSummary?: React.ComponentType<OverviewSummaryProps>;
   /** Optional: response table column cell */
   ResponseCell?: React.ComponentType<ResponseCellProps>;
   /**
