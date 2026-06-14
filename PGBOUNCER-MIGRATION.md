@@ -59,13 +59,21 @@ sslmode=disable
 
 > **Note:** The password contains `+`. In URL-format connection strings, encode it as `%2B`.
 > For plain environment variables (not URLs), use the raw password as-is.
+>
+> **Prisma (dculus-forms):** Always append `?pgbouncer=true&connection_limit=2&sslmode=disable` to any
+> DATABASE_URL that targets PgBouncer. Without `pgbouncer=true`, Prisma uses prepared statements
+> which PgBouncer transaction mode does not support — this causes intermittent query failures.
 
 | Database | DATABASE_URL (via PgBouncer) |
 |---|---|
 | `indiastats_cms_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/indiastats_cms_db?sslmode=disable` |
-| `dculus_forms_dev_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_dev_db?sslmode=disable` |
-| `dculus_forms_prod_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_prod_db?sslmode=disable` |
+| `dculus_forms_dev_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_dev_db?pgbouncer=true&connection_limit=2&sslmode=disable` |
+| `dculus_forms_prod_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_prod_db?pgbouncer=true&connection_limit=2&sslmode=disable` |
 | `dculus_home_site_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_home_site_db?sslmode=disable` |
+
+> `indiastats_cms_db` uses `@payloadcms/db-postgres` (Drizzle under the hood) which does not use
+> Prisma prepared statements — `pgbouncer=true` is not applicable there. The `max: 2` pool cap in
+> `payload.config.ts` serves the same connection-limiting purpose.
 
 ---
 
