@@ -6,6 +6,7 @@ import { uploadFile } from '../../services/fileUploadService.js';
 import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
 import { auth } from '../../lib/better-auth.js';
+import { fromNodeHeaders } from 'better-auth/node';
 import * as formSharing from '../../graphql/resolvers/formSharing.js';
 
 // Mock dependencies
@@ -61,6 +62,9 @@ describe('Upload Routes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // vi.restoreAllMocks() in afterEach clears the fromNodeHeaders vi.fn() implementation;
+    // re-assert it here so session resolution works in every test.
+    vi.mocked(fromNodeHeaders).mockImplementation((headers: any) => headers);
     app = express();
     app.use(express.json());
     app.use('/api/upload', uploadRouter);
