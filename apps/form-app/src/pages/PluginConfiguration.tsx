@@ -5,7 +5,7 @@ import { LoadingSpinner, Button, toastSuccess, toastError, EmptyState } from '@d
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
-import { GET_FORM_PLUGIN, CREATE_FORM_PLUGIN, UPDATE_FORM_PLUGIN } from '../graphql/plugins';
+import { GET_FORM_PLUGIN, GET_FORM_PLUGINS, CREATE_FORM_PLUGIN, UPDATE_FORM_PLUGIN } from '../graphql/plugins';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { getFrontendPlugin } from '../plugins/core/registry';
 import '../plugins/index';
@@ -43,7 +43,7 @@ const PluginConfiguration: React.FC = () => {
     try {
       await createPlugin({
         variables: { input: { formId, ...data } },
-        refetchQueries: ['GetFormPlugins'],
+        refetchQueries: [{ query: GET_FORM_PLUGINS, variables: { formId } }],
       });
       toastSuccess(
         t('toasts.pluginCreated.title'),
@@ -63,7 +63,7 @@ const PluginConfiguration: React.FC = () => {
     try {
       await updatePlugin({
         variables: { id: pluginId, input: { name: data.name, config: data.config, events: data.events } },
-        refetchQueries: ['GetFormPlugins'],
+        refetchQueries: [{ query: GET_FORM_PLUGINS, variables: { formId } }],
       });
       toastSuccess(
         t('toasts.pluginUpdated.title'),

@@ -27,6 +27,7 @@ import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
 import { pixabayRouter } from './routes/pixabay.js';
 import { pexelsRouter } from './routes/pexels.js';
 import { aiChatRouter } from './routes/aiChat.js';
+import { googleOAuthRouter } from './routes/google-oauth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { edgeGeolocationMiddleware } from './middleware/edge-geolocation.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
@@ -202,6 +203,7 @@ app.use('/api', chargebeeWebhookRouter);
 app.use('/api/ai', graphqlLimiter, aiChatRouter);
 app.use('/api', pixabayRouter);
 app.use('/api', pexelsRouter);
+app.use('/api', googleOAuthRouter);
 
 // Add favicon route to prevent 404 errors
 app.get('/favicon.ico', (req, res) => {

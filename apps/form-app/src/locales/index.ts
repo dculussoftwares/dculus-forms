@@ -235,6 +235,8 @@ import enAIEditDrawer from './en/aiEditDrawer.json';
 import taAIEditDrawer from './ta/aiEditDrawer.json';
 import enAiTaggerPluginConfig from './en/aiTaggerPluginConfig.json';
 import taAiTaggerPluginConfig from './ta/aiTaggerPluginConfig.json';
+import enPluginGoogleSheets from './en/pluginGoogleSheets.json';
+import taPluginGoogleSheets from './ta/pluginGoogleSheets.json';
 
 const enTranslations = {
   common: enCommon,
@@ -356,6 +358,7 @@ const enTranslations = {
   createFormWizard: enCreateFormWizard,
   aiEditDrawer: enAIEditDrawer,
   aiTaggerPluginConfig: enAiTaggerPluginConfig,
+  pluginGoogleSheets: enPluginGoogleSheets,
 } as const;
 
 const taTranslations = {
@@ -478,6 +481,7 @@ const taTranslations = {
   createFormWizard: taCreateFormWizard,
   aiEditDrawer: taAIEditDrawer,
   aiTaggerPluginConfig: taAiTaggerPluginConfig,
+  pluginGoogleSheets: taPluginGoogleSheets,
 } as const;
 
 export const translations = {

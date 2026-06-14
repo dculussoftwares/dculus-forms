@@ -1,0 +1,50 @@
+{
+  "header": {
+    "titleCreate": "Connect Google Sheets",
+    "titleEdit": "Edit Google Sheets",
+    "description": "Automatically append form responses to a Google Spreadsheet as new rows",
+    "formLabel": "Form",
+    "viewForm": "View form"
+  },
+  "basicSettings": {
+    "title": "Basic Settings",
+    "name": {
+      "label": "Plugin Name",
+      "placeholder": "e.g., Sales Leads Sheet",
+      "hint": "A descriptive name to identify this integration"
+    }
+  },
+  "connection": {
+    "title": "Google Account",
+    "description": "Connect your Google account to allow writing to Google Sheets",
+    "connectButton": "Connect Google Account",
+    "connecting": "Connecting...",
+    "disconnectButton": "Disconnect",
+    "connectedAs": "Connected as {{email}}",
+    "openSheet": "Open in Google Sheets",
+    "notConnectedHint": "Connect your Google account to start syncing responses to a spreadsheet. A new spreadsheet will be created automatically on the first submission.",
+    "popupBlocked": "Could not open the Google login popup. Please allow popups for this site and try again."
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "step1": "On the first form submission, a new Google Sheet is created automatically in your Google Drive.",
+    "step2": "A header row is written with all form field names, submission time, and response ID.",
+    "step3": "Every subsequent submission appends a new row to the sheet."
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "create": "Create Plugin",
+    "update": "Update Plugin",
+    "saving": "Saving..."
+  },
+  "validation": {
+    "nameRequired": "Plugin name is required",
+    "notConnected": "Please connect your Google account first"
+  },
+  "toasts": {
+    "connectedTitle": "Google Account Connected",
+    "connectedDescription": "Signed in as {{email}}",
+    "disconnectedTitle": "Account Disconnected",
+    "disconnectedDescription": "Your Google account has been disconnected"
+  }
+}

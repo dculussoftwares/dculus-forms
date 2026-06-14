@@ -14,6 +14,7 @@ import { EmailVerification } from './pages/EmailVerification';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { MagicLinkCallback } from './pages/MagicLinkCallback';
 import { OAuthCallback } from './pages/OAuthCallback';
+import { OAuthGoogleSheetsCallback } from './pages/OAuthGoogleSheetsCallback';
 import InviteAcceptance from './pages/InviteAcceptance';
 import { Pricing } from './pages/Pricing';
 import { CheckoutSuccess } from './pages/subscription/success';
@@ -58,6 +59,7 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/magic-link/verify" element={<MagicLinkCallback />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
+          <Route path="/oauth/google/sheets" element={<OAuthGoogleSheetsCallback />} />
           <Route path="/invite/:invitationId" element={<InviteAcceptance />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/subscription/success" element={<CheckoutSuccess />} />

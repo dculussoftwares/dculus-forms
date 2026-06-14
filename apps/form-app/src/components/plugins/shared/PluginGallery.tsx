@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge, Button } from '@dculus/ui';
-import { Webhook, Mail, MessageSquare, GraduationCap, Tag, type LucideIcon } from 'lucide-react';
+import { Webhook, Mail, MessageSquare, GraduationCap, Tag, TableProperties, type LucideIcon } from 'lucide-react';
 import { allPluginManifests, type PluginManifest } from '@dculus/plugins';
 
 export const PLUGIN_ICON_MAP: Record<string, LucideIcon> = {
@@ -9,6 +9,7 @@ export const PLUGIN_ICON_MAP: Record<string, LucideIcon> = {
   GraduationCap,
   MessageSquare,
   Tag,
+  TableProperties,
 };
 
 export type { PluginManifest as PluginType };
