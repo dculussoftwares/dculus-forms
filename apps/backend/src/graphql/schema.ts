@@ -601,6 +601,12 @@ export const typeDefs = gql`
     percentage: Float!
   }
 
+  type OrgDailyUsageDay {
+    date: String!
+    views: Int!
+    submissions: Int!
+  }
+
   type CountryStats {
     code: String
     name: String!
@@ -1079,6 +1085,7 @@ export const typeDefs = gql`
       formId: ID!
       timeRange: TimeRangeInput
     ): FormSubmissionAnalytics!
+    orgDailyUsage(organizationId: ID!, periodStart: String!, periodEnd: String!): [OrgDailyUsageDay!]!
 
     # Field Analytics Queries
     fieldAnalytics(formId: ID!, fieldId: ID!): FieldAnalytics!
