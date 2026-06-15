@@ -18,7 +18,10 @@ export const aiTaggerMetadataKey = (pluginId: string) => `ai-tagger:${pluginId}`
 
 export interface AiTaggerResult {
   success: boolean;
+  /** Tag IDs that were assigned to the response. */
   tagsApplied: string[];
+  /** Human-readable tag names that were assigned (parallel array to tagsApplied). */
+  tagsAppliedNames?: string[];
   tagsConsidered: number;
   tokensUsed: number;
   taggedAt?: string;

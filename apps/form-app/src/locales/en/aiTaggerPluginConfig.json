@@ -6,12 +6,21 @@
     "pluginName": "Plugin Name",
     "pluginNamePlaceholder": "e.g., AI Auto-Tagger"
   },
+  "createTag": {
+    "sectionTitle": "Manage Tags",
+    "sectionDescription": "Create tags for this form. Tags created here will appear in the definitions section below and in the Responses table.",
+    "namePlaceholder": "Tag name",
+    "colorLabel": "Colour",
+    "addButton": "Add Tag",
+    "deleteTag": "Delete tag",
+    "nameRequired": "Tag name is required"
+  },
   "tagDefinitions": {
-    "title": "Tag Definitions",
-    "description": "Add a definition for each tag to tell the AI when to apply it",
+    "title": "AI Definitions",
+    "description": "Add a definition for each tag to tell the AI when to apply it. Only tags with a definition will be auto-tagged.",
     "hint": "Only tags with a definition will be considered by the AI. Tags without definitions are skipped.",
     "loading": "Loading tags...",
-    "noTags": "No tags found for this form. Create tags in the Responses table first, then come back to add definitions.",
+    "noTags": "No tags yet. Use the section above to create your first tag.",
     "definitionLabel": "When should AI apply this tag?",
     "definitionPlaceholder": "e.g., Response mentions a billing issue, payment problem, or invoice query"
   },

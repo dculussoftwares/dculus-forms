@@ -86,8 +86,8 @@ Rules:
       prompt: `Tags to consider:\n${tagList}\n\nForm response:\n${responseFields}`,
     });
 
-    const validTagIds = new Set(tagsWithDefinitions.map((t) => t.tagId));
-    const confirmedTagIds = (output.tagIds ?? []).filter((id: string) => validTagIds.has(id));
+    const tagConfigById = new Map(tagsWithDefinitions.map((t) => [t.tagId, t]));
+    const confirmedTagIds = (output.tagIds ?? []).filter((id: string) => tagConfigById.has(id));
 
     for (const tagId of confirmedTagIds) {
       await context.prisma.responseTagAssignment.upsert({
@@ -98,9 +98,13 @@ Rules:
     }
 
     const existingMetadata = (response.metadata as Record<string, any>) || {};
+    // Store tag names alongside IDs so export columns can produce human-readable output
+    // without needing a second database lookup.
+    const appliedTagNames = confirmedTagIds.map((id: string) => tagConfigById.get(id)?.name ?? id);
     const result = {
       success: true,
       tagsApplied: confirmedTagIds,
+      tagsAppliedNames: appliedTagNames,
       tagsConsidered: tagsWithDefinitions.length,
       tokensUsed: usage?.totalTokens ?? 0,
       taggedAt: new Date().toISOString(),
