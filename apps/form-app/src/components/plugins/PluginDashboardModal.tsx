@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogTitle,
   Button,
+  Badge,
   LoadingSpinner,
   AlertDialog,
   AlertDialogContent,
@@ -17,6 +18,10 @@ import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
@@ -260,16 +265,12 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                 <span className="text-sm font-semibold truncate" style={{ color: 'var(--tf-dark)' }}>
                   {plugin.name}
                 </span>
-                <span
-                  className="px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0"
-                  style={
-                    plugin.enabled
-                      ? { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }
-                      : { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' }
-                  }
+                <Badge
+                  variant={plugin.enabled ? 'outline' : 'secondary'}
+                  className={`shrink-0 text-[10px] ${plugin.enabled ? 'border-[var(--tf-green-bg-md)] bg-[var(--tf-green-bg)] text-[var(--tf-green)]' : ''}`}
                 >
                   {plugin.enabled ? t('footer.enable').replace('Enable', 'Enabled') : t('footer.disable').replace('Disable', 'Disabled')}
-                </span>
+                </Badge>
               </div>
               <p className="text-[11px]" style={{ color: 'var(--tf-muted)' }}>
                 {typeLabel}
@@ -278,31 +279,28 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
           </div>
 
           {/* Tabs */}
-          <div
-            className="flex px-5"
-            style={{ borderBottom: '1px solid var(--tf-border)' }}
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => {
+              setActiveTab(v as TabId);
+              if (v === 'log') refetchDeliveries();
+            }}
           >
-            {(['overview', 'settings', 'log'] as TabId[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => { setActiveTab(tab); if (tab === 'log') refetchDeliveries(); }}
-                className="px-4 py-2.5 text-xs font-medium transition-colors"
-                style={{
-                  borderBottom: activeTab === tab ? '2px solid var(--tf-dark)' : '2px solid transparent',
-                  color: activeTab === tab ? 'var(--tf-dark)' : 'var(--tf-muted)',
-                  marginBottom: '-1px',
-                }}
-              >
-                {t(`tabs.${tab}` as any)}
-              </button>
-            ))}
-          </div>
+            <div className="px-5" style={{ borderBottom: '1px solid var(--tf-border)' }}>
+              <TabsList className="border-b-0">
+                {(['overview', 'settings', 'log'] as TabId[]).map((tab) => (
+                  <TabsTrigger key={tab} value={tab}>
+                    {t(`tabs.${tab}` as any)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
           {/* Body — fixed height so popup never resizes on tab switch */}
           <div className="h-[420px] overflow-y-auto p-5">
 
             {/* ── OVERVIEW TAB ── */}
-            {activeTab === 'overview' && (
+            <TabsContent value="overview" className="mt-0">
               <div className="space-y-4">
                 {/* Stats */}
                 <div className="grid grid-cols-4 gap-2.5">
@@ -411,10 +409,10 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                   )}
                 </div>
               </div>
-            )}
+            </TabsContent>
 
             {/* ── SETTINGS TAB ── */}
-            {activeTab === 'settings' && (
+            <TabsContent value="settings" className="mt-0">
               <div>
                 {ConfigForm ? (
                   <ConfigForm
@@ -431,10 +429,10 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                   </p>
                 )}
               </div>
-            )}
+            </TabsContent>
 
             {/* ── DELIVERY LOG TAB ── */}
-            {activeTab === 'log' && (
+            <TabsContent value="log" className="mt-0">
               <div>
                 {deliveryLoading && (
                   <div className="flex justify-center py-10">
@@ -478,16 +476,12 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                               <span className="flex-1 text-xs font-semibold" style={{ color: 'var(--tf-dark)' }}>
                                 {delivery.eventType}
                               </span>
-                              <span
-                                className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                                style={
-                                  delivery.status === 'success'
-                                    ? { background: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }
-                                    : { background: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }
-                                }
+                              <Badge
+                                variant={delivery.status === 'success' ? 'outline' : 'destructive'}
+                                className={`text-[10px] ${delivery.status === 'success' ? 'border-[var(--tf-green-bg-md)] bg-[var(--tf-green-bg)] text-[var(--tf-green)]' : ''}`}
                               >
                                 {delivery.status}
-                              </span>
+                              </Badge>
                               <span className="text-[10px]" style={{ color: 'var(--tf-light-muted)' }}>
                                 {safeFormatDistance(delivery.deliveredAt)}
                               </span>
@@ -550,8 +544,9 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                   </div>
                 )}
               </div>
-            )}
+            </TabsContent>
           </div>
+          </Tabs>
 
           {/* Footer */}
           <div
