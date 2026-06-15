@@ -5,7 +5,16 @@ import { useTranslation } from '../hooks/useTranslation';
 import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
+import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { AlertCircle, ArrowLeft, BarChart3, PieChart } from 'lucide-react';
+
+const formatTime = (seconds: number | null): string => {
+  if (!seconds || seconds <= 0) return '—';
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const m = Math.floor(seconds / 60);
+  const s = Math.round(seconds % 60);
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+};
 
 const ResponsesAnalytics: React.FC = () => {
   const { t } = useTranslation('responsesAnalytics');
@@ -18,12 +27,10 @@ const ResponsesAnalytics: React.FC = () => {
     skip: !actualFormId,
   });
 
-  /* Mock data — replace with real query */
-  const mockResponses = [
-    { id: '1', submittedAt: '2024-01-15T10:30:00Z', data: { name: 'John Doe', email: 'john@example.com', message: 'Great form!' }, status: 'completed' },
-    { id: '2', submittedAt: '2024-01-14T15:45:00Z', data: { name: 'Jane Smith', email: 'jane@example.com', message: 'Thanks for the service' }, status: 'completed' },
-    { id: '3', submittedAt: '2024-01-13T09:15:00Z', data: { name: 'Bob Johnson', email: 'bob@example.com', message: 'Needs improvement' }, status: 'completed' },
-  ];
+  const { submissionAnalyticsData, submissionConversionRate } = useFormAnalytics({
+    formId: actualFormId || '',
+    initialTimeRange: '30d',
+  });
 
   const breadcrumbs = [
     { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
@@ -99,22 +106,10 @@ const ResponsesAnalytics: React.FC = () => {
           </ChartCard>
 
           <ChartCard icon={PieChart} iconBg="var(--tf-icon-lavender)" iconColor="#5c2e6b" title={t('charts.fieldAnalytics.title')} description={t('charts.fieldAnalytics.description')}>
-            <div className="space-y-3">
-              {[
-                { label: t('charts.fieldAnalytics.nameFieldCompletion'), pct: 100, color: 'var(--tf-green)' },
-                { label: t('charts.fieldAnalytics.emailFieldCompletion'), pct: 100, color: 'var(--tf-green)' },
-                { label: t('charts.fieldAnalytics.messageFieldCompletion'), pct: 85, color: '#a25fba' },
-              ].map(({ label, pct, color }) => (
-                <div key={label}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-xs text-muted-foreground">{label}</span>
-                    <span className="text-xs font-medium text-primary">{pct}%</span>
-                  </div>
-                  <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: 'var(--tf-faint)' }}>
-                    <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-                  </div>
-                </div>
-              ))}
+            <div className="h-52 flex flex-col items-center justify-center rounded-lg" style={{ backgroundColor: 'var(--tf-faint)' }}>
+              <PieChart className="h-10 w-10 mb-2 text-[var(--tf-icon-gray)]" />
+              <p className="text-sm font-medium text-muted-foreground">{t('charts.fieldAnalytics.title')}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--tf-muted)', opacity: 0.7 }}>{t('charts.fieldAnalytics.comingSoon')}</p>
             </div>
           </ChartCard>
         </div>
@@ -124,9 +119,9 @@ const ResponsesAnalytics: React.FC = () => {
           <h3 className="text-sm font-semibold mb-4 text-primary">{t('charts.responseSummary.title')}</h3>
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { value: mockResponses.length, label: t('charts.responseSummary.totalSubmissions'), bg: 'var(--tf-icon-teal)', color: 'var(--tf-green)' },
-              { value: '100%', label: t('charts.responseSummary.completionRate'), bg: 'var(--tf-icon-lavender)', color: '#5c2e6b' },
-              { value: '2.5 min', label: t('charts.responseSummary.avgTimeToComplete'), bg: '#fbe19d', color: '#8b6a18' },
+              { value: submissionAnalyticsData?.totalSubmissions ?? form.responseCount, label: t('charts.responseSummary.totalSubmissions'), bg: 'var(--tf-icon-teal)', color: 'var(--tf-green)' },
+              { value: submissionAnalyticsData ? `${submissionConversionRate}%` : '—', label: t('charts.responseSummary.completionRate'), bg: 'var(--tf-icon-lavender)', color: '#5c2e6b' },
+              { value: formatTime(submissionAnalyticsData?.averageCompletionTime ?? null), label: t('charts.responseSummary.avgTimeToComplete'), bg: '#fbe19d', color: '#8b6a18' },
             ].map(({ value, label, bg, color }) => (
               <div key={label} className="p-4 rounded-xl" style={{ backgroundColor: bg }}>
                 <p className="text-2xl font-light" style={{ color }}>{value}</p>

@@ -28,9 +28,7 @@
     "fieldAnalytics": {
       "title": "களப் பகுப்பாய்வு",
       "description": "மிகவும் பொதுவான பதில்கள் மற்றும் புல நிறைவு விகிதங்கள்",
-      "nameFieldCompletion": "பெயர் புலம் நிறைவு",
-      "emailFieldCompletion": "மின்னஞ்சல் புலம் நிறைவு",
-      "messageFieldCompletion": "செய்தி புலம் நிறைவு"
+      "comingSoon": "புல-வாரியான பகுப்பாய்வு விரைவில்"
     },
     "responseSummary": {
       "title": "பதில் சுருக்கம்",

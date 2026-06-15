@@ -28,9 +28,7 @@
     "fieldAnalytics": {
       "title": "Field Analytics",
       "description": "Most common responses and field completion rates",
-      "nameFieldCompletion": "Name field completion",
-      "emailFieldCompletion": "Email field completion",
-      "messageFieldCompletion": "Message field completion"
+      "comingSoon": "Per-field analytics coming soon"
     },
     "responseSummary": {
       "title": "Response Summary",
