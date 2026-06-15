@@ -374,6 +374,7 @@ export const SubscriptionDashboard = () => {
 
       {/* Usage Chart */}
       <UsageChart
+        organizationId={organizationId}
         viewsUsed={usage.views.used}
         submissionsUsed={usage.submissions.used}
         viewsLimit={usage.views.limit}
