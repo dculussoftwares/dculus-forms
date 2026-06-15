@@ -44,7 +44,7 @@ export function PageWrapper({
           <SidebarTrigger className="h-8 w-8 shrink-0 rounded-lg text-[#655d67] hover:bg-[rgba(87,84,91,0.06)] hover:text-[#3c323e] dark:text-muted-foreground dark:hover:bg-white/5 dark:hover:text-foreground" />
           <div className="w-px h-5 bg-[rgba(81,76,84,0.12)] dark:bg-white/10 shrink-0" />
           <Breadcrumb>
-            <BreadcrumbList className="flex-nowrap">
+            <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink
                   href="/"
@@ -109,7 +109,7 @@ export function PageWrapper({
       </header>
 
       {/* ── Page content ── */}
-      <div className={`flex flex-1 flex-col gap-4 p-6 overflow-y-auto bg-background dark:bg-background ${className}`}>
+      <div className={`flex flex-1 flex-col gap-4 p-4 sm:p-6 overflow-y-auto bg-background dark:bg-background ${className}`}>
         {subtitle && (
           <p className="text-sm text-[#655d67] dark:text-muted-foreground -mt-2">{subtitle}</p>
         )}
