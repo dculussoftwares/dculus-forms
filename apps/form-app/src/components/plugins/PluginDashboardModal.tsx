@@ -66,7 +66,7 @@ import { getFrontendPlugin } from '../../plugins/core/registry';
 import { useTranslation } from '../../hooks/useTranslation';
 import '../../plugins/index';
 
-type TabId = 'overview' | 'settings' | 'log';
+type TabId = 'configure' | 'log';
 
 interface Plugin {
   id: string;
@@ -116,16 +116,18 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
   onUpdated,
 }) => {
   const { t } = useTranslation('pluginDashboard');
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [activeTab, setActiveTab] = useState<TabId>('configure');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (open) setActiveTab('overview');
+    if (open) setActiveTab('configure');
   }, [open]);
   const [isTogglingEnabled, setIsTogglingEnabled] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  const isAnyLoading = isSaving || isTogglingEnabled || isTesting || isDeleting;
 
   const { data: deliveryData, loading: deliveryLoading, error: deliveryError, refetch: refetchDeliveries } = useQuery(
     GET_PLUGIN_DELIVERIES,
@@ -219,7 +221,6 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
         t('settings.saveSuccess'),
         t('settings.saveSuccessDescription', { values: { name: data.name } })
       );
-      setActiveTab('overview');
       onUpdated();
     } catch (error: any) {
       toastError(t('toasts.saveError'), error.message);
@@ -247,7 +248,21 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
           }}
         >
           {/* Visually-hidden title required by Radix Dialog for screen readers */}
-          <DialogTitle className="sr-only">{plugin.name} — Dashboard</DialogTitle>
+          <DialogTitle className="sr-only">{plugin.name}</DialogTitle>
+
+          {/* Top loading bar — visible during any async operation */}
+          <div className="absolute top-0 left-0 w-full h-0.5 z-10 overflow-hidden">
+            {isAnyLoading && (
+              <div
+                className="h-full animate-pulse"
+                style={{
+                  background: 'var(--tf-green)',
+                  width: '100%',
+                  opacity: 0.85,
+                }}
+              />
+            )}
+          </div>
 
           {/* Header */}
           <div
@@ -288,7 +303,7 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
           >
             <div className="px-5" style={{ borderBottom: '1px solid var(--tf-border)' }}>
               <TabsList className="border-b-0">
-                {(['overview', 'settings', 'log'] as TabId[]).map((tab) => (
+                {(['configure', 'log'] as TabId[]).map((tab) => (
                   <TabsTrigger key={tab} value={tab}>
                     {t(`tabs.${tab}` as any)}
                   </TabsTrigger>
@@ -299,10 +314,29 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
           {/* Body — fixed height so popup never resizes on tab switch */}
           <div className="h-[420px] overflow-y-auto p-5">
 
-            {/* ── OVERVIEW TAB ── */}
-            <TabsContent value="overview" className="mt-0">
-              <div className="space-y-4">
-                {/* Stats */}
+            {/* ── CONFIGURE TAB (merged config + overview) ── */}
+            <TabsContent value="configure" className="mt-0">
+              <div className="space-y-5">
+                {/* Config section */}
+                {ConfigForm ? (
+                  <ConfigForm
+                    form={form}
+                    initialData={plugin}
+                    mode="edit"
+                    isSaving={isSaving}
+                    onSave={handleSaveSettings}
+                    onCancel={() => {}}
+                  />
+                ) : (
+                  <p className="text-sm text-center py-6" style={{ color: 'var(--tf-muted)' }}>
+                    {t('configure.noSettings')}
+                  </p>
+                )}
+
+                {/* Divider */}
+                <hr style={{ borderColor: 'var(--tf-border-light)' }} />
+
+                {/* Stats row */}
                 <div className="grid grid-cols-4 gap-2.5">
                   {[
                     { label: t('overview.stats.totalDeliveries'), value: total, valueClass: '' },
@@ -408,26 +442,6 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                     </div>
                   )}
                 </div>
-              </div>
-            </TabsContent>
-
-            {/* ── SETTINGS TAB ── */}
-            <TabsContent value="settings" className="mt-0">
-              <div>
-                {ConfigForm ? (
-                  <ConfigForm
-                    form={form}
-                    initialData={plugin}
-                    mode="edit"
-                    isSaving={isSaving}
-                    onSave={handleSaveSettings}
-                    onCancel={() => setActiveTab('overview')}
-                  />
-                ) : (
-                  <p className="text-sm text-center py-10" style={{ color: 'var(--tf-muted)' }}>
-                    No settings available for this plugin type.
-                  </p>
-                )}
               </div>
             </TabsContent>
 

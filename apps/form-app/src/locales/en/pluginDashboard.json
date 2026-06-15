@@ -1,8 +1,10 @@
 {
   "tabs": {
-    "overview": "Overview",
-    "settings": "Settings",
+    "configure": "Configure",
     "log": "Delivery Log"
+  },
+  "configure": {
+    "noSettings": "No settings available for this plugin type."
   },
   "overview": {
     "stats": {
