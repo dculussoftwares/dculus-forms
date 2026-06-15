@@ -721,4 +721,48 @@ describe('Analytics Service', () => {
     });
   });
 
+  describe('getOrgDailyUsage', () => {
+    const orgId = 'org-abc';
+    const periodStart = new Date('2026-06-01T00:00:00Z');
+    const periodEnd = new Date('2026-06-30T23:59:59Z');
+
+    it('returns merged daily views and submissions sorted by date', async () => {
+      (prisma.$queryRaw as any)
+        .mockResolvedValueOnce([
+          { date: new Date('2026-06-01T00:00:00Z'), views: BigInt(5) },
+          { date: new Date('2026-06-03T00:00:00Z'), views: BigInt(2) },
+        ])
+        .mockResolvedValueOnce([
+          { date: new Date('2026-06-01T00:00:00Z'), submissions: BigInt(3) },
+          { date: new Date('2026-06-04T00:00:00Z'), submissions: BigInt(1) },
+        ]);
+
+      const result = await analyticsService.getOrgDailyUsage(orgId, periodStart, periodEnd);
+
+      expect(result).toEqual([
+        { date: '2026-06-01', views: 5, submissions: 3 },
+        { date: '2026-06-03', views: 2, submissions: 0 },
+        { date: '2026-06-04', views: 0, submissions: 1 },
+      ]);
+    });
+
+    it('returns empty array when no data exists', async () => {
+      (prisma.$queryRaw as any)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+
+      const result = await analyticsService.getOrgDailyUsage(orgId, periodStart, periodEnd);
+
+      expect(result).toEqual([]);
+    });
+
+    it('throws when prisma.$queryRaw fails', async () => {
+      (prisma.$queryRaw as any).mockRejectedValueOnce(new Error('DB error'));
+
+      await expect(
+        analyticsService.getOrgDailyUsage(orgId, periodStart, periodEnd)
+      ).rejects.toThrow('Failed to fetch org daily usage data');
+    });
+  });
+
 });

@@ -538,6 +538,72 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
   }
 };
 
+// Org daily usage types
+type OrgDailyViewRow = { date: Date; views: bigint };
+type OrgDailySubmissionRow = { date: Date; submissions: bigint };
+
+/**
+ * Get organization's daily views and submissions for a given time period.
+ * Returns merged data sorted by date in ascending order.
+ */
+const getOrgDailyUsage = async (
+  organizationId: string,
+  periodStart: Date,
+  periodEnd: Date
+): Promise<Array<{ date: string; views: number; submissions: number }>> => {
+  try {
+    const [viewRows, submissionRows] = await Promise.all([
+      prisma.$queryRaw<OrgDailyViewRow[]>`
+        SELECT
+          DATE_TRUNC('day', fva."viewedAt") AS date,
+          COUNT(*) AS views
+        FROM "form_view_analytics" fva
+        JOIN "form" f ON f.id = fva."formId"
+        WHERE f."organizationId" = ${organizationId}
+          AND fva."viewedAt" >= ${periodStart}
+          AND fva."viewedAt" <= ${periodEnd}
+        GROUP BY DATE_TRUNC('day', fva."viewedAt")
+        ORDER BY date ASC
+      `,
+      prisma.$queryRaw<OrgDailySubmissionRow[]>`
+        SELECT
+          DATE_TRUNC('day', fsa."submittedAt") AS date,
+          COUNT(*) AS submissions
+        FROM "form_submission_analytics" fsa
+        JOIN "form" f ON f.id = fsa."formId"
+        WHERE f."organizationId" = ${organizationId}
+          AND fsa."submittedAt" >= ${periodStart}
+          AND fsa."submittedAt" <= ${periodEnd}
+        GROUP BY DATE_TRUNC('day', fsa."submittedAt")
+        ORDER BY date ASC
+      `,
+    ]);
+
+    const merged = new Map<string, { views: number; submissions: number }>();
+
+    for (const row of viewRows) {
+      const date = new Date(row.date).toISOString().split('T')[0];
+      merged.set(date, { views: Number(row.views), submissions: 0 });
+    }
+    for (const row of submissionRows) {
+      const date = new Date(row.date).toISOString().split('T')[0];
+      const existing = merged.get(date);
+      if (existing) {
+        existing.submissions = Number(row.submissions);
+      } else {
+        merged.set(date, { views: 0, submissions: Number(row.submissions) });
+      }
+    }
+
+    return Array.from(merged.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, counts]) => ({ date, ...counts }));
+  } catch (error) {
+    logger.error('Error getting org daily usage:', error);
+    throw new Error('Failed to fetch org daily usage data');
+  }
+};
+
 // Initialize service (log startup)
 const initializeService = () => {
   const dbPath = process.env.MAXMIND_DB_PATH;
@@ -764,6 +830,7 @@ const analyticsService = {
   trackFormSubmission,
   getFormAnalytics,
   getFormSubmissionAnalytics,
+  getOrgDailyUsage,
   initialize: initializeService
 };
 
