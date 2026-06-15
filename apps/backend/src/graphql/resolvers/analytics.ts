@@ -1,7 +1,7 @@
 import { createGraphQLError, GraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { analyticsService } from '../../services/analyticsService.js';
-import { requireAuth, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
+import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { prisma } from '../../lib/prisma.js';
 import { emitFormViewed } from '../../subscriptions/events.js';
 import { logger } from '../../lib/logger.js';
@@ -259,6 +259,29 @@ export const analyticsResolvers = {
         }
 
         throw createGraphQLError('Failed to fetch submission analytics data', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+    },
+
+    orgDailyUsage: async (
+      _: any,
+      { organizationId, periodStart, periodEnd }: { organizationId: string; periodStart: string; periodEnd: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      try {
+        requireAuth(context.auth);
+        await requireOrganizationMembership(context.auth, organizationId);
+
+        const start = new Date(periodStart);
+        const end = new Date(periodEnd);
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          throw createGraphQLError('Invalid period dates', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+        }
+
+        return await analyticsService.getOrgDailyUsage(organizationId, start, end);
+      } catch (error) {
+        logger.error('Error in orgDailyUsage query:', error);
+        if (error instanceof GraphQLError) throw error;
+        throw createGraphQLError('Failed to fetch org daily usage', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     }
   }
