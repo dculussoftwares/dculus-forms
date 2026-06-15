@@ -5,17 +5,47 @@ import { useFormBuilderStore } from '@/store/useFormBuilderStore.ts';
 import { FormRenderer, toastSuccess, toastError } from '@dculus/ui';
 import type { FormSchema } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
-import { getCdnEndpoint, getFormViewerUrl } from '../../../lib/config';
+import { getCdnEndpoint } from '../../../lib/config';
 import { SUBMIT_RESPONSE } from '../../../graphql/mutations';
 
 type PreviewMode = 'desktop' | 'mobile';
 
 interface PreviewTabProps {
   formId?: string;
-  shortUrl?: string;
 }
 
-export const PreviewTab: React.FC<PreviewTabProps> = ({ formId, shortUrl }) => {
+/**
+ * Scoped CSS overrides that force sm: breakpoint classes to behave as if the
+ * viewport is narrow (<640px) inside the phone preview frame.
+ *
+ * Two rules do the heavy lifting for all 9 form layouts:
+ *  1. sm:flex-row → column (stacks two-chunk intro splits vertically)
+ *  2. sm:flex     → none   (keeps decorative image chunks hidden)
+ *
+ * Padding overrides prevent the pages-section card from using sm: padding
+ * values (which would be enormous at 1280px browser viewport).
+ */
+const MOBILE_PREVIEW_CSS = `
+  /* Stack horizontal two-chunk layouts vertically */
+  .mobile-preview .sm\\:flex-row { flex-direction: column !important; }
+
+  /* Keep hidden-on-mobile elements hidden (hidden sm:flex / hidden sm:block) */
+  .mobile-preview .sm\\:flex   { display: none !important; }
+  .mobile-preview .sm\\:block  { display: none !important; }
+  .mobile-preview .sm\\:inline { display: none !important; }
+
+  /* Pages-section outer wrapper: use compact padding */
+  .mobile-preview .sm\\:p-8  { padding: 0.75rem !important; }
+
+  /* L6 wizard intro padding */
+  .mobile-preview .sm\\:px-\\[10\\%\\] { padding-left:  1rem !important; padding-right:  1rem !important; }
+  .mobile-preview .sm\\:py-\\[5\\%\\]  { padding-top:   1rem !important; padding-bottom: 1rem !important; }
+
+  /* Page-size selector: stay visible in preview context */
+  .mobile-preview .sm\\:flex.hidden { display: none !important; }
+`;
+
+export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
   const { pages, layout } = useFormBuilderStore();
   const cdnEndpoint = getCdnEndpoint();
   const [submitCount, setSubmitCount] = useState(0);
@@ -64,13 +94,29 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId, shortUrl }) => {
     [formId, submitResponse]
   );
 
-  const mobileUrl = shortUrl ? getFormViewerUrl(shortUrl) : null;
+  const renderer = (
+    <FormRenderer
+      key={`${previewMode}-${submitCount}`}
+      formSchema={formSchema}
+      cdnEndpoint={cdnEndpoint}
+      className="preview-mode"
+      mode={RendererMode.PREVIEW}
+      formId={formId}
+      onFormSubmit={formId ? handlePreviewSubmit : undefined}
+    />
+  );
 
   return (
     <div className="flex flex-col h-full">
       {/* ── Viewport toggle bar ── */}
-      <div className="flex justify-center items-center py-2.5 shrink-0 border-b border-[var(--tf-border-medium)]">
-        <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid var(--tf-border-strong)' }}>
+      <div
+        className="flex justify-center items-center py-2.5 shrink-0"
+        style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
+      >
+        <div
+          className="flex items-center rounded-lg overflow-hidden"
+          style={{ border: '1px solid var(--tf-border-strong)' }}
+        >
           <button
             onClick={() => setPreviewMode('desktop')}
             title="Desktop preview"
@@ -101,23 +147,16 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId, shortUrl }) => {
 
       {/* ── Preview area ── */}
       {previewMode === 'desktop' ? (
-        <div className="flex-1 overflow-hidden">
-          <FormRenderer
-            key={`desktop-${submitCount}`}
-            formSchema={formSchema}
-            cdnEndpoint={cdnEndpoint}
-            className="preview-mode"
-            mode={RendererMode.PREVIEW}
-            formId={formId}
-            onFormSubmit={formId ? handlePreviewSubmit : undefined}
-          />
-        </div>
+        <div className="flex-1 overflow-hidden">{renderer}</div>
       ) : (
-        /* Mobile: centered phone frame panel */
+        /* Mobile: scrollable panel with centered phone frame */
         <div
           className="flex-1 overflow-y-auto flex flex-col items-center py-8 px-4"
           style={{ background: 'var(--tf-faint)' }}
         >
+          {/* Scoped CSS overrides — simulate narrow viewport inside the phone */}
+          <style dangerouslySetInnerHTML={{ __html: MOBILE_PREVIEW_CSS }} />
+
           {/* Phone outer shell */}
           <div
             className="relative shrink-0 rounded-[44px] shadow-2xl overflow-hidden"
@@ -133,34 +172,12 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId, shortUrl }) => {
               className="absolute top-0 left-1/2 -translate-x-1/2 z-10 rounded-b-2xl"
               style={{ width: 90, height: 22, background: '#1c1c1e' }}
             />
-
-            {/* Screen */}
-            {mobileUrl ? (
-              /* iframe gives the form its own 390px viewport — media queries fire correctly */
-              <iframe
-                key={mobileUrl}
-                src={mobileUrl}
-                title="Mobile preview"
-                className="w-full h-full border-0 bg-white"
-                style={{ display: 'block' }}
-              />
-            ) : (
-              /* Fallback when form has no shortUrl yet (unsaved / draft) */
-              <div className="w-full h-full overflow-y-auto bg-white">
-                <FormRenderer
-                  key={`mobile-${submitCount}`}
-                  formSchema={formSchema}
-                  cdnEndpoint={cdnEndpoint}
-                  className="preview-mode"
-                  mode={RendererMode.PREVIEW}
-                  formId={formId}
-                  onFormSubmit={formId ? handlePreviewSubmit : undefined}
-                />
-              </div>
-            )}
+            {/* Screen — scoped overrides applied via .mobile-preview wrapper */}
+            <div className="mobile-preview w-full h-full overflow-y-auto bg-white">
+              {renderer}
+            </div>
           </div>
 
-          {/* Label */}
           <p className="mt-4 text-xs text-muted-foreground">390 × 780 · iPhone 14</p>
         </div>
       )}
