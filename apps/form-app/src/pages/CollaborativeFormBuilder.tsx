@@ -431,6 +431,25 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           data-testid="collaborative-form-builder"
           className={`min-h-screen bg-background dark:bg-background ${className || ''}`}
         >
+          {/* Mobile — show friendly notice instead of broken canvas */}
+          <div className="md:hidden fixed inset-0 z-50 flex flex-col items-center justify-center bg-background p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-5 bg-muted">
+              <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-primary mb-2">Best on a larger screen</h2>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+              The form builder uses drag-and-drop and works best on a desktop or tablet.
+            </p>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="h-9 px-4 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Go to Dashboard
+            </button>
+          </div>
           <div className="flex flex-col h-screen">
             <FormBuilderHeader
               formId={formId}
