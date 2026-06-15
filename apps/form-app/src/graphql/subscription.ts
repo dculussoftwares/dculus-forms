@@ -63,6 +63,17 @@ export const GET_SUBSCRIPTION : TypedDocumentNode<any, any> = gql`
   }
 `;
 
+// Get organization daily usage
+export const GET_ORG_DAILY_USAGE: TypedDocumentNode<any, any> = gql`
+  query GetOrgDailyUsage($organizationId: ID!, $periodStart: String!, $periodEnd: String!) {
+    orgDailyUsage(organizationId: $organizationId, periodStart: $periodStart, periodEnd: $periodEnd) {
+      date
+      views
+      submissions
+    }
+  }
+`;
+
 // Create checkout session for upgrade
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const CREATE_CHECKOUT_SESSION: TypedDocumentNode<any, any> = gql`
