@@ -156,13 +156,13 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
 
   return (
     <div
-      className="flex items-center justify-between gap-3 px-4 py-2.5 w-full bg-white"
+      className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 w-full bg-white"
     >
       {/* Left: search + filter */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
 
         {/* Search */}
-        <div className="relative w-56 shrink-0">
+        <div className="relative flex-1 min-w-[100px] sm:w-56 sm:flex-none">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-muted-foreground" />
           <Input
             type="text"
@@ -183,8 +183,8 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
           )}
         </div>
 
-        {/* Date range quick filter */}
-        <div className="shrink-0">
+        {/* Date range quick filter — hidden on mobile */}
+        <div className="hidden sm:block shrink-0">
           <DateRangePicker
             from={submittedAtRange?.from}
             to={submittedAtRange?.to}
@@ -282,9 +282,9 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
       {/* Right: density + column visibility + export */}
       <div className="flex items-center gap-2 shrink-0">
 
-        {/* Row density toggle */}
+        {/* Row density toggle — hidden on mobile */}
         <div
-          className="flex items-center rounded-md border overflow-hidden shrink-0"
+          className="hidden sm:flex items-center rounded-md border overflow-hidden shrink-0"
           style={{ borderColor: 'var(--tf-border-strong)', height: '32px' }}
         >
           {(['compact', 'default', 'comfortable'] as const).map((d, i) => (
