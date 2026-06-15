@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { FormPage, FormLayout } from '@dculus/types';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
@@ -118,9 +117,9 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                 )}
                 
                 {/* Two chunks layout - SWAPPED: White paper first, then image */}
-                <div className="relative z-10 h-full flex">
+                <div className="relative z-10 h-full flex flex-col sm:flex-row">
                   {/* First chunk - White paper overlay with content (MOVED FROM RIGHT) */}
-                  <div className="flex-1 relative">
+                  <div className="w-full sm:flex-1 relative">
                     <div 
                       className="absolute bg-white bg-opacity-95 backdrop-blur-sm flex flex-col rounded-sm p-8 overflow-y-auto" 
                       style={{ top: '5%', right: '5%', bottom: '5%', left: '5%' }}
@@ -205,7 +204,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                   </div>
                   
                   {/* Second chunk - Background image display area (MOVED FROM LEFT) */}
-                  <div className="flex-1 flex items-center justify-center">
+                  <div className="hidden sm:flex flex-1 items-center justify-center">
                     {/* This chunk showcases the background image */}
                   </div>
                 </div>
@@ -231,8 +230,8 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
             )}
             
             {/* Pages content with white background container */}
-            <div className="h-full relative z-10 p-8 overflow-y-auto">
-              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+            <div className="h-full relative z-10 p-3 sm:p-8 overflow-y-auto">
+              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
                 {/* Back button */}
                 <button
                   onClick={() => setShowPages(false)}
