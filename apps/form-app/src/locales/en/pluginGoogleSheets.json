@@ -23,7 +23,8 @@
     "connectedAs": "Connected as {{email}}",
     "openSheet": "Open in Google Sheets",
     "notConnectedHint": "Connect your Google account to start syncing responses to a spreadsheet. A new spreadsheet will be created automatically on the first submission.",
-    "popupBlocked": "Could not open the Google login popup. Please allow popups for this site and try again."
+    "popupBlocked": "Could not open the Google login popup. Please allow popups for this site and try again.",
+    "authFailed": "Google authentication failed. Please try connecting again."
   },
   "howItWorks": {
     "title": "How It Works",
