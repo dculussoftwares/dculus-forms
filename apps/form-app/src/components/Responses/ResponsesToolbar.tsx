@@ -267,7 +267,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
           className="gap-1.5 shrink-0"
         >
           <Filter className="h-3.5 w-3.5" />
-          {t('toolbar.filters.buttonLabel')}
+          <span className="hidden sm:inline">{t('toolbar.filters.buttonLabel')}</span>
           {activeFilters.length > 0 && (
             <span
               className="ml-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full"
