@@ -328,7 +328,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                     </svg>
                   </button>
                 )}
-                <span className="text-xs text-gray-400 mr-1">press Enter ↵</span>
+                <span className="hidden sm:inline text-xs text-gray-400 mr-1">press Enter ↵</span>
               </div>
             </div>
           </div>

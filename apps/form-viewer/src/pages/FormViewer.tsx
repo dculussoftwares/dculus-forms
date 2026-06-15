@@ -256,7 +256,7 @@ const FormViewer: React.FC = () => {
         className="h-screen w-full flex items-center justify-center"
         data-testid="form-viewer-error"
       >
-        <div className="text-center p-8">
+        <div className="text-center p-4 sm:p-8">
           <h1 className="text-2xl font-bold text-destructive mb-2">
             {limitError ? 'Form Unavailable' : 'Form Not Found'}
           </h1>
@@ -274,7 +274,7 @@ const FormViewer: React.FC = () => {
   if (!data?.formByShortUrl) {
     return (
       <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
-        <div className="text-center p-8">
+        <div className="text-center p-4 sm:p-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Form Not Found
           </h1>
@@ -292,7 +292,7 @@ const FormViewer: React.FC = () => {
   if (!form.formSchemaPublic) {
     return (
       <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
-        <div className="text-center p-8">
+        <div className="text-center p-4 sm:p-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Form Not Ready
           </h1>
@@ -316,7 +316,7 @@ const FormViewer: React.FC = () => {
       if (!isNaN(start.getTime()) && now < start) {
         return (
           <div className="h-screen w-full flex items-center justify-center">
-            <div className="text-center p-8">
+            <div className="text-center p-4 sm:p-8">
               <h1 className="text-2xl font-bold text-foreground mb-2">Not Yet Open</h1>
               <p className="text-muted-foreground">This form is not yet open for submissions. Please check back later.</p>
             </div>
@@ -329,7 +329,7 @@ const FormViewer: React.FC = () => {
       if (!isNaN(end.getTime()) && now > end) {
         return (
           <div className="h-screen w-full flex items-center justify-center">
-            <div className="text-center p-8">
+            <div className="text-center p-4 sm:p-8">
               <h1 className="text-2xl font-bold text-destructive mb-2">Submissions Closed</h1>
               <p className="text-muted-foreground">The submission period for this form has ended.</p>
             </div>
