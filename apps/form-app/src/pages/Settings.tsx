@@ -37,9 +37,9 @@ const Settings: React.FC = () => {
 
   return (
     <MainLayout title={t('page.title')} subtitle={t('page.subtitle')}>
-      <div className="flex min-h-0 flex-1 -mx-4 sm:-mx-6">
+      <div className="flex flex-col sm:flex-row min-h-0 flex-1 -mx-4 sm:-mx-6">
         <SettingsNav />
-        <div className="flex-1 overflow-y-auto py-1 pr-4 sm:pr-6">
+        <div className="flex-1 overflow-y-auto py-1 px-4 sm:pl-0 sm:pr-6">
           {resolvedSection === 'profile' && <ProfileSettings />}
           {resolvedSection === 'members' && <MembersSettings />}
           {resolvedSection === 'billing' && <BillingSettings />}
