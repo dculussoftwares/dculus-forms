@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { FormPage, FormLayout } from '@dculus/types';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
@@ -103,7 +102,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
             )}
             
             {/* Background image container with padding */}
-            <div className="h-full flex items-center justify-center relative z-10" style={{ padding: '5% 10%' }}>
+            <div className="h-full flex items-center justify-center relative z-10 px-3 py-4 sm:px-[10%] sm:py-[5%]">
               {/* Background image area with white paper chunk centered */}
               <div className="w-full h-full relative rounded-sm overflow-hidden shadow-2xl">
                 {/* Clear background image in center area */}
@@ -222,8 +221,8 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
             )}
             
             {/* Pages content with white background container */}
-            <div className="h-full relative z-10 p-8 overflow-y-auto">
-              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+            <div className="h-full relative z-10 p-3 sm:p-8 overflow-y-auto">
+              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
                 {/* Back button */}
                 <button
                   onClick={() => setShowPages(false)}
