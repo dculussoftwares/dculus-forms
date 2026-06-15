@@ -313,11 +313,11 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       case 'page-builder':
         return <PageBuilderTab />;
       case 'preview':
-        return <PreviewTab formId={formId || ''} />;
+        return <PreviewTab formId={formId || ''} shortUrl={formData?.form?.shortUrl} />;
       default:
         return <PageBuilderTab />;
     }
-  }, [activeTab, formId, updateLayout]);
+  }, [activeTab, formId, updateLayout, formData]);
 
   if (!formId) {
     return (
