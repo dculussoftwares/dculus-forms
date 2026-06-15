@@ -206,9 +206,9 @@ function FormsListDashboard() {
         <div className="flex flex-col gap-0">
 
           {/* Row 1: Search + Create button */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             {/* Search — ghost input matching Typeform */}
-            <div className="relative flex-1 max-w-xs">
+            <div className="relative flex-1 min-w-[160px] max-w-xs">
               <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 pointer-events-none text-muted-foreground" />
               <Input
                 type="text"
@@ -269,7 +269,7 @@ function FormsListDashboard() {
               ))}
             </div>
 
-            <div className="flex items-center gap-2 pb-1">
+            <div className="hidden sm:flex items-center gap-2 pb-1">
               <span className="text-xs text-muted-foreground">{t('pageSize.label')}</span>
               <Select value={pageSize.toString()} onValueChange={handlePageSizeChange} disabled={formsLoading}>
                 <SelectTrigger className="w-16 h-8 text-xs">

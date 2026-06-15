@@ -53,13 +53,13 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
   t,
 }) => (
   <div
-    className="flex items-center gap-3 px-4 py-2 text-sm font-medium"
+    className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium"
     style={{ background: '#f0f7ff', borderBottom: '1px solid rgb(189,221,249)' }}
   >
-    <span className="text-xs font-semibold" style={{ color: '#01487f' }}>
+    <span className="text-xs font-semibold shrink-0" style={{ color: '#01487f' }}>
       {t('toolbar.bulkActions.selected', { values: { count: selectedCount } })}
     </span>
-    <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       <Button
         variant="outline"
         size="sm"
