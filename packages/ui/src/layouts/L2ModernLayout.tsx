@@ -102,7 +102,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
             )}
             
             {/* Background image container with padding */}
-            <div className="h-full flex items-center justify-center relative z-10" style={{ padding: '5% 10%' }}>
+            <div className="h-full flex items-center justify-center relative z-10 px-2 py-2 sm:px-[10%] sm:py-[5%]">
               {/* Background image area with 2 chunks - clear background image in center */}
               <div className="w-full h-full relative rounded-sm overflow-hidden shadow-2xl">
                 {/* Clear background image in center area */}
@@ -121,7 +121,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                   {/* First chunk - White paper overlay with content (MOVED FROM RIGHT) */}
                   <div className="flex-1 relative">
                     <div 
-                      className="absolute bg-white bg-opacity-95 backdrop-blur-sm flex flex-col rounded-sm p-8 overflow-y-auto" 
+                      className="absolute bg-white bg-opacity-95 backdrop-blur-sm flex flex-col rounded-sm p-4 sm:p-8 overflow-y-auto"
                       style={{ top: '5%', right: '5%', bottom: '5%', left: '5%' }}
                     >
                         {/* Mode toggle and action buttons - only show in BUILDER mode */}

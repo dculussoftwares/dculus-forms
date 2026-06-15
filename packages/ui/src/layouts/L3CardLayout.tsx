@@ -119,7 +119,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                 {/* Centered white paper overlay with content */}
                 <div className="relative z-10 h-full flex items-center justify-center">
                   <div 
-                    className="bg-white bg-opacity-95 backdrop-blur-sm flex flex-col rounded-sm p-8 overflow-y-auto max-w-md w-full" 
+                    className="bg-white bg-opacity-95 backdrop-blur-sm flex flex-col rounded-sm p-4 sm:p-8 overflow-y-auto max-w-md w-full"
                     style={{ maxHeight: '90%' }}
                   >
                       {/* Mode toggle and action buttons - only show in BUILDER mode */}

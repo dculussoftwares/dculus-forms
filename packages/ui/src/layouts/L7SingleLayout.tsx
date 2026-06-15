@@ -102,7 +102,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
             )}
             
             {/* Background image container with padding */}
-            <div className="h-full flex items-center justify-center relative z-10" style={{ padding: '5% 10%' }}>
+            <div className="h-full flex items-center justify-center relative z-10 px-2 py-2 sm:px-[10%] sm:py-[5%]">
               {/* Background image area with single chunk - clear background image in center */}
               <div className="w-full h-full relative rounded-lg overflow-hidden shadow-xl">
                 {/* Default minimal gradient background */}
@@ -113,7 +113,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
                   {/* Single chunk - WHITE PAPER CHUNK - Content area (100%) */}
                   <div className="w-full relative">
                     <div 
-                      className="absolute bg-white bg-opacity-98 backdrop-blur-sm flex flex-col p-8 overflow-y-auto shadow-inner inset-0" 
+                      className="absolute bg-white bg-opacity-98 backdrop-blur-sm flex flex-col p-4 sm:p-8 overflow-y-auto shadow-inner inset-0"
                     >
                         {/* Mode toggle and action buttons - only show in BUILDER mode */}
                         {mode === RendererMode.BUILDER && (

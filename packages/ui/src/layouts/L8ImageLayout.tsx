@@ -68,7 +68,7 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
             )}
             
             {/* Background image container with padding */}
-            <div className="h-full flex items-center justify-center relative z-10" style={{ padding: '5% 10%' }}>
+            <div className="h-full flex items-center justify-center relative z-10 px-2 py-2 sm:px-[10%] sm:py-[5%]">
               {/* Background image area with IMAGE CHUNK only - full width showcase */}
               <div className="w-full h-full relative rounded-lg overflow-hidden shadow-xl">
                 {/* Default minimal gradient background */}

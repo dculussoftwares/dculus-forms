@@ -150,47 +150,6 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     setValidationErrors([]);
   }, [currentPage, currentPageIndex]);
 
-  const goToPage = useCallback(async (pageIndex: number) => {
-    if (!currentPage || pageIndex === currentPageIndex) return;
-    if (pageIndex < 0 || pageIndex >= pages.length) return;
-
-    if (pageIndex > currentPageIndex) {
-      const currentPageAttempts = pageAttemptCounts[currentPage.id] ?? 0;
-      setPageAttemptCounts(prev => ({ ...prev, [currentPage.id]: currentPageAttempts + 1 }));
-
-      try {
-        if (currentPageFormRef.current) {
-          const isValid = await currentPageFormRef.current.validate();
-
-          if (!isValid) {
-            if (currentPageFormRef.current.showAllValidationErrors) {
-              await currentPageFormRef.current.showAllValidationErrors();
-            }
-
-            const validationState = currentPageFormRef.current.getValidationState();
-            const errorMessages = Object.values(validationState.errors)
-              .map(error => {
-                if (error && typeof error === 'object' && 'message' in error) return error.message as string;
-                return 'Unknown error';
-              })
-              .filter(Boolean);
-            setValidationErrors(errorMessages);
-
-            if (onValidationError) onValidationError(currentPage.id, errorMessages);
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Page navigation validation error:', error);
-        return;
-      }
-    }
-
-    if (currentPageFormRef.current) currentPageFormRef.current.submit();
-    setCurrentPageIndex(pageIndex);
-    setValidationErrors([]);
-  }, [currentPage, currentPageIndex, pages.length, enableStrictValidation, onValidationError, pageAttemptCounts]);
-
   if (pages.length === 0) {
     return (
       <div className={`text-center py-12 ${className}`}>
@@ -211,7 +170,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     >
       {/* Progress bar + page counter */}
       {showPageNavigation && pages.length > 1 && (
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-4 sm:mb-8">
           <div className="flex-1 h-0.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
@@ -229,7 +188,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
 
       {/* Page title */}
       {showPageNavigation && pages[currentPageIndex]?.title && (
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-8">
           <h3
             className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight"
             data-testid="viewer-page-title"
@@ -285,7 +244,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
 
       {/* Typeform-style navigation footer */}
       {showPageNavigation && (
-        <div className="sticky bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800 mt-10 z-10">
+        <div className="sticky bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800 mt-4 sm:mt-10 z-10">
           <div className="max-w-4xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               {/* Ghost previous button */}

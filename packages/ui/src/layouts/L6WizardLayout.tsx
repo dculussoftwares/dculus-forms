@@ -99,10 +99,10 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
           
           {/* Central Content Area with vertical layout - scrollable */}
           <div className="h-full relative z-10 overflow-y-auto px-4 py-4 sm:px-[10%] sm:py-[5%]">
-            <div className="w-full max-w-4xl mx-auto flex flex-col space-y-6 min-h-full">
+            <div className="w-full max-w-4xl mx-auto flex flex-col space-y-3 sm:space-y-6 min-h-full">
               
               {/* Background Image in 4:1 ratio */}
-              <div className="w-full h-48 relative rounded-lg overflow-hidden shadow-lg">
+              <div className="w-full h-32 sm:h-48 relative rounded-lg overflow-hidden shadow-lg">
                 {layout?.backgroundImageKey && cdnEndpoint ? (
                   <div 
                     className="absolute inset-0 bg-center bg-no-repeat bg-cover"
@@ -114,7 +114,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
               </div>
 
               {/* Rich Text Editor with Mode Toggle + Save/Cancel */}
-              <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-lg p-6 shadow-lg">
+              <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-lg p-4 sm:p-6 shadow-lg">
                 {/* Mode toggle and action buttons - only show in BUILDER mode */}
                 {mode === RendererMode.BUILDER && (
                   <div className="flex justify-between items-center mb-4">
