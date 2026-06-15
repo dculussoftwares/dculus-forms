@@ -125,7 +125,7 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
                   </div>
 
                   {/* Second chunk - White paper overlay with content */}
-                  <div className="w-full sm:flex-1 relative">
+                  <div className="flex-1 relative">
                     <div 
                       className="absolute bg-white bg-opacity-95 backdrop-blur-sm flex flex-col rounded-sm p-8 overflow-y-auto" 
                       style={{ top: '5%', right: '5%', bottom: '5%', left: '5%' }}

@@ -111,7 +111,7 @@ export const L5SplitLayout: React.FC<LayoutProps> = ({
                 {/* Two chunks layout - 50/50 split */}
                 <div className="relative z-10 h-full flex flex-col sm:flex-row">
                   {/* First chunk - WHITE PAPER CHUNK - Content area (50%) */}
-                  <div className="w-full sm:flex-1 relative">
+                  <div className="flex-1 relative">
                     <div 
                       className="absolute bg-white bg-opacity-98 backdrop-blur-sm flex flex-col p-8 overflow-y-auto shadow-inner inset-0" 
                     >

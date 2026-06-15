@@ -125,7 +125,7 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
                   </div>
                   
                   {/* Second chunk - WHITE PAPER CHUNK - Content area (50%) */}
-                  <div className="w-full sm:flex-1 relative">
+                  <div className="flex-1 relative">
                     <div 
                       className="absolute bg-white bg-opacity-98 backdrop-blur-sm flex flex-col p-8 overflow-y-auto shadow-inner inset-0" 
                     >

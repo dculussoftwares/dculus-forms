@@ -119,7 +119,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                 {/* Two chunks layout - SWAPPED: White paper first, then image */}
                 <div className="relative z-10 h-full flex flex-col sm:flex-row">
                   {/* First chunk - White paper overlay with content (MOVED FROM RIGHT) */}
-                  <div className="w-full sm:flex-1 relative">
+                  <div className="flex-1 relative">
                     <div 
                       className="absolute bg-white bg-opacity-95 backdrop-blur-sm flex flex-col rounded-sm p-8 overflow-y-auto" 
                       style={{ top: '5%', right: '5%', bottom: '5%', left: '5%' }}
