@@ -15,6 +15,10 @@ export default defineConfig({
         replacement: resolve(__dirname, '../../packages/types/src/graphql.ts'),
       },
       {
+        find: '@dculus/types/graphql.js',
+        replacement: resolve(__dirname, '../../packages/types/src/graphql.ts'),
+      },
+      {
         find: '@dculus/types',
         replacement: resolve(__dirname, '../../packages/types/src/index.ts'),
       },
