@@ -571,6 +571,8 @@ jobs:
           TF_VAR_pixabay_api_key: ${{ secrets.PIXABAY_API_KEY }}
           TF_VAR_google_client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
           TF_VAR_google_client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TF_VAR_microsoft_client_id: ${{ secrets.MICROSOFT_CLIENT_ID }}
+          TF_VAR_microsoft_client_secret: ${{ secrets.MICROSOFT_CLIENT_SECRET }}
           TF_VAR_run_seed: true
         run: |
           # Copy shared Terraform files

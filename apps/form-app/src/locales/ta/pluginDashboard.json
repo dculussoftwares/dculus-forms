@@ -56,6 +56,7 @@
     "quiz-grading": "வினாடி வினா மதிப்பீடு",
     "ai-tagger": "AI தானியங்கி குறிச்சொல்",
     "google-sheets": "Google தாள்கள்",
+    "microsoft-sheets": "மைக்ரோசாஃப்ட் எக்சல்",
     "slack": "Slack"
   },
   "pluginSummary": {
@@ -87,6 +88,14 @@
     "aiTagger": {
       "tagsConfigured": "கட்டமைக்கப்பட்ட குறிச்சொற்கள்",
       "noTags": "குறிச்சொற்கள் கட்டமைக்கப்படவில்லை. அமைப்புகளைத் திறக்கவும்."
+    },
+    "microsoftSheets": {
+      "connectedAs": "இவராக இணைக்கப்பட்டது",
+      "workbook": "பணிப்புத்தகம்",
+      "openWorkbook": "Excel Online-ல் திறக்கவும்",
+      "worksheet": "பணித்தாள்",
+      "notConnected": "இணைக்கப்படவில்லை",
+      "notConnectedHint": "உங்கள் Microsoft 365 கணக்கை இணைக்க அமைப்புகளைத் திறக்கவும்."
     }
   },
   "deliveryLog": {

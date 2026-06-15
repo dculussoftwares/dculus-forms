@@ -1,0 +1,51 @@
+{
+  "header": {
+    "titleCreate": "Connect Microsoft Excel",
+    "titleEdit": "Edit Microsoft Excel",
+    "description": "Automatically append form responses to a Microsoft Excel workbook in OneDrive",
+    "formLabel": "Form",
+    "viewForm": "View form"
+  },
+  "basicSettings": {
+    "title": "Basic Settings",
+    "name": {
+      "label": "Plugin Name",
+      "placeholder": "e.g., Sales Leads Workbook",
+      "hint": "A descriptive name to identify this integration"
+    },
+    "worksheet": {
+      "label": "Worksheet Name",
+      "placeholder": "Sheet1",
+      "hint": "Name of the worksheet tab where rows will be appended. Defaults to Sheet1."
+    }
+  },
+  "connection": {
+    "title": "Microsoft Account",
+    "description": "Connect your Microsoft 365 account to allow writing to Excel Online",
+    "connectButton": "Connect Microsoft Account",
+    "disconnectButton": "Disconnect",
+    "openWorkbook": "Open in Excel Online",
+    "notConnectedHint": "Connect your Microsoft 365 account to start syncing responses to an Excel workbook. A new workbook will be created automatically on the first submission.",
+    "authFailed": "Microsoft authentication failed. Please try connecting again."
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "step1": "On the first form submission, a new Excel workbook is created automatically in your OneDrive.",
+    "step2": "A header row is written with all form field names, submission time, and response ID.",
+    "step3": "Every subsequent submission appends a new row to the configured worksheet."
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "create": "Create Plugin",
+    "update": "Update Plugin",
+    "saving": "Saving..."
+  },
+  "validation": {
+    "nameRequired": "Plugin name is required",
+    "notConnected": "Please connect your Microsoft 365 account first"
+  },
+  "toasts": {
+    "disconnectedTitle": "Account Disconnected",
+    "disconnectedDescription": "Your Microsoft account has been disconnected"
+  }
+}

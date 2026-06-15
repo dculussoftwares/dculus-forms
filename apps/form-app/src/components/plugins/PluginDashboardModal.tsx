@@ -95,6 +95,7 @@ const PLUGIN_ICON_MAP: Record<string, React.ComponentType<{ className?: string; 
   slack: MessageSquare,
   'quiz-grading': GraduationCap,
   'google-sheets': TableProperties,
+  'microsoft-sheets': TableProperties,
   'ai-tagger': Tag,
 };
 
@@ -103,8 +104,9 @@ const PLUGIN_ICON_STYLE: Record<string, { bg: string; color: string }> = {
   email:          { bg: 'var(--tf-icon-salmon)', color: 'var(--tf-dark)' },
   'quiz-grading': { bg: 'var(--tf-icon-lavender)', color: '#5c2e6b' },
   slack:          { bg: '#c4e3ba', color: '#2d6236' },
-  'google-sheets': { bg: '#c8e6c9', color: '#1a7340' },
-  'ai-tagger':    { bg: '#e8eaf6', color: '#3949ab' },
+  'google-sheets':    { bg: '#c8e6c9', color: '#1a7340' },
+  'microsoft-sheets': { bg: '#d6f0e0', color: '#217346' },
+  'ai-tagger':        { bg: '#e8eaf6', color: '#3949ab' },
 };
 
 export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({

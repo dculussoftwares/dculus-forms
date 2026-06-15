@@ -6,6 +6,7 @@ export { quizManifest } from './manifests/quiz.js';
 export { slackManifest } from './manifests/slack.js';
 export { aiTaggerManifest } from './manifests/ai-tagger.js';
 export { googleSheetsManifest } from './manifests/google-sheets.js';
+export { microsoftSheetsManifest } from './manifests/microsoft-sheets.js';
 
 import { webhookManifest } from './manifests/webhook.js';
 import { emailManifest } from './manifests/email.js';
@@ -13,6 +14,7 @@ import { quizManifest } from './manifests/quiz.js';
 import { slackManifest } from './manifests/slack.js';
 import { aiTaggerManifest } from './manifests/ai-tagger.js';
 import { googleSheetsManifest } from './manifests/google-sheets.js';
+import { microsoftSheetsManifest } from './manifests/microsoft-sheets.js';
 import type { PluginManifest } from './types.js';
 
 export const allPluginManifests: PluginManifest[] = [
@@ -22,4 +24,5 @@ export const allPluginManifests: PluginManifest[] = [
   slackManifest,
   aiTaggerManifest,
   googleSheetsManifest,
+  microsoftSheetsManifest,
 ];

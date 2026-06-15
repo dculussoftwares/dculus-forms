@@ -56,6 +56,7 @@
     "quiz-grading": "Quiz Grading",
     "ai-tagger": "AI Auto-Tagger",
     "google-sheets": "Google Sheets",
+    "microsoft-sheets": "Microsoft Excel",
     "slack": "Slack"
   },
   "pluginSummary": {
@@ -87,6 +88,14 @@
     "aiTagger": {
       "tagsConfigured": "Tags Configured",
       "noTags": "No tags configured yet. Open Settings to configure."
+    },
+    "microsoftSheets": {
+      "connectedAs": "Connected as",
+      "workbook": "Workbook",
+      "openWorkbook": "Open in Excel Online",
+      "worksheet": "Worksheet",
+      "notConnected": "Not connected",
+      "notConnectedHint": "Open Settings to connect your Microsoft 365 account."
     }
   },
   "deliveryLog": {

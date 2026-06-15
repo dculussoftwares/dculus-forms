@@ -237,6 +237,8 @@ import enAiTaggerPluginConfig from './en/aiTaggerPluginConfig.json';
 import taAiTaggerPluginConfig from './ta/aiTaggerPluginConfig.json';
 import enPluginGoogleSheets from './en/pluginGoogleSheets.json';
 import taPluginGoogleSheets from './ta/pluginGoogleSheets.json';
+import enPluginMicrosoftSheets from './en/pluginMicrosoftSheets.json';
+import taPluginMicrosoftSheets from './ta/pluginMicrosoftSheets.json';
 import enPluginDashboard from './en/pluginDashboard.json';
 import taPluginDashboard from './ta/pluginDashboard.json';
 
@@ -361,6 +363,7 @@ const enTranslations = {
   aiEditDrawer: enAIEditDrawer,
   aiTaggerPluginConfig: enAiTaggerPluginConfig,
   pluginGoogleSheets: enPluginGoogleSheets,
+  pluginMicrosoftSheets: enPluginMicrosoftSheets,
   pluginDashboard: enPluginDashboard,
 } as const;
 
@@ -485,6 +488,7 @@ const taTranslations = {
   aiEditDrawer: taAIEditDrawer,
   aiTaggerPluginConfig: taAiTaggerPluginConfig,
   pluginGoogleSheets: taPluginGoogleSheets,
+  pluginMicrosoftSheets: taPluginMicrosoftSheets,
   pluginDashboard: taPluginDashboard,
 } as const;
 

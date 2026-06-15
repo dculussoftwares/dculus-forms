@@ -282,6 +282,26 @@ resource "azurerm_container_app" "backend" {
         value = var.google_client_secret
       }
 
+      env {
+        name  = "GOOGLE_REDIRECT_URI"
+        value = "https://${local.service_domain}/api/integrations/google/callback"
+      }
+
+      env {
+        name  = "MICROSOFT_CLIENT_ID"
+        value = var.microsoft_client_id
+      }
+
+      env {
+        name  = "MICROSOFT_CLIENT_SECRET"
+        value = var.microsoft_client_secret
+      }
+
+      env {
+        name  = "MICROSOFT_REDIRECT_URI"
+        value = "https://${local.service_domain}/api/integrations/microsoft/callback"
+      }
+
       liveness_probe {
         transport               = "HTTP"
         port                    = var.container_port

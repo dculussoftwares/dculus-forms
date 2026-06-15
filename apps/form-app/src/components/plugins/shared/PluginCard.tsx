@@ -132,9 +132,10 @@ export const PluginCard: React.FC<PluginCardProps> = ({
       case 'email':         return <Mail className="h-5 w-5" />;
       case 'slack':         return <MessageSquare className="h-5 w-5" />;
       case 'quiz-grading':  return <GraduationCap className="h-5 w-5" />;
-      case 'google-sheets': return <TableProperties className="h-5 w-5" />;
-      case 'ai-tagger':     return <Tag className="h-5 w-5" />;
-      default:              return <Webhook className="h-5 w-5" />;
+      case 'google-sheets':     return <TableProperties className="h-5 w-5" />;
+      case 'microsoft-sheets':  return <TableProperties className="h-5 w-5" />;
+      case 'ai-tagger':         return <Tag className="h-5 w-5" />;
+      default:                  return <Webhook className="h-5 w-5" />;
     }
   };
 
@@ -144,8 +145,9 @@ export const PluginCard: React.FC<PluginCardProps> = ({
       case 'email':          return { bg: 'var(--tf-icon-salmon)', color: 'var(--tf-dark)' };
       case 'quiz-grading':   return { bg: 'var(--tf-icon-lavender)', color: '#5c2e6b' };
       case 'slack':          return { bg: '#c4e3ba', color: '#2d6236' };
-      case 'google-sheets':  return { bg: '#c8e6c9', color: '#1a7340' };
-      case 'ai-tagger':      return { bg: '#e8eaf6', color: '#3949ab' };
+      case 'google-sheets':    return { bg: '#c8e6c9', color: '#1a7340' };
+      case 'microsoft-sheets': return { bg: '#d6f0e0', color: '#217346' };
+      case 'ai-tagger':        return { bg: '#e8eaf6', color: '#3949ab' };
       default:               return { bg: 'var(--tf-icon-gray)', color: 'var(--tf-text)' };
     }
   };
@@ -156,8 +158,9 @@ export const PluginCard: React.FC<PluginCardProps> = ({
       case 'email':          return t('types.email');
       case 'slack':          return t('types.slack');
       case 'quiz-grading':   return t('types.quiz-grading');
-      case 'google-sheets':  return t('types.google-sheets');
-      case 'ai-tagger':      return t('types.ai-tagger');
+      case 'google-sheets':    return t('types.google-sheets');
+      case 'microsoft-sheets': return t('types.microsoft-sheets');
+      case 'ai-tagger':        return t('types.ai-tagger');
       default:               return plugin.type;
     }
   };

@@ -3,6 +3,7 @@ import './email/index.js';
 import './quiz/index.js';
 import './ai-tagger/index.js';
 import './google-sheets/index.js';
+import './microsoft-sheets/index.js';
 
 import { initializePluginEvents } from './core/events.js';
 import { logger } from '../lib/logger.js';

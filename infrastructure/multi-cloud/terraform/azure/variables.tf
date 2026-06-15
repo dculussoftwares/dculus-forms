@@ -265,6 +265,20 @@ variable "google_client_secret" {
   default     = ""
 }
 
+variable "microsoft_client_id" {
+  description = "Microsoft OAuth client ID (enables Microsoft Excel / OneDrive integration)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "microsoft_client_secret" {
+  description = "Microsoft OAuth client secret (enables Microsoft Excel / OneDrive integration)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "run_seed" {
   description = "Whether to run database seeding on container startup"
   type        = bool
