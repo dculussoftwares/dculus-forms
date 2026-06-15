@@ -79,6 +79,10 @@ const refreshMicrosoftTokenIfNeeded = async (
 
 // ─── Graph API helpers ────────────────────────────────────────────────────────
 
+class WorkbookNotFoundError extends Error {
+  constructor() { super('Workbook not found (404)'); }
+}
+
 const authHeaders = (accessToken: string): Record<string, string> => ({
   Authorization: `Bearer ${accessToken}`,
   'Content-Type': 'application/json',
@@ -168,6 +172,8 @@ const appendDataRow = async (
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
+  if (usedRangeRes.status === 404) throw new WorkbookNotFoundError();
+
   let nextRow = 2; // Default: first data row after header
   if (usedRangeRes.ok) {
     const usedData = await usedRangeRes.json() as any;
@@ -188,6 +194,8 @@ const appendDataRow = async (
       values: [rowValues],
     }),
   });
+
+  if (response.status === 404) throw new WorkbookNotFoundError();
 
   if (!response.ok) {
     const body = await response.text();
@@ -306,34 +314,18 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
 
     const responseData = (response.data as Record<string, any>) ?? {};
 
-    // 4. Auto-create workbook on first ever submission
+    // 4. Auto-create workbook on first ever submission (or recreate if deleted)
     let workbookId = config.workbookId;
-    let workbookUrl = config.workbookUrl;
 
     const form = await context.getFormById(event.formId);
     const formSchema = form?.formSchema ? deserializeFormSchema(form.formSchema) : null;
 
-    if (!workbookId) {
-      const formTitle = form?.title?.trim() || 'Form Responses';
-      const workbookTitle = `${formTitle} — Responses`;
-
-      context.logger.info('Microsoft Sheets: creating new workbook', {
-        pluginId: plugin.id,
-        title: workbookTitle,
-      });
-
-      const created = await createWorkbook(workbookTitle, worksheetName, accessToken);
-      workbookId = created.workbookId;
-      workbookUrl = created.workbookUrl;
-
-      // Build header row
+    const buildHeaders = (): string[] => {
       const fieldHeaders: string[] = [];
       if (formSchema?.pages) {
         for (const page of formSchema.pages) {
           for (const field of page.fields ?? []) {
-            if (field?.id) {
-              fieldHeaders.push((field as any).label ?? field.id);
-            }
+            if (field?.id) fieldHeaders.push((field as any).label ?? field.id);
           }
         }
       } else {
@@ -342,27 +334,45 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
           if (!skipKeys.has(key)) fieldHeaders.push(key);
         }
       }
+      return [...fieldHeaders, 'Submitted At', 'Response ID'];
+    };
 
-      const headers = [...fieldHeaders, 'Submitted At', 'Response ID'];
-      await writeHeaderRow(workbookId, worksheetName, headers, accessToken);
+    const initWorkbook = async (): Promise<{ workbookId: string; workbookUrl: string }> => {
+      const formTitle = form?.title?.trim() || 'Form Responses';
+      // Append short plugin ID suffix to prevent collisions when two forms share the same title
+      const workbookTitle = `${formTitle} — Responses (${plugin.id.slice(0, 8)})`;
 
-      // Persist workbook coordinates back to plugin config
+      context.logger.info('Microsoft Sheets: creating new workbook', {
+        pluginId: plugin.id,
+        title: workbookTitle,
+      });
+
+      const created = await createWorkbook(workbookTitle, worksheetName, accessToken);
+      await writeHeaderRow(created.workbookId, worksheetName, buildHeaders(), accessToken);
+
       await context.prisma.formPlugin.update({
         where: { id: plugin.id },
         data: {
           config: {
             ...config,
             microsoftToken: freshToken,
-            workbookId,
-            workbookUrl,
+            workbookId: created.workbookId,
+            workbookUrl: created.workbookUrl,
           } as any,
         },
       });
 
       context.logger.info('Microsoft Sheets: workbook created and header row written', {
         pluginId: plugin.id,
-        workbookId,
+        workbookId: created.workbookId,
       });
+
+      return created;
+    };
+
+    if (!workbookId) {
+      const created = await initWorkbook();
+      workbookId = created.workbookId;
     }
 
     // 5. Build and append the data row
@@ -391,7 +401,18 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     rowValues.push(String(submittedAt));
     rowValues.push(event.data.responseId);
 
-    await appendDataRow(workbookId, worksheetName, rowValues, accessToken);
+    try {
+      await appendDataRow(workbookId, worksheetName, rowValues, accessToken);
+    } catch (err) {
+      if (err instanceof WorkbookNotFoundError) {
+        context.logger.warn('Microsoft Sheets: workbook was deleted — recreating', { pluginId: plugin.id });
+        const recreated = await initWorkbook();
+        workbookId = recreated.workbookId;
+        await appendDataRow(workbookId, worksheetName, rowValues, accessToken);
+      } else {
+        throw err;
+      }
+    }
 
     context.logger.info('Microsoft Sheets: row appended', {
       pluginId: plugin.id,

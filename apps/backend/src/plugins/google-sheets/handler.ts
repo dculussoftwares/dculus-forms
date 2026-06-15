@@ -5,6 +5,10 @@ import type { GoogleSheetsPluginConfig, GoogleSheetsResult, GoogleToken } from '
 const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4';
 const TOKEN_REFRESH_URL = 'https://oauth2.googleapis.com/token';
 
+class SpreadsheetNotFoundError extends Error {
+  constructor() { super('Spreadsheet not found (404)'); }
+}
+
 /**
  * Refreshes the Google OAuth access token when it is within 5 minutes of expiry.
  * Updates the plugin config in the database with the new token.
@@ -149,6 +153,8 @@ const appendDataRow = async (
     body: JSON.stringify({ values: [rowValues] }),
   });
 
+  if (response.status === 404) throw new SpreadsheetNotFoundError();
+
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`Failed to append data row: ${response.status} ${body}`);
@@ -260,12 +266,30 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
 
     const responseData = (response.data as Record<string, any>) ?? {};
 
-    // 3. Auto-create spreadsheet on first ever submission
+    // 3. Auto-create spreadsheet on first ever submission (or recreate if deleted)
     let spreadsheetId = config.spreadsheetId;
-    let spreadsheetUrl = config.spreadsheetUrl;
 
-    if (!spreadsheetId) {
-      const form = await context.getFormById(event.formId);
+    const form = await context.getFormById(event.formId);
+    const formSchema = form?.formSchema ? deserializeFormSchema(form.formSchema) : null;
+
+    const buildHeaders = (): string[] => {
+      const fieldHeaders: string[] = [];
+      if (formSchema?.pages) {
+        for (const page of formSchema.pages) {
+          for (const field of page.fields ?? []) {
+            if (field?.id) fieldHeaders.push((field as any).label ?? field.id);
+          }
+        }
+      } else {
+        const skipKeys = new Set(['responseId', 'submittedAt']);
+        for (const key of Object.keys(responseData)) {
+          if (!skipKeys.has(key)) fieldHeaders.push(key);
+        }
+      }
+      return [...fieldHeaders, 'Submitted At', 'Response ID'];
+    };
+
+    const initSpreadsheet = async (): Promise<{ spreadsheetId: string; spreadsheetUrl: string }> => {
       const formTitle = form?.title?.trim() || 'Form Responses';
       const sheetTitle = `${formTitle} — Responses`;
 
@@ -275,52 +299,27 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       });
 
       const created = await createSpreadsheet(sheetTitle, accessToken);
-      spreadsheetId = created.spreadsheetId;
-      spreadsheetUrl = created.spreadsheetUrl;
+      await writeHeaderRow(created.spreadsheetId, buildHeaders(), accessToken);
 
-      // Build header row from form schema field labels
-      const formSchema = form?.formSchema
-        ? deserializeFormSchema(form.formSchema)
-        : null;
-
-      const fieldHeaders: string[] = [];
-      if (formSchema?.pages) {
-        for (const page of formSchema.pages) {
-          for (const field of page.fields ?? []) {
-            if (field?.id) {
-              fieldHeaders.push((field as any).label ?? field.id);
-            }
-          }
-        }
-      } else {
-        // Fallback: use raw keys from response data (excluding metadata keys)
-        const skipKeys = new Set(['responseId', 'submittedAt']);
-        for (const key of Object.keys(responseData)) {
-          if (!skipKeys.has(key)) fieldHeaders.push(key);
-        }
-      }
-
-      const headers = [...fieldHeaders, 'Submitted At', 'Response ID'];
-      await writeHeaderRow(spreadsheetId, headers, accessToken);
-
-      // Persist spreadsheetId and spreadsheetUrl into plugin config
       await context.prisma.formPlugin.update({
         where: { id: plugin.id },
         data: {
-          config: { ...config, googleToken: freshToken, spreadsheetId, spreadsheetUrl } as any,
+          config: { ...config, googleToken: freshToken, spreadsheetId: created.spreadsheetId, spreadsheetUrl: created.spreadsheetUrl } as any,
         },
       });
 
       context.logger.info('Google Sheets: spreadsheet created and header row written', {
         pluginId: plugin.id,
-        spreadsheetId,
+        spreadsheetId: created.spreadsheetId,
       });
-    }
 
-    // 4. Build and append the data row
-    // Re-fetch the latest config (may have been updated above) to get the field order from schema
-    const form = await context.getFormById(event.formId);
-    const formSchema = form?.formSchema ? deserializeFormSchema(form.formSchema) : null;
+      return created;
+    };
+
+    if (!spreadsheetId) {
+      const created = await initSpreadsheet();
+      spreadsheetId = created.spreadsheetId;
+    }
 
     const rowValues: string[] = [];
 
@@ -348,7 +347,19 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     rowValues.push(String(submittedAt));
     rowValues.push(event.data.responseId);
 
-    const rowNumber = await appendDataRow(spreadsheetId, rowValues, accessToken);
+    let rowNumber: number | undefined;
+    try {
+      rowNumber = await appendDataRow(spreadsheetId, rowValues, accessToken);
+    } catch (err) {
+      if (err instanceof SpreadsheetNotFoundError) {
+        context.logger.warn('Google Sheets: spreadsheet was deleted — recreating', { pluginId: plugin.id });
+        const recreated = await initSpreadsheet();
+        spreadsheetId = recreated.spreadsheetId;
+        rowNumber = await appendDataRow(spreadsheetId, rowValues, accessToken);
+      } else {
+        throw err;
+      }
+    }
 
     context.logger.info('Google Sheets: row appended', {
       pluginId: plugin.id,
