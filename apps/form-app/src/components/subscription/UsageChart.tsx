@@ -1,9 +1,12 @@
-import { Card } from '@dculus/ui';
+import { useQuery } from '@apollo/client/react';
+import { Card, LoadingSpinner } from '@dculus/ui';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Eye, FileText } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { GET_ORG_DAILY_USAGE } from '../../graphql/subscription';
 
 interface UsageChartProps {
+  organizationId: string;
   viewsUsed: number;
   submissionsUsed: number;
   viewsLimit: number | null;
@@ -13,6 +16,7 @@ interface UsageChartProps {
 }
 
 export const UsageChart = ({
+  organizationId,
   viewsUsed,
   submissionsUsed,
   viewsLimit,
@@ -21,41 +25,18 @@ export const UsageChart = ({
   currentPeriodEnd,
 }: UsageChartProps) => {
   const { t } = useTranslation('usageChart');
-  
-  // Generate mock daily usage data for visualization
-  // In a real implementation, this would come from backend historical data
-  const generateUsageData = () => {
-    // Convert epoch timestamp strings to numbers (milliseconds)
-    const start = new Date(Number(currentPeriodStart));
-    const end = new Date(Number(currentPeriodEnd));
-    const now = new Date();
-    const currentDate = now > end ? end : now;
 
-    const daysDiff = Math.ceil((currentDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    const daysInPeriod = Math.max(daysDiff, 1);
+  const { data, loading } = useQuery(GET_ORG_DAILY_USAGE, {
+    variables: {
+      organizationId,
+      periodStart: new Date(Number(currentPeriodStart)).toISOString(),
+      periodEnd: new Date(Number(currentPeriodEnd)).toISOString(),
+    },
+    skip: !organizationId,
+  });
 
-    const data = [];
-
-    // Simulate gradual usage accumulation over the period
-    for (let i = 0; i <= Math.min(daysInPeriod, 30); i++) {
-      const date = new Date(start);
-      date.setDate(date.getDate() + i);
-
-      // Use a growth curve that accelerates toward current usage
-      const progress = i / daysInPeriod;
-      const growthFactor = Math.pow(progress, 1.5); // Slightly accelerating growth
-
-      data.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        views: Math.floor(viewsUsed * growthFactor),
-        submissions: Math.floor(submissionsUsed * growthFactor),
-      });
-    }
-
-    return data;
-  };
-
-  const data = generateUsageData();
+  const chartData: Array<{ date: string; views: number; submissions: number }> =
+    data?.orgDailyUsage ?? [];
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -104,11 +85,16 @@ export const UsageChart = ({
         </p>
       </div>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <AreaChart
-          data={data}
-          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-        >
+      {loading ? (
+        <div className="h-[300px] flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart
+            data={chartData}
+            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+          >
           <defs>
             <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -162,7 +148,8 @@ export const UsageChart = ({
             name={t('legend.formSubmissions')}
           />
         </AreaChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      )}
 
       <div className="mt-4 pt-4 border-t border-[var(--tf-border-medium)] dark:border-gray-700">
         <div className="grid grid-cols-2 gap-4 text-sm">
