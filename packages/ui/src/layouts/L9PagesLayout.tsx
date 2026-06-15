@@ -1,5 +1,4 @@
 import React from 'react';
-import { FormPage, FormLayout } from '@dculus/types';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, RendererMode } from '@dculus/utils';
 import { LayoutProps } from '../types';
@@ -67,8 +66,8 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
           )}
           
           {/* Pages content with white background container */}
-          <div className="h-full relative z-10 p-8 overflow-y-auto">
-            <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+          <div className="h-full relative z-10 p-3 sm:p-8 overflow-y-auto">
+            <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
               <PageRenderer
                 pages={pages}
                 layoutStyles={getLayoutStyles()}

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { FormPage, FormLayout } from '@dculus/types';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
@@ -99,7 +98,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
           )}
           
           {/* Central Content Area with vertical layout - scrollable */}
-          <div className="h-full relative z-10 overflow-y-auto" style={{ padding: '5% 10%' }}>
+          <div className="h-full relative z-10 overflow-y-auto px-4 py-4 sm:px-[10%] sm:py-[5%]">
             <div className="w-full max-w-4xl mx-auto flex flex-col space-y-6 min-h-full">
               
               {/* Background Image in 4:1 ratio */}
@@ -182,7 +181,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
               </div>
 
               {/* Pages from schema displayed vertically */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-8 shadow-lg">
                 <PageRenderer
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
