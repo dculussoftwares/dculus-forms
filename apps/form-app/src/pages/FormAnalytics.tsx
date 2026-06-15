@@ -97,9 +97,9 @@ const FormAnalytics: React.FC = () => {
       <div className="space-y-5">
 
         {/* ── Top toolbar: tabs + time range + view form ── */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
           {/* Typeform underline tabs */}
-          <div className="flex items-center" style={{ borderBottom: '1px solid var(--tf-border)' }}>
+          <div className="flex items-center overflow-x-auto" style={{ borderBottom: '1px solid var(--tf-border)' }}>
             {([
               { id: 'overview', icon: BarChart3, label: t('tabs.overview') },
               { id: 'fields', icon: TrendingUp, label: t('tabs.fields') },
@@ -120,7 +120,7 @@ const FormAnalytics: React.FC = () => {
           </div>
 
           {/* Right actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:shrink-0">
             {activeTab === 'overview' && (
               <TimeRangeSelector
                 value={timeRangePreset}
