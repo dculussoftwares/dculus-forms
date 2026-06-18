@@ -18,7 +18,7 @@
     "@dculus/ui": "workspace:*",
     "@dculus/utils": "workspace:*",
     "@sentry/react": "10.53.1",
-    "dompurify": "^3.4.8",
+    "dompurify": "^3.4.9",
     "graphql": "^16.14.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
