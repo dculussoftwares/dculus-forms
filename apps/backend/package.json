@@ -77,7 +77,7 @@
     "jsonwebtoken": "9.0.2",
     "lib0": "0.2.114",
     "morgan": "^1.11.0",
-    "multer": "^2.1.1",
+    "multer": "^2.2.0",
     "nanoid": "5.1.5",
     "nodemailer": "^8.0.5",
     "pino": "10.1.0",
