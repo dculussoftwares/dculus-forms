@@ -21,7 +21,7 @@
     "@dculus/types": "workspace:*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.263.1",
-    "nanoid": "5.1.5",
+    "nanoid": "5.1.15",
     "tailwind-merge": "^2.6.1"
   }
 }
