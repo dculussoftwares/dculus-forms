@@ -516,8 +516,16 @@ const createFieldColumns = (
   const knownFieldIds = new Set(
     formSchema.pages.flatMap((p) => p.fields.map((f) => f.id))
   );
+
+  // Safety guard: if the schema has no fields at all, it likely hasn't finished
+  // loading yet. Skip orphan detection entirely to prevent all response field IDs
+  // from being incorrectly classified as "Unknown field (deleted)" before the real
+  // schema arrives (race condition between GET_FORM_BY_ID and GET_FORM_RESPONSES).
+  const schemaHasFields = knownFieldIds.size > 0;
   const orphanIds = new Set(
-    responses.flatMap((r) => Object.keys(r.data)).filter((id) => !knownFieldIds.has(id))
+    schemaHasFields
+      ? responses.flatMap((r) => Object.keys(r.data)).filter((id) => !knownFieldIds.has(id))
+      : []
   );
 
   const orphanColumns: ColumnDef<FormResponse>[] = Array.from(orphanIds).map((fieldId) => ({

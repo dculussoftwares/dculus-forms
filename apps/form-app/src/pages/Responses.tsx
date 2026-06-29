@@ -256,7 +256,10 @@ const Responses: React.FC = () => {
     return [...fixedStart, ...orderedHideable, ...fixedEnd];
   }, [columns, responsesState.columnOrder]);
 
-  const loading = formLoading;
+  // Wait for BOTH the form schema AND responses before rendering the table.
+  // Without this, when responses arrive before formSchema, field IDs in response data
+  // are not found in the (empty) schema, causing them to show as "Unknown field (deleted)".
+  const loading = formLoading || (responsesLoading && !responsesData);
   const error = formError || responsesError;
   const responsePagination = responsesData?.responsesByForm;
 
