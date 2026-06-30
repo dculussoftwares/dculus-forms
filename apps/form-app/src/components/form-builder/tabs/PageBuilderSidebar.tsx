@@ -172,96 +172,96 @@ export const RightSidebar: React.FC<{
         ))}
       </div>
 
-      <ScrollArea className="flex-1">
-        {activeTab === 'pages' ? (
-          /* Pages Tab Content */
-          <div className="p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#655d67]">
-                {t('sidebar.pages.pageCount', {
-                  values: { count: pages.length },
-                })}
-              </span>
-              {permissions.canAddPages() && (
-                <Button
-                  variant="ghost"
-                  onClick={handleAddPage}
-                  data-testid="add-page-button"
-                  className="h-7 w-7 p-0 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={t('menu.addPage')}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-
-            <SortableContext
-              items={pages.map((p) => p.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2" data-testid="pages-list">
-                {pages.map((page, index) => (
-                  <DraggablePageItem
-                    key={page.id}
-                    page={page}
-                    index={index}
-                    isSelected={selectedPageId === page.id}
-                    isConnected={isConnected}
-                    onSelect={() => setSelectedPage(page.id)}
-                    onRemove={() => removePage(page.id)}
-                    onDuplicate={() => duplicatePage(page.id)}
-                    onUpdateTitle={(title) => updatePageTitle(page.id, title)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-
-            {pages.length === 0 && (
-              <div className="text-center py-8">
-                <p className="text-sm text-[#655d67]">{t('sidebar.pages.noPages')}</p>
+      {activeTab === 'properties' && selectedField ? (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <FieldSettingsV2
+            field={selectedField}
+            isConnected={isConnected}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+          />
+        </div>
+      ) : (
+        <ScrollArea className="flex-1">
+          {activeTab === 'pages' ? (
+            /* Pages Tab Content */
+            <div className="p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#655d67]">
+                  {t('sidebar.pages.pageCount', {
+                    values: { count: pages.length },
+                  })}
+                </span>
                 {permissions.canAddPages() && (
                   <Button
                     variant="ghost"
                     onClick={handleAddPage}
-                    className="mt-2 text-xs font-medium h-auto p-0 text-[#3c323e] underline-offset-2 hover:underline"
+                    data-testid="add-page-button"
+                    className="h-7 w-7 p-0 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={t('menu.addPage')}
                   >
-                    Create your first page
+                    <Plus className="w-4 h-4" />
                   </Button>
                 )}
               </div>
-            )}
-          </div>
-        ) : activeTab === 'properties' ? (
-          /* Properties Tab Content */
-          <div className="h-full flex flex-col">
-            {selectedField ? (
-              <FieldSettingsV2
-                field={selectedField}
-                isConnected={isConnected}
-                onUpdate={handleUpdate}
-                onDelete={handleDelete}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-64 p-8 text-center">
-                <div className="w-10 h-10 rounded-xl bg-[var(--tf-icon-gray)] flex items-center justify-center mb-3">
-                  <Settings className="w-4.5 h-4.5 text-[#655d67]" />
+
+              <SortableContext
+                items={pages.map((p) => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2" data-testid="pages-list">
+                  {pages.map((page, index) => (
+                    <DraggablePageItem
+                      key={page.id}
+                      page={page}
+                      index={index}
+                      isSelected={selectedPageId === page.id}
+                      isConnected={isConnected}
+                      onSelect={() => setSelectedPage(page.id)}
+                      onRemove={() => removePage(page.id)}
+                      onDuplicate={() => duplicatePage(page.id)}
+                      onUpdateTitle={(title) => updatePageTitle(page.id, title)}
+                    />
+                  ))}
                 </div>
-                <p className="text-sm font-medium text-[#4c414e] dark:text-gray-300">{t('emptyState.title')}</p>
-                <p className="text-xs text-[#655d67] dark:text-gray-500 mt-1">Click a field to edit its settings</p>
+              </SortableContext>
+
+              {pages.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-sm text-[#655d67]">{t('sidebar.pages.noPages')}</p>
+                  {permissions.canAddPages() && (
+                    <Button
+                      variant="ghost"
+                      onClick={handleAddPage}
+                      className="mt-2 text-xs font-medium h-auto p-0 text-[#3c323e] underline-offset-2 hover:underline"
+                    >
+                      Create your first page
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'properties' ? (
+            /* Properties Tab Content */
+            <div className="flex flex-col items-center justify-center h-64 p-8 text-center">
+              <div className="w-10 h-10 rounded-xl bg-[var(--tf-icon-gray)] flex items-center justify-center mb-3">
+                <Settings className="w-4.5 h-4.5 text-[#655d67]" />
               </div>
-            )}
-          </div>
-        ) : (
-          /* JSON Tab Content */
-          <div className="h-full">
-            <JSONPreview
-              pages={pages}
-              layout={layout}
-              isShuffleEnabled={isShuffleEnabled}
-            />
-          </div>
-        )}
-      </ScrollArea>
+              <p className="text-sm font-medium text-[#4c414e] dark:text-gray-300">{t('emptyState.title')}</p>
+              <p className="text-xs text-[#655d67] dark:text-gray-500 mt-1">Click a field to edit its settings</p>
+            </div>
+          ) : (
+            /* JSON Tab Content */
+            <div className="h-full">
+              <JSONPreview
+                pages={pages}
+                layout={layout}
+                isShuffleEnabled={isShuffleEnabled}
+              />
+            </div>
+          )}
+        </ScrollArea>
+      )}
     </div>
   );
 };

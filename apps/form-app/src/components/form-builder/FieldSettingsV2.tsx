@@ -304,7 +304,7 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
     children,
   }) => (
     <div data-testid="field-settings-panel" className="h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto">{children}</div>
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
       {deleteHandler && isConnected && (
         <div className="border-t border-[var(--tf-border-medium)] dark:border-gray-700 p-4">
           <Button
