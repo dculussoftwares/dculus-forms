@@ -23,7 +23,7 @@ import {
   type FieldTypeConfig,
 } from '../components/form-builder/FieldTypesPanel';
 import { FormField } from '@dculus/types';
-import { FormBuilderHeader, CompactFieldCard, AIFloatingButton } from '@/components/form-builder';
+import { FormBuilderHeader, CompactFieldCard } from '@/components/form-builder';
 import { LoadingState } from '../components/form-builder/LoadingState';
 import { ErrorState } from '../components/form-builder/ErrorState';
 import {
@@ -311,13 +311,13 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       case 'layout':
         return <LayoutTab onLayoutChange={updateLayout} />;
       case 'page-builder':
-        return <PageBuilderTab />;
+        return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
       case 'preview':
         return <PreviewTab formId={formId || ''} />;
       default:
-        return <PageBuilderTab />;
+        return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
     }
-  }, [activeTab, formId, updateLayout]);
+  }, [activeTab, formId, updateLayout, isAIDrawerOpen, setIsAIDrawerOpen]);
 
   if (!formId) {
     return (
@@ -517,10 +517,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           {activeTab === 'page-builder' && (
             <DragOverlay>{renderDragOverlay}</DragOverlay>
           )}
-          <AIFloatingButton
-            isOpen={isAIDrawerOpen}
-            onClick={() => setIsAIDrawerOpen((prev) => !prev)}
-          />
+
         </div>
       </DndContext>
     </FormPermissionProvider>

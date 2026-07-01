@@ -25,6 +25,7 @@ import {
 import { FieldCard } from './PageBuilderFieldCard';
 import { FormArea } from './PageBuilderFormArea';
 import { RightSidebar } from './PageBuilderSidebar';
+import { AIFloatingButton } from '../AIFloatingButton.js';
 
 // =============================================================================
 // Sub-Components
@@ -45,10 +46,18 @@ const LeftSidebar: React.FC = () => {
 // Main Component
 // =============================================================================
 
+interface PageBuilderTabProps {
+  onAskAI?: () => void;
+  isAIOpen?: boolean;
+}
+
 /**
  * PageBuilderTab - Reimplemented page builder with stable drag-and-drop
  */
-export const PageBuilderTab: React.FC = () => {
+export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
+  onAskAI,
+  isAIOpen = false,
+}) => {
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
   // Track the currently dragged field type (from sidebar)
@@ -353,12 +362,22 @@ export const PageBuilderTab: React.FC = () => {
         {/* Left: Field Types */}
         <LeftSidebar />
 
-        {/* Center: Form Area */}
-        <FormArea
-          recentlyDroppedFieldId={recentlyDroppedFieldId}
-          isDelayingExpansion={isDelayingExpansion}
-          isAnyDragActive={isAnyDragActive}
-        />
+        {/* Center: Form Area with Ask AI button scoped inside */}
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          <FormArea
+            recentlyDroppedFieldId={recentlyDroppedFieldId}
+            isDelayingExpansion={isDelayingExpansion}
+            isAnyDragActive={isAnyDragActive}
+          />
+          {/* Ask AI button — positioned within this column only, won't overlap sidebars */}
+          {onAskAI && (
+            <div className="absolute bottom-6 right-6 z-20 pointer-events-none">
+              <div className="pointer-events-auto">
+                <AIFloatingButton isOpen={isAIOpen} onClick={onAskAI} />
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Right: Field Settings with Resizable Width */}
         <RightSidebar width={sidebarWidth} onWidthChange={setSidebarWidth} />
