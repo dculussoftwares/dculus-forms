@@ -9,9 +9,12 @@ import {
   useSensor,
   useSensors,
   defaultDropAnimationSideEffects,
+  pointerWithin,
+  rectIntersection,
   type DropAnimation,
   type DragStartEvent,
   type DragEndEvent,
+  type CollisionDetection,
 } from '@dnd-kit/core';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import {
@@ -229,24 +232,28 @@ export const PageBuilderTab: React.FC = () => {
       // Dropped on a field-insert zone
       if (over.data.current?.type === 'field-insert') {
         const targetPageId = over.data.current.pageId as string;
-        let targetIndex = over.data.current.insertIndex as number;
+        // insertIndex is a SLOT index (0 = before first field, N = after last field).
+        // reorderFields expects a FINAL ELEMENT position (0 to N-1) in the resulting array.
+        //
+        // Conversion: when the dragged field is removed, all slots ABOVE the source shift
+        // left by one, so for downward drops the target slot is one lower in element terms.
+        //   insertIndex > sourceIndex  →  finalPos = insertIndex - 1
+        //   insertIndex <= sourceIndex →  finalPos = insertIndex
+        //
+        // The last slot (insertIndex = N = fields.length) correctly maps to N-1 via this
+        // formula, keeping toRawIndex in-bounds for every drop position.
+        const insertIndex = over.data.current.insertIndex as number;
+        const finalPos = insertIndex > sourceIndex ? insertIndex - 1 : insertIndex;
 
         if (sourcePageId === targetPageId) {
-          // Same page - reorder
-          if (targetIndex > sourceIndex) {
-            targetIndex = targetIndex - 1;
-          }
-
-          if (sourceIndex !== targetIndex) {
-            reorderFields(sourcePageId, sourceIndex, targetIndex);
-          }
+          reorderFields(sourcePageId, sourceIndex, finalPos);
         } else {
-          // Cross-page move
+          // Cross-page move — insertIndex is an insertion slot in the target page, valid as-is
           moveFieldBetweenPages(
             sourcePageId,
             targetPageId,
             droppedFieldId,
-            targetIndex
+            insertIndex
           );
         }
       }
@@ -325,9 +332,20 @@ export const PageBuilderTab: React.FC = () => {
     }, 400);
   };
 
+  // Use pointerWithin as the primary collision detection so that the tiny
+  // DropIndicator gap zones (2–8px tall) win over the large field cards.
+  // Fallback to rectIntersection for sidebar-to-form-area drops where the
+  // cursor may not be within any droppable but is close enough to one.
+  const collisionDetectionStrategy: CollisionDetection = (args) => {
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) return pointerCollisions;
+    return rectIntersection(args);
+  };
+
   return (
     <DndContext
       sensors={canEdit ? sensors : []}
+      collisionDetection={collisionDetectionStrategy}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >

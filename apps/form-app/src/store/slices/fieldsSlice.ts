@@ -505,8 +505,12 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         // Remove from old position
         fieldsArray.delete(rawOldIndex, 1);
 
-        // Insert at new position (re-compute rawNewIndex after deletion)
-        const adjustedNewIndex = rawOldIndex < rawNewIndex ? rawNewIndex - 1 : rawNewIndex;
+        // Insert at the target visual position in the post-deletion array.
+        // rawNewIndex is the desired final slot in the original array; after
+        // deleting at rawOldIndex the correct insert index is simply rawNewIndex
+        // (no direction-based ±1 adjustment — that was causing downward moves
+        // to land one position too early, e.g. [B,A,C] instead of [B,C,A]).
+        const adjustedNewIndex = rawNewIndex;
         const fieldMap = createYJSFieldMap(fieldData);
         fieldsArray.insert(adjustedNewIndex, [fieldMap]);
       });
