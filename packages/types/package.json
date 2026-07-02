@@ -13,6 +13,10 @@
     "./graphql.js": {
       "types": "./dist/graphql.d.ts",
       "import": "./dist/graphql.js"
+    },
+    "./ai.js": {
+      "types": "./dist/ai.d.ts",
+      "import": "./dist/ai.js"
     }
   },
   "scripts": {

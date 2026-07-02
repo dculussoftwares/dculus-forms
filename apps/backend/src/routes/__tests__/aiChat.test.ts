@@ -64,6 +64,9 @@ vi.mock('../../services/aiChatService.js', () => ({
   saveConversationMessages: vi.fn().mockResolvedValue(undefined),
   autoGenerateTitle: vi.fn(),
   truncateToolResults: vi.fn().mockImplementation((msgs: any[]) => msgs),
+  // Phase 1.3: history management — pass-through by default so route tests are unaffected
+  pruneToolCallsFromHistory: vi.fn().mockImplementation((msgs: any[]) => msgs),
+  summarizeHistoryIfNeeded: vi.fn().mockImplementation((msgs: any[]) => Promise.resolve(msgs)),
   MAX_TOOL_RESULT_CHARS: 8_000,
 }));
 
@@ -400,17 +403,17 @@ describe('STATIC_SYSTEM_PROMPT', () => {
     expect(STATIC_SYSTEM_PROMPT).not.toMatch(/id:p\d/);
     expect(STATIC_SYSTEM_PROMPT).not.toMatch(/\(\d+f,/);
     expect(STATIC_SYSTEM_PROMPT).not.toContain('Current page id:');
-    // It references the consolidated tools, not the old ones.
+    // Compressed prompt still references the key tools used in workflow rules.
     expect(STATIC_SYSTEM_PROMPT).toContain('updateFields');
     expect(STATIC_SYSTEM_PROMPT).toContain('removeFields');
     expect(STATIC_SYSTEM_PROMPT).toContain('relocateField');
-    expect(STATIC_SYSTEM_PROMPT).toContain('reorder');
-    // Legacy tool names must be gone (note: "removeFields" legitimately contains "moveField"
-    // as a substring, so assert on the legacy-only tokens instead).
+    // Legacy tool names must be gone.
     expect(STATIC_SYSTEM_PROMPT).not.toContain('bulkUpdateFields');
     expect(STATIC_SYSTEM_PROMPT).not.toContain('bulkRemoveFields');
     expect(STATIC_SYSTEM_PROMPT).not.toContain('copyField');
     expect(STATIC_SYSTEM_PROMPT).toContain('<current_context>');
+    // Note: 'reorder' is now embedded in the reorder tool description rather than
+    // the static system prompt — this is intentional for the compressed prompt design.
   });
 
   it('contains explicit merge-pages workflow instruction to prevent field data loss', () => {

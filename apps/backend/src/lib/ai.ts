@@ -1,5 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
+import type { IntentTier } from './intentClassifier.js';
 
 // Returns the env var value only when it is a non-empty, non-"undefined" string.
 // process.env coerces undefined to the literal string "undefined" (via Object.assign
@@ -43,6 +44,42 @@ export function getFastModel(): LanguageModel {
 // Returns the resolved primary model id — used for telemetry only.
 export function getPrimaryModelId(): string {
   return env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini';
+}
+
+/**
+ * Route a request to the appropriate model tier based on classified intent.
+ *
+ * Two-tier routing strategy (Option A — no new infrastructure required):
+ *   'nano' → gpt-5.4-nano (fast model)  — simple CRUD ops + questions
+ *   'mini' → gpt-5.4-mini (primary model) — complex analysis, remix, bulk edits
+ *
+ * Both models are already deployed in ai.tf. This reuses the existing env vars:
+ *   AI_FAST_*   → nano (previously only used for auto-title generation)
+ *   AI_PRIMARY_* → mini (form edit agent + form generation + field insights)
+ */
+export function getRoutedModel(tier: 'nano' | 'mini'): LanguageModel {
+  if (tier === 'nano') return getFastModel();
+  return getPrimaryModel();
+}
+
+/** Returns the model ID string for the given tier — used for telemetry logging. */
+export function getRoutedModelId(tier: 'nano' | 'mini'): string {
+  if (tier === 'nano') return env('AI_FAST_MODEL') ?? 'gpt-5.4-nano';
+  return env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini';
+}
+
+/**
+ * Convenience: resolve intent tier → model tier → model in one call.
+ * Avoids importing intentToModelTier in the ai.ts module (keeps deps clean).
+ */
+export function getModelForIntent(intent: IntentTier): LanguageModel {
+  return intent === 'complex' ? getPrimaryModel() : getFastModel();
+}
+
+export function getModelIdForIntent(intent: IntentTier): string {
+  return intent === 'complex'
+    ? (env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini')
+    : (env('AI_FAST_MODEL') ?? 'gpt-5.4-nano');
 }
 
 // GPT models on Azure AI Services use automatic prompt caching — no explicit

@@ -1,5 +1,5 @@
 import { Router, type Router as ExpressRouter } from 'express';
-import { validateUIMessages, convertToModelMessages, pruneMessages } from 'ai';
+import { validateUIMessages, convertToModelMessages, pruneMessages, streamText } from 'ai';
 import type { UIMessage, ModelMessage } from 'ai';
 import * as Y from 'yjs';
 import {
@@ -13,14 +13,18 @@ import {
   saveConversationMessages,
   autoGenerateTitle,
   truncateToolResults,
+  pruneToolCallsFromHistory,
+  summarizeHistoryIfNeeded,
 } from '../services/aiChatService.js';
 import {
   checkAITokenBudget,
   recordAITokenUsage,
 } from '../services/aiUsageService.js';
 import { createFormEditAgent } from '../lib/formEditAgent.js';
-import { getPrimaryModelId } from '../lib/ai.js';
+import { getModelForIntent, getModelIdForIntent } from '../lib/ai.js';
+import { classifyIntent, intentToModelTier, intentToToolTier } from '../lib/intentClassifier.js';
 import { extractUsageStats, recordTurnTelemetry } from '../services/aiTelemetry.js';
+import { getCachedSchema, setCachedSchema, invalidateCachedSchema } from '../lib/formSchemaCache.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 
@@ -71,14 +75,14 @@ async function getFormSchemaFromYjs(formId: string): Promise<{ pages: any[] } | 
 }
 
 // ── Schema cache ──────────────────────────────────────────────────────────────
-const schemaCache = new Map<string, { schema: { pages: any[] }; cachedAt: number }>();
-const SCHEMA_CACHE_TTL_MS = 10_000;
+// Phase 2.2: cache logic extracted to lib/formSchemaCache.ts.
+// schemaCache, SCHEMA_CACHE_TTL_MS removed — use getCachedSchema / setCachedSchema.
 
 export async function getFormSchema(formId: string): Promise<{ pages: any[] }> {
-  const hit = schemaCache.get(formId);
-  if (hit && Date.now() - hit.cachedAt < SCHEMA_CACHE_TTL_MS) return hit.schema;
+  const cached = getCachedSchema(formId);
+  if (cached) return cached;
   const schema = (await getFormSchemaFromYjs(formId)) ?? { pages: [] };
-  schemaCache.set(formId, { schema, cachedAt: Date.now() });
+  setCachedSchema(formId, schema);
   return schema;
 }
 
@@ -106,29 +110,24 @@ export function countFields(schema: { pages: any[] }): number {
  * STATIC system prompt. Contains NO per-turn data (no current page, no form structure) so it is
  * byte-identical on every request — this is what lets Azure/OpenAI prefix caching hit. All
  * dynamic context is delivered separately via buildEphemeralContext (the trailing tail).
+ *
+ * COMPRESSED: Behavioral rules that are tool-specific are embedded in each tool's description
+ * (aiFormEditTools.ts) — the model always sees them in context but only for the tools included
+ * in the current turn. This reduces the static prompt from ~525 tokens to ~210 tokens.
  */
-export const STATIC_SYSTEM_PROMPT = `You are an AI assistant that helps users edit their multi-page form.
+export const STATIC_SYSTEM_PROMPT = `You are an AI form editor. A <current_context> block at the end of each message shows the form's pages, fields, and current page. Read it before acting — it is authoritative.
 
-The current form structure (pages, fields, and the current page) is provided in a <current_context> block at the end of each message. Read it before acting — it is authoritative.
-
-- Identify fields by their label and id from <current_context>. If the snapshot is omitted (large forms), call listFields (no pageId) to search across all pages, then getField for full details before updating.
-- When the user mentions "page 1", "page 2", match by position using the page numbers in <current_context>.
-- If the user references a page that does not exist:
-  • If the number is exactly one more than the current total — it is the next sequential page. Auto-create it: call addPage, then immediately addField (or whatever was requested). Do NOT ask, do NOT write text first.
-  • If the number is two or more beyond the total — reply with plain text asking which page they meant. Do NOT call any tools.
-- Make only the changes the user requests. Confirm what you did in your final text response.
-- "Add", "create", or "insert a … field" ALWAYS means create a NEW field with addField — even if a similar field already exists. NEVER repurpose an existing field (e.g. via updateFields to change its label/options) to satisfy an "add" request. Only use updateFields when the user explicitly refers to changing/renaming/editing an existing field (e.g. "rename X", "change X's options", "make X required").
-- When you call addPage, the result contains a pageId. Use that exact pageId for subsequent addField calls on that new page. Never invent a page ID.
-- Never call removePage when there is only one page.
-- When editing fields on a page that is NOT the current page, call navigateToPage first, then make your changes.
-- Deleting fields (removeFields), deleting a page (removePage), and changing a field's type (proposeFieldTypeChange) are PROPOSALS that require user confirmation — the tool does NOT apply the change. After calling one, tell the user you have proposed it and ask them to confirm in the card. NEVER say the field/page was deleted or converted; say it WILL be once confirmed.
-- To change a field's type, call proposeFieldTypeChange. This deletes the existing field and creates a new one of the new type, so existing responses for that field will not carry over — make that clear to the user.
-- When suggesting or reviewing validation, call proposeValidation with all affected fields at once. Never apply validation via updateFields without explicit user confirmation.
-- updateFields and removeFields take an array of field IDs — pass one ID for a single field, or many for a batch. Always prefer one batched call over many single calls.
-- Use reorder with scope "fields" (and a pageId) to change field order within a page; use reorder with scope "pages" to reorder pages.
-- Use relocateField with mode "move" to move a field to a different page, or mode "copy" to duplicate it onto another page (the copy gets a new ID; all other properties are preserved). Not for same-page reordering.
-- When the user asks to "merge pages", "combine pages", "consolidate into one page", or "put all fields on one page": call relocateField (mode "move") for EVERY field from the source pages to the target page FIRST, then call removePage on each now-empty source page. NEVER call removePage while fields remain on that page during a merge — they will be lost permanently.
-- When asked to "remix", "transform", or "convert" the form: read the current structure, remove fields that don't fit (removeFields), add fields that belong (addField), keep fields that work for both and relabel via updateFields, then updateLayout for the title and CTA. Add new fields before removing the last field on a page.`;
+Rules:
+1. Identify fields by label+id from <current_context>. Large forms omit the snapshot — call listFields then getField.
+2. "page N" = Nth page by position. If N = total+1, auto-create (addPage then act). If N > total+1, ask which page.
+3. "add/create/insert a field" = always addField (never updateFields). updateFields = only explicit edits ("rename", "change", "make required").
+4. Batch: prefer one updateFields/removeFields call with multiple IDs over many single calls.
+5. After addPage, use its returned pageId for subsequent addField calls. Never invent IDs.
+6. Cross-page edits: call navigateToPage first, then make changes.
+7. Proposals (removeFields, removePage, proposeFieldTypeChange, proposeValidation) do NOT apply immediately — tell the user to confirm in the card. Never say "deleted/converted"; say "will be once confirmed".
+8. Merge pages: relocateField (move) ALL fields first, THEN removePage on empty source pages.
+9. Remix/transform: read structure, removeFields unneeded, addField new ones, updateFields to relabel keepers, updateLayout for title+CTA. Add before removing.
+10. Make only requested changes. Confirm what you did in final text.`;
 
 /**
  * The per-turn dynamic context, delivered as a trailing user message placed AFTER conversation
@@ -230,8 +229,14 @@ aiChatRouter.post('/chat', async (req, res) => {
     autoGenerateTitle(conversationId, messageText);
   }
 
-  // Build full message list with new user message
-  const allMessages = [...previous, message];
+  // Build full message list with new user message.
+  // Phase 1.3: Prune old tool call payloads to compact annotations, then
+  // summarise if the conversation is long enough — reduces context by ~55%.
+  const previousPruned = pruneToolCallsFromHistory(
+    truncateToolResults(previous)
+  );
+  const previousSmartened = await summarizeHistoryIfNeeded(previousPruned);
+  const allMessages = [...previousSmartened, message];
 
   // Read Y.js schema once (cached for 10 s)
   const schema = await getFormSchema(conv.formId);
@@ -250,6 +255,83 @@ aiChatRouter.post('/chat', async (req, res) => {
     validated = allMessages;
   }
 
+  // ── Intent classification + model routing ──────────────────────────────────
+  // Zero-latency heuristic: no API call, pure regex. Determines which model and
+  // tool tier to use for this specific turn.
+  const intent = classifyIntent(messageText);
+  const modelTier = intentToModelTier(intent);
+  const toolTier = intentToToolTier(intent);
+
+  logger.debug({ conversationId, intent, modelTier, toolTier }, 'AI chat intent classified');
+
+  // Questions ("what field types do you support?", "how do I...") don't need tools.
+  // Skip the ToolLoopAgent entirely and use direct streamText — saves ~2,100 tokens
+  // of tool definition schemas per question turn.
+  if (intent === 'question') {
+    try {
+      const model = getModelForIntent(intent);
+      const modelMessages = await convertToModelMessages(validated);
+      const prunedModelMessages = pruneMessages({
+        messages: modelMessages,
+        reasoning: 'all',
+        toolCalls: 'before-last-5-messages',
+        emptyMessages: 'remove',
+      });
+      const ephemeralContext: ModelMessage = {
+        role: 'user',
+        content: buildEphemeralContext(currentPageId, schema),
+      };
+
+      const questionStream = await streamText({
+        model,
+        system: STATIC_SYSTEM_PROMPT,
+        messages: [...prunedModelMessages, ephemeralContext],
+        onFinish: async ({ text, usage }) => {
+          const tokensUsed = usage?.totalTokens ?? 0;
+          // Save user message + the assistant text response
+          const assistantMsg: UIMessage = {
+            id: `msg-${Date.now()}`,
+            role: 'assistant',
+            parts: [{ type: 'text', text }],
+          };
+          await saveConversationMessages(conversationId, [message, assistantMsg], tokensUsed);
+          await recordAITokenUsage(organizationId, tokensUsed);
+          const stats = extractUsageStats(usage as any);
+          recordTurnTelemetry({
+            conversationId,
+            formId: conv.formId,
+            formFieldCount: fieldCount,
+            model: getModelIdForIntent(intent),
+            intentTier: intent,
+            modelTier,
+            ...stats,
+          });
+        },
+      });
+
+      questionStream.consumeStream();
+
+      const questionWebResponse = questionStream.toTextStreamResponse();
+      res.status(questionWebResponse.status);
+      for (const [k, v] of questionWebResponse.headers.entries()) {
+        res.setHeader(k, v);
+      }
+      try {
+        for await (const chunk of questionWebResponse.body as any) {
+          res.write(chunk);
+        }
+      } finally {
+        res.end();
+      }
+      return;
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.warn({ errMsg, conversationId }, 'Question streamText failed — falling back to agent');
+      // Fall through to agent path on error
+    }
+  }
+
+  // ── ToolLoopAgent path (simple + complex intents) ──────────────────────────
   // Static system prompt + stable per-conversation cache key keep the prefix byte-stable so
   // Azure/OpenAI prefix caching hits on every step and across turns.
   const agent = createFormEditAgent(schema, {
@@ -257,6 +339,8 @@ aiChatRouter.post('/chat', async (req, res) => {
     cacheKey: conversationId,
     includeReadTools,
     formId: conv.formId,
+    modelTier,
+    toolTier,
   });
 
   try {
@@ -298,7 +382,9 @@ aiChatRouter.post('/chat', async (req, res) => {
           conversationId,
           formId: conv.formId,
           formFieldCount: fieldCount,
-          model: getPrimaryModelId(),
+          model: getModelIdForIntent(intent),
+          intentTier: intent,
+          modelTier,
           ...stats,
         });
       },
@@ -330,6 +416,7 @@ aiChatRouter.post('/invalidate-schema', async (req, res) => {
   const auth = await createBetterAuthContext(req);
   try { requireAuth(auth); } catch { res.status(401).json({ error: 'Authentication required' }); return; }
   const { formId } = req.body as { formId?: string };
-  if (formId) schemaCache.delete(formId);
+  // Phase 2.2: use centralized invalidation utility
+  if (formId) invalidateCachedSchema(formId);
   res.status(204).end();
 });

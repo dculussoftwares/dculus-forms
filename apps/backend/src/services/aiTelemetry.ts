@@ -1,21 +1,9 @@
 import type { LanguageModelUsage } from 'ai';
 import { logger } from '../lib/logger.js';
-
-export interface TurnTelemetry {
-  conversationId: string;
-  formId: string;
-  formFieldCount: number;
-  model: string;
-  /** Total input (prompt) tokens summed across every step of the tool loop. */
-  inputTokens: number;
-  /** Output (completion) tokens summed across all steps. */
-  outputTokens: number;
-  /** Prompt tokens served from the prefix cache (the savings). */
-  cachedInputTokens: number;
-  /** cachedInputTokens / inputTokens, 0..1 — how much of the prompt was cached. */
-  cacheHitRatio: number;
-  totalTokens: number;
-}
+// Phase 2.1: types centralised in @dculus/types — import from built dist.
+// Run `pnpm --filter @dculus/types build` after changing packages/types/src/ai.ts.
+export type { TurnTelemetry, UsageStats, IntentTier, ModelTier } from '@dculus/types/ai.js';
+import type { TurnTelemetry } from '@dculus/types/ai.js';
 
 /**
  * Pull the cache-aware token breakdown out of an AI SDK usage object.
@@ -49,6 +37,8 @@ export function recordTurnTelemetry(stats: TurnTelemetry): void {
       formId: stats.formId,
       formFieldCount: stats.formFieldCount,
       model: stats.model,
+      intentTier: stats.intentTier,
+      modelTier: stats.modelTier,
       inputTokens: stats.inputTokens,
       outputTokens: stats.outputTokens,
       cachedInputTokens: stats.cachedInputTokens,

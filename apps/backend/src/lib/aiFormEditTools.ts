@@ -48,12 +48,17 @@ const updatesSchema = z.object({
   maxDate: z.string().nullable().optional(),
 });
 
+export type ToolTier = 'full' | 'core' | 'minimal';
+
 export function createFormEditTools(
   schema: { pages: any[] },
-  opts?: { includeReadTools?: boolean; formId?: string }
+  opts?: { includeReadTools?: boolean; formId?: string; toolTier?: ToolTier }
 ) {
   const includeReadTools = opts?.includeReadTools !== false;
   const formId = opts?.formId;
+  const toolTier = opts?.toolTier ?? 'full';
+  const totalFields = (schema.pages ?? []).reduce((n: number, p: any) => n + (p.fields?.length ?? 0), 0);
+  const totalPages = (schema.pages ?? []).length;
 
   // Deep-clone so in-turn mutations don't corrupt the shared schema cache, and so later tool
   // calls in the same AI turn (e.g. removePage after relocateField) see accurate field counts.
@@ -133,7 +138,7 @@ export function createFormEditTools(
   const mutationTools = {
     addField: tool({
       description:
-        'Add a field to a page. pageId from listFields. insertAfterFieldId for position; null to append at end.',
+        'Create a NEW field on a page. ALWAYS use this for "add/create/insert" requests — never repurpose existing fields via updateFields. insertAfterFieldId positions it; null appends at end.',
       inputSchema: z.object({
         pageId: z.string().describe('ID of the page to add the field to'),
         insertAfterFieldId: z.string().nullable().describe('Insert after this field ID; null to append'),
@@ -148,7 +153,7 @@ export function createFormEditTools(
 
     updateFields: tool({
       description:
-        'Update one or more fields with the same changes. Single edit = 1-elem fieldIds. text: validation.min/maxLength. number: min/max. date: minDate/maxDate.',
+        'Update existing fields. Use ONLY for explicit edits ("rename", "change options", "make required") — never for "add" requests. Pass multiple fieldIds for batch updates. text: validation.min/maxLength. number: min/max. date: minDate/maxDate.',
       inputSchema: z.object({
         fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to update (min 1)'),
         updates: updatesSchema,
@@ -158,7 +163,7 @@ export function createFormEditTools(
 
     removeFields: tool({
       description:
-        'Propose removing one or more fields. Does NOT delete immediately — the user must confirm in a card. Single removal = 1-elem fieldIds. Call listFields first to get the IDs.',
+        'PROPOSAL: propose removing fields. Does NOT delete — user must confirm in the card. Say "will be deleted once confirmed", never "deleted". Batch: pass multiple fieldIds.',
       inputSchema: z.object({
         fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to remove (min 1)'),
       }),
@@ -178,7 +183,7 @@ export function createFormEditTools(
 
     relocateField: tool({
       description:
-        'Move or copy a field to another page. mode "move" relocates; "copy" duplicates. insertAfterFieldId positions it; null to append.',
+        'Move or copy a field between pages (not for same-page reordering — use reorder). For merge/consolidate: relocate ALL fields first, THEN removePage on empty source pages.',
       inputSchema: z.object({
         fieldId: z.string().describe('The field ID — get it from listFields'),
         targetPageId: z.string().describe('Destination page ID — get it from listFields'),
@@ -247,7 +252,7 @@ export function createFormEditTools(
 
     addPage: tool({
       description:
-        'Add a page. insertAfterPageId to position it, null to append. Use the returned pageId immediately as the pageId for addField on this page.',
+        'Add a page. Use the returned pageId for subsequent addField calls on this page — never invent a page ID. insertAfterPageId positions it; null appends.',
       inputSchema: z.object({
         title: z.string().max(50).describe('Title for the new page'),
         insertAfterPageId: z.string().nullable().describe('Insert after this page ID; null to append at end'),
@@ -267,7 +272,7 @@ export function createFormEditTools(
 
     removePage: tool({
       description:
-        'Propose removing a page and ALL its fields. Does NOT delete immediately — the user must confirm in a card. Cannot remove the last remaining page.',
+        'PROPOSAL: propose deleting a page + all its fields. Does NOT delete — user must confirm. Cannot remove the last page. For merges: relocate all fields off the page first.',
       inputSchema: z.object({
         pageId: z.string().describe('The page ID from listFields'),
       }),
@@ -295,7 +300,7 @@ export function createFormEditTools(
 
     navigateToPage: tool({
       description:
-        'Navigate the form builder canvas to a specific page. Call this before editing fields on a page the user is not currently viewing.',
+        'Navigate canvas to a page. Call BEFORE editing fields on a page the user is not currently viewing.',
       inputSchema: z.object({
         pageId: z.string().describe('The page ID to navigate to — get it from listFields'),
       }),
@@ -304,7 +309,7 @@ export function createFormEditTools(
 
     proposeValidation: tool({
       description:
-        'Propose validation rules for user review. Use instead of updateFields for validation — never apply validation without user confirmation.',
+        'PROPOSAL: suggest validation rules for user review. Never apply validation via updateFields directly — always use this tool for user confirmation.',
       inputSchema: z.object({
         suggestions: z.array(
           z.object({
@@ -331,7 +336,7 @@ export function createFormEditTools(
 
     proposeFieldTypeChange: tool({
       description:
-        'Propose changing a field to a different type. Does NOT change immediately — the user must confirm. Converting DELETES the field and creates a new one of the new type; existing responses for it will NOT carry over.',
+        'PROPOSAL: convert a field to a different type. Does NOT apply — user must confirm. Converting deletes the field and creates a new one; existing responses will NOT carry over. Make this clear to the user.',
       inputSchema: z.object({
         fieldId: z.string().describe('The field ID to convert — get it from listFields'),
         newFieldType: z.enum(FIELD_TYPE_TOKENS).describe('The target field type'),
@@ -355,9 +360,39 @@ export function createFormEditTools(
     }),
   };
 
+  // Conditional tool inclusion based on tier and form state:
+  // - 'minimal': core CRUD only (addField, updateFields, addPage, navigateToPage, updateLayout)
+  // - 'core': minimal + removeFields, renamePage, reorder, removePage
+  // - 'full': all tools including proposals and relocation
+  const minimalTools = {
+    addField: mutationTools.addField,
+    updateFields: mutationTools.updateFields,
+    addPage: mutationTools.addPage,
+    navigateToPage: mutationTools.navigateToPage,
+    updateLayout: mutationTools.updateLayout,
+  };
+
+  const coreTools = {
+    ...minimalTools,
+    removeFields: mutationTools.removeFields,
+    renamePage: mutationTools.renamePage,
+    reorder: mutationTools.reorder,
+    ...(totalPages > 1 ? { removePage: mutationTools.removePage } : {}),
+  };
+
+  const fullTools = {
+    ...coreTools,
+    ...(totalPages > 1 || totalFields > 0 ? { removePage: mutationTools.removePage } : {}),
+    ...(totalFields > 0 ? { relocateField: mutationTools.relocateField } : {}),
+    ...(totalFields > 2 ? { proposeValidation: mutationTools.proposeValidation } : {}),
+    ...(totalFields > 0 ? { proposeFieldTypeChange: mutationTools.proposeFieldTypeChange } : {}),
+  };
+
+  const tieredTools = toolTier === 'minimal' ? minimalTools : toolTier === 'core' ? coreTools : fullTools;
+
   return {
     ...(includeReadTools ? readTools : {}),
-    ...mutationTools,
+    ...tieredTools,
   };
 }
 

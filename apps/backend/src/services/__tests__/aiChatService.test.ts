@@ -140,9 +140,10 @@ describe('loadConversationMessages', () => {
     expect(result).toEqual([]);
   });
 
-  it('returns at most 10 messages in ascending order', async () => {
-    // Simulate Prisma returning 10 messages in desc order (newest first)
-    const fakeMessages = Array.from({ length: 10 }, (_, i) => ({
+  it('returns at most 6 messages in ascending order (MAX_HISTORY_MESSAGES=6)', async () => {
+    // Simulate Prisma returning 6 messages in desc order (newest first).
+    // Phase 1.3: MAX_HISTORY_MESSAGES reduced from 10 → 6.
+    const fakeMessages = Array.from({ length: 6 }, (_, i) => ({
       data: { id: `msg-${i}`, role: 'user', content: `message ${i}`, parts: [] },
     }));
     (prisma.aIChatMessage.findMany as any).mockResolvedValue(fakeMessages);
@@ -152,13 +153,13 @@ describe('loadConversationMessages', () => {
     expect(prisma.aIChatMessage.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         orderBy: { createdAt: 'desc' },
-        take: 10,
+        take: 6,
       })
     );
-    expect(result).toHaveLength(10);
-    // After reverse(), first element should be the last from the desc array (msg-9)
-    expect((result[0] as any).id).toBe('msg-9');
-    expect((result[9] as any).id).toBe('msg-0');
+    expect(result).toHaveLength(6);
+    // After reverse(), first element should be the last from the desc array (msg-5)
+    expect((result[0] as any).id).toBe('msg-5');
+    expect((result[5] as any).id).toBe('msg-0');
   });
 
   it('returns all messages when fewer than 20 exist', async () => {

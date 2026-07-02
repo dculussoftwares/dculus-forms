@@ -69,6 +69,8 @@ describe('recordTurnTelemetry', () => {
       formId: 'form-1',
       formFieldCount: 5,
       model: 'gpt-5.4-mini',
+      intentTier: 'simple',
+      modelTier: 'nano',
       inputTokens: 1000,
       outputTokens: 200,
       cachedInputTokens: 600,
@@ -76,7 +78,7 @@ describe('recordTurnTelemetry', () => {
       totalTokens: 1200,
     });
     expect(vi.mocked(logger.info)).toHaveBeenCalledWith(
-      expect.objectContaining({ aiTelemetry: true, cacheHitRatio: 0.6, conversationId: 'conv-1' }),
+      expect.objectContaining({ aiTelemetry: true, cacheHitRatio: 0.6, conversationId: 'conv-1', intentTier: 'simple', modelTier: 'nano' }),
       'AI chat turn complete'
     );
   });
