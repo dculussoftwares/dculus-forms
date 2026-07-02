@@ -329,6 +329,8 @@ const renderFilterInput = (
                   <div
                     key={index}
                     className="flex items-center space-x-2 p-2 hover:bg-background"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <Checkbox
                       id={`${field.id}-${index}`}

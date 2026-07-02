@@ -935,6 +935,12 @@ When('I add a filter for field {string} with operator {string} and options {stri
         // The SelectContent is rendered as a portal, so labels are NOT inside valueContainer
         // We need to find them globally on the page
         for (const option of options) {
+            // Re-open the dropdown if it closed during E2E selection
+            const isExpanded = await selectTrigger.getAttribute('aria-expanded');
+            if (isExpanded !== 'true') {
+                await selectTrigger.click();
+                await this.page.waitForTimeout(500);
+            }
             // Find the label with this option text (rendered in the portal)
             const labelLocator = this.page.locator(`label:has-text("${option}")`);
             if (await labelLocator.count() > 0) {
