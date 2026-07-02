@@ -306,13 +306,13 @@ variable "ai_location" {
 variable "ai_primary_tpm" {
   description = "Tokens per minute capacity for the primary model (in thousands)"
   type        = number
-  default     = 10
+  default     = 5
 }
 
 variable "ai_fast_tpm" {
   description = "Tokens per minute capacity for the fast model (in thousands)"
   type        = number
-  default     = 30
+  default     = 60
 }
 
 variable "ai_primary_model" {

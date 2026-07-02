@@ -1,7 +1,23 @@
 // apps/form-app/src/components/form-builder/AIEditDrawer.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Send, Plus, Trash2, ChevronDown, X, Undo2 } from 'lucide-react';
+import {
+  Send,
+  Plus,
+  Trash2,
+  ChevronDown,
+  X,
+  Undo2,
+  Wand2,
+  ShieldCheck,
+  ScanSearch,
+  LayoutDashboard,
+  Layers,
+  Shuffle,
+  Asterisk,
+  Loader2,
+  CheckCircle2,
+} from 'lucide-react';
 import { GradientSparkles } from './GradientSparkles.js';
 import { cn } from '@dculus/utils';
 import {
@@ -32,11 +48,27 @@ interface AIEditDrawerProps {
   initialMessage?: string;
 }
 
+const CHIP_ICONS: Record<string, React.ComponentType<any>> = {
+  Wand2,
+  ShieldCheck,
+  ScanSearch,
+  LayoutDashboard,
+  Layers,
+  Shuffle,
+  Asterisk,
+};
+
+function ChipIcon({ name, className }: { name: string; className?: string }) {
+  const IconComponent = CHIP_ICONS[name];
+  if (!IconComponent) return null;
+  return <IconComponent className={className} size={13} />;
+}
+
 function UserBubble({ message }: { message: FormEditAgentUIMessage }) {
   const textPart = message.parts.find((p) => p.type === 'text') as { type: 'text'; text: string } | undefined;
   return (
     <div className="flex justify-end">
-      <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-primary px-3 py-2 text-sm text-primary-foreground">
+      <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-primary px-3 py-2 text-sm text-primary-foreground shadow-sm">
         {textPart?.text ?? (message as any).content}
       </div>
     </div>
@@ -46,11 +78,11 @@ function UserBubble({ message }: { message: FormEditAgentUIMessage }) {
 function TextBubble({ text, isStreaming }: { text: string; isStreaming?: boolean }) {
   if (!text) return null;
   return (
-    <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2 text-sm leading-relaxed text-foreground">
+    <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2 text-sm leading-relaxed text-foreground shadow-sm">
       <ReactMarkdown
         components={{
           p: ({ children }) => <p className="mb-1 last:mb-0">{children}</p>,
-          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+          strong: ({ children }) => <strong className="font-semibold text-primary">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
           ul: ({ children }) => <ul className="ml-4 list-disc space-y-0.5 my-1">{children}</ul>,
           ol: ({ children }) => <ol className="ml-4 list-decimal space-y-0.5 my-1">{children}</ol>,
@@ -74,6 +106,54 @@ function toolStatusLabel(part: FormEditToolPart, t: (key: string) => string): st
   return label !== key ? label : t('toolStatus.default');
 }
 
+/**
+ * Phase 3.3: Streaming timeline tracking.
+ * Provides a clean, vertical step timeline of tool invocations currently running or completed.
+ */
+function StreamingTimeline({ parts }: { parts: FormEditToolPart[] }) {
+  const { t } = useTranslation('aiEditDrawer');
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-xl border border-border/80 bg-background/40 backdrop-blur-sm shadow-sm">
+      <div className="flex items-center gap-1.5 border-b border-border/60 bg-muted/20 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+        <Loader2 className="h-3 w-3 animate-spin text-primary" />
+        {t('timeline.executingPlan') ?? 'Executing operations'}
+      </div>
+      <div className="divide-y divide-border/30 px-3 py-1">
+        {parts.map((part, i) => {
+          const key = (part as any).toolCallId ?? `${part.type}-${i}`;
+          const state = (part as any).state as string;
+          const isDone = state === 'output-available';
+
+          return (
+            <div key={key} className="flex items-start gap-2.5 py-1.5 text-xs">
+              <div className="relative mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                {isDone ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                ) : (
+                  <span className="h-2 w-2 animate-ping rounded-full bg-primary" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className={cn('font-medium transition-colors', isDone ? 'text-muted-foreground line-through' : 'text-foreground')}>
+                    {toolStatusLabel(part, t)}
+                  </span>
+                  {isDone && (
+                    <span className="text-[9px] text-green-600 font-semibold uppercase tracking-wider bg-green-50 px-1 rounded border border-green-200">
+                      OK
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function AssistantMessage({
   message,
   isStreaming,
@@ -89,11 +169,11 @@ function AssistantMessage({
   const textParts = message.parts.filter((p) => p.type === 'text') as { type: 'text'; text: string }[];
   const combinedText = textParts.map((p) => p.text).join('');
 
-  // Find any tool part currently in-flight (not yet output-available)
+  const toolParts = message.parts.filter((p) => p.type.startsWith('tool-')) as FormEditToolPart[];
+
+  // Find any tool part currently in-flight
   const inFlightPart = isStreaming
-    ? (message.parts as FormEditToolPart[]).find(
-        (p) => p.type.startsWith('tool-') && (p as any).state !== 'output-available'
-      )
+    ? toolParts.find((p) => (p as any).state !== 'output-available')
     : undefined;
 
   return (
@@ -102,47 +182,52 @@ function AssistantMessage({
         <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
           <GradientSparkles size={12} />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 flex-1 min-w-0">
           {combinedText && <TextBubble text={combinedText} isStreaming={isStreaming && !inFlightPart} />}
-          {inFlightPart && (
-            <StatusIndicator text={toolStatusLabel(inFlightPart, t)} />
+
+          {/* Phase 3.3: Rich timeline during streaming execution */}
+          {isStreaming && toolParts.length > 0 && (
+            <StreamingTimeline parts={toolParts} />
           )}
-          {!inFlightPart && !combinedText && isStreaming && <StatusIndicator />}
-          <div className="flex flex-wrap gap-1.5">
-            {message.parts.map((part, i) => {
-              // Stable key: toolCallId is unique per tool invocation; fall back to type+index
-              // for non-tool parts so index shifts during streaming don't produce duplicate keys.
-              const key = (part as any).toolCallId ?? `${part.type}-${i}`;
-              if (part.type === 'tool-listFields') return <ListFieldsToolPart key={key} part={part as any} />;
-              if (part.type === 'tool-getField') return <GetFieldToolPart key={key} part={part as any} />;
-              if (part.type === 'tool-proposeValidation') {
-                if ((part as any).state !== 'output-available') return null;
-                return (
-                  <span key={key} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-                    ✦ {t('validation.title')}
-                  </span>
-                );
-              }
-              // Destructive proposals render as an "awaiting confirmation" chip, not a done pill —
-              // the actual delete/convert happens only when the user confirms in DestructiveActionCard.
-              if (
-                part.type === 'tool-removeFields' ||
-                part.type === 'tool-removePage' ||
-                part.type === 'tool-proposeFieldTypeChange'
-              ) {
-                if ((part as any).state !== 'output-available') return null;
-                return (
-                  <span key={key} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700">
-                    ⚠ {t('destructive.awaitingConfirmation')}
-                  </span>
-                );
-              }
-              // Route any other tool-* part (including legacy mutation parts from
-              // old conversations) to MutationToolPart for back-compat rendering.
-              if (part.type.startsWith('tool-')) return <MutationToolPart key={key} part={part as any} />;
-              return null;
-            })}
-          </div>
+
+          {/* Simple fallback spinner if streaming has no tool parts yet */}
+          {isStreaming && toolParts.length === 0 && !combinedText && (
+            <StatusIndicator />
+          )}
+
+          {/* Only render individual tool chips when execution is completed */}
+          {!isStreaming && toolParts.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {message.parts.map((part, i) => {
+                const key = (part as any).toolCallId ?? `${part.type}-${i}`;
+                if (part.type === 'tool-listFields') return <ListFieldsToolPart key={key} part={part as any} />;
+                if (part.type === 'tool-getField') return <GetFieldToolPart key={key} part={part as any} />;
+                if (part.type === 'tool-proposeValidation') {
+                  if ((part as any).state !== 'output-available') return null;
+                  return (
+                    <span key={key} className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+                      ✦ {t('validation.title')}
+                    </span>
+                  );
+                }
+                if (
+                  part.type === 'tool-removeFields' ||
+                  part.type === 'tool-removePage' ||
+                  part.type === 'tool-proposeFieldTypeChange'
+                ) {
+                  if ((part as any).state !== 'output-available') return null;
+                  return (
+                    <span key={key} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700">
+                      ⚠ {t('destructive.awaitingConfirmation')}
+                    </span>
+                  );
+                }
+                if (part.type.startsWith('tool-')) return <MutationToolPart key={key} part={part as any} />;
+                return null;
+              })}
+            </div>
+          )}
+
           {!isStreaming && (
             <ChangeSummaryCard
               message={message}
@@ -164,11 +249,11 @@ function StatusIndicator({ text }: { text?: string }) {
           <GradientSparkles size={12} />
         </div>
         {text ? (
-          <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2 text-xs italic text-muted-foreground">
+          <div className="rounded-2xl rounded-tl-sm bg-muted px-3 py-2 text-xs italic text-muted-foreground shadow-sm">
             {text}
           </div>
         ) : (
-          <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-muted px-3 py-2.5">
+          <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-muted px-3 py-2.5 shadow-sm">
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
@@ -381,28 +466,43 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
       <div className="border-t border-border p-3">
         {!isStreaming && activeConversationId && chips.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
-            {chips.map((chip) => (
-              <button
-                key={chip.key}
-                onClick={() => {
-                  if (chip.key === 'remixForm') {
-                    setInput(chip.prompt);
-                  } else {
-                    sendMessage(chip.prompt);
-                  }
-                }}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground',
-                  'transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground',
-                  'disabled:cursor-not-allowed disabled:opacity-40'
-                )}
-              >
-                {['analyseForm', 'generateFields', 'suggestValidation', 'remixForm'].includes(chip.key) && (
-                  <GradientSparkles size={12} />
-                )}
-                {chip.label}
-              </button>
-            ))}
+            {chips.map((chip) => {
+              // Phase 3.2: premium styles per chip category
+              const catStyles: Record<string, string> = {
+                add: 'border-emerald-200 bg-emerald-50/30 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-400 dark:hover:bg-emerald-950/40',
+                edit: 'border-blue-200 bg-blue-50/30 text-blue-700 hover:bg-blue-50 hover:border-blue-300 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-400 dark:hover:bg-blue-950/40',
+                structure: 'border-indigo-200 bg-indigo-50/30 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 dark:border-indigo-900/50 dark:bg-indigo-950/20 dark:text-indigo-400 dark:hover:bg-indigo-950/40',
+                style: 'border-amber-200 bg-amber-50/30 text-amber-700 hover:bg-amber-50 hover:border-amber-300 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-400 dark:hover:bg-amber-950/40',
+                ai: 'border-purple-200 bg-purple-50/30 text-purple-700 hover:bg-purple-50 hover:border-purple-300 dark:border-purple-900/50 dark:bg-purple-950/20 dark:text-purple-400 dark:hover:bg-purple-950/40',
+              };
+
+              const styleClass = catStyles[chip.category] || 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground';
+
+              return (
+                <button
+                  key={chip.key}
+                  onClick={() => {
+                    if (chip.key === 'remixForm') {
+                      setInput(chip.prompt);
+                    } else {
+                      sendMessage(chip.prompt);
+                    }
+                  }}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all shadow-sm',
+                    styleClass,
+                    'disabled:cursor-not-allowed disabled:opacity-40'
+                  )}
+                >
+                  {chip.icon ? (
+                    <ChipIcon name={chip.icon} className="shrink-0" />
+                  ) : (
+                    <GradientSparkles size={11} className="shrink-0" />
+                  )}
+                  {chip.label}
+                </button>
+              );
+            })}
           </div>
         )}
         <div
