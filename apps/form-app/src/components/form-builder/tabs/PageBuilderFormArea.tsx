@@ -217,7 +217,7 @@ export const FormArea: React.FC<{
   });
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--tf-faint)] dark:bg-background">
+    <div className="flex-1 flex flex-col min-h-0 bg-[var(--tf-faint)] dark:bg-background">
       <ScrollArea className="flex-1">
         <div className="p-6">
           <div className="max-w-3xl mx-auto">
