@@ -72,6 +72,7 @@
     "makeAllRequired": "Make all required",
     "generateFields": "Generate fields",
     "reorganisePages": "Reorganise pages",
+    "mergePages": "Consolidate pages",
     "suggestValidation": "Suggest validation",
     "remixForm": "Remix this form"
   },

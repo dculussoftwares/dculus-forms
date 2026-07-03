@@ -96,7 +96,7 @@ export function useAIChips(): AIChip[] {
     if (multiPage && avgFieldsPerPage < 3 && totalPages > 2) {
       candidates.push({
         key: 'mergePages',
-        label: t('chips.mergePages') ?? 'Consolidate pages',
+        label: t('chips.mergePages'),
         prompt:
           'This form has many pages with few fields each. Consolidate them into fewer, more logical pages by moving related fields together, then delete empty pages.',
         category: 'structure',
