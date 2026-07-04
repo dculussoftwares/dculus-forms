@@ -30,7 +30,7 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, onCloseAutoFocus, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -39,6 +39,14 @@ const DialogContent = React.forwardRef<
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 bg-white text-[#4c414e] p-7 shadow-[0_16px_48px_rgba(60,50,62,0.18)] duration-200 rounded-xl border border-[rgba(81,76,84,0.12)] dark:bg-card dark:text-foreground dark:border-white/10 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
         className
       )}
+      onCloseAutoFocus={(event) => {
+        onCloseAutoFocus?.(event);
+        // Radix can leave `pointer-events: none` stuck on <body> when a nested
+        // modal primitive (Select, Popover, ...) closes together with this
+        // Dialog in the same tick (e.g. pressing Escape). Always release it.
+        event.preventDefault();
+        document.body.style.pointerEvents = '';
+      }}
       {...props}
     >
       {children}
