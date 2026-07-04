@@ -30,3 +30,6 @@ Task 3: complete (commits c816fec3, review clean)
 - [x] Task 4: Add Route and Navigation
 
 Task 4: complete (commits 32c925cc, review clean)
+- [x] Task 5: Create Translation Files (English)
+
+Task 5: complete (commits f1e1e36c, review clean)
