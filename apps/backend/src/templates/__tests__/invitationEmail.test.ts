@@ -70,7 +70,7 @@ describe('Invitation Email Templates', () => {
 
       const html = generateInvitationEmailHtml(data);
 
-      expect(html).toContain('🚀 Dculus Forms');
+      expect(html).toContain('Dculus&nbsp;Forms');
       expect(html).toContain('You\'re Invited!');
     });
 

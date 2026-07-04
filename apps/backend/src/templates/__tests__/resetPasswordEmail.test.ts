@@ -72,7 +72,7 @@ describe('Reset Password Email Templates', () => {
 
       const html = generateResetPasswordEmailHtml(data);
 
-      expect(html).toContain('🔐');
+      expect(html).toContain('Dculus&nbsp;Forms');
       expect(html).toContain('Dculus Forms');
     });
 

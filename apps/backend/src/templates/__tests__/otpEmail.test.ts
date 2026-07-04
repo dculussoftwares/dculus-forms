@@ -93,7 +93,7 @@ describe('OTP Email Templates', () => {
 
       const html = generateOTPEmailHtml(data);
 
-      expect(html).toContain('🔐 Dculus Forms');
+      expect(html).toContain('Dculus&nbsp;Forms');
       expect(html).toContain('https://dculus.com');
       expect(html).toContain('support@dculus.com');
     });
