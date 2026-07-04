@@ -16,3 +16,8 @@
 
 ## Completion Log
 
+- [x] Task 1: Create Sample Data Constants
+
+## Completed Tasks
+
+Task 1: complete (commits 2a3ca099, review clean)
