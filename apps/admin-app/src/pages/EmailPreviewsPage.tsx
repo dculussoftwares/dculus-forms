@@ -9,15 +9,10 @@ import { useTranslation } from '../hooks/useTranslation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@dculus/ui';
 
 // Import email generators from backend (used in Task 3)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { generateOTPEmailHtml } from '../../../backend/src/templates/otpEmail';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { generateResetPasswordEmailHtml } from '../../../backend/src/templates/resetPasswordEmail';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { generateInvitationEmailHtml } from '../../../backend/src/templates/invitationEmail';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { generateMagicLinkEmailHtml } from '../../../backend/src/templates/magicLinkEmail';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { generateFormPublishedHtml } from '../../../backend/src/templates/formPublishedEmail';
 
 /** Sample data for OTP Email variants */
@@ -76,12 +71,35 @@ export const FORM_PUBLISHED_SAMPLE_DATA: FormPublishedEmailData = {
 
 type ViewportMode = 'mobile' | 'desktop';
 
+interface EmailPreviewProps {
+  html: string;
+  iframeWidth: string;
+}
+
+function EmailPreview({ html, iframeWidth }: EmailPreviewProps) {
+  return (
+    <div className="flex justify-center p-6">
+      <iframe
+        srcDoc={html}
+        title="Email Preview"
+        style={{
+          width: iframeWidth,
+          height: '600px',
+          border: 'none',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px var(--tf-overlay)',
+        }}
+        sandbox="allow-same-origin"
+      />
+    </div>
+  );
+}
+
 export default function EmailPreviewsPage() {
   const { t } = useTranslation('emailPreviews');
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
   const [activeTab, setActiveTab] = useState('otp');
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const iframeWidth = viewportMode === 'mobile' ? '375px' : '600px';
 
   return (
@@ -115,12 +133,27 @@ export default function EmailPreviewsPage() {
             <TabsTrigger value="formPublished">{t('tabs.formPublished')}</TabsTrigger>
           </TabsList>
 
-          {/* Tab contents: empty for now (will be filled by Task 3) */}
-          <TabsContent value="otp" className="mt-4" />
-          <TabsContent value="resetPassword" className="mt-4" />
-          <TabsContent value="invitation" className="mt-4" />
-          <TabsContent value="magicLink" className="mt-4" />
-          <TabsContent value="formPublished" className="mt-4" />
+          {/* Tab contents */}
+          <TabsContent value="otp" className="mt-4 space-y-4">
+            {Object.entries(OTP_SAMPLE_DATA).map(([variant, data]) => (
+              <div key={variant} className="border-t pt-4 first:border-t-0 first:pt-0">
+                <h3 className="text-sm font-medium text-primary mb-3">{t(`otpVariants.${variant.replace(/-/g, '')}`)}</h3>
+                <EmailPreview html={generateOTPEmailHtml(data)} iframeWidth={iframeWidth} />
+              </div>
+            ))}
+          </TabsContent>
+          <TabsContent value="resetPassword" className="mt-4">
+            <EmailPreview html={generateResetPasswordEmailHtml(RESET_PASSWORD_SAMPLE_DATA)} iframeWidth={iframeWidth} />
+          </TabsContent>
+          <TabsContent value="invitation" className="mt-4">
+            <EmailPreview html={generateInvitationEmailHtml(INVITATION_SAMPLE_DATA)} iframeWidth={iframeWidth} />
+          </TabsContent>
+          <TabsContent value="magicLink" className="mt-4">
+            <EmailPreview html={generateMagicLinkEmailHtml(MAGIC_LINK_SAMPLE_DATA)} iframeWidth={iframeWidth} />
+          </TabsContent>
+          <TabsContent value="formPublished" className="mt-4">
+            <EmailPreview html={generateFormPublishedHtml(FORM_PUBLISHED_SAMPLE_DATA)} iframeWidth={iframeWidth} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
