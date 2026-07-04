@@ -20,6 +20,7 @@ import {
   Unlink,
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { getApiBaseUrl } from '../../lib/config';
 import type { ConfigFormProps } from '../core/registry';
 
 interface GoogleToken {
@@ -89,7 +90,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   const handleConnectGoogle = () => {
     // Redirect the current tab — avoids all popup/COOP/BroadcastChannel issues
     const returnTo = window.location.pathname + window.location.search;
-    window.location.href = `/api/integrations/google/auth?return_to=${encodeURIComponent(returnTo)}`;
+    window.location.href = `${getApiBaseUrl()}/api/integrations/google/auth?return_to=${encodeURIComponent(returnTo)}`;
   };
 
   const handleDisconnect = () => {
