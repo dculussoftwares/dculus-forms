@@ -1,0 +1,15 @@
+{
+  "pageTitle": "Email Preview",
+  "pageSubtitle": "View email templates and how they render across different devices",
+  "viewportToggle": {
+    "mobile": "View on Mobile",
+    "desktop": "View on Desktop"
+  },
+  "tabs": {
+    "otp": "OTP",
+    "resetPassword": "Reset Password",
+    "invitation": "Invitation",
+    "magicLink": "Magic Link",
+    "formPublished": "Form Published"
+  }
+}

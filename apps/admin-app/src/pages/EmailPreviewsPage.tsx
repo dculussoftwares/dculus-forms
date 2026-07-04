@@ -4,6 +4,22 @@ import type { InvitationEmailData } from '../../../backend/src/templates/invitat
 import type { MagicLinkEmailData } from '../../../backend/src/templates/magicLinkEmail';
 import type { FormPublishedEmailData } from '../../../backend/src/services/emailService';
 
+import { useState } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@dculus/ui';
+
+// Import email generators from backend (used in Task 3)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { generateOTPEmailHtml } from '../../../backend/src/templates/otpEmail';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { generateResetPasswordEmailHtml } from '../../../backend/src/templates/resetPasswordEmail';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { generateInvitationEmailHtml } from '../../../backend/src/templates/invitationEmail';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { generateMagicLinkEmailHtml } from '../../../backend/src/templates/magicLinkEmail';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { generateFormPublishedHtml } from '../../../backend/src/templates/formPublishedEmail';
+
 /** Sample data for OTP Email variants */
 export const OTP_SAMPLE_DATA = {
   'sign-in': {
@@ -58,6 +74,55 @@ export const FORM_PUBLISHED_SAMPLE_DATA: FormPublishedEmailData = {
   ownerName: 'Alice Brown',
 };
 
+type ViewportMode = 'mobile' | 'desktop';
+
 export default function EmailPreviewsPage() {
-  return null;
+  const { t } = useTranslation('emailPreviews');
+  const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
+  const [activeTab, setActiveTab] = useState('otp');
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const iframeWidth = viewportMode === 'mobile' ? '375px' : '600px';
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-semibold text-primary">{t('pageTitle')}</h1>
+          <p className="text-xs mt-0.5 text-muted-foreground">{t('pageSubtitle')}</p>
+        </div>
+        <button
+          onClick={() => setViewportMode(viewportMode === 'mobile' ? 'desktop' : 'mobile')}
+          className="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+          style={{
+            backgroundColor: 'var(--tf-tab-bg)',
+            color: 'var(--tf-text)',
+          }}
+        >
+          {viewportMode === 'mobile' ? t('viewportToggle.desktop') : t('viewportToggle.mobile')}
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="rounded-xl bg-white p-5" style={{ border: '1px solid var(--tf-border-medium)' }}>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-5 gap-1">
+            <TabsTrigger value="otp">{t('tabs.otp')}</TabsTrigger>
+            <TabsTrigger value="resetPassword">{t('tabs.resetPassword')}</TabsTrigger>
+            <TabsTrigger value="invitation">{t('tabs.invitation')}</TabsTrigger>
+            <TabsTrigger value="magicLink">{t('tabs.magicLink')}</TabsTrigger>
+            <TabsTrigger value="formPublished">{t('tabs.formPublished')}</TabsTrigger>
+          </TabsList>
+
+          {/* Tab contents: empty for now (will be filled by Task 3) */}
+          <TabsContent value="otp" className="mt-4" />
+          <TabsContent value="resetPassword" className="mt-4" />
+          <TabsContent value="invitation" className="mt-4" />
+          <TabsContent value="magicLink" className="mt-4" />
+          <TabsContent value="formPublished" className="mt-4" />
+        </Tabs>
+      </div>
+    </div>
+  );
 }
