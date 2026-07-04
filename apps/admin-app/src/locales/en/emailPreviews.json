@@ -1,15 +1,21 @@
 {
-  "pageTitle": "Email Preview",
-  "pageSubtitle": "View email templates and how they render across different devices",
+  "pageTitle": "Email Previews",
+  "pageSubtitle": "Preview all transactional email templates",
   "viewportToggle": {
-    "mobile": "View on Mobile",
-    "desktop": "View on Desktop"
+    "mobile": "📱 Mobile",
+    "desktop": "🖥️ Desktop"
   },
   "tabs": {
-    "otp": "OTP",
+    "otp": "OTP Email",
     "resetPassword": "Reset Password",
     "invitation": "Invitation",
     "magicLink": "Magic Link",
     "formPublished": "Form Published"
+  },
+  "otpVariants": {
+    "signin": "Sign-in",
+    "signup": "Sign-up",
+    "emailverification": "Email Verification",
+    "forgetpassword": "Forgot Password"
   }
 }
