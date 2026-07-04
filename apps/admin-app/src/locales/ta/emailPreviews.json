@@ -1,0 +1,21 @@
+{
+  "pageTitle": "மின்னஞ்சல் முன்னோட்டங்கள்",
+  "pageSubtitle": "அனைத்து பரிவர்த்தன மின்னஞ்சல் முறைமைகளின் முன்னோட்டம்",
+  "viewportToggle": {
+    "mobile": "📱 மொபைல்",
+    "desktop": "🖥️ கணினி"
+  },
+  "tabs": {
+    "otp": "OTP மின்னஞ்சல்",
+    "resetPassword": "கடவுச்சொல் மீட்டமைப்பு",
+    "invitation": "அழைப்பு",
+    "magicLink": "மந்திர இணைப்பு",
+    "formPublished": "படிவம் வெளியிடப்பட்டது"
+  },
+  "otpVariants": {
+    "signin": "உள்நுழைகை",
+    "signup": "பதிவு செய்க",
+    "emailverification": "மின்னஞ்சல் சரிபார்ப்பு",
+    "forgetpassword": "கடவுச்சொல்லை மறந்துவிட்டேன்"
+  }
+}

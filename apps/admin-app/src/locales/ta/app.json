@@ -1,0 +1,7 @@
+{
+  "accessDenied": {
+    "title": "Access Denied",
+    "message": "You don't have permission to access this admin area."
+  },
+  "loading": "Loading..."
+}

@@ -1,0 +1,43 @@
+{
+  "title": "Dashboard",
+  "welcome": "Welcome to the Dculus Forms admin dashboard",
+  "stats": {
+    "totalOrganizations": "Total Organizations",
+    "totalUsers": "Total Users",
+    "totalForms": "Total Forms",
+    "formResponses": "Form Responses"
+  },
+  "storage": {
+    "title": "Storage Overview",
+    "s3Storage": "S3 Storage",
+    "postgresDB": "PostgreSQL",
+    "files": "files",
+    "tables": "tables"
+  },
+  "plans": {
+    "title": "Plan Distribution",
+    "free": "Free",
+    "starter": "Starter",
+    "advanced": "Advanced",
+    "orgs": "orgs"
+  },
+  "usageAlerts": {
+    "title": "{{count}} organization(s) are at ≥80% of their submission limit",
+    "viewAll": "View"
+  },
+  "recentActivity": {
+    "recentOrganizations": "Recent Organizations",
+    "noOrganizations": "No organizations yet"
+  },
+  "systemHealth": {
+    "title": "System Health",
+    "ok": "OK",
+    "degraded": "Degraded",
+    "error": "Error"
+  },
+  "error": {
+    "unableToLoad": "Unable to load dashboard",
+    "checkConnection": "Please check your connection and try again.",
+    "backendRunning": "Make sure the backend server is running and GraphQL endpoint is accessible."
+  }
+}

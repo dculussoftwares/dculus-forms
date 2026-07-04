@@ -8,18 +8,43 @@ import enLogin from './en/login.json';
 import enApp from './en/app.json';
 import enEmailPreviews from './en/emailPreviews.json';
 
+import taCommon from './ta/common.json';
+import taDashboard from './ta/dashboard.json';
+import taOrganizations from './ta/organizations.json';
+import taUsers from './ta/users.json';
+import taTemplates from './ta/templates.json';
+import taLayout from './ta/layout.json';
+import taLogin from './ta/login.json';
+import taApp from './ta/app.json';
+import taEmailPreviews from './ta/emailPreviews.json';
+
+const enTranslations = {
+  common: enCommon,
+  dashboard: enDashboard,
+  organizations: enOrganizations,
+  users: enUsers,
+  templates: enTemplates,
+  layout: enLayout,
+  login: enLogin,
+  app: enApp,
+  emailPreviews: enEmailPreviews,
+};
+
+const taTranslations = {
+  common: taCommon,
+  dashboard: taDashboard,
+  organizations: taOrganizations,
+  users: taUsers,
+  templates: taTemplates,
+  layout: taLayout,
+  login: taLogin,
+  app: taApp,
+  emailPreviews: taEmailPreviews,
+};
+
 export const translations = {
-  en: {
-    common: enCommon,
-    dashboard: enDashboard,
-    organizations: enOrganizations,
-    users: enUsers,
-    templates: enTemplates,
-    layout: enLayout,
-    login: enLogin,
-    app: enApp,
-    emailPreviews: enEmailPreviews,
-  },
+  en: enTranslations,
+  ta: taTranslations,
 } as const;
 
 export type Translations = typeof translations;

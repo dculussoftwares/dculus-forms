@@ -1,0 +1,36 @@
+{
+  "title": "Organizations",
+  "subtitle": "Manage all organizations in the system",
+  "members": "members",
+  "forms": "forms",
+  "created": "Created",
+  "viewDetails": "View Details",
+  "search": {
+    "placeholder": "Search organizations by name or slug..."
+  },
+  "plan": {
+    "columnHeader": "Plan",
+    "free": "Free",
+    "starter": "Starter",
+    "advanced": "Advanced"
+  },
+  "error": {
+    "unableToLoad": "Unable to load organizations",
+    "checkConnection": "Please check your connection and try again."
+  },
+  "organizationDetail": {
+    "title": "Organization Details",
+    "overview": "Overview",
+    "members": "Members",
+    "forms": "Forms",
+    "settings": "Settings",
+    "organizationName": "Organization Name",
+    "slug": "Slug",
+    "createdAt": "Created At",
+    "memberCount": "Member Count",
+    "formCount": "Form Count",
+    "owner": "Owner",
+    "adminUsers": "Admin Users",
+    "regularUsers": "Regular Users"
+  }
+}
