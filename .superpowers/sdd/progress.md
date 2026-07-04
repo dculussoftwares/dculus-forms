@@ -33,3 +33,6 @@ Task 4: complete (commits 32c925cc, review clean)
 - [x] Task 5: Create Translation Files (English)
 
 Task 5: complete (commits f1e1e36c, review clean)
+- [x] Task 6: Create Translation Files (Tamil) and Register Both
+
+Task 6: complete (commits 003e6ceb, review clean)
