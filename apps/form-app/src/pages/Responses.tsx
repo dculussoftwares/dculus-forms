@@ -194,7 +194,7 @@ const Responses: React.FC = () => {
     (t: { name: string }) => t.name !== PREVIEW_TAG_NAME
   );
 
-  const { data: responsesData, loading: responsesLoading, error: responsesError } = useQuery(GET_FORM_RESPONSES, {
+  const { data: responsesData, previousData: previousResponsesData, loading: responsesLoading, error: responsesError } = useQuery(GET_FORM_RESPONSES, {
     variables: {
       formId: actualFormId,
       page: responsesState.currentPage,
@@ -220,7 +220,12 @@ const Responses: React.FC = () => {
     return fields;
   }, [formData]);
 
-  const responses: FormResponse[] = responsesData?.responsesByForm?.data ?? [];
+  // Fall back to previousData while a refetch (e.g. filter/sort/page change) is in flight,
+  // so the table keeps showing rows instead of flashing empty and triggering a full-table loading state.
+  const responses: FormResponse[] =
+    responsesData?.responsesByForm?.data ??
+    previousResponsesData?.responsesByForm?.data ??
+    [];
 
   const columns = useMemo(
     () => createResponsesColumns({
@@ -259,9 +264,11 @@ const Responses: React.FC = () => {
   // Wait for BOTH the form schema AND responses before rendering the table.
   // Without this, when responses arrive before formSchema, field IDs in response data
   // are not found in the (empty) schema, causing them to show as "Unknown field (deleted)".
-  const loading = formLoading || (responsesLoading && !responsesData);
+  // Once we've received data at least once, previousData covers refetches (filter/sort/page
+  // changes) so this only gates the true first load — not every subsequent query.
+  const loading = formLoading || (responsesLoading && !responsesData && !previousResponsesData);
   const error = formError || responsesError;
-  const responsePagination = responsesData?.responsesByForm;
+  const responsePagination = responsesData?.responsesByForm ?? previousResponsesData?.responsesByForm;
 
   const previewResponseCount = responses.filter((r: any) =>
     r.tags?.some((tag: any) => tag.name === PREVIEW_TAG_NAME)
@@ -449,7 +456,6 @@ const Responses: React.FC = () => {
                 filters={responsesState.filters}
                 fillableFields={fillableFields}
                 onShowFilterModal={() => responsesState.setShowFilterModal(true)}
-                onRemoveFilter={responsesState.handleRemoveFilter}
                 columns={orderedColumns}
                 columnVisibility={responsesState.columnVisibility}
                 onColumnVisibilityChange={responsesState.setColumnVisibility}
@@ -502,10 +508,6 @@ const Responses: React.FC = () => {
         fields={fillableFields}
         filters={responsesState.filters}
         filterLogic={responsesState.filterLogic}
-        onFilterLogicChange={responsesState.setFilterLogic}
-        onFilterChange={responsesState.handleFilterChange}
-        onRemoveFilter={responsesState.handleRemoveFilter}
-        onClearAllFilters={responsesState.handleClearAllFilters}
         onApplyFilters={responsesState.handleApplyFilters}
       />
 

@@ -92,7 +92,6 @@ interface ResponsesToolbarProps {
   filters: Record<string, FilterState>;
   fillableFields: FillableFormField[];
   onShowFilterModal: () => void;
-  onRemoveFilter: (fieldId: string) => void;
   columns: ColumnDef<any>[];
   columnVisibility: VisibilityState;
   onColumnVisibilityChange: (visibility: VisibilityState | ((prev: VisibilityState) => VisibilityState)) => void;

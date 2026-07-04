@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -12,11 +12,7 @@ interface FilterModalProps {
   fields: FillableFormField[];
   filters: Record<string, FilterState>;
   filterLogic: 'AND' | 'OR';
-  onFilterLogicChange: (logic: 'AND' | 'OR') => void;
-  onFilterChange: (fieldId: string, filter: Partial<FilterState>) => void;
-  onRemoveFilter: (fieldId: string) => void;
-  onClearAllFilters: () => void;
-  onApplyFilters: () => void;
+  onApplyFilters: (filters: Record<string, FilterState>, filterLogic: 'AND' | 'OR') => void;
 }
 
 export const FilterModal: React.FC<FilterModalProps> = ({
@@ -25,18 +21,38 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   fields,
   filters,
   filterLogic,
-  onFilterLogicChange,
-  onFilterChange,
-  onRemoveFilter,
-  onClearAllFilters,
   onApplyFilters,
 }) => {
   const { t } = useTranslation('filterModal');
-  const activeFilters = Object.entries(filters);
+
+  // Local draft state: edits here only reach the GraphQL query once "Apply" is clicked,
+  // so typing/selecting in the modal never triggers a responses refetch on its own.
+  const [draftFilters, setDraftFilters] = useState<Record<string, FilterState>>(filters);
+  const [draftFilterLogic, setDraftFilterLogic] = useState<'AND' | 'OR'>(filterLogic);
+
+  useEffect(() => {
+    if (open) {
+      setDraftFilters(filters);
+      setDraftFilterLogic(filterLogic);
+    }
+  }, [open, filters, filterLogic]);
+
+  const activeFilters = Object.entries(draftFilters);
+
+  const updateDraftFilter = (filterId: string, filterUpdate: Partial<FilterState>) => {
+    setDraftFilters((prev) => ({
+      ...prev,
+      [filterId]: {
+        ...prev[filterId],
+        fieldId: filterId,
+        ...filterUpdate,
+      },
+    }));
+  };
 
   const handleAddFilter = () => {
     const newFilterId = `filter_${Date.now()}`;
-    onFilterChange(newFilterId, {
+    updateDraftFilter(newFilterId, {
       fieldId: '',
       operator: '',
       value: undefined,
@@ -48,15 +64,26 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   };
 
   const handleRemoveFilter = (filterId: string) => {
-    onRemoveFilter(filterId);
+    setDraftFilters((prev) => {
+      const next = { ...prev };
+      delete next[filterId];
+      return next;
+    });
+  };
+
+  // Clearing is a single explicit action (not per-keystroke), so it commits immediately
+  // instead of waiting for "Apply" — otherwise "Apply" would stay disabled with 0 filters.
+  const handleClearAllFilters = () => {
+    setDraftFilters({});
+    onApplyFilters({}, draftFilterLogic);
   };
 
   const handleApply = () => {
-    onApplyFilters();
+    onApplyFilters(draftFilters, draftFilterLogic);
     onClose();
   };
 
-  const activeFilterCount = Object.values(filters).filter(f => f.active).length;
+  const activeFilterCount = Object.values(draftFilters).filter(f => f.active).length;
 
   if (!open) return null;
 
@@ -85,23 +112,23 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 <div className="inline-flex rounded-lg shadow-sm" role="group">
                   <Button
                     type="button"
-                    onClick={() => onFilterLogicChange('AND')}
-                    variant={filterLogic === 'AND' ? 'default' : 'outline'}
+                    onClick={() => setDraftFilterLogic('AND')}
+                    variant={draftFilterLogic === 'AND' ? 'default' : 'outline'}
                     className="px-3 py-1 text-xs font-medium rounded-r-none h-auto"
                   >
                     ALL filters
                   </Button>
                   <Button
                     type="button"
-                    onClick={() => onFilterLogicChange('OR')}
-                    variant={filterLogic === 'OR' ? 'default' : 'outline'}
+                    onClick={() => setDraftFilterLogic('OR')}
+                    variant={draftFilterLogic === 'OR' ? 'default' : 'outline'}
                     className="px-3 py-1 text-xs font-medium rounded-l-none h-auto"
                   >
                     ANY filter
                   </Button>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  ({filterLogic === 'AND' ? 'All conditions must match' : 'Any condition can match'})
+                  ({draftFilterLogic === 'AND' ? 'All conditions must match' : 'Any condition can match'})
                 </span>
               </div>
             )}
@@ -126,10 +153,10 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     key={filterId}
                     fields={fields}
                     filter={filter}
-                    onChange={(updates) => onFilterChange(filterId, updates)}
+                    onChange={(updates) => updateDraftFilter(filterId, updates)}
                     onRemove={() => handleRemoveFilter(filterId)}
                     isFirst={index === 0}
-                    filterLogic={filterLogic}
+                    filterLogic={draftFilterLogic}
                   />
                 ))}
               </div>
@@ -164,7 +191,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             {activeFilterCount > 0 && (
               <Button
                 variant="ghost"
-                onClick={onClearAllFilters}
+                onClick={handleClearAllFilters}
                 className="text-foreground hover:text-primary"
                 data-testid="clear-all-filters-button"
               >

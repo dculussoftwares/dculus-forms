@@ -61,16 +61,11 @@ export interface UseResponsesStateReturn {
   globalFilter: string;
   setGlobalFilter: (filter: string) => void;
   filters: Record<string, FilterState>;
-  setFilters: React.Dispatch<React.SetStateAction<Record<string, FilterState>>>;
   graphqlFilters: any[] | null;
   filterLogic: 'AND' | 'OR';
-  setFilterLogic: (logic: 'AND' | 'OR') => void;
   showFilterModal: boolean;
   setShowFilterModal: (show: boolean) => void;
-  handleFilterChange: (fieldId: string, filterUpdate: Partial<FilterState>) => void;
-  handleClearAllFilters: () => void;
-  handleRemoveFilter: (fieldId: string) => void;
-  handleApplyFilters: () => void;
+  handleApplyFilters: (filters: Record<string, FilterState>, filterLogic: 'AND' | 'OR') => void;
 
   // Column visibility + order
   columnVisibility: VisibilityState;
@@ -247,34 +242,10 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     setCurrentPage(1); // Reset to first page when page size changes
   };
 
-  // Filter handlers
-  const handleFilterChange = (fieldId: string, filterUpdate: Partial<FilterState>) => {
-    setFilters((prev) => ({
-      ...prev,
-      [fieldId]: {
-        ...prev[fieldId],
-        fieldId,
-        ...filterUpdate,
-      },
-    }));
-    setCurrentPage(1);
-  };
-
-  const handleClearAllFilters = () => {
-    setFilters({});
-    setCurrentPage(1);
-  };
-
-  const handleRemoveFilter = (fieldId: string) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev };
-      delete newFilters[fieldId];
-      return newFilters;
-    });
-    setCurrentPage(1);
-  };
-
-  const handleApplyFilters = () => {
+  // Commits the Filter Modal's draft filters as the ones that actually drive the GraphQL query.
+  const handleApplyFilters = (newFilters: Record<string, FilterState>, newFilterLogic: 'AND' | 'OR') => {
+    setFilters(newFilters);
+    setFilterLogic(newFilterLogic);
     setCurrentPage(1);
   };
 
@@ -433,15 +404,10 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     globalFilter,
     setGlobalFilter,
     filters,
-    setFilters,
     graphqlFilters,
     filterLogic,
-    setFilterLogic,
     showFilterModal,
     setShowFilterModal,
-    handleFilterChange,
-    handleClearAllFilters,
-    handleRemoveFilter,
     handleApplyFilters,
 
     // Column visibility + order
