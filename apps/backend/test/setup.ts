@@ -1,3 +1,4 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '#prisma-client';
 import { beforeAll, afterAll, afterEach } from 'vitest';
 
@@ -19,8 +20,13 @@ let prisma: PrismaClient;
 // Setup for unit tests - using mocked Prisma client
 // For integration tests, use the real PostgreSQL connection
 beforeAll(async () => {
-  // Initialize Prisma client (will be mocked in individual test files)
-  prisma = new PrismaClient();
+  // Initialize Prisma client (will be mocked in individual test files).
+  // With engineType = "client" (WASM query compiler), PrismaClient always
+  // requires a driver adapter — even here, where no real connection is ever
+  // made (pg's Pool connects lazily on first query, so a dummy connection
+  // string is safe).
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  prisma = new PrismaClient({ adapter });
 }, 30000);
 
 // Clean up database after each test
