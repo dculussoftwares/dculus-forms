@@ -4,7 +4,7 @@ import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon, Clock, X, Check } from "lucide-react"
 
-import { cn } from "@dculus/utils"
+import { cn, formatTimeForInput, combineDateAndTime } from "@dculus/utils"
 import { Button } from "./button"
 import { Calendar } from "./calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "./popover"
@@ -37,26 +37,6 @@ interface DateTimeRangePickerProps {
 }
 
 const PRESET_ORDER: SubmittedAtPreset[] = ["last1d", "last7d", "last30d"]
-
-function formatTimeForInput(date: Date): string {
-  const hh = String(date.getHours()).padStart(2, "0")
-  const mm = String(date.getMinutes()).padStart(2, "0")
-  return `${hh}:${mm}`
-}
-
-function combineDateAndTime(date: Date, time: string): Date {
-  const [hoursStr, minutesStr] = time.split(":")
-  const hours = Number(hoursStr)
-  const minutes = Number(minutesStr)
-  const combined = new Date(date)
-  combined.setHours(
-    Number.isFinite(hours) ? hours : 0,
-    Number.isFinite(minutes) ? minutes : 0,
-    0,
-    0
-  )
-  return combined
-}
 
 /**
  * DateTimeRangePicker
