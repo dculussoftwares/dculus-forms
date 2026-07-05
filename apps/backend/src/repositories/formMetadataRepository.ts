@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '#prisma-client';
 import { resolvePrisma, type RepositoryContext } from './baseRepository.js';
 
 export const createFormMetadataRepository = (context?: RepositoryContext) => {

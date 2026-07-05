@@ -2,6 +2,23 @@
 
 This directory contains integration tests for the Dculus Forms application using Cucumber.js and better-auth for authentication testing.
 
+## Prerequisite: build the backend first
+
+The test harness (`support/hooks.ts`) connects to Postgres using the backend's
+generated Prisma client (`apps/backend/src/generated/prisma`, via the
+`prisma-client` generator + `@prisma/adapter-pg` — see
+`apps/backend/prisma/schema.prisma`). That client is an ES module, and this
+test project runs as CommonJS, so the client is loaded via a dynamic
+`import()` of the *compiled* backend output rather than a static import.
+Run the backend build before running integration tests locally:
+
+```bash
+pnpm db:generate
+pnpm --filter backend build
+```
+
+(CI's `integration-tests` job does this automatically.)
+
 ## Quick Start
 
 ```bash

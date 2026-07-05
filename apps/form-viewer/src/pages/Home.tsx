@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button } from '@dculus/ui';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 const Home: React.FC = () => {
   return (

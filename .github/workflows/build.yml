@@ -192,6 +192,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
       - name: Lint backend
         run: pnpm --filter backend lint
 
@@ -254,6 +257,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+
+      - name: Build backend
+        run: pnpm --filter backend build
 
       - name: Pre-pull integration PostgreSQL image
         run: docker compose -f test/integration/docker-compose.postgres.yml pull postgres

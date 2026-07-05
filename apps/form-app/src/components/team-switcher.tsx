@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { ChevronsUpDown, Plus, Building2 } from 'lucide-react';
 import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
 import { gql } from '@apollo/client';

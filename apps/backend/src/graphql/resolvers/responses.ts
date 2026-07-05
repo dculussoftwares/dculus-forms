@@ -7,7 +7,7 @@ import {
   submitResponse,
   updateResponse,
 } from '../../services/responseService.js';
-import { Prisma } from '@prisma/client';
+import { Prisma } from '#prisma-client';
 import { prisma } from '../../lib/prisma.js';
 import { ResponseFilter } from '../../services/responseFilterService.js';
 import { getFormById } from '../../services/formService.js';

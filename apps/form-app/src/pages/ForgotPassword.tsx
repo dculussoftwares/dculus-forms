@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { Button, Input, Label } from "@dculus/ui";
 import { forgetPassword, authClient } from "../lib/auth-client";
 import { CheckCircle, FileText, KeyRound } from "lucide-react";

@@ -19,7 +19,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { useApolloClient } from '@apollo/client/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from '../lib/auth-client';
 import { useTranslation } from '../hooks/useTranslation';

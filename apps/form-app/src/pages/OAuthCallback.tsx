@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { FileText, AlertCircle } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { useMutation } from '@apollo/client/react';

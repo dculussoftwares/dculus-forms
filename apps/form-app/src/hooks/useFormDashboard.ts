@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { DELETE_FORM, UPDATE_FORM } from '../graphql/mutations';

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { LayoutDashboard, Settings, Layers, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 import { NavMain } from './nav-main';
 import { NavLocale } from './nav-locale';

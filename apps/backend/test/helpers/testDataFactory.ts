@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { Form, Response, FormPermission, User, Organization, Member } from '@prisma/client';
+import { Form, Response, FormPermission, User, Organization, Member } from '#prisma-client';
 
 export class TestDataFactory {
   // Generate realistic form data

@@ -36,6 +36,7 @@ vi.mock('../../../lib/prisma.js', () => ({
       create: vi.fn(),
     },
   },
+  isLocalDatabase: vi.fn(() => true),
 }));
 vi.mock('../../../lib/logger.js', () => ({
   logger: {

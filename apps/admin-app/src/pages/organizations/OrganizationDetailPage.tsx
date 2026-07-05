@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { Button, Card, CardContent, LoadingSpinner, toastSuccess, toastError } from '@dculus/ui';
 import {
   ArrowLeft, Building2, Users, FileText, BarChart3,

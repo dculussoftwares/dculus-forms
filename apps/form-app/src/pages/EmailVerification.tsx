@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router';
 
 import { Button, Label, OTPInput } from '@dculus/ui';
 import { emailOtp } from '../lib/auth-client';

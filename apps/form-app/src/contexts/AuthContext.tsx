@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { useQuery } from '@apollo/client/react';
 import { useSession } from '../lib/auth-client';
 import { gql } from '@apollo/client';

@@ -37,6 +37,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '#graphql-errors': path.resolve(__dirname, './src/lib/graphqlErrors.ts'),
+      '#prisma-client': path.resolve(__dirname, './src/generated/prisma/client.ts'),
     },
   },
 });

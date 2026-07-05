@@ -25,7 +25,7 @@ import {
   ChevronRight,
   Inbox,
 } from 'lucide-react';
-import { useNavigate, Routes, Route, useSearchParams } from 'react-router-dom';
+import { useNavigate, Routes, Route, useSearchParams } from 'react-router';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_ACTIVE_ORGANIZATION, GET_FORMS } from '../graphql/queries';

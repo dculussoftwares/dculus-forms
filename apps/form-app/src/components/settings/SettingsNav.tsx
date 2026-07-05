@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../hooks/useTranslation';
 

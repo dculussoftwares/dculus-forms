@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Button, Card } from '@dculus/ui';
 import { XCircle, ArrowLeft, TrendingUp, HelpCircle } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';

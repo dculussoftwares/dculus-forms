@@ -2,7 +2,8 @@ import { execSync } from 'child_process';
 import { readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '#prisma-client';
 
 // Migrations require a direct PostgreSQL connection — not PgBouncer.
 // PgBouncer transaction mode does not support the session-level advisory locks
@@ -44,9 +45,8 @@ function getAllMigrationNames(): string[] {
 }
 
 async function main() {
-  const prisma = new PrismaClient({
-    datasources: { db: { url: MIGRATION_URL } },
-  });
+  const adapter = new PrismaPg({ connectionString: MIGRATION_URL });
+  const prisma = new PrismaClient({ adapter });
 
   try {
     const [{ has_migration_table }] = await prisma.$queryRaw<[{ has_migration_table: boolean }]>`

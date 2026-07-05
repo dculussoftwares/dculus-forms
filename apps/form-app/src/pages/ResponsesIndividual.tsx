@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router';
 
 const ResponsesIndividual: React.FC = () => {
   const { formId, id } = useParams<{ formId?: string; id?: string }>();

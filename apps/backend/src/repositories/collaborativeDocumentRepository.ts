@@ -1,4 +1,4 @@
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '#prisma-client';
 import { resolvePrisma, type RepositoryContext } from './baseRepository.js';
 
 export const createCollaborativeDocumentRepository = (
@@ -37,12 +37,19 @@ export const createCollaborativeDocumentRepository = (
     documentName: string,
     state: Buffer,
     idFactory: (documentName: string) => string
-  ) =>
-    prisma.collaborativeDocument.upsert({
+  ) => {
+    // Prisma's generated `Bytes` type is `Uint8Array<ArrayBuffer>`, while
+    // Node's `Buffer` type is generic over `ArrayBufferLike` (which also
+    // covers `SharedArrayBuffer`), so TS no longer considers `Buffer`
+    // structurally assignable. The runtime value is unaffected — `Buffer`
+    // instances are `Uint8Array`s — this only widens the type for Prisma.
+    const bytes = state as unknown as Uint8Array<ArrayBuffer>;
+    return prisma.collaborativeDocument.upsert({
       where: { documentName },
-      update: { state, updatedAt: new Date() },
-      create: { id: idFactory(documentName), documentName, state, updatedAt: new Date() },
+      update: { state: bytes, updatedAt: new Date() },
+      create: { id: idFactory(documentName), documentName, state: bytes, updatedAt: new Date() },
     });
+  };
 
   return {
     findUnique,

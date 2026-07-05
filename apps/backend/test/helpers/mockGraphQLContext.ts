@@ -1,5 +1,5 @@
 import { MockAuthContext } from './mockAuth';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma-client';
 import { prismaMock } from './mockPrisma';
 
 export interface MockGraphQLContext extends MockAuthContext {

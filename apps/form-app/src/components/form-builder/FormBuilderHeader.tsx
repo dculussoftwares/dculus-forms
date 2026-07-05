@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';

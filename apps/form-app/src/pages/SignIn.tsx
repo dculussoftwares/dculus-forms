@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router";
 import { Button, Input, Label } from "@dculus/ui";
 import { signIn, emailOtp } from "../lib/auth-client";
 import { useTranslation } from "../hooks/useTranslation";

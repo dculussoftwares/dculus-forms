@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '#prisma-client';
 import { appConfig } from './env.js';
 
 declare global {
@@ -6,43 +7,32 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-/**
- * Build the runtime DATABASE_URL.
- *
- * In production (PgBouncer transaction mode) Prisma needs two extra params:
- *   - pgbouncer=true      → disables prepared statements, which PgBouncer
- *                           transaction mode does not support across connections
- *   - connection_limit=2  → keeps the app-side pool small; PgBouncer handles
- *                           real server-side pooling
- *
- * We inject them here so that all deployments are safe even if the env var
- * was set without them.
- */
-function buildDatasourceUrl(): string | undefined {
-  const raw = process.env.DATABASE_URL;
-  if (!raw) return undefined;
-
-  // Only inject PgBouncer params when the URL targets PgBouncer (not local dev).
-  // We detect this by the absence of localhost/127.0.0.1.
-  if (raw.includes('localhost') || raw.includes('127.0.0.1')) {
-    return raw;
-  }
-
-  const url = new URL(raw);
-  if (!url.searchParams.has('pgbouncer')) {
-    url.searchParams.set('pgbouncer', 'true');
-  }
-  if (!url.searchParams.has('connection_limit')) {
-    url.searchParams.set('connection_limit', '2');
-  }
-  return url.toString();
+export function isLocalDatabase(url: string): boolean {
+  return url.includes('localhost') || url.includes('127.0.0.1');
 }
 
-const datasourceUrl = buildDatasourceUrl();
+/**
+ * Build the pg driver adapter.
+ *
+ * In production (PgBouncer transaction mode) we keep the app-side pool small
+ * (max: 2) — PgBouncer handles real server-side pooling. The adapter does not
+ * send named/prepared statements unless a statementNameGenerator is supplied
+ * (we don't supply one), which is required for PgBouncer transaction mode
+ * compatibility — this replaces the old `pgbouncer=true` query-string flag
+ * that the removed query-engine binary used to read.
+ */
+function buildAdapter(): PrismaPg {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is not set');
+  }
 
-const prisma =
-  globalThis.prisma ||
-  new PrismaClient(datasourceUrl ? { datasources: { db: { url: datasourceUrl } } } : undefined);
+  const max = isLocalDatabase(connectionString) ? undefined : 2;
+
+  return new PrismaPg({ connectionString, max });
+}
+
+const prisma = globalThis.prisma || new PrismaClient({ adapter: buildAdapter() });
 
 if (!appConfig.isProduction) {
   globalThis.prisma = prisma;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useApolloClient, useQuery } from '@apollo/client/react';
 import { gql } from '@apollo/client';
 import type { TypedDocumentNode } from '@apollo/client';

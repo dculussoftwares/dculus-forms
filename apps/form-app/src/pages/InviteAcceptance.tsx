@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { AlertCircle, CheckCircle, FileText, Mail, Users } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';

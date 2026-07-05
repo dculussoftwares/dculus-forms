@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { LoadingSpinner, Button, toastSuccess, toastError, EmptyState } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';

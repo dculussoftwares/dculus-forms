@@ -1,5 +1,5 @@
 import React from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router"
 import { LogOut, UserCircle } from "lucide-react"
 import { useApolloClient } from "@apollo/client/react"
 import { AppSidebar } from "../components/app-sidebar"

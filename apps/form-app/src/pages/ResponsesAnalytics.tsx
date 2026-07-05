@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { useQuery } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';

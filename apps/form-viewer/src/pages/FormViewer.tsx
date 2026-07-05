@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { CombinedGraphQLErrors } from '@apollo/client';
 import { Button, FormRenderer, useFormResponseStore, LoadingSpinner } from '@dculus/ui';

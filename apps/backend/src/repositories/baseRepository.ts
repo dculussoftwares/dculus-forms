@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '#prisma-client';
 import { prisma as defaultPrisma } from '../lib/prisma.js';
 
 export interface RepositoryContext {

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { Button, LoadingSpinner } from '@dculus/ui';
 import { Building2, Search, AlertTriangle } from 'lucide-react';
 import { ADMIN_ORGANIZATIONS_QUERY } from '../graphql/organizations';

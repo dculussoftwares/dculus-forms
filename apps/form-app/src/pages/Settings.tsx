@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { MainLayout } from '../components/MainLayout';
 import { SettingsNav } from '../components/settings/SettingsNav';
 import { ProfileSettings } from '../components/settings/ProfileSettings';

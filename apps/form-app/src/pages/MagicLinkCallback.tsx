@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { FileText, AlertCircle } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { authClient } from '../lib/auth-client';

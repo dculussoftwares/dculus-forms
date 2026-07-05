@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '#prisma-client';
 import { prisma } from '../../lib/prisma.js';
 import { getFormById } from '../../services/formService.js';
 import {

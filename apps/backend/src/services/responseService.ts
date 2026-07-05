@@ -8,7 +8,7 @@ import { batchLoadTagsForResponses } from './tagService.js';
 import { responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '#prisma-client';
 
 
 /**
