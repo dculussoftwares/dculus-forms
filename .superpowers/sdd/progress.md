@@ -17,10 +17,12 @@ Worktree branch: worktree-submission-limits-time-window
 
 ## Tasks
 - [x] Task 1: Move formatTimeForInput/combineDateAndTime into @dculus/utils
-- [ ] Task 2: Frontend dual-format instant parser
+- [x] Task 2: Frontend dual-format instant parser
 - [ ] Task 3: Backend enforcement — dual-format parsing
 - [ ] Task 4: Submission Limits UI — date + time inputs
 - [ ] Task 5: Local-timezone hint translation strings
 - [ ] Task 6: Manual verification (checklist, no commit)
 
 Task 1: complete (commits 44b7fa95..ca080c87, review clean — Minor: unrelated S3_KEY_PATTERN regex escape cleanup bundled in, verified no-op, not blocking)
+
+Task 2: complete (commits b422e9fe..45f5df36, review clean — Minor: JSDoc in timeWindowDateTime.ts:14 references brief's "step" prose, doc-polish only, deferred to final review)
