@@ -226,6 +226,7 @@ export function DateTimeRangePicker({
                   aria-label={labels.fromTime}
                   value={draftFromTime}
                   onChange={(e) => setDraftFromTime(e.target.value)}
+                  className="[&::-webkit-calendar-picker-indicator]:hidden"
                 />
               </InputGroup>
               <span className="text-muted-foreground text-xs">-</span>
@@ -238,6 +239,7 @@ export function DateTimeRangePicker({
                   aria-label={labels.toTime}
                   value={draftToTime}
                   onChange={(e) => setDraftToTime(e.target.value)}
+                  className="[&::-webkit-calendar-picker-indicator]:hidden"
                 />
               </InputGroup>
             </div>
