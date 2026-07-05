@@ -12,7 +12,9 @@ import { useState, useMemo } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { ColumnSizingState, OnChangeFn, RowSelectionState, VisibilityState } from '@tanstack/react-table';
 import { FormResponse } from '@dculus/types';
+import type { DateTimeRangeValue } from '@dculus/ui';
 import { FilterState } from '../components/Filters';
+import { buildSubmittedAtGraphqlFilter } from '../lib/submittedAtFilter';
 import { GENERATE_FORM_RESPONSE_REPORT } from '../graphql/queries';
 import { DELETE_RESPONSES } from '../graphql/mutations';
 
@@ -82,9 +84,9 @@ export interface UseResponsesStateReturn {
   handleBulkExport: (format: 'EXCEL' | 'CSV') => Promise<void>;
   isBulkDeleting: boolean;
 
-  // Submission date range filter
-  submittedAtRange: { from?: Date; to?: Date } | null;
-  setSubmittedAtRange: (range: { from?: Date; to?: Date } | null) => void;
+  // Submission date filter (presets or custom range)
+  submittedAtFilter: DateTimeRangeValue | null;
+  setSubmittedAtFilter: (filter: DateTimeRangeValue | null) => void;
 
   // Row density
   rowDensity: 'compact' | 'default' | 'comfortable';
@@ -166,11 +168,10 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     responseId: null,
   });
 
-  // Submission date range filter
-  const [submittedAtRangeState, setSubmittedAtRangeRaw] = useState<{ from?: Date; to?: Date } | null>(null);
-  const submittedAtRange = submittedAtRangeState;
-  const setSubmittedAtRange = (range: { from?: Date; to?: Date } | null) => {
-    setSubmittedAtRangeRaw(range);
+  // Submission date filter (presets or custom range)
+  const [submittedAtFilter, setSubmittedAtFilterRaw] = useState<DateTimeRangeValue | null>(null);
+  const setSubmittedAtFilter = (filter: DateTimeRangeValue | null) => {
+    setSubmittedAtFilterRaw(filter);
     setCurrentPage(1);
   };
 
@@ -263,18 +264,9 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
       numberRange: filter.numberRange,
     }));
 
-    if (submittedAtRange && (submittedAtRange.from || submittedAtRange.to)) {
-      mapped.push({
-        fieldId: '__submittedAt',
-        operator: 'DATE_BETWEEN',
-        value: undefined,
-        values: undefined,
-        dateRange: {
-          from: submittedAtRange.from?.toISOString(),
-          to: submittedAtRange.to?.toISOString(),
-        },
-        numberRange: undefined,
-      });
+    const submittedAtGraphqlFilter = buildSubmittedAtGraphqlFilter(submittedAtFilter);
+    if (submittedAtGraphqlFilter) {
+      mapped.push(submittedAtGraphqlFilter);
     }
 
     if (selectedTagIds.length > 0) {
@@ -289,31 +281,7 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     }
 
     return mapped.length > 0 ? mapped : null;
-  }, [filters, submittedAtRange, selectedTagIds]);
-
-  // Convert frontend filters to GraphQL export format
-  const convertFiltersForExport = () => {
-    return Object.values(filters)
-      .filter((filter) => filter.active)
-      .map((filter) => ({
-        fieldId: filter.fieldId,
-        operator: filter.operator,
-        value: filter.value || undefined,
-        values: filter.values || undefined,
-        dateRange: filter.dateRange
-          ? {
-            from: filter.dateRange.from || undefined,
-            to: filter.dateRange.to || undefined,
-          }
-          : undefined,
-        numberRange: filter.numberRange
-          ? {
-            min: filter.numberRange.min || undefined,
-            max: filter.numberRange.max || undefined,
-          }
-          : undefined,
-      }));
-  };
+  }, [filters, submittedAtFilter, selectedTagIds]);
 
   // Common download function
   const handleDownload = (downloadUrl: string, filename: string) => {
@@ -332,19 +300,18 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     if (!formId) return;
 
     try {
-      const activeFilters = convertFiltersForExport();
-      const hasFilters = activeFilters.length > 0;
+      const hasFilters = !!graphqlFilters && graphqlFilters.length > 0;
 
       console.log(
-        `Generating ${format} report on backend${hasFilters ? ` with ${activeFilters.length} filters` : ' (all responses)'}...`
+        `Generating ${format} report on backend${hasFilters ? ` with ${graphqlFilters!.length} filters` : ' (all responses)'}...`
       );
 
       const { data } = await generateReport({
         variables: {
           formId,
           format,
-          filters: hasFilters ? activeFilters : undefined,
-          filterLogic: hasFilters && activeFilters.length > 1 ? filterLogic : undefined,
+          filters: hasFilters ? graphqlFilters : undefined,
+          filterLogic: hasFilters && graphqlFilters!.length > 1 ? filterLogic : undefined,
         },
       });
 
@@ -425,9 +392,9 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     handleBulkExport,
     isBulkDeleting,
 
-    // Submission date range
-    submittedAtRange,
-    setSubmittedAtRange,
+    // Submission date filter
+    submittedAtFilter,
+    setSubmittedAtFilter,
 
     // Tag filter
     selectedTagIds,

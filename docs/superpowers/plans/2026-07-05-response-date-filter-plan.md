@@ -625,10 +625,10 @@ import type { DateTimeRangeValue } from '@dculus/ui';
 export interface SubmittedAtGraphqlFilter {
   fieldId: '__submittedAt';
   operator: 'DATE_LAST_N_DAYS' | 'DATE_BETWEEN';
-  value?: string;
-  values?: string[];
-  dateRange?: { from?: string; to?: string };
-  numberRange?: { min?: number; max?: number };
+  value: string | undefined;
+  values: string[] | undefined;
+  dateRange: { from?: string; to?: string } | undefined;
+  numberRange: { min?: number; max?: number } | undefined;
 }
 
 const PRESET_DAYS: Record<'last1d' | 'last7d' | 'last30d', string> = {
