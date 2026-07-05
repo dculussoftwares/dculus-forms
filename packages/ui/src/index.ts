@@ -67,6 +67,14 @@ export {
 } from "./drawer"
 export { Calendar, CalendarDayButton, type CalendarProps } from "./calendar"
 export { DatePicker, DateRangePicker } from "./date-picker"
+export {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupText,
+  InputGroupInput,
+  InputGroupTextarea,
+} from "./input-group"
 export { Switch } from "./switch"
 export { Toggle, toggleVariants } from "./toggle"
 export { ToggleGroup, ToggleGroupItem } from "./toggle-group"
