@@ -460,8 +460,8 @@ const Responses: React.FC = () => {
                 columnVisibility={responsesState.columnVisibility}
                 onColumnVisibilityChange={responsesState.setColumnVisibility}
                 onColumnOrderChange={responsesState.setColumnOrder}
-                submittedAtRange={responsesState.submittedAtRange}
-                onSubmittedAtRangeChange={responsesState.setSubmittedAtRange}
+                submittedAtFilter={responsesState.submittedAtFilter}
+                onSubmittedAtFilterChange={responsesState.setSubmittedAtFilter}
                 rowDensity={responsesState.rowDensity}
                 onRowDensityChange={responsesState.setRowDensity}
                 formTags={userFormTags}
