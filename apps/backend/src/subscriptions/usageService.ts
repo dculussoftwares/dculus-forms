@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '#prisma-client';
 import {
   emitUsageLimitReached,
   emitUsageLimitExceeded,
@@ -9,7 +10,8 @@ import type { FormViewedEvent, FormSubmittedEvent } from './types.js';
 import { logger } from '../lib/logger.js';
 import { subscriptionRepository } from '../repositories/subscriptionRepository.js';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
 
 /**
  * Subscription Usage Service
