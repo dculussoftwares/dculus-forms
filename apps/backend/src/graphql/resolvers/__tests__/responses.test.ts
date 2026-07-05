@@ -711,6 +711,25 @@ describe('Responses Resolvers', () => {
       ).rejects.toThrow('Form has an invalid start date configured');
     });
 
+    it('should throw BAD_USER_INPUT for a malformed time window end value', async () => {
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              endDate: 'not-a-date',
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormById).mockResolvedValue(formWithTimeWindow as any);
+
+      await expect(
+        responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
+      ).rejects.toThrow('Form has an invalid end date configured');
+    });
+
     it('should handle missing analytics data gracefully', async () => {
       const inputWithoutAnalytics = {
         formId: 'form-123',

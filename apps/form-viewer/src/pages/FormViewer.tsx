@@ -15,7 +15,6 @@ import { getFormErrorMessage, isSubmissionLimitError } from '../lib/formError';
 
 const SUBMISSION_TIMEOUT_MS = 30_000;
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB — matches backend multer limit
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function validateFiles(
   responses: Record<string, unknown>,
@@ -304,40 +303,12 @@ const FormViewer: React.FC = () => {
     );
   }
 
-  // Client-side time-window pre-validation — gives immediate feedback instead of
-  // waiting for the server to reject the submission after filling out the form.
-  const timeWindow = form.settings?.submissionLimits?.timeWindow as
-    | { enabled?: boolean; startDate?: string; endDate?: string }
-    | undefined;
-  if (timeWindow?.enabled) {
-    const now = new Date();
-    if (timeWindow.startDate && ISO_DATE_RE.test(timeWindow.startDate)) {
-      const start = new Date(timeWindow.startDate + 'T00:00:00');
-      if (!isNaN(start.getTime()) && now < start) {
-        return (
-          <div className="h-screen w-full flex items-center justify-center">
-            <div className="text-center p-4 sm:p-8">
-              <h1 className="text-2xl font-bold text-foreground mb-2">Not Yet Open</h1>
-              <p className="text-muted-foreground">This form is not yet open for submissions. Please check back later.</p>
-            </div>
-          </div>
-        );
-      }
-    }
-    if (timeWindow.endDate && ISO_DATE_RE.test(timeWindow.endDate)) {
-      const end = new Date(timeWindow.endDate + 'T23:59:59');
-      if (!isNaN(end.getTime()) && now > end) {
-        return (
-          <div className="h-screen w-full flex items-center justify-center">
-            <div className="text-center p-4 sm:p-8">
-              <h1 className="text-2xl font-bold text-destructive mb-2">Submissions Closed</h1>
-              <p className="text-muted-foreground">The submission period for this form has ended.</p>
-            </div>
-          </div>
-        );
-      }
-    }
-  }
+  // Time-window gating is enforced server-side by formByShortUrl (see
+  // apps/backend/src/lib/timeWindowEnforcement.ts) and surfaces here via the
+  // `error` branch above (FORM_NOT_YET_OPEN / FORM_CLOSED) — a form outside
+  // its window never reaches this point with data. No client-side
+  // re-validation here, since duplicating that check drifted out of sync
+  // with the server's dual-format (legacy date vs. precise datetime) parsing.
 
   const handleSubmitAnother = () => {
     useFormResponseStore.getState().clearAllResponses();

@@ -324,6 +324,52 @@ describe('Forms Resolvers', () => {
 
       expect(result).toEqual(formWithTimeWindow);
     });
+
+    it('should throw BAD_USER_INPUT for a malformed time window start value', async () => {
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              startDate: 'not-a-date',
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormByShortUrl).mockResolvedValue(formWithTimeWindow as any);
+      vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+        viewsExceeded: false,
+        submissionsExceeded: false,
+      });
+
+      await expect(
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+      ).rejects.toThrow('Form has an invalid start date configured');
+    });
+
+    it('should throw BAD_USER_INPUT for a malformed time window end value', async () => {
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              endDate: 'not-a-date',
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormByShortUrl).mockResolvedValue(formWithTimeWindow as any);
+      vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+        viewsExceeded: false,
+        submissionsExceeded: false,
+      });
+
+      await expect(
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+      ).rejects.toThrow('Form has an invalid end date configured');
+    });
   });
 
   describe('Form: metadata', () => {
