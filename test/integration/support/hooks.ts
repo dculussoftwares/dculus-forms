@@ -4,7 +4,17 @@ import axios from 'axios';
 import path from 'path';
 import fs from 'fs';
 import net from 'net';
-import { PrismaClient } from '@prisma/client';
+import { pathToFileURL } from 'url';
+// The backend's Prisma client is generated via the `prisma-client` generator
+// (see apps/backend/prisma/schema.prisma) into apps/backend/src/generated/prisma
+// rather than the default @prisma/client output, and it requires a driver
+// adapter to connect (no built-in query engine). It's also emitted as an ES
+// module (apps/backend has "type": "module"), so it can't be `require()`'d
+// from this CommonJS test project — it's loaded via dynamic `import()` in
+// the BeforeAll hook below. Only the type is imported statically here
+// (fully erased at runtime, so the ESM/CJS mismatch doesn't apply).
+import type { PrismaClient } from '../../../apps/backend/src/generated/prisma/client.js' with { 'resolution-mode': 'import' };
+import { PrismaPg } from '@prisma/adapter-pg';
 import { CustomWorld } from './world';
 import { MockSMTPServer } from '../utils/mock-servers';
 import { getMockS3Service, MockS3Service } from '../utils/s3-mock';
@@ -222,14 +232,27 @@ BeforeAll({ timeout: 120000 }, async function() {
     await waitForPostgresPort(postgresUri);
     console.log('✅ PostgreSQL port reachable');
 
-    // Initialize Prisma client with PostgreSQL
-    prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: postgresUri,
-        },
-      },
-    });
+    // Initialize Prisma client with PostgreSQL, using the same driver-adapter
+    // pattern as apps/backend/src/lib/prisma.ts (the generated client requires
+    // an adapter — it has no built-in query engine). Loaded via dynamic
+    // import() from the *compiled* backend dist output — the generated
+    // client is an ES module (apps/backend has "type": "module") and this
+    // test project is CommonJS, and Node's native import() cannot load raw
+    // .ts source. This requires `pnpm --filter backend build` to have run
+    // first (see test/integration/README.md).
+    const backendClientDist = path.resolve(
+      rootDir,
+      'apps/backend/dist/apps/backend/src/generated/prisma/client.js'
+    );
+    if (!fs.existsSync(backendClientDist)) {
+      throw new Error(
+        `Backend Prisma client not found at ${backendClientDist}. Run "pnpm --filter backend build" before running integration tests.`
+      );
+    }
+    const { PrismaClient: BackendPrismaClient } = await import(pathToFileURL(backendClientDist).href);
+    prisma = new BackendPrismaClient({
+      adapter: new PrismaPg({ connectionString: postgresUri }),
+    }) as PrismaClient;
 
     await connectPrismaWithRetry(prisma);
     console.log('✅ Prisma client connected to PostgreSQL');
