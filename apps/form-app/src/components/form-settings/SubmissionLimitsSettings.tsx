@@ -247,7 +247,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                       value={startTimeValue}
                       disabled={!startInstant}
                       onChange={(e) => handleStartTimeChange(e.target.value)}
-                      className="w-28"
+                      className="w-28 h-12 rounded-xl border-2 border-gray-200 dark:border-gray-700"
                     />
                   </div>
                 </div>
@@ -269,7 +269,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                       value={endTimeValue}
                       disabled={!endInstant}
                       onChange={(e) => handleEndTimeChange(e.target.value)}
-                      className="w-28"
+                      className="w-28 h-12 rounded-xl border-2 border-gray-200 dark:border-gray-700"
                     />
                   </div>
                 </div>
