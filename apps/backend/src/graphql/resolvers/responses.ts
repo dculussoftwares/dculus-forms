@@ -32,6 +32,7 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { logger } from '../../lib/logger.js';
 import { audit } from '../../lib/audit.js';
 import { upsertPreviewTag, addTagToResponse } from '../../services/tagService.js';
+import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 
 interface ResponseParent {
   id: string;
@@ -231,41 +232,8 @@ export const responsesResolvers = {
         }
 
         // Check time window limits
-        if (limits.timeWindow?.enabled) {
-          const now = new Date();
-          const LEGACY_DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-          // startDate/endDate are either a legacy "YYYY-MM-DD" value (padded
-          // to the server's local day boundary, unchanged behavior for forms
-          // saved before time-of-day support existed) or a full ISO 8601
-          // datetime string (already an absolute UTC instant — no padding
-          // or timezone math needed).
-          const parseTimeWindowBoundary = (value: string, boundary: 'start' | 'end'): Date => {
-            if (LEGACY_DATE_ONLY_RE.test(value)) {
-              return new Date(value + (boundary === 'start' ? 'T00:00:00' : 'T23:59:59'));
-            }
-            return new Date(value);
-          };
-
-          if (limits.timeWindow.startDate) {
-            const startDate = parseTimeWindowBoundary(limits.timeWindow.startDate, 'start');
-            if (isNaN(startDate.getTime())) {
-              throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-            }
-            if (now < startDate) {
-              throw createGraphQLError('Form is not yet open for submissions', GRAPHQL_ERROR_CODES.FORM_NOT_YET_OPEN);
-            }
-          }
-
-          if (limits.timeWindow.endDate) {
-            const endDate = parseTimeWindowBoundary(limits.timeWindow.endDate, 'end');
-            if (isNaN(endDate.getTime())) {
-              throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-            }
-            if (now > endDate) {
-              throw createGraphQLError('Form submission period has ended', GRAPHQL_ERROR_CODES.FORM_CLOSED);
-            }
-          }
+        if (limits.timeWindow) {
+          enforceTimeWindow(limits.timeWindow);
         }
       }
 

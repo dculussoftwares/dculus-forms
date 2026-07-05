@@ -246,6 +246,84 @@ describe('Forms Resolvers', () => {
         formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
       ).rejects.toThrow('Form submission period has ended');
     });
+
+    it('should enforce time window start date-time with hour precision', async () => {
+      const twoHoursFromNow = new Date();
+      twoHoursFromNow.setHours(twoHoursFromNow.getHours() + 2);
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              startDate: twoHoursFromNow.toISOString(),
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormByShortUrl).mockResolvedValue(formWithTimeWindow as any);
+      vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+        viewsExceeded: false,
+        submissionsExceeded: false,
+      });
+
+      await expect(
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+      ).rejects.toThrow('Form is not yet open for submissions');
+    });
+
+    it('should enforce time window end date-time with hour precision', async () => {
+      const twoHoursAgo = new Date();
+      twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              endDate: twoHoursAgo.toISOString(),
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormByShortUrl).mockResolvedValue(formWithTimeWindow as any);
+      vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+        viewsExceeded: false,
+        submissionsExceeded: false,
+      });
+
+      await expect(
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+      ).rejects.toThrow('Form submission period has ended');
+    });
+
+    it('should allow viewing within a precise start/end date-time window', async () => {
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      const oneHourFromNow = new Date();
+      oneHourFromNow.setHours(oneHourFromNow.getHours() + 1);
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              startDate: oneHourAgo.toISOString(),
+              endDate: oneHourFromNow.toISOString(),
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormByShortUrl).mockResolvedValue(formWithTimeWindow as any);
+      vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+        viewsExceeded: false,
+        submissionsExceeded: false,
+      });
+
+      const result = await formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' });
+
+      expect(result).toEqual(formWithTimeWindow);
+    });
   });
 
   describe('Form: metadata', () => {
