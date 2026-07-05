@@ -233,13 +233,22 @@ export const responsesResolvers = {
         // Check time window limits
         if (limits.timeWindow?.enabled) {
           const now = new Date();
-          const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+          const LEGACY_DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+          // startDate/endDate are either a legacy "YYYY-MM-DD" value (padded
+          // to the server's local day boundary, unchanged behavior for forms
+          // saved before time-of-day support existed) or a full ISO 8601
+          // datetime string (already an absolute UTC instant — no padding
+          // or timezone math needed).
+          const parseTimeWindowBoundary = (value: string, boundary: 'start' | 'end'): Date => {
+            if (LEGACY_DATE_ONLY_RE.test(value)) {
+              return new Date(value + (boundary === 'start' ? 'T00:00:00' : 'T23:59:59'));
+            }
+            return new Date(value);
+          };
 
           if (limits.timeWindow.startDate) {
-            if (!ISO_DATE_RE.test(limits.timeWindow.startDate)) {
-              throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-            }
-            const startDate = new Date(limits.timeWindow.startDate + 'T00:00:00');
+            const startDate = parseTimeWindowBoundary(limits.timeWindow.startDate, 'start');
             if (isNaN(startDate.getTime())) {
               throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
             }
@@ -249,10 +258,7 @@ export const responsesResolvers = {
           }
 
           if (limits.timeWindow.endDate) {
-            if (!ISO_DATE_RE.test(limits.timeWindow.endDate)) {
-              throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-            }
-            const endDate = new Date(limits.timeWindow.endDate + 'T23:59:59');
+            const endDate = parseTimeWindowBoundary(limits.timeWindow.endDate, 'end');
             if (isNaN(endDate.getTime())) {
               throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
             }

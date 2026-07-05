@@ -622,6 +622,95 @@ describe('Responses Resolvers', () => {
       expect(result).toBeDefined();
     });
 
+    it('should enforce time window start date-time with hour precision', async () => {
+      const twoHoursFromNow = new Date();
+      twoHoursFromNow.setHours(twoHoursFromNow.getHours() + 2);
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              startDate: twoHoursFromNow.toISOString(),
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormById).mockResolvedValue(formWithTimeWindow as any);
+
+      await expect(
+        responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
+      ).rejects.toThrow('Form is not yet open for submissions');
+    });
+
+    it('should enforce time window end date-time with hour precision', async () => {
+      const twoHoursAgo = new Date();
+      twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              endDate: twoHoursAgo.toISOString(),
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormById).mockResolvedValue(formWithTimeWindow as any);
+
+      await expect(
+        responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
+      ).rejects.toThrow('Form submission period has ended');
+    });
+
+    it('should allow submission within a precise start/end date-time window', async () => {
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      const oneHourFromNow = new Date();
+      oneHourFromNow.setHours(oneHourFromNow.getHours() + 1);
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              startDate: oneHourAgo.toISOString(),
+              endDate: oneHourFromNow.toISOString(),
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormById).mockResolvedValue(formWithTimeWindow as any);
+
+      const result = await responsesResolvers.Mutation.submitResponse(
+        {},
+        { input: mockInput },
+        mockContext
+      );
+
+      expect(result).toBeDefined();
+    });
+
+    it('should throw BAD_USER_INPUT for a malformed time window start value', async () => {
+      const formWithTimeWindow = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: {
+              enabled: true,
+              startDate: 'not-a-date',
+            },
+          },
+        },
+      };
+      vi.mocked(formService.getFormById).mockResolvedValue(formWithTimeWindow as any);
+
+      await expect(
+        responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
+      ).rejects.toThrow('Form has an invalid start date configured');
+    });
+
     it('should handle missing analytics data gracefully', async () => {
       const inputWithoutAnalytics = {
         formId: 'form-123',
