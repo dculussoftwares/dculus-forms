@@ -6,13 +6,14 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   Button,
   Checkbox,
-  DateRangePicker,
+  DateTimeRangePicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   Input,
   Label,
+  type DateTimeRangeValue,
 } from '@dculus/ui';
 import {
   AlignJustify,
@@ -96,8 +97,8 @@ interface ResponsesToolbarProps {
   columnVisibility: VisibilityState;
   onColumnVisibilityChange: (visibility: VisibilityState | ((prev: VisibilityState) => VisibilityState)) => void;
   onColumnOrderChange: (order: string[]) => void;
-  submittedAtRange: { from?: Date; to?: Date } | null;
-  onSubmittedAtRangeChange: (range: { from?: Date; to?: Date } | null) => void;
+  submittedAtFilter: DateTimeRangeValue | null;
+  onSubmittedAtFilterChange: (filter: DateTimeRangeValue | null) => void;
   rowDensity: 'compact' | 'default' | 'comfortable';
   onRowDensityChange: (density: 'compact' | 'default' | 'comfortable') => void;
   formTags: { id: string; name: string; color: string }[];
@@ -121,8 +122,8 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   columnVisibility,
   onColumnVisibilityChange,
   onColumnOrderChange,
-  submittedAtRange,
-  onSubmittedAtRangeChange,
+  submittedAtFilter,
+  onSubmittedAtFilterChange,
   rowDensity,
   onRowDensityChange,
   formTags,
@@ -182,16 +183,22 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
           )}
         </div>
 
-        {/* Date range quick filter — hidden on mobile */}
+        {/* Submitted-date quick filter — hidden on mobile */}
         <div className="hidden sm:block shrink-0">
-          <DateRangePicker
-            from={submittedAtRange?.from}
-            to={submittedAtRange?.to}
-            onDateRangeChange={(from, to) =>
-              onSubmittedAtRangeChange(from || to ? { from, to } : null)
-            }
-            placeholder={t('toolbar.dateRange.placeholder')}
-            className="h-8 text-xs"
+          <DateTimeRangePicker
+            value={submittedAtFilter}
+            onChange={onSubmittedAtFilterChange}
+            labels={{
+              allTime: t('toolbar.dateRange.allTime'),
+              last24Hours: t('toolbar.dateRange.last24Hours'),
+              last7Days: t('toolbar.dateRange.last7Days'),
+              last30Days: t('toolbar.dateRange.last30Days'),
+              customRange: t('toolbar.dateRange.customRange'),
+              apply: t('toolbar.dateRange.apply'),
+              cancel: t('toolbar.dateRange.cancel'),
+              fromTime: t('toolbar.dateRange.fromTime'),
+              toTime: t('toolbar.dateRange.toTime'),
+            }}
           />
         </div>
 
