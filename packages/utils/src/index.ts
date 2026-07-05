@@ -67,33 +67,6 @@ export const isDateExpired = (dateString: string): boolean => {
   return new Date() > parseDate(dateString);
 };
 
-/**
- * Format a Date's local hours/minutes as "HH:MM" for a native `<input type="time">`.
- */
-export const formatTimeForInput = (date: Date): string => {
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mm = String(date.getMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
-};
-
-/**
- * Combine a calendar Date with a "HH:MM" time-of-day string (both interpreted
- * in the browser's local timezone) into a single local Date.
- */
-export const combineDateAndTime = (date: Date, time: string): Date => {
-  const [hoursStr, minutesStr] = time.split(':');
-  const hours = Number(hoursStr);
-  const minutes = Number(minutesStr);
-  const combined = new Date(date);
-  combined.setHours(
-    Number.isFinite(hours) ? hours : 0,
-    Number.isFinite(minutes) ? minutes : 0,
-    0,
-    0
-  );
-  return combined;
-};
-
 export function slugify(str: string): string {
   // Normalise to NFKD so diacritics become base-char + combining mark,
   // then strip the combining marks — handles é→e, ñ→n, ü→u, Tamil, etc.
@@ -161,7 +134,7 @@ export async function generateShortUrl(length: number = 8): Promise<string> {
  * Pass the CDN endpoint from your environment variables
  */
 // Allowed pattern: alphanumeric, slashes, hyphens, underscores, dots
-const S3_KEY_PATTERN = /^[a-zA-Z0-9/_.-]+$/;
+const S3_KEY_PATTERN = /^[a-zA-Z0-9/_.\-]+$/;
 
 export function getImageUrl(s3Key: string, cdnEndpoint: string): string {
   if (!s3Key || !cdnEndpoint) {
