@@ -1,61 +1,26 @@
-# Email Preview Page - Development Progress
+# Submission Limits Time Window — SDD Progress Ledger
 
-**Plan:** docs/superpowers/plans/2026-07-04-email-preview-page.md  
-**Started:** 2026-07-04
+Plan: docs/superpowers/plans/2026-07-05-submission-limits-time-window-datetime.md
+Worktree branch: worktree-submission-limits-time-window
 
-## Task Progress
+## Pre-flight decisions (human-approved, 2026-07-05)
+- Task 2's duplication of the 3-line local-midnight parse (instead of importing
+  `parseLocalDate` from `@dculus/utils`) is intentional — form-app's Jest config
+  cannot execute `@dculus/utils`'s compiled ESM dist output (pre-existing on
+  `main`, unrelated to this feature). If a task reviewer flags this as
+  duplication, the ruling stands: keep it, do not "fix" by importing.
+- Task 1 (move formatTimeForInput/combineDateAndTime into @dculus/utils) has no
+  new automated test — no test harness exists for packages/ui or packages/utils
+  today, and this is a behavior-identical move. If a task reviewer flags missing
+  test coverage for this task, the ruling stands: verify via build/type-check
+  only, do not add a new test harness.
 
-- [ ] Task 1: Create Sample Data Constants
-- [ ] Task 2: Import Email Generators and Create Component Shell
-- [ ] Task 3: Render Email Content in Tabs
-- [ ] Task 4: Add Route and Navigation
-- [ ] Task 5: Create Translation Files (English)
-- [ ] Task 6: Create Translation Files (Tamil) and Register Both
-- [ ] Task 7: Manual Testing & Verification
-- [ ] Task 8: Full Feature Test & Fix Issues
+## Tasks
+- [x] Task 1: Move formatTimeForInput/combineDateAndTime into @dculus/utils
+- [ ] Task 2: Frontend dual-format instant parser
+- [ ] Task 3: Backend enforcement — dual-format parsing
+- [ ] Task 4: Submission Limits UI — date + time inputs
+- [ ] Task 5: Local-timezone hint translation strings
+- [ ] Task 6: Manual verification (checklist, no commit)
 
-## Completion Log
-
-- [x] Task 1: Create Sample Data Constants
-
-## Completed Tasks
-
-Task 1: complete (commits 2a3ca099, review clean)
-- [x] Task 2: Import Email Generators and Create Component Shell
-
-Task 2: complete (commits c69aba24, review clean) — Note: Implementer created EN i18n file (normally Task 5), avoiding broken references during Task 3
-- [x] Task 3: Render Email Content in Tabs
-
-Task 3: complete (commits c816fec3, review clean)
-- [x] Task 4: Add Route and Navigation
-
-Task 4: complete (commits 32c925cc, review clean)
-- [x] Task 5: Create Translation Files (English)
-
-Task 5: complete (commits f1e1e36c, review clean)
-- [x] Task 6: Create Translation Files (Tamil) and Register Both
-
-Task 6: complete (commits 003e6ceb, review clean)
-- [x] Task 7: Manual Testing & Verification
-
-Task 7: complete (review clean, 0 issues found)
-- [x] Task 8: Full Feature Test & Fix Issues
-
-Task 8: complete (final validation clean, READY FOR MERGE)
-
-## FEATURE COMPLETE
-
-All 8 tasks completed successfully:
-✅ Task 1: Sample data constants
-✅ Task 2: Component shell with tabs
-✅ Task 3: Email rendering in iframes
-✅ Task 4: Route and navigation
-✅ Task 5: English translations
-✅ Task 6: Tamil translations + registration
-✅ Task 7: Manual testing (0 issues)
-✅ Task 8: Final validation (0 regressions)
-
-Status: READY FOR MERGE
-Commits: 16 ahead of main
-Files changed: 11 files (new + modified)
-Test results: ALL PASSED
+Task 1: complete (commits 44b7fa95..ca080c87, review clean — Minor: unrelated S3_KEY_PATTERN regex escape cleanup bundled in, verified no-op, not blocking)
