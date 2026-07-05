@@ -19,6 +19,7 @@ import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
+import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 
 export const formsResolvers = {
   Query: {
@@ -60,35 +61,8 @@ export const formsResolvers = {
         }
 
         // Check time window limits
-        if (limits.timeWindow?.enabled) {
-          const now = new Date();
-          const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-          if (limits.timeWindow.startDate) {
-            if (!ISO_DATE_RE.test(limits.timeWindow.startDate)) {
-              throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-            }
-            const startDate = new Date(limits.timeWindow.startDate + 'T00:00:00');
-            if (isNaN(startDate.getTime())) {
-              throw createGraphQLError('Form has an invalid start date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-            }
-            if (now < startDate) {
-              throw createGraphQLError("Form is not yet open for submissions", GRAPHQL_ERROR_CODES.FORM_NOT_YET_OPEN);
-            }
-          }
-
-          if (limits.timeWindow.endDate) {
-            if (!ISO_DATE_RE.test(limits.timeWindow.endDate)) {
-              throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-            }
-            const endDate = new Date(limits.timeWindow.endDate + 'T23:59:59');
-            if (isNaN(endDate.getTime())) {
-              throw createGraphQLError('Form has an invalid end date configured', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-            }
-            if (now > endDate) {
-              throw createGraphQLError("Form submission period has ended", GRAPHQL_ERROR_CODES.FORM_CLOSED);
-            }
-          }
+        if (limits.timeWindow) {
+          enforceTimeWindow(limits.timeWindow);
         }
       }
 

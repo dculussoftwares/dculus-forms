@@ -51,8 +51,12 @@ export interface MaxResponsesSettings {
 
 export interface TimeWindowSettings {
   enabled: boolean;
-  startDate?: string; // ISO date string
-  endDate?: string; // ISO date string
+  // Either a legacy "YYYY-MM-DD" date (whole-day window, pre-existing forms)
+  // or a full ISO 8601 datetime string (absolute UTC instant, precise
+  // start/end time) — see apps/form-app/src/lib/timeWindowDateTime.ts and
+  // apps/backend/src/graphql/resolvers/responses.ts for the parsing logic.
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface SubmissionLimitsSettings {
