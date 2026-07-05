@@ -8,9 +8,16 @@ import {
 import { SubscriptionEventType } from './types.js';
 import type { FormViewedEvent, FormSubmittedEvent } from './types.js';
 import { logger } from '../lib/logger.js';
+import { isLocalDatabase } from '../lib/prisma.js';
 import { subscriptionRepository } from '../repositories/subscriptionRepository.js';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+// Keep the app-side pool small in production (max: 2) — PgBouncer handles
+// real server-side pooling. Mirrors the cap used by the main Prisma singleton
+// in lib/prisma.ts so this standalone client doesn't silently open up to
+// pg's default max of 10 connections.
+const connectionString = process.env.DATABASE_URL ?? '';
+const max = isLocalDatabase(connectionString) ? undefined : 2;
+const adapter = new PrismaPg({ connectionString, max });
 const prisma = new PrismaClient({ adapter });
 
 /**

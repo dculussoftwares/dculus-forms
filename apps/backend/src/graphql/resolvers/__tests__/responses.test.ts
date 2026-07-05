@@ -37,6 +37,7 @@ vi.mock('../../../lib/prisma.js', () => ({
       callback(mockTxClient)
     ),
   },
+  isLocalDatabase: vi.fn(() => true),
 }));
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');

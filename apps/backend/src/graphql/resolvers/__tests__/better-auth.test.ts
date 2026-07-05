@@ -20,6 +20,7 @@ vi.mock('../../../lib/prisma.js', () => ({
       findUnique: vi.fn(),
     },
   },
+  isLocalDatabase: vi.fn(() => true),
 }));
 vi.mock('../../../lib/better-auth.js', () => ({
   auth: {

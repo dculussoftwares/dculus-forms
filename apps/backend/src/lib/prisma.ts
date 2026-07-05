@@ -7,7 +7,7 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-function isLocalDatabase(url: string): boolean {
+export function isLocalDatabase(url: string): boolean {
   return url.includes('localhost') || url.includes('127.0.0.1');
 }
 
