@@ -267,6 +267,8 @@ export const responsesResolvers = {
               ','
             )[0];
 
+          const visitorGeo = context.req?.visitorGeo;
+
           // Track the submission analytics
           await analyticsService.trackFormSubmission(
             {
@@ -277,6 +279,7 @@ export const responsesResolvers = {
               timezone: input.timezone,
               language: input.language,
               completionTimeSeconds: input.completionTimeSeconds,
+              visitorGeo,
             },
             clientIP
           );
