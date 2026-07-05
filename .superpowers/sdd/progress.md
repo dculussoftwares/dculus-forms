@@ -20,7 +20,7 @@ Worktree branch: worktree-submission-limits-time-window
 - [x] Task 2: Frontend dual-format instant parser
 - [x] Task 3: Backend enforcement — dual-format parsing
 - [x] Task 4: Submission Limits UI — date + time inputs
-- [ ] Task 5: Local-timezone hint translation strings
+- [x] Task 5: Local-timezone hint translation strings
 - [ ] Task 6: Manual verification (checklist, no commit)
 
 Task 1: complete (commits 44b7fa95..ca080c87, review clean — Minor: unrelated S3_KEY_PATTERN regex escape cleanup bundled in, verified no-op, not blocking)
@@ -30,3 +30,5 @@ Task 2: complete (commits b422e9fe..45f5df36, review clean — Minor: JSDoc in t
 Task 3: complete (commits 34d0dc19..c638829d, review clean — Minor: LEGACY_DATE_ONLY_RE recreated per-request (trivial hoist opportunity), no mirrored malformed-end test; deferred to final review)
 
 Task 4: complete (commits 0866d501..b7eba2ed, review clean — notes for Task 6 manual verification: check clear-then-re-pick-start-date time-of-day carryover behavior, and check date+time input layout on narrow viewports)
+
+Task 5: complete (commits 653992c8..f8ad16b5, review clean)
