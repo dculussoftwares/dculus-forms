@@ -111,8 +111,9 @@ EOF
 - Modify: `packages/types/src/index.ts:52-56`
 
 **Interfaces:**
-- Consumes: `parseLocalDate(dateStr: string): Date` from `@dculus/utils` (existing).
-- Produces: `parseTimeWindowInstant(value: string): Date` — if `value` matches `YYYY-MM-DD`, returns `parseLocalDate(value)` (local midnight, exactly today's existing legacy behavior); otherwise returns `new Date(value)` (treats `value` as an already-absolute ISO instant). Task 4 imports this.
+- Produces: `parseTimeWindowInstant(value: string): Date` — if `value` matches `YYYY-MM-DD`, parses it as local midnight (same logic as `@dculus/utils`'s `parseLocalDate`/`parseCalendarDate` — exactly today's existing legacy behavior); otherwise returns `new Date(value)` (treats `value` as an already-absolute ISO instant). Task 4 imports this.
+
+**Important — do not import from `@dculus/utils` in this file or its test.** `apps/form-app/jest.config.js` maps `@dculus/*` imports to each package's compiled `dist/index.js` (ESM `import` syntax), which Jest's `ts-jest`-only `transform` config cannot execute — confirmed pre-existing on `main` (no current form-app test imports `@dculus/utils`; the two already-failing suites in the baseline, the `BaseChartComponents`-related ones, hit this exact wall). Attempting to fix it by pointing the mapper at `packages/utils/src/index.ts` instead just moves the failure into `nanoid` (also ESM-only) — that's a separate, unrelated infrastructure problem, out of scope here. The local-midnight parsing is 3 lines; duplicate it directly in this file instead of importing `parseLocalDate`, so the new pure function is actually testable without touching Jest config.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -120,12 +121,11 @@ Create `apps/form-app/src/lib/__tests__/timeWindowDateTime.test.ts`:
 
 ```typescript
 import { parseTimeWindowInstant } from '../timeWindowDateTime';
-import { parseLocalDate } from '@dculus/utils';
 
 describe('parseTimeWindowInstant', () => {
   test('parses a legacy YYYY-MM-DD value as local midnight', () => {
     expect(parseTimeWindowInstant('2026-07-05').getTime()).toEqual(
-      parseLocalDate('2026-07-05').getTime()
+      new Date(2026, 6, 5).getTime()
     );
   });
 
@@ -152,8 +152,6 @@ Expected: FAIL — `Cannot find module '../timeWindowDateTime'`
 Create `apps/form-app/src/lib/timeWindowDateTime.ts`:
 
 ```typescript
-import { parseLocalDate } from '@dculus/utils';
-
 const LEGACY_DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
@@ -161,13 +159,16 @@ const LEGACY_DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
  *
  * `startDate`/`endDate` may be either a legacy "YYYY-MM-DD" string (forms
  * saved before time-of-day support was added — interpreted as local
- * midnight, matching the pre-existing behavior) or a full ISO 8601 datetime
- * string (an already-absolute UTC instant, produced by `.toISOString()`
- * when the user picks a specific time).
+ * midnight, matching the pre-existing behavior of @dculus/utils's
+ * parseLocalDate/parseCalendarDate, duplicated here rather than imported —
+ * see the note above this step) or a full ISO 8601 datetime string (an
+ * already-absolute UTC instant, produced by `.toISOString()` when the user
+ * picks a specific time).
  */
 export function parseTimeWindowInstant(value: string): Date {
   if (LEGACY_DATE_ONLY_RE.test(value)) {
-    return parseLocalDate(value);
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
   }
   return new Date(value);
 }
