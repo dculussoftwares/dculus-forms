@@ -39,7 +39,16 @@
       "csv": "Export as CSV"
     },
     "dateRange": {
-      "placeholder": "All time"
+      "placeholder": "All time",
+      "allTime": "All time",
+      "last24Hours": "Last 24 hours",
+      "last7Days": "Last 7 days",
+      "last30Days": "Last 30 days",
+      "customRange": "Custom range",
+      "apply": "Apply",
+      "cancel": "Cancel",
+      "fromTime": "From time",
+      "toTime": "To time"
     },
     "density": {
       "compact": "Compact",
