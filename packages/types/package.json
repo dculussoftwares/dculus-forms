@@ -29,7 +29,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "react-hook-form": "7.62.0",
+    "react-hook-form": "7.81.0",
     "zod": "^4.4.3"
   }
 }
