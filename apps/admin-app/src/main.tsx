@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ApolloProvider } from '@apollo/client/react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import App from './App.tsx';
 import { AuthProvider } from './hooks/useAuth';
 import { LocaleProvider } from './contexts/LocaleContext';

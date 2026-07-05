@@ -1,5 +1,5 @@
 import { useQuery } from '@apollo/client/react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { Button, Card, CardContent } from '@dculus/ui';
 import { ArrowLeft, Mail, CheckCircle2, XCircle, Building2, Calendar } from 'lucide-react';
 import { ADMIN_USER_BY_ID_QUERY, AdminUserByIdQueryData } from '../../graphql/users';

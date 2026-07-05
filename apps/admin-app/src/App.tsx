@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router';
 import { useAuth } from './hooks/useAuth';
 import AdminLayout from './components/AdminLayout';
 import LoginPage from './pages/LoginPage';

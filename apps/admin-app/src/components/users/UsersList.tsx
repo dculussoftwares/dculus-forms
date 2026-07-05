@@ -1,6 +1,6 @@
 import { AdminUserDetail } from '../../graphql/users';
 import { UserCard } from './UserCard';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { EmptyState } from '@dculus/ui';
 import { Users } from 'lucide-react';
 
