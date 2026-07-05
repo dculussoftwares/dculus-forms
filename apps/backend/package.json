@@ -5,7 +5,8 @@
   "type": "module",
   "main": "dist/apps/backend/src/index.js",
   "imports": {
-    "#graphql-errors": "./dist/apps/backend/src/lib/graphqlErrors.js"
+    "#graphql-errors": "./dist/apps/backend/src/lib/graphqlErrors.js",
+    "#prisma-client": "./dist/apps/backend/src/generated/prisma/client.js"
   },
   "scripts": {
     "predev": "prisma generate",

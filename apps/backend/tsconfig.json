@@ -22,7 +22,8 @@
       "@dculus/utils/*": ["../../packages/utils/src/*"],
       "@dculus/types": ["../../packages/types/src"],
       "@dculus/types/*": ["../../packages/types/src/*"],
-      "#graphql-errors": ["./src/lib/graphqlErrors.ts"]
+      "#graphql-errors": ["./src/lib/graphqlErrors.ts"],
+      "#prisma-client": ["./src/generated/prisma/client.ts"]
     }
   },
   "include": ["src/**/*", "../../packages/utils/src/**/*", "../../packages/types/src/**/*"],
