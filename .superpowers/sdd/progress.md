@@ -19,7 +19,7 @@ Worktree branch: worktree-submission-limits-time-window
 - [x] Task 1: Move formatTimeForInput/combineDateAndTime into @dculus/utils
 - [x] Task 2: Frontend dual-format instant parser
 - [x] Task 3: Backend enforcement — dual-format parsing
-- [ ] Task 4: Submission Limits UI — date + time inputs
+- [x] Task 4: Submission Limits UI — date + time inputs
 - [ ] Task 5: Local-timezone hint translation strings
 - [ ] Task 6: Manual verification (checklist, no commit)
 
@@ -28,3 +28,5 @@ Task 1: complete (commits 44b7fa95..ca080c87, review clean — Minor: unrelated 
 Task 2: complete (commits b422e9fe..45f5df36, review clean — Minor: JSDoc in timeWindowDateTime.ts:14 references brief's "step" prose, doc-polish only, deferred to final review)
 
 Task 3: complete (commits 34d0dc19..c638829d, review clean — Minor: LEGACY_DATE_ONLY_RE recreated per-request (trivial hoist opportunity), no mirrored malformed-end test; deferred to final review)
+
+Task 4: complete (commits 0866d501..b7eba2ed, review clean — notes for Task 6 manual verification: check clear-then-re-pick-start-date time-of-day carryover behavior, and check date+time input layout on narrow viewports)
