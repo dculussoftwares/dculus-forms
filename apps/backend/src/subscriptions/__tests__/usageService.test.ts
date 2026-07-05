@@ -7,7 +7,7 @@ import {
   getUsage,
   resetUsageCounters,
 } from '../usageService.js';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma-client';
 import {
   emitUsageLimitReached,
   emitUsageLimitExceeded,
@@ -17,7 +17,7 @@ import { SubscriptionEventType } from '../types.js';
 import { logger } from '../../lib/logger.js';
 
 // Mock dependencies
-vi.mock('@prisma/client', () => {
+vi.mock('#prisma-client', () => {
   // Create mock subscription object inside vi.mock to avoid hoisting issues
   const mockSubscription = {
     findUnique: vi.fn(),

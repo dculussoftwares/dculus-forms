@@ -9,7 +9,7 @@ import { generateId } from '@dculus/utils';
 import { responseRepository } from '../repositories/index.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
-import type { Prisma } from '@prisma/client';
+import type { Prisma } from '#prisma-client';
 
 export interface FieldChange {
   fieldId: string;

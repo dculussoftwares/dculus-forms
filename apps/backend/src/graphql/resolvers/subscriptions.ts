@@ -1,5 +1,5 @@
 import { prisma } from '../../lib/prisma.js';
-import type { Subscription as PrismaSubscription } from '@prisma/client';
+import type { Subscription as PrismaSubscription } from '#prisma-client';
 import {
   createCheckoutHostedPage,
   createPortalSession,

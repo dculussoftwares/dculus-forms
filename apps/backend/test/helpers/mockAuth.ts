@@ -1,4 +1,4 @@
-import { User, Organization, Member } from '@prisma/client';
+import { User, Organization, Member } from '#prisma-client';
 
 export interface MockAuthContext {
   user: User | null;

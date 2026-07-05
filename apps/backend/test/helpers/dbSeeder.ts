@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '#prisma-client';
 import { TestDataFactory } from './testDataFactory';
 
 export class DatabaseSeeder {
