@@ -42,3 +42,14 @@ a shared apps/backend/src/lib/timeWindowEnforcement.ts used by both submitRespon
 Verified live: toggle time window -> precise date+time -> save -> reload (round-trips exactly) -> DB confirmed
 UTC ISO storage -> public form blocked before start -> submission succeeds inside window -> blocked with
 correct "Form Unavailable" message after end. Test form + response deleted from shared dev DB afterward.
+
+Final whole-branch review: found 1 Important issue (a third, stale copy of time-window
+parsing in apps/form-viewer/src/pages/FormViewer.tsx that silently no-oped for the new
+full-ISO format, currently masked by the server-side gate but a latent trap) plus
+confirmed deferred Minor #1/#3 as safe-to-leave/resolved. Fixed in commit af16ad27:
+removed the redundant client-side block (server-side formByShortUrl is now the sole
+enforcement point), reworded a leftover planning-doc JSDoc phrase, and added the
+missing malformed-end-value test coverage to both responses.test.ts and forms.test.ts
+(115/115 passing). Re-reviewed clean — Ready to merge: Yes.
+
+## FEATURE COMPLETE — READY FOR MERGE
