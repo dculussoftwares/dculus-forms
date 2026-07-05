@@ -334,8 +334,10 @@ export function DateTimeRangePicker({
 }: DateTimeRangePickerProps) {
   const [open, setOpen] = React.useState(false)
   const [showCustom, setShowCustom] = React.useState(value?.preset === "custom")
-  const [draftRange, setDraftRange] = React.useState<{ from?: Date; to?: Date }>(
-    value?.preset === "custom" ? { from: value.from, to: value.to } : {}
+  const [draftRange, setDraftRange] = React.useState<{ from: Date | undefined; to: Date | undefined }>(
+    value?.preset === "custom"
+      ? { from: value.from, to: value.to }
+      : { from: undefined, to: undefined }
   )
   const [draftFromTime, setDraftFromTime] = React.useState(
     value?.preset === "custom" ? formatTimeForInput(value.from) : "00:00"
@@ -360,7 +362,11 @@ export function DateTimeRangePicker({
 
   const resetDraftFromValue = React.useCallback(() => {
     setShowCustom(value?.preset === "custom")
-    setDraftRange(value?.preset === "custom" ? { from: value.from, to: value.to } : {})
+    setDraftRange(
+      value?.preset === "custom"
+        ? { from: value.from, to: value.to }
+        : { from: undefined, to: undefined }
+    )
     setDraftFromTime(value?.preset === "custom" ? formatTimeForInput(value.from) : "00:00")
     setDraftToTime(value?.preset === "custom" ? formatTimeForInput(value.to) : "23:59")
   }, [value])
