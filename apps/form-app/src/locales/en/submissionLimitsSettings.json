@@ -16,6 +16,7 @@
   "timeWindow": {
     "title": "Time Window",
     "description": "Limit form submissions to a specific date and time range",
+    "localTimeHint": "Times are shown in your local timezone.",
     "enable": "Enable time window",
     "startDate": "Start Date & Time",
     "endDate": "End Date & Time",
