@@ -13,9 +13,10 @@ import {
   toastError,
 } from '@dculus/ui';
 import { Shield, Save, Calendar, Users } from 'lucide-react';
-import { parseLocalDate, formatLocalDate } from '@dculus/utils';
+import { formatTimeForInput, combineDateAndTime } from '@dculus/utils';
 import type { SubmissionLimitsSettings as SubmissionLimitsSettingsType } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
+import { parseTimeWindowInstant } from '../../lib/timeWindowDateTime';
 
 interface SubmissionLimitsSettingsProps {
   settings: SubmissionLimitsSettingsType;
@@ -35,7 +36,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
   onSave,
 }) => {
   const { t } = useTranslation('submissionLimitsSettings');
-  
+
   const handleMaxResponsesToggle = (enabled: boolean) => {
     if (enabled) {
       onUpdateMaxResponses(true, settings.maxResponses?.limit || 100);
@@ -59,51 +60,74 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
 
   const handleTimeWindowToggle = (enabled: boolean) => {
     if (enabled) {
-      const now = new Date();
-      const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
-      onUpdateTimeWindow(
-        true, 
-        formatLocalDate(now),    // Start date (today)
-        formatLocalDate(endDate) // End date (30 days from now)
-      );
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+      end.setHours(23, 59, 0, 0);
+      onUpdateTimeWindow(true, start.toISOString(), end.toISOString());
     } else {
       onUpdateTimeWindow(false);
     }
   };
 
+  // Parsed instants for the currently-saved start/end values (handles both
+  // legacy YYYY-MM-DD and full ISO datetime formats).
+  const startInstant = settings.timeWindow?.startDate
+    ? parseTimeWindowInstant(settings.timeWindow.startDate)
+    : undefined;
+  const endInstant = settings.timeWindow?.endDate
+    ? parseTimeWindowInstant(settings.timeWindow.endDate)
+    : undefined;
+  const startTimeValue = startInstant ? formatTimeForInput(startInstant) : '00:00';
+  const endTimeValue = endInstant ? formatTimeForInput(endInstant) : '23:59';
+
   const handleStartDateChange = (date: Date | undefined) => {
-    const value = date ? formatLocalDate(date) : '';
-    const endDate = settings.timeWindow?.endDate;
-    if (endDate && value && parseLocalDate(value) > parseLocalDate(endDate)) {
+    const combined = date ? combineDateAndTime(date, startTimeValue) : undefined;
+    if (combined && endInstant && combined > endInstant) {
       toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
       return;
     }
-    onUpdateTimeWindow(true, value, settings.timeWindow?.endDate);
+    onUpdateTimeWindow(true, combined ? combined.toISOString() : '', settings.timeWindow?.endDate);
+  };
+
+  const handleStartTimeChange = (time: string) => {
+    if (!startInstant) return;
+    const combined = combineDateAndTime(startInstant, time);
+    if (endInstant && combined > endInstant) {
+      toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
+      return;
+    }
+    onUpdateTimeWindow(true, combined.toISOString(), settings.timeWindow?.endDate);
   };
 
   const handleEndDateChange = (date: Date | undefined) => {
-    const value = date ? formatLocalDate(date) : '';
-    const startDate = settings.timeWindow?.startDate;
-    if (startDate && value && parseLocalDate(value) < parseLocalDate(startDate)) {
+    const combined = date ? combineDateAndTime(date, endTimeValue) : undefined;
+    if (combined && startInstant && combined < startInstant) {
       toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
       return;
     }
-    onUpdateTimeWindow(true, settings.timeWindow?.startDate, value);
+    onUpdateTimeWindow(true, settings.timeWindow?.startDate, combined ? combined.toISOString() : '');
+  };
+
+  const handleEndTimeChange = (time: string) => {
+    if (!endInstant) return;
+    const combined = combineDateAndTime(endInstant, time);
+    if (startInstant && combined < startInstant) {
+      toastError(t('validation.invalidDateRange'), t('validation.endAfterStart'));
+      return;
+    }
+    onUpdateTimeWindow(true, settings.timeWindow?.startDate, combined.toISOString());
   };
 
   // Helper to check if max responses limit is reached
-  const isMaxResponsesReached = settings.maxResponses?.enabled && 
-    settings.maxResponses?.limit && 
+  const isMaxResponsesReached = settings.maxResponses?.enabled &&
+    settings.maxResponses?.limit &&
     currentResponseCount >= settings.maxResponses.limit;
 
   // Helper to check if form is within time window
   const now = new Date();
-  const isBeforeStart = settings.timeWindow?.enabled && 
-    settings.timeWindow?.startDate && 
-    parseLocalDate(settings.timeWindow.startDate) > now;
-  const isAfterEnd = settings.timeWindow?.enabled && 
-    settings.timeWindow?.endDate && 
-    parseLocalDate(settings.timeWindow.endDate) < now;
+  const isBeforeStart = !!(settings.timeWindow?.enabled && startInstant && startInstant > now);
+  const isAfterEnd = !!(settings.timeWindow?.enabled && endInstant && endInstant < now);
   const isOutsideTimeWindow = isBeforeStart || isAfterEnd;
 
   return (
@@ -118,7 +142,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        
+
         {/* Maximum Responses Section */}
         <div className="space-y-4">
           <div className="flex items-center space-x-2">
@@ -160,11 +184,11 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                {t('maxResponses.responses', { 
-                  values: { 
-                    current: currentResponseCount, 
-                    limit: settings.maxResponses?.limit || 100 
-                  } 
+                {t('maxResponses.responses', {
+                  values: {
+                    current: currentResponseCount,
+                    limit: settings.maxResponses?.limit || 100
+                  }
                 })}
                 {isMaxResponsesReached && (
                   <span className="ml-2 text-destructive font-medium">
@@ -201,30 +225,53 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
 
           {settings.timeWindow?.enabled && (
             <div className="ml-6 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                {t('timeWindow.localTimeHint')}
+              </p>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label htmlFor="start-date" className="text-sm">
                     {t('timeWindow.startDate')}
                   </Label>
-                  <DatePicker
-                    id="time-window-start-date"
-                    name="time-window-start-date"
-                    date={settings.timeWindow?.startDate ? parseLocalDate(settings.timeWindow.startDate) : undefined}
-                    onDateChange={handleStartDateChange}
-                    placeholder="Select start date"
-                  />
+                  <div className="flex gap-2">
+                    <DatePicker
+                      id="time-window-start-date"
+                      name="time-window-start-date"
+                      date={startInstant}
+                      onDateChange={handleStartDateChange}
+                      placeholder="Select start date"
+                    />
+                    <Input
+                      type="time"
+                      data-testid="time-window-start-time-input"
+                      value={startTimeValue}
+                      disabled={!startInstant}
+                      onChange={(e) => handleStartTimeChange(e.target.value)}
+                      className="w-28"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="end-date" className="text-sm">
                     {t('timeWindow.endDate')}
                   </Label>
-                  <DatePicker
-                    id="time-window-end-date"
-                    name="time-window-end-date"
-                    date={settings.timeWindow?.endDate ? parseLocalDate(settings.timeWindow.endDate) : undefined}
-                    onDateChange={handleEndDateChange}
-                    placeholder="Select end date"
-                  />
+                  <div className="flex gap-2">
+                    <DatePicker
+                      id="time-window-end-date"
+                      name="time-window-end-date"
+                      date={endInstant}
+                      onDateChange={handleEndDateChange}
+                      placeholder="Select end date"
+                    />
+                    <Input
+                      type="time"
+                      data-testid="time-window-end-time-input"
+                      value={endTimeValue}
+                      disabled={!endInstant}
+                      onChange={(e) => handleEndTimeChange(e.target.value)}
+                      className="w-28"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="text-sm text-muted-foreground">
@@ -250,23 +297,23 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
             <div className="space-y-1 text-sm">
               {settings.maxResponses?.enabled && (
                 <div className={isMaxResponsesReached ? 'text-destructive' : 'text-primary'}>
-                  • {t('maxResponses.responses', { 
-                      values: { 
-                        current: currentResponseCount, 
-                        limit: settings.maxResponses?.limit || 100 
-                      } 
-                    })} 
+                  • {t('maxResponses.responses', {
+                      values: {
+                        current: currentResponseCount,
+                        limit: settings.maxResponses?.limit || 100
+                      }
+                    })}
                   {isMaxResponsesReached ? ` (${t('maxResponses.reached')})` : ` (${t('maxResponses.active')})`}
                 </div>
               )}
               {settings.timeWindow?.enabled && (
                 <div className={isOutsideTimeWindow ? 'text-destructive' : 'text-primary'}>
-                  • {t('timeWindow.title')}: {isOutsideTimeWindow 
+                  • {t('timeWindow.title')}: {isOutsideTimeWindow
                     ? (isBeforeStart ? t('timeWindow.notStarted') : t('timeWindow.ended'))
                     : t('timeWindow.active')}
-                  {settings.timeWindow?.startDate && settings.timeWindow?.endDate && (
+                  {startInstant && endInstant && (
                     <span className="text-muted-foreground ml-1">
-                      ({settings.timeWindow.startDate} to {settings.timeWindow.endDate})
+                      ({startInstant.toLocaleString()} to {endInstant.toLocaleString()})
                     </span>
                   )}
                 </div>
@@ -276,7 +323,7 @@ const SubmissionLimitsSettings: React.FC<SubmissionLimitsSettingsProps> = ({
         )}
 
         <div className="pt-4">
-          <Button 
+          <Button
             onClick={onSave}
             disabled={isSaving}
             data-testid="save-submission-limits-button"
