@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router';
 import { ApolloProvider } from '@apollo/client/react';
 import { Button } from '@dculus/ui';
 import { client } from './services/apolloClient';
@@ -33,7 +33,7 @@ class FormViewerErrorBoundary extends React.Component<
 function App() {
   return (
     <ApolloProvider client={client}>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Router>
         <div className="min-h-screen bg-background">
           <Routes>
             {/* Public form routes - no header */}
