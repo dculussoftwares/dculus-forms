@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import { useQuery } from '@apollo/client/react';
 import { format } from 'date-fns';
 import { useTranslation } from '../hooks/useTranslation';

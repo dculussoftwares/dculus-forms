@@ -614,9 +614,9 @@ importers:
       react-markdown:
         specifier: 10.1.0
         version: 10.1.0(@types/react@18.3.31)(react@18.3.1)
-      react-router-dom:
+      react-router:
         specifier: ^6.30.4
-        version: 6.30.4(react-dom@18.3.1)(react@18.3.1)
+        version: 6.30.4(react@18.3.1)
       react-svg-worldmap:
         specifier: 2.0.0-alpha.16
         version: 2.0.0-alpha.16(react-dom@18.3.1)(react@18.3.1)

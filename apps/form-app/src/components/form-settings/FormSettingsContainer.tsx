@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 import SettingsSidebar from './SettingsSidebar';
 import GeneralSettings from './GeneralSettings';
 import ThankYouSettings from './ThankYouSettings';

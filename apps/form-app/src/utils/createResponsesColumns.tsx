@@ -11,7 +11,7 @@ import React, { useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import type { Column, Row } from '@tanstack/react-table';
 import { formatDistanceToNow } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { gql } from '@apollo/client'
 import type { TypedDocumentNode } from '@apollo/client';
 import { useApolloClient } from '@apollo/client/react';

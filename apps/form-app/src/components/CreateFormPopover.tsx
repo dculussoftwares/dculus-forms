@@ -14,7 +14,7 @@ import {
 } from '@dculus/ui';
 import { Plus, Loader2 } from 'lucide-react';
 import { CREATE_FORM } from '../graphql/mutations';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useAppConfig } from '@/hooks';
 import { useTranslation } from '../hooks/useTranslation';
 import { getErrorDetails } from '../utils/graphqlErrors';

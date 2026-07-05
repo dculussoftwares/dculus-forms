@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
-import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { AlertTriangle, X } from 'lucide-react';

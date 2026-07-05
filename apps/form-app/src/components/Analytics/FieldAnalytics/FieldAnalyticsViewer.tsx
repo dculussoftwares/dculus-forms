@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { Card, CardContent, Button, toastError } from '@dculus/ui';
 import { useFieldAnalyticsManager } from '@/hooks/useFieldAnalytics.ts';

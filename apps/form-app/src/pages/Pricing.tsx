@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { Button, toastSuccess, toastError } from '@dculus/ui';
 import {

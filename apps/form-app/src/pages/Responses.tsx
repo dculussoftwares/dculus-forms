@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
 import {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useQuery } from '@apollo/client/react';
 import { Button, Card } from '@dculus/ui';
 import { CheckCircle2, Sparkles, TrendingUp, ArrowRight, Info } from 'lucide-react';

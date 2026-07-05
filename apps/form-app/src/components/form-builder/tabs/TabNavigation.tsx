@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { Palette, FileText, Eye, Users } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
