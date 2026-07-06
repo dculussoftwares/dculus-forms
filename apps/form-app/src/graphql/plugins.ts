@@ -130,3 +130,66 @@ export const TEST_FORM_PLUGIN : TypedDocumentNode<any, any> = gql`
     }
   }
 `;
+
+/**
+ * Get the latest backfill job status for a plugin
+ */
+export const GET_PLUGIN_BACKFILL_STATUS: TypedDocumentNode<any, any> = gql`
+  query GetPluginBackfillStatus($pluginId: ID!) {
+    pluginBackfillStatus(pluginId: $pluginId) {
+      id
+      pluginId
+      formId
+      status
+      totalCount
+      processedCount
+      succeededCount
+      failedCount
+      errorMessage
+      startedAt
+      completedAt
+    }
+  }
+`;
+
+/**
+ * Start a backfill run for a plugin against existing responses
+ */
+export const START_PLUGIN_BACKFILL: TypedDocumentNode<any, any> = gql`
+  mutation StartPluginBackfill($pluginId: ID!) {
+    startPluginBackfill(pluginId: $pluginId) {
+      id
+      pluginId
+      formId
+      status
+      totalCount
+      processedCount
+      succeededCount
+      failedCount
+      errorMessage
+      startedAt
+      completedAt
+    }
+  }
+`;
+
+/**
+ * Cancel a running backfill job
+ */
+export const CANCEL_PLUGIN_BACKFILL: TypedDocumentNode<any, any> = gql`
+  mutation CancelPluginBackfill($jobId: ID!) {
+    cancelPluginBackfill(jobId: $jobId) {
+      id
+      pluginId
+      formId
+      status
+      totalCount
+      processedCount
+      succeededCount
+      failedCount
+      errorMessage
+      startedAt
+      completedAt
+    }
+  }
+`;
