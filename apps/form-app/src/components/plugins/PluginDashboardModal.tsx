@@ -22,6 +22,7 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
+  Progress,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
@@ -39,6 +40,7 @@ import {
   Power,
   PowerOff,
   PlayCircle,
+  StopCircle,
   Trash2,
   Loader2,
 } from 'lucide-react';
@@ -58,9 +60,12 @@ const safeFormatDistance = (dateVal: string | number | null | undefined): string
 import {
   GET_FORM_PLUGINS,
   GET_PLUGIN_DELIVERIES,
+  GET_PLUGIN_BACKFILL_STATUS,
   UPDATE_FORM_PLUGIN,
   DELETE_FORM_PLUGIN,
   TEST_FORM_PLUGIN,
+  START_PLUGIN_BACKFILL,
+  CANCEL_PLUGIN_BACKFILL,
 } from '../../graphql/plugins';
 import { getFrontendPlugin } from '../../plugins/core/registry';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -140,6 +145,21 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
     }
   );
 
+  const { data: backfillData, refetch: refetchBackfillStatus } = useQuery(
+    GET_PLUGIN_BACKFILL_STATUS,
+    {
+      variables: { pluginId: plugin.id },
+      skip: !open,
+      fetchPolicy: 'network-only',
+      pollInterval: 3000,
+    }
+  );
+  const backfillJob = backfillData?.pluginBackfillStatus ?? null;
+  const isBackfillActive = backfillJob?.status === 'running' || backfillJob?.status === 'cancelling';
+
+  const [startBackfillMutation, { loading: isStartingBackfill }] = useMutation(START_PLUGIN_BACKFILL);
+  const [cancelBackfillMutation, { loading: isCancellingBackfill }] = useMutation(CANCEL_PLUGIN_BACKFILL);
+
   const [updatePlugin] = useMutation(UPDATE_FORM_PLUGIN);
   const [deletePlugin] = useMutation(DELETE_FORM_PLUGIN);
   const [testPlugin] = useMutation(TEST_FORM_PLUGIN);
@@ -183,6 +203,27 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
       toastError(t('toasts.testFailed'), error.message);
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleStartBackfill = async () => {
+    try {
+      await startBackfillMutation({ variables: { pluginId: plugin.id } });
+      toastSuccess(t('backfill.toasts.started'), '');
+      refetchBackfillStatus();
+    } catch (error: any) {
+      toastError(t('backfill.toasts.startError'), error.message);
+    }
+  };
+
+  const handleCancelBackfill = async () => {
+    if (!backfillJob) return;
+    try {
+      await cancelBackfillMutation({ variables: { jobId: backfillJob.id } });
+      toastSuccess(t('backfill.toasts.cancelled'), '');
+      refetchBackfillStatus();
+    } catch (error: any) {
+      toastError(t('backfill.toasts.cancelError'), error.message);
     }
   };
 
@@ -334,6 +375,111 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                     {t('configure.noSettings')}
                   </p>
                 )}
+
+                {/* Divider */}
+                <hr style={{ borderColor: 'var(--tf-border-light)' }} />
+
+                {/* Existing Responses / Backfill */}
+                <div>
+                  <p
+                    className="text-[10px] font-semibold uppercase tracking-wide mb-2"
+                    style={{ color: 'var(--tf-light-muted)' }}
+                  >
+                    {t('backfill.title')}
+                  </p>
+                  {!backfillJob && (
+                    <div
+                      className="flex items-center justify-between rounded-lg px-4 py-3"
+                      style={{ background: 'var(--tf-faint)', border: '1px solid var(--tf-border-light)' }}
+                    >
+                      <p className="text-xs" style={{ color: 'var(--tf-muted)' }}>
+                        {t('backfill.idle.description')}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleStartBackfill}
+                        disabled={isStartingBackfill}
+                        className="h-8 px-3 text-xs shrink-0 ml-3"
+                      >
+                        {isStartingBackfill ? (
+                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        ) : (
+                          <PlayCircle className="h-3.5 w-3.5 mr-1.5" />
+                        )}
+                        {t('backfill.idle.button')}
+                      </Button>
+                    </div>
+                  )}
+                  {backfillJob && isBackfillActive && (
+                    <div
+                      className="rounded-lg px-4 py-3 space-y-2"
+                      style={{ background: 'var(--tf-faint)', border: '1px solid var(--tf-border-light)' }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium" style={{ color: 'var(--tf-dark)' }}>
+                          {t('backfill.running.progress', {
+                            values: { processed: backfillJob.processedCount, total: backfillJob.totalCount },
+                          })}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleCancelBackfill}
+                          disabled={isCancellingBackfill || backfillJob.status === 'cancelling'}
+                          className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+                        >
+                          <StopCircle className="h-3.5 w-3.5 mr-1" />
+                          {t('backfill.running.cancelButton')}
+                        </Button>
+                      </div>
+                      <Progress
+                        value={
+                          backfillJob.totalCount > 0
+                            ? Math.round((backfillJob.processedCount / backfillJob.totalCount) * 100)
+                            : 100
+                        }
+                      />
+                      <div className="flex items-center gap-3 text-[10px]" style={{ color: 'var(--tf-muted)' }}>
+                        <span>{t('backfill.running.succeeded', { values: { count: backfillJob.succeededCount } })}</span>
+                        <span>{t('backfill.running.failed', { values: { count: backfillJob.failedCount } })}</span>
+                      </div>
+                    </div>
+                  )}
+                  {backfillJob && !isBackfillActive && (
+                    <div
+                      className="flex items-center justify-between rounded-lg px-4 py-3"
+                      style={{ background: 'var(--tf-faint)', border: '1px solid var(--tf-border-light)' }}
+                    >
+                      <p className="text-xs" style={{ color: 'var(--tf-muted)' }}>
+                        {backfillJob.status === 'completed' &&
+                          t('backfill.terminal.completed', {
+                            values: { succeeded: backfillJob.succeededCount, failed: backfillJob.failedCount },
+                          })}
+                        {backfillJob.status === 'cancelled' &&
+                          t('backfill.terminal.cancelled', {
+                            values: { succeeded: backfillJob.succeededCount, failed: backfillJob.failedCount },
+                          })}
+                        {backfillJob.status === 'failed' &&
+                          t('backfill.terminal.failed', { values: { error: backfillJob.errorMessage ?? '' } })}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleStartBackfill}
+                        disabled={isStartingBackfill}
+                        className="h-8 px-3 text-xs shrink-0 ml-3"
+                      >
+                        {isStartingBackfill ? (
+                          <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                        ) : (
+                          <PlayCircle className="h-3.5 w-3.5 mr-1.5" />
+                        )}
+                        {t('backfill.terminal.retryButton')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
 
                 {/* Divider */}
                 <hr style={{ borderColor: 'var(--tf-border-light)' }} />
