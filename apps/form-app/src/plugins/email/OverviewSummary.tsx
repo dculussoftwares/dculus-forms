@@ -23,6 +23,19 @@ export const EmailOverviewSummary: React.FC<EmailOverviewSummaryProps> = ({ conf
           </p>
         </div>
       )}
+      {config.recipientFieldId && (
+        <div
+          className="rounded-lg px-3 py-2.5"
+          style={{ background: 'var(--tf-faint)', border: '1px solid var(--tf-border-light)' }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: 'var(--tf-light-muted)' }}>
+            {t('pluginSummary.email.recipientField')}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--tf-text)' }}>
+            {config.recipientFieldLabel || config.recipientFieldId}
+          </p>
+        </div>
+      )}
       {config.subject && (
         <div
           className="rounded-lg px-3 py-2.5"

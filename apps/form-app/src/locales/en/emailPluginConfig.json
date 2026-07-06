@@ -13,11 +13,19 @@
       "hint": "A descriptive name to identify this plugin"
     },
     "recipientEmail": {
-      "label": "Recipient Email",
+      "label": "Recipient Email (fixed address)",
       "placeholder": "admin@example.com",
       "required": "Recipient email is required",
       "invalid": "Invalid email address",
-      "hint": "Email address to receive notifications"
+      "hint": "Optional if you select a form email field below. You can use both at once."
+    },
+    "recipientField": {
+      "label": "Or send to a form's email field",
+      "placeholder": "Select an email field",
+      "none": "None (use fixed address only)",
+      "hint": "Sends to whatever address the respondent enters in this field, in addition to the fixed address above.",
+      "noFieldsHint": "This form has no email fields yet. Add one to send notifications to a respondent's own address.",
+      "notRequiredWarning": "This field isn't marked as required, so respondents may leave it blank. If they do, this notification won't be sent for that submission."
     },
     "subject": {
       "label": "Email Subject",
@@ -59,7 +67,8 @@
   },
   "validation": {
     "noEvents": "Please select at least one event",
-    "noMessage": "Please enter an email message"
+    "noMessage": "Please enter an email message",
+    "noRecipient": "Enter a recipient email or choose a form email field"
   },
   "toasts": {
     "validationErrorTitle": "Validation Error"

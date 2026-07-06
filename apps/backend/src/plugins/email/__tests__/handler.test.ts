@@ -458,6 +458,158 @@ describe('Email Handler', () => {
     });
   });
 
+  describe('Field-based recipient', () => {
+    it('should resolve recipient from a form email field', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        recipientFieldLabel: 'Contact Email',
+        subject: 'New Form Submission',
+        message: '<p>You have a new form submission!</p>',
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      const mockResponse = {
+        id: 'response-123',
+        data: { 'email-field': 'respondent@example.com' },
+      };
+
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(createFieldLabelsMap).mockReturnValue({});
+      vi.mocked(substituteMentions).mockReturnValue(config.message);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'respondent@example.com' })
+      );
+      expect(result.success).toBe(true);
+      expect(result.recipient).toBe('respondent@example.com');
+    });
+
+    it('should send to both static and field-based recipients, deduped', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'admin@example.com',
+        recipientFieldId: 'email-field',
+        recipientFieldLabel: 'Contact Email',
+        subject: 'New Form Submission',
+        message: '<p>You have a new form submission!</p>',
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      const mockResponse = {
+        id: 'response-123',
+        data: { 'email-field': 'respondent@example.com' },
+      };
+
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(createFieldLabelsMap).mockReturnValue({});
+      vi.mocked(substituteMentions).mockReturnValue(config.message);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'admin@example.com, respondent@example.com' })
+      );
+      expect(result.recipient).toBe('admin@example.com, respondent@example.com');
+    });
+
+    it('should not duplicate recipient when static and field-based emails match', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'same@example.com',
+        recipientFieldId: 'email-field',
+        subject: 'New Form Submission',
+        message: '<p>Hi</p>',
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      const mockResponse = {
+        id: 'response-123',
+        data: { 'email-field': 'same@example.com' },
+      };
+
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(createFieldLabelsMap).mockReturnValue({});
+      vi.mocked(substituteMentions).mockReturnValue(config.message);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'same@example.com' })
+      );
+      expect(result.recipient).toBe('same@example.com');
+    });
+
+    it('should skip sending (not throw) when the field-based recipient is empty on this submission', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        recipientFieldLabel: 'Contact Email',
+        subject: 'New Form Submission',
+        message: '<p>Hi</p>',
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      const mockResponse = {
+        id: 'response-123',
+        data: { 'email-field': '' },
+      };
+
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(mockContext.sendEmail).not.toHaveBeenCalled();
+      expect(result.success).toBe(false);
+      expect(result.skipped).toBe(true);
+      expect(result.skipReason).toContain('Contact Email');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Email skipped: no recipient could be resolved',
+        expect.objectContaining({ reason: expect.stringContaining('Contact Email') })
+      );
+    });
+
+    it('should skip sending during a plugin.test event when only a field-based recipient is configured', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        recipientFieldLabel: 'Contact Email',
+        subject: 'Test Email',
+        message: '<p>Hi</p>',
+      };
+
+      const testEvent: PluginEvent = {
+        type: 'plugin.test',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2024-01-01T12:00:00Z'),
+        data: {},
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, testEvent, mockContext);
+
+      expect(mockContext.getResponseById).not.toHaveBeenCalled();
+      expect(mockContext.sendEmail).not.toHaveBeenCalled();
+      expect(result.success).toBe(false);
+      expect(result.skipped).toBe(true);
+    });
+  });
+
   describe('Edge cases', () => {
     it('should handle empty message', async () => {
       const config: ValidatedEmailConfig = {
