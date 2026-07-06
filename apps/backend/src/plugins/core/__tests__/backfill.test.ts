@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { countEligibleResponses, fetchEligibleResponseBatch } from '../backfill.js';
+import { countEligibleResponses, fetchEligibleResponseBatch, startBackfill } from '../backfill.js';
 import { prisma } from '../../../lib/prisma.js';
 
 vi.mock('../../../lib/prisma.js', () => ({
@@ -95,5 +95,74 @@ describe('backfill eligibility queries', () => {
       expect(sqlCall.values).toContain(20);
       expect(sqlText).not.toContain("'20'");
     });
+  });
+});
+
+describe('startBackfill', () => {
+  const mockPlugin = {
+    id: 'plugin-456',
+    formId: 'form-123',
+    type: 'webhook',
+    enabled: true,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('throws when the plugin does not exist', async () => {
+    vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(null);
+
+    await expect(startBackfill('missing-plugin')).rejects.toThrow('Plugin not found');
+  });
+
+  it('throws when the plugin is disabled', async () => {
+    vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({ ...mockPlugin, enabled: false } as any);
+
+    await expect(startBackfill('plugin-456')).rejects.toThrow('Cannot backfill a disabled plugin');
+  });
+
+  it('throws when a job is already running for this plugin', async () => {
+    vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockPlugin as any);
+    vi.mocked(prisma.pluginBackfillJob.findFirst).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
+
+    await expect(startBackfill('plugin-456')).rejects.toThrow('A backfill is already running for this plugin');
+  });
+
+  it('creates a job with the eligible response count', async () => {
+    vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockPlugin as any);
+    vi.mocked(prisma.pluginBackfillJob.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ count: 7n }]);
+    const createdJob = {
+      id: 'job-new',
+      pluginId: 'plugin-456',
+      formId: 'form-123',
+      status: 'running',
+      totalCount: 7,
+      processedCount: 0,
+      succeededCount: 0,
+      failedCount: 0,
+      errorMessage: null,
+      startedAt: new Date('2024-01-01'),
+      updatedAt: new Date('2024-01-01'),
+      completedAt: null,
+    };
+    vi.mocked(prisma.pluginBackfillJob.create).mockResolvedValue(createdJob as any);
+
+    const result = await startBackfill('plugin-456');
+
+    expect(prisma.pluginBackfillJob.findFirst).toHaveBeenCalledWith({
+      where: { pluginId: 'plugin-456', status: { in: ['running', 'cancelling'] } },
+    });
+    expect(prisma.pluginBackfillJob.create).toHaveBeenCalledWith({
+      data: {
+        id: expect.any(String),
+        pluginId: 'plugin-456',
+        formId: 'form-123',
+        status: 'running',
+        totalCount: 7,
+      },
+    });
+    expect(result).toEqual(createdJob);
   });
 });
