@@ -258,10 +258,14 @@ describe('runBackfillLoop', () => {
       { id: 'response-1', data: {}, submittedAt: new Date('2024-01-01T00:00:00Z') },
       { id: 'response-2', data: {}, submittedAt: new Date('2024-01-02T00:00:00Z') },
     ];
-    // The eligibility query always returns the same batch, since neither response
-    // ever gets a successful delivery — this is what a perpetually-failing plugin
-    // (e.g. misconfigured SMTP/webhook) looks like in production.
-    vi.mocked(prisma.$queryRaw).mockResolvedValue(batch);
+    // Neither response ever gets a successful delivery — this is what a perpetually
+    // failing plugin (e.g. misconfigured SMTP/webhook) looks like in production. A
+    // real DB, given both ids in the exclude list, would return nothing left on the
+    // second fetch — simulated here via mockResolvedValueOnce rather than
+    // mockResolvedValue, since the exclusion happens in the query, not in this mock.
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce(batch)
+      .mockResolvedValueOnce([]);
     vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
     vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue({} as any);
     vi.mocked(executePlugin).mockResolvedValue({ success: false, error: 'smtp unreachable' });
@@ -280,6 +284,48 @@ describe('runBackfillLoop', () => {
       where: { id: 'job-1' },
       data: { processedCount: 2, succeededCount: 0, failedCount: 2 },
     });
+  });
+
+  it('reaches every eligible response across multiple batches even when an entire batch fails (no starvation)', async () => {
+    const makeResponse = (n: number) => ({
+      id: `response-${n}`,
+      data: {},
+      submittedAt: new Date(2024, 0, n),
+    });
+    const firstBatch = Array.from({ length: 20 }, (_, i) => makeResponse(i + 1));
+    const secondBatch = Array.from({ length: 5 }, (_, i) => makeResponse(i + 21));
+    // A real DB excludes the first batch's ids (passed via fetchEligibleResponseBatch's
+    // excludeResponseIds parameter) on the second fetch, so it naturally returns the
+    // next 5 responses rather than the same first 20 again.
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce(firstBatch)
+      .mockResolvedValueOnce(secondBatch)
+      .mockResolvedValueOnce([]);
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue({} as any);
+    vi.mocked(executePlugin).mockResolvedValue({ success: false, error: 'smtp unreachable' });
+
+    const runPromise = runBackfillLoop('job-1', 'plugin-456', 'form-123', 'org-789');
+    await vi.runAllTimersAsync();
+    await runPromise;
+
+    // All 25 responses attempted, not just the first batch's 20.
+    expect(executePlugin).toHaveBeenCalledTimes(25);
+    expect(prisma.pluginBackfillJob.update).toHaveBeenLastCalledWith({
+      where: { id: 'job-1' },
+      data: { status: 'completed', completedAt: expect.any(Date) },
+    });
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { processedCount: 25, succeededCount: 0, failedCount: 25 },
+    });
+
+    // Verify the exclude list is actually threaded into the second fetch's query —
+    // without it, a real DB would keep returning the same first-20 window forever.
+    const secondFetchCall = vi.mocked(prisma.$queryRaw).mock.calls[1][0] as unknown as {
+      values: any[];
+    };
+    expect(secondFetchCall.values).toContainEqual(firstBatch.map((r) => r.id));
   });
 
   it('writes progress after each response, not just once per batch', async () => {

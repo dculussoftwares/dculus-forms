@@ -36,20 +36,22 @@ export const countEligibleResponses = async (
 export const fetchEligibleResponseBatch = async (
   formId: string,
   pluginId: string,
-  batchSize: number
+  batchSize: number,
+  excludeResponseIds: string[] = []
 ): Promise<EligibleResponseRow[]> => {
   return prisma.$queryRaw<EligibleResponseRow[]>(Prisma.sql`
     SELECT r.id, r.data, r."submittedAt"
     FROM "response" r
     WHERE r."formId" = ${formId}
       AND r."deletedAt" IS NULL
+      AND r.id <> ALL(${excludeResponseIds}::text[])
       AND NOT EXISTS (
         SELECT 1 FROM "plugin_delivery" pd
         WHERE pd."pluginId" = ${pluginId}
           AND pd."responseId" = r.id
           AND pd.status = 'success'
       )
-    ORDER BY r."submittedAt" ASC
+    ORDER BY r."submittedAt" ASC, r.id ASC
     LIMIT ${batchSize}
   `);
 };
@@ -144,8 +146,17 @@ export const runBackfillLoop = async (
         return;
       }
 
-      const rawBatch = await fetchEligibleResponseBatch(formId, pluginId, BATCH_SIZE);
-      const batch = rawBatch.filter((response) => !attemptedResponseIds.has(response.id));
+      // Excluding attempted IDs in the query itself (not just filtering the result in
+      // memory) is essential: the query is always ORDER BY submittedAt LIMIT BATCH_SIZE,
+      // so if a persistently-failing response stayed in that window without being
+      // excluded, it would keep consuming the whole batch every fetch and starve any
+      // eligible responses beyond it from ever being reached.
+      const batch = await fetchEligibleResponseBatch(
+        formId,
+        pluginId,
+        BATCH_SIZE,
+        Array.from(attemptedResponseIds)
+      );
       if (batch.length === 0) break;
 
       for (const response of batch) {
