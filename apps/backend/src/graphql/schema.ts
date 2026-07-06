@@ -896,6 +896,20 @@ export const typeDefs = gql`
     deliveredAt: String!
   }
 
+  type PluginBackfillJob {
+    id: ID!
+    pluginId: ID!
+    formId: ID!
+    status: String!
+    totalCount: Int!
+    processedCount: Int!
+    succeededCount: Int!
+    failedCount: Int!
+    errorMessage: String
+    startedAt: String!
+    completedAt: String
+  }
+
   type PluginMutationResponse {
     success: Boolean!
     message: String!
@@ -1095,6 +1109,7 @@ export const typeDefs = gql`
     formPlugins(formId: ID!): [FormPlugin!]!
     formPlugin(id: ID!): FormPlugin
     pluginDeliveries(pluginId: ID!, limit: Int): [PluginDelivery!]!
+    pluginBackfillStatus(pluginId: ID!): PluginBackfillJob
 
     # Subscription Queries
     availablePlans: [AvailablePlan!]!
@@ -1213,6 +1228,8 @@ export const typeDefs = gql`
     updateFormPlugin(id: ID!, input: UpdateFormPluginInput!): FormPlugin!
     deleteFormPlugin(id: ID!): PluginMutationResponse!
     testFormPlugin(id: ID!): PluginMutationResponse!
+    startPluginBackfill(pluginId: ID!): PluginBackfillJob!
+    cancelPluginBackfill(jobId: ID!): PluginBackfillJob!
 
     # AI Mutations
     generateFormWithAI(

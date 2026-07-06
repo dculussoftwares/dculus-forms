@@ -4,6 +4,7 @@ import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { emitPluginTest } from '../../plugins/core/events.js';
+import { startBackfill, cancelBackfill, getLatestBackfillJob } from '../../plugins/core/backfill.js';
 import { generateId } from '@dculus/utils';
 
 /**
@@ -112,6 +113,33 @@ export const pluginsResolvers = {
       });
 
       return deliveries;
+    },
+
+    /**
+     * Get the latest backfill job status for a plugin
+     */
+    pluginBackfillStatus: async (
+      _: any,
+      { pluginId }: { pluginId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const plugin = await prisma.formPlugin.findUnique({ where: { id: pluginId } });
+      if (!plugin) {
+        throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+
+      const accessCheck = await checkFormAccess(
+        context.auth.user!.id,
+        plugin.formId,
+        PermissionLevel.VIEWER
+      );
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You do not have permission to view this plugin', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      return getLatestBackfillJob(pluginId);
     },
   },
 
@@ -313,6 +341,65 @@ export const pluginsResolvers = {
         success: true,
         message: 'Test event triggered successfully. Check plugin deliveries for results.',
       };
+    },
+
+    /**
+     * Start a backfill run for a plugin against existing responses
+     */
+    startPluginBackfill: async (
+      _: any,
+      { pluginId }: { pluginId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const plugin = await prisma.formPlugin.findUnique({ where: { id: pluginId } });
+      if (!plugin) {
+        throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+
+      const accessCheck = await checkFormAccess(
+        context.auth.user!.id,
+        plugin.formId,
+        PermissionLevel.OWNER
+      );
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need OWNER access to backfill this plugin', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      return startBackfill(pluginId);
+    },
+
+    /**
+     * Cancel a running backfill job
+     */
+    cancelPluginBackfill: async (
+      _: any,
+      { jobId }: { jobId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const job = await prisma.pluginBackfillJob.findUnique({ where: { id: jobId } });
+      if (!job) {
+        throw createGraphQLError('Backfill job not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+
+      const plugin = await prisma.formPlugin.findUnique({ where: { id: job.pluginId } });
+      if (!plugin) {
+        throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+
+      const accessCheck = await checkFormAccess(
+        context.auth.user!.id,
+        plugin.formId,
+        PermissionLevel.OWNER
+      );
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need OWNER access to cancel this backfill', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      return cancelBackfill(jobId);
     },
   },
 

@@ -4,12 +4,14 @@ import { GraphQLError } from '#graphql-errors';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';
 import * as pluginEvents from '../../../plugins/core/events.js';
+import * as pluginBackfill from '../../../plugins/core/backfill.js';
 import { prisma } from '../../../lib/prisma.js';
 
 // Mock all dependencies
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../plugins/core/events.js');
+vi.mock('../../../plugins/core/backfill.js');
 vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
     formPlugin: {
@@ -21,6 +23,12 @@ vi.mock('../../../lib/prisma.js', () => ({
     },
     pluginDelivery: {
       findMany: vi.fn(),
+    },
+    pluginBackfillJob: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
@@ -1290,6 +1298,136 @@ describe('Plugins Resolvers', () => {
       expect(prisma.pluginDelivery.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ take: 10 })
       );
+    });
+  });
+
+  describe('Mutation: startPluginBackfill', () => {
+    it('starts a backfill when user has OWNER access', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'OWNER' as any,
+        form: mockForm as any,
+      });
+      const job = { id: 'job-1', pluginId: 'plugin-123', formId: 'form-123', status: 'running' };
+      vi.mocked(pluginBackfill.startBackfill).mockResolvedValue(job as any);
+
+      const result = await pluginsResolvers.Mutation.startPluginBackfill(
+        {},
+        { pluginId: 'plugin-123' },
+        mockContext
+      );
+
+      expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
+        'user-123',
+        'form-123',
+        formSharingResolvers.PermissionLevel.OWNER
+      );
+      expect(pluginBackfill.startBackfill).toHaveBeenCalledWith('plugin-123');
+      expect(result).toEqual(job);
+    });
+
+    it('throws NOT_FOUND when the plugin does not exist', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(null);
+
+      await expect(
+        pluginsResolvers.Mutation.startPluginBackfill({}, { pluginId: 'missing' }, mockContext)
+      ).rejects.toThrow('Plugin not found');
+    });
+
+    it('throws access denied when user lacks OWNER access', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: false,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+
+      await expect(
+        pluginsResolvers.Mutation.startPluginBackfill({}, { pluginId: 'plugin-123' }, mockContext)
+      ).rejects.toThrow('Access denied');
+      expect(pluginBackfill.startBackfill).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Mutation: cancelPluginBackfill', () => {
+    it('cancels a backfill when user has OWNER access', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({
+        id: 'job-1',
+        pluginId: 'plugin-123',
+      } as any);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'OWNER' as any,
+        form: mockForm as any,
+      });
+      const cancelled = { id: 'job-1', status: 'cancelling' };
+      vi.mocked(pluginBackfill.cancelBackfill).mockResolvedValue(cancelled as any);
+
+      const result = await pluginsResolvers.Mutation.cancelPluginBackfill(
+        {},
+        { jobId: 'job-1' },
+        mockContext
+      );
+
+      expect(pluginBackfill.cancelBackfill).toHaveBeenCalledWith('job-1');
+      expect(result).toEqual(cancelled);
+    });
+
+    it('throws NOT_FOUND when the job does not exist', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue(null);
+
+      await expect(
+        pluginsResolvers.Mutation.cancelPluginBackfill({}, { jobId: 'missing' }, mockContext)
+      ).rejects.toThrow('Backfill job not found');
+    });
+  });
+
+  describe('Query: pluginBackfillStatus', () => {
+    it('returns the latest job when user has VIEWER access', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      const job = { id: 'job-1', status: 'completed' };
+      vi.mocked(pluginBackfill.getLatestBackfillJob).mockResolvedValue(job as any);
+
+      const result = await pluginsResolvers.Query.pluginBackfillStatus(
+        {},
+        { pluginId: 'plugin-123' },
+        mockContext
+      );
+
+      expect(pluginBackfill.getLatestBackfillJob).toHaveBeenCalledWith('plugin-123');
+      expect(result).toEqual(job);
+    });
+
+    it('returns null when no job has ever run', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockWebhookPlugin as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      vi.mocked(pluginBackfill.getLatestBackfillJob).mockResolvedValue(null);
+
+      const result = await pluginsResolvers.Query.pluginBackfillStatus(
+        {},
+        { pluginId: 'plugin-123' },
+        mockContext
+      );
+
+      expect(result).toBeNull();
     });
   });
 });
