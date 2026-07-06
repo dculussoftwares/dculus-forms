@@ -145,17 +145,29 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
     }
   );
 
-  const { data: backfillData, refetch: refetchBackfillStatus } = useQuery(
-    GET_PLUGIN_BACKFILL_STATUS,
-    {
-      variables: { pluginId: plugin.id },
-      skip: !open,
-      fetchPolicy: 'network-only',
-      pollInterval: 3000,
-    }
-  );
+  const {
+    data: backfillData,
+    refetch: refetchBackfillStatus,
+    startPolling: startBackfillPolling,
+    stopPolling: stopBackfillPolling,
+  } = useQuery(GET_PLUGIN_BACKFILL_STATUS, {
+    variables: { pluginId: plugin.id },
+    skip: !open,
+    fetchPolicy: 'network-only',
+  });
   const backfillJob = backfillData?.pluginBackfillStatus ?? null;
   const isBackfillActive = backfillJob?.status === 'running' || backfillJob?.status === 'cancelling';
+
+  // Only poll while a job is actually running/cancelling — otherwise this would hit
+  // the server every 3s for the entire time the modal is open, even when idle or
+  // after the job has already reached a terminal state.
+  useEffect(() => {
+    if (open && isBackfillActive) {
+      startBackfillPolling(3000);
+    } else {
+      stopBackfillPolling();
+    }
+  }, [open, isBackfillActive, startBackfillPolling, stopBackfillPolling]);
 
   const [startBackfillMutation, { loading: isStartingBackfill }] = useMutation(START_PLUGIN_BACKFILL);
   const [cancelBackfillMutation, { loading: isCancellingBackfill }] = useMutation(CANCEL_PLUGIN_BACKFILL);
