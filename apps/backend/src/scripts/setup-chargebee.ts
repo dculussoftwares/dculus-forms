@@ -147,6 +147,71 @@ async function createFeatures() {
     const result = handleError(error, 'form_submissions feature');
     if (!result?.alreadyExists) throw error;
   }
+
+  // Feature 3: AI Credits (1 credit = 1,000 tokens of the cheapest model tier;
+  // heavier models consume more credits per token — see lib/ai.ts weights)
+  try {
+    await chargebee.feature.create({
+      id: 'ai_credits',
+      name: 'AI Credits',
+      type: 'quantity',
+      unit: 'credit',
+      levels: [
+        {
+          value: '200',
+          name: '200 credits',
+          level: 0
+        },
+        {
+          value: '2000',
+          name: '2,000 credits',
+          level: 1
+        },
+        {
+          value: '20000',
+          name: '20,000 credits',
+          level: 2
+        },
+        {
+          is_unlimited: true,
+          name: 'Unlimited',
+          level: 3
+        }
+      ]
+    });
+    logger.info('  ✅ Created feature: ai_credits\n');
+  } catch (error: any) {
+    const result = handleError(error, 'ai_credits feature');
+    if (!result?.alreadyExists) throw error;
+  }
+}
+
+/**
+ * Step 1b: Activate Features
+ * Features are created in draft status; entitlements only surface properly
+ * once the feature is active.
+ */
+async function activateFeatures() {
+  logger.info('🟢 Step 1b: Activating Features...\n');
+
+  for (const featureId of ['form_views', 'form_submissions', 'ai_credits']) {
+    try {
+      await chargebee.feature.activate(featureId);
+      logger.info(`  ✅ Activated feature: ${featureId}`);
+    } catch (error: any) {
+      // Already-active features fail with an invalid state error — that's fine
+      if (
+        error.api_error_code === 'invalid_state_for_request' ||
+        error.message?.includes('already active')
+      ) {
+        logger.info(`  ⚠️  Feature ${featureId} already active (skipping)`);
+      } else {
+        logger.error(`  ❌ Error activating feature ${featureId}:`, error.message || error);
+        throw error;
+      }
+    }
+  }
+  logger.info('');
 }
 
 /**
@@ -322,7 +387,8 @@ async function createEntitlements() {
       planName: 'Free (USD) - Monthly',
       entitlements: [
         { feature_id: 'form_views', value: '10000' },
-        { feature_id: 'form_submissions', value: '1000' }
+        { feature_id: 'form_submissions', value: '1000' },
+        { feature_id: 'ai_credits', value: '200' }
       ]
     },
     // Free Plan (INR)
@@ -331,7 +397,8 @@ async function createEntitlements() {
       planName: 'Free (INR) - Monthly',
       entitlements: [
         { feature_id: 'form_views', value: '10000' },
-        { feature_id: 'form_submissions', value: '1000' }
+        { feature_id: 'form_submissions', value: '1000' },
+        { feature_id: 'ai_credits', value: '200' }
       ]
     },
     // Starter Plan (USD) - Monthly
@@ -340,7 +407,8 @@ async function createEntitlements() {
       planName: 'Starter (USD) - Monthly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '10000' }
+        { feature_id: 'form_submissions', value: '10000' },
+        { feature_id: 'ai_credits', value: '2000' }
       ]
     },
     // Starter Plan (INR) - Monthly
@@ -349,7 +417,8 @@ async function createEntitlements() {
       planName: 'Starter (INR) - Monthly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '10000' }
+        { feature_id: 'form_submissions', value: '10000' },
+        { feature_id: 'ai_credits', value: '2000' }
       ]
     },
     // Starter Plan (USD) - Yearly
@@ -358,7 +427,8 @@ async function createEntitlements() {
       planName: 'Starter (USD) - Yearly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '10000' }
+        { feature_id: 'form_submissions', value: '10000' },
+        { feature_id: 'ai_credits', value: '2000' }
       ]
     },
     // Starter Plan (INR) - Yearly
@@ -367,7 +437,8 @@ async function createEntitlements() {
       planName: 'Starter (INR) - Yearly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '10000' }
+        { feature_id: 'form_submissions', value: '10000' },
+        { feature_id: 'ai_credits', value: '2000' }
       ]
     },
     // Advanced Plan (USD) - Monthly
@@ -376,7 +447,8 @@ async function createEntitlements() {
       planName: 'Advanced (USD) - Monthly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '100000' }
+        { feature_id: 'form_submissions', value: '100000' },
+        { feature_id: 'ai_credits', value: '20000' }
       ]
     },
     // Advanced Plan (INR) - Monthly
@@ -385,7 +457,8 @@ async function createEntitlements() {
       planName: 'Advanced (INR) - Monthly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '100000' }
+        { feature_id: 'form_submissions', value: '100000' },
+        { feature_id: 'ai_credits', value: '20000' }
       ]
     },
     // Advanced Plan (USD) - Yearly
@@ -394,7 +467,8 @@ async function createEntitlements() {
       planName: 'Advanced (USD) - Yearly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '100000' }
+        { feature_id: 'form_submissions', value: '100000' },
+        { feature_id: 'ai_credits', value: '20000' }
       ]
     },
     // Advanced Plan (INR) - Yearly
@@ -403,7 +477,8 @@ async function createEntitlements() {
       planName: 'Advanced (INR) - Yearly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '100000' }
+        { feature_id: 'form_submissions', value: '100000' },
+        { feature_id: 'ai_credits', value: '20000' }
       ]
     }
   ];
@@ -442,19 +517,20 @@ async function main() {
   try {
     await createItemFamily();
     await createFeatures();
+    await activateFeatures();
     await createPlanItems();
     await createItemPrices();
     await createEntitlements();
 
     logger.info('✅ Chargebee setup complete!\n');
     logger.info('📊 Summary:');
-    logger.info('  • Features created: form_views, form_submissions');
+    logger.info('  • Features created: form_views, form_submissions, ai_credits');
     logger.info('  • Plans created: free, starter, advanced');
     logger.info('  • Item prices created: 10 total');
     logger.info('    - Free: 2 (USD/INR monthly)');
     logger.info('    - Starter: 4 (USD/INR monthly + yearly)');
     logger.info('    - Advanced: 4 (USD/INR monthly + yearly)');
-    logger.info('  • Entitlements configured: 10 plan prices\n');
+    logger.info('  • Entitlements configured: 10 plan prices (incl. ai_credits: 200/2,000/20,000)\n');
     logger.info('💰 Pricing:');
     logger.info('  • Starter: $6/mo or $66/yr ($5.50/mo)');
     logger.info('  • Advanced: $15/mo or $168/yr ($14/mo)\n');
