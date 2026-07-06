@@ -8,7 +8,7 @@ module.exports = {
     '**/*.(test|spec).{js,jsx,ts,tsx}'
   ],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': 'ts-jest',
   },
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
@@ -20,7 +20,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared/(.*)$': '<rootDir>/../../packages/shared/src/$1',
-    '^@dculus/(.*)$': '<rootDir>/../../packages/$1/dist',
+    '^@dculus/(.*)$': '<rootDir>/../../packages/$1/src',
     '^@dculus/type$': '<rootDir>/../../packages/types/src/index',
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy'
@@ -38,6 +38,6 @@ module.exports = {
     '<rootDir>/dist/'
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$|@dculus/))'
+    'node_modules/(?!(.*\\.mjs$|@dculus/|\\.pnpm/nanoid@|nanoid/))'
   ]
 };

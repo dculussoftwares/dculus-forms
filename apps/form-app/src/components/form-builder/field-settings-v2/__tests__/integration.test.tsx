@@ -28,6 +28,12 @@ jest.mock('@hookform/resolvers/zod', () => ({
   zodResolver: () => () => ({ values: {}, errors: {} }),
 }));
 
+jest.mock('@/hooks/useFormPermissions', () => ({
+  useFormPermissions: () => ({
+    canEditFields: () => true,
+  }),
+}));
+
 function createFieldSettingsModuleStub() {
   return {
     TextFieldSettings: ({ field }: any) => (

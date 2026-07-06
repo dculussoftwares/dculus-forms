@@ -12,7 +12,10 @@ import { NumberFieldAnalytics } from '../../NumberFieldAnalytics';
 import { SelectionFieldAnalytics } from '../../SelectionFieldAnalytics';
 import { CheckboxFieldAnalytics } from '../../CheckboxFieldAnalytics';
 import { DateFieldAnalytics } from '../../DateFieldAnalytics';
-import { EmailFieldAnalytics } from '../../EmailFieldAnalytics';
+import {
+  EmailFieldAnalytics,
+  FileUploadFieldAnalytics,
+} from '../../EmailFieldAnalytics';
 import {
   BarChart3,
   Calendar,
@@ -22,6 +25,7 @@ import {
   Hash,
   ListOrdered,
   Mail,
+  Upload,
 } from 'lucide-react';
 
 describe('analyticsRegistry', () => {
@@ -73,6 +77,12 @@ describe('analyticsRegistry', () => {
       component: EmailFieldAnalytics,
       dataKey: 'emailAnalytics',
       icon: Mail,
+    },
+    {
+      fieldType: FieldType.FILE_UPLOAD_FIELD,
+      component: FileUploadFieldAnalytics,
+      dataKey: 'fileUploadAnalytics',
+      icon: Upload,
     },
   ] as const;
 
