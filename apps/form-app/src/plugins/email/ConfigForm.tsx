@@ -11,12 +11,21 @@ import {
   Label,
   Checkbox,
   RichTextEditor,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Alert,
+  AlertDescription,
   toastError,
 } from '@dculus/ui';
-import { Mail, Loader2, Save, X } from 'lucide-react';
-import { deserializeFormSchema, FillableFormField } from '@dculus/types';
+import { Mail, Loader2, Save, X, AlertTriangle } from 'lucide-react';
+import { deserializeFormSchema, FillableFormField, EmailField } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { ConfigFormProps } from '../core/registry';
+
+const NO_RECIPIENT_FIELD = '__none__';
 
 const extractMentionFields = (form: any) => {
   if (!form?.formSchema) return [];
@@ -27,6 +36,34 @@ const extractMentionFields = (form: any) => {
       for (const field of page.fields) {
         if (field instanceof FillableFormField && field.label) {
           fields.push({ fieldId: field.id, label: field.label });
+        }
+      }
+    }
+    return fields;
+  } catch {
+    return [];
+  }
+};
+
+interface EmailFieldInfo {
+  id: string;
+  label: string;
+  required: boolean;
+}
+
+const extractEmailFields = (form: any): EmailFieldInfo[] => {
+  if (!form?.formSchema) return [];
+  try {
+    const schema = deserializeFormSchema(form.formSchema);
+    const fields: EmailFieldInfo[] = [];
+    for (const page of schema.pages) {
+      for (const field of page.fields) {
+        if (field instanceof EmailField) {
+          fields.push({
+            id: field.id,
+            label: field.label || 'Unlabeled Field',
+            required: field.validation?.required ?? false,
+          });
         }
       }
     }
@@ -49,6 +86,9 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
   const [selectedEvents, setSelectedEvents] = useState<string[]>(
     initialData?.events || ['form.submitted']
   );
+  const [recipientFieldId, setRecipientFieldId] = useState<string>(
+    initialData?.config?.recipientFieldId || NO_RECIPIENT_FIELD
+  );
 
   const {
     register,
@@ -64,6 +104,8 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
   });
 
   const mentionFields = useMemo(() => extractMentionFields(form), [form]);
+  const emailFields = useMemo(() => extractEmailFields(form), [form]);
+  const selectedEmailField = emailFields.find((f) => f.id === recipientFieldId);
 
   useEffect(() => {
     if (initialData) {
@@ -74,6 +116,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       });
       setMessage(initialData.config.message);
       setSelectedEvents(initialData.events);
+      setRecipientFieldId(initialData.config.recipientFieldId || NO_RECIPIENT_FIELD);
     }
   }, [initialData, reset]);
 
@@ -92,10 +135,22 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       toastError(t('toasts.validationErrorTitle'), t('validation.noMessage'));
       return;
     }
+    const staticEmail = data.recipientEmail?.trim();
+    const hasFieldRecipient = recipientFieldId !== NO_RECIPIENT_FIELD;
+    if (!staticEmail && !hasFieldRecipient) {
+      toastError(t('toasts.validationErrorTitle'), t('validation.noRecipient'));
+      return;
+    }
     await onSave({
       type: 'email',
       name: data.name,
-      config: { recipientEmail: data.recipientEmail, subject: data.subject, message },
+      config: {
+        recipientEmail: staticEmail || undefined,
+        recipientFieldId: hasFieldRecipient ? recipientFieldId : undefined,
+        recipientFieldLabel: hasFieldRecipient ? selectedEmailField?.label : undefined,
+        subject: data.subject,
+        message,
+      },
       events: selectedEvents,
     });
   };
@@ -137,25 +192,58 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipientEmail">
-              {t('basicInformation.recipientEmail.label')} <span className="text-destructive">{t('required')}</span>
-            </Label>
+            <Label htmlFor="recipientEmail">{t('basicInformation.recipientEmail.label')}</Label>
             <Input
               id="recipientEmail"
               type="email"
               placeholder={t('basicInformation.recipientEmail.placeholder')}
               {...register('recipientEmail', {
-                required: t('basicInformation.recipientEmail.required'),
-                pattern: {
-                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: t('basicInformation.recipientEmail.invalid'),
-                },
+                validate: (value) =>
+                  !value ||
+                  /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value) ||
+                  t('basicInformation.recipientEmail.invalid'),
               })}
             />
             {errors.recipientEmail && (
               <p className="text-sm text-destructive">{errors.recipientEmail.message as string}</p>
             )}
             <p className="text-xs text-muted-foreground">{t('basicInformation.recipientEmail.hint')}</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="recipientFieldId">{t('basicInformation.recipientField.label')}</Label>
+            {emailFields.length > 0 ? (
+              <>
+                <Select value={recipientFieldId} onValueChange={setRecipientFieldId}>
+                  <SelectTrigger id="recipientFieldId">
+                    <SelectValue placeholder={t('basicInformation.recipientField.placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_RECIPIENT_FIELD}>
+                      {t('basicInformation.recipientField.none')}
+                    </SelectItem>
+                    {emailFields.map((field) => (
+                      <SelectItem key={field.id} value={field.id}>
+                        {field.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">{t('basicInformation.recipientField.hint')}</p>
+                {selectedEmailField && !selectedEmailField.required && (
+                  <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      {t('basicInformation.recipientField.notRequiredWarning')}
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {t('basicInformation.recipientField.noFieldsHint')}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

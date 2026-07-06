@@ -70,6 +70,7 @@
     },
     "email": {
       "recipient": "பெறுநர்",
+      "recipientField": "பெறுநர் (படிவ புலத்திலிருந்து)",
       "subject": "பொருள்"
     },
     "quiz": {
