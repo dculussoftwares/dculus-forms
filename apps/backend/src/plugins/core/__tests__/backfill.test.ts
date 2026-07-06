@@ -42,6 +42,15 @@ describe('backfill eligibility queries', () => {
 
       expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
       expect(result).toBe(42);
+
+      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as {
+        strings: TemplateStringsArray;
+        values: any[];
+      };
+      const sqlText = sqlCall.strings.join('');
+      expect(sqlText).toContain('NOT EXISTS');
+      expect(sqlText).toContain("status = 'success'");
+      expect(sqlText).toContain('"deletedAt" IS NULL');
     });
 
     it('returns 0 when the query returns no rows', async () => {
@@ -50,6 +59,15 @@ describe('backfill eligibility queries', () => {
       const result = await countEligibleResponses('form-123', 'plugin-456');
 
       expect(result).toBe(0);
+
+      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as {
+        strings: TemplateStringsArray;
+        values: any[];
+      };
+      const sqlText = sqlCall.strings.join('');
+      expect(sqlText).toContain('NOT EXISTS');
+      expect(sqlText).toContain("status = 'success'");
+      expect(sqlText).toContain('"deletedAt" IS NULL');
     });
   });
 
@@ -65,6 +83,17 @@ describe('backfill eligibility queries', () => {
 
       expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
       expect(result).toEqual(rows);
+
+      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as {
+        strings: TemplateStringsArray;
+        values: any[];
+      };
+      const sqlText = sqlCall.strings.join('');
+      expect(sqlText).toContain('NOT EXISTS');
+      expect(sqlText).toContain("status = 'success'");
+      expect(sqlText).toContain('"deletedAt" IS NULL');
+      expect(sqlCall.values).toContain(20);
+      expect(sqlText).not.toContain("'20'");
     });
   });
 });
