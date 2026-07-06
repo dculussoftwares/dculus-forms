@@ -285,7 +285,8 @@ describe('POST /chat', () => {
     await capturedOnFinish!({ messages: [{ id: 'a1', role: 'assistant', content: 'Hi', parts: [] }] });
 
     expect(vi.mocked(saveConversationMessages)).toHaveBeenCalled();
-    expect(vi.mocked(recordAITokenUsage)).toHaveBeenCalledWith('org-1', 42);
+    // message "Hi" classifies as 'simple' intent -> intentToModelTier('simple') === 'nano'
+    expect(vi.mocked(recordAITokenUsage)).toHaveBeenCalledWith('org-1', 42, 'nano');
   });
 
   it('applies truncateToolResults before saving messages in onFinish', async () => {

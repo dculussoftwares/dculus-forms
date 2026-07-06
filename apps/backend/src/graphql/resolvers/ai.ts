@@ -38,14 +38,15 @@ export const aiResolvers = {
       const budget = await checkAITokenBudget(organizationId);
       if (!budget.allowed) {
         throw createGraphQLError(
-          `AI token limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} tokens used this month). Upgrade your plan to continue.`,
+          `AI credit limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} credits used this month). Upgrade your plan to continue.`,
           GRAPHQL_ERROR_CODES.AI_TOKEN_LIMIT_EXCEEDED
         );
       }
 
       try {
         const result = await generateFormWithAI(prompt.trim(), mode);
-        await recordAITokenUsage(organizationId, result.tokensUsed);
+        // generateFormWithAI always calls getPrimaryModel() (lib/ai.ts) — the 'mini' tier.
+        await recordAITokenUsage(organizationId, result.tokensUsed, 'mini');
         return result;
       } catch (error) {
         logger.error({ err: error, organizationId }, 'AI form generation failed');

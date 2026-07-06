@@ -91,12 +91,6 @@ export function buildPromptCacheOptions(
   return undefined;
 }
 
-export const AI_TOKEN_LIMITS: Record<string, number> = {
-  free: 200_000,
-  starter: 2_000_000,
-  advanced: 20_000_000,
-};
-
 // Plan allowances in AI credits per month. Fallbacks only — the live values come
 // from the Chargebee `ai_credits` entitlement, cached on Subscription.aiCreditsLimit.
 export const AI_CREDIT_LIMITS_FALLBACK: Record<string, number> = {

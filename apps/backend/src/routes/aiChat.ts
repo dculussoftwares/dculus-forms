@@ -295,7 +295,9 @@ aiChatRouter.post('/chat', async (req, res) => {
             parts: [{ type: 'text', text }],
           };
           await saveConversationMessages(conversationId, [message, assistantMsg], tokensUsed);
-          await recordAITokenUsage(organizationId, tokensUsed);
+          // Question turns always route through getModelForIntent(intent) with intent === 'question',
+          // which resolves to the fast/nano model — matches intentToModelTier('question') === 'nano'.
+          await recordAITokenUsage(organizationId, tokensUsed, modelTier);
           const stats = extractUsageStats(usage as any);
           recordTurnTelemetry({
             conversationId,
@@ -375,7 +377,9 @@ aiChatRouter.post('/chat', async (req, res) => {
         const usage = await result.totalUsage;
         const tokensUsed = usage?.totalTokens ?? 0;
         await saveConversationMessages(conversationId, newMessages, tokensUsed);
-        await recordAITokenUsage(organizationId, tokensUsed);
+        // modelTier reflects the tier this turn's agent actually ran with (from
+        // intentToModelTier(intent) above, threaded into createFormEditAgent).
+        await recordAITokenUsage(organizationId, tokensUsed, modelTier);
 
         const stats = extractUsageStats(usage);
         recordTurnTelemetry({

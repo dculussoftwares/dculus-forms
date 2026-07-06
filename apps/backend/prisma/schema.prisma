@@ -521,7 +521,7 @@ model Subscription {
   submissionsUsed  Int  @default(0)
   viewsLimit       Int? // null = unlimited
   submissionsLimit Int? // null = unlimited
-  aiCreditsLimit   Int? // null = unlimited
+  aiCreditsLimit   Int? // null = not yet synced from Chargebee; falls back to plan defaults (see aiUsageService)
 
   // Billing period (resets usage counters)
   currentPeriodStart DateTime
