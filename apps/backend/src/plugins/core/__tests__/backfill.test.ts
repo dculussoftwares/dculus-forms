@@ -253,6 +253,65 @@ describe('runBackfillLoop', () => {
     });
   });
 
+  it('stops after one attempt per response instead of looping forever when every delivery fails', async () => {
+    const batch = [
+      { id: 'response-1', data: {}, submittedAt: new Date('2024-01-01T00:00:00Z') },
+      { id: 'response-2', data: {}, submittedAt: new Date('2024-01-02T00:00:00Z') },
+    ];
+    // The eligibility query always returns the same batch, since neither response
+    // ever gets a successful delivery — this is what a perpetually-failing plugin
+    // (e.g. misconfigured SMTP/webhook) looks like in production.
+    vi.mocked(prisma.$queryRaw).mockResolvedValue(batch);
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue({} as any);
+    vi.mocked(executePlugin).mockResolvedValue({ success: false, error: 'smtp unreachable' });
+
+    const runPromise = runBackfillLoop('job-1', 'plugin-456', 'form-123', 'org-789');
+    await vi.runAllTimersAsync();
+    await runPromise;
+
+    // Each response attempted exactly once, not indefinitely.
+    expect(executePlugin).toHaveBeenCalledTimes(2);
+    expect(prisma.pluginBackfillJob.update).toHaveBeenLastCalledWith({
+      where: { id: 'job-1' },
+      data: { status: 'completed', completedAt: expect.any(Date) },
+    });
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { processedCount: 2, succeededCount: 0, failedCount: 2 },
+    });
+  });
+
+  it('writes progress after each response, not just once per batch', async () => {
+    const batch = [
+      { id: 'response-1', data: {}, submittedAt: new Date('2024-01-01T00:00:00Z') },
+      { id: 'response-2', data: {}, submittedAt: new Date('2024-01-02T00:00:00Z') },
+    ];
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce(batch)
+      .mockResolvedValueOnce([]);
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue({} as any);
+    vi.mocked(executePlugin).mockResolvedValue({ success: true });
+
+    const runPromise = runBackfillLoop('job-1', 'plugin-456', 'form-123', 'org-789');
+    await vi.runAllTimersAsync();
+    await runPromise;
+
+    // An intermediate write after the FIRST response (before the second has been
+    // processed) proves progress is persisted per-response, not batched up and
+    // written once at the end — this keeps `updatedAt` fresh enough that a slow
+    // batch can't be mistaken for a stalled job by getLatestBackfillJob.
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { processedCount: 1, succeededCount: 1, failedCount: 0 },
+    });
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { processedCount: 2, succeededCount: 2, failedCount: 0 },
+    });
+  });
+
   it('marks the job failed when an unexpected error is thrown', async () => {
     vi.mocked(prisma.$queryRaw).mockRejectedValue(new Error('db down'));
     vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);

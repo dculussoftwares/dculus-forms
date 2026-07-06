@@ -127,6 +127,11 @@ export const runBackfillLoop = async (
     let processed = 0;
     let succeeded = 0;
     let failed = 0;
+    // Tracks responses already attempted in this run. A response that keeps failing
+    // (e.g. a misconfigured plugin) never gets a successful delivery, so it would
+    // otherwise stay "eligible" forever and be re-fetched every batch, looping
+    // indefinitely. Each response gets exactly one attempt per backfill run.
+    const attemptedResponseIds = new Set<string>();
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
@@ -139,10 +144,13 @@ export const runBackfillLoop = async (
         return;
       }
 
-      const batch = await fetchEligibleResponseBatch(formId, pluginId, BATCH_SIZE);
+      const rawBatch = await fetchEligibleResponseBatch(formId, pluginId, BATCH_SIZE);
+      const batch = rawBatch.filter((response) => !attemptedResponseIds.has(response.id));
       if (batch.length === 0) break;
 
       for (const response of batch) {
+        attemptedResponseIds.add(response.id);
+
         const event: PluginEvent = {
           type: 'form.submitted',
           formId,
@@ -161,12 +169,15 @@ export const runBackfillLoop = async (
         } else {
           failed += 1;
         }
-      }
 
-      await prisma.pluginBackfillJob.update({
-        where: { id: jobId },
-        data: { processedCount: processed, succeededCount: succeeded, failedCount: failed },
-      });
+        // Written after every response (not just every batch) so a slow batch never
+        // lets `updatedAt` go stale enough to trip stalled-job detection while the
+        // loop is still healthy — see getLatestBackfillJob's STALLED_THRESHOLD_MS check.
+        await prisma.pluginBackfillJob.update({
+          where: { id: jobId },
+          data: { processedCount: processed, succeededCount: succeeded, failedCount: failed },
+        });
+      }
 
       await wait(BATCH_DELAY_MS);
     }
