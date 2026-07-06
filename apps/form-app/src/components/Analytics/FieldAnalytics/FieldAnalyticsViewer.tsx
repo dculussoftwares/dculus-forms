@@ -26,14 +26,12 @@ import { FieldAnalyticsPanel } from './FieldAnalyticsPanel';
 
 interface FieldAnalyticsViewerProps {
   formId: string;
-  organizationId: string;
   initialSelectedFieldId?: string | null;
 }
 
 // Main Component
 export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
   formId,
-  _organizationId,
   initialSelectedFieldId,
 }) => {
   const { t } = useTranslation('fieldAnalyticsViewer');

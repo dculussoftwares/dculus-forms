@@ -266,7 +266,6 @@ const FormAnalytics: React.FC = () => {
         ) : (
           <FieldAnalyticsViewer
             formId={formId || ''}
-            organizationId={form.organization?.id || ''}
             initialSelectedFieldId={selectedFieldId}
           />
         )}
