@@ -20,6 +20,31 @@
     "loadingDeliveries": "Loading...",
     "errorDeliveries": "Could not load delivery history."
   },
+  "backfill": {
+    "title": "Existing Responses",
+    "idle": {
+      "button": "Backfill existing responses",
+      "description": "Run this plugin against responses it hasn't processed yet."
+    },
+    "running": {
+      "progress": "{{processed}} of {{total}} responses processed",
+      "succeeded": "{{count}} succeeded",
+      "failed": "{{count}} failed",
+      "cancelButton": "Cancel"
+    },
+    "terminal": {
+      "completed": "Backfill complete: {{succeeded}} succeeded, {{failed}} failed",
+      "cancelled": "Backfill cancelled: {{succeeded}} succeeded, {{failed}} failed",
+      "failed": "Backfill failed: {{error}}",
+      "retryButton": "Backfill existing responses"
+    },
+    "toasts": {
+      "started": "Backfill started",
+      "startError": "Could not start backfill",
+      "cancelled": "Backfill cancelled",
+      "cancelError": "Could not cancel backfill"
+    }
+  },
   "settings": {
     "saveSuccess": "Settings saved",
     "saveSuccessDescription": "\"{{name}}\" has been updated."
