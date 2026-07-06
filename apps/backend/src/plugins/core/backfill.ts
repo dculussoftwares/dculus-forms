@@ -187,3 +187,46 @@ export const runBackfillLoop = async (
     });
   }
 };
+
+const STALLED_THRESHOLD_MS = 5 * 60 * 1000;
+
+export const cancelBackfill = async (jobId: string): Promise<BackfillJob> => {
+  const job = await prisma.pluginBackfillJob.findUnique({ where: { id: jobId } });
+  if (!job) {
+    throw createGraphQLError('Backfill job not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+  }
+  if (job.status !== 'running') {
+    return job as unknown as BackfillJob;
+  }
+
+  const updated = await prisma.pluginBackfillJob.update({
+    where: { id: jobId },
+    data: { status: 'cancelling' },
+  });
+  return updated as unknown as BackfillJob;
+};
+
+export const getLatestBackfillJob = async (pluginId: string): Promise<BackfillJob | null> => {
+  const job = await prisma.pluginBackfillJob.findFirst({
+    where: { pluginId },
+    orderBy: { startedAt: 'desc' },
+  });
+  if (!job) return null;
+
+  if (job.status === 'running') {
+    const staleMs = Date.now() - job.updatedAt.getTime();
+    if (staleMs > STALLED_THRESHOLD_MS) {
+      const updated = await prisma.pluginBackfillJob.update({
+        where: { id: job.id },
+        data: {
+          status: 'failed',
+          errorMessage: 'Job appears stalled, possibly due to a server restart. Click Backfill again to retry.',
+          completedAt: new Date(),
+        },
+      });
+      return updated as unknown as BackfillJob;
+    }
+  }
+
+  return job as unknown as BackfillJob;
+};

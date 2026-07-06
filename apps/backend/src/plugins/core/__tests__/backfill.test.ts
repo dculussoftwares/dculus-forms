@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { countEligibleResponses, fetchEligibleResponseBatch, startBackfill, runBackfillLoop } from '../backfill.js';
+import { cancelBackfill, getLatestBackfillJob } from '../backfill.js';
 import { prisma } from '../../../lib/prisma.js';
 import { executePlugin } from '../executor.js';
 
@@ -263,5 +264,96 @@ describe('runBackfillLoop', () => {
       where: { id: 'job-1' },
       data: { status: 'failed', errorMessage: 'db down', completedAt: expect.any(Date) },
     });
+  });
+});
+
+describe('cancelBackfill', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('throws when the job does not exist', async () => {
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue(null);
+
+    await expect(cancelBackfill('missing-job')).rejects.toThrow('Backfill job not found');
+  });
+
+  it('returns the job unchanged if it is not running', async () => {
+    const job = { id: 'job-1', status: 'completed' };
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue(job as any);
+
+    const result = await cancelBackfill('job-1');
+
+    expect(prisma.pluginBackfillJob.update).not.toHaveBeenCalled();
+    expect(result).toEqual(job);
+  });
+
+  it('flips a running job to cancelling', async () => {
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
+    const updated = { id: 'job-1', status: 'cancelling' };
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue(updated as any);
+
+    const result = await cancelBackfill('job-1');
+
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { status: 'cancelling' },
+    });
+    expect(result).toEqual(updated);
+  });
+});
+
+describe('getLatestBackfillJob', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns null when no job has ever run', async () => {
+    vi.mocked(prisma.pluginBackfillJob.findFirst).mockResolvedValue(null);
+
+    const result = await getLatestBackfillJob('plugin-456');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns a non-stale running job unchanged', async () => {
+    const job = { id: 'job-1', status: 'running', updatedAt: new Date() };
+    vi.mocked(prisma.pluginBackfillJob.findFirst).mockResolvedValue(job as any);
+
+    const result = await getLatestBackfillJob('plugin-456');
+
+    expect(prisma.pluginBackfillJob.update).not.toHaveBeenCalled();
+    expect(result).toEqual(job);
+  });
+
+  it('marks a stale running job as failed', async () => {
+    const staleDate = new Date(Date.now() - 10 * 60 * 1000); // 10 minutes ago
+    const job = { id: 'job-1', status: 'running', updatedAt: staleDate };
+    vi.mocked(prisma.pluginBackfillJob.findFirst).mockResolvedValue(job as any);
+    const updated = { ...job, status: 'failed' };
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue(updated as any);
+
+    const result = await getLatestBackfillJob('plugin-456');
+
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: {
+        status: 'failed',
+        errorMessage: 'Job appears stalled, possibly due to a server restart. Click Backfill again to retry.',
+        completedAt: expect.any(Date),
+      },
+    });
+    expect(result).toEqual(updated);
+  });
+
+  it('returns a completed job unchanged regardless of updatedAt age', async () => {
+    const staleDate = new Date(Date.now() - 10 * 60 * 1000);
+    const job = { id: 'job-1', status: 'completed', updatedAt: staleDate };
+    vi.mocked(prisma.pluginBackfillJob.findFirst).mockResolvedValue(job as any);
+
+    const result = await getLatestBackfillJob('plugin-456');
+
+    expect(prisma.pluginBackfillJob.update).not.toHaveBeenCalled();
+    expect(result).toEqual(job);
   });
 });
