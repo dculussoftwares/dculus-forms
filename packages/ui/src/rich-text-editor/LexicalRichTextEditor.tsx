@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useMemo } from 'react';
 import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
@@ -23,8 +23,8 @@ import { ListItemNode, ListNode } from '@lexical/list';
 import { LinkNode, AutoLinkNode } from '@lexical/link';
 import {
   BeautifulMentionsPlugin,
-  BeautifulMentionNode,
   type BeautifulMentionsItem,
+  type BeautifulMentionsItemData,
   type BeautifulMentionsMenuProps,
   type BeautifulMentionsMenuItemProps,
   type BeautifulMentionComponentProps,
@@ -32,6 +32,12 @@ import {
 } from 'lexical-beautiful-mentions';
 import { forwardRef } from 'react';
 import { cn } from '../utils';
+
+// Must be a stable reference: BeautifulMentionsPlugin re-derives its internal
+// trigger-matching callback whenever this array's identity changes, which resets
+// in-flight mention state. An inline `['@']` literal in JSX would be a new
+// reference on every render (this component re-renders on every keystroke).
+const MENTION_TRIGGERS = ['@'];
 
 const theme = {
   ltr: 'ltr',
@@ -120,7 +126,13 @@ function normalizeHtmlContent(html: string): string {
   return stripped;
 }
 
-function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
+function OnChangeHandler({
+  onChange,
+  lastEmittedValueRef,
+}: {
+  onChange?: (html: string) => void;
+  lastEmittedValueRef: React.MutableRefObject<string>;
+}) {
   const [editor] = useLexicalComposerContext();
 
   return (
@@ -131,6 +143,9 @@ function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
           // Normalize empty Lexical output to '' so it matches the stored empty value
           const normalized =
             normalizeHtmlContent(htmlString) === '' ? '' : htmlString;
+          // Mark this content as already applied so the round-trip through the
+          // controlled `value` prop (see InitialContentPlugin) doesn't re-sync it.
+          lastEmittedValueRef.current = normalized;
           onChange?.(normalized);
         });
       }}
@@ -138,14 +153,20 @@ function OnChangeHandler({ onChange }: { onChange?: (html: string) => void }) {
   );
 }
 
-function InitialContentPlugin({ value }: { value: string }) {
+function InitialContentPlugin({
+  value,
+  lastEmittedValueRef,
+}: {
+  value: string;
+  lastEmittedValueRef: React.MutableRefObject<string>;
+}) {
   const [editor] = useLexicalComposerContext();
-  // Use a ref (not state) to avoid async React state race conditions
-  const lastLoadedValueRef = useRef<string>(value);
 
   useEffect(() => {
-    // Skip if the value hasn't changed from what we last loaded
-    if (value === lastLoadedValueRef.current) return;
+    // Skip content we just emitted ourselves. Calling editor.update() here even as a
+    // no-op still triggers reconciliation, which can reset the selection/caret and
+    // close anything tracking it (e.g. the mention dropdown) on every keystroke.
+    if (value === lastEmittedValueRef.current) return;
 
     editor.update(() => {
       const currentHtml = $generateHtmlFromNodes(editor, null);
@@ -165,8 +186,8 @@ function InitialContentPlugin({ value }: { value: string }) {
         }
       }
     });
-    lastLoadedValueRef.current = value;
-  }, [editor, value]);
+    lastEmittedValueRef.current = value;
+  }, [editor, value, lastEmittedValueRef]);
 
   return null;
 }
@@ -181,6 +202,41 @@ function EditablePlugin({ editable }: { editable: boolean }) {
   return null;
 }
 
+// Works around a focus-tracking bug in lexical-beautiful-mentions: if the editor's
+// root element receives focus before that library's own FOCUS_COMMAND listener has
+// registered (e.g. AutoFocusPlugin's mount-time focus racing the listener under React
+// StrictMode's effect double-invoke), its internal "is the editor focused" state gets
+// stuck false for the rest of the session, and its mention menu closes itself the
+// instant it would open. A genuine blur+focus cycle reliably resyncs it, so we force
+// one via native DOM events (unaffected by React effect timing) the first time the
+// root element is focused.
+function FocusResyncPlugin() {
+  const [editor] = useLexicalComposerContext();
+
+  useEffect(() => {
+    const rootElement = editor.getRootElement();
+    if (!rootElement) return;
+
+    let hasResynced = false;
+    const handleFocus = () => {
+      if (hasResynced) return;
+      hasResynced = true;
+      rootElement.blur();
+      rootElement.focus();
+    };
+
+    rootElement.addEventListener('focus', handleFocus);
+    // Handle the case where the root is already focused (e.g. by autofocus) before
+    // this listener could be attached.
+    if (rootElement === document.activeElement) {
+      handleFocus();
+    }
+    return () => rootElement.removeEventListener('focus', handleFocus);
+  }, [editor]);
+
+  return null;
+}
+
 const onError = (error: Error) => {
   console.error(error);
 };
@@ -190,11 +246,18 @@ interface MentionField {
   label: string;
 }
 
+interface MentionFieldItem {
+  [key: string]: BeautifulMentionsItemData;
+  value: string;
+  fieldId: string;
+  label: string;
+}
+
 // Custom menu component that fixes the loading prop warning
 const CustomMentionMenu = forwardRef<
   HTMLUListElement,
   BeautifulMentionsMenuProps
->(({ loading, ...props }, ref) => {
+>(({ loading: _loading, ...props }, ref) => {
   // Don't pass loading as a prop to the ul element, just use it for logic if needed
   return <ul {...props} ref={ref} className="beautiful-mentions-menu" />;
 });
@@ -267,24 +330,47 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
 }) => {
   // Capture the initial value at mount time (used by initialConfig.editorState)
   const initialValueRef = useRef(value);
+  // Shared between OnChangeHandler and InitialContentPlugin so content we just
+  // emitted isn't treated as an external change when it round-trips back via `value`.
+  const lastEmittedValueRef = useRef(value);
 
-  const mentionItems = useMemo((): Record<string, BeautifulMentionsItem[]> => {
-    if (mentionFields.length === 0) return {};
-
-    return {
-      '@': mentionFields.map((field) => {
-        // CRITICAL: value must be fieldId for proper substitution
-        // The Beautiful Mentions library stores 'value' in data-lexical-beautiful-mention-value
-        // Our substitution logic uses this to lookup user responses by fieldId
-        const item: BeautifulMentionsItem = {
-          value: field.fieldId, // ✅ Store fieldId as value for substitution lookup
-          fieldId: field.fieldId, // Keep fieldId in data for reference
-          label: field.label, // Label for display purposes
-        };
-        return item;
-      }),
-    };
+  const mentionFieldItems = useMemo((): MentionFieldItem[] => {
+    return mentionFields.map((field) => ({
+      // CRITICAL: value must be fieldId for proper substitution
+      // The Beautiful Mentions library stores 'value' in data-lexical-beautiful-mention-value
+      // Our substitution logic uses this to lookup user responses by fieldId
+      value: field.fieldId, // ✅ Store fieldId as value for substitution lookup
+      fieldId: field.fieldId, // Keep fieldId in data for reference
+      label: field.label, // Label for display purposes
+    }));
   }, [mentionFields]);
+
+  // Beautiful Mentions filters its built-in `items` list by matching the query
+  // against `item.value` (the fieldId), not the visible label, and doesn't sort
+  // results at all. We drive the search ourselves so typed text is matched and
+  // ranked against the field label instead.
+  const handleMentionSearch = useCallback(
+    async (
+      _trigger: string,
+      queryString?: string | null
+    ): Promise<BeautifulMentionsItem[]> => {
+      if (!queryString) return mentionFieldItems;
+
+      const query = queryString.toLowerCase();
+      return mentionFieldItems
+        .map((item) => ({
+          item,
+          index: item.label.toLowerCase().indexOf(query),
+        }))
+        .filter(({ index }) => index !== -1)
+        .sort((a, b) => {
+          if (a.index !== b.index) return a.index - b.index;
+          return a.item.label.localeCompare(b.item.label);
+        })
+        .map(({ item }) => item);
+    },
+    [mentionFieldItems]
+  );
 
   const initialConfig = {
     namespace: 'LayoutEditor',
@@ -345,9 +431,16 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
             ErrorBoundary={LexicalErrorBoundary}
           />
         </div>
-        <InitialContentPlugin value={value} />
-        <OnChangeHandler onChange={onChange} />
+        <InitialContentPlugin
+          value={value}
+          lastEmittedValueRef={lastEmittedValueRef}
+        />
+        <OnChangeHandler
+          onChange={onChange}
+          lastEmittedValueRef={lastEmittedValueRef}
+        />
         <EditablePlugin editable={editable} />
+        <FocusResyncPlugin />
         <HistoryPlugin />
         <AutoFocusPlugin />
         <ListPlugin />
@@ -513,7 +606,9 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
               }
             `}</style>
             <BeautifulMentionsPlugin
-              items={mentionItems}
+              triggers={MENTION_TRIGGERS}
+              onSearch={handleMentionSearch}
+              searchDelay={0}
               menuComponent={CustomMentionMenu}
               menuItemComponent={CustomMentionMenuItem}
             />
