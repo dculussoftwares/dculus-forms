@@ -204,21 +204,6 @@ export const GENERATE_FORM_WITH_AI : TypedDocumentNode<any, any> = gql`
   }
 `;
 
-export const GENERATE_FIELD_INSIGHTS : TypedDocumentNode<any, any> = gql`
-  mutation GenerateFieldInsights($formId: ID!, $organizationId: ID!) {
-    generateFieldInsights(formId: $formId, organizationId: $organizationId) {
-      insights {
-        fieldId
-        tip
-        fixPrompt
-        severity
-        generatedAt
-      }
-      schemaStale
-      generatedAt
-    }
-  }
-`;
 
 export const SUBMIT_RESPONSE : TypedDocumentNode<any, any> = gql`
   mutation SubmitResponse($input: SubmitResponseInput!) {

@@ -1101,7 +1101,6 @@ export const typeDefs = gql`
 
     # AI Queries
     aiTokenUsage(organizationId: ID!): AITokenUsage!
-    fieldInsights(formId: ID!, organizationId: ID!): FieldInsightsResult!
     listAIChatConversations(formId: ID!, organizationId: ID!): [AIChatConversation!]!
     getAIChatConversation(id: ID!, organizationId: ID!): AIChatConversation!
   }
@@ -1221,7 +1220,6 @@ export const typeDefs = gql`
       organizationId: ID!
       mode: AIFormMode = standard
     ): AIGeneratedForm!
-    generateFieldInsights(formId: ID!, organizationId: ID!): FieldInsightsResult!
     createAIChatConversation(formId: ID!, organizationId: ID!): AIChatConversation!
     deleteAIChatConversation(id: ID!, organizationId: ID!): Boolean!
     renameAIChatConversation(id: ID!, organizationId: ID!, title: String!): AIChatConversation!
@@ -1271,19 +1269,6 @@ export const typeDefs = gql`
     resetAt: String!
   }
 
-  type FieldInsight {
-    fieldId: ID!
-    tip: String!
-    fixPrompt: String!
-    severity: String!
-    generatedAt: String!
-  }
-
-  type FieldInsightsResult {
-    insights: [FieldInsight!]!
-    schemaStale: Boolean!
-    generatedAt: String
-  }
 
   # AI Chat Types
   type AIChatConversation {

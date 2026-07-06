@@ -6,9 +6,8 @@
  */
 
 import React, { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router';
-import { useQuery, useMutation } from '@apollo/client/react';
-import { Card, CardContent, Button, toastError } from '@dculus/ui';
+import { useSearchParams } from 'react-router';
+import { Card, CardContent, Button } from '@dculus/ui';
 import { useFieldAnalyticsManager } from '@/hooks/useFieldAnalytics.ts';
 import { usePerformanceMonitor, useMemoryTracker } from '@/hooks/usePerformanceMonitor.ts';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -22,18 +21,8 @@ import {
   ChevronRight,
   ArrowLeft,
 } from 'lucide-react';
-import { GradientSparkles } from '../../form-builder/GradientSparkles.js';
 import { FieldSelectionGrid } from './FieldSelectionGrid';
 import { FieldAnalyticsPanel } from './FieldAnalyticsPanel';
-import { GET_FIELD_INSIGHTS } from '../../../graphql/queries';
-import { GENERATE_FIELD_INSIGHTS } from '../../../graphql/mutations';
-
-interface FieldInsight {
-  fieldId: string;
-  tip: string;
-  fixPrompt: string;
-  severity: string;
-}
 
 interface FieldAnalyticsViewerProps {
   formId: string;
@@ -44,12 +33,11 @@ interface FieldAnalyticsViewerProps {
 // Main Component
 export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
   formId,
-  organizationId,
+  _organizationId,
   initialSelectedFieldId,
 }) => {
   const { t } = useTranslation('fieldAnalyticsViewer');
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   // Get selected field from URL parameters
@@ -72,44 +60,6 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
     refreshAll,
     loading
   } = useFieldAnalyticsManager(formId);
-
-  const { data: insightsData, refetch: refetchInsights, error: insightsError } = useQuery(GET_FIELD_INSIGHTS, {
-    variables: { formId, organizationId },
-    skip: !formId || !organizationId,
-  });
-
-  const [generateInsights, { loading: generatingInsights }] = useMutation(GENERATE_FIELD_INSIGHTS, {
-    variables: { formId, organizationId },
-    onCompleted: () => refetchInsights(),
-    onError: (err) => {
-      const msg = (err as any).graphQLErrors?.[0]?.message ?? err.message ?? 'AI field insights generation failed.';
-      const isLimit = msg.toLowerCase().includes('token limit');
-      toastError(
-        isLimit ? 'AI Token Limit Reached' : 'Analysis Failed',
-        isLimit ? msg : 'Could not generate field insights. Please try again.'
-      );
-    },
-  });
-
-  const insightsMap: Record<string, FieldInsight> = React.useMemo(() => {
-    const list: FieldInsight[] = insightsData?.fieldInsights?.insights ?? [];
-    return Object.fromEntries(list.map((ins) => [ins.fieldId, ins]));
-  }, [insightsData]);
-
-  const schemaStale = insightsData?.fieldInsights?.schemaStale ?? false;
-  const hasInsights = (insightsData?.fieldInsights?.insights?.length ?? 0) > 0;
-
-  if (insightsError) {
-    console.error('Field insights query failed:', insightsError.message);
-  }
-
-  const handleFixWithAI = React.useCallback((prompt: string) => {
-    navigate(`/dashboard/form/${formId}/builder/page-builder?aiMessage=${encodeURIComponent(prompt)}`);
-  }, [formId, navigate]);
-
-  const handleGenerateInsights = React.useCallback(() => {
-    generateInsights();
-  }, [generateInsights]);
 
   // Field URL helpers - convert between fieldId and URL-friendly parameter
   const getFieldUrlParam = (fieldId: string) => {
@@ -318,30 +268,6 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
             {t('buttons.refresh')}
           </Button>
 
-          {/* AI analyze controls — grid view only */}
-          {view === 'grid' && !hasInsights && (
-            <div className="ai-gradient-ring rounded-full p-[2px]">
-              <button
-                type="button"
-                onClick={handleGenerateInsights}
-                disabled={generatingInsights}
-                className="flex items-center gap-1 rounded-full bg-black px-4 h-9 text-sm font-semibold text-white hover:bg-zinc-800 transition-colors disabled:opacity-50"
-              >
-                <GradientSparkles size={16} />
-                {generatingInsights ? t('aiInsights.loading') : t('aiInsights.analyzeButton')}
-              </button>
-            </div>
-          )}
-          {view === 'grid' && hasInsights && (
-            <button
-              onClick={handleGenerateInsights}
-              disabled={generatingInsights}
-              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 disabled:opacity-50"
-            >
-              {generatingInsights ? t('aiInsights.loading') : t('aiInsights.reanalyzeLink')}
-            </button>
-          )}
-
           {totalResponses > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f0ebff] text-[#7C3AAE] rounded-lg text-sm">
               <Eye className="h-4 w-4" />
@@ -350,22 +276,6 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
           )}
         </div>
       </div>
-
-      {/* Stale schema banner — grid view only */}
-      {view === 'grid' && schemaStale && (
-        <div className="flex items-center justify-between rounded-md border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
-          <span>{t('aiInsights.staleBanner')}</span>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 border-yellow-400 text-yellow-800 hover:bg-yellow-100"
-            onClick={handleGenerateInsights}
-            disabled={generatingInsights}
-          >
-            {t('aiInsights.reanalyzeButton')}
-          </Button>
-        </div>
-      )}
 
       {/* Content */}
       {view === 'grid' ? (
@@ -442,8 +352,6 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
             onFieldSelect={handleFieldSelect}
             totalFormResponses={totalResponses}
             t={t}
-            insights={insightsMap}
-            onFixWithAI={handleFixWithAI}
           />
         </>
       ) : selectedField ? (

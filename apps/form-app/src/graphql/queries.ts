@@ -433,18 +433,3 @@ export const GET_RESPONSE_WITH_EDIT_INFO : TypedDocumentNode<any, any> = gql`
   }
 `;
 
-export const GET_FIELD_INSIGHTS : TypedDocumentNode<any, any> = gql`
-  query GetFieldInsights($formId: ID!, $organizationId: ID!) {
-    fieldInsights(formId: $formId, organizationId: $organizationId) {
-      insights {
-        fieldId
-        tip
-        fixPrompt
-        severity
-        generatedAt
-      }
-      schemaStale
-      generatedAt
-    }
-  }
-`;

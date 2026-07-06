@@ -16,14 +16,6 @@ import { FieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { MiniPreviewChart } from './MiniChartComponents';
 import { getFieldTypeDisplayName } from '@dculus/utils';
 import { getAnalyticsIcon } from './registry';
-import { AIInsightCard } from './AIInsightCard';
-
-interface FieldInsight {
-  fieldId: string;
-  tip: string;
-  fixPrompt: string;
-  severity: string;
-}
 
 interface FieldSelectionGridProps {
   fields: FieldAnalyticsData[];
@@ -31,8 +23,6 @@ interface FieldSelectionGridProps {
   onFieldSelect: (fieldId: string) => void;
   totalFormResponses: number;
   t: (key: string, options?: { values?: Record<string, string | number>; defaultValue?: string }) => string;
-  insights?: Record<string, FieldInsight>;
-  onFixWithAI?: (prompt: string) => void;
 }
 
 export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
@@ -41,8 +31,6 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
   onFieldSelect,
   totalFormResponses: _totalFormResponses,
   t,
-  insights = {},
-  onFixWithAI,
 }) => {
   // Empty state
   if (fields.length === 0) {
@@ -160,18 +148,6 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
                   </div>
                 </div>
               </div>
-              {insights[field.fieldId] && onFixWithAI && (
-                <div className="px-5 pb-4">
-                  <AIInsightCard
-                    tip={insights[field.fieldId].tip}
-                    fixPrompt={insights[field.fieldId].fixPrompt}
-                    severity={insights[field.fieldId].severity as any}
-                    insightLabel={t('aiInsights.insightLabel')}
-                    fixButtonLabel={t('aiInsights.fixButton')}
-                    onFixWithAI={onFixWithAI}
-                  />
-                </div>
-              )}
             </CardContent>
           </Card>
         );

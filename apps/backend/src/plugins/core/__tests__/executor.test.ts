@@ -52,7 +52,7 @@ describe('executor', () => {
     type: 'form.submitted',
     formId: 'form-123',
     organizationId: 'org-456',
-    data: { field1: 'value1', field2: 'value2' },
+    data: { responseId: 'response-789', field1: 'value1', field2: 'value2' },
     timestamp: new Date('2024-05-01T12:00:00Z'),
   };
 
@@ -97,6 +97,7 @@ describe('executor', () => {
         data: {
           id: 'delivery-123',
           pluginId: 'plugin-1',
+          responseId: 'response-789',
           eventType: 'form.submitted',
           status: 'success',
           payload: mockEvent.data,
@@ -121,6 +122,7 @@ describe('executor', () => {
         data: {
           id: 'delivery-123',
           pluginId: 'nonexistent-plugin',
+          responseId: 'response-789',
           eventType: 'form.submitted',
           status: 'failed',
           payload: mockEvent.data,
@@ -210,6 +212,7 @@ describe('executor', () => {
         data: {
           id: 'delivery-123',
           pluginId: 'plugin-1',
+          responseId: 'response-789',
           eventType: 'form.submitted',
           status: 'failed',
           payload: mockEvent.data,

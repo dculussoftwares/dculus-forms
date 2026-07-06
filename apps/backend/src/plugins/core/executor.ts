@@ -42,6 +42,7 @@ export const executePlugin = async (
       data: {
         id: generateId(),
         pluginId,
+        responseId: event.data?.responseId ?? null,
         eventType: event.type,
         status: 'success',
         payload: event.data,
@@ -59,6 +60,7 @@ export const executePlugin = async (
       data: {
         id: generateId(),
         pluginId,
+        responseId: event.data?.responseId ?? null,
         eventType: event.type,
         status: 'failed',
         payload: event.data,

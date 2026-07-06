@@ -4,9 +4,6 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { generateFormWithAI, type AIFormMode } from '../../services/aiService.js';
 import { checkAITokenBudget, recordAITokenUsage, getAITokenUsage } from '../../services/aiUsageService.js';
 import { logger } from '../../lib/logger.js';
-import { getFieldInsights, generateFieldInsights, computeSchemaHash } from '../../services/aiFieldInsightService.js';
-import { getFormSchema } from '../../routes/aiChat.js';
-import { prisma } from '../../lib/prisma.js';
 
 export const aiResolvers = {
   Query: {
@@ -20,26 +17,6 @@ export const aiResolvers = {
       return getAITokenUsage(organizationId);
     },
 
-    fieldInsights: async (
-      _: any,
-      { formId, organizationId }: { formId: string; organizationId: string },
-      context: { auth: BetterAuthContext }
-    ) => {
-      requireAuth(context.auth);
-      await requireOrganizationMembership(context.auth, organizationId);
-
-      const form = await prisma.form.findUnique({
-        where: { id: formId, organizationId },
-        select: { id: true },
-      });
-      if (!form) {
-        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
-      }
-
-      const schema = await getFormSchema(formId);
-      const currentHash = computeSchemaHash(schema);
-      return getFieldInsights(formId, currentHash);
-    },
   },
 
   Mutation: {
@@ -79,43 +56,5 @@ export const aiResolvers = {
       }
     },
 
-    generateFieldInsights: async (
-      _: any,
-      { formId, organizationId }: { formId: string; organizationId: string },
-      context: { auth: BetterAuthContext }
-    ) => {
-      requireAuth(context.auth);
-      await requireOrganizationMembership(context.auth, organizationId);
-
-      const budget = await checkAITokenBudget(organizationId);
-      if (!budget.allowed) {
-        throw createGraphQLError(
-          `AI token limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} tokens used this month). Upgrade your plan to continue.`,
-          GRAPHQL_ERROR_CODES.AI_TOKEN_LIMIT_EXCEEDED
-        );
-      }
-
-      const form = await prisma.form.findUnique({
-        where: { id: formId, organizationId },
-        select: { title: true },
-      });
-      if (!form) {
-        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
-      }
-
-      const schema = await getFormSchema(formId);
-
-      try {
-        const result = await generateFieldInsights(formId, form.title, schema);
-        await recordAITokenUsage(organizationId, result.tokensUsed);
-        return result;
-      } catch (error) {
-        logger.error({ err: error, formId, organizationId }, 'AI field insights generation failed');
-        throw createGraphQLError(
-          'AI field insights generation failed. Please try again.',
-          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
-        );
-      }
-    },
   },
 };
