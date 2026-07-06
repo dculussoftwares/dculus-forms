@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { countEligibleResponses, fetchEligibleResponseBatch, startBackfill } from '../backfill.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { countEligibleResponses, fetchEligibleResponseBatch, startBackfill, runBackfillLoop } from '../backfill.js';
 import { prisma } from '../../../lib/prisma.js';
+import { executePlugin } from '../executor.js';
 
 vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
@@ -27,6 +28,10 @@ vi.mock('../../../lib/logger.js', () => ({
     error: vi.fn(),
     warn: vi.fn(),
   },
+}));
+
+vi.mock('../executor.js', () => ({
+  executePlugin: vi.fn(),
 }));
 
 describe('backfill eligibility queries', () => {
@@ -104,6 +109,7 @@ describe('startBackfill', () => {
     formId: 'form-123',
     type: 'webhook',
     enabled: true,
+    form: { organizationId: 'org-789' },
   };
 
   beforeEach(() => {
@@ -164,5 +170,98 @@ describe('startBackfill', () => {
       },
     });
     expect(result).toEqual(createdJob);
+  });
+});
+
+describe('runBackfillLoop', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('marks the job completed when there are no eligible responses', async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([]);
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue({} as any);
+
+    await runBackfillLoop('job-1', 'plugin-456', 'form-123', 'org-789');
+
+    expect(executePlugin).not.toHaveBeenCalled();
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { status: 'completed', completedAt: expect.any(Date) },
+    });
+  });
+
+  it('processes a batch, updates counts, then completes on the next empty batch', async () => {
+    const batch = [
+      { id: 'response-1', data: { q1: 'a' }, submittedAt: new Date('2024-01-01T00:00:00Z') },
+      { id: 'response-2', data: { q1: 'b' }, submittedAt: new Date('2024-01-02T00:00:00Z') },
+    ];
+    vi.mocked(prisma.$queryRaw)
+      .mockResolvedValueOnce(batch)
+      .mockResolvedValueOnce([]);
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue({} as any);
+    vi.mocked(executePlugin)
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: 'boom' });
+
+    const runPromise = runBackfillLoop('job-1', 'plugin-456', 'form-123', 'org-789');
+    await vi.runAllTimersAsync();
+    await runPromise;
+
+    expect(executePlugin).toHaveBeenCalledTimes(2);
+    expect(executePlugin).toHaveBeenNthCalledWith(1, 'plugin-456', {
+      type: 'form.submitted',
+      formId: 'form-123',
+      organizationId: 'org-789',
+      data: { responseId: 'response-1', submittedAt: '2024-01-01T00:00:00.000Z', q1: 'a' },
+      timestamp: expect.any(Date),
+    });
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { processedCount: 2, succeededCount: 1, failedCount: 1 },
+    });
+    expect(prisma.pluginBackfillJob.update).toHaveBeenLastCalledWith({
+      where: { id: 'job-1' },
+      data: { status: 'completed', completedAt: expect.any(Date) },
+    });
+  });
+
+  it('stops and marks the job cancelled when status flips to cancelling', async () => {
+    const batch = [{ id: 'response-1', data: {}, submittedAt: new Date('2024-01-01T00:00:00Z') }];
+    vi.mocked(prisma.$queryRaw).mockResolvedValue(batch);
+    vi.mocked(prisma.pluginBackfillJob.findUnique)
+      .mockResolvedValueOnce({ id: 'job-1', status: 'running' } as any)
+      .mockResolvedValueOnce({ id: 'job-1', status: 'cancelling' } as any);
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue({} as any);
+    vi.mocked(executePlugin).mockResolvedValue({ success: true });
+
+    const runPromise = runBackfillLoop('job-1', 'plugin-456', 'form-123', 'org-789');
+    await vi.runAllTimersAsync();
+    await runPromise;
+
+    expect(prisma.pluginBackfillJob.update).toHaveBeenLastCalledWith({
+      where: { id: 'job-1' },
+      data: { status: 'cancelled', completedAt: expect.any(Date) },
+    });
+  });
+
+  it('marks the job failed when an unexpected error is thrown', async () => {
+    vi.mocked(prisma.$queryRaw).mockRejectedValue(new Error('db down'));
+    vi.mocked(prisma.pluginBackfillJob.findUnique).mockResolvedValue({ id: 'job-1', status: 'running' } as any);
+    vi.mocked(prisma.pluginBackfillJob.update).mockResolvedValue({} as any);
+
+    await runBackfillLoop('job-1', 'plugin-456', 'form-123', 'org-789');
+
+    expect(prisma.pluginBackfillJob.update).toHaveBeenCalledWith({
+      where: { id: 'job-1' },
+      data: { status: 'failed', errorMessage: 'db down', completedAt: expect.any(Date) },
+    });
   });
 });
