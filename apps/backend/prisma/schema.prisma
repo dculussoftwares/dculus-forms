@@ -430,8 +430,9 @@ model FormPlugin {
   updatedAt DateTime @updatedAt
 
   // Relations
-  form       Form             @relation(fields: [formId], references: [id], onDelete: Cascade)
-  deliveries PluginDelivery[]
+  form         Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
+  deliveries   PluginDelivery[]
+  backfillJobs PluginBackfillJob[]
 
   @@index([formId])
   @@index([type])
@@ -442,6 +443,7 @@ model FormPlugin {
 model PluginDelivery {
   id           String   @id @default(cuid())
   pluginId     String // Reference to FormPlugin
+  responseId   String? // Reference to Response this delivery was for (null for plugin.test events)
   eventType    String // "form.submitted", "plugin.test", etc.
   status       String // "success", "failed"
   payload      Json // Event data sent to plugin
@@ -453,10 +455,33 @@ model PluginDelivery {
   plugin FormPlugin @relation(fields: [pluginId], references: [id], onDelete: Cascade)
 
   @@index([pluginId])
+  @@index([pluginId, responseId])
   @@index([eventType])
   @@index([status])
   @@index([deliveredAt])
   @@map("plugin_delivery")
+}
+
+model PluginBackfillJob {
+  id             String    @id @default(cuid())
+  pluginId       String // Reference to FormPlugin
+  formId         String // Reference to Form (denormalized for querying without a join)
+  status         String // "running" | "cancelling" | "cancelled" | "completed" | "failed"
+  totalCount     Int
+  processedCount Int       @default(0)
+  succeededCount Int       @default(0)
+  failedCount    Int       @default(0)
+  errorMessage   String?
+  startedAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  completedAt    DateTime?
+
+  // Relations
+  plugin FormPlugin @relation(fields: [pluginId], references: [id], onDelete: Cascade)
+
+  @@index([pluginId])
+  @@index([formId])
+  @@map("plugin_backfill_job")
 }
 
 // Audit Log Model — records sensitive operations for security/compliance tracing
