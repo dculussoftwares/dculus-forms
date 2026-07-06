@@ -48,7 +48,7 @@ describe('backfill eligibility queries', () => {
       expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
       expect(result).toBe(42);
 
-      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as {
+      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as unknown as {
         strings: TemplateStringsArray;
         values: any[];
       };
@@ -65,7 +65,7 @@ describe('backfill eligibility queries', () => {
 
       expect(result).toBe(0);
 
-      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as {
+      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as unknown as {
         strings: TemplateStringsArray;
         values: any[];
       };
@@ -89,7 +89,7 @@ describe('backfill eligibility queries', () => {
       expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
       expect(result).toEqual(rows);
 
-      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as {
+      const sqlCall = vi.mocked(prisma.$queryRaw).mock.calls[0][0] as unknown as {
         strings: TemplateStringsArray;
         values: any[];
       };
