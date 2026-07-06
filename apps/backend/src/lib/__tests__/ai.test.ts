@@ -98,3 +98,65 @@ describe('buildPromptCacheOptions', () => {
     expect(buildPromptCacheOptions(undefined)).toBeUndefined();
   });
 });
+
+describe('AI_CREDIT_LIMITS_FALLBACK', () => {
+  beforeEach(() => vi.resetModules());
+
+  it('has exactly free:200, starter:2000, advanced:20000', async () => {
+    const { AI_CREDIT_LIMITS_FALLBACK } = await import('../ai.js');
+    expect(AI_CREDIT_LIMITS_FALLBACK).toEqual({
+      free: 200,
+      starter: 2_000,
+      advanced: 20_000,
+    });
+  });
+});
+
+describe('tokensToMilliCredits', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    delete process.env.AI_CREDIT_WEIGHT_NANO;
+    delete process.env.AI_CREDIT_WEIGHT_MINI;
+  });
+
+  it('converts 2000 nano tokens to 2000 mCr using the default weight (1)', async () => {
+    const { tokensToMilliCredits } = await import('../ai.js');
+    expect(tokensToMilliCredits(2000, 'nano')).toBe(2000);
+  });
+
+  it('converts 2000 mini tokens to 10000 mCr using the default weight (5)', async () => {
+    const { tokensToMilliCredits } = await import('../ai.js');
+    expect(tokensToMilliCredits(2000, 'mini')).toBe(10_000);
+  });
+
+  it('honors AI_CREDIT_WEIGHT_MINI env override', async () => {
+    process.env.AI_CREDIT_WEIGHT_MINI = '2.5';
+    const { tokensToMilliCredits } = await import('../ai.js');
+    expect(tokensToMilliCredits(2000, 'mini')).toBe(5000);
+  });
+
+  it.each(['abc', '0', '-1'])(
+    'falls back to the default mini weight when AI_CREDIT_WEIGHT_MINI=%s is invalid',
+    async (invalid) => {
+      process.env.AI_CREDIT_WEIGHT_MINI = invalid;
+      const { tokensToMilliCredits } = await import('../ai.js');
+      expect(tokensToMilliCredits(2000, 'mini')).toBe(10_000);
+    },
+  );
+
+  it('returns 0 for zero tokens', async () => {
+    const { tokensToMilliCredits } = await import('../ai.js');
+    expect(tokensToMilliCredits(0, 'nano')).toBe(0);
+  });
+
+  it('returns 0 for negative tokens', async () => {
+    const { tokensToMilliCredits } = await import('../ai.js');
+    expect(tokensToMilliCredits(-100, 'nano')).toBe(0);
+  });
+
+  it('rounds fractional results using Math.round semantics', async () => {
+    process.env.AI_CREDIT_WEIGHT_MINI = '0.5';
+    const { tokensToMilliCredits } = await import('../ai.js');
+    expect(tokensToMilliCredits(1, 'mini')).toBe(1);
+  });
+});

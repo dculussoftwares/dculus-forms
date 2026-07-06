@@ -96,3 +96,35 @@ export const AI_TOKEN_LIMITS: Record<string, number> = {
   starter: 2_000_000,
   advanced: 20_000_000,
 };
+
+// Plan allowances in AI credits per month. Fallbacks only — the live values come
+// from the Chargebee `ai_credits` entitlement, cached on Subscription.aiCreditsLimit.
+export const AI_CREDIT_LIMITS_FALLBACK: Record<string, number> = {
+  free: 200,
+  starter: 2_000,
+  advanced: 20_000,
+};
+
+export type AIModelTier = 'nano' | 'mini';
+
+const DEFAULT_CREDIT_WEIGHTS: Record<AIModelTier, number> = {
+  nano: 1,
+  mini: 5,
+};
+
+// Reads a per-tier credit weight from env, lazily (so tests can override env
+// between imports). Falls back to the default when unset or not a finite
+// number > 0.
+function creditWeight(tier: AIModelTier): number {
+  const envKey = tier === 'nano' ? 'AI_CREDIT_WEIGHT_NANO' : 'AI_CREDIT_WEIGHT_MINI';
+  const raw = env(envKey);
+  const parsed = raw === undefined ? NaN : Number(raw);
+  if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  return DEFAULT_CREDIT_WEIGHTS[tier];
+}
+
+/** Converts a token count for the given model tier into integer milli-credits. */
+export function tokensToMilliCredits(tokens: number, tier: AIModelTier): number {
+  if (!Number.isFinite(tokens) || tokens < 0) return 0;
+  return Math.round(tokens * creditWeight(tier));
+}

@@ -140,13 +140,13 @@ model Invitation {
 // Application Models
 
 model Form {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   title             String
   description       String?
-  shortUrl          String   @unique
+  shortUrl          String    @unique
   formSchema        Json
   settings          Json?
-  isPublished       Boolean  @default(false)
+  isPublished       Boolean   @default(false)
   organizationId    String
   createdById       String
   // TODO(P3-05): Migrate to enum type — validate existing data first
@@ -160,16 +160,16 @@ model Form {
   deletedAt         DateTime?
 
   // Relations
-  organization         Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy            User                      @relation(fields: [createdById], references: [id], onDelete: Cascade)
-  responses            Response[]
-  files                FormFile[]
-  analytics            FormViewAnalytics[]
-  submissionAnalytics  FormSubmissionAnalytics[]
-  permissions          FormPermission[]
-  plugins              FormPlugin[]
-  tags                 ResponseTag[]
-  aiChatConversations  AIChatConversation[]
+  organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy           User                      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  responses           Response[]
+  files               FormFile[]
+  analytics           FormViewAnalytics[]
+  submissionAnalytics FormSubmissionAnalytics[]
+  permissions         FormPermission[]
+  plugins             FormPlugin[]
+  tags                ResponseTag[]
+  aiChatConversations AIChatConversation[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -430,7 +430,7 @@ model FormPlugin {
   updatedAt DateTime @updatedAt
 
   // Relations
-  form         Form                 @relation(fields: [formId], references: [id], onDelete: Cascade)
+  form         Form                @relation(fields: [formId], references: [id], onDelete: Cascade)
   deliveries   PluginDelivery[]
   backfillJobs PluginBackfillJob[]
 
@@ -487,17 +487,16 @@ model PluginBackfillJob {
 // Audit Log Model — records sensitive operations for security/compliance tracing
 model AuditLog {
   id           String   @id @default(cuid())
-  action       String   // e.g. "form.deleted", "permission.changed", "response.deleted"
-  actorId      String?  // userId — null for system actions
-  resourceType String   // "Form", "Response", "FormPermission"
+  action       String // e.g. "form.deleted", "permission.changed", "response.deleted"
+  actorId      String? // userId — null for system actions
+  resourceType String // "Form", "Response", "FormPermission"
   resourceId   String
-  metadata     Json?    // additional context (e.g. old/new values)
+  metadata     Json? // additional context (e.g. old/new values)
   createdAt    DateTime @default(now())
 
   @@index([actorId])
   @@index([resourceType, resourceId])
   @@index([createdAt])
-
   @@map("audit_log")
 }
 
@@ -522,6 +521,7 @@ model Subscription {
   submissionsUsed  Int  @default(0)
   viewsLimit       Int? // null = unlimited
   submissionsLimit Int? // null = unlimited
+  aiCreditsLimit   Int? // null = unlimited
 
   // Billing period (resets usage counters)
   currentPeriodStart DateTime
@@ -541,13 +541,14 @@ model Subscription {
 }
 
 model AIUsage {
-  id             String   @id @default(cuid())
-  organizationId String
-  tokensUsed     Int      @default(0)
-  periodStart    DateTime
-  periodEnd      DateTime
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id               String   @id @default(cuid())
+  organizationId   String
+  tokensUsed       Int      @default(0)
+  creditsUsedMilli Int      @default(0)
+  periodStart      DateTime
+  periodEnd        DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -564,9 +565,9 @@ model AIChatConversation {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  form         Form         @relation(fields: [formId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  form         Form            @relation(fields: [formId], references: [id], onDelete: Cascade)
+  organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages     AIChatMessage[]
 
   @@index([formId, userId])
@@ -587,4 +588,3 @@ model AIChatMessage {
   @@index([conversationId])
   @@map("ai_chat_message")
 }
-
