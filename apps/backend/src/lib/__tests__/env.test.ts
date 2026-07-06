@@ -30,6 +30,7 @@ describe('env config', () => {
     delete process.env.EMAIL_USER;
     delete process.env.EMAIL_PASSWORD;
     delete process.env.EMAIL_FROM;
+    delete process.env.BETTER_AUTH_SECRET;
 
     const envModule = await import('../env.js');
 
@@ -40,6 +41,9 @@ describe('env config', () => {
       publicBucketName: 'test-public-bucket',
       privateBucketName: 'test-private-bucket',
       publicCdnUrl: 'http://localhost:9000',
+    });
+    expect(envModule.authConfig).toMatchObject({
+      secret: 'test-only-secret-for-unit-tests-not-used-in-production',
     });
     expect(envModule.appConfig).toMatchObject({
       port: 4000,

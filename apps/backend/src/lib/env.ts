@@ -58,7 +58,9 @@ export const s3Config: S3Config = {
 
 export const authConfig: AuthConfig = {
   baseUrl: optionalEnv('BETTER_AUTH_URL', 'http://localhost:4000')!,
-  secret: requireEnv('BETTER_AUTH_SECRET'),
+  secret: isTest
+    ? optionalEnv('BETTER_AUTH_SECRET', 'test-only-secret-for-unit-tests-not-used-in-production')!
+    : requireEnv('BETTER_AUTH_SECRET'),
 };
 
 export const appConfig: AppConfig = {
