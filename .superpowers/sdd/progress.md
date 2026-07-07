@@ -1,55 +1,51 @@
-# Submission Limits Time Window — SDD Progress Ledger
+# Chargebee Single Source of Truth + AI Credits — SDD Progress Ledger
 
-Plan: docs/superpowers/plans/2026-07-05-submission-limits-time-window-datetime.md
-Worktree branch: worktree-submission-limits-time-window
+(Previous ledger: submission-limits-time-window, FEATURE COMPLETE, merged — replaced.)
 
-## Pre-flight decisions (human-approved, 2026-07-05)
-- Task 2's duplication of the 3-line local-midnight parse (instead of importing
-  `parseLocalDate` from `@dculus/utils`) is intentional — form-app's Jest config
-  cannot execute `@dculus/utils`'s compiled ESM dist output (pre-existing on
-  `main`, unrelated to this feature). If a task reviewer flags this as
-  duplication, the ruling stands: keep it, do not "fix" by importing.
-- Task 1 (move formatTimeForInput/combineDateAndTime into @dculus/utils) has no
-  new automated test — no test harness exists for packages/ui or packages/utils
-  today, and this is a behavior-identical move. If a task reviewer flags missing
-  test coverage for this task, the ruling stands: verify via build/type-check
-  only, do not add a new test harness.
+Plan: /Users/natheeshkumarrangasamy/.claude/plans/i-want-to-keep-velvet-sunrise.md
+Branch: feature/ai-credits-chargebee (from main @ 9105d381)
+Model policy (user directive): implementers + task reviewers = sonnet; final whole-branch review = Fable main loop.
+
+## Pre-flight notes
+- Working tree at branch start already contains PARTIAL Task 1 edits to
+  apps/backend/src/scripts/setup-chargebee.ts (ai_credits feature block added,
+  activateFeatures() defined but NOT wired into main(), free-plan entitlement
+  configs updated with ai_credits:200; starter/advanced entitlement configs
+  still missing ai_credits). Task 1 implementer completes and commits these.
+- Verified against Chargebee SDK 3.14.0 typings: chargebee.feature.activate(id)
+  exists; subscription.createWithItems(customerId, params) exists;
+  auto_collection: 'off' is the documented way to create $0 subs with no card.
+- Phase 0 (test-site separation) is blocked on the user creating a
+  dculus-global-test API key — user-facing checklist, not dispatched to subagents.
 
 ## Tasks
-- [x] Task 1: Move formatTimeForInput/combineDateAndTime into @dculus/utils
-- [x] Task 2: Frontend dual-format instant parser
-- [x] Task 3: Backend enforcement — dual-format parsing
-- [x] Task 4: Submission Limits UI — date + time inputs
-- [x] Task 5: Local-timezone hint translation strings
-- [x] Task 6: Manual verification (checklist, no commit)
+- [x] Task 1: Extend setup-chargebee.ts (ai_credits feature + entitlements + activation)
+- [x] Task 2: Schema columns (creditsUsedMilli, aiCreditsLimit) + lib/ai.ts credit weights
+- [x] Task 3: aiUsageService credits rework + caller tier params + tests
+- [x] Task 4: chargebeeService (ai_credits mapping, case-insensitive unlimited, $0 free subs, aiCreditsLimit sync) + tests
+- [x] Task 5: Backfill scripts (ai credits, free subscriptions)
+- [x] Task 6: GraphQL + form-app credits UI + i18n (en/ta)
+- [x] Task 7: Full-suite verification sweep (type-check, build, test:unit) + db:push (deferred from Task 2 — shared dev DB)
 
-Task 1: complete (commits 44b7fa95..ca080c87, review clean — Minor: unrelated S3_KEY_PATTERN regex escape cleanup bundled in, verified no-op, not blocking)
+Task 7: complete (db:push applied to dculus_forms_dev_db — pre-existing form_template [name,category] unique-constraint drift verified duplicate-free before --accept-data-loss; root type-check PASS, build PASS, backend 2374/2374 tests PASS)
 
-Task 2: complete (commits b422e9fe..45f5df36, review clean — Minor: JSDoc in timeWindowDateTime.ts:14 references brief's "step" prose, doc-polish only, deferred to final review)
+Final whole-branch review (Fable main loop, main..2fc8c98e, 27 files +1060/-110): APPROVED — verified aiUsageService final state (effectiveCreditLimit fallback chain, both counters in both upsert branches), chargebeeService (isUnlimited on all 3 features, fail-open $0 sub creation with Sentry, aiCreditsLimit at all 3 write sites incl. hardcoded outage fallback), en/ta locale parity + natural Tamil, meter renders credits with divide-by-zero guard. All deferred Minors triaged: cosmetic/documented, none blocking. READY FOR MERGE.
 
-Task 3: complete (commits 34d0dc19..c638829d, review clean — Minor: LEGACY_DATE_ONLY_RE recreated per-request (trivial hoist opportunity), no mirrored malformed-end test; deferred to final review)
+## Remaining (user-dependent, not code)
+- Phase 0: create dculus-global-test API key; switch local .env; gh env secrets (dev/staging); test-site webhook + separate CHARGEBEE_WEBHOOK_PASSWORD
+- Run setup-chargebee.ts against test site, then live site (adds ai_credits + activates the draft features)
+- Run backfill-ai-credits.ts then backfill-free-subscriptions.ts (dry-run first, then --execute) per environment
 
-Task 4: complete (commits 0866d501..b7eba2ed, review clean — notes for Task 6 manual verification: check clear-then-re-pick-start-date time-of-day carryover behavior, and check date+time input layout on narrow viewports)
+Task 2: complete (commit 627d9ea9, review clean — Important finding [prisma format collateral on 5 unrelated models] ruled acceptable by controller: cosmetic, no other task touches schema.prisma. Minor deferred to final review: missing afterEach env cleanup in new describe block; no invalid-override test for NANO weight specifically)
 
-Task 5: complete (commits 653992c8..f8ad16b5, review clean)
+DESIGN DEVIATION (controller, Task 3): plan said aiCreditsLimit null = unlimited; changed to null = not-synced → fall back to AI_CREDIT_LIMITS_FALLBACK[planId]. Reason: after db:push every existing row is null; null=unlimited would unmeter all orgs until backfill/webhook sync. No current plan has unlimited AI credits. Surface to user in final summary.
 
-Task 6: complete (manual E2E verification via Playwright against a real published form + shared dev DB).
-Found and fixed a real bug NOT in the original plan: formByShortUrl (apps/backend/src/graphql/resolvers/forms.ts)
-duplicated the old YYYY-MM-DD-only time-window validation and was never updated — any full-ISO-datetime time
-window made the form's own public landing page throw BAD_USER_INPUT instead of loading. Fixed by extracting
-a shared apps/backend/src/lib/timeWindowEnforcement.ts used by both submitResponse and formByShortUrl
-(commit 0977998b), with new precision tests added to forms.test.ts (112/112 passing across both files).
-Verified live: toggle time window -> precise date+time -> save -> reload (round-trips exactly) -> DB confirmed
-UTC ISO storage -> public form blocked before start -> submission succeeds inside window -> blocked with
-correct "Form Unavailable" message after end. Test form + response deleted from shared dev DB afterward.
+Task 3: complete (commit 90a1e6ca, review clean after controller fix round — Important [resolver error string said "tokens" for credit values] + Minor [stale null=unlimited schema comment] fixed directly + amended; reviewer re-approved, confirmed frontend keys off error code not string. NOTE for Task 6: frontend locale JSONs aiEditDrawer.json / aiFormBar.json / subscriptionDashboard.json still say "AI token limit reached" — reword to credits.)
 
-Final whole-branch review: found 1 Important issue (a third, stale copy of time-window
-parsing in apps/form-viewer/src/pages/FormViewer.tsx that silently no-oped for the new
-full-ISO format, currently masked by the server-side gate but a latent trap) plus
-confirmed deferred Minor #1/#3 as safe-to-leave/resolved. Fixed in commit af16ad27:
-removed the redundant client-side block (server-side formByShortUrl is now the sole
-enforcement point), reworded a leftover planning-doc JSDoc phrase, and added the
-missing malformed-end-value test coverage to both responses.test.ts and forms.test.ts
-(115/115 passing). Re-reviewed clean — Ready to merge: Yes.
+Task 4: complete (commit 419f6548, review clean — first dispatch died to API error then stalled; fresh dispatch kept its RED tests. Reviewer confirmed the "extra" hardcoded-fallback aiCredits addition is load-bearing, not scope creep. Minor deferred: failure-path test spies logger.error without asserting it; pre-existing `parseInt || null` treats "0" entitlement as null [inherited, all three features])
 
-## FEATURE COMPLETE — READY FOR MERGE
+Task 5: complete (commit a0bc3c4d, review clean — Minor deferred [brief-inherited]: subscription.list ignores next_offset for >100-sub customers; documented-unlikely)
+
+Task 6: complete (commit 2fc8c98e, review clean — reviewer verified ta naturalness + placeholder parity; Minor deferred: BillingSettings UsageCard shows unit only in label [matches sibling cards]; redundant toLocaleString on 1dp creditsUsed)
+
+Task 1: complete (commit 02d55ead — reviewed at 50e80540, spec ✅, quality approved; Important finding [loose 'active' substring match in activateFeatures error handling] fixed directly by controller + amended; Minor deferred: per-item log lines in activateFeatures omit trailing \n)
