@@ -52,8 +52,8 @@
     --sidebar-border: 240 2% 91%;
     --sidebar-ring: 290 11% 22%;
 
-    --font-sans: "DM Sans", sans-serif;
-    --font-serif: "DM Sans", serif;
+    --font-sans: "Inter", sans-serif;
+    --font-serif: "Inter", serif;
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
 
@@ -133,8 +133,8 @@
     --sidebar-accent-foreground: 240 4% 92%;
     --sidebar-border: 290 8% 17%;
     --sidebar-ring: 290 6% 76%;
-    --font-sans: "DM Sans", sans-serif;
-    --font-serif: "DM Sans", serif;
+    --font-sans: "Inter", sans-serif;
+    --font-serif: "Inter", serif;
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
     --tf-icon-salmon: rgba(248,205,216,0.20);

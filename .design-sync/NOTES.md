@@ -42,6 +42,27 @@
   stories fixed upstream (wrap in `FormRenderer`, or add a minimal
   context-provider decorator) before it can be synced with a real preview.
 
+## Fixed: font mismatch (2026-07-07, second pass)
+
+`--font-sans`/`--font-serif` in `packages/ui/src/styles/globals.css` said
+`"DM Sans"`, but **no app in the monorepo actually loads DM Sans anywhere** —
+`form-app`, `admin-app`, and `form-viewer`'s `index.html` all load **Inter**
+(+ `JetBrains Mono`) via Google Fonts `<link>` tags instead. This was a
+pre-existing product mismatch, not a sync artifact — confirmed by grepping
+the whole repo for `DM Sans` / `DM+Sans` (only the one CSS variable
+declaration, never an actual font load).
+
+User decided: fix `packages/ui` to match reality. Changed both the `:root`
+and `.dark` blocks' `--font-sans`/`--font-serif` from `"DM Sans"` to
+`"Inter"`. Added `packages/ui/.storybook/preview-head.html` with the same
+Google Fonts `<link>` tags the real apps already use (Inter + JetBrains Mono)
+— this is what the storybook-shape converter's `scrapeRemoteImports` picks
+up automatically (`<link rel="stylesheet" href="https://...">` in the
+Storybook iframe → `styles.css`'s `@import url(...)`), so `[FONT_MISSING]`
+is now resolved for real, not just documented as accepted. Re-synced via
+`resync.mjs --remote` (styling-only change; all 18 components' grades
+carried forward, verified via a `[SPOT_CHECK]` canary on 5 components).
+
 ## Known, accepted gaps (render-check warnings, not blocking)
 
 - `[TOKENS_MISSING]`: `--tracking-tight`, `--tracking-wide`, `--tracking-widest`,
@@ -55,11 +76,6 @@
   "ship what the customer already built."
   - `--radix-accordion-content-height` is set by Radix's Accordion at runtime
     via inline style — expected absent from static CSS.
-- `[FONT_MISSING]`: `"DM Sans"` / `"JetBrains Mono"` are referenced (and ARE
-  defined as `--font-sans`/`--font-mono` CSS vars in `globals.css`) but no
-  `@font-face` ships the actual `.woff2` files from this package — the DS
-  pane will render with system-font substitutes. No `cfg.extraFonts` path
-  found bundled in the repo at sync time.
 
 ## Re-sync risks
 

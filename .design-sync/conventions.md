@@ -33,7 +33,7 @@ from the tokens below. Key variable families (all consumed via Tailwind's
 | Sidebar | `--sidebar*` | sidebar-specific surface only |
 | Typeform palette | `--tf-*` (e.g. `--tf-icon-salmon`, `--tf-border`, `--tf-green`) | exact-match accents/overlays lifted from the reference design; use for fine-grained opacity/overlay tints Tailwind's default palette can't express |
 | Elevation | `--shadow-2xs` … `--shadow-2xl` | box-shadow scale |
-| Type | `--font-sans` ("DM Sans"), `--font-mono` ("JetBrains Mono") | do not hardcode font-family |
+| Type | `--font-sans` ("Inter"), `--font-mono` ("JetBrains Mono") | do not hardcode font-family |
 
 Use Tailwind utilities that resolve to these (`bg-primary`, `text-muted-foreground`,
 `border-border`, `shadow-md`, `rounded-[--radius]`, etc.) rather than raw hex
