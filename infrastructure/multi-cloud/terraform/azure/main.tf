@@ -222,6 +222,11 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
+        name  = "CHARGEBEE_WEBHOOK_PASSWORD"
+        value = var.chargebee_webhook_password
+      }
+
+      env {
         name  = "RUN_SEED"
         value = var.run_seed ? "true" : "false"
       }

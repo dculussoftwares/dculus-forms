@@ -231,6 +231,13 @@ variable "chargebee_api_key" {
   default     = ""
 }
 
+variable "chargebee_webhook_password" {
+  description = "Basic Auth password Chargebee sends with webhook calls; backend rejects all webhooks when unset"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "sentry_dsn" {
   description = "Sentry DSN for backend observability"
   type        = string

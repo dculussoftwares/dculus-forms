@@ -566,6 +566,7 @@ jobs:
           TF_VAR_email_from: ${{ secrets.EMAIL_FROM }}
           TF_VAR_chargebee_site: ${{ secrets.CHARGEBEE_SITE }}
           TF_VAR_chargebee_api_key: ${{ secrets.CHARGEBEE_API_KEY }}
+          TF_VAR_chargebee_webhook_password: ${{ secrets.CHARGEBEE_WEBHOOK_PASSWORD }}
           TF_VAR_sentry_dsn: ${{ secrets.SENTRY_DSN }}
           TF_VAR_pexels_api_key: ${{ secrets.PEXELS_API_KEY }}
           TF_VAR_pixabay_api_key: ${{ secrets.PIXABAY_API_KEY }}
