@@ -22,6 +22,14 @@ set-github-secrets.sh
 # Claude Code agent working memory (auto-regenerated, gets stale)
 .claude/agent-memory/
 
+# design-sync (see .design-sync/NOTES.md)
+.design-sync/sb-reference/
+.design-sync/learnings/
+.design-sync/.cache/
+.design-sync/node_modules
+.ds-sync/
+ds-bundle/
+
 # Logs
 logs
 *.log

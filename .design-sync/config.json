@@ -1,0 +1,38 @@
+{
+  "projectId": "36181fa0-089c-484a-9dcb-a3369f574d01",
+  "shape": "storybook",
+  "storybookConfigDir": "packages/ui/.storybook",
+  "pkg": "@dculus/ui",
+  "storybookStatic": ".design-sync/sb-reference",
+  "buildCmd": "pnpm -F \"@dculus/ui...\" build",
+  "readmeHeader": ".design-sync/conventions.md",
+  "titleMap": {
+    "Tokens": null,
+    "L1ClassicLayout": null,
+    "L2ModernLayout": null,
+    "L3CardLayout": null,
+    "LexicalRichTextEditor": "RichTextEditor"
+  },
+  "overrides": {
+    "Tabs": { "cardMode": "column" },
+    "LayoutRenderer": { "cardMode": "single" },
+    "PageRenderer": {
+      "skip": [
+        "renderers-pagerenderer--default",
+        "renderers-pagerenderer--single-page-mode",
+        "renderers-pagerenderer--multipage-mode",
+        "renderers-pagerenderer--builder-mode",
+        "renderers-pagerenderer--submission-mode",
+        "renderers-pagerenderer--preview-mode",
+        "renderers-pagerenderer--hidden-navigation",
+        "renderers-pagerenderer--single-page-form",
+        "renderers-pagerenderer--empty-form",
+        "renderers-pagerenderer--pages-with-no-fields",
+        "renderers-pagerenderer--custom-layout-styles",
+        "renderers-pagerenderer--controlled-form",
+        "renderers-pagerenderer--dark-theme",
+        "renderers-pagerenderer--validation-test-form"
+      ]
+    }
+  }
+}
