@@ -5,6 +5,7 @@ import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
 import { sendEmail } from './emailService.js';
 import * as Sentry from '@sentry/node';
+import { AI_CREDIT_LIMITS_FALLBACK } from '../lib/ai.js';
 
 /**
  * Chargebee Service
@@ -26,13 +27,22 @@ const PLAN_LIMITS_FALLBACK: Record<string, { views: number | null; submissions: 
   advanced: { views: null, submissions: 100000 },
 };
 
+// Chargebee returns unlimited entitlement values as the string "Unlimited"
+// (capital U) in live responses; some fixtures/tests use lowercase. Compare
+// case-insensitively so both are treated as "no limit".
+const isUnlimited = (v: unknown): boolean => String(v).toLowerCase() === 'unlimited';
+
+const entitlementToLimit = (v: unknown): number | null =>
+  v == null || isUnlimited(v) ? null : parseInt(String(v), 10) || null;
+
 /**
  * Returns plan limits sourced from Chargebee entitlements (via the plans cache).
- * Falls back to PLAN_LIMITS_FALLBACK when the cache is cold or the API is down.
+ * Falls back to PLAN_LIMITS_FALLBACK / AI_CREDIT_LIMITS_FALLBACK when the cache
+ * is cold or the API is down.
  */
 const getPlanLimits = async (
   planId: string
-): Promise<{ views: number | null; submissions: number | null }> => {
+): Promise<{ views: number | null; submissions: number | null; aiCredits: number | null }> => {
   try {
     const plans = await getAvailablePlans();
     const plan = plans.find((p: any) => p.id === planId);
@@ -40,12 +50,17 @@ const getPlanLimits = async (
       return {
         views: plan.features.views ?? null,
         submissions: plan.features.submissions ?? null,
+        aiCredits: plan.features.aiCredits ?? null,
       };
     }
   } catch {
     // fall through to fallback
   }
-  return PLAN_LIMITS_FALLBACK[planId] ?? { views: null, submissions: null };
+  return {
+    views: PLAN_LIMITS_FALLBACK[planId]?.views ?? null,
+    submissions: PLAN_LIMITS_FALLBACK[planId]?.submissions ?? null,
+    aiCredits: AI_CREDIT_LIMITS_FALLBACK[planId] ?? null,
+  };
 };
 
 /**
@@ -74,17 +89,46 @@ export const createChargebeeCustomer = async (
 /**
  * Create a free subscription for an organization
  * Called when a new organization is created
+ *
+ * The free plan now HAS a real, $0 Chargebee subscription (created with
+ * auto_collection: 'off' since there is no payment method on file) so that
+ * monthly renewal webhooks fire and reset usage counters, the same as paid
+ * plans. If Chargebee is unreachable, we still create the local subscription
+ * record with chargebeeSubscriptionId: null — billing being down must never
+ * block organization creation.
  */
 export const createFreeSubscription = async (
   organizationId: string,
   chargebeeCustomerId: string
 ): Promise<void> => {
   try {
-    // Free plan doesn't need a Chargebee subscription
-    // Just create the local subscription record
     const now = new Date();
     const periodEnd = new Date();
     periodEnd.setMonth(periodEnd.getMonth() + 1); // Free plan is monthly
+
+    let chargebeeSubscriptionId: string | null = null;
+    let currentPeriodStart = now;
+    let currentPeriodEnd = periodEnd;
+
+    try {
+      const result: any = await chargebee.subscription.createWithItems(chargebeeCustomerId, {
+        subscription_items: [{ item_price_id: 'free-usd-monthly', quantity: 1 }],
+        auto_collection: 'off',
+      } as any);
+
+      chargebeeSubscriptionId = result.subscription.id;
+      if (result.subscription.current_term_start && result.subscription.current_term_end) {
+        currentPeriodStart = new Date(result.subscription.current_term_start * 1000);
+        currentPeriodEnd = new Date(result.subscription.current_term_end * 1000);
+      }
+    } catch (chargebeeError: any) {
+      // Fail open: do not let a Chargebee outage block organization creation.
+      Sentry.captureException(chargebeeError);
+      logger.error(
+        '[Chargebee Service] Error creating $0 Chargebee subscription for free plan:',
+        chargebeeError
+      );
+    }
 
     const freeLimits = await getPlanLimits('free');
 
@@ -92,15 +136,16 @@ export const createFreeSubscription = async (
       id: `sub_${organizationId}`,
       organizationId,
       chargebeeCustomerId,
-      chargebeeSubscriptionId: null, // No Chargebee subscription for free plan
+      chargebeeSubscriptionId,
       planId: 'free',
       status: 'active',
       viewsUsed: 0,
       submissionsUsed: 0,
       viewsLimit: freeLimits.views,
       submissionsLimit: freeLimits.submissions,
-      currentPeriodStart: now,
-      currentPeriodEnd: periodEnd,
+      aiCreditsLimit: freeLimits.aiCredits,
+      currentPeriodStart,
+      currentPeriodEnd,
     });
 
     logger.info('[Chargebee Service] Created free subscription for organization:', organizationId);
@@ -260,6 +305,7 @@ export const syncSubscriptionFromWebhook = async (
         status,
         viewsLimit: limits.views,
         submissionsLimit: limits.submissions,
+        aiCreditsLimit: limits.aiCredits,
         currentPeriodStart: new Date(
           subscriptionData.current_term_start * 1000
         ),
@@ -276,6 +322,7 @@ export const syncSubscriptionFromWebhook = async (
         submissionsUsed: 0,
         viewsLimit: limits.views,
         submissionsLimit: limits.submissions,
+        aiCreditsLimit: limits.aiCredits,
         currentPeriodStart: new Date(
           subscriptionData.current_term_start * 1000
         ),
@@ -474,8 +521,9 @@ export const getAvailablePlans = async () => {
 
         // Map Chargebee feature IDs to our format
         plansByItem[planId].features = {
-          views: features['form_views'] === 'unlimited' ? null : parseInt(features['form_views']) || null,
-          submissions: features['form_submissions'] === 'unlimited' ? null : parseInt(features['form_submissions']) || null,
+          views: entitlementToLimit(features['form_views']),
+          submissions: entitlementToLimit(features['form_submissions']),
+          aiCredits: entitlementToLimit(features['ai_credits']),
         };
       }
     }
@@ -516,7 +564,7 @@ export const getAvailablePlans = async () => {
           { id: 'free-usd-monthly', currency: 'USD', amount: 0, period: 'month' },
           { id: 'free-inr-monthly', currency: 'INR', amount: 0, period: 'month' },
         ],
-        features: { views: 10000, submissions: 1000 },
+        features: { views: 10000, submissions: 1000, aiCredits: AI_CREDIT_LIMITS_FALLBACK.free ?? null },
       },
       {
         id: 'starter',
@@ -528,7 +576,7 @@ export const getAvailablePlans = async () => {
           { id: 'starter-inr-monthly', currency: 'INR', amount: 489, period: 'month' },
           { id: 'starter-inr-yearly', currency: 'INR', amount: 5400, period: 'year' },
         ],
-        features: { views: null, submissions: 10000 },
+        features: { views: null, submissions: 10000, aiCredits: AI_CREDIT_LIMITS_FALLBACK.starter ?? null },
       },
       {
         id: 'advanced',
@@ -540,7 +588,7 @@ export const getAvailablePlans = async () => {
           { id: 'advanced-inr-monthly', currency: 'INR', amount: 1289, period: 'month' },
           { id: 'advanced-inr-yearly', currency: 'INR', amount: 14268, period: 'year' },
         ],
-        features: { views: null, submissions: 100000 },
+        features: { views: null, submissions: 100000, aiCredits: AI_CREDIT_LIMITS_FALLBACK.advanced ?? null },
       },
     ];
   }

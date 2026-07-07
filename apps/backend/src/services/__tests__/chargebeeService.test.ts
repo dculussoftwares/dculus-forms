@@ -14,6 +14,7 @@ import {
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
 import { subscriptionRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
+import * as Sentry from '@sentry/node';
 
 // Mock dependencies
 vi.mock('chargebee', () => {
@@ -31,6 +32,7 @@ vi.mock('chargebee', () => {
       retrieve: vi.fn(),
       cancel: vi.fn(),
       reactivate: vi.fn(),
+      createWithItems: vi.fn(),
     },
     itemPrice: {
       list: vi.fn(),
@@ -51,6 +53,7 @@ vi.mock('chargebee', () => {
 });
 vi.mock('../../subscriptions/usageService.js');
 vi.mock('../../repositories/index.js');
+vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
 
 const Chargebee = await import('chargebee') as any;
 const mockChargebee = Chargebee.__mockChargebee;
@@ -65,6 +68,7 @@ describe('Chargebee Service', () => {
     mockChargebee.subscription.retrieve.mockReset();
     mockChargebee.subscription.cancel.mockReset();
     mockChargebee.subscription.reactivate.mockReset();
+    mockChargebee.subscription.createWithItems.mockReset();
     mockChargebee.itemPrice.list.mockReset();
     mockChargebee.entitlement.list.mockReset();
     mockChargebee.item.retrieve.mockReset();
@@ -116,28 +120,43 @@ describe('Chargebee Service', () => {
   });
 
   describe('createFreeSubscription', () => {
-    it('should create free subscription successfully', async () => {
+    it('should create a real $0 Chargebee subscription and use its id locally', async () => {
+      mockChargebee.subscription.createWithItems.mockResolvedValue({
+        subscription: { id: 'chargebee_sub_free_1' },
+      });
       vi.mocked(subscriptionRepository.createSubscription).mockResolvedValue({} as any);
 
       await createFreeSubscription('org-123', 'cust_123');
+
+      expect(mockChargebee.subscription.createWithItems).toHaveBeenCalledWith(
+        'cust_123',
+        expect.objectContaining({
+          subscription_items: [{ item_price_id: 'free-usd-monthly', quantity: 1 }],
+          auto_collection: 'off',
+        })
+      );
 
       expect(subscriptionRepository.createSubscription).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'sub_org-123',
           organizationId: 'org-123',
           chargebeeCustomerId: 'cust_123',
-          chargebeeSubscriptionId: null,
+          chargebeeSubscriptionId: 'chargebee_sub_free_1',
           planId: 'free',
           status: 'active',
           viewsUsed: 0,
           submissionsUsed: 0,
           viewsLimit: 10000,
           submissionsLimit: 1000,
+          aiCreditsLimit: 200,
         })
       );
     });
 
-    it('should set period end to one month from now', async () => {
+    it('should set period end to one month from now when Chargebee does not return term dates', async () => {
+      mockChargebee.subscription.createWithItems.mockResolvedValue({
+        subscription: { id: 'chargebee_sub_free_2' },
+      });
       vi.mocked(subscriptionRepository.createSubscription).mockResolvedValue({} as any);
 
       await createFreeSubscription('org-123', 'cust_123');
@@ -152,8 +171,51 @@ describe('Chargebee Service', () => {
       expect(new Date(periodEnd).getMonth()).toBe(expectedEndDate.getMonth());
     });
 
+    it('should use Chargebee current_term_start/end when present', async () => {
+      mockChargebee.subscription.createWithItems.mockResolvedValue({
+        subscription: {
+          id: 'chargebee_sub_free_3',
+          current_term_start: 1704067200,
+          current_term_end: 1706745600,
+        },
+      });
+      vi.mocked(subscriptionRepository.createSubscription).mockResolvedValue({} as any);
+
+      await createFreeSubscription('org-123', 'cust_123');
+
+      expect(subscriptionRepository.createSubscription).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chargebeeSubscriptionId: 'chargebee_sub_free_3',
+          currentPeriodStart: new Date(1704067200 * 1000),
+          currentPeriodEnd: new Date(1706745600 * 1000),
+        })
+      );
+    });
+
+    it('should fail open: keep creating the local record when Chargebee is unreachable', async () => {
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      mockChargebee.subscription.createWithItems.mockRejectedValue(new Error('Chargebee down'));
+      vi.mocked(subscriptionRepository.createSubscription).mockResolvedValue({} as any);
+
+      await createFreeSubscription('org-123', 'cust_123');
+
+      expect(vi.mocked(Sentry.captureException)).toHaveBeenCalled();
+      expect(subscriptionRepository.createSubscription).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chargebeeSubscriptionId: null,
+          planId: 'free',
+          aiCreditsLimit: 200,
+        })
+      );
+
+      loggerError.mockRestore();
+    });
+
     it('should handle subscription creation errors', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      mockChargebee.subscription.createWithItems.mockResolvedValue({
+        subscription: { id: 'chargebee_sub_free_4' },
+      });
       vi.mocked(subscriptionRepository.createSubscription).mockRejectedValue(
         new Error('Database error')
       );
@@ -373,8 +435,11 @@ describe('Chargebee Service', () => {
           status: 'active',
           viewsLimit: null,
           submissionsLimit: 10000,
+          aiCreditsLimit: 2000,
         }),
-        expect.any(Object)
+        expect.objectContaining({
+          aiCreditsLimit: 2000,
+        })
       );
     });
 
@@ -402,8 +467,11 @@ describe('Chargebee Service', () => {
           planId: 'advanced',
           viewsLimit: null,
           submissionsLimit: 100000,
+          aiCreditsLimit: 20000,
         }),
-        expect.any(Object)
+        expect.objectContaining({
+          aiCreditsLimit: 20000,
+        })
       );
     });
 
@@ -584,6 +652,138 @@ describe('Chargebee Service', () => {
         views: null,
         submissions: 10000,
       });
+    });
+
+    it('should treat capital-U "Unlimited" as unlimited (null)', async () => {
+      mockChargebee.itemPrice.list.mockResolvedValue({
+        list: [
+          {
+            item_price: {
+              id: 'advanced-usd-monthly',
+              item_id: 'advanced-plan',
+              item_type: 'plan',
+              price: 1500,
+              currency_code: 'USD',
+              period_unit: 'month',
+            },
+          },
+        ],
+        next_offset: undefined,
+      });
+
+      mockChargebee.entitlement.list.mockResolvedValue({
+        list: [
+          {
+            entitlement: {
+              entity_id: 'advanced-usd-monthly',
+              feature_id: 'form_views',
+              value: 'Unlimited',
+            },
+          },
+          {
+            entitlement: {
+              entity_id: 'advanced-usd-monthly',
+              feature_id: 'form_submissions',
+              value: '100000',
+            },
+          },
+        ],
+        next_offset: undefined,
+      });
+
+      mockChargebee.item.retrieve.mockResolvedValue({
+        item: {
+          id: 'advanced-plan',
+          name: 'Advanced Plan',
+          external_name: 'advanced',
+          description: 'For enterprises',
+        },
+      });
+
+      const result = await getAvailablePlans();
+
+      expect(result[0].features).toMatchObject({
+        views: null,
+        submissions: 100000,
+      });
+    });
+
+    it('should map ai_credits entitlement to aiCredits, and default to null when absent', async () => {
+      mockChargebee.itemPrice.list.mockResolvedValue({
+        list: [
+          {
+            item_price: {
+              id: 'starter-usd-monthly',
+              item_id: 'starter-plan',
+              item_type: 'plan',
+              price: 600,
+              currency_code: 'USD',
+              period_unit: 'month',
+            },
+          },
+          {
+            item_price: {
+              id: 'advanced-usd-monthly',
+              item_id: 'advanced-plan',
+              item_type: 'plan',
+              price: 1500,
+              currency_code: 'USD',
+              period_unit: 'month',
+            },
+          },
+        ],
+        next_offset: undefined,
+      });
+
+      mockChargebee.entitlement.list.mockResolvedValue({
+        list: [
+          {
+            entitlement: {
+              entity_id: 'starter-usd-monthly',
+              feature_id: 'form_views',
+              value: 'unlimited',
+            },
+          },
+          {
+            entitlement: {
+              entity_id: 'starter-usd-monthly',
+              feature_id: 'form_submissions',
+              value: '10000',
+            },
+          },
+          {
+            entitlement: {
+              entity_id: 'starter-usd-monthly',
+              feature_id: 'ai_credits',
+              value: '2000',
+            },
+          },
+          // advanced-usd-monthly has no ai_credits entitlement at all
+          {
+            entitlement: {
+              entity_id: 'advanced-usd-monthly',
+              feature_id: 'form_views',
+              value: 'unlimited',
+            },
+          },
+        ],
+        next_offset: undefined,
+      });
+
+      mockChargebee.item.retrieve.mockImplementation(async (id: string) => {
+        if (id === 'starter-plan') {
+          return { item: { id: 'starter-plan', name: 'Starter Plan', external_name: 'starter' } };
+        }
+        return { item: { id: 'advanced-plan', name: 'Advanced Plan', external_name: 'advanced' } };
+      });
+
+      const result = await getAvailablePlans();
+
+      const starter = result.find((p: any) => p.id === 'starter');
+      const advanced = result.find((p: any) => p.id === 'advanced');
+
+      expect(starter.features).toMatchObject({ aiCredits: 2000 });
+      expect(advanced.features).toMatchObject({ aiCredits: null });
     });
 
     it('should handle pagination for item prices', async () => {
