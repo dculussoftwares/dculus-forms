@@ -5,7 +5,7 @@
   "error": {
     "title": "Generation failed",
     "description": "Failed to generate form. Please try again.",
-    "limitReached": "AI token limit reached. Upgrade your plan to continue."
+    "limitReached": "AI credit limit reached. Upgrade your plan to continue."
   },
   "success": {
     "title": "Form generated",

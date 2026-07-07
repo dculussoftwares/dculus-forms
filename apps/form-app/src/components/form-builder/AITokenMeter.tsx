@@ -20,9 +20,10 @@ const AITokenMeter: React.FC<Props> = ({ organizationId }) => {
   const usage = data?.aiTokenUsage;
   if (!usage) return null;
 
-  const pct = usage.limit > 0 ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 100;
+  const { creditsUsed, creditsLimit, resetAt } = usage;
+  const pct = creditsLimit > 0 ? Math.min(100, Math.round((creditsUsed / creditsLimit) * 100)) : 100;
   const resetDate = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(
-    new Date(usage.resetAt)
+    new Date(resetAt)
   );
 
   const barColor =
@@ -35,7 +36,12 @@ const AITokenMeter: React.FC<Props> = ({ organizationId }) => {
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs text-muted-foreground">{t('tokenMeter.label')}</span>
         <span className={cn('text-xs font-medium', textColor)}>
-          {(usage.used / 1000).toFixed(0)}k / {(usage.limit / 1000).toFixed(0)}k
+          {t('tokenMeter.creditsUsed', {
+            values: {
+              used: creditsUsed.toLocaleString(),
+              limit: creditsLimit.toLocaleString(),
+            },
+          })}
         </span>
       </div>
       <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">

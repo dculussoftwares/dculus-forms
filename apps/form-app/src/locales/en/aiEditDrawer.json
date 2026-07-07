@@ -14,7 +14,7 @@
     "REORDER_FIELDS": "Reordered fields",
     "UPDATE_LAYOUT": "Updated layout"
   },
-  "tokenLimitError": "AI token limit reached. Upgrade your plan to continue.",
+  "tokenLimitError": "AI credit limit reached. Upgrade your plan to continue.",
   "genericError": "Something went wrong. Please try again.",
   "emptyState": "Ask AI to help you edit, improve, or rewrite any part of your form.",
   "openButton": "AI",
@@ -62,8 +62,9 @@
   "tokenMeter": {
     "label": "AI usage this month",
     "used": "{{percent}}% used",
+    "creditsUsed": "{{used}} / {{limit}} credits",
     "resets": "Resets {{date}}",
-    "limitReached": "Token limit reached.",
+    "limitReached": "Credit limit reached.",
     "upgrade": "Upgrade plan"
   },
   "chips": {

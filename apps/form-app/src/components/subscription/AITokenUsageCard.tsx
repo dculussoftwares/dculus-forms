@@ -40,9 +40,9 @@ export function AITokenUsageCard({ organizationId, currentPlan }: AITokenUsageCa
 
   if (!data?.aiTokenUsage) return null;
 
-  const { used, limit, resetAt } = data.aiTokenUsage;
-  const percentage = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
-  const limitReached = limit > 0 && used >= limit;
+  const { creditsUsed, creditsLimit, resetAt } = data.aiTokenUsage;
+  const percentage = creditsLimit > 0 ? Math.min((creditsUsed / creditsLimit) * 100, 100) : 0;
+  const limitReached = creditsLimit > 0 && creditsUsed >= creditsLimit;
   const d = new Date(resetAt);
   const resetDate = isNaN(d.getTime()) ? '–' : d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
 
@@ -79,14 +79,14 @@ export function AITokenUsageCard({ organizationId, currentPlan }: AITokenUsageCa
           </div>
         )}
 
-        {/* Token count */}
+        {/* Credit count */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-muted-foreground">
               {t('aiTokens.used', {
                 values: {
-                  used: used.toLocaleString(),
-                  limit: limit.toLocaleString(),
+                  used: creditsUsed.toLocaleString(),
+                  limit: creditsLimit.toLocaleString(),
                 },
               })}
             </span>

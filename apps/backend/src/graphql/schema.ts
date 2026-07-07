@@ -1284,6 +1284,8 @@ export const typeDefs = gql`
     used: Int!
     limit: Int!
     resetAt: String!
+    creditsUsed: Float!
+    creditsLimit: Int!
   }
 
 

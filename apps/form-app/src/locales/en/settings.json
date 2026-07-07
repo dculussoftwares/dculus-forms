@@ -250,7 +250,9 @@
     "noSubscription": "No active subscription",
     "portalOpening": "Opening billing portal",
     "portalOpeningDesc": "Manage your subscription in the new tab",
-    "portalError": "Failed to open portal"
+    "portalError": "Failed to open portal",
+    "aiCreditsLabel": "AI credits",
+    "aiCreditsResetOn": "Your credits reset on {{date}}"
   },
   "membersPage": {
     "title": "Members",

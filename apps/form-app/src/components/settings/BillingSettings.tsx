@@ -150,15 +150,19 @@ export function BillingSettings() {
   });
 
   const tokenUsage = tokenData?.aiTokenUsage;
-  const tokenPct = tokenUsage && tokenUsage.limit > 0
-    ? Math.min((tokenUsage.used / tokenUsage.limit) * 100, 100)
+  const tokenPct = tokenUsage && tokenUsage.creditsLimit > 0
+    ? Math.min((tokenUsage.creditsUsed / tokenUsage.creditsLimit) * 100, 100)
     : 0;
   const tokenResetDate = tokenUsage
     ? (() => {
         const d = new Date(tokenUsage.resetAt);
         return isNaN(d.getTime())
           ? ''
-          : `Your tokens reset on ${d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
+          : t('billing.aiCreditsResetOn', {
+              values: {
+                date: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+              },
+            });
       })()
     : '';
 
@@ -228,9 +232,9 @@ export function BillingSettings() {
           />
           <UsageCard
             icon={<Sparkles className="h-4 w-4" />}
-            label="AI tokens"
-            used={tokenUsage?.used ?? 0}
-            limit={tokenUsage?.limit ?? null}
+            label={t('billing.aiCreditsLabel')}
+            used={tokenUsage?.creditsUsed ?? 0}
+            limit={tokenUsage?.creditsLimit ?? null}
             unlimited={false}
             percentage={tokenPct}
             resetDate={tokenResetDate}

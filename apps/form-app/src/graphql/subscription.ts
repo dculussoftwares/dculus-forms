@@ -119,6 +119,8 @@ export const GET_AI_TOKEN_USAGE : TypedDocumentNode<any, any> = gql`
       used
       limit
       resetAt
+      creditsUsed
+      creditsLimit
     }
   }
 `;
