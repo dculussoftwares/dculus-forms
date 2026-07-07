@@ -31,6 +31,24 @@ Task 7: complete (db:push applied to dculus_forms_dev_db — pre-existing form_t
 
 Final whole-branch review (Fable main loop, main..2fc8c98e, 27 files +1060/-110): APPROVED — verified aiUsageService final state (effectiveCreditLimit fallback chain, both counters in both upsert branches), chargebeeService (isUnlimited on all 3 features, fail-open $0 sub creation with Sentry, aiCreditsLimit at all 3 write sites incl. hardcoded outage fallback), en/ta locale parity + natural Tamil, meter renders credits with divide-by-zero guard. All deferred Minors triaged: cosmetic/documented, none blocking. READY FOR MERGE.
 
+## Rollout log (2026-07-07)
+- Test site dculus-global-test: catalog fully provisioned (10 prices, ai_credits entitlements verified via API), features ACTIVE, multi-currency+USD enabled by user, webhook configured by user.
+- Dev backfills: aiCreditsLimit seeded (1 org), $0 sub created (customer had to be created on test site first — dev orgs' customers only existed on live).
+- GitHub: dev/staging env secrets = test site; repo secrets = live; CHARGEBEE_WEBHOOK_PASSWORD wired via terraform (commit 7f6277e7), passwords in ~/dculus-chargebee-webhook-passwords.txt (gitignored copy in repo root).
+- Bug fixed during rollout: backfill scripts crashed on module-load env validation (ESM import order) — load-env.ts shim, commit e275f4b9.
+- Live site dculus-global: ai_credits feature + entitlements created, all 3 features activated (setup script run 2026-07-07 05:15 UTC).
+- Prod DB: migration 20260707051800_add_ai_credits applied via migrate deploy (repo uses migrations in prod — migration file committed 6075d30b); backfills executed: 10/10 orgs seeded with aiCreditsLimit=200 and real $0 live-site subscriptions, 0 failures.
+- Secret audit of all pushed commits: clean.
+- Deploy: main push auto-deploys dev; tag v1.2.111 pushed → production deploy via Build Pipeline → multi-cloud-deployment.
+- Pre-existing prod drift noted (NOT touched): form_template has 7×3 duplicate name+category rows; schema.prisma's unique constraint has no migration. dedupe-templates.ts exists in scripts/. Separate cleanup task.
+
+## Deploy + webhook verification (2026-07-07, final)
+- Prod container runs image v1.2.111 (dispatched via workflow_dispatch — v* tag push does NOT trigger prod deploy; workflow_run ignores tags filter). Dev on sha-6075d30b.
+- Webhook password mismatch found post-deploy: user configured Chargebee dashboards with their own credentials, not the generated secrets. Resolved by adopting the user's password everywhere (repo + dev/staging gh secrets, both container apps via az update, local .env).
+- Live verification: /health 200 on both; POST /api/webhooks/chargebee → 200 with dashboard credentials, 401 with wrong password, on BOTH prod and dev. Chargebee webhooks functional end-to-end for the first time.
+
+## FEATURE + ROLLOUT COMPLETE (pending: e2e tests in prod deploy run 28844422130)
+
 ## Remaining (user-dependent, not code)
 - Phase 0: create dculus-global-test API key; switch local .env; gh env secrets (dev/staging); test-site webhook + separate CHARGEBEE_WEBHOOK_PASSWORD
 - Run setup-chargebee.ts against test site, then live site (adds ai_credits + activates the draft features)
