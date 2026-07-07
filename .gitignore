@@ -171,3 +171,7 @@ test/e2e/.auth/
 .agents/
 skills-lock.json
 /.superpowers/brainstorm/*
+
+# Local secret references — never commit
+dculus-chargebee-webhook-passwords.txt
+*.env.bak*
