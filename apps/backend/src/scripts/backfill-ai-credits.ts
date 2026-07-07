@@ -26,20 +26,10 @@
  *   npx tsx src/scripts/backfill-ai-credits.ts --execute    # apply changes
  */
 
-import * as dotenv from 'dotenv';
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import './load-env.js'; // MUST be first: lib/env.js validates env at import time
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { AI_CREDIT_LIMITS_FALLBACK } from '../lib/ai.js';
-
-// ES module __dirname equivalent
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load environment variables
-dotenv.config({ path: resolve(__dirname, '../../.env') });
 
 const EXECUTE = process.argv.includes('--execute');
 

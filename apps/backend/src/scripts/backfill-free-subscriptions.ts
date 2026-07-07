@@ -34,20 +34,10 @@
  *   npx tsx src/scripts/backfill-free-subscriptions.ts --execute    # apply changes
  */
 
+import './load-env.js'; // MUST be first: lib/env.js validates env at import time
 import Chargebee from 'chargebee';
-import * as dotenv from 'dotenv';
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
-
-// ES module __dirname equivalent
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load environment variables
-dotenv.config({ path: resolve(__dirname, '../../.env') });
 
 const CHARGEBEE_SITE = process.env.CHARGEBEE_SITE;
 const CHARGEBEE_API_KEY = process.env.CHARGEBEE_API_KEY;
