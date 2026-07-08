@@ -6,6 +6,7 @@ import { s3Config } from '../../lib/env.js';
 import { logger } from '../../lib/logger.js';
 import { cancelChargebeeSubscription, reactivateChargebeeSubscription } from '../../services/chargebeeService.js';
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
+import { invalidateAIBudgetCache } from '../../services/aiUsageService.js';
 import { type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 
 export interface AdminOrganizationsArgs {
@@ -641,9 +642,11 @@ export const adminResolvers = {
         resetUsageCounters(orgId, subscription.currentPeriodStart, subscription.currentPeriodEnd),
         prisma.aIUsage.updateMany({
           where: { organizationId: orgId },
-          data: { tokensUsed: 0 },
+          data: { tokensUsed: 0, creditsUsedMilli: 0 },
         }),
       ]);
+
+      invalidateAIBudgetCache(orgId);
 
       await prisma.auditLog.create({
         data: {
