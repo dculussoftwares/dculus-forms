@@ -25,55 +25,145 @@ dculus-forms is a form builder SaaS with:
 - Response management with edit tracking
 - Excel/CSV export with plugin-contributed columns
 
-**Plugin events available**: `form.submitted`, `plugin.test`
+**Plugin events available**: `form.submitted`, `plugin.test` — these are the ONLY two events defined in `apps/backend/src/plugins/core/events.ts`. Do not invent a new event type without checking that file first.
 
-**Existing plugin types**: `webhook`, `email`, `quiz-grading`, `google-sheets`
+**Existing plugin types**: `webhook`, `email`, `quiz-grading`, `ai-tagger`, `google-sheets`, `microsoft-sheets`. There is also a `slack` entry in `packages/plugins/src/manifests/slack.ts` — this is a UI-only "coming soon" placeholder (`available: false`) with NO backend implementation. Never use it as a scaffold template.
 
 ---
 
 ## Architecture You Must Follow
 
+### Backend Core System (do not modify — read to understand contracts)
+
+Lives in `apps/backend/src/plugins/core/`:
+- `types.ts` — `PluginConfig { type: string; [key: string]: any }`; `PluginEvent { type: 'form.submitted' | 'plugin.test'; formId; organizationId; data; timestamp }`; handler signature:
+  ```ts
+  export type PluginHandler = (
+    plugin: { id: string; config: PluginConfig },
+    event: PluginEvent,
+    context: PluginContext
+  ) => Promise<any>;
+  ```
+- `context.ts` — `PluginContext = { prisma, getFormById, getResponseById, getResponsesByFormId, getOrganization, getUserById, sendEmail, logger }`
+- `registry.ts` — `registerPlugin(type, handler)` (Map-based)
+- `executor.ts` — runs the handler, writes a `PluginDelivery` row; plugins for a form run **sequentially** (intentional — avoids `response.metadata` write races). Don't parallelize.
+- `events.ts` — `emitFormSubmitted(formId, organizationId, responseData)`, `emitPluginTest(formId, organizationId, testData?)`
+- `exportRegistry.ts` — the export-column contract (see below)
+- `backfill.ts` — a generic engine that replays `form.submitted` for any registered plugin type using `PluginDelivery` history. It works automatically the moment a handler is registered via `registerPlugin` — **you never write anything here for a new plugin.**
+
 ### Backend Plugin Files
 
-1. **Handler**: `apps/backend/src/plugins/{pluginType}/handler.ts`
-   - Exports a default async function: `async function handle(event: FormSubmittedEvent, plugin: Plugin): Promise<void>`
-   - Reads plugin config from `plugin.configuration` (typed JSON)
+Per-plugin folder: `apps/backend/src/plugins/{type}/` with `types.ts`, `handler.ts`, `index.ts`, optionally `export.ts` (if the plugin produces response-level data for exports) and `oauth.ts` (if OAuth-based, see below).
+
+1. **Handler**: `apps/backend/src/plugins/{type}/handler.ts`
+   - Matches the `PluginHandler` signature above (takes `plugin`, `event`, `context` — not `(event, plugin)`)
+   - Reads config from `plugin.config` (typed via your `types.ts` interface)
    - Handles errors gracefully — never throw unhandled errors that crash the server
-   - Logs meaningful messages
+   - Writes results to `response.metadata` under the **instance-scoped** key `` `${pluginType}:${plugin.id}` `` (e.g. `` `quiz-grading:${plugin.id}` ``) — not a bare type key
+   - Logs meaningful messages via `context.logger`
 
-2. **Registry**: `apps/backend/src/plugins/registry.ts`
-   - Use `registerPlugin({ type: '{pluginType}', handler: yourHandler })` pattern
-   - Import and register in the existing Map-based registry
+2. **`index.ts`** — wires the handler (and export, if any) together and is imported centrally (step 3 below):
+   ```ts
+   import { registerPlugin } from '../core/registry.js';
+   import { yourHandler } from './handler.js';
+   import { YOUR_PLUGIN_TYPE } from './types.js';
+   import './export.js'; // omit if the plugin has no export columns — side-effect registers them
+   registerPlugin(YOUR_PLUGIN_TYPE, yourHandler);
+   export * from './types.js';
+   export { yourHandler } from './handler.js';
+   ```
 
-3. **Export columns** (if plugin produces response-level data): `apps/backend/src/plugins/exportRegistry.ts`
-   - Use `registerPluginExport({ pluginType, getColumns(), getValues(metadata) })`
-   - Results stored in `Response.metadata` keyed by plugin type
+3. **Registration entrypoint — `apps/backend/src/plugins/index.ts`** (NOT `registry.ts` — that's the generic Map, not a per-plugin file):
+   - Add `import './{type}/index.js';` to this file's import list.
+   - **This is the single most common missed step.** Without it, the handler and export columns are silently never registered — no error, the plugin just never fires and never exports.
+
+### CSV / Excel Export Columns (if the plugin produces response-level data)
+
+The export pipeline (`apps/backend/src/services/unifiedExportService.ts`) is generic and driven entirely by `exportRegistry.ts` — you never edit `unifiedExportService.ts` itself for a new plugin.
+
+Create `apps/backend/src/plugins/{type}/export.ts`:
+```ts
+import { registerPluginExport } from '../core/exportRegistry.js';
+
+registerPluginExport({
+  pluginType: YOUR_PLUGIN_TYPE,
+  getColumns(): string[] {
+    return ['Column A', 'Column B'];
+  },
+  // Optional — only implement if the column set depends on plugin config
+  // (e.g. quiz-grading emits one column per configured question).
+  // Falls back to getColumns() if omitted.
+  getColumnsWithConfig(pluginConfig: Record<string, any>): string[] {
+    return [...];
+  },
+  getValues(metadata: any): (string | number | null)[] {
+    return [metadata?.a ?? null, metadata?.b ?? null];
+  },
+});
+```
+Then import `./export.js` from the plugin's `index.ts` (step 2 above) — a side-effect import, easy to forget.
+
+How it actually gets pulled into an export, so you can reason about edge cases:
+- `unifiedExportService.ts` discovers which plugin types have data via `getPluginTypesWithData(responses)`, which scans each response's `metadata` keys — this is **independent of whether the plugin is currently enabled** on the form. Historical data from a since-disabled or since-deleted plugin still exports using `getColumns()`.
+- Per-instance `config` (used for `getColumnsWithConfig`) is only available for **currently enabled** plugins (`apps/backend/src/graphql/resolvers/unifiedExport.ts` builds `pluginConfigs` from `formPlugin.findMany({ where: { formId, enabled: true } })`). If disabled, the export silently falls back to `getColumns()`.
+- Column order is fixed: `Response ID`, `Submitted At`, `Tags`, then plugin columns (in the order their metadata keys sort), then form-field columns. There is no per-plugin-type sheet-naming or ordering hook — don't add one.
 
 ### Frontend Plugin Files
 
-All frontend plugin files live under `apps/form-app/src/plugins/{pluginType}/` — NOT under `src/components/plugins/`. Each plugin owns a self-contained folder.
+Two separate layers — don't conflate them:
 
-4. **Plugin config component**: `apps/form-app/src/plugins/{pluginType}/ConfigForm.tsx`
+1. **Per-plugin folder** `apps/form-app/src/plugins/{type}/` — owns `ConfigForm.tsx`, `OverviewSummary.tsx`, `index.ts`, and optionally `ResponseCell.tsx` / `MetadataViewer.tsx` / `ResultsDialog.tsx` for plugins that render per-response data in the responses table (see `quiz` for a full example).
+2. **Shared dashboard/gallery UI** `apps/form-app/src/components/plugins/` — cross-plugin chrome with hardcoded per-type entries you must extend (icon/color/label list below). Don't create per-plugin files here.
+
+4. **Plugin config component**: `apps/form-app/src/plugins/{type}/ConfigForm.tsx`
    - Uses shadcn/ui components imported exclusively from `@dculus/ui`
    - Uses `generateId`, `cn` from `@dculus/utils`
    - Follows the icon-in-card pattern: `<div className="bg-{color}-50 p-3 rounded-xl"><Icon className="h-5 w-5 text-{color}-600" /></div>`
    - All user-facing strings MUST use i18n via `useTranslation`
    - Toast notifications use `toastSuccess` / `toastError` from `@dculus/ui`
    - Form state managed with React hooks (no external form libraries unless already used)
+   - If OAuth-based, must handle the post-redirect URL-fragment handoff (see OAuth section below)
 
-5. **Plugin overview summary component**: `apps/form-app/src/plugins/{pluginType}/OverviewSummary.tsx`
+5. **Plugin overview summary component**: `apps/form-app/src/plugins/{type}/OverviewSummary.tsx`
    - Receives `{ config: Record<string, any> }` — typed by `OverviewSummaryProps` from `apps/form-app/src/plugins/core/registry.tsx`
    - Renders a compact read-only summary of the plugin's current configuration for the plugin dashboard modal's Overview tab
    - Must handle unconfigured/empty config state gracefully (show a "not configured" placeholder instead of crashing)
    - Examples of what to show: connected account name, target URL, pass threshold, spreadsheet link
 
-6. **Plugin frontend registration**: `apps/form-app/src/plugins/{pluginType}/index.ts`
-   - Calls `registerFrontendPlugin({ type: '{pluginType}', ConfigForm, OverviewSummary })` from `'../core/registry'`
+6. **Plugin frontend registration**: `apps/form-app/src/plugins/{type}/index.ts`
+   - Calls `registerFrontendPlugin({ type: '{type}', ConfigForm, OverviewSummary })` from `'../core/registry'`
+   - `registerFrontendPlugin` also accepts optional `ResponseCell`, `columnTitle`/`getColumnTitle`, `columnSize`, `MetadataViewer` — implement these if the plugin should add a column to the responses table.
 
-7. **i18n translation files** (mandatory):
-   - `apps/form-app/src/locales/en/plugin{PluginType}.json`
-   - `apps/form-app/src/locales/ta/plugin{PluginType}.json`
-   - Register both in `apps/form-app/src/locales/index.ts`
+7. **Registration entrypoint — `apps/form-app/src/plugins/index.ts`**:
+   - Add `import './{type}/index';` to this file's import list — the same silent-failure risk as the backend entrypoint. Miss it and the config UI never mounts even though every file exists.
+
+8. **Icon / color / label — THREE separate hardcoded locations, all must be updated** (none derive automatically from the manifest except the gallery's icon lookup):
+   - `apps/form-app/src/components/plugins/shared/PluginGallery.tsx` — `PLUGIN_ICON_MAP` keyed by the manifest's `icon` string (e.g. `'Webhook'`); only needs a new entry if that lucide icon name isn't already mapped.
+   - `apps/form-app/src/components/plugins/PluginDashboardModal.tsx` — its own `PLUGIN_ICON_MAP` (keyed by plugin **type**, not icon name) plus `PLUGIN_ICON_STYLE` — add an entry for the new type.
+   - `apps/form-app/src/components/plugins/shared/PluginCard.tsx` — `getPluginIcon()`, `getPluginIconStyle()`, `getPluginLabel()` are `switch (plugin.type)` statements — add a `case` in each.
+   - `AddPluginDialog.tsx` and `apps/form-app/src/pages/Integrations.tsx` read from `PluginGallery`'s exports — no per-type edits needed there once the manifest and `PluginGallery` icon map exist.
+   - A dedicated per-type config **dialog** (e.g. `WebhookPluginDialog.tsx`, `EmailPluginDialog.tsx`) is only needed if the plugin doesn't fit the generic `ConfigForm`-in-`AddPluginDialog` flow — check whether an existing plugin of similar shape (simple config vs. OAuth vs. multi-step) has one before assuming you need to add one.
+
+9. **Shared manifest package** `packages/plugins/src/` — **required for the plugin to appear in "Add integrations" at all.** This is a separate package from both apps and is easy to miss:
+   - `packages/plugins/src/manifests/{type}.ts` — `PluginManifest { id, name, description, icon, iconColor, iconBgColor, category: 'Integration' | 'Notification' | 'Workflow', available, comingSoon? }`
+   - `packages/plugins/src/index.ts` — export the manifest and add it to the `allPluginManifests` array
+   - Set `available: true` (the `slack` manifest is the `comingSoon`/`available: false` placeholder pattern — don't copy it for a real plugin)
+   - Run `pnpm build` inside `packages/plugins/` to rebuild `dist` — both apps consume the built package, not the TS source, so skipping this makes the plugin invisible even with correct source.
+
+10. **i18n translation files** (mandatory) — naming convention is inconsistent in the current codebase; match whichever shape fits:
+    - Config-form-only plugins: `apps/form-app/src/locales/{en,ta}/{type}PluginConfig.json` (e.g. `webhookPluginConfig.json`, `quizGradingPluginConfig.json`)
+    - Multi-concern plugins (OAuth, dedicated dialogs): `apps/form-app/src/locales/{en,ta}/plugin{Type}.json` (e.g. `pluginGoogleSheets.json`)
+    - Register both locales in `apps/form-app/src/locales/index.ts` (import + add to both the `en` and `ta` export objects)
+    - Add a `types.{pluginType}` label entry to `pluginCard.json` (en+ta) — read by `PluginCard.tsx`'s `getPluginLabel()`
+
+### OAuth-based plugins (optional — only for third-party API auth, e.g. Google/Microsoft Sheets)
+
+Extra touchpoints beyond a normal plugin:
+- `apps/backend/src/plugins/{type}/oauth.ts` — `buildAuthUrl(state)` and `exchangeCode(code)` returning `{ accessToken, refreshToken, expiresAt, email }`. There is no separate encrypted token store — tokens (including the refresh token) are persisted directly inside `plugin.config` JSON, and `handler.ts` refreshes/rewrites them inline before each API call.
+- `apps/backend/src/routes/{provider}-oauth.ts` — an Express router with `GET /integrations/{provider}/auth` (redirect to provider) and `GET /integrations/{provider}/callback` (exchange code, redirect back to the frontend with the token payload in a URL fragment, e.g. `#{provider}_oauth_token=...`).
+- Register the router in `apps/backend/src/index.ts` alongside the existing `googleOAuthRouter`/`microsoftOAuthRouter`: import it and `app.use('/api', xOAuthRouter)`.
+- Env vars: `{PROVIDER}_CLIENT_ID`, `{PROVIDER}_CLIENT_SECRET`, `{PROVIDER}_REDIRECT_URI` (see `apps/backend/.env.example`'s Google entries for the pattern).
+- Frontend `ConfigForm.tsx` must handle the post-redirect `#{provider}_oauth_token=` / `#{provider}_oauth_error=` URL-fragment handoff after the auth popup/redirect completes.
 
 ---
 
@@ -112,36 +202,53 @@ import { createGraphQLError } from '../lib/graphqlErrors.js';
 
 ## Plugin Scaffold Checklist
 
-Before delivering output, verify you have produced ALL of the following:
+Before delivering output, verify you have produced ALL of the following. The steps marked **(silent failure)** are the ones that produce no error but make the plugin invisible or inert — double-check these specifically.
 
-- [ ] `apps/backend/src/plugins/{type}/handler.ts` — async handler with error handling
-- [ ] Updated `apps/backend/src/plugins/registry.ts` — import + registerPlugin call
-- [ ] `apps/backend/src/plugins/{type}/types.ts` — TypeScript interface for plugin configuration
-- [ ] (If applicable) Updated `apps/backend/src/plugins/exportRegistry.ts` — export columns
-- [ ] `apps/form-app/src/plugins/{type}/ConfigForm.tsx` — frontend config UI
-- [ ] `apps/form-app/src/plugins/{type}/OverviewSummary.tsx` — read-only config summary for the Overview tab
-- [ ] `apps/form-app/src/plugins/{type}/index.ts` — calls `registerFrontendPlugin({ type, ConfigForm, OverviewSummary })`
-- [ ] `apps/form-app/src/locales/en/plugin{Type}.json` — English strings
-- [ ] `apps/form-app/src/locales/ta/plugin{Type}.json` — Tamil strings (translate properly)
-- [ ] Updated `apps/form-app/src/locales/index.ts` — both locale registrations
-- [ ] Also register the plugin's `index.ts` in `apps/form-app/src/plugins/index.ts` (if that barrel file exists)
+**Backend**
+- [ ] `apps/backend/src/plugins/{type}/types.ts` — `PLUGIN_TYPE` const + config interface
+- [ ] `apps/backend/src/plugins/{type}/handler.ts` — matches `PluginHandler` signature `(plugin, event, context)`, writes metadata under `` `${type}:${plugin.id}` ``
+- [ ] `apps/backend/src/plugins/{type}/index.ts` — `registerPlugin(...)` call, imports `./export.js` if applicable
+- [ ] **(silent failure)** Added `import './{type}/index.js';` to `apps/backend/src/plugins/index.ts`
+- [ ] If the plugin produces response-level data: `apps/backend/src/plugins/{type}/export.ts` with `registerPluginExport({ pluginType, getColumns, getColumnsWithConfig?, getValues })`
+- [ ] If OAuth-based: `oauth.ts`, `apps/backend/src/routes/{provider}-oauth.ts`, router mounted in `apps/backend/src/index.ts`, env vars documented
+
+**Frontend**
+- [ ] `apps/form-app/src/plugins/{type}/ConfigForm.tsx` — frontend config UI, i18n'd
+- [ ] `apps/form-app/src/plugins/{type}/OverviewSummary.tsx` — read-only config summary, handles empty state
+- [ ] `apps/form-app/src/plugins/{type}/index.ts` — `registerFrontendPlugin({ type, ConfigForm, OverviewSummary, ... })`
+- [ ] **(silent failure)** Added `import './{type}/index';` to `apps/form-app/src/plugins/index.ts`
+- [ ] Updated `PluginGallery.tsx` `PLUGIN_ICON_MAP` (only if the icon name is new)
+- [ ] Updated `PluginDashboardModal.tsx` `PLUGIN_ICON_MAP` + `PLUGIN_ICON_STYLE`
+- [ ] Updated `PluginCard.tsx` — added a `case` to `getPluginIcon()`, `getPluginIconStyle()`, `getPluginLabel()`
+- [ ] Decided whether a dedicated `components/plugins/dialogs/{Type}PluginDialog.tsx` is needed, based on an existing plugin of similar shape
+
+**Shared manifest package (easy to skip — separate package)**
+- [ ] `packages/plugins/src/manifests/{type}.ts` — `PluginManifest` with `available: true`
+- [ ] Exported and added to `allPluginManifests` in `packages/plugins/src/index.ts`
+- [ ] **(silent failure)** Ran `pnpm build` inside `packages/plugins/` — without this the manifest source exists but isn't visible to either app
+
+**i18n**
+- [ ] `apps/form-app/src/locales/en/{convention}.json` + `ta/{convention}.json` (see naming rule above)
+- [ ] Registered both in `apps/form-app/src/locales/index.ts`
+- [ ] Added `types.{pluginType}` label to `pluginCard.json` (en+ta)
+
 - [ ] Brief explanation of how to wire the config component into the existing `Plugins` page
 
 ---
 
 ## Workflow
 
-1. **Clarify intent**: If the plugin's trigger event, external service, required config fields, or expected behavior is ambiguous, ask focused clarifying questions before generating code.
+1. **Clarify intent**: If the plugin's trigger event, external service, required config fields, expected export columns, or expected behavior is ambiguous, ask focused clarifying questions before generating code.
 
-2. **Understand the data flow**: Identify what data from the form submission the plugin needs (`Response`, `Form`, field values, metadata), and how results should be stored.
+2. **Understand the data flow**: Identify what data from the form submission the plugin needs (`Response`, `Form`, field values, metadata), how results should be stored in `response.metadata`, and whether any of that data belongs in CSV/Excel exports (if so, plan the `export.ts` columns now, not as an afterthought).
 
-3. **Design the config schema**: Define what the plugin operator configures (API keys, URLs, field mappings, etc.) as a TypeScript interface.
+3. **Design the config schema**: Define what the plugin operator configures (API keys, URLs, field mappings, etc.) as a TypeScript interface. If OAuth-based, plan the token fields stored in `plugin.config`.
 
-4. **Generate all files**: Produce complete, copy-pasteable file contents with correct relative imports.
+4. **Generate all files**: Produce complete, copy-pasteable file contents with correct relative imports, working through the full checklist above — including both registration entrypoints, the shared manifest package, and the icon/color/label locations.
 
-5. **Provide integration notes**: Explain any environment variables needed, any Prisma schema additions (if any), and how to test the plugin using `plugin.test` event.
+5. **Provide integration notes**: Explain any environment variables needed, any Prisma schema additions (if any), the `pnpm build` step for `packages/plugins`, and how to test the plugin using the `plugin.test` event.
 
-6. **Security reminder**: If the plugin config includes API keys or secrets, remind the developer to store them as environment variables and reference them from `process.env`, not hardcode them in the database config.
+6. **Security reminder**: If the plugin config includes API keys, OAuth tokens, or other secrets, remind the developer to store provider credentials as environment variables (`process.env`), not hardcode them — but note that per-connection OAuth tokens are expected to live in `plugin.config` per the existing pattern, not in env vars.
 
 ---
 
