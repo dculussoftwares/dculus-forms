@@ -19,8 +19,19 @@ function currentPeriod(): { start: Date; end: Date } {
  * `null`/missing means "not yet synced from Chargebee" — it is NOT unlimited — so we fall
  * back to the plan's default allowance in AI_CREDIT_LIMITS_FALLBACK, defaulting to `free`
  * if the plan itself is unrecognized.
+ *
+ * A cancelled/expired subscription keeps whatever `planId`/`aiCreditsLimit` it last synced
+ * from Chargebee (cancellation doesn't change which plan item was on the subscription), so
+ * without this check the org would retain paid-tier AI credits indefinitely. Fall back to
+ * the free allowance instead — mirrors the views/submissions enforcement in usageService.ts.
  */
-function effectiveCreditLimit(subscription: { planId: string; aiCreditsLimit: number | null } | null): number {
+function effectiveCreditLimit(
+  subscription: { planId: string; aiCreditsLimit: number | null; status: string } | null
+): number {
+  if (subscription && (subscription.status === 'cancelled' || subscription.status === 'expired')) {
+    return AI_CREDIT_LIMITS_FALLBACK.free;
+  }
+
   const planId = subscription?.planId ?? 'free';
   return (
     subscription?.aiCreditsLimit ??
@@ -53,7 +64,12 @@ export async function checkAITokenBudget(organizationId: string): Promise<{
   const limit = effectiveCreditLimit(subscription);
   const creditsUsedMilli = usage?.creditsUsedMilli ?? 0;
   const used = creditsUsedMilli / 1000;
-  const result = { allowed: creditsUsedMilli < limit * 1000, used, limit };
+
+  // A past_due subscription means the last payment failed. Block AI credits until
+  // payment recovers, regardless of remaining budget — consistent with how
+  // checkUsageExceeded blocks views/submissions for the same status.
+  const isPastDue = subscription?.status === 'past_due';
+  const result = { allowed: !isPastDue && creditsUsedMilli < limit * 1000, used, limit };
 
   budgetCache.set(organizationId, { result, cachedAt: Date.now() });
   return result;
