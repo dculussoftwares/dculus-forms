@@ -1,107 +1,202 @@
-import React from 'react';
-import { Settings, Cog, Info } from 'lucide-react';
-import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
-import { useTranslation } from '../../../hooks';
+import React, { useState } from 'react';
+import { useMutation, useQuery } from '@apollo/client/react';
+import {
+  LoadingSpinner,
+  toastSuccess,
+  toastError,
+  EmptyState,
+} from '@dculus/ui';
+import { useTranslation } from '../../../hooks/useTranslation';
+import { FormSettingsContainer } from '../../form-settings';
+import { useFormSettings } from '../../../hooks/useFormSettings';
+import { GET_FORM_BY_ID } from '../../../graphql/queries';
+import { REGENERATE_SHORT_URL, UPDATE_FORM } from '../../../graphql/mutations';
+import { getErrorDetails } from '../../../utils/graphqlErrors';
+import { AlertCircle } from 'lucide-react';
 
-export const SettingsTab: React.FC = () => {
-  const { t } = useTranslation('settingsTab');
-  const { pages, isShuffleEnabled, isConnected } = useFormBuilderStore();
+interface SettingsTabProps {
+  formId?: string;
+}
+
+export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
+  const { t } = useTranslation('formSettings');
+  const { t: tErr } = useTranslation('graphqlErrors');
+  const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const {
+    data: formData,
+    loading: formLoading,
+    error: formError,
+    refetch,
+  } = useQuery(GET_FORM_BY_ID, {
+    variables: { id: formId },
+    skip: !formId,
+  });
+
+  const {
+    settings,
+    isSaving: settingsIsSaving,
+    updateSetting,
+    saveThankYouSettings,
+    updateSubmissionLimits,
+    saveSubmissionLimits,
+  } = useFormSettings({
+    formId,
+    initialSettings: formData?.form?.settings,
+    onSuccess: () => {
+      setErrors({});
+      refetch();
+    },
+    onError: (error) => {
+      setErrors({ general: error });
+    },
+  });
+
+  const [updateForm] = useMutation(UPDATE_FORM, {
+    onCompleted: () => {
+      setIsSaving(false);
+      setErrors({});
+      refetch();
+      toastSuccess(t('toasts.settingsSaved'));
+    },
+    onError: (error) => {
+      setIsSaving(false);
+      const { messageKey } = getErrorDetails(error);
+      setErrors({ general: error.message });
+      toastError(t('toasts.settingsSaveError'), tErr(messageKey));
+    },
+  });
+
+  const [regenerateShortUrl] = useMutation(REGENERATE_SHORT_URL, {
+    onCompleted: () => {
+      setIsSaving(false);
+      setErrors({});
+      refetch();
+      toastSuccess(t('toasts.shortUrlRegenerated'));
+    },
+    onError: (error) => {
+      setIsSaving(false);
+      const { messageKey } = getErrorDetails(error);
+      setErrors({ general: error.message });
+      toastError(t('toasts.shortUrlRegenerateError'), tErr(messageKey));
+    },
+  });
+
+  const handleSaveGeneralSettings = async () => {
+    if (!formId) return;
+
+    setIsSaving(true);
+    setErrors({});
+
+    const titleInput = document.getElementById('form-title') as HTMLInputElement;
+    const descriptionInput = document.getElementById('form-description') as HTMLTextAreaElement;
+
+    const title = titleInput?.value.trim();
+    const description = descriptionInput?.value.trim();
+
+    if (!titleInput.value.trim()) {
+      setErrors({ title: t('errors.formTitleRequired') });
+      setIsSaving(false);
+      toastError(t('errors.validationError'), t('errors.formTitleRequired'));
+      return;
+    }
+
+    try {
+      await updateForm({
+        variables: {
+          id: formId,
+          input: {
+            title,
+            description,
+          },
+        },
+      });
+    } catch {
+      // Error handled by onError callback
+    }
+  };
+
+  const handleRegenerateShortUrl = async () => {
+    if (!formId) return;
+
+    setIsSaving(true);
+    setErrors({});
+
+    try {
+      await regenerateShortUrl({
+        variables: {
+          id: formId,
+        },
+      });
+    } catch {
+      // Error handled by onError callback
+    }
+  };
+
+  const handleUpdateThankYouSetting = (key: string, value: any) => {
+    updateSetting('thankYou', key as keyof typeof settings.thankYou, value);
+  };
+
+  if (formLoading) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (formError || !formData?.form) {
+    return (
+      <div className="flex justify-center items-center h-full p-6">
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
+          title={t('errors.formNotFound')}
+          description={t('errors.formNotFoundMessage')}
+        />
+      </div>
+    );
+  }
+
+  const form = formData.form;
+
+  if (form.userPermission === 'VIEWER' || form.userPermission === 'NO_ACCESS') {
+    return (
+      <div className="flex justify-center items-center h-full p-6">
+        <EmptyState
+          variant="error"
+          icon={<AlertCircle className="h-6 w-6 text-destructive" />}
+          title={t('errors.accessDenied')}
+          description={t('errors.accessDeniedMessage')}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center space-x-3 p-6 border-b border-[var(--tf-border-medium)] dark:border-gray-700">
-        <div className="p-2 bg-background dark:bg-gray-800 rounded-lg">
-          <Settings className="w-5 h-5 text-foreground dark:text-gray-400" />
-        </div>
-        <div>
-          <h2 className="text-lg font-semibold text-primary dark:text-white">
-            {t('header.title')}
-          </h2>
-          <p className="text-sm text-foreground dark:text-gray-400">
-            {t('header.description')}
-          </p>
-        </div>
-      </div>
+    <div className="h-full overflow-y-auto p-6" style={{ backgroundColor: 'var(--tf-faint)' }}>
+      <div className="space-y-5">
+        <FormSettingsContainer
+          form={form}
+          settings={settings}
+          isSaving={isSaving || settingsIsSaving}
+          errors={errors}
+          currentResponseCount={form?.responseCount || 0}
+          onSaveGeneralSettings={handleSaveGeneralSettings}
+          onRegenerateShortUrl={handleRegenerateShortUrl}
+          onUpdateThankYouSetting={handleUpdateThankYouSetting}
+          onSaveThankYouSettings={saveThankYouSettings}
+          onUpdateSubmissionLimits={updateSubmissionLimits}
+          onSaveSubmissionLimits={saveSubmissionLimits}
+        />
 
-      {/* Content */}
-      <div className="flex-1 p-6">
-        <div className="max-w-2xl mx-auto">
-          {/* Coming Soon Card */}
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900/50 dark:to-blue-900/20 rounded-xl p-8 border border-[var(--tf-border-medium)] dark:border-gray-700">
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-background dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                <Cog className="w-8 h-8 text-foreground dark:text-gray-400" />
-              </div>
-              
-              <h3 className="text-xl font-semibold text-primary dark:text-white mb-2">
-                {t('comingSoon.title')}
-              </h3>
-              
-              <p className="text-foreground dark:text-gray-400 mb-6">
-                {t('comingSoon.description')}
-              </p>
-
-              {/* Current Settings Info */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-[var(--tf-border-medium)] dark:border-gray-700">
-                <div className="flex items-center space-x-2 mb-3">
-                  <Info className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm font-medium text-primary dark:text-white">
-                    {t('currentState.title')}
-                  </span>
-                </div>
-                <div className="space-y-2 text-sm text-left">
-                  <div className="flex justify-between">
-                    <span className="text-foreground dark:text-gray-400">{t('currentState.totalPages')}:</span>
-                    <span className="text-primary dark:text-white">{pages.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-foreground dark:text-gray-400">{t('currentState.shuffleEnabled')}:</span>
-                    <span className="text-primary dark:text-white">
-                      {isShuffleEnabled ? t('currentState.yes') : t('currentState.no')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-foreground dark:text-gray-400">{t('currentState.totalFields')}:</span>
-                    <span className="text-primary dark:text-white">
-                      {pages.reduce((total: number, page: any) => total + page.fields.length, 0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Collaboration Status */}
-              {isConnected && (
-                <div className="mt-4 flex items-center justify-center space-x-2 text-sm text-primary">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  <span>{t('collaboration.ready')}</span>
-                </div>
-              )}
-            </div>
+        {errors.general && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-xs" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-lg)' }}>
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{errors.general}</span>
           </div>
-
-          {/* Feature Preview */}
-          <div className="mt-8">
-            <h4 className="text-sm font-medium text-primary dark:text-white mb-4">
-              {t('upcomingFeatures.title')}
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                t('upcomingFeatures.features.formSubmission'),
-                t('upcomingFeatures.features.emailNotifications'),
-                t('upcomingFeatures.features.accessPermissions'),
-                t('upcomingFeatures.features.responseValidation'),
-                t('upcomingFeatures.features.exportOptions'),
-                t('upcomingFeatures.features.integrationSettings')
-              ].map((feature, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <div className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                  <span className="text-sm text-foreground dark:text-gray-400">{feature}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
