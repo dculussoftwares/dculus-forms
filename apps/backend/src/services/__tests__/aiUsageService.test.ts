@@ -43,16 +43,16 @@ describe('aiUsageService', () => {
       expect(call.create.creditsUsedMilli).toBe(2000);
     });
 
-    it('increments creditsUsedMilli by the mini-tier weighted amount (default weight 5x) in both branches', async () => {
+    it('increments creditsUsedMilli by the mini-tier weighted amount (default weight 3.75x) in both branches', async () => {
       vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({} as any);
 
       await recordAITokenUsage('org-2', 2000, 'mini');
 
       const call = vi.mocked(prisma.aIUsage.upsert).mock.calls[0][0] as any;
       expect(call.update.tokensUsed).toEqual({ increment: 2000 });
-      expect(call.update.creditsUsedMilli).toEqual({ increment: 10000 });
+      expect(call.update.creditsUsedMilli).toEqual({ increment: 7500 });
       expect(call.create.tokensUsed).toBe(2000);
-      expect(call.create.creditsUsedMilli).toBe(10000);
+      expect(call.create.creditsUsedMilli).toBe(7500);
     });
   });
 

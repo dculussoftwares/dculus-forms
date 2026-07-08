@@ -101,9 +101,17 @@ export const AI_CREDIT_LIMITS_FALLBACK: Record<string, number> = {
 
 export type AIModelTier = 'nano' | 'mini';
 
+// Calibrated against actual Azure OpenAI Global Standard pricing for the deployed
+// models (gpt-5.4-mini / gpt-5.4-nano, see infrastructure/.../ai.tf):
+//   nano: $0.20 / 1M input, $1.25 / 1M output
+//   mini: $0.75 / 1M input, $4.50 / 1M output
+// Ratio is ~3.6-3.75x depending on input/output mix (stable across mixes, since
+// both tiers scale similarly) — not the previously assumed 5x, which matched the
+// prior-generation gpt-5-mini/nano pricing ($0.25/$2.00 vs $0.05/$0.40) rather than
+// the gpt-5.4 models actually in use. See docs/superpowers/specs/2026-07-08-ai-credit-weight-calibration.md.
 const DEFAULT_CREDIT_WEIGHTS: Record<AIModelTier, number> = {
   nano: 1,
-  mini: 5,
+  mini: 3.75,
 };
 
 // Reads a per-tier credit weight from env, lazily (so tests can override env

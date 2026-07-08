@@ -124,9 +124,9 @@ describe('tokensToMilliCredits', () => {
     expect(tokensToMilliCredits(2000, 'nano')).toBe(2000);
   });
 
-  it('converts 2000 mini tokens to 10000 mCr using the default weight (5)', async () => {
+  it('converts 2000 mini tokens to 7500 mCr using the default weight (3.75)', async () => {
     const { tokensToMilliCredits } = await import('../ai.js');
-    expect(tokensToMilliCredits(2000, 'mini')).toBe(10_000);
+    expect(tokensToMilliCredits(2000, 'mini')).toBe(7500);
   });
 
   it('honors AI_CREDIT_WEIGHT_MINI env override', async () => {
@@ -140,7 +140,7 @@ describe('tokensToMilliCredits', () => {
     async (invalid) => {
       process.env.AI_CREDIT_WEIGHT_MINI = invalid;
       const { tokensToMilliCredits } = await import('../ai.js');
-      expect(tokensToMilliCredits(2000, 'mini')).toBe(10_000);
+      expect(tokensToMilliCredits(2000, 'mini')).toBe(7500);
     },
   );
 
