@@ -22,6 +22,7 @@ vi.mock('../../subscriptions/events.js', () => ({
   emitUsageLimitExceeded: vi.fn(),
 }));
 
+import { logger } from '../../lib/logger.js';
 import {
   checkAITokenBudget,
   recordAITokenUsage,
@@ -187,6 +188,135 @@ describe('aiUsageService', () => {
       expect(call.create.periodStart).toBe(currentPeriodStart);
       expect(call.create.periodEnd).toBe(currentPeriodEnd);
     });
+
+    it('logs a warning when the write pushes the org over its limit (post-hoc overage detection)', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'free',
+        aiCreditsLimit: null,
+        status: 'active',
+      } as any);
+      // Free limit is 200 credits (200,000 milli). This write's post-increment total exceeds it.
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 205_000 } as any);
+
+      await recordAITokenUsage('org-over', 41_000, 'nano');
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org-over', creditsUsedMilli: 205_000, overageMilli: 5_000 }),
+        expect.stringContaining('AI credit budget exceeded')
+      );
+    });
+
+    it('does not log an overage warning when the write stays within the limit', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'free',
+        aiCreditsLimit: null,
+        status: 'active',
+      } as any);
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 100_000 } as any);
+
+      await recordAITokenUsage('org-under', 10_000, 'nano');
+
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('invalidates the cache so a check immediately after reflects the just-recorded usage', async () => {
+      // Seed the cache with an "allowed" result via a normal check.
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'free',
+        aiCreditsLimit: null,
+        status: 'active',
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 0 } as any);
+      const seeded = await checkAITokenBudget('org-invalidate');
+      expect(seeded.allowed).toBe(true);
+
+      // Record usage that would push the org over budget.
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 250_000 } as any);
+      await recordAITokenUsage('org-invalidate', 250_000, 'nano');
+
+      // The next check must not be served from the stale pre-increment cache entry.
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 250_000 } as any);
+      const rechecked = await checkAITokenBudget('org-invalidate');
+      expect(rechecked.allowed).toBe(false);
+      // seed check + recordAITokenUsage's internal previous-usage lookup + recheck — none
+      // served from a stale cache entry.
+      expect(prisma.aIUsage.findFirst).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not cache a stale result from a check whose read overlapped a concurrent write', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'free',
+        aiCreditsLimit: null,
+        status: 'active',
+      } as any);
+
+      // A check starts and its DB read is deliberately left pending so a concurrent
+      // recordAITokenUsage write can run to completion (including both of its cache
+      // invalidations) while the check's read is still in flight.
+      let resolveFindFirst!: (value: unknown) => void;
+      vi.mocked(prisma.aIUsage.findFirst).mockReturnValueOnce(
+        new Promise((resolve) => { resolveFindFirst = resolve; }) as any
+      );
+      const overlappingCheck = checkAITokenBudget('org-overlap');
+
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValueOnce({ creditsUsedMilli: 50_000 } as any);
+      await recordAITokenUsage('org-overlap', 50_000, 'nano');
+
+      // Now let the check's stale (pre-write) read resolve.
+      resolveFindFirst({ creditsUsedMilli: 0 });
+      const staleResult = await overlappingCheck;
+      expect(staleResult.used).toBe(0); // reflects what it read, not a bug in the read itself
+
+      // The bug this guards against: without the write-generation check, the line above would
+      // have cached { used: 0, allowed: true } *after* recordAITokenUsage's post-write
+      // invalidation already ran, re-introducing a stale cache entry. Assert a subsequent
+      // check is not served from any such entry and hits the DB for fresh data instead.
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValueOnce({ creditsUsedMilli: 50_000 } as any);
+      const freshCheck = await checkAITokenBudget('org-overlap');
+      expect(freshCheck.used).toBe(50);
+      // overlapping check + recordAITokenUsage's internal previous-usage lookup + fresh
+      // check — no cache hit.
+      expect(prisma.aIUsage.findFirst).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('check-then-record race (issue #83)', () => {
+    it('bounds concurrent overage to at most one in-flight request worth of credits, and surfaces it via a warning', async () => {
+      // Two concurrent requests near the 200-credit free limit. Org is at 180 credits used;
+      // each request costs 15 credits (nano, 15,000 raw tokens = 15,000 milli-credits).
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'free',
+        aiCreditsLimit: null,
+        status: 'active',
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 180_000 } as any);
+
+      // Both requests' pre-flight checks race and read the same pre-increment state — this
+      // is the accepted, documented race: it is not eliminated, only bounded (see design
+      // decision in aiUsageService.ts).
+      const checkA = await checkAITokenBudget('org-race');
+      invalidateAIBudgetCache('org-race'); // simulate the second request's check missing the cache too
+      const checkB = await checkAITokenBudget('org-race');
+      expect(checkA.allowed).toBe(true);
+      expect(checkB.allowed).toBe(true);
+
+      // Both requests complete and record their usage. The first keeps the org within budget
+      // (180 + 15 = 195 <= 200); the second is the one that tips it over and must be flagged.
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValueOnce({ creditsUsedMilli: 195_000 } as any);
+      await recordAITokenUsage('org-race', 15_000, 'nano');
+      expect(logger.warn).not.toHaveBeenCalled();
+
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValueOnce({ creditsUsedMilli: 210_000 } as any);
+      await recordAITokenUsage('org-race', 15_000, 'nano');
+
+      // Overage is bounded to exactly one request's worth of credits (15,000 milli), not
+      // unbounded — this is the explicit, accepted bound from the design decision.
+      expect(logger.warn).toHaveBeenCalledTimes(1);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ organizationId: 'org-race', creditsUsedMilli: 210_000, overageMilli: 10_000 }),
+        expect.stringContaining('AI credit budget exceeded')
+      );
+    });
   });
 
   describe('checkAITokenBudget', () => {
@@ -234,24 +364,46 @@ describe('aiUsageService', () => {
       expect(result.allowed).toBe(true);
     });
 
-    it('serves a cached blocked result within the TTL, then re-fetches after invalidateAIBudgetCache', async () => {
+    it('serves a cached allowed result within the TTL when comfortably under the limit, until invalidated', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 200,
+      } as any);
+      // 50/200 credits used — well under the 90% near-limit bypass threshold.
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 50_000 } as any);
+
+      const first = await checkAITokenBudget('org-cache-hit');
+      expect(first.allowed).toBe(true);
+
+      // DB now shows the org over budget, but the cached (far-from-limit) result should
+      // still be served within the TTL — this is the caching behaviour the TTL exists for.
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 200_000 } as any);
+      const stillCached = await checkAITokenBudget('org-cache-hit');
+      expect(stillCached.allowed).toBe(true);
+      expect(prisma.aIUsage.findFirst).toHaveBeenCalledTimes(1);
+
+      invalidateAIBudgetCache('org-cache-hit');
+      const fresh = await checkAITokenBudget('org-cache-hit');
+      expect(fresh.allowed).toBe(false);
+    });
+
+    it('never serves a stale result from cache once usage is near the limit (bypasses cache automatically)', async () => {
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
         planId: 'starter',
         aiCreditsLimit: 200,
       } as any);
       vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 200_000 } as any);
 
-      const blocked = await checkAITokenBudget('org-reset');
+      const blocked = await checkAITokenBudget('org-near-limit');
       expect(blocked.allowed).toBe(false);
 
-      // Simulate an admin reset zeroing the DB row without a cache-aware call.
+      // Simulate an admin reset zeroing the DB row. Unlike the comfortably-under-limit case,
+      // a near-limit (or over-limit) cached result is never trusted — every call re-fetches,
+      // so the reset takes effect immediately with no manual invalidateAIBudgetCache call.
       vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 0 } as any);
-      const stillCached = await checkAITokenBudget('org-reset');
-      expect(stillCached.allowed).toBe(false); // stale cache still in effect
-
-      invalidateAIBudgetCache('org-reset');
-      const fresh = await checkAITokenBudget('org-reset');
-      expect(fresh.allowed).toBe(true);
+      const afterReset = await checkAITokenBudget('org-near-limit');
+      expect(afterReset.allowed).toBe(true);
+      expect(prisma.aIUsage.findFirst).toHaveBeenCalledTimes(2); // both calls hit the DB
     });
 
     it('blocks a past_due org regardless of remaining credits', async () => {
