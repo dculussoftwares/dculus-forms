@@ -154,16 +154,16 @@ export const emitFormSubmitted = (
  * Triggered when usage reaches a warning threshold (e.g., 80% of limit)
  *
  * @param organizationId - ID of the organization
- * @param formId - ID of the form
- * @param usageType - Type of usage ('views' or 'submissions')
+ * @param formId - ID of the form (undefined for org-level usage types like 'ai_credits')
+ * @param usageType - Type of usage ('views', 'submissions', or 'ai_credits')
  * @param current - Current usage count
  * @param limit - Usage limit
  * @param percentage - Current usage as percentage of limit
  */
 export const emitUsageLimitReached = (
   organizationId: string,
-  formId: string,
-  usageType: 'views' | 'submissions',
+  formId: string | undefined,
+  usageType: 'views' | 'submissions' | 'ai_credits',
   current: number,
   limit: number,
   percentage: number
@@ -189,15 +189,15 @@ export const emitUsageLimitReached = (
  * Triggered when usage exceeds the plan limit
  *
  * @param organizationId - ID of the organization
- * @param formId - ID of the form
- * @param usageType - Type of usage ('views' or 'submissions')
+ * @param formId - ID of the form (undefined for org-level usage types like 'ai_credits')
+ * @param usageType - Type of usage ('views', 'submissions', or 'ai_credits')
  * @param current - Current usage count
  * @param limit - Usage limit
  */
 export const emitUsageLimitExceeded = (
   organizationId: string,
-  formId: string,
-  usageType: 'views' | 'submissions',
+  formId: string | undefined,
+  usageType: 'views' | 'submissions' | 'ai_credits',
   current: number,
   limit: number
 ): void => {

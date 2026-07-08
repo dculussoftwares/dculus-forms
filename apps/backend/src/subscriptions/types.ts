@@ -51,10 +51,13 @@ export interface FormSubmittedEvent extends SubscriptionEvent {
  * Usage limit reached event
  * Emitted when usage reaches a warning threshold (e.g., 80% of limit)
  */
-export interface UsageLimitReachedEvent extends SubscriptionEvent {
+export interface UsageLimitReachedEvent extends Omit<SubscriptionEvent, 'formId'> {
   type: SubscriptionEventType.USAGE_LIMIT_REACHED;
+  // AI credit usage is tracked per-organization, not per-form, so 'ai_credits' events have
+  // no associated form. Views/submissions events always populate this.
+  formId?: string;
   data: {
-    usageType: 'views' | 'submissions';
+    usageType: 'views' | 'submissions' | 'ai_credits';
     current: number;
     limit: number;
     percentage: number;
@@ -65,10 +68,13 @@ export interface UsageLimitReachedEvent extends SubscriptionEvent {
  * Usage limit exceeded event
  * Emitted when usage exceeds the plan limit
  */
-export interface UsageLimitExceededEvent extends SubscriptionEvent {
+export interface UsageLimitExceededEvent extends Omit<SubscriptionEvent, 'formId'> {
   type: SubscriptionEventType.USAGE_LIMIT_EXCEEDED;
+  // AI credit usage is tracked per-organization, not per-form, so 'ai_credits' events have
+  // no associated form. Views/submissions events always populate this.
+  formId?: string;
   data: {
-    usageType: 'views' | 'submissions';
+    usageType: 'views' | 'submissions' | 'ai_credits';
     current: number;
     limit: number;
   };

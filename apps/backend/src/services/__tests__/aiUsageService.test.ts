@@ -17,12 +17,18 @@ vi.mock('../../lib/logger.js', () => ({
   logger: { warn: vi.fn(), debug: vi.fn(), info: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock('../../subscriptions/events.js', () => ({
+  emitUsageLimitReached: vi.fn(),
+  emitUsageLimitExceeded: vi.fn(),
+}));
+
 import {
   checkAITokenBudget,
   recordAITokenUsage,
   getAITokenUsage,
   invalidateAIBudgetCache,
 } from '../aiUsageService.js';
+import { emitUsageLimitReached, emitUsageLimitExceeded } from '../../subscriptions/events.js';
 
 describe('aiUsageService', () => {
   beforeEach(() => {
@@ -55,6 +61,111 @@ describe('aiUsageService', () => {
       expect(call.update.creditsUsedMilli).toEqual({ increment: 10000 });
       expect(call.create.tokensUsed).toBe(2000);
       expect(call.create.creditsUsedMilli).toBe(10000);
+    });
+
+    it('does not emit any usage-limit event while usage stays below the 80% warning threshold', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 100,
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 1000 } as any);
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 2000 } as any);
+
+      await recordAITokenUsage('org-below-threshold', 1000, 'nano');
+
+      expect(emitUsageLimitReached).not.toHaveBeenCalled();
+      expect(emitUsageLimitExceeded).not.toHaveBeenCalled();
+    });
+
+    it('emits USAGE_LIMIT_REACHED exactly once when this request crosses the 80% threshold', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 100, // limit = 100,000 milli-credits
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 79_000 } as any); // 79%
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 81_000 } as any); // 81%
+
+      await recordAITokenUsage('org-crossing-80', 2000, 'nano');
+
+      expect(emitUsageLimitReached).toHaveBeenCalledTimes(1);
+      expect(emitUsageLimitReached).toHaveBeenCalledWith(
+        'org-crossing-80',
+        undefined,
+        'ai_credits',
+        81,
+        100,
+        81
+      );
+      expect(emitUsageLimitExceeded).not.toHaveBeenCalled();
+    });
+
+    it('does not re-emit USAGE_LIMIT_REACHED when usage was already past 80% before this request', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 100,
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 85_000 } as any); // 85%
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 90_000 } as any); // 90%
+
+      await recordAITokenUsage('org-already-warned', 5000, 'nano');
+
+      expect(emitUsageLimitReached).not.toHaveBeenCalled();
+      expect(emitUsageLimitExceeded).not.toHaveBeenCalled();
+    });
+
+    it('emits USAGE_LIMIT_EXCEEDED exactly once when this request crosses 100%, not USAGE_LIMIT_REACHED', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 100, // limit = 100,000 milli-credits
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 95_000 } as any); // 95%
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 105_000 } as any); // 105%
+
+      await recordAITokenUsage('org-crossing-100', 10_000, 'nano');
+
+      expect(emitUsageLimitExceeded).toHaveBeenCalledTimes(1);
+      expect(emitUsageLimitExceeded).toHaveBeenCalledWith(
+        'org-crossing-100',
+        undefined,
+        'ai_credits',
+        105,
+        100
+      );
+      expect(emitUsageLimitReached).not.toHaveBeenCalled();
+    });
+
+    it('does not re-emit USAGE_LIMIT_EXCEEDED when usage was already over the limit before this request', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 100,
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 110_000 } as any); // already over
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 120_000 } as any);
+
+      await recordAITokenUsage('org-already-exceeded', 10_000, 'nano');
+
+      expect(emitUsageLimitExceeded).not.toHaveBeenCalled();
+      expect(emitUsageLimitReached).not.toHaveBeenCalled();
+    });
+
+    it('treats a first-usage org (no prior AIUsage row) as starting from zero for threshold crossing', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'free',
+        aiCreditsLimit: null, // falls back to AI_CREDIT_LIMITS_FALLBACK.free (200 credits)
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 250_000 } as any); // 250 credits > 200 limit
+
+      await recordAITokenUsage('org-first-usage', 250_000, 'nano');
+
+      expect(emitUsageLimitExceeded).toHaveBeenCalledTimes(1);
+      expect(emitUsageLimitExceeded).toHaveBeenCalledWith(
+        'org-first-usage',
+        undefined,
+        'ai_credits',
+        250,
+        200
+      );
     });
 
     it('keys the upsert to the org billing-cycle periodStart/periodEnd from Subscription, not the calendar month', async () => {
