@@ -1,9 +1,14 @@
 import { prisma } from '../lib/prisma.js';
 import { AI_CREDIT_LIMITS_FALLBACK, tokensToMilliCredits, type AIModelTier } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
+import { emitUsageLimitReached, emitUsageLimitExceeded } from '../subscriptions/events.js';
 
 const budgetCache = new Map<string, { result: { allowed: boolean; used: number; limit: number }; cachedAt: number }>();
 const BUDGET_CACHE_TTL_MS = 30_000;
+
+// Mirrors WARNING_THRESHOLD in subscriptions/usageService.ts — kept as a separate constant
+// since AI credits are enforced from this service, not usageService.ts.
+const AI_CREDITS_WARNING_THRESHOLD = 80;
 
 function currentPeriod(): { start: Date; end: Date } {
   const now = new Date();
@@ -84,6 +89,40 @@ export async function checkAITokenBudget(organizationId: string): Promise<{
 }
 
 /**
+ * Emits `USAGE_LIMIT_REACHED`/`USAGE_LIMIT_EXCEEDED` for `ai_credits` exactly once per
+ * threshold crossing, mirroring `checkUsageLimits` in `subscriptions/usageService.ts`.
+ * Unlike views/submissions (incremented one at a time), AI credit increments can jump by
+ * an arbitrary amount in one request, so crossing is detected by comparing the
+ * pre-increment and post-increment values rather than assuming a fixed step of 1.
+ */
+function checkAICreditLimits(
+  organizationId: string,
+  previousMilli: number,
+  currentMilli: number,
+  limitCredits: number
+): void {
+  const limitMilli = limitCredits * 1000;
+  if (limitMilli <= 0) return;
+
+  // Already over the limit before this request — the exceeded event already fired then.
+  if (previousMilli > limitMilli) return;
+
+  if (currentMilli > limitMilli) {
+    const currentCredits = currentMilli / 1000;
+    emitUsageLimitExceeded(organizationId, undefined, 'ai_credits', currentCredits, limitCredits);
+    return;
+  }
+
+  const previousPercentage = (previousMilli / limitMilli) * 100;
+  const currentPercentage = (currentMilli / limitMilli) * 100;
+
+  if (currentPercentage >= AI_CREDITS_WARNING_THRESHOLD && previousPercentage < AI_CREDITS_WARNING_THRESHOLD) {
+    const currentCredits = currentMilli / 1000;
+    emitUsageLimitReached(organizationId, undefined, 'ai_credits', currentCredits, limitCredits, currentPercentage);
+  }
+}
+
+/**
  * Records AI usage for an org's current billing period. Increments both the raw
  * `tokensUsed` (kept as an audit trail) and `creditsUsedMilli` (the model-weighted
  * amount actually charged against the org's credit budget, per `tier`).
@@ -98,7 +137,13 @@ export async function recordAITokenUsage(
   const creditsUsedMilli = tokensToMilliCredits(tokensUsed, tier);
 
   try {
-    await prisma.aIUsage.upsert({
+    const [existing, subscription] = await Promise.all([
+      prisma.aIUsage.findFirst({ where: { organizationId, periodStart: start } }),
+      prisma.subscription.findUnique({ where: { organizationId } }),
+    ]);
+    const previousMilli = existing?.creditsUsedMilli ?? 0;
+
+    const updated = await prisma.aIUsage.upsert({
       where: { organizationId_periodStart: { organizationId, periodStart: start } },
       update: {
         tokensUsed: { increment: tokensUsed },
@@ -112,6 +157,8 @@ export async function recordAITokenUsage(
         periodEnd: end,
       },
     });
+
+    checkAICreditLimits(organizationId, previousMilli, updated.creditsUsedMilli, effectiveCreditLimit(subscription));
   } catch {
     logger.warn({ organizationId, tokensUsed, tier }, 'Failed to record AI token usage');
   }

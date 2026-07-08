@@ -372,6 +372,26 @@ describe('subscription events', () => {
       expect(call.timestamp.getTime()).toBeGreaterThanOrEqual(beforeEmit.getTime());
       expect(call.timestamp.getTime()).toBeLessThanOrEqual(afterEmit.getTime());
     });
+
+    it('should emit usage limit reached event for ai_credits with no formId', () => {
+      const mockHandler = vi.fn();
+      eventEmitter.on(SubscriptionEventType.USAGE_LIMIT_REACHED, mockHandler);
+
+      emitUsageLimitReached('org-1', undefined, 'ai_credits', 81, 100, 81);
+
+      expect(mockHandler).toHaveBeenCalledWith({
+        type: SubscriptionEventType.USAGE_LIMIT_REACHED,
+        organizationId: 'org-1',
+        formId: undefined,
+        timestamp: expect.any(Date),
+        data: {
+          usageType: 'ai_credits',
+          current: 81,
+          limit: 100,
+          percentage: 81,
+        },
+      });
+    });
   });
 
   describe('emitUsageLimitExceeded', () => {
@@ -455,6 +475,25 @@ describe('subscription events', () => {
       expect(call.timestamp).toBeInstanceOf(Date);
       expect(call.timestamp.getTime()).toBeGreaterThanOrEqual(beforeEmit.getTime());
       expect(call.timestamp.getTime()).toBeLessThanOrEqual(afterEmit.getTime());
+    });
+
+    it('should emit usage limit exceeded event for ai_credits with no formId', () => {
+      const mockHandler = vi.fn();
+      eventEmitter.on(SubscriptionEventType.USAGE_LIMIT_EXCEEDED, mockHandler);
+
+      emitUsageLimitExceeded('org-1', undefined, 'ai_credits', 105, 100);
+
+      expect(mockHandler).toHaveBeenCalledWith({
+        type: SubscriptionEventType.USAGE_LIMIT_EXCEEDED,
+        organizationId: 'org-1',
+        formId: undefined,
+        timestamp: expect.any(Date),
+        data: {
+          usageType: 'ai_credits',
+          current: 105,
+          limit: 100,
+        },
+      });
     });
   });
 
