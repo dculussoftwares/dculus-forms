@@ -50,7 +50,7 @@ describe('aiUsageService', () => {
       expect(call.create.creditsUsedMilli).toBe(2000);
     });
 
-    it('increments creditsUsedMilli by the mini-tier weighted amount (default weight 5x) in both branches', async () => {
+    it('increments creditsUsedMilli by the mini-tier weighted amount (default weight 3.75x) in both branches', async () => {
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({} as any);
 
@@ -58,9 +58,9 @@ describe('aiUsageService', () => {
 
       const call = vi.mocked(prisma.aIUsage.upsert).mock.calls[0][0] as any;
       expect(call.update.tokensUsed).toEqual({ increment: 2000 });
-      expect(call.update.creditsUsedMilli).toEqual({ increment: 10000 });
+      expect(call.update.creditsUsedMilli).toEqual({ increment: 7500 });
       expect(call.create.tokensUsed).toBe(2000);
-      expect(call.create.creditsUsedMilli).toBe(10000);
+      expect(call.create.creditsUsedMilli).toBe(7500);
     });
 
     it('does not emit any usage-limit event while usage stays below the 80% warning threshold', async () => {
