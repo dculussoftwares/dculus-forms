@@ -540,6 +540,12 @@ model Subscription {
   @@map("subscription")
 }
 
+// periodStart/periodEnd track the org's actual Chargebee billing cycle
+// (Subscription.currentPeriodStart/currentPeriodEnd), not the calendar month.
+// Rows created before this alignment are keyed to calendar-month boundaries and
+// will simply stop being matched once the org's billing-cycle periodStart no
+// longer coincides with the 1st of the month — no backfill needed, they're kept
+// only as a historical audit trail (see aiUsageService.currentPeriod).
 model AIUsage {
   id               String   @id @default(cuid())
   organizationId   String

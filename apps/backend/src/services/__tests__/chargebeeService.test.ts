@@ -14,6 +14,7 @@ import {
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
 import { subscriptionRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
+import { invalidateAIBudgetCache } from '../aiUsageService.js';
 import * as Sentry from '@sentry/node';
 
 // Mock dependencies
@@ -53,6 +54,7 @@ vi.mock('chargebee', () => {
 });
 vi.mock('../../subscriptions/usageService.js');
 vi.mock('../../repositories/index.js');
+vi.mock('../aiUsageService.js', () => ({ invalidateAIBudgetCache: vi.fn() }));
 vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
 
 const Chargebee = await import('chargebee') as any;
@@ -559,6 +561,20 @@ describe('Chargebee Service', () => {
         new Date(1704067200 * 1000),
         new Date(1706745600 * 1000)
       );
+    });
+
+    it('should invalidate the AI budget cache on renewal, so a mid-cycle upgrade limit or new-period reset is not masked by a stale cached result', async () => {
+      const subscriptionData = {
+        customer_id: 'org_org-123',
+        current_term_start: 1704067200,
+        current_term_end: 1706745600,
+      };
+
+      vi.mocked(resetUsageCounters).mockResolvedValue(undefined);
+
+      await handleSubscriptionRenewal(subscriptionData);
+
+      expect(invalidateAIBudgetCache).toHaveBeenCalledWith('org-123');
     });
 
     it('should handle renewal errors', async () => {
