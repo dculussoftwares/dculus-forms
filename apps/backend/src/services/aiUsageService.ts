@@ -5,7 +5,22 @@ import { logger } from '../lib/logger.js';
 const budgetCache = new Map<string, { result: { allowed: boolean; used: number; limit: number }; cachedAt: number }>();
 const BUDGET_CACHE_TTL_MS = 30_000;
 
-function currentPeriod(): { start: Date; end: Date } {
+type SubscriptionPeriod = { currentPeriodStart: Date; currentPeriodEnd: Date } | null | undefined;
+
+/**
+ * AI credit periods follow the org's actual Chargebee billing cycle
+ * (`Subscription.currentPeriodStart`/`currentPeriodEnd`) — the same source of
+ * truth `viewsUsed`/`submissionsUsed` reset against. This keeps a mid-month
+ * billing date from producing two different reset dates for the same org.
+ *
+ * Falls back to calendar-month boundaries when there's no synced subscription
+ * yet (e.g. a pre-backfill org, or a subscription row missing period fields).
+ */
+function currentPeriod(subscription: SubscriptionPeriod): { start: Date; end: Date } {
+  if (subscription?.currentPeriodStart && subscription?.currentPeriodEnd) {
+    return { start: subscription.currentPeriodStart, end: subscription.currentPeriodEnd };
+  }
+
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
@@ -60,14 +75,12 @@ export async function checkAITokenBudget(organizationId: string): Promise<{
   const hit = budgetCache.get(organizationId);
   if (hit && Date.now() - hit.cachedAt < BUDGET_CACHE_TTL_MS) return hit.result;
 
-  const { start } = currentPeriod();
+  const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
+  const { start } = currentPeriod(subscription);
 
-  const [usage, subscription] = await Promise.all([
-    prisma.aIUsage.findFirst({
-      where: { organizationId, periodStart: start },
-    }),
-    prisma.subscription.findUnique({ where: { organizationId } }),
-  ]);
+  const usage = await prisma.aIUsage.findFirst({
+    where: { organizationId, periodStart: start },
+  });
 
   const limit = effectiveCreditLimit(subscription);
   const creditsUsedMilli = usage?.creditsUsedMilli ?? 0;
@@ -94,7 +107,11 @@ export async function recordAITokenUsage(
   tier: AIModelTier
 ): Promise<void> {
   budgetCache.delete(organizationId); // invalidate so next check is fresh
-  const { start, end } = currentPeriod();
+  const subscription = await prisma.subscription.findUnique({
+    where: { organizationId },
+    select: { currentPeriodStart: true, currentPeriodEnd: true },
+  });
+  const { start, end } = currentPeriod(subscription);
   const creditsUsedMilli = tokensToMilliCredits(tokensUsed, tier);
 
   try {
@@ -124,12 +141,10 @@ export async function getAITokenUsage(organizationId: string): Promise<{
   creditsUsed: number;
   creditsLimit: number;
 }> {
-  const { start, end } = currentPeriod();
+  const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
+  const { start, end } = currentPeriod(subscription);
 
-  const [usage, subscription] = await Promise.all([
-    prisma.aIUsage.findFirst({ where: { organizationId, periodStart: start } }),
-    prisma.subscription.findUnique({ where: { organizationId } }),
-  ]);
+  const usage = await prisma.aIUsage.findFirst({ where: { organizationId, periodStart: start } });
 
   const creditsLimit = effectiveCreditLimit(subscription);
   const creditsUsedMilli = usage?.creditsUsedMilli ?? 0;

@@ -31,6 +31,7 @@ describe('aiUsageService', () => {
 
   describe('recordAITokenUsage', () => {
     it('increments both tokensUsed and creditsUsedMilli on the update branch (nano tier: 1:1 weight)', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({} as any);
 
       await recordAITokenUsage('org-1', 2000, 'nano');
@@ -44,6 +45,7 @@ describe('aiUsageService', () => {
     });
 
     it('increments creditsUsedMilli by the mini-tier weighted amount (default weight 3.75x) in both branches', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({} as any);
 
       await recordAITokenUsage('org-2', 2000, 'mini');
@@ -53,6 +55,26 @@ describe('aiUsageService', () => {
       expect(call.update.creditsUsedMilli).toEqual({ increment: 7500 });
       expect(call.create.tokensUsed).toBe(2000);
       expect(call.create.creditsUsedMilli).toBe(7500);
+    });
+
+    it('keys the upsert to the org billing-cycle periodStart/periodEnd from Subscription, not the calendar month', async () => {
+      const currentPeriodStart = new Date('2024-03-15T00:00:00.000Z');
+      const currentPeriodEnd = new Date('2024-04-14T23:59:59.999Z');
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        currentPeriodStart,
+        currentPeriodEnd,
+      } as any);
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({} as any);
+
+      await recordAITokenUsage('org-billing-cycle', 1000, 'nano');
+
+      const call = vi.mocked(prisma.aIUsage.upsert).mock.calls[0][0] as any;
+      expect(call.where.organizationId_periodStart).toEqual({
+        organizationId: 'org-billing-cycle',
+        periodStart: currentPeriodStart,
+      });
+      expect(call.create.periodStart).toBe(currentPeriodStart);
+      expect(call.create.periodEnd).toBe(currentPeriodEnd);
     });
   });
 
@@ -171,6 +193,76 @@ describe('aiUsageService', () => {
       expect(result.limit).toBe(20_000);
       expect(result.allowed).toBe(true);
     });
+
+    it('looks up AIUsage by the org billing-cycle periodStart from Subscription, not the calendar month', async () => {
+      const currentPeriodStart = new Date('2024-03-15T00:00:00.000Z');
+      const currentPeriodEnd = new Date('2024-04-14T23:59:59.999Z');
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        currentPeriodStart,
+        currentPeriodEnd,
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 0 } as any);
+
+      await checkAITokenBudget('org-mid-cycle');
+
+      expect(prisma.aIUsage.findFirst).toHaveBeenCalledWith({
+        where: { organizationId: 'org-mid-cycle', periodStart: currentPeriodStart },
+      });
+    });
+
+    it('a mid-cycle plan upgrade raises the limit without resetting usage already accrued this period', async () => {
+      const currentPeriodStart = new Date('2024-03-15T00:00:00.000Z');
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        currentPeriodStart,
+        currentPeriodEnd: new Date('2024-04-14T23:59:59.999Z'),
+      } as any);
+      // 1,500 of the 2,000 starter credits already used earlier this period.
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 1_500_000 } as any);
+
+      const beforeUpgrade = await checkAITokenBudget('org-upgrade');
+      expect(beforeUpgrade.used).toBe(1500);
+      expect(beforeUpgrade.limit).toBe(2000);
+      expect(beforeUpgrade.allowed).toBe(true);
+
+      invalidateAIBudgetCache('org-upgrade');
+
+      // Upgrade to advanced mid-period: aiCreditsLimit jumps, periodStart/currentPeriodEnd
+      // is untouched by syncSubscriptionFromWebhook on a plan-change event (only a real
+      // renewal moves the period), and the AIUsage row is untouched too.
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'advanced',
+        aiCreditsLimit: 20_000,
+        currentPeriodStart,
+        currentPeriodEnd: new Date('2024-04-14T23:59:59.999Z'),
+      } as any);
+
+      const afterUpgrade = await checkAITokenBudget('org-upgrade');
+      expect(afterUpgrade.used).toBe(1500); // usage carries over, unchanged
+      expect(afterUpgrade.limit).toBe(20_000); // limit raised immediately
+      expect(afterUpgrade.allowed).toBe(true);
+    });
+
+    it('falls back to calendar-month boundaries when the subscription row is missing period fields', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2024-03-20T12:00:00.000Z'));
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        // currentPeriodStart/currentPeriodEnd absent — e.g. pre-backfill org
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 0 } as any);
+
+      await checkAITokenBudget('org-pre-backfill');
+
+      const call = vi.mocked(prisma.aIUsage.findFirst).mock.calls[0][0] as any;
+      expect(call.where.periodStart).toEqual(new Date(2024, 2, 1));
+
+      vi.useRealTimers();
+    });
   });
 
   describe('getAITokenUsage', () => {
@@ -191,6 +283,25 @@ describe('aiUsageService', () => {
       expect(result.creditsLimit).toBe(2000); // starter fallback
       expect(result.limit).toBe(result.creditsLimit * 1000);
       expect(typeof result.resetAt).toBe('string');
+    });
+
+    it('reports resetAt as the org billing-cycle currentPeriodEnd, not the calendar month end', async () => {
+      const currentPeriodStart = new Date('2024-03-15T00:00:00.000Z');
+      const currentPeriodEnd = new Date('2024-04-14T23:59:59.999Z');
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        currentPeriodStart,
+        currentPeriodEnd,
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({
+        tokensUsed: 0,
+        creditsUsedMilli: 0,
+      } as any);
+
+      const result = await getAITokenUsage('org-mid-cycle-reset');
+
+      expect(result.resetAt).toBe(currentPeriodEnd.toISOString());
     });
   });
 });

@@ -7,6 +7,7 @@ import { sendEmail } from './emailService.js';
 import * as Sentry from '@sentry/node';
 import { AI_CREDIT_LIMITS_FALLBACK } from '../lib/ai.js';
 import { PLAN_LIMITS_FALLBACK } from '../lib/planLimits.js';
+import { invalidateAIBudgetCache } from './aiUsageService.js';
 
 /**
  * Chargebee Service
@@ -331,7 +332,13 @@ export const syncSubscriptionFromWebhook = async (
 
 /**
  * Handle subscription renewal from webhook
- * Resets usage counters for the new billing period
+ * Resets views/submissions usage counters for the new billing period.
+ *
+ * AI credit usage does NOT need an explicit reset here: `aiUsageService`'s
+ * `currentPeriod()` reads `Subscription.currentPeriodStart`/`currentPeriodEnd`
+ * directly, and `resetUsageCounters` below just updated those to the new
+ * period, so the next `recordAITokenUsage` call upserts an `AIUsage` row
+ * keyed to the new `periodStart` — starting that period's usage at zero.
  */
 export const handleSubscriptionRenewal = async (
   subscriptionData: any
@@ -344,6 +351,7 @@ export const handleSubscriptionRenewal = async (
     const periodEnd = new Date(subscriptionData.current_term_end * 1000);
 
     await resetUsageCounters(organizationId, periodStart, periodEnd);
+    invalidateAIBudgetCache(organizationId);
 
     logger.info('[Chargebee Service] Reset usage counters for organization:', organizationId);
   } catch (error: any) {
