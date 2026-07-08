@@ -6,6 +6,7 @@ import { prisma } from '../lib/prisma.js';
 import { sendEmail } from './emailService.js';
 import * as Sentry from '@sentry/node';
 import { AI_CREDIT_LIMITS_FALLBACK } from '../lib/ai.js';
+import { PLAN_LIMITS_FALLBACK } from '../lib/planLimits.js';
 
 /**
  * Chargebee Service
@@ -17,15 +18,6 @@ const chargebee = new Chargebee({
   site: process.env.CHARGEBEE_SITE!,
   apiKey: process.env.CHARGEBEE_API_KEY!,
 });
-
-// Fallback limits used when Chargebee entitlements are unavailable.
-// Keep in sync with Chargebee entitlement config — the live values take precedence
-// once getAvailablePlans() has populated the cache.
-const PLAN_LIMITS_FALLBACK: Record<string, { views: number | null; submissions: number | null }> = {
-  free: { views: 10000, submissions: 1000 },
-  starter: { views: null, submissions: 10000 },
-  advanced: { views: null, submissions: 100000 },
-};
 
 // Chargebee returns unlimited entitlement values as the string "Unlimited"
 // (capital U) in live responses; some fixtures/tests use lowercase. Compare
