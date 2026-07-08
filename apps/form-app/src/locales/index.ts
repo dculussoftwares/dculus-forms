@@ -86,8 +86,6 @@ import enEmptyStates from './en/emptyStates.json';
 import taEmptyStates from './ta/emptyStates.json';
 import enConfirmationDialog from './en/confirmationDialog.json';
 import taConfirmationDialog from './ta/confirmationDialog.json';
-import enSettingsTab from './en/settingsTab.json';
-import taSettingsTab from './ta/settingsTab.json';
 import enPageBuilderTab from './en/pageBuilderTab.json';
 import taPageBuilderTab from './ta/pageBuilderTab.json';
 
@@ -287,7 +285,6 @@ const enTranslations = {
   pageThumbnailsSidebar: enPageThumbnailsSidebar,
   emptyStates: enEmptyStates,
   confirmationDialog: enConfirmationDialog,
-  settingsTab: enSettingsTab,
   pageBuilderTab: enPageBuilderTab,
 
   fieldSettingsHeader: enFieldSettingsHeader,
@@ -412,7 +409,6 @@ const taTranslations = {
   pageThumbnailsSidebar: taPageThumbnailsSidebar,
   emptyStates: taEmptyStates,
   confirmationDialog: taConfirmationDialog,
-  settingsTab: taSettingsTab,
   pageBuilderTab: taPageBuilderTab,
 
   fieldSettingsHeader: taFieldSettingsHeader,

@@ -32,6 +32,7 @@ import {
   LayoutTab,
   PageBuilderTab,
   PreviewTab,
+  SettingsTab,
   type BuilderTab,
 } from '../components/form-builder/tabs';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
@@ -49,6 +50,7 @@ const VALID_TABS: readonly BuilderTab[] = [
   'layout',
   'page-builder',
   'preview',
+  'settings',
 ] as const;
 const DEFAULT_TAB: BuilderTab = 'page-builder';
 
@@ -314,6 +316,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
         return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
       case 'preview':
         return <PreviewTab formId={formId || ''} />;
+      case 'settings':
+        return <SettingsTab formId={formId} />;
       default:
         return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
     }
