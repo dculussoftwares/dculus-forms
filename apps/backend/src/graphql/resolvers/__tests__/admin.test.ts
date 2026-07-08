@@ -4,6 +4,7 @@ import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../../lib/prisma.js';
 import { cancelChargebeeSubscription, reactivateChargebeeSubscription } from '../../../services/chargebeeService.js';
 import { resetUsageCounters } from '../../../subscriptions/usageService.js';
+import { invalidateAIBudgetCache } from '../../../services/aiUsageService.js';
 
 // Mock all dependencies
 vi.mock('../../../lib/prisma.js', () => ({
@@ -78,6 +79,10 @@ vi.mock('../../../services/chargebeeService.js', () => ({
 
 vi.mock('../../../subscriptions/usageService.js', () => ({
   resetUsageCounters: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('../../../services/aiUsageService.js', () => ({
+  invalidateAIBudgetCache: vi.fn(),
 }));
 
 describe('Admin Resolvers', () => {
@@ -1214,7 +1219,7 @@ describe('Admin Resolvers', () => {
       expect(vi.mocked(resetUsageCounters)).toHaveBeenCalledWith('org-1', periodStart, periodEnd);
       expect(vi.mocked(prisma.aIUsage.updateMany)).toHaveBeenCalledWith({
         where: { organizationId: 'org-1' },
-        data: { tokensUsed: 0 },
+        data: { tokensUsed: 0, creditsUsedMilli: 0 },
       });
       expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -1224,6 +1229,26 @@ describe('Admin Resolvers', () => {
           }),
         })
       );
+    });
+
+    it('should zero creditsUsedMilli and invalidate the AI budget cache', async () => {
+      const periodStart = new Date('2026-05-01');
+      const periodEnd = new Date('2026-05-31');
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', viewsUsed: 500, submissionsUsed: 200,
+        currentPeriodStart: periodStart, currentPeriodEnd: periodEnd,
+      } as any);
+      vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.aIUsage.aggregate).mockResolvedValue({ _sum: { tokensUsed: 1500 } } as any);
+      vi.mocked(prisma.aIUsage.updateMany).mockResolvedValue({ count: 1 } as any);
+
+      await adminResolvers.Mutation.adminResetUsage({}, { orgId: 'org-1' }, mockAdminContext);
+
+      expect(vi.mocked(prisma.aIUsage.updateMany)).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ creditsUsedMilli: 0 }) })
+      );
+      expect(vi.mocked(invalidateAIBudgetCache)).toHaveBeenCalledWith('org-1');
     });
 
     it('should throw NOT_FOUND when subscription does not exist', async () => {

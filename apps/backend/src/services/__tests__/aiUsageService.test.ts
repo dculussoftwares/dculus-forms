@@ -21,6 +21,7 @@ import {
   checkAITokenBudget,
   recordAITokenUsage,
   getAITokenUsage,
+  invalidateAIBudgetCache,
 } from '../aiUsageService.js';
 
 describe('aiUsageService', () => {
@@ -98,6 +99,26 @@ describe('aiUsageService', () => {
       expect(result.limit).toBe(200);
       expect(result.used).toBe(0);
       expect(result.allowed).toBe(true);
+    });
+
+    it('serves a cached blocked result within the TTL, then re-fetches after invalidateAIBudgetCache', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 200,
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 200_000 } as any);
+
+      const blocked = await checkAITokenBudget('org-reset');
+      expect(blocked.allowed).toBe(false);
+
+      // Simulate an admin reset zeroing the DB row without a cache-aware call.
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 0 } as any);
+      const stillCached = await checkAITokenBudget('org-reset');
+      expect(stillCached.allowed).toBe(false); // stale cache still in effect
+
+      invalidateAIBudgetCache('org-reset');
+      const fresh = await checkAITokenBudget('org-reset');
+      expect(fresh.allowed).toBe(true);
     });
   });
 

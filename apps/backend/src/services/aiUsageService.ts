@@ -30,6 +30,14 @@ function effectiveCreditLimit(subscription: { planId: string; aiCreditsLimit: nu
 }
 
 /**
+ * Invalidates the in-memory budget cache for an org, forcing the next
+ * `checkAITokenBudget` call to read fresh data instead of a stale cached result.
+ */
+export function invalidateAIBudgetCache(organizationId: string): void {
+  budgetCache.delete(organizationId);
+}
+
+/**
  * Checks whether an org is within its monthly AI-credit budget.
  * `used`/`limit` are both in **credits** (not raw tokens) — 1 credit = 1,000 milli-credits.
  */
