@@ -99,6 +99,57 @@ describe('aiUsageService', () => {
       expect(result.used).toBe(0);
       expect(result.allowed).toBe(true);
     });
+
+    it('blocks a past_due org regardless of remaining credits', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'advanced',
+        aiCreditsLimit: 20_000,
+        status: 'past_due',
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 0 } as any);
+
+      const result = await checkAITokenBudget('org-past-due');
+      expect(result.allowed).toBe(false);
+    });
+
+    it('falls back to the free allowance for a cancelled org instead of its last-synced paid limit', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'advanced',
+        aiCreditsLimit: 20_000,
+        status: 'cancelled',
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 0 } as any);
+
+      const result = await checkAITokenBudget('org-cancelled');
+      expect(result.limit).toBe(200); // free fallback, not the retained 20,000 advanced limit
+      expect(result.allowed).toBe(true);
+    });
+
+    it('falls back to the free allowance for an expired org', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        status: 'expired',
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 250_000 } as any);
+
+      const result = await checkAITokenBudget('org-expired');
+      expect(result.limit).toBe(200);
+      expect(result.allowed).toBe(false); // 250 credits used already exceeds the free 200 limit
+    });
+
+    it('leaves an active paid org unaffected', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'advanced',
+        aiCreditsLimit: 20_000,
+        status: 'active',
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 5_000_000 } as any);
+
+      const result = await checkAITokenBudget('org-active');
+      expect(result.limit).toBe(20_000);
+      expect(result.allowed).toBe(true);
+    });
   });
 
   describe('getAITokenUsage', () => {

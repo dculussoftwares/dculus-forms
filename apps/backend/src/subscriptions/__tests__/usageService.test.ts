@@ -578,6 +578,78 @@ describe('usageService', () => {
         submissionsExceeded: true,
       });
     });
+
+    it('should block both views and submissions for a past_due org regardless of usage', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        viewsUsed: 0,
+        viewsLimit: null,
+        submissionsUsed: 0,
+        submissionsLimit: null,
+        status: 'past_due',
+      });
+
+      const result = await checkUsageExceeded('org-1');
+
+      expect(result).toEqual({
+        viewsExceeded: true,
+        submissionsExceeded: true,
+      });
+    });
+
+    it('should fall back to the free plan limits for a cancelled org instead of its retained paid limits', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        viewsUsed: 500,
+        viewsLimit: null, // retained "advanced" unlimited views from before cancellation
+        submissionsUsed: 1500, // over the free plan's 1000 submissions allowance
+        submissionsLimit: 100000, // retained "advanced" limit from before cancellation
+        status: 'cancelled',
+      });
+
+      const result = await checkUsageExceeded('org-1');
+
+      expect(result).toEqual({
+        viewsExceeded: false, // free plan's views limit (10000) not yet reached
+        submissionsExceeded: true, // free plan's submissions limit (1000) exceeded
+      });
+    });
+
+    it('should fall back to the free plan limits for an expired org', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        viewsUsed: 15000, // over the free plan's 10000 views allowance
+        viewsLimit: null,
+        submissionsUsed: 5,
+        submissionsLimit: 10000,
+        status: 'expired',
+      });
+
+      const result = await checkUsageExceeded('org-1');
+
+      expect(result).toEqual({
+        viewsExceeded: true,
+        submissionsExceeded: false,
+      });
+    });
+
+    it('should leave an active paid org unaffected by the cancelled/expired fallback', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        viewsUsed: 5000,
+        viewsLimit: null,
+        submissionsUsed: 50000,
+        submissionsLimit: 100000,
+        status: 'active',
+      });
+
+      const result = await checkUsageExceeded('org-1');
+
+      expect(result).toEqual({
+        viewsExceeded: false,
+        submissionsExceeded: false,
+      });
+    });
   });
 
   describe('getUsage', () => {

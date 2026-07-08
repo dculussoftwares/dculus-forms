@@ -9,6 +9,7 @@ import { SubscriptionEventType } from './types.js';
 import type { FormViewedEvent, FormSubmittedEvent } from './types.js';
 import { logger } from '../lib/logger.js';
 import { isLocalDatabase } from '../lib/prisma.js';
+import { PLAN_LIMITS_FALLBACK } from '../lib/planLimits.js';
 import { subscriptionRepository } from '../repositories/subscriptionRepository.js';
 
 // Keep the app-side pool small in production (max: 2) — PgBouncer handles
@@ -206,14 +207,21 @@ export const checkUsageExceeded = async (
   // submissions until payment recovers — consistent enforcement across all usage types.
   const isPastDue = subscription.status === 'past_due';
 
+  // A cancelled/expired subscription keeps whatever viewsLimit/submissionsLimit it last
+  // synced from Chargebee (cancellation doesn't change which plan item was on the
+  // subscription), so without this the org would retain paid-tier limits indefinitely.
+  // Fall back to the free plan's limits instead — mirrors the AI-credits enforcement in
+  // aiUsageService.ts.
+  const isCancelledOrExpired = subscription.status === 'cancelled' || subscription.status === 'expired';
+  const viewsLimit = isCancelledOrExpired ? PLAN_LIMITS_FALLBACK.free.views : subscription.viewsLimit;
+  const submissionsLimit = isCancelledOrExpired
+    ? PLAN_LIMITS_FALLBACK.free.submissions
+    : subscription.submissionsLimit;
+
   return {
-    viewsExceeded:
-      isPastDue ||
-      (subscription.viewsLimit !== null && subscription.viewsUsed >= subscription.viewsLimit),
+    viewsExceeded: isPastDue || (viewsLimit !== null && subscription.viewsUsed >= viewsLimit),
     submissionsExceeded:
-      isPastDue ||
-      (subscription.submissionsLimit !== null &&
-        subscription.submissionsUsed >= subscription.submissionsLimit),
+      isPastDue || (submissionsLimit !== null && subscription.submissionsUsed >= submissionsLimit),
   };
 };
 
