@@ -26,6 +26,7 @@ import {
   ListOrdered,
   Mail,
   Upload,
+  Phone,
 } from 'lucide-react';
 
 describe('analyticsRegistry', () => {
@@ -83,6 +84,12 @@ describe('analyticsRegistry', () => {
       component: FileUploadFieldAnalytics,
       dataKey: 'fileUploadAnalytics',
       icon: Upload,
+    },
+    {
+      fieldType: FieldType.PHONE_NUMBER_FIELD,
+      component: TextFieldAnalytics,
+      dataKey: 'textAnalytics',
+      icon: Phone,
     },
   ] as const;
 

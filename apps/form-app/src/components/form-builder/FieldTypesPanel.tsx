@@ -18,6 +18,7 @@ import {
   Calendar,
   FileCode,
   Upload,
+  Phone,
 } from 'lucide-react';
 
 export interface FieldTypeConfig {
@@ -63,6 +64,13 @@ const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
     label: t('fieldTypes.date.label'),
     description: t('fieldTypes.date.description'),
     icon: <Calendar className="w-5 h-5" />,
+    category: 'input',
+  },
+  {
+    type: FieldType.PHONE_NUMBER_FIELD,
+    label: t('fieldTypes.phone.label'),
+    description: t('fieldTypes.phone.description'),
+    icon: <Phone className="w-5 h-5" />,
     category: 'input',
   },
 

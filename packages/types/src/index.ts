@@ -541,6 +541,39 @@ export class FileUploadField extends FillableFormField {
   }
 }
 
+/**
+ * Phone number field with country-aware validation.
+ *
+ * The stored/submitted value is always a plain E.164 string (e.g. "+14155552671"),
+ * same value shape as every other fillable field. `defaultCountry` is only a UI hint
+ * (ISO 3166-1 alpha-2, e.g. "IN") used to pre-select the country selector when the
+ * field is empty — it is not needed to interpret a non-empty value, since a leading
+ * "+" already encodes the country unambiguously.
+ *
+ * Uses the base FillableFormFieldValidation (required only) — "is this a valid phone
+ * number" is a format rule enforced in the Zod schemas (validation.ts and
+ * packages/ui/src/utils/zodSchemaBuilder.ts), not a configurable numeric bound like
+ * TextFieldValidation's min/max.
+ */
+export class PhoneNumberField extends FillableFormField {
+  defaultCountry?: string;
+
+  constructor(
+    id: string,
+    label: string,
+    defaultValue: string,
+    prefix: string,
+    hint: string,
+    placeholder: string,
+    validation: FillableFormFieldValidation,
+    defaultCountry?: string
+  ) {
+    super(id, label, defaultValue, prefix, hint, placeholder, validation);
+    this.type = FieldType.PHONE_NUMBER_FIELD;
+    this.defaultCountry = defaultCountry;
+  }
+}
+
 export enum FieldType {
   TEXT = 'text',
   TEXT_INPUT_FIELD = 'text_input_field',
@@ -552,6 +585,7 @@ export enum FieldType {
   RADIO_FIELD = 'radio_field',
   DATE_FIELD = 'date_field',
   FILE_UPLOAD_FIELD = 'file_upload_field',
+  PHONE_NUMBER_FIELD = 'phone_number_field',
   RICH_TEXT_FIELD = 'rich_text_field',
   FORM_FIELD = 'form_field',
   FILLABLE_FORM_FIELD = 'fillable_form_field',
@@ -740,6 +774,20 @@ export const deserializeFormField = (data: any): FormField | null => {
         data.allowedMimeTypes,
         data.maxFileSizeMb,
         data.maxFiles
+      );
+    case FieldType.PHONE_NUMBER_FIELD:
+      return new PhoneNumberField(
+        data.id,
+        data.label || '',
+        data.defaultValue || '',
+        data.prefix || '',
+        data.hint || '',
+        data.placeholder || '',
+        getValidation(
+          data,
+          FieldType.PHONE_NUMBER_FIELD
+        ) as FillableFormFieldValidation,
+        data.defaultCountry
       );
     case FieldType.RICH_TEXT_FIELD: {
       const richTextContent = data.content || '';

@@ -19,6 +19,7 @@ import {
   DateField,
   RichTextFormField,
   FileUploadField,
+  PhoneNumberField,
   FillableFormFieldValidation,
   TextFieldValidation,
   CheckboxFieldValidation,
@@ -40,6 +41,7 @@ export const FIELD_CONFIGS: Partial<
   [FieldType.CHECKBOX_FIELD]: { label: 'Checkbox' },
   [FieldType.DATE_FIELD]: { label: 'Date' },
   [FieldType.FILE_UPLOAD_FIELD]: { label: 'File Upload' },
+  [FieldType.PHONE_NUMBER_FIELD]: { label: 'Phone Number' },
   // NOTE: RICH_TEXT_FIELD omitted intentionally - it's non-fillable and shouldn't have a label
 };
 
@@ -225,6 +227,21 @@ export const createFormField = (
         fieldData.maxDate
       );
     }
+    case FieldType.PHONE_NUMBER_FIELD: {
+      const validation = new FillableFormFieldValidation(
+        fieldData.required || false
+      );
+      return new PhoneNumberField(
+        fieldId,
+        label,
+        defaultValue,
+        prefix,
+        hint,
+        placeholder,
+        validation,
+        fieldData.defaultCountry
+      );
+    }
     case FieldType.RICH_TEXT_FIELD: {
       const content =
         (fieldData as RichTextFormField).content ||
@@ -359,6 +376,7 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     allowedMimeTypes: (fillableField as FileUploadField).allowedMimeTypes,
     maxFileSizeMb: (fillableField as FileUploadField).maxFileSizeMb,
     maxFiles: (fillableField as FileUploadField).maxFiles,
+    defaultCountry: (fillableField as PhoneNumberField).defaultCountry,
   };
 
   return createYJSFieldMap(fieldData);

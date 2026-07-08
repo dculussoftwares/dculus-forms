@@ -48,6 +48,7 @@ import {
   List,
   Loader2,
   MoreHorizontal,
+  Phone,
   Tag,
   Type,
   Upload,
@@ -107,6 +108,8 @@ const fieldIconStyle = (fieldType: FieldType): { bg: string; color: string } => 
       return { bg: '#dbeafe', color: '#1d4ed8' };
     case FieldType.NUMBER_FIELD:
       return { bg: '#fef3c7', color: '#b45309' };
+    case FieldType.PHONE_NUMBER_FIELD:
+      return { bg: '#dbeafe', color: '#1d4ed8' };
     default:
       return { bg: '#dedcde', color: '#655d67' };
   }
@@ -123,6 +126,7 @@ const fieldIconNode = (fieldType: FieldType) => {
     case FieldType.FILE_UPLOAD_FIELD: return <Upload className="h-4 w-4" />;
     case FieldType.EMAIL_FIELD:       return <AtSign className="h-4 w-4" />;
     case FieldType.NUMBER_FIELD:      return <Hash className="h-4 w-4" />;
+    case FieldType.PHONE_NUMBER_FIELD: return <Phone className="h-4 w-4" />;
     default:                          return <Type className="h-4 w-4" />;
   }
 };
@@ -184,6 +188,8 @@ const getFieldIcon = (fieldType: FieldType) => {
       return <List className="h-4 w-4" />;
     case FieldType.FILE_UPLOAD_FIELD:
       return <Upload className="h-4 w-4" />;
+    case FieldType.PHONE_NUMBER_FIELD:
+      return <Phone className="h-4 w-4" />;
     default:
       return <Type className="h-4 w-4" />;
   }

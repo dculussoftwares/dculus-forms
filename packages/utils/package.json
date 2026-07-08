@@ -20,6 +20,7 @@
   "dependencies": {
     "@dculus/types": "workspace:*",
     "clsx": "^2.1.1",
+    "libphonenumber-js": "^1.13.8",
     "lucide-react": "^0.263.1",
     "nanoid": "5.1.5",
     "tailwind-merge": "^2.6.1"

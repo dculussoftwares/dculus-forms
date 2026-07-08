@@ -14,6 +14,7 @@
  */
 
 import { FieldType } from '@dculus/types';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 
 /**
  * Formats a timestamp into a localized date string
@@ -53,7 +54,7 @@ export const formatDateFieldValue = (
 
     // Use Intl.DateTimeFormat for locale-aware formatting
     return date.toLocaleDateString(locale, options);
-  } catch (error) {
+  } catch {
     return 'Invalid date';
   }
 };
@@ -166,6 +167,28 @@ export const formatEmailFieldValue = (value: any): string => {
 };
 
 /**
+ * Formats a phone number field value (stored as a plain E.164 string, e.g.
+ * "+14155552671") into a spaced international format for display, e.g.
+ * "+1 415-555-2671". Falls back to the raw stored string when it can't be
+ * parsed (e.g. legacy/malformed data), so display never throws or blanks out.
+ *
+ * @param value - E.164 phone number string
+ * @returns Formatted international phone number string
+ *
+ * @example
+ * ```typescript
+ * formatPhoneFieldValue('+14155552671'); // '+1 415-555-2671'
+ * ```
+ */
+export const formatPhoneFieldValue = (value: any): string => {
+  if (value === null || value === undefined || value === '') return '';
+
+  const raw = String(value);
+  const parsed = parsePhoneNumberFromString(raw);
+  return parsed ? parsed.formatInternational() : raw;
+};
+
+/**
  * Formats a text field value (trims whitespace)
  *
  * @param value - Text string
@@ -251,6 +274,9 @@ export const formatFieldValue = (
 
     case FieldType.EMAIL_FIELD:
       return formatEmailFieldValue(value);
+
+    case FieldType.PHONE_NUMBER_FIELD:
+      return formatPhoneFieldValue(value);
 
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
@@ -352,10 +378,19 @@ export const parseFormattedValue = (
       // Parse date string back to Date object
       return new Date(formattedValue);
 
-    case FieldType.NUMBER_FIELD:
+    case FieldType.NUMBER_FIELD: {
       // Parse number from string
       const numValue = parseFloat(formattedValue);
       return isNaN(numValue) ? null : numValue;
+    }
+
+    case FieldType.PHONE_NUMBER_FIELD: {
+      // Convert a display-formatted number (e.g. "+1 415-555-2671") back to
+      // the stored E.164 shape (e.g. "+14155552671"); falls back to the raw
+      // input when it can't be parsed.
+      const parsed = parsePhoneNumberFromString(formattedValue);
+      return parsed ? parsed.number : formattedValue;
+    }
 
     default:
       return formattedValue;

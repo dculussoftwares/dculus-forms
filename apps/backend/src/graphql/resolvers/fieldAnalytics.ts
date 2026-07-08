@@ -61,6 +61,7 @@ const transformAnalyticsToGraphQL = (analytics: FieldAnalytics) => {
   switch (analytics.fieldType) {
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
+    case FieldType.PHONE_NUMBER_FIELD:
       if ('averageLength' in analytics) {
         base.textAnalytics = {
           averageLength: analytics.averageLength,
@@ -262,6 +263,7 @@ export const fieldAnalyticsResolvers = {
         FieldType.CHECKBOX_FIELD,
         FieldType.DATE_FIELD,
         FieldType.EMAIL_FIELD,
+        FieldType.PHONE_NUMBER_FIELD,
       ];
 
       if (!supportedTypes.includes(fieldInfo.type)) {

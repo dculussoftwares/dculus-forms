@@ -19,6 +19,7 @@ import {
   Calendar,
   FileCode,
   Upload,
+  Phone,
 } from 'lucide-react';
 
 interface FieldDragPreviewProps {
@@ -73,6 +74,8 @@ export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({
         return 'Date';
       case FieldType.FILE_UPLOAD_FIELD:
         return 'File Upload';
+      case FieldType.PHONE_NUMBER_FIELD:
+        return 'Phone Number';
       case FieldType.RICH_TEXT_FIELD:
         return 'Rich Text';
       default:
@@ -100,6 +103,8 @@ export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({
         return <Calendar className="w-4 h-4" />;
       case FieldType.FILE_UPLOAD_FIELD:
         return <Upload className="w-4 h-4" />;
+      case FieldType.PHONE_NUMBER_FIELD:
+        return <Phone className="w-4 h-4" />;
       case FieldType.RICH_TEXT_FIELD:
         return <FileCode className="w-4 h-4" />;
       default:

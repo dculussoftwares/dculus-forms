@@ -21,6 +21,7 @@ const AIFieldSchema = z.object({
     'radio',
     'checkbox',
     'file',
+    'phone',
   ]),
   label: z.string().describe('The question or field label shown to users'),
   // Use nullable instead of optional so every key is always present in the JSON output.
@@ -96,8 +97,9 @@ Set options to null for non-choice fields.
 ${JSON_SCHEMA_RULES}`,
 
   standard: `You are a form builder assistant. Create well-balanced forms with 6–10 fields.
-Include appropriate field types (text, email, number, date, select, radio, checkbox, textarea, file).
-Mix field types naturally — use radio or select for categorical choices, textarea for long answers.
+Include appropriate field types (text, email, phone, number, date, select, radio, checkbox, textarea, file).
+Mix field types naturally — use radio or select for categorical choices, textarea for long answers,
+and phone for phone/contact-number questions instead of a plain text field.
 Keep labels concise and user-friendly. Set placeholder to null if not needed.
 Set options to null for non-choice fields.
 ${JSON_SCHEMA_RULES}`,
@@ -105,7 +107,8 @@ ${JSON_SCHEMA_RULES}`,
   professional: `You are a form builder assistant. Create comprehensive, professional forms with 10–20 fields.
 Use a rich variety of field types. Include detailed labels and helpful placeholder text where appropriate.
 Group related fields logically. Use radio/select for categorical choices, checkboxes for multi-select,
-textarea for open-ended answers, and specialized types (date, file, number) where natural.
+textarea for open-ended answers, and specialized types (date, file, number, phone) where natural —
+use phone specifically for phone/contact-number questions instead of a plain text field.
 Set options to null for non-choice fields. Set placeholder to null only if truly unnecessary.
 ${JSON_SCHEMA_RULES}`,
 };

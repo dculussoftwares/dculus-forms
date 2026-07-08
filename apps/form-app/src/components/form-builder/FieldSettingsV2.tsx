@@ -12,6 +12,7 @@ import {
   CheckboxField,
   DateField,
   RichTextFormField,
+  PhoneNumberField,
 } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
@@ -32,6 +33,7 @@ import {
   SelectionFieldSettings,
   DateFieldSettings,
   RichTextFieldSettings,
+  PhoneNumberFieldSettings,
 } from './field-settings-v2';
 
 /** Common MIME type options for the file upload field settings UI */
@@ -366,6 +368,18 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
         <FieldSettingsWrapper>
           <SelectionFieldSettings
             field={field as SelectField | RadioField | CheckboxField}
+            isConnected={isConnected}
+            isReadOnly={isReadOnly}
+            onUpdate={updateHandler}
+          />
+        </FieldSettingsWrapper>
+      );
+
+    case FieldType.PHONE_NUMBER_FIELD:
+      return (
+        <FieldSettingsWrapper>
+          <PhoneNumberFieldSettings
+            field={field as PhoneNumberField}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}

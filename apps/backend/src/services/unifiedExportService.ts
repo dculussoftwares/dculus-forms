@@ -1,4 +1,5 @@
 import ExcelJS from 'exceljs';
+import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { FormResponse, FormSchema, FieldType } from '@dculus/types';
 import {
   getPluginTypesWithData,
@@ -73,6 +74,13 @@ const formatFieldValue = (
             .map((key: string) => String(key).split('/').pop() || key)
             .join(format === 'csv' ? '; ' : ', ');
         }
+        break;
+      }
+      case FieldType.PHONE_NUMBER_FIELD: {
+        // Values are stored as a plain E.164 string — export in spaced
+        // international format; fall back to the raw value if unparseable.
+        const parsed = parsePhoneNumberFromString(stringValue);
+        if (parsed) stringValue = parsed.formatInternational();
         break;
       }
       default:

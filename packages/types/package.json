@@ -29,6 +29,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "libphonenumber-js": "^1.13.8",
     "react-hook-form": "7.62.0",
     "zod": "^4.4.3"
   }

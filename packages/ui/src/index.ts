@@ -251,6 +251,17 @@ export { SimpleRichTextEditor } from "./rich-text-editor/SimpleRichTextEditor"
 export { FieldPreview } from "./field-preview"
 export { FieldDragPreview } from "./field-drag-preview"
 
+// Phone Number Input
+export {
+  PhoneNumberInput,
+  CountrySelect,
+  getCountryList,
+  getCountryDisplayName,
+  getCountryFlagEmoji,
+  guessCountryFromBrowserLocale,
+} from "./phone-number-input"
+export type { CountryOption, CountryCode } from "./phone-number-input"
+
 // Renderers
 export { LayoutRenderer } from "./renderers/LayoutRenderer"
 export { PageRenderer } from "./renderers/PageRenderer"

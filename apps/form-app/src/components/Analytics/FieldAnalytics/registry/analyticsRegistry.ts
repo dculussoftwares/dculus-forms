@@ -16,6 +16,7 @@ import {
   CircleDot,
   BarChart3,
   Upload,
+  Phone,
 } from 'lucide-react';
 import { TextFieldAnalytics } from '../TextFieldAnalytics';
 import { NumberFieldAnalytics } from '../NumberFieldAnalytics';
@@ -81,6 +82,13 @@ export const analyticsRegistry: AnalyticsRegistry = {
     component: FileUploadFieldAnalytics,
     dataKey: 'fileUploadAnalytics',
     icon: Upload,
+  },
+  [FieldType.PHONE_NUMBER_FIELD]: {
+    // Phone numbers are stored as plain E.164 strings — reuse the text
+    // analytics visualization rather than a bespoke by-country chart.
+    component: TextFieldAnalytics,
+    dataKey: 'textAnalytics',
+    icon: Phone,
   },
 };
 

@@ -31,7 +31,9 @@
     "minFileSizeInvalid": "Maximum file size must be at least 1 MB",
     "maxFileSizeExceeded": "Maximum file size cannot exceed 50 MB",
     "minFilesInvalid": "Must allow at least 1 file",
-    "maxFilesExceeded": "Cannot allow more than 10 files"
+    "maxFilesExceeded": "Cannot allow more than 10 files",
+    "invalidPhoneNumber": "Enter a valid phone number",
+    "invalidCountryCode": "Select a valid country"
   },
   "placeholders": {
     "fieldLabel": "Field label",
@@ -45,7 +47,8 @@
     "maxPlaceholder": "Max",
     "optionPlaceholder": "Option {{index}}",
     "selectDefaultOption": "Select default option",
-    "richTextContent": "Enter rich text content..."
+    "richTextContent": "Enter rich text content...",
+    "selectCountry": "Select country"
   },
   "sectionTitles": {
     "basicSettings": "Basic Settings",
@@ -55,7 +58,8 @@
     "numberRange": "Number Range",
     "dateRange": "Date Range",
     "prefixSettings": "Prefix Settings",
-    "fileUploadSettings": "Upload Constraints"
+    "fileUploadSettings": "Upload Constraints",
+    "phoneSettings": "Phone Settings"
   },
   "labels": {
     "label": "Label",
@@ -73,7 +77,8 @@
     "none": "None",
     "allowedFileTypes": "Allowed File Types",
     "maxFileSizeMb": "Max File Size (MB)",
-    "maxFiles": "Max Files Allowed"
+    "maxFiles": "Max Files Allowed",
+    "defaultCountry": "Default Country"
   },
   "buttons": {
     "add": "Add",

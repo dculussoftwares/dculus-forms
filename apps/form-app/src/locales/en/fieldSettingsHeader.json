@@ -8,6 +8,7 @@
     "radio": "Radio",
     "checkbox": "Checkbox",
     "date": "Date",
+    "phone": "Phone Number",
     "formField": "Form Field",
     "richText": "Rich Text",
     "fileUpload": "File Upload"

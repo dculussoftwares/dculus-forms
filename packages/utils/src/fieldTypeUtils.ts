@@ -27,6 +27,7 @@ export {
   CircleDot,
   BarChart3,
   Upload,
+  Phone,
 } from 'lucide-react';
 
 /**
@@ -43,6 +44,7 @@ export const FIELD_TYPE_ICON_MAP: Record<FieldType, string> = {
   [FieldType.RADIO_FIELD]: 'CircleDot',
   [FieldType.CHECKBOX_FIELD]: 'CheckSquare',
   [FieldType.FILE_UPLOAD_FIELD]: 'Upload',
+  [FieldType.PHONE_NUMBER_FIELD]: 'Phone',
   [FieldType.RICH_TEXT_FIELD]: 'FileText',
   // Base types - fallback to generic icon
   [FieldType.TEXT]: 'BarChart3',
@@ -82,6 +84,7 @@ export const FIELD_TYPE_TRANSLATION_KEYS: Record<FieldType, string> = {
   [FieldType.RADIO_FIELD]: 'fieldTypes.radio_field',
   [FieldType.CHECKBOX_FIELD]: 'fieldTypes.checkbox_field',
   [FieldType.FILE_UPLOAD_FIELD]: 'fieldTypes.file_upload_field',
+  [FieldType.PHONE_NUMBER_FIELD]: 'fieldTypes.phone_number_field',
   [FieldType.RICH_TEXT_FIELD]: 'fieldTypes.rich_text_field',
   // Base types
   [FieldType.TEXT]: 'fieldTypes.unknown',
@@ -130,6 +133,7 @@ export const isFillableFieldType = (fieldType: string): boolean => {
     FieldType.RADIO_FIELD,
     FieldType.CHECKBOX_FIELD,
     FieldType.FILE_UPLOAD_FIELD,
+    FieldType.PHONE_NUMBER_FIELD,
   ];
   return fillableTypes.includes(fieldType as FieldType);
 };
@@ -145,6 +149,7 @@ export const isTextFieldType = (fieldType: string): boolean => {
     FieldType.TEXT_INPUT_FIELD,
     FieldType.TEXT_AREA_FIELD,
     FieldType.EMAIL_FIELD,
+    FieldType.PHONE_NUMBER_FIELD,
   ];
   return textTypes.includes(fieldType as FieldType);
 };
@@ -189,6 +194,7 @@ export const getAllFillableFieldTypes = (): FieldType[] => {
     FieldType.RADIO_FIELD,
     FieldType.CHECKBOX_FIELD,
     FieldType.FILE_UPLOAD_FIELD,
+    FieldType.PHONE_NUMBER_FIELD,
   ];
 };
 
@@ -207,5 +213,6 @@ export const getAnalyticsEnabledFieldTypes = (): FieldType[] => {
     FieldType.RADIO_FIELD,
     FieldType.CHECKBOX_FIELD,
     FieldType.FILE_UPLOAD_FIELD,
+    FieldType.PHONE_NUMBER_FIELD,
   ];
 };

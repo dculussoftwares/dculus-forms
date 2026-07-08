@@ -22,6 +22,7 @@ const AI_TYPE_MAP: Record<string, FieldType> = {
   radio: FieldType.RADIO_FIELD,
   checkbox: FieldType.CHECKBOX_FIELD,
   file: FieldType.FILE_UPLOAD_FIELD,
+  phone: FieldType.PHONE_NUMBER_FIELD,
   // Full store type names used by copyField (sourceField.type from Y.js)
   text_input_field: FieldType.TEXT_INPUT_FIELD,
   TEXT_INPUT_FIELD: FieldType.TEXT_INPUT_FIELD,
@@ -41,6 +42,8 @@ const AI_TYPE_MAP: Record<string, FieldType> = {
   CHECKBOX_FIELD: FieldType.CHECKBOX_FIELD,
   file_upload_field: FieldType.FILE_UPLOAD_FIELD,
   FILE_UPLOAD_FIELD: FieldType.FILE_UPLOAD_FIELD,
+  phone_number_field: FieldType.PHONE_NUMBER_FIELD,
+  PHONE_NUMBER_FIELD: FieldType.PHONE_NUMBER_FIELD,
 };
 
 const CHOICE_TYPES = new Set([FieldType.SELECT_FIELD, FieldType.RADIO_FIELD, FieldType.CHECKBOX_FIELD]);

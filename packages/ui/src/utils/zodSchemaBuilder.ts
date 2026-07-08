@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'libphonenumber-js/max';
 import { parseCalendarDate } from '@dculus/utils';
 import {
   FormField,
@@ -112,6 +113,25 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
           ])
           .optional();
       }
+    }
+
+    case FieldType.PHONE_NUMBER_FIELD: {
+      // Stored/submitted value is a plain E.164 string (e.g. "+14155552671"),
+      // same shape as every other fillable field — PhoneNumberInput only ever
+      // commits a value once it's a complete, valid number.
+      const invalidPhoneMsg = `${fillableField.label} must be a valid phone number`;
+      const phoneSchema = z
+        .string()
+        .trim()
+        .refine((val) => !val || isValidPhoneNumber(val), invalidPhoneMsg);
+
+      if (isRequired) {
+        return phoneSchema.refine(
+          (val) => val.length > 0,
+          `${fillableField.label} is required`
+        );
+      }
+      return z.union([z.literal(''), phoneSchema]).optional();
     }
 
     case FieldType.NUMBER_FIELD: {
@@ -369,6 +389,7 @@ export const createPageDefaultValues = (
       case FieldType.DATE_FIELD:
       case FieldType.SELECT_FIELD:
       case FieldType.RADIO_FIELD:
+      case FieldType.PHONE_NUMBER_FIELD:
         defaultValues[field.id] = fillableField?.defaultValue || '';
         break;
       case FieldType.NUMBER_FIELD:

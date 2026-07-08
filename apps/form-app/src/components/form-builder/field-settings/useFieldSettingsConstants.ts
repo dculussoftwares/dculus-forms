@@ -67,6 +67,8 @@ export const useFieldSettingsConstants = () => {
       MIN_OPTIONS_REQUIRED: t('errorMessages.minOptionsRequired'),
       MIN_RADIO_OPTIONS_REQUIRED: t('errorMessages.minRadioOptionsRequired'),
       DEFAULT_VALUES_INVALID: t('errorMessages.defaultValuesInvalid'),
+      INVALID_PHONE_NUMBER: t('errorMessages.invalidPhoneNumber'),
+      INVALID_COUNTRY_CODE: t('errorMessages.invalidCountryCode'),
     },
 
     // Placeholder texts (translated)
@@ -80,6 +82,7 @@ export const useFieldSettingsConstants = () => {
       NO_MAXIMUM: t('placeholders.noMaximum'),
       MIN_PLACEHOLDER: t('placeholders.minPlaceholder'),
       MAX_PLACEHOLDER: t('placeholders.maxPlaceholder'),
+      SELECT_COUNTRY: t('placeholders.selectCountry'),
       OPTION_PLACEHOLDER: (index: number) =>
         t('placeholders.optionPlaceholder', { values: { index: index + 1 } }),
       SELECT_DEFAULT_OPTION: t('placeholders.selectDefaultOption'),
@@ -155,6 +158,7 @@ export const useFieldSettingsConstants = () => {
       DATE_RANGE: t('sectionTitles.dateRange'),
       PREFIX_SETTINGS: t('sectionTitles.prefixSettings'),
       FILE_UPLOAD_SETTINGS: t('sectionTitles.fileUploadSettings'),
+      PHONE_SETTINGS: t('sectionTitles.phoneSettings'),
     },
 
     // Labels (translated)
@@ -175,6 +179,7 @@ export const useFieldSettingsConstants = () => {
       ALLOWED_FILE_TYPES: t('labels.allowedFileTypes'),
       MAX_FILE_SIZE_MB: t('labels.maxFileSizeMb'),
       MAX_FILES: t('labels.maxFiles'),
+      DEFAULT_COUNTRY: t('labels.defaultCountry'),
     },
 
     // Button texts (translated)

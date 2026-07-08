@@ -43,6 +43,7 @@ const getOperatorOptions = (
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
     case FieldType.EMAIL_FIELD:
+    case FieldType.PHONE_NUMBER_FIELD:
       return [
         { value: 'CONTAINS', label: t('operators.contains') },
         { value: 'NOT_CONTAINS', label: t('operators.notContains') },
@@ -142,6 +143,7 @@ const renderFilterInput = (
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
     case FieldType.EMAIL_FIELD:
+    case FieldType.PHONE_NUMBER_FIELD:
       return (
         <Input
           placeholder={t('placeholders.enterValue')}

@@ -12,6 +12,7 @@
     "radio_field": "Radio Buttons",
     "checkbox_field": "Checkboxes",
     "file_upload_field": "File Upload",
+    "phone_number_field": "Phone Number",
     "unknown": "Unknown Field"
   },
   "miniChart": {

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { countResponsesPerField, countResponsesReferencingAnyField } from '../services/responseService.js';
 
 // Field type tokens the AI uses (kept in sync with addField's fieldType enum).
-const FIELD_TYPE_TOKENS = ['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file'] as const;
+const FIELD_TYPE_TOKENS = ['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file', 'phone'] as const;
 
 // Normalize a stored field type (e.g. 'text_input_field' / 'TEXT_INPUT_FIELD') to the short token.
 const STORED_TYPE_TO_TOKEN: Record<string, string> = {
@@ -16,6 +16,7 @@ const STORED_TYPE_TO_TOKEN: Record<string, string> = {
   radio_field: 'radio',      RADIO_FIELD: 'radio',
   checkbox_field: 'checkbox', CHECKBOX_FIELD: 'checkbox',
   file_upload_field: 'file', FILE_UPLOAD_FIELD: 'file',
+  phone_number_field: 'phone', PHONE_NUMBER_FIELD: 'phone',
 };
 
 function findFieldInSchema(
@@ -92,6 +93,7 @@ export function createFormEditTools(
           radio_field: 'radio',      RADIO_FIELD: 'radio',
           checkbox_field: 'check',   CHECKBOX_FIELD: 'check',
           file_upload_field: 'file', FILE_UPLOAD_FIELD: 'file',
+          phone_number_field: 'phone', PHONE_NUMBER_FIELD: 'phone',
         };
 
         return {
@@ -142,7 +144,7 @@ export function createFormEditTools(
       inputSchema: z.object({
         pageId: z.string().describe('ID of the page to add the field to'),
         insertAfterFieldId: z.string().nullable().describe('Insert after this field ID; null to append'),
-        fieldType: z.enum(['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file']),
+        fieldType: z.enum(['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file', 'phone']),
         label: z.string().describe('The question/label shown to users'),
         required: z.boolean(),
         placeholder: z.string().nullable(),

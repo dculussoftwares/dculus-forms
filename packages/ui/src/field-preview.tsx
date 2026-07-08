@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FormField, FieldType, RichTextFormField } from '@dculus/types';
+import { FormField, FieldType, RichTextFormField, PhoneNumberField } from '@dculus/types';
 import { Upload } from 'lucide-react';
 import {
   Input,
@@ -14,6 +14,7 @@ import {
   Checkbox,
   RadioGroup,
   RadioGroupItem,
+  PhoneNumberInput,
 } from './index';
 
 interface FieldPreviewProps {
@@ -42,6 +43,8 @@ const getDefaultLabel = (type: FieldType): string => {
       return 'Date';
     case FieldType.FILE_UPLOAD_FIELD:
       return 'File Upload';
+    case FieldType.PHONE_NUMBER_FIELD:
+      return 'Phone Number';
     case FieldType.RICH_TEXT_FIELD:
       return 'Rich Text';
     default:
@@ -52,7 +55,7 @@ const getDefaultLabel = (type: FieldType): string => {
 export const FieldPreview: React.FC<FieldPreviewProps> = ({
   field,
   disabled = true,
-  showValidation = true,
+  showValidation: _showValidation = true,
 }) => {
   // Memoize field data extraction to make it reactive to field changes
   const fieldData = useMemo(() => {
@@ -222,7 +225,21 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
           </div>
         );
 
-      case FieldType.NUMBER_FIELD:
+      case FieldType.PHONE_NUMBER_FIELD: {
+        const phoneField = field as PhoneNumberField;
+        return (
+          <PhoneNumberInput
+            id={inputId}
+            value={defaultValue}
+            onChange={() => {}} // Disabled preview - no actual interaction
+            defaultCountry={phoneField.defaultCountry as any}
+            placeholder={placeholder || 'Phone number'}
+            disabled={disabled}
+          />
+        );
+      }
+
+      case FieldType.NUMBER_FIELD: {
         const numberField = field as any;
         return (
           <div className="relative">
@@ -243,6 +260,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             />
           </div>
         );
+      }
 
       case FieldType.SELECT_FIELD:
         return (
@@ -305,7 +323,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
           </div>
         );
 
-      case FieldType.CHECKBOX_FIELD:
+      case FieldType.CHECKBOX_FIELD: {
         const defaultValues = fieldData.defaultValueArray;
         return (
           <div className="space-y-2">
@@ -336,8 +354,9 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             )}
           </div>
         );
+      }
 
-      case FieldType.DATE_FIELD:
+      case FieldType.DATE_FIELD: {
         const dateField = field as any;
         return (
           <Input
@@ -350,6 +369,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             className="text-sm"
           />
         );
+      }
 
       case FieldType.FILE_UPLOAD_FIELD: {
         const fileUploadField = field as any;
@@ -369,7 +389,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
         );
       }
 
-      case FieldType.RICH_TEXT_FIELD:
+      case FieldType.RICH_TEXT_FIELD: {
         const richTextField = field as RichTextFormField;
         const richTextContent =
           richTextField.content ||
@@ -383,6 +403,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             />
           </div>
         );
+      }
 
       default:
         return (

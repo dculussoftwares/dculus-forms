@@ -74,6 +74,12 @@ function createFieldSettingsModuleStub() {
         <div data-testid="field-settings-footer">Footer</div>
       </div>
     ),
+    PhoneNumberFieldSettings: ({ field }: any) => (
+      <div data-testid="phone-number-field-settings">
+        <div data-testid="field-settings-header">{field?.label ?? 'No Field'}</div>
+        <div data-testid="field-settings-footer">Footer</div>
+      </div>
+    ),
   };
 }
 
@@ -314,6 +320,7 @@ describe('FieldSettingsV2 Integration', () => {
       { type: FieldType.RADIO_FIELD, name: 'RadioField' },
       { type: FieldType.CHECKBOX_FIELD, name: 'CheckboxField' },
       { type: FieldType.DATE_FIELD, name: 'DateField' },
+      { type: FieldType.PHONE_NUMBER_FIELD, name: 'PhoneNumberField' },
       { type: FieldType.RICH_TEXT_FIELD, name: 'RichTextField' },
     ];
 

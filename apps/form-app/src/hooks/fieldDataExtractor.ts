@@ -8,6 +8,7 @@ import {
   NumberField,
   DateField,
   FileUploadField,
+  PhoneNumberField,
   RichTextFormField,
   TextFieldValidation,
   CheckboxFieldValidation,
@@ -21,6 +22,7 @@ import {
   CheckboxValidationFieldData,
   RichTextFieldData,
   FileUploadFieldData,
+  PhoneNumberFieldData,
 } from './types';
 
 /**
@@ -123,6 +125,16 @@ export function extractDateRangeData(field: FormField): DateRangeFieldData {
 }
 
 /**
+ * Extract default-country hint for phone number fields
+ */
+export function extractPhoneNumberData(field: FormField): PhoneNumberFieldData {
+  const phoneField = field as PhoneNumberField;
+  return {
+    defaultCountry: phoneField.defaultCountry,
+  };
+}
+
+/**
  * Extract rich text content data for rich text fields
  */
 export function extractRichTextData(field: FormField): RichTextFieldData {
@@ -215,6 +227,19 @@ const FIELD_DATA_EXTRACTORS: Partial<
       ...restBaseData,
       required,
       ...extractDateRangeData(field),
+      validation: {
+        required: required,
+      },
+    };
+  },
+
+  [FieldType.PHONE_NUMBER_FIELD]: (field: FormField) => {
+    const baseData = extractBaseFieldData(field);
+    const { required, ...restBaseData } = baseData;
+    return {
+      ...restBaseData,
+      required,
+      ...extractPhoneNumberData(field),
       validation: {
         required: required,
       },

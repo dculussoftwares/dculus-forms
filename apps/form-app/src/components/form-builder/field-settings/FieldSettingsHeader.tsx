@@ -1,5 +1,5 @@
 import React from 'react';
-import { Type, FileCode, Upload } from 'lucide-react';
+import { Type, FileCode, Upload, Phone } from 'lucide-react';
 import { FormField, FieldType } from '@dculus/types';
 import { useTranslation } from '../../../hooks';
 
@@ -12,6 +12,7 @@ const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.RADIO_FIELD]: <Type className="w-4 h-4" />,
   [FieldType.CHECKBOX_FIELD]: <Type className="w-4 h-4" />,
   [FieldType.DATE_FIELD]: <Type className="w-4 h-4" />,
+  [FieldType.PHONE_NUMBER_FIELD]: <Phone className="w-4 h-4" />,
   [FieldType.FORM_FIELD]: <Type className="w-4 h-4" />,
   [FieldType.RICH_TEXT_FIELD]: <FileCode className="w-4 h-4" />,
   [FieldType.FILE_UPLOAD_FIELD]: <Upload className="w-4 h-4" />,
@@ -26,6 +27,7 @@ const getFieldTypeLabels = (t: any) => ({
   [FieldType.RADIO_FIELD]: t('fieldTypes.radio'),
   [FieldType.CHECKBOX_FIELD]: t('fieldTypes.checkbox'),
   [FieldType.DATE_FIELD]: t('fieldTypes.date'),
+  [FieldType.PHONE_NUMBER_FIELD]: t('fieldTypes.phone'),
   [FieldType.FORM_FIELD]: t('fieldTypes.formField'),
   [FieldType.RICH_TEXT_FIELD]: t('fieldTypes.richText'),
   [FieldType.FILE_UPLOAD_FIELD]: t('fieldTypes.fileUpload'),

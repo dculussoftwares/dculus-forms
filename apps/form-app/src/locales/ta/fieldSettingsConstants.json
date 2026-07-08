@@ -29,7 +29,9 @@
     "minFileSizeInvalid": "அதிகபட்ச கோப்பு அளவு குறைந்தது  1 MB ஆக இருக்க வேண்டும்",
     "maxFileSizeExceeded": "அதிகபட்ச கோப்பு அளவு 50 MB க்கு மேலாக இருக்கக்கூடாது",
     "minFilesInvalid": "குறைந்தது 1 கோப்பை அனுமதிக்க வேண்டும்",
-    "maxFilesExceeded": "10 கோப்புகளுக்கு மேலாக அனுமதிக்க முடியாது"
+    "maxFilesExceeded": "10 கோப்புகளுக்கு மேலாக அனுமதிக்க முடியாது",
+    "invalidPhoneNumber": "சரியான தொலைபேசி எண்ணை உள்ளிடவும்",
+    "invalidCountryCode": "சரியான நாட்டைத் தேர்ந்தெடுக்கவும்"
   },
   "placeholders": {
     "fieldLabel": "புல முத்திரை",
@@ -43,7 +45,8 @@
     "maxPlaceholder": "அதிகபட்சம்",
     "optionPlaceholder": "விருப்பம் {{index}}",
     "selectDefaultOption": "இயல்புநிலை விருப்பத்தைத் தேர்ந்தெடுக்கவும்",
-    "richTextContent": "பணக்கார உரை உள்ளடக்கத்தை உள்ளிடவும்..."
+    "richTextContent": "பணக்கார உரை உள்ளடக்கத்தை உள்ளிடவும்...",
+    "selectCountry": "நாட்டைத் தேர்ந்தெடுக்கவும்"
   },
   "sectionTitles": {
     "basicSettings": "அடிப்படை அமைப்புகள்",
@@ -53,7 +56,8 @@
     "numberRange": "எண் வரம்பு",
     "dateRange": "தேதி வரம்பு",
     "prefixSettings": "முன்னொட்டு அமைப்புகள்",
-    "fileUploadSettings": "பதிவேற்ற கட்டுப்பாடுகள்"
+    "fileUploadSettings": "பதிவேற்ற கட்டுப்பாடுகள்",
+    "phoneSettings": "தொலைபேசி அமைப்புகள்"
   },
   "labels": {
     "label": "லேபிள்",
@@ -71,7 +75,8 @@
     "none": "இல்லை",
     "allowedFileTypes": "அனுமதிக்கப்பட்ட கோப்பு வகைகள்",
     "maxFileSizeMb": "அதிகபட்ச கோப்பு அளவு (MB)",
-    "maxFiles": "அதிகபட்ச கோப்புகள் அனுமதிக்கப்பட்டன"
+    "maxFiles": "அதிகபட்ச கோப்புகள் அனுமதிக்கப்பட்டன",
+    "defaultCountry": "இயல்புநிலை நாடு"
   },
   "buttons": {
     "add": "சேர்",

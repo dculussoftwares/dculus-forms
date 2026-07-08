@@ -30,6 +30,7 @@ export type FieldData = {
   allowedMimeTypes?: string[];
   maxFileSizeMb?: number;
   maxFiles?: number;
+  defaultCountry?: string;
   deleted?: boolean;
 };
 
@@ -89,6 +90,7 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
       : undefined,
     maxFileSizeMb: fieldMap.get('maxFileSizeMb'),
     maxFiles: fieldMap.get('maxFiles'),
+    defaultCountry: fieldMap.get('defaultCountry') || undefined,
     deleted: fieldMap.get('deleted') || undefined,
   };
 

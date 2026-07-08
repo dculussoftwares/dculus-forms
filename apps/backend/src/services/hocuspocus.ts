@@ -528,6 +528,8 @@ export const getFormSchemaFromHocuspocus = async (
                       field.minDate = fieldMap.get('minDate');
                     if (fieldMap.has('maxDate'))
                       field.maxDate = fieldMap.get('maxDate');
+                    if (fieldMap.has('defaultCountry'))
+                      field.defaultCountry = fieldMap.get('defaultCountry');
 
                     if (fieldMap.get('deleted') === true) {
                       field.deleted = true;
@@ -725,6 +727,8 @@ export const initializeHocuspocusDocument = async (
                 fieldMap.set('minDate', field.minDate);
               if (field.maxDate !== undefined)
                 fieldMap.set('maxDate', field.maxDate);
+              if (field.defaultCountry !== undefined)
+                fieldMap.set('defaultCountry', field.defaultCountry);
             }
 
             logger.info(

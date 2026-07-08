@@ -73,6 +73,7 @@ const AI_TYPE_MAP: Record<string, string> = {
   radio: 'radio_field',
   checkbox: 'checkbox_field',
   file: 'file_upload_field',
+  phone: 'phone_number_field',
 };
 
 function buildFieldJson(f: AIField) {

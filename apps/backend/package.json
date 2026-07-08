@@ -79,6 +79,7 @@
     "iso-3166-1-alpha-2": "1.0.2",
     "jsonwebtoken": "9.0.2",
     "lib0": "0.2.114",
+    "libphonenumber-js": "^1.13.8",
     "morgan": "^1.11.0",
     "multer": "^2.1.1",
     "nanoid": "5.1.5",

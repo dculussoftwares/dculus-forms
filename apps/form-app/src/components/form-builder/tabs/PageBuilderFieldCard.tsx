@@ -25,6 +25,7 @@ import {
   Calendar,
   FileCode,
   Upload,
+  Phone,
 } from 'lucide-react';
 import { PageActionsSelector } from '../PageActionsSelector';
 
@@ -54,6 +55,7 @@ export const getFieldTypeConfig = (
       label: 'Checkboxes',
     },
     date_field: { icon: Calendar, category: 'input', label: 'Date' },
+    phone_number_field: { icon: Phone, category: 'input', label: 'Phone Number' },
     rich_text_field: {
       icon: FileCode,
       category: 'content',

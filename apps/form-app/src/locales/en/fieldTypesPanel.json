@@ -30,6 +30,10 @@
       "label": "Date",
       "description": "Date picker"
     },
+    "phone": {
+      "label": "Phone Number",
+      "description": "Phone number with country code"
+    },
     "dropdown": {
       "label": "Dropdown",
       "description": "Select from options"

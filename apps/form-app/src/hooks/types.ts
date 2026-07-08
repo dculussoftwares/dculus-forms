@@ -109,6 +109,13 @@ export interface FileUploadFieldData {
 }
 
 /**
+ * Default-country hint for phone number fields
+ */
+export interface PhoneNumberFieldData {
+  defaultCountry?: string;
+}
+
+/**
  * Base field data that all fields share
  */
 export interface BaseFieldData {

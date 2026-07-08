@@ -69,6 +69,8 @@ jest.mock('@dculus/types', () => {
     CHECKBOX_FIELD: 'checkbox_field',
     DATE_FIELD: 'date_field',
     FILE_UPLOAD_FIELD: 'file_upload_field',
+    PHONE_NUMBER_FIELD: 'phone_number_field',
+    RICH_TEXT_FIELD: 'rich_text_field',
   };
 
   class TextFieldValidation {
@@ -172,6 +174,39 @@ jest.mock('@dculus/types', () => {
     }
   }
 
+  class PhoneNumberField {
+    id: string;
+    label: string;
+    defaultValue: string;
+    prefix: string;
+    hint: string;
+    placeholder: string;
+    validation: FillableFormFieldValidation;
+    defaultCountry?: string;
+    type: string;
+
+    constructor(
+      id: string,
+      label: string,
+      defaultValue: string,
+      prefix: string,
+      hint: string,
+      placeholder: string,
+      validation: FillableFormFieldValidation,
+      defaultCountry?: string
+    ) {
+      this.id = id;
+      this.label = label;
+      this.defaultValue = defaultValue;
+      this.prefix = prefix;
+      this.hint = hint;
+      this.placeholder = placeholder;
+      this.validation = validation;
+      this.defaultCountry = defaultCountry;
+      this.type = FieldType.PHONE_NUMBER_FIELD;
+    }
+  }
+
   // Mock validation schema
   const textInputFieldValidationSchema = {
     safeParse: jest.fn((data: any) => {
@@ -262,6 +297,7 @@ jest.mock('@dculus/types', () => {
     TextInputField,
     TextAreaField,
     FileUploadField,
+    PhoneNumberField,
     textInputFieldValidationSchema,
     getFieldValidationSchema: jest.fn(() => ({})),
   };

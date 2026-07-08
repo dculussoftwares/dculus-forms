@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'libphonenumber-js/max';
 import { FieldType } from './index.js';
 
 // Base validation schema for common field properties
@@ -587,6 +588,29 @@ export const fileUploadFieldValidationSchema = z.object({
     .optional(),
 });
 
+// Phone number field validation schema
+// The stored/submitted value (defaultValue here, response value elsewhere) is a plain
+// E.164 string (e.g. "+14155552671"); defaultCountry is only a UI hint for pre-selecting
+// the country selector and is passed to isValidPhoneNumber so a defaultValue typed in
+// national format (no leading "+") can still be validated against it.
+export const phoneNumberFieldValidationSchema = baseFieldValidationSchema
+  .extend({
+    defaultCountry: z
+      .string()
+      .length(2, 'fieldSettingsConstants:errorMessages.invalidCountryCode')
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.defaultValue) return true;
+      return isValidPhoneNumber(data.defaultValue, data.defaultCountry as any);
+    },
+    {
+      message: 'fieldSettingsConstants:errorMessages.invalidPhoneNumber',
+      path: ['defaultValue'],
+    }
+  );
+
 // Rich text field validation schema
 export const richTextFieldValidationSchema = z.object({
   content: z
@@ -616,6 +640,8 @@ export function getFieldValidationSchema(fieldType: FieldType) {
       return dateFieldValidationSchema;
     case FieldType.FILE_UPLOAD_FIELD:
       return fileUploadFieldValidationSchema;
+    case FieldType.PHONE_NUMBER_FIELD:
+      return phoneNumberFieldValidationSchema;
     case FieldType.RICH_TEXT_FIELD:
       return richTextFieldValidationSchema;
     default:
@@ -642,6 +668,9 @@ export type DateFieldFormData = z.infer<typeof dateFieldValidationSchema>;
 export type FileUploadFieldFormData = z.infer<
   typeof fileUploadFieldValidationSchema
 >;
+export type PhoneNumberFieldFormData = z.infer<
+  typeof phoneNumberFieldValidationSchema
+>;
 export type RichTextFieldFormData = z.infer<
   typeof richTextFieldValidationSchema
 >;
@@ -656,6 +685,7 @@ export type FieldFormData =
   | RadioFieldFormData
   | CheckboxFieldFormData
   | DateFieldFormData
+  | PhoneNumberFieldFormData
   | FileUploadFieldFormData
   | RichTextFieldFormData;
 

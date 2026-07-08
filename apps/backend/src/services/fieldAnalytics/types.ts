@@ -163,7 +163,10 @@ export interface FieldAnalyticsBase {
 export type FieldAnalytics = FieldAnalyticsBase &
   (
     | ({
-        fieldType: FieldType.TEXT_INPUT_FIELD | FieldType.TEXT_AREA_FIELD;
+        fieldType:
+          | FieldType.TEXT_INPUT_FIELD
+          | FieldType.TEXT_AREA_FIELD
+          | FieldType.PHONE_NUMBER_FIELD;
       } & TextFieldAnalytics)
     | ({ fieldType: FieldType.NUMBER_FIELD } & NumberFieldAnalytics)
     | ({

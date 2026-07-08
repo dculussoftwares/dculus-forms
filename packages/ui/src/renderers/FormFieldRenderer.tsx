@@ -14,6 +14,7 @@ import {
   FillableFormField,
   TextFieldValidation,
   RichTextFormField,
+  PhoneNumberField,
 } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { Upload } from 'lucide-react';
@@ -26,6 +27,7 @@ import {
   Checkbox,
   Label,
   DatePicker,
+  PhoneNumberInput,
 } from '../index';
 
 /* ── Types ── */
@@ -96,7 +98,6 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   /* ── Rich text: uncontrolled, just render ── */
   if (field.type === FieldType.RICH_TEXT_FIELD) {
     const richTextField = field as RichTextFormField;
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const safeContent = useMemo(() => {
       try {
         const doc = new DOMParser().parseFromString(richTextField.content || '', 'text/html');
@@ -214,6 +215,30 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
                 </div>
               );
+
+            /* ─── Phone number ─── */
+            case FieldType.PHONE_NUMBER_FIELD: {
+              const pf = field as PhoneNumberField;
+              return (
+                <div>
+                  <PhoneNumberInput
+                    name={cf.name}
+                    ref={cf.ref}
+                    value={cf.value ?? ''}
+                    onChange={cf.onChange}
+                    onBlur={cf.onBlur}
+                    defaultCountry={pf.defaultCountry as any}
+                    // Only guess the respondent's country from their browser locale on the
+                    // public submission flow — never in the builder preview/edit tools.
+                    browserLocaleFallback={mode === RendererMode.SUBMISSION}
+                    placeholder={fillableField?.placeholder || 'Phone number'}
+                    disabled={!isInteractive}
+                    error={hasError}
+                  />
+                  {hasError && <ErrorMessage message={fieldState.error!.message!} />}
+                </div>
+              );
+            }
 
             /* ─── Number ─── */
             case FieldType.NUMBER_FIELD: {

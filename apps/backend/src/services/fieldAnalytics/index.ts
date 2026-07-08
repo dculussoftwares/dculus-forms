@@ -109,8 +109,12 @@ export const getFieldAnalytics = async (
 
   // Process based on field type
   switch (fieldType) {
+    // Phone numbers are stored as plain E.164 strings — reuse the text
+    // analytics processor (response count, recent values, etc.) rather than
+    // adding a bespoke by-country analytics shape.
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
+    case FieldType.PHONE_NUMBER_FIELD:
       result = {
         ...processTextFieldAnalytics(
           fieldResponses,

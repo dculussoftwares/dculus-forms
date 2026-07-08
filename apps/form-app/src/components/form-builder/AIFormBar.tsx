@@ -26,6 +26,7 @@ const AI_TYPE_MAP: Record<string, FieldType> = {
   radio: FieldType.RADIO_FIELD,
   checkbox: FieldType.CHECKBOX_FIELD,
   file: FieldType.FILE_UPLOAD_FIELD,
+  phone: FieldType.PHONE_NUMBER_FIELD,
 };
 
 function buildFieldData(field: {
