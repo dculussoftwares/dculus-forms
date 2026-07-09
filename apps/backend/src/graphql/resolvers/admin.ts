@@ -18,7 +18,7 @@ import {
   type PlanPriceInput,
 } from '../../services/chargebeeService.js';
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
-import { invalidateAIBudgetCache } from '../../services/aiUsageService.js';
+import { invalidateAIBudgetCache, getAITokenUsage } from '../../services/aiUsageService.js';
 import { type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 
 export interface AdminOrganizationsArgs {
@@ -612,6 +612,12 @@ export const adminResolvers = {
           },
         });
 
+        let aiCreditsUsed = 0;
+        if (organization.subscription) {
+          const aiUsage = await getAITokenUsage(organization.id);
+          aiCreditsUsed = aiUsage.creditsUsed;
+        }
+
         return {
           id: organization.id,
           name: organization.name,
@@ -636,6 +642,7 @@ export const adminResolvers = {
                 status: organization.subscription.status,
                 viewsUsed: organization.subscription.viewsUsed,
                 submissionsUsed: organization.subscription.submissionsUsed,
+                aiCreditsUsed,
                 viewsLimit: organization.subscription.viewsLimit,
                 submissionsLimit: organization.subscription.submissionsLimit,
                 aiCreditsLimit: organization.subscription.aiCreditsLimit,

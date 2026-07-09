@@ -101,6 +101,13 @@ vi.mock('../../../subscriptions/usageService.js', () => ({
 
 vi.mock('../../../services/aiUsageService.js', () => ({
   invalidateAIBudgetCache: vi.fn(),
+  getAITokenUsage: vi.fn().mockResolvedValue({
+    used: 0,
+    limit: 1000,
+    resetAt: '2026-05-31T23:59:59.999Z',
+    creditsUsed: 0,
+    creditsLimit: 100,
+  }),
 }));
 
 describe('Admin Resolvers', () => {

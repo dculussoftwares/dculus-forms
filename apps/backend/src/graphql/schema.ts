@@ -533,6 +533,7 @@ export const typeDefs = gql`
     status: String!
     viewsUsed: Int!
     submissionsUsed: Int!
+    aiCreditsUsed: Float!
     viewsLimit: Int
     submissionsLimit: Int
     aiCreditsLimit: Int
@@ -1393,3 +1394,4 @@ export const typeDefs = gql`
 
   scalar Upload
 `;
+
