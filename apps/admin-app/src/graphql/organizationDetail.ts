@@ -29,6 +29,7 @@ export const ADMIN_ORGANIZATION_BY_ID_QUERY : TypedDocumentNode<any, any> = gql`
         submissionsUsed
         viewsLimit
         submissionsLimit
+        aiCreditsLimit
         currentPeriodStart
         currentPeriodEnd
         chargebeeCustomerId
@@ -38,9 +39,28 @@ export const ADMIN_ORGANIZATION_BY_ID_QUERY : TypedDocumentNode<any, any> = gql`
   }
 `;
 
-export const ADMIN_CHANGE_PLAN_MUTATION : TypedDocumentNode<any, any> = gql`
-  mutation AdminChangePlan($orgId: ID!, $planId: String!) {
-    adminChangePlan(orgId: $orgId, planId: $planId)
+export const ADMIN_SET_ENTERPRISE_PLAN_MUTATION : TypedDocumentNode<any, any> = gql`
+  mutation AdminSetEnterprisePlan(
+    $orgId: ID!
+    $currency: String!
+    $period: String!
+    $priceInSmallestUnit: Int!
+    $viewsLimit: Int
+    $submissionsLimit: Int
+    $aiCreditsLimit: Int
+  ) {
+    adminSetEnterprisePlan(
+      orgId: $orgId
+      currency: $currency
+      period: $period
+      priceInSmallestUnit: $priceInSmallestUnit
+      viewsLimit: $viewsLimit
+      submissionsLimit: $submissionsLimit
+      aiCreditsLimit: $aiCreditsLimit
+    ) {
+      requiresPayment
+      checkoutUrl
+    }
   }
 `;
 
@@ -69,6 +89,7 @@ export interface OrgSubscription {
   submissionsUsed: number;
   viewsLimit: number | null;
   submissionsLimit: number | null;
+  aiCreditsLimit: number | null;
   currentPeriodStart: string;
   currentPeriodEnd: string;
   chargebeeCustomerId: string;

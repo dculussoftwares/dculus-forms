@@ -4,7 +4,19 @@ import { prisma } from '../../lib/prisma.js';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { s3Config } from '../../lib/env.js';
 import { logger } from '../../lib/logger.js';
-import { cancelChargebeeSubscription, reactivateChargebeeSubscription } from '../../services/chargebeeService.js';
+import {
+  cancelChargebeeSubscription,
+  reactivateChargebeeSubscription,
+  setEnterpriseSubscription,
+  getAdminPlanCatalog,
+  createPlan,
+  updatePlan,
+  archivePlan,
+  unarchivePlan,
+  changeOrganizationPlan,
+  type PlanLimitsInput,
+  type PlanPriceInput,
+} from '../../services/chargebeeService.js';
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
 import { invalidateAIBudgetCache } from '../../services/aiUsageService.js';
 import { type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
@@ -33,11 +45,68 @@ export interface AdminOrganizationByIdArgs {
   id: string;
 }
 
-const PLAN_LIMITS: Record<string, { views: number | null; submissions: number | null }> = {
-  free: { views: 10000, submissions: 1000 },
-  starter: { views: null, submissions: 10000 },
-  advanced: { views: null, submissions: 100000 },
-};
+export interface AdminPlanPriceArg {
+  currency: string;
+  period: string;
+  priceInSmallestUnit: number;
+}
+
+export interface AdminPlanLimitsArg {
+  views?: number | null;
+  submissions?: number | null;
+  aiCredits?: number | null;
+}
+
+function validatePlanPrices(prices: AdminPlanPriceArg[]): PlanPriceInput[] {
+  return prices.map((price) => {
+    if (!['USD', 'INR'].includes(price.currency)) {
+      throw createGraphQLError('Invalid currency', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+    }
+    if (!['monthly', 'yearly'].includes(price.period)) {
+      throw createGraphQLError('Invalid billing period', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+    }
+    if (!Number.isInteger(price.priceInSmallestUnit) || price.priceInSmallestUnit < 0) {
+      throw createGraphQLError('Price must be a non-negative integer', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+    }
+    return {
+      currency: price.currency as 'USD' | 'INR',
+      period: price.period as 'monthly' | 'yearly',
+      priceInSmallestUnit: price.priceInSmallestUnit,
+    };
+  });
+}
+
+function validatePlanLimits(limits: AdminPlanLimitsArg): PlanLimitsInput {
+  for (const [label, value] of [
+    ['views', limits.views],
+    ['submissions', limits.submissions],
+    ['aiCredits', limits.aiCredits],
+  ] as const) {
+    if (value != null && (!Number.isInteger(value) || value < 0)) {
+      throw createGraphQLError(
+        `${label} must be a non-negative integer or null (unlimited)`,
+        GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+      );
+    }
+  }
+  return {
+    views: limits.views ?? null,
+    submissions: limits.submissions ?? null,
+    aiCredits: limits.aiCredits ?? null,
+  };
+}
+
+async function getAdminPlansWithSubscriberCounts() {
+  const [catalog, counts] = await Promise.all([
+    getAdminPlanCatalog(),
+    prisma.subscription.groupBy({ by: ['planId'], _count: { _all: true } }),
+  ]);
+  const countByPlan = new Map(counts.map((c) => [c.planId, c._count._all]));
+  return catalog.map((plan) => ({
+    ...plan,
+    subscriberCount: countByPlan.get(plan.id) ?? 0,
+  }));
+}
 
 // P2-06: In-memory cache for S3 storage stats (expensive operation — paginates all objects)
 let statsCache: { data: { storageUsed: string; fileCount: number }; timestamp: number } | null = null;
@@ -569,6 +638,7 @@ export const adminResolvers = {
                 submissionsUsed: organization.subscription.submissionsUsed,
                 viewsLimit: organization.subscription.viewsLimit,
                 submissionsLimit: organization.subscription.submissionsLimit,
+                aiCreditsLimit: organization.subscription.aiCreditsLimit,
                 currentPeriodStart: serializeDate(organization.subscription.currentPeriodStart)!,
                 currentPeriodEnd: serializeDate(organization.subscription.currentPeriodEnd)!,
                 chargebeeCustomerId: organization.subscription.chargebeeCustomerId,
@@ -581,34 +651,213 @@ export const adminResolvers = {
         throw createGraphQLError('Failed to fetch organization', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
+
+    adminPlans: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
+      requireAdminRole(context);
+      try {
+        return await getAdminPlansWithSubscriberCounts();
+      } catch (error) {
+        logger.error('Error fetching admin plan catalog:', error);
+        throw createGraphQLError('Failed to fetch plan catalog', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+    },
   },
 
   Mutation: {
-    adminChangePlan: async (_: any, args: { orgId: string; planId: string }, context: { auth: BetterAuthContext }) => {
+    adminCreatePlan: async (
+      _: any,
+      args: {
+        input: {
+          id: string;
+          name: string;
+          description?: string | null;
+          prices: AdminPlanPriceArg[];
+          limits: AdminPlanLimitsArg;
+          visibleOnPricingPage?: boolean | null;
+        };
+      },
+      context: { auth: BetterAuthContext }
+    ) => {
+      const admin = requireAdminRole(context);
+      const { input } = args;
+
+      if (!input.name?.trim()) {
+        throw createGraphQLError('Plan name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      if (!input.prices?.length) {
+        throw createGraphQLError('At least one price is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      const prices = validatePlanPrices(input.prices);
+      const limits = validatePlanLimits(input.limits ?? {});
+
+      try {
+        await createPlan({
+          id: input.id,
+          name: input.name.trim(),
+          description: input.description ?? undefined,
+          prices,
+          limits,
+          visibleOnPricingPage: input.visibleOnPricingPage ?? false,
+        });
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'plan_created',
+          actorId: admin.id,
+          resourceType: 'Plan',
+          resourceId: input.id,
+          metadata: {
+            name: input.name,
+            prices: prices as any,
+            limits: limits as any,
+            visibleOnPricingPage: input.visibleOnPricingPage ?? false,
+            changedBy: admin.email,
+          },
+        },
+      });
+
+      logger.info(`[Admin] Plan ${input.id} created by ${admin.email}`);
+      const plan = (await getAdminPlansWithSubscriberCounts()).find((p) => p.id === input.id);
+      if (!plan) {
+        throw createGraphQLError('Plan was created but could not be read back', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+      return plan;
+    },
+
+    adminUpdatePlan: async (
+      _: any,
+      args: {
+        input: {
+          id: string;
+          name?: string | null;
+          description?: string | null;
+          prices?: AdminPlanPriceArg[] | null;
+          limits?: AdminPlanLimitsArg | null;
+          visibleOnPricingPage?: boolean | null;
+        };
+      },
+      context: { auth: BetterAuthContext }
+    ) => {
+      const admin = requireAdminRole(context);
+      const { input } = args;
+
+      const prices = input.prices?.length ? validatePlanPrices(input.prices) : undefined;
+      const limits = input.limits ? validatePlanLimits(input.limits) : undefined;
+
+      let backfilledOrganizations = 0;
+      try {
+        const result = await updatePlan({
+          id: input.id,
+          name: input.name ?? undefined,
+          description: input.description ?? undefined,
+          prices,
+          limits,
+          visibleOnPricingPage: input.visibleOnPricingPage ?? undefined,
+        });
+        backfilledOrganizations = result.backfilledOrganizations;
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'plan_updated',
+          actorId: admin.id,
+          resourceType: 'Plan',
+          resourceId: input.id,
+          metadata: {
+            name: input.name ?? null,
+            prices: (prices ?? null) as any,
+            limits: (limits ?? null) as any,
+            visibleOnPricingPage: input.visibleOnPricingPage ?? null,
+            backfilledOrganizations,
+            changedBy: admin.email,
+          },
+        },
+      });
+
+      logger.info(`[Admin] Plan ${input.id} updated by ${admin.email}`);
+      const plan = (await getAdminPlansWithSubscriberCounts()).find((p) => p.id === input.id);
+      if (!plan) {
+        throw createGraphQLError('Plan was updated but could not be read back', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+      return plan;
+    },
+
+    adminArchivePlan: async (_: any, args: { planId: string }, context: { auth: BetterAuthContext }) => {
+      const admin = requireAdminRole(context);
+      const { planId } = args;
+
+      try {
+        await archivePlan(planId);
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'plan_archived',
+          actorId: admin.id,
+          resourceType: 'Plan',
+          resourceId: planId,
+          metadata: { changedBy: admin.email },
+        },
+      });
+
+      logger.info(`[Admin] Plan ${planId} archived by ${admin.email}`);
+      return true;
+    },
+
+    adminUnarchivePlan: async (_: any, args: { planId: string }, context: { auth: BetterAuthContext }) => {
+      const admin = requireAdminRole(context);
+      const { planId } = args;
+
+      try {
+        await unarchivePlan(planId);
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'plan_unarchived',
+          actorId: admin.id,
+          resourceType: 'Plan',
+          resourceId: planId,
+          metadata: { changedBy: admin.email },
+        },
+      });
+
+      logger.info(`[Admin] Plan ${planId} restored by ${admin.email}`);
+      return true;
+    },
+
+    /**
+     * Assign a catalog plan to an organization with real billing effect — the
+     * org's Chargebee subscription is switched to the target plan (invoicing
+     * and renewal webhooks behave like a self-serve plan change; when the
+     * customer has no payment method, collection falls back to offline
+     * invoices). Enterprise deals go through adminSetEnterprisePlan instead.
+     */
+    adminAssignPlan: async (_: any, args: { orgId: string; planId: string }, context: { auth: BetterAuthContext }) => {
       const admin = requireAdminRole(context);
       const { orgId, planId } = args;
-
-      if (!['free', 'starter', 'advanced'].includes(planId)) {
-        throw createGraphQLError('Invalid plan ID', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-      }
 
       const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
       if (!subscription) {
         throw createGraphQLError('Subscription not found for this organization', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
-      const limits = PLAN_LIMITS[planId];
       const previousPlan = subscription.planId;
 
-      await prisma.subscription.update({
-        where: { organizationId: orgId },
-        data: {
-          planId,
-          viewsLimit: limits.views,
-          submissionsLimit: limits.submissions,
-          status: 'active',
-        },
-      });
+      try {
+        await changeOrganizationPlan(orgId, planId);
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
 
       await prisma.auditLog.create({
         data: {
@@ -622,6 +871,96 @@ export const adminResolvers = {
 
       logger.info(`[Admin] Plan changed for org ${orgId}: ${previousPlan} -> ${planId} by ${admin.email}`);
       return true;
+    },
+
+    /**
+     * Set (or update) a negotiated Enterprise deal for an organization —
+     * pay-to-activate: paid deals return a Chargebee checkout URL (also emailed
+     * to the org owner) and leave the org disabled (past_due) until the customer
+     * pays; completing checkout saves their card and enables auto-collection for
+     * all future renewals. $0 deals activate immediately.
+     *
+     * Views/submissions/AI-credits limits are admin-set directly on Postgres
+     * (null = unlimited, 0 is a valid explicit cap) and are never re-derived
+     * from a shared Chargebee catalog entitlement.
+     */
+    adminSetEnterprisePlan: async (
+      _: any,
+      args: {
+        orgId: string;
+        currency: string;
+        period: string;
+        priceInSmallestUnit: number;
+        viewsLimit?: number | null;
+        submissionsLimit?: number | null;
+        aiCreditsLimit?: number | null;
+      },
+      context: { auth: BetterAuthContext }
+    ) => {
+      const admin = requireAdminRole(context);
+      const { orgId, currency, period, priceInSmallestUnit, viewsLimit, submissionsLimit, aiCreditsLimit } = args;
+
+      if (!['USD', 'INR'].includes(currency)) {
+        throw createGraphQLError('Invalid currency', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      if (!['monthly', 'yearly'].includes(period)) {
+        throw createGraphQLError('Invalid billing period', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      if (!Number.isInteger(priceInSmallestUnit) || priceInSmallestUnit < 0) {
+        throw createGraphQLError('Price must be a non-negative integer', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      for (const [label, value] of [
+        ['viewsLimit', viewsLimit],
+        ['submissionsLimit', submissionsLimit],
+        ['aiCreditsLimit', aiCreditsLimit],
+      ] as const) {
+        if (value != null && (!Number.isInteger(value) || value < 0)) {
+          throw createGraphQLError(
+            `${label} must be a non-negative integer or null (unlimited)`,
+            GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+          );
+        }
+      }
+
+      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      if (!subscription) {
+        throw createGraphQLError('Subscription not found for this organization', GRAPHQL_ERROR_CODES.NOT_FOUND);
+      }
+
+      const previousPlan = subscription.planId;
+
+      const { checkoutUrl } = await setEnterpriseSubscription(orgId, {
+        currency: currency as 'USD' | 'INR',
+        period: period as 'monthly' | 'yearly',
+        priceInSmallestUnit,
+        viewsLimit: viewsLimit ?? null,
+        submissionsLimit: submissionsLimit ?? null,
+        aiCreditsLimit: aiCreditsLimit ?? null,
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          action: 'enterprise_plan_set',
+          actorId: admin.id,
+          resourceType: 'Organization',
+          resourceId: orgId,
+          metadata: {
+            from: previousPlan,
+            to: 'enterprise',
+            currency,
+            period,
+            priceInSmallestUnit,
+            viewsLimit: viewsLimit ?? null,
+            submissionsLimit: submissionsLimit ?? null,
+            aiCreditsLimit: aiCreditsLimit ?? null,
+            requiresPayment: priceInSmallestUnit > 0,
+            changedBy: admin.email,
+          },
+        },
+      });
+
+      logger.info(`[Admin] Enterprise plan set for org ${orgId} by ${admin.email}`);
+      return { requiresPayment: priceInSmallestUnit > 0, checkoutUrl };
     },
 
     adminResetUsage: async (_: any, args: { orgId: string }, context: { auth: BetterAuthContext }) => {

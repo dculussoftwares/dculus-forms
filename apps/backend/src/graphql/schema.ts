@@ -535,6 +535,7 @@ export const typeDefs = gql`
     submissionsUsed: Int!
     viewsLimit: Int
     submissionsLimit: Int
+    aiCreditsLimit: Int
     currentPeriodStart: String!
     currentPeriodEnd: String!
     chargebeeCustomerId: String!
@@ -1092,6 +1093,7 @@ export const typeDefs = gql`
     adminUserById(id: String!): AdminUserDetail!
     adminOrganizationById(id: String!): AdminOrganizationDetail!
     adminSystemHealth: [SystemHealthItem!]!
+    adminPlans: [AdminPlan!]!
 
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
@@ -1154,6 +1156,72 @@ export const typeDefs = gql`
     description: String
     prices: [PlanPrice!]!
     features: PlanFeatures!
+  }
+
+  # Admin plan catalog types — full Chargebee catalog view (includes hidden,
+  # archived, and enterprise plans). Prices are in the smallest currency unit
+  # (cents/paise); null limits mean unlimited.
+  type AdminPlanPrice {
+    id: String!
+    currency: String!
+    period: String!
+    priceInSmallestUnit: Int!
+    status: String!
+  }
+
+  type AdminPlanLimits {
+    views: Int
+    submissions: Int
+    aiCredits: Int
+  }
+
+  type AdminPlan {
+    id: String!
+    name: String!
+    description: String
+    status: String!
+    visibleOnPricingPage: Boolean!
+    prices: [AdminPlanPrice!]!
+    limits: AdminPlanLimits!
+    subscriberCount: Int!
+  }
+
+  input AdminPlanPriceInput {
+    currency: String!
+    period: String!
+    priceInSmallestUnit: Int!
+  }
+
+  input AdminPlanLimitsInput {
+    views: Int
+    submissions: Int
+    aiCredits: Int
+  }
+
+  input AdminCreatePlanInput {
+    id: String!
+    name: String!
+    description: String
+    prices: [AdminPlanPriceInput!]!
+    limits: AdminPlanLimitsInput!
+    visibleOnPricingPage: Boolean
+  }
+
+  input AdminUpdatePlanInput {
+    id: String!
+    name: String
+    description: String
+    prices: [AdminPlanPriceInput!]
+    limits: AdminPlanLimitsInput
+    visibleOnPricingPage: Boolean
+  }
+
+  # Result of setting an enterprise deal. Paid deals return a Chargebee checkout
+  # URL and leave the org disabled (past_due) until the customer pays; $0 deals
+  # activate immediately with no checkout.
+  type EnterprisePlanResult {
+    requiresPayment: Boolean!
+    checkoutUrl: String
   }
 
   type Mutation {
@@ -1242,7 +1310,20 @@ export const typeDefs = gql`
     renameAIChatConversation(id: ID!, organizationId: ID!, title: String!): AIChatConversation!
 
     # Admin Mutations
-    adminChangePlan(orgId: ID!, planId: String!): Boolean!
+    adminCreatePlan(input: AdminCreatePlanInput!): AdminPlan!
+    adminUpdatePlan(input: AdminUpdatePlanInput!): AdminPlan!
+    adminArchivePlan(planId: String!): Boolean!
+    adminUnarchivePlan(planId: String!): Boolean!
+    adminAssignPlan(orgId: ID!, planId: String!): Boolean!
+    adminSetEnterprisePlan(
+      orgId: ID!
+      currency: String!
+      period: String!
+      priceInSmallestUnit: Int!
+      viewsLimit: Int
+      submissionsLimit: Int
+      aiCreditsLimit: Int
+    ): EnterprisePlanResult!
     adminResetUsage(orgId: ID!): Boolean!
     adminCancelSubscription(orgId: ID!): Boolean!
     adminReactivateSubscription(orgId: ID!): Boolean!

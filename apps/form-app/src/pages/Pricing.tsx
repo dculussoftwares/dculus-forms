@@ -7,6 +7,7 @@ import {
   Zap,
   TrendingUp,
   Sparkles,
+  Building2,
   ArrowRight,
   HelpCircle,
 } from 'lucide-react';
@@ -186,7 +187,7 @@ export const Pricing = () => {
             <p className="text-xs text-muted-foreground">{t('loading.plans')}</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {plans.map((plan: any) => {
               const config = planConfig[plan.id];
               if (!config) return null;
@@ -265,6 +266,49 @@ export const Pricing = () => {
                 </div>
               );
             })}
+
+            {/* Enterprise — admin-assisted negotiated deals, no self-serve checkout */}
+            <div
+              className="relative rounded-xl bg-white p-7 flex flex-col transition-all duration-200"
+              style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
+            >
+              <div className="flex flex-col items-center mb-6 text-center">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: 'var(--tf-icon-salmon)' }}>
+                  <Building2 className="h-6 w-6" style={{ color: '#9d174d' }} />
+                </div>
+                <h3 className="text-lg font-semibold text-primary">{t('plans.enterprise.name')}</h3>
+                <p className="text-xs mt-0.5 text-muted-foreground">{t('plans.enterprise.tagline')}</p>
+              </div>
+
+              <div className="text-center mb-7 text-2xl font-light text-primary">
+                {t('plans.enterprise.priceLabel')}
+              </div>
+
+              <div className="space-y-2.5 mb-7 flex-1">
+                {[
+                  t('plans.enterprise.features.limits'),
+                  t('plans.enterprise.features.aiCredits'),
+                  t('plans.enterprise.features.pricing'),
+                  t('plans.enterprise.features.support'),
+                ].map((feature, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 shrink-0 mt-0.5 text-[var(--tf-green)]" />
+                    <span className="text-xs text-foreground">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                onClick={() => {
+                  window.location.href = 'mailto:support@dculus.com?subject=Enterprise%20plan%20inquiry';
+                }}
+                variant="outline"
+                className="w-full h-9 flex items-center justify-center gap-1.5"
+              >
+                {t('buttons.contactSales')}
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
         )}
       </div>

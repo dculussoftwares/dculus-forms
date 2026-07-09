@@ -27,6 +27,11 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
       data,
     });
 
+  const updateManyByPlan = (
+    planId: string,
+    data: Prisma.SubscriptionUncheckedUpdateManyInput
+  ) => prisma.subscription.updateMany({ where: { planId }, data });
+
   const upsertForOrganization = async (
     organizationId: string,
     updateData: Prisma.SubscriptionUncheckedUpdateInput,
@@ -62,6 +67,7 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
     upsert,
     create,
     update,
+    updateManyByPlan,
     createSubscription,
     upsertForOrganization,
     findByOrganizationPublic,

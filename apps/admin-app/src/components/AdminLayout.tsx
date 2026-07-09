@@ -11,6 +11,7 @@ import {
   LogOut,
   Shield,
   Mail,
+  CreditCard,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -28,6 +29,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: t('navigation.organizations'), href: '/organizations', icon: Building2 },
     { name: t('navigation.users'),         href: '/users',         icon: Users },
     { name: t('navigation.templates'),     href: '/templates',     icon: FileText },
+    { name: t('navigation.plans'),         href: '/plans',         icon: CreditCard },
     { name: t('navigation.emailPreviews'), href: '/email-previews', icon: Mail },
   ];
 
