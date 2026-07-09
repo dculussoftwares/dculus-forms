@@ -1,0 +1,41 @@
+language: en-US
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/*.generated.*"
+    - "!**/pnpm-lock.yaml"
+    - "!apps/backend/prisma/migrations/**"
+    - "!**/*.min.js"
+  path_instructions:
+    - path: "apps/backend/src/graphql/resolvers/**"
+      instructions: >
+        Verify every resolver guards access with requireAuth and, where the
+        operation touches a specific organization/form, requireOrganizationMembership
+        or the equivalent FormPermission check, per this repo's three-layer
+        authorization model (system role, org membership, form permission).
+    - path: "apps/form-app/src/**/*.tsx"
+      instructions: >
+        Flag any hardcoded user-facing strings; this app requires i18n via
+        useTranslation for both en and ta locales.
+    - path: "**/*.env*"
+      instructions: >
+        This is a public repository. Flag any committed secrets, API keys,
+        or credentials immediately as a blocking issue.
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: auto
