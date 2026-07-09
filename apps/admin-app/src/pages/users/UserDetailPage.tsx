@@ -3,16 +3,7 @@ import { useParams, useNavigate } from 'react-router';
 import { Button, LoadingSpinner } from '@dculus/ui';
 import { ArrowLeft, Mail, CheckCircle2, XCircle, Building2, Calendar, Fingerprint } from 'lucide-react';
 import { ADMIN_USER_BY_ID_QUERY, AdminUserByIdQueryData } from '../../graphql/users';
-
-const CARD_STYLE: React.CSSProperties = { border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' };
-
-const roleBadgeStyle = (role: string): React.CSSProperties => {
-  switch (role.toLowerCase()) {
-    case 'owner': return { backgroundColor: 'var(--tf-icon-lavender)', color: '#5c2e6b' };
-    case 'admin': return { backgroundColor: 'var(--tf-icon-salmon)', color: 'var(--tf-dark)' };
-    default:      return { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)' };
-  }
-};
+import { CARD_STYLE, roleBadgeStyle } from '../../lib/cardTokens';
 
 export const UserDetailPage = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -124,7 +115,7 @@ export const UserDetailPage = () => {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
-              <Fingerprint className="w-4.5 h-4.5" style={{ color: '#5c2e6b' }} />
+              <Fingerprint className="w-[18px] h-[18px]" style={{ color: '#5c2e6b' }} />
             </div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">User ID</p>
@@ -134,7 +125,7 @@ export const UserDetailPage = () => {
 
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-teal)' }}>
-              <Calendar className="w-4.5 h-4.5" style={{ color: 'var(--tf-green)' }} />
+              <Calendar className="w-[18px] h-[18px]" style={{ color: 'var(--tf-green)' }} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Created</p>
@@ -144,7 +135,7 @@ export const UserDetailPage = () => {
 
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-salmon)' }}>
-              <Calendar className="w-4.5 h-4.5" style={{ color: 'var(--tf-dark)' }} />
+              <Calendar className="w-[18px] h-[18px]" style={{ color: 'var(--tf-dark)' }} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Last Updated</p>
@@ -167,7 +158,7 @@ export const UserDetailPage = () => {
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-gray)' }}>
-                    <Building2 className="w-4.5 h-4.5 text-primary" />
+                    <Building2 className="w-[18px] h-[18px] text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-medium text-primary truncate">{org.organizationName}</h3>

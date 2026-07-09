@@ -20,10 +20,11 @@ import {
   ADMIN_ASSIGN_PLAN_MUTATION,
   AdminPlansQueryData,
 } from '../../graphql/plans';
+import { CARD_STYLE, roleBadgeStyle } from '../../lib/cardTokens';
 
 const CHARGEBEE_SITE = (import.meta as { env?: Record<string, string> }).env?.VITE_CHARGEBEE_SITE ?? '';
 
-const CARD_STYLE: React.CSSProperties = { border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' };
+const MODAL_STYLE: React.CSSProperties = { border: '1px solid var(--tf-border-medium)', boxShadow: 'var(--shadow-xl)' };
 
 const planBadgeStyle = (planId: string): React.CSSProperties => {
   switch (planId) {
@@ -69,14 +70,6 @@ const statusBadgeStyle = (status: string): React.CSSProperties => {
     case 'active':    return { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' };
     case 'past_due':  return { backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-lg)' };
     default:          return { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' };
-  }
-};
-
-const roleBadgeStyle = (role: string): React.CSSProperties => {
-  switch (role.toLowerCase()) {
-    case 'owner': return { backgroundColor: 'var(--tf-icon-lavender)', color: '#5c2e6b' };
-    case 'admin': return { backgroundColor: 'var(--tf-icon-salmon)', color: 'var(--tf-dark)' };
-    default:      return { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)' };
   }
 };
 
@@ -647,7 +640,7 @@ export const OrganizationDetailPage = () => {
       {confirmModal === 'changePlan' && selectedPlan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: 'var(--shadow-xl)' }}>
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={MODAL_STYLE}>
             <h3 className="text-base font-semibold text-primary">Change Plan</h3>
             <p className="text-sm text-muted-foreground">
               Change <strong>{org.name}</strong> from <strong>{sub?.planId}</strong> to <strong>{selectedPlan}</strong>?
@@ -667,7 +660,7 @@ export const OrganizationDetailPage = () => {
       {confirmModal === 'setEnterprise' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => !settingEnterprise && setConfirmModal(null)} />
-          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)' }}>
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={MODAL_STYLE}>
             <h3 className="text-base font-semibold text-primary">Set Enterprise Plan</h3>
             <p className="text-sm text-muted-foreground">
               This will update <strong>{org.name}</strong>&apos;s real Chargebee subscription to charge{' '}
@@ -712,7 +705,7 @@ export const OrganizationDetailPage = () => {
       {confirmModal === 'resetUsage' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => !resettingUsage && setConfirmModal(null)} />
-          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: 'var(--shadow-xl)' }}>
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={MODAL_STYLE}>
             <h3 className="text-base font-semibold text-primary">Reset Usage Counters</h3>
             <p className="text-sm text-muted-foreground">
               Resets views, submissions, and AI token usage to zero. Type <strong>{org.name}</strong> to confirm.
@@ -720,6 +713,7 @@ export const OrganizationDetailPage = () => {
             <input
               className="w-full rounded-lg px-3 py-2 text-sm"
               style={{ border: '1px solid var(--tf-border-strong)' }}
+              aria-label={`Type ${org.name} to confirm`}
               placeholder={org.name}
               value={resetConfirmText}
               onChange={e => setResetConfirmText(e.target.value)}
@@ -745,7 +739,7 @@ export const OrganizationDetailPage = () => {
       {confirmModal === 'cancel' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: 'var(--shadow-xl)' }}>
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={MODAL_STYLE}>
             <h3 className="text-base font-semibold text-primary">Cancel Subscription</h3>
             <p className="text-sm text-muted-foreground">
               This will cancel the Chargebee subscription at the end of the billing period.
@@ -763,7 +757,7 @@ export const OrganizationDetailPage = () => {
       {enterpriseCheckoutUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => setEnterpriseCheckoutUrl(null)} />
-          <div className="relative bg-white rounded-xl p-6 max-w-md w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)' }}>
+          <div className="relative bg-white rounded-xl p-6 max-w-md w-full mx-4 space-y-4" style={MODAL_STYLE}>
             <h3 className="text-base font-semibold text-primary">Payment link created</h3>
             <p className="text-sm text-muted-foreground">
               The organization is <strong>disabled</strong> until this payment completes. The link has been
@@ -798,7 +792,7 @@ export const OrganizationDetailPage = () => {
       {confirmModal === 'reactivate' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={() => setConfirmModal(null)} />
-          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: 'var(--shadow-xl)' }}>
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={MODAL_STYLE}>
             <h3 className="text-base font-semibold text-primary">Reactivate Subscription</h3>
             <p className="text-sm text-muted-foreground">
               This will reactivate the Chargebee subscription immediately.

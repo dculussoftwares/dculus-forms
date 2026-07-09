@@ -1,22 +1,13 @@
 import { Button } from '@dculus/ui';
 import { Building2, CheckCircle2, XCircle } from 'lucide-react';
 import { AdminUserDetail } from '../../graphql/users';
+import { CARD_STYLE, roleBadgeStyle } from '../../lib/cardTokens';
 
 interface UserCardProps {
   user: AdminUserDetail;
   onViewDetails: () => void;
   onViewOrganization: (orgId: string) => void;
 }
-
-const CARD_STYLE: React.CSSProperties = { border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' };
-
-const roleBadgeStyle = (role: string): React.CSSProperties => {
-  switch (role.toLowerCase()) {
-    case 'owner': return { backgroundColor: 'var(--tf-icon-lavender)', color: '#5c2e6b' };
-    case 'admin': return { backgroundColor: 'var(--tf-icon-salmon)', color: 'var(--tf-dark)' };
-    default:      return { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)' };
-  }
-};
 
 export const UserCard = ({ user, onViewDetails, onViewOrganization }: UserCardProps) => {
   // Format date
