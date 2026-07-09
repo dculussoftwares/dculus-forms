@@ -92,6 +92,71 @@ function currentPeriod(subscription: SubscriptionPeriod): { start: Date; end: Da
 }
 
 /**
+ * One-time bridge from the old calendar-month-keyed `AIUsage` rows to the new
+ * Chargebee-billing-cycle key (issue #77 acceptance criteria: existing rows must be
+ * migrated or handled without breaking `checkAITokenBudget` for orgs mid-transition).
+ *
+ * Without this, an org whose billing term started earlier in the current calendar
+ * month would have usage from before this deploy sitting under the old calendar-month
+ * key — invisible to lookups against the new billing-cycle key, effectively granting a
+ * fresh AI budget mid-cycle until the next Chargebee renewal. Rolls that legacy row's
+ * totals onto the new key and deletes it so it isn't matched again.
+ *
+ * Deliberately narrow: only migrates when the billing term started in the *current*
+ * calendar month, so the legacy row can be safely attributed to the current term.
+ * Terms that started in an earlier calendar month would need to reconcile usage split
+ * across multiple legacy rows at a month boundary — that's the historical reconciliation
+ * the issue explicitly scoped out. Best-effort: failures are logged and swallowed, since
+ * a missed migration only loses one month's carryover usage, not a hard failure.
+ */
+async function migrateLegacyPeriodUsage(
+  organizationId: string,
+  newStart: Date,
+  newEnd: Date,
+  subscription: SubscriptionPeriod
+): Promise<void> {
+  if (!subscription?.currentPeriodStart) return; // already on the calendar-month key
+
+  const now = new Date();
+  const legacyStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (legacyStart.getTime() === newStart.getTime()) return; // no key change to migrate from
+
+  const sameCalendarMonth =
+    subscription.currentPeriodStart.getFullYear() === legacyStart.getFullYear() &&
+    subscription.currentPeriodStart.getMonth() === legacyStart.getMonth();
+  if (!sameCalendarMonth) return; // legacy row (if any) predates this billing term
+
+  try {
+    const [existingNew, legacy] = await Promise.all([
+      prisma.aIUsage.findFirst({ where: { organizationId, periodStart: newStart } }),
+      prisma.aIUsage.findFirst({ where: { organizationId, periodStart: legacyStart } }),
+    ]);
+    if (existingNew || !legacy) return;
+
+    await prisma.aIUsage.upsert({
+      where: { organizationId_periodStart: { organizationId, periodStart: newStart } },
+      update: {
+        tokensUsed: { increment: legacy.tokensUsed },
+        creditsUsedMilli: { increment: legacy.creditsUsedMilli },
+      },
+      create: {
+        organizationId,
+        periodStart: newStart,
+        periodEnd: newEnd,
+        tokensUsed: legacy.tokensUsed,
+        creditsUsedMilli: legacy.creditsUsedMilli,
+      },
+    });
+    await prisma.aIUsage.delete({ where: { id: legacy.id } });
+  } catch {
+    logger.warn(
+      { organizationId },
+      'Failed to migrate legacy calendar-month AI usage onto the billing-cycle period key'
+    );
+  }
+}
+
+/**
  * Effective monthly AI-credit limit for an org.
  *
  * `Subscription.aiCreditsLimit` is populated by a Chargebee webhook sync (a later task).
@@ -152,7 +217,8 @@ export async function checkAITokenBudget(organizationId: string): Promise<{
   const generationAtStart = currentWriteGeneration(organizationId);
 
   const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
-  const { start } = currentPeriod(subscription);
+  const { start, end } = currentPeriod(subscription);
+  await migrateLegacyPeriodUsage(organizationId, start, end, subscription);
 
   const usage = await prisma.aIUsage.findFirst({
     where: { organizationId, periodStart: start },
@@ -231,6 +297,7 @@ export async function recordAITokenUsage(
   // and effectiveCreditLimit() below needs planId/aiCreditsLimit/status from the same row.
   const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
   const { start, end } = currentPeriod(subscription);
+  await migrateLegacyPeriodUsage(organizationId, start, end, subscription);
   const creditsUsedMilli = tokensToMilliCredits(tokensUsed, tier);
 
   try {
@@ -279,6 +346,7 @@ export async function getAITokenUsage(organizationId: string): Promise<{
 }> {
   const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
   const { start, end } = currentPeriod(subscription);
+  await migrateLegacyPeriodUsage(organizationId, start, end, subscription);
 
   const usage = await prisma.aIUsage.findFirst({ where: { organizationId, periodStart: start } });
 

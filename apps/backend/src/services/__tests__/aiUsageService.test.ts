@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { prisma } from '../../lib/prisma.js';
 
 vi.mock('../../lib/prisma.js', () => ({
@@ -6,6 +6,7 @@ vi.mock('../../lib/prisma.js', () => ({
     aIUsage: {
       findFirst: vi.fn(),
       upsert: vi.fn(),
+      delete: vi.fn(),
     },
     subscription: {
       findUnique: vi.fn(),
@@ -525,6 +526,156 @@ describe('aiUsageService', () => {
       expect(call.where.periodStart).toEqual(new Date(2024, 2, 1));
 
       vi.useRealTimers();
+    });
+  });
+
+  describe('legacy calendar-month AIUsage migration (issue #77)', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('rolls a same-month legacy calendar-key row onto the billing-cycle key and deletes the legacy row', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 6, 20, 12, 0, 0)); // "now": 2026-07-20
+
+      const currentPeriodStart = new Date(2026, 6, 5); // billing term started 2026-07-05
+      const currentPeriodEnd = new Date(2026, 7, 4, 23, 59, 59, 999);
+      const legacyStart = new Date(2026, 6, 1); // pre-deploy calendar-month key
+
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        currentPeriodStart,
+        currentPeriodEnd,
+      } as any);
+
+      (prisma.aIUsage.findFirst as any).mockImplementation(async ({ where }: any) => {
+        if (where.periodStart.getTime() === legacyStart.getTime()) {
+          return { id: 'legacy-row', tokensUsed: 3000, creditsUsedMilli: 450_000 } as any;
+        }
+        return null; // nothing yet under the new billing-cycle key
+      });
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({} as any);
+      vi.mocked(prisma.aIUsage.delete).mockResolvedValue({} as any);
+
+      await checkAITokenBudget('org-migrate');
+
+      expect(prisma.aIUsage.upsert).toHaveBeenCalledWith({
+        where: { organizationId_periodStart: { organizationId: 'org-migrate', periodStart: currentPeriodStart } },
+        update: { tokensUsed: { increment: 3000 }, creditsUsedMilli: { increment: 450_000 } },
+        create: {
+          organizationId: 'org-migrate',
+          periodStart: currentPeriodStart,
+          periodEnd: currentPeriodEnd,
+          tokensUsed: 3000,
+          creditsUsedMilli: 450_000,
+        },
+      });
+      expect(prisma.aIUsage.delete).toHaveBeenCalledWith({ where: { id: 'legacy-row' } });
+    });
+
+    it('does nothing when there is no legacy row to migrate', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 6, 20, 12, 0, 0));
+
+      const currentPeriodStart = new Date(2026, 6, 5);
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        currentPeriodStart,
+        currentPeriodEnd: new Date(2026, 7, 4, 23, 59, 59, 999),
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue(null);
+
+      await checkAITokenBudget('org-no-legacy');
+
+      expect(prisma.aIUsage.upsert).not.toHaveBeenCalled();
+      expect(prisma.aIUsage.delete).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when the billing-cycle key already has a row (already migrated or genuinely fresh)', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 6, 20, 12, 0, 0));
+
+      const currentPeriodStart = new Date(2026, 6, 5);
+      const legacyStart = new Date(2026, 6, 1);
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        currentPeriodStart,
+        currentPeriodEnd: new Date(2026, 7, 4, 23, 59, 59, 999),
+      } as any);
+      (prisma.aIUsage.findFirst as any).mockImplementation(async ({ where }: any) => {
+        if (where.periodStart.getTime() === currentPeriodStart.getTime()) {
+          return { id: 'new-row', tokensUsed: 10, creditsUsedMilli: 10_000 } as any;
+        }
+        if (where.periodStart.getTime() === legacyStart.getTime()) {
+          return { id: 'legacy-row', tokensUsed: 3000, creditsUsedMilli: 450_000 } as any;
+        }
+        return null;
+      });
+
+      await checkAITokenBudget('org-already-migrated');
+
+      expect(prisma.aIUsage.upsert).not.toHaveBeenCalled();
+      expect(prisma.aIUsage.delete).not.toHaveBeenCalled();
+    });
+
+    it('skips migration when the billing term started in an earlier calendar month', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 6, 20, 12, 0, 0)); // "now": July 2026
+
+      // Term started in June — a July-keyed legacy row (if any) can't be safely attributed
+      // to this term without splitting usage at the month boundary (out of scope).
+      const currentPeriodStart = new Date(2026, 5, 15);
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        currentPeriodStart,
+        currentPeriodEnd: new Date(2026, 6, 14, 23, 59, 59, 999),
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue({ creditsUsedMilli: 0 } as any);
+
+      await checkAITokenBudget('org-earlier-term');
+
+      // Only the main lookup runs — no legacy-row probe.
+      expect(prisma.aIUsage.findFirst).toHaveBeenCalledTimes(1);
+      expect(prisma.aIUsage.upsert).not.toHaveBeenCalled();
+    });
+
+    it('carries migrated usage forward through recordAITokenUsage so it is not lost on the first post-deploy write', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 6, 20, 12, 0, 0));
+
+      const currentPeriodStart = new Date(2026, 6, 5);
+      const currentPeriodEnd = new Date(2026, 7, 4, 23, 59, 59, 999);
+      const legacyStart = new Date(2026, 6, 1);
+
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: 2_000,
+        currentPeriodStart,
+        currentPeriodEnd,
+      } as any);
+
+      // First findFirst call (inside migration, for the legacy key) returns the legacy row;
+      // all other findFirst calls (new-key probes) return null until the migration upsert lands.
+      (prisma.aIUsage.findFirst as any).mockImplementation(async ({ where }: any) => {
+        if (where.periodStart.getTime() === legacyStart.getTime()) {
+          return { id: 'legacy-row', tokensUsed: 3000, creditsUsedMilli: 450_000 } as any;
+        }
+        return null;
+      });
+      vi.mocked(prisma.aIUsage.upsert).mockResolvedValue({ creditsUsedMilli: 451_000 } as any);
+      vi.mocked(prisma.aIUsage.delete).mockResolvedValue({} as any);
+
+      await recordAITokenUsage('org-migrate-record', 1000, 'nano');
+
+      // Migration upsert (rolling the legacy 450,000 forward) plus the normal record upsert.
+      expect(prisma.aIUsage.upsert).toHaveBeenCalledTimes(2);
+      const migrationCall = vi.mocked(prisma.aIUsage.upsert).mock.calls[0][0] as any;
+      expect(migrationCall.update.creditsUsedMilli).toEqual({ increment: 450_000 });
+      expect(prisma.aIUsage.delete).toHaveBeenCalledWith({ where: { id: 'legacy-row' } });
     });
   });
 
