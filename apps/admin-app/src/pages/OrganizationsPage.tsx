@@ -38,7 +38,7 @@ const UsageMiniBar: React.FC<{ used: number; limit: number }> = ({ used, limit }
       <div className="h-1 rounded-full w-20" style={{ backgroundColor: 'var(--tf-faint)' }}>
         <div className="h-1 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <p className="text-[9px] mt-0.5" style={{ color: 'var(--tf-muted)' }}>
+      <p className="text-[11px] mt-0.5" style={{ color: 'var(--tf-muted)' }}>
         {used.toLocaleString()} / {limit.toLocaleString()}
       </p>
     </div>
@@ -129,7 +129,7 @@ export default function OrganizationsPage() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--tf-border-light)' }}>
                     {['Organization', 'Members', 'Forms', t('plan.columnHeader'), 'Created', 'Actions'].map(h => (
-                      <th key={h} className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--tf-muted)', backgroundColor: 'var(--tf-faint)' }}>
+                      <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--tf-muted)', backgroundColor: 'var(--tf-faint)' }}>
                         {h}
                       </th>
                     ))}
@@ -166,7 +166,7 @@ export default function OrganizationsPage() {
                                 <AlertTriangle className="h-3 w-3" style={{ color: '#991b1b' }} />
                               )}
                               <span
-                                className="px-2 py-0.5 rounded-full text-[10px] font-medium capitalize"
+                                className="px-2 py-0.5 rounded-full text-[11px] font-medium capitalize"
                                 style={planBadgeStyle(org.planId, org.subscriptionStatus)}
                               >
                                 {org.planId}

@@ -4,64 +4,156 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* ─── Typeform exact colors (extracted via Playwright MCP, May 2026) ─── */
+
+    /* Surfaces — backgrounds are clean neutral, NOT purple-tinted */
+    --background: 240 3% 97%;          /* #f7f7f8  page/content area */
+    --foreground: 290 9% 28%;          /* #4c414e  body text (aubergine-tinted) */
+    --card: 0 0% 100%;                 /* #ffffff  white cards, panels, nav */
+    --card-foreground: 290 9% 28%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --sidebar: 0 0% 98%;
-    --sidebar-foreground: 215.4 16.3% 46.9%;
-    --sidebar-primary: 222.2 47.4% 11.2%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 214.3 31.8% 91.4%;
-    --sidebar-ring: 222.2 84% 4.9%;
+    --popover-foreground: 290 9% 28%;
+
+    /* Primary — aubergine dark #3c323e (Typeform "Create form" button exact) */
+    --primary: 290 11% 22%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary & muted surfaces */
+    --secondary: 240 3% 95%;           /* slightly darker neutral */
+    --secondary-foreground: 290 9% 28%;
+    --muted: 240 3% 95%;
+    --muted-foreground: 288 5% 38%;    /* #655d67  inactive/muted text */
+
+    --accent: 240 3% 93%;
+    --accent-foreground: 290 9% 28%;
+
+    --destructive: 4 55% 57%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders — neutral, using rgba in components for exact Typeform feel */
+    --border: 240 2% 87%;              /* #dedcde  neutral border / gray icon bg */
+    --input: 240 2% 87%;
+    --ring: 290 11% 22%;               /* aubergine focus ring */
+
+    /* Charts — Typeform palette */
+    --chart-1: 284 46% 54%;            /* #a25fba  purple */
+    --chart-2: 170 68% 28%;            /* #177767  green CTA */
+    --chart-3: 217 80% 60%;            /* blue */
+    --chart-4: 345 68% 89%;            /* #f8cdd8  salmon (field icons) */
+    --chart-5: 252 78% 91%;            /* #ddd6fa  lavender */
+
+    /* Sidebar — white panel */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 290 9% 28%;
+    --sidebar-primary: 290 11% 22%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3% 95%;
+    --sidebar-accent-foreground: 290 9% 28%;
+    --sidebar-border: 240 2% 91%;
+    --sidebar-ring: 290 11% 22%;
+
+    --font-sans: "Inter", sans-serif;
+    --font-serif: "Inter", serif;
+    --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
+
+    /* Typeform field-icon palette — used as utility CSS vars */
+    --tf-icon-salmon: #f8cdd8;         /* address, location fields */
+    --tf-icon-teal: #f4faf8;           /* time, clock fields */
+    --tf-icon-gray: #dedcde;           /* generic fields */
+    --tf-icon-lavender: #ddd6fa;       /* rating, scale fields */
+    --tf-green: #177767;               /* green CTA exact */
+    --tf-dark: #3c323e;                /* primary dark exact */
+    --tf-text: #4c414e;                /* body text exact */
+    --tf-muted: #655d67;               /* muted text exact */
+    --tf-faint: #f7f7f8;               /* page bg exact */
+    --tf-error: #ce5d55;               /* error/validation red */
+    --tf-darkest: #2a222b;             /* deepest aubergine — near-black */
+    --tf-light-muted: #a09aa2;         /* lighter muted text / placeholders */
+
+    /* Border opacity scale — for inline styles where Tailwind can't express rgba */
+    --tf-border: rgba(81,76,84,0.12);
+    --tf-border-strong: rgba(81,76,84,0.15);
+    --tf-border-medium: rgba(81,76,84,0.10);
+    --tf-border-light: rgba(81,76,84,0.08);
+    --tf-border-faint: rgba(81,76,84,0.06);
+    --tf-overlay: rgba(60,50,62,0.06);
+    --tf-white-overlay: rgba(255,255,255,0.08);
+    --tf-error-bg: rgba(206,93,85,0.06);
+    --tf-error-bg-md: rgba(206,93,85,0.14);
+    --tf-error-bg-lg: rgba(206,93,85,0.16);
+    --tf-green-bg: rgba(23,119,103,0.08);
+    --tf-green-bg-md: rgba(23,119,103,0.16);
+    --tf-tab-bg: rgba(87,84,91,0.06);    /* active/hover tab background */
+    --tf-tab-bg-faint: rgba(87,84,91,0.025);
+
+    --shadow-2xs: 0px 1px 3px 0px rgba(60,50,62,0.04);
+    --shadow-xs: 0px 1px 3px 0px rgba(60,50,62,0.06);
+    --shadow-sm: 0px 1px 3px 0px rgba(60,50,62,0.07), 0px 1px 2px -1px rgba(60,50,62,0.05);
+    --shadow: 0px 2px 6px 0px rgba(60,50,62,0.08), 0px 1px 2px -1px rgba(60,50,62,0.05);
+    --shadow-md: 0px 4px 12px 0px rgba(60,50,62,0.10), 0px 2px 4px -2px rgba(60,50,62,0.06);
+    --shadow-lg: 0px 8px 24px 0px rgba(60,50,62,0.12), 0px 4px 8px -4px rgba(60,50,62,0.08);
+    --shadow-xl: 0px 12px 32px 0px rgba(60,50,62,0.14), 0px 6px 12px -6px rgba(60,50,62,0.10);
+    --shadow-2xl: 0px 20px 48px 0px rgba(60,50,62,0.18);
+    --tracking-normal: 0rem;
+    --spacing: 0.25rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar: 222.2 84% 4.9%;
-    --sidebar-foreground: 215 20.2% 65.1%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 212.7 26.8% 83.9%;
+    /* Dark mode — deep aubergine surfaces */
+    --background: 290 14% 9%;          /* deep aubergine-dark */
+    --foreground: 240 4% 92%;
+    --card: 290 12% 12%;
+    --card-foreground: 240 4% 92%;
+    --popover: 290 12% 12%;
+    --popover-foreground: 240 4% 92%;
+    --primary: 290 6% 84%;             /* light aubergine — readable on dark */
+    --primary-foreground: 290 14% 9%;
+    --secondary: 290 10% 17%;
+    --secondary-foreground: 240 4% 92%;
+    --muted: 290 10% 15%;
+    --muted-foreground: 288 5% 56%;
+    --accent: 290 10% 17%;
+    --accent-foreground: 240 4% 92%;
+    --destructive: 4 60% 65%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 290 8% 19%;
+    --input: 290 8% 19%;
+    --ring: 290 6% 76%;
+    --chart-1: 284 46% 64%;
+    --chart-2: 170 55% 44%;
+    --chart-3: 217 80% 65%;
+    --chart-4: 345 55% 75%;
+    --chart-5: 252 55% 78%;
+    --sidebar: 290 14% 8%;
+    --sidebar-foreground: 288 5% 58%;
+    --sidebar-primary: 290 6% 84%;
+    --sidebar-primary-foreground: 290 14% 9%;
+    --sidebar-accent: 290 10% 17%;
+    --sidebar-accent-foreground: 240 4% 92%;
+    --sidebar-border: 290 8% 17%;
+    --sidebar-ring: 290 6% 76%;
+    --font-sans: "Inter", sans-serif;
+    --font-serif: "Inter", serif;
+    --font-mono: "JetBrains Mono", monospace;
+    --radius: 0.5rem;
+    --tf-icon-salmon: rgba(248,205,216,0.20);
+    --tf-icon-teal: rgba(244,250,248,0.15);
+    --tf-icon-gray: rgba(222,220,222,0.18);
+    --tf-icon-lavender: rgba(221,214,250,0.20);
+    --tf-green: #25a088;
+    --tf-dark: #d4ccd6;
+    --tf-text: #c0b8c2;
+    --tf-muted: #8a8090;
+    --tf-faint: #1a141b;
+    --shadow-2xs: 0px 1px 3px 0px rgba(0,0,0,0.18);
+    --shadow-xs: 0px 1px 3px 0px rgba(0,0,0,0.22);
+    --shadow-sm: 0px 1px 3px 0px rgba(0,0,0,0.26), 0px 1px 2px -1px rgba(0,0,0,0.20);
+    --shadow: 0px 2px 6px 0px rgba(0,0,0,0.30), 0px 1px 2px -1px rgba(0,0,0,0.22);
+    --shadow-md: 0px 4px 12px 0px rgba(0,0,0,0.34), 0px 2px 4px -2px rgba(0,0,0,0.26);
+    --shadow-lg: 0px 8px 24px 0px rgba(0,0,0,0.38), 0px 4px 8px -4px rgba(0,0,0,0.30);
+    --shadow-xl: 0px 12px 32px 0px rgba(0,0,0,0.42), 0px 6px 12px -6px rgba(0,0,0,0.34);
+    --shadow-2xl: 0px 20px 48px 0px rgba(0,0,0,0.50);
   }
 }
 
@@ -71,6 +163,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    letter-spacing: var(--tracking-normal);
   }
 }
 

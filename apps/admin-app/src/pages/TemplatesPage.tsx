@@ -103,7 +103,7 @@ export default function TemplatesPage() {
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--tf-border-light)' }}>
                   {['Name', 'Category', 'Description', 'Status', 'Created', ''].map(h => (
-                    <th key={h} className={`px-5 py-3 text-[10px] font-semibold uppercase tracking-wide ${h ? 'text-left' : 'text-right'}`} style={{ color: 'var(--tf-muted)', backgroundColor: 'var(--tf-faint)' }}>{h}</th>
+                    <th key={h} className={`px-5 py-3 text-[11px] font-semibold uppercase tracking-wide ${h ? 'text-left' : 'text-right'}`} style={{ color: 'var(--tf-muted)', backgroundColor: 'var(--tf-faint)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -123,7 +123,7 @@ export default function TemplatesPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' }}>
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={{ backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' }}>
                         {template.category || 'Uncategorized'}
                       </span>
                     </td>
@@ -132,7 +132,7 @@ export default function TemplatesPage() {
                     </td>
                     <td className="px-5 py-3.5">
                       <span
-                        className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                        className="px-2 py-0.5 rounded-full text-[11px] font-medium"
                         style={template.isActive
                           ? { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }
                           : { backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-lg)' }
