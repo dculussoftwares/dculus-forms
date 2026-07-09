@@ -186,9 +186,15 @@ export default function PlansPage() {
 
   const handleVisibilityToggle = async (plan: AdminPlan) => {
     const next = !plan.visibleOnPricingPage;
-    await toggleVisibility({ variables: { input: { id: plan.id, visibleOnPricingPage: next } } });
-    toastSuccess(next ? t('toasts.visibilityOn') : t('toasts.visibilityOff'), plan.name);
-    refetch();
+    try {
+      const result = await toggleVisibility({ variables: { input: { id: plan.id, visibleOnPricingPage: next } } });
+      if (result?.data) {
+        toastSuccess(next ? t('toasts.visibilityOn') : t('toasts.visibilityOff'), plan.name);
+        refetch();
+      }
+    } catch {
+      // Failure toast is handled by the mutation's onError.
+    }
   };
 
   const enabledPrices = PRICE_COMBOS.filter(c => form.prices[comboKey(c.currency, c.period)].enabled);

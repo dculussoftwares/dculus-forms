@@ -134,12 +134,21 @@ export const OrganizationDetailPage = () => {
   );
 
   // Assignable plans come from the live Chargebee catalog (active, non-enterprise),
-  // with enterprise appended as the admin-assisted negotiated-deal flow.
+  // with enterprise appended as the admin-assisted negotiated-deal flow. The org's
+  // current plan is always included so its "(current)" indicator renders even while
+  // the catalog query is loading or when the org sits on a hidden/archived plan.
   const { data: plansData } = useQuery<AdminPlansQueryData>(ADMIN_PLANS_QUERY);
   const assignablePlans = (plansData?.adminPlans ?? [])
     .filter(p => p.status === 'active' && p.id !== 'enterprise')
     .map(p => p.id);
-  const planOptions = [...assignablePlans, 'enterprise'];
+  const currentPlanId = data?.adminOrganizationById?.subscription?.planId;
+  const planOptions = Array.from(
+    new Set([
+      ...assignablePlans,
+      ...(currentPlanId && currentPlanId !== 'enterprise' ? [currentPlanId] : []),
+      'enterprise',
+    ])
+  );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [changePlan, { loading: changingPlan }] = useMutation(ADMIN_ASSIGN_PLAN_MUTATION, {
