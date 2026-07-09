@@ -435,6 +435,7 @@ export const OrganizationDetailPage = () => {
                 <div className="flex flex-col sm:flex-row gap-6">
                   <UsageBar label="Form Views" used={sub.viewsUsed} limit={sub.viewsLimit} />
                   <UsageBar label="Submissions" used={sub.submissionsUsed} limit={sub.submissionsLimit} />
+                  <UsageBar label="AI Credits" used={Math.round(sub.aiCreditsUsed * 10) / 10} limit={sub.aiCreditsLimit} />
                 </div>
               </div>
 
@@ -589,7 +590,7 @@ export const OrganizationDetailPage = () => {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium text-primary">Reset Usage Counters</p>
-                      <p className="text-xs text-muted-foreground">Resets views, submissions, and AI token usage to zero immediately.</p>
+                      <p className="text-xs text-muted-foreground">Resets views, submissions, and AI credits usage to zero immediately.</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setConfirmModal('resetUsage')} disabled={resettingUsage} className="shrink-0">
                       {resettingUsage
@@ -708,7 +709,7 @@ export const OrganizationDetailPage = () => {
           <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={MODAL_STYLE}>
             <h3 className="text-base font-semibold text-primary">Reset Usage Counters</h3>
             <p className="text-sm text-muted-foreground">
-              Resets views, submissions, and AI token usage to zero. Type <strong>{org.name}</strong> to confirm.
+              Resets views, submissions, and AI credits usage to zero. Type <strong>{org.name}</strong> to confirm.
             </p>
             <input
               className="w-full rounded-lg px-3 py-2 text-sm"

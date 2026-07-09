@@ -27,6 +27,7 @@ export const ADMIN_ORGANIZATION_BY_ID_QUERY : TypedDocumentNode<any, any> = gql`
         status
         viewsUsed
         submissionsUsed
+        aiCreditsUsed
         viewsLimit
         submissionsLimit
         aiCreditsLimit
@@ -87,6 +88,7 @@ export interface OrgSubscription {
   status: string;
   viewsUsed: number;
   submissionsUsed: number;
+  aiCreditsUsed: number;
   viewsLimit: number | null;
   submissionsLimit: number | null;
   aiCreditsLimit: number | null;
