@@ -159,10 +159,15 @@ async function migrateLegacyPeriodUsage(
 /**
  * Effective monthly AI-credit limit for an org.
  *
- * `Subscription.aiCreditsLimit` is populated by a Chargebee webhook sync (a later task).
- * `null`/missing means "not yet synced from Chargebee" — it is NOT unlimited — so we fall
- * back to the plan's default allowance in AI_CREDIT_LIMITS_FALLBACK, defaulting to `free`
- * if the plan itself is unrecognized.
+ * `Subscription.aiCreditsLimit` is populated by a Chargebee webhook sync. `null`/missing
+ * means "not yet synced from Chargebee" — it is NOT unlimited — so we fall back to the
+ * plan's default allowance in AI_CREDIT_LIMITS_FALLBACK, defaulting to `free` if the plan
+ * itself is unrecognized.
+ *
+ * Enterprise is the one exception: its limits are admin-set directly (never synced from
+ * a shared catalog entitlement), so `null` there is a deliberate, explicit "unlimited"
+ * rather than "not yet synced" — mirrors how viewsLimit/submissionsLimit already treat
+ * `null` as unlimited elsewhere (see usageService.checkUsageExceeded).
  *
  * A cancelled/expired subscription keeps whatever `planId`/`aiCreditsLimit` it last synced
  * from Chargebee (cancellation doesn't change which plan item was on the subscription), so
@@ -174,6 +179,10 @@ function effectiveCreditLimit(
 ): number {
   if (subscription && (subscription.status === 'cancelled' || subscription.status === 'expired')) {
     return AI_CREDIT_LIMITS_FALLBACK.free;
+  }
+
+  if (subscription?.planId === 'enterprise' && subscription.aiCreditsLimit == null) {
+    return Infinity;
   }
 
   const planId = subscription?.planId ?? 'free';
