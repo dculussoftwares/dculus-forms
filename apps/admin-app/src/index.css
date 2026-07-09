@@ -62,6 +62,7 @@
     --tf-icon-teal: #f4faf8;           /* time, clock fields */
     --tf-icon-gray: #dedcde;           /* generic fields */
     --tf-icon-lavender: #ddd6fa;       /* rating, scale fields */
+    --tf-icon-lavender-text: #5c2e6b;  /* text on lavender badges (e.g. owner role) */
     --tf-green: #177767;               /* green CTA exact */
     --tf-dark: #3c323e;                /* primary dark exact */
     --tf-text: #4c414e;                /* body text exact */
@@ -141,6 +142,7 @@
     --tf-icon-teal: rgba(244,250,248,0.15);
     --tf-icon-gray: rgba(222,220,222,0.18);
     --tf-icon-lavender: rgba(221,214,250,0.20);
+    --tf-icon-lavender-text: #d4ccd6;
     --tf-green: #25a088;
     --tf-dark: #d4ccd6;
     --tf-text: #c0b8c2;

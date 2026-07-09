@@ -269,7 +269,7 @@ export const OrganizationDetailPage = () => {
       {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'Members',   value: org.members.length,       icon: Users,     iconBg: 'var(--tf-icon-lavender)', iconColor: '#5c2e6b' },
+          { label: 'Members',   value: org.members.length,       icon: Users,     iconBg: 'var(--tf-icon-lavender)', iconColor: 'var(--tf-icon-lavender-text)' },
           { label: 'Forms',     value: org.stats.totalForms,     icon: FileText,  iconBg: 'var(--tf-icon-salmon)',   iconColor: 'var(--tf-dark)' },
           { label: 'Responses', value: org.stats.totalResponses, icon: BarChart3, iconBg: 'var(--tf-icon-teal)',     iconColor: 'var(--tf-green)' },
         ].map(({ label, value, icon: Icon, iconBg, iconColor }) => (

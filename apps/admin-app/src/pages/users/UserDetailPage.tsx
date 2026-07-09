@@ -115,7 +115,7 @@ export const UserDetailPage = () => {
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
-              <Fingerprint className="w-[18px] h-[18px]" style={{ color: '#5c2e6b' }} />
+              <Fingerprint className="w-[18px] h-[18px]" style={{ color: 'var(--tf-icon-lavender-text)' }} />
             </div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">User ID</p>

@@ -31,7 +31,7 @@ const STAT_COLORS = [
   { iconBg: 'var(--tf-icon-salmon)', iconColor: 'var(--tf-dark)' },
   { iconBg: 'var(--tf-icon-teal)', iconColor: 'var(--tf-green)' },
   { iconBg: '#fbe19d', iconColor: '#8b6a18' },
-  { iconBg: 'var(--tf-icon-lavender)', iconColor: '#5c2e6b' },
+  { iconBg: 'var(--tf-icon-lavender)', iconColor: 'var(--tf-icon-lavender-text)' },
 ];
 
 const STORAGE_COLORS = [
