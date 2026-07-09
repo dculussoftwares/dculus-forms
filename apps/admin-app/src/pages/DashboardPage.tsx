@@ -31,7 +31,7 @@ const STAT_COLORS = [
   { iconBg: 'var(--tf-icon-salmon)', iconColor: 'var(--tf-dark)' },
   { iconBg: 'var(--tf-icon-teal)', iconColor: 'var(--tf-green)' },
   { iconBg: '#fbe19d', iconColor: '#8b6a18' },
-  { iconBg: 'var(--tf-icon-lavender)', iconColor: '#5c2e6b' },
+  { iconBg: 'var(--tf-icon-lavender)', iconColor: 'var(--tf-icon-lavender-text)' },
 ];
 
 const STORAGE_COLORS = [
@@ -236,16 +236,16 @@ export default function DashboardPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-primary truncate">{org.name}</p>
-                      <p className="text-[10px] text-muted-foreground">/{org.slug}</p>
+                      <p className="text-[11px] text-muted-foreground">/{org.slug}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {org.planId && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium capitalize" style={planBadgeStyle(org.planId)}>
+                      <span className="px-1.5 py-0.5 rounded text-[11px] font-medium capitalize" style={planBadgeStyle(org.planId)}>
                         {org.planId}
                       </span>
                     )}
-                    <span className="text-[10px] text-muted-foreground">{org.memberCount}m · {org.formCount}f</span>
+                    <span className="text-[11px] text-muted-foreground">{org.memberCount}m · {org.formCount}f</span>
                   </div>
                 </div>
               ))}
@@ -269,10 +269,10 @@ export default function DashboardPage() {
                     <div>
                       <span className="text-xs text-muted-foreground">{item.label}</span>
                       {item.latencyMs != null && (
-                        <span className="text-[10px] text-muted-foreground ml-1">({item.latencyMs}ms)</span>
+                        <span className="text-[11px] text-muted-foreground ml-1">({item.latencyMs}ms)</span>
                       )}
                     </div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={healthBadgeStyle(item.status)}>
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-medium" style={healthBadgeStyle(item.status)}>
                       {t(`systemHealth.${item.status}`)}
                     </span>
                   </div>

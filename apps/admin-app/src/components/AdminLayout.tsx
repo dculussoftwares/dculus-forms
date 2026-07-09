@@ -56,7 +56,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate text-primary">{t('sidebar.title')}</p>
-            <p className="text-[10px] truncate text-muted-foreground">{t('sidebar.subtitle')}</p>
+            <p className="text-[11px] truncate text-muted-foreground">{t('sidebar.subtitle')}</p>
           </div>
         </div>
 
@@ -89,9 +89,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium truncate text-primary">{user?.name}</p>
               <div className="flex items-center gap-1.5">
-                <p className="text-[10px] truncate text-muted-foreground">{user?.email}</p>
+                <p className="text-[11px] truncate text-muted-foreground">{user?.email}</p>
                 {isSuperAdmin && (
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0" style={{ backgroundColor: '#fbe19d', color: '#8b6a18' }}>
+                  <span className="px-1.5 py-0.5 rounded text-[11px] font-medium shrink-0" style={{ backgroundColor: '#fbe19d', color: '#8b6a18' }}>
                     {t('userMenu.superAdmin')}
                   </span>
                 )}
