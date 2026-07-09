@@ -56,7 +56,18 @@
         "sla": "99.9% uptime SLA"
       }
     },
-    "priceNotAvailable": "Contact sales"
+    "priceNotAvailable": "Contact sales",
+    "enterprise": {
+      "name": "Enterprise",
+      "tagline": "Custom deals for large organizations",
+      "priceLabel": "Contact us",
+      "features": {
+        "limits": "Custom views & submissions limits",
+        "aiCredits": "Custom AI credits allowance",
+        "pricing": "Negotiated pricing for your needs",
+        "support": "Dedicated account support"
+      }
+    }
   },
   "loading": {
     "plans": "Loading plans..."
@@ -78,7 +89,8 @@
   "buttons": {
     "processing": "Processing...",
     "getStarted": "Get Started Free",
-    "upgradeTo": "Upgrade to {{planName}}"
+    "upgradeTo": "Upgrade to {{planName}}",
+    "contactSales": "Contact Sales"
   },
   "faq": {
     "title": "Frequently Asked Questions",

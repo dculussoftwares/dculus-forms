@@ -8,24 +8,59 @@ import {
 } from 'lucide-react';
 import {
   ADMIN_ORGANIZATION_BY_ID_QUERY,
-  ADMIN_CHANGE_PLAN_MUTATION,
+  ADMIN_SET_ENTERPRISE_PLAN_MUTATION,
   ADMIN_RESET_USAGE_MUTATION,
   ADMIN_CANCEL_SUBSCRIPTION_MUTATION,
   ADMIN_REACTIVATE_SUBSCRIPTION_MUTATION,
   AdminOrganizationByIdQueryData,
   OrgSubscription,
 } from '../../graphql/organizationDetail';
+import {
+  ADMIN_PLANS_QUERY,
+  ADMIN_ASSIGN_PLAN_MUTATION,
+  AdminPlansQueryData,
+} from '../../graphql/plans';
 
 const CHARGEBEE_SITE = (import.meta as { env?: Record<string, string> }).env?.VITE_CHARGEBEE_SITE ?? '';
-const PLANS = ['free', 'starter', 'advanced'] as const;
 
 const planBadgeStyle = (planId: string): React.CSSProperties => {
   switch (planId) {
-    case 'starter':  return { backgroundColor: '#dbeafe', color: '#1d4ed8', border: '1px solid #bfdbfe' };
-    case 'advanced': return { backgroundColor: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe' };
-    default:         return { backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' };
+    case 'starter':    return { backgroundColor: '#dbeafe', color: '#1d4ed8', border: '1px solid #bfdbfe' };
+    case 'advanced':   return { backgroundColor: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe' };
+    case 'enterprise': return { backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
+    default:           return { backgroundColor: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb' };
   }
 };
+
+// A limit input paired with an "Unlimited" toggle — null means unlimited, matching
+// the Subscription schema's viewsLimit/submissionsLimit/aiCreditsLimit convention.
+const LimitField: React.FC<{
+  label: string;
+  value: string;
+  unlimited: boolean;
+  onValueChange: (v: string) => void;
+  onUnlimitedChange: (v: boolean) => void;
+}> = ({ label, value, unlimited, onValueChange, onUnlimitedChange }) => (
+  <div className="flex-1 min-w-[160px]">
+    <label className="text-xs font-medium text-muted-foreground block mb-1">{label}</label>
+    <div className="flex items-center gap-2">
+      <input
+        type="number"
+        min={0}
+        step={1}
+        className="w-full border rounded px-2 py-1.5 text-sm disabled:opacity-50"
+        placeholder="0"
+        value={value}
+        disabled={unlimited}
+        onChange={e => onValueChange(e.target.value)}
+      />
+      <label className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+        <input type="checkbox" checked={unlimited} onChange={e => onUnlimitedChange(e.target.checked)} />
+        Unlimited
+      </label>
+    </div>
+  </div>
+);
 
 const statusBadgeStyle = (status: string): React.CSSProperties => {
   switch (status) {
@@ -72,23 +107,68 @@ export const OrganizationDetailPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'subscription'>('overview');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [confirmModal, setConfirmModal] = useState<null | 'changePlan' | 'resetUsage' | 'cancel' | 'reactivate'>(null);
+  const [confirmModal, setConfirmModal] = useState<
+    null | 'changePlan' | 'setEnterprise' | 'resetUsage' | 'cancel' | 'reactivate'
+  >(null);
   const [resetConfirmText, setResetConfirmText] = useState('');
+  // Chargebee checkout URL returned after setting a paid enterprise deal —
+  // shown in a modal so the admin can copy/share it (it's also emailed to the owner).
+  const [enterpriseCheckoutUrl, setEnterpriseCheckoutUrl] = useState<string | null>(null);
+  const [checkoutUrlCopied, setCheckoutUrlCopied] = useState(false);
+
+  // Enterprise deal form state — kept separate from the simple 3-plan picker since
+  // it needs a negotiated price + three independently-unlimited-able limits.
+  const [entCurrency, setEntCurrency] = useState<'USD' | 'INR'>('USD');
+  const [entPeriod, setEntPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [entPrice, setEntPrice] = useState('');
+  const [entViews, setEntViews] = useState('');
+  const [entViewsUnlimited, setEntViewsUnlimited] = useState(true);
+  const [entSubmissions, setEntSubmissions] = useState('');
+  const [entSubmissionsUnlimited, setEntSubmissionsUnlimited] = useState(true);
+  const [entAiCredits, setEntAiCredits] = useState('');
+  const [entAiCreditsUnlimited, setEntAiCreditsUnlimited] = useState(true);
 
   const { data, loading, error, refetch } = useQuery<AdminOrganizationByIdQueryData>(
     ADMIN_ORGANIZATION_BY_ID_QUERY,
     { variables: { id: orgId }, skip: !orgId }
   );
 
+  // Assignable plans come from the live Chargebee catalog (active, non-enterprise),
+  // with enterprise appended as the admin-assisted negotiated-deal flow.
+  const { data: plansData } = useQuery<AdminPlansQueryData>(ADMIN_PLANS_QUERY);
+  const assignablePlans = (plansData?.adminPlans ?? [])
+    .filter(p => p.status === 'active' && p.id !== 'enterprise')
+    .map(p => p.id);
+  const planOptions = [...assignablePlans, 'enterprise'];
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [changePlan, { loading: changingPlan }] = useMutation(ADMIN_CHANGE_PLAN_MUTATION, {
+  const [changePlan, { loading: changingPlan }] = useMutation(ADMIN_ASSIGN_PLAN_MUTATION, {
     onCompleted: () => {
-      toastSuccess('Plan updated', 'The plan has been changed successfully.');
+      toastSuccess('Plan assigned', 'Chargebee billing has been updated to the new plan.');
       setConfirmModal(null);
       setSelectedPlan(null);
       refetch();
     },
-    onError: (e) => toastError('Failed to change plan', e.message),
+    onError: (e) => toastError('Failed to assign plan', e.message),
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [setEnterprisePlan, { loading: settingEnterprise }] = useMutation(ADMIN_SET_ENTERPRISE_PLAN_MUTATION, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onCompleted: (data: any) => {
+      const result = data?.adminSetEnterprisePlan;
+      setConfirmModal(null);
+      setSelectedPlan(null);
+      if (result?.requiresPayment && result?.checkoutUrl) {
+        toastSuccess('Enterprise deal created', 'The org is disabled until the customer completes payment.');
+        setCheckoutUrlCopied(false);
+        setEnterpriseCheckoutUrl(result.checkoutUrl);
+      } else {
+        toastSuccess('Enterprise plan set', 'The $0 deal is active immediately — no payment required.');
+      }
+      refetch();
+    },
+    onError: (e) => toastError('Failed to set enterprise plan', e.message),
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -359,13 +439,26 @@ export const OrganizationDetailPage = () => {
                 <CardContent className="p-6 space-y-4">
                   <h2 className="text-base font-semibold text-primary">Change Plan</h2>
                   <p className="text-xs text-muted-foreground">
-                    This updates the local subscription record immediately. Use the Chargebee portal link above to adjust billing.
+                    Assigning a plan updates the organization&apos;s real Chargebee subscription — invoicing
+                    and renewals behave like a normal plan change. If the customer has no payment method on
+                    file, auto-collection is turned off and invoices are generated for offline collection.
+                    Enterprise uses a negotiated price override with per-org limits.
                   </p>
-                  <div className="flex gap-3">
-                    {PLANS.map(plan => (
+                  <div className="flex gap-3 flex-wrap">
+                    {planOptions.map(plan => (
                       <button
                         key={plan}
-                        onClick={() => setSelectedPlan(plan)}
+                        onClick={() => {
+                          setSelectedPlan(plan);
+                          if (plan === 'enterprise') {
+                            setEntViewsUnlimited(sub.viewsLimit == null);
+                            setEntViews(sub.viewsLimit != null ? String(sub.viewsLimit) : '');
+                            setEntSubmissionsUnlimited(sub.submissionsLimit == null);
+                            setEntSubmissions(sub.submissionsLimit != null ? String(sub.submissionsLimit) : '');
+                            setEntAiCreditsUnlimited(sub.aiCreditsLimit == null);
+                            setEntAiCredits(sub.aiCreditsLimit != null ? String(sub.aiCreditsLimit) : '');
+                          }
+                        }}
                         className="flex-1 py-2 px-3 rounded-lg text-sm font-medium capitalize transition-all"
                         style={{
                           border: selectedPlan === plan
@@ -382,16 +475,101 @@ export const OrganizationDetailPage = () => {
                       </button>
                     ))}
                   </div>
-                  <Button
-                    disabled={!selectedPlan || selectedPlan === sub.planId || changingPlan}
-                    onClick={() => setConfirmModal('changePlan')}
-                    size="sm"
-                  >
-                    {changingPlan
-                      ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Changing...</>
-                      : 'Change Plan'
-                    }
-                  </Button>
+
+                  {selectedPlan === 'enterprise' ? (
+                    <div className="space-y-4 pt-2" style={{ borderTop: '1px solid var(--tf-border-medium)' }}>
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <label className="text-xs font-medium text-muted-foreground block mb-1">Currency</label>
+                          <select
+                            className="w-full border rounded px-2 py-1.5 text-sm"
+                            value={entCurrency}
+                            onChange={e => setEntCurrency(e.target.value as 'USD' | 'INR')}
+                          >
+                            <option value="USD">USD</option>
+                            <option value="INR">INR</option>
+                          </select>
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs font-medium text-muted-foreground block mb-1">Billing period</label>
+                          <select
+                            className="w-full border rounded px-2 py-1.5 text-sm"
+                            value={entPeriod}
+                            onChange={e => setEntPeriod(e.target.value as 'monthly' | 'yearly')}
+                          >
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                          </select>
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-xs font-medium text-muted-foreground block mb-1">
+                            Price ({entCurrency}, per period)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            className="w-full border rounded px-2 py-1.5 text-sm"
+                            placeholder="0.00"
+                            value={entPrice}
+                            onChange={e => setEntPrice(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-4">
+                        <LimitField
+                          label="Views limit"
+                          value={entViews}
+                          unlimited={entViewsUnlimited}
+                          onValueChange={setEntViews}
+                          onUnlimitedChange={setEntViewsUnlimited}
+                        />
+                        <LimitField
+                          label="Submissions limit"
+                          value={entSubmissions}
+                          unlimited={entSubmissionsUnlimited}
+                          onValueChange={setEntSubmissions}
+                          onUnlimitedChange={setEntSubmissionsUnlimited}
+                        />
+                        <LimitField
+                          label="AI credits limit"
+                          value={entAiCredits}
+                          unlimited={entAiCreditsUnlimited}
+                          onValueChange={setEntAiCredits}
+                          onUnlimitedChange={setEntAiCreditsUnlimited}
+                        />
+                      </div>
+                      <Button
+                        disabled={
+                          entPrice === '' ||
+                          Number.isNaN(Number(entPrice)) ||
+                          Number(entPrice) < 0 ||
+                          (!entViewsUnlimited && entViews === '') ||
+                          (!entSubmissionsUnlimited && entSubmissions === '') ||
+                          (!entAiCreditsUnlimited && entAiCredits === '') ||
+                          settingEnterprise
+                        }
+                        onClick={() => setConfirmModal('setEnterprise')}
+                        size="sm"
+                      >
+                        {settingEnterprise
+                          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Setting...</>
+                          : 'Set Enterprise Plan'
+                        }
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      disabled={!selectedPlan || selectedPlan === sub.planId || changingPlan}
+                      onClick={() => setConfirmModal('changePlan')}
+                      size="sm"
+                    >
+                      {changingPlan
+                        ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Changing...</>
+                        : 'Change Plan'
+                      }
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
 
@@ -462,12 +640,58 @@ export const OrganizationDetailPage = () => {
             <h3 className="text-base font-semibold text-primary">Change Plan</h3>
             <p className="text-sm text-muted-foreground">
               Change <strong>{org.name}</strong> from <strong>{sub?.planId}</strong> to <strong>{selectedPlan}</strong>?
-              This updates the local subscription record immediately.
+              This updates the organization&apos;s real Chargebee subscription — billing changes take effect
+              immediately (prorated per your Chargebee site settings).
             </p>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" size="sm" onClick={() => setConfirmModal(null)}>Cancel</Button>
               <Button size="sm" onClick={() => changePlan({ variables: { orgId, planId: selectedPlan } })}>
                 Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmModal === 'setEnterprise' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => !settingEnterprise && setConfirmModal(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-sm w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)' }}>
+            <h3 className="text-base font-semibold text-primary">Set Enterprise Plan</h3>
+            <p className="text-sm text-muted-foreground">
+              This will update <strong>{org.name}</strong>&apos;s real Chargebee subscription to charge{' '}
+              <strong>{entCurrency} {Number(entPrice || 0).toFixed(2)}</strong> per {entPeriod.replace('ly', '')}, with:
+            </p>
+            <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
+              <li>Views: {entViewsUnlimited ? 'Unlimited' : Number(entViews).toLocaleString()}</li>
+              <li>Submissions: {entSubmissionsUnlimited ? 'Unlimited' : Number(entSubmissions).toLocaleString()}</li>
+              <li>AI credits: {entAiCreditsUnlimited ? 'Unlimited' : Number(entAiCredits).toLocaleString()}</li>
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              {Number(entPrice || 0) > 0
+                ? 'Pay-to-activate: a Chargebee payment link is generated and emailed to the org owner. The organization is DISABLED until payment completes; the saved card is then auto-charged every renewal.'
+                : 'A $0 deal activates immediately — no payment is required.'}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setConfirmModal(null)} disabled={settingEnterprise}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={settingEnterprise}
+                onClick={() => setEnterprisePlan({
+                  variables: {
+                    orgId,
+                    currency: entCurrency,
+                    period: entPeriod,
+                    priceInSmallestUnit: Math.round(Number(entPrice || 0) * 100),
+                    viewsLimit: entViewsUnlimited ? null : Number(entViews),
+                    submissionsLimit: entSubmissionsUnlimited ? null : Number(entSubmissions),
+                    aiCreditsLimit: entAiCreditsUnlimited ? null : Number(entAiCredits),
+                  },
+                })}
+              >
+                {settingEnterprise ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Setting...</> : 'Confirm'}
               </Button>
             </div>
           </div>
@@ -519,6 +743,41 @@ export const OrganizationDetailPage = () => {
               <Button size="sm" onClick={() => cancelSub({ variables: { orgId } })} className="bg-red-600 hover:bg-red-700 text-white">
                 Cancel Subscription
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {enterpriseCheckoutUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setEnterpriseCheckoutUrl(null)} />
+          <div className="relative bg-white rounded-xl p-6 max-w-md w-full mx-4 space-y-4" style={{ border: '1px solid var(--tf-border-medium)' }}>
+            <h3 className="text-base font-semibold text-primary">Payment link created</h3>
+            <p className="text-sm text-muted-foreground">
+              The organization is <strong>disabled</strong> until this payment completes. The link has been
+              emailed to the org owner — you can also copy and share it directly. Once paid, the account
+              activates automatically and future renewals are charged to the saved card.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                className="flex-1 border rounded px-2 py-1.5 text-xs font-mono bg-gray-50"
+                value={enterpriseCheckoutUrl}
+                onFocus={e => e.target.select()}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(enterpriseCheckoutUrl);
+                  setCheckoutUrlCopied(true);
+                }}
+              >
+                {checkoutUrlCopied ? 'Copied!' : 'Copy'}
+              </Button>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button size="sm" onClick={() => setEnterpriseCheckoutUrl(null)}>Done</Button>
             </div>
           </div>
         </div>

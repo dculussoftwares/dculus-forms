@@ -2,7 +2,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { adminResolvers, _clearStatsCacheForTests } from '../admin.js';
 import { GraphQLError } from '#graphql-errors';
 import { prisma } from '../../../lib/prisma.js';
-import { cancelChargebeeSubscription, reactivateChargebeeSubscription } from '../../../services/chargebeeService.js';
+import {
+  cancelChargebeeSubscription,
+  reactivateChargebeeSubscription,
+  setEnterpriseSubscription,
+  getAdminPlanCatalog,
+  createPlan,
+  updatePlan,
+  archivePlan,
+  unarchivePlan,
+  changeOrganizationPlan,
+} from '../../../services/chargebeeService.js';
 import { resetUsageCounters } from '../../../subscriptions/usageService.js';
 import { invalidateAIBudgetCache } from '../../../services/aiUsageService.js';
 
@@ -30,6 +40,7 @@ vi.mock('../../../lib/prisma.js', () => ({
       findMany: vi.fn(),
       update: vi.fn(),
       findUnique: vi.fn(),
+      groupBy: vi.fn().mockResolvedValue([]),
     },
     auditLog: {
       create: vi.fn(),
@@ -75,6 +86,13 @@ vi.mock('../../../lib/env.js', () => ({
 vi.mock('../../../services/chargebeeService.js', () => ({
   cancelChargebeeSubscription: vi.fn().mockResolvedValue(undefined),
   reactivateChargebeeSubscription: vi.fn().mockResolvedValue(undefined),
+  setEnterpriseSubscription: vi.fn().mockResolvedValue({ checkoutUrl: null }),
+  getAdminPlanCatalog: vi.fn().mockResolvedValue([]),
+  createPlan: vi.fn().mockResolvedValue(undefined),
+  updatePlan: vi.fn().mockResolvedValue({ backfilledOrganizations: 0 }),
+  archivePlan: vi.fn().mockResolvedValue(undefined),
+  unarchivePlan: vi.fn().mockResolvedValue(undefined),
+  changeOrganizationPlan: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../../subscriptions/usageService.js', () => ({
@@ -1155,39 +1173,286 @@ describe('Admin Resolvers', () => {
     });
   });
 
-  describe('Mutation: adminChangePlan', () => {
-    it('should update planId and limits for a valid plan', async () => {
-      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
-        organizationId: 'org-1', planId: 'free', status: 'active',
-        chargebeeSubscriptionId: null, viewsUsed: 0, submissionsUsed: 0,
-        currentPeriodStart: new Date(), currentPeriodEnd: new Date(),
-      } as any);
-      vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
-      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+  describe('Query: adminPlans', () => {
+    const catalogEntry = {
+      id: 'starter',
+      name: 'Starter Plan',
+      description: 'For growing teams',
+      status: 'active',
+      visibleOnPricingPage: true,
+      prices: [
+        { id: 'starter-usd-monthly', currency: 'USD', period: 'monthly', priceInSmallestUnit: 600, status: 'active' },
+      ],
+      limits: { views: null, submissions: 10000, aiCredits: 2000 },
+    };
 
-      const result = await adminResolvers.Mutation.adminChangePlan(
-        {}, { orgId: 'org-1', planId: 'starter' }, mockAdminContext
-      );
+    it('should return the catalog decorated with subscriber counts', async () => {
+      vi.mocked(getAdminPlanCatalog).mockResolvedValue([catalogEntry] as any);
+      vi.mocked(prisma.subscription.groupBy).mockResolvedValue([
+        { planId: 'starter', _count: { _all: 7 } },
+      ] as any);
 
-      expect(result).toBe(true);
-      expect(vi.mocked(prisma.subscription.update)).toHaveBeenCalledWith({
-        where: { organizationId: 'org-1' },
-        data: { planId: 'starter', viewsLimit: null, submissionsLimit: 10000, status: 'active' },
-      });
-      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ action: 'plan_changed' }) })
-      );
+      const result = await adminResolvers.Query.adminPlans({}, {}, mockAdminContext);
+
+      expect(result).toEqual([{ ...catalogEntry, subscriberCount: 7 }]);
     });
 
-    it('should reject invalid plan IDs', async () => {
-      await expect(
-        adminResolvers.Mutation.adminChangePlan({}, { orgId: 'org-1', planId: 'enterprise' }, mockAdminContext)
-      ).rejects.toThrow();
+    it('should default subscriberCount to 0 for plans with no subscriptions', async () => {
+      vi.mocked(getAdminPlanCatalog).mockResolvedValue([catalogEntry] as any);
+      vi.mocked(prisma.subscription.groupBy).mockResolvedValue([] as any);
+
+      const result = await adminResolvers.Query.adminPlans({}, {}, mockAdminContext);
+
+      expect(result[0].subscriberCount).toBe(0);
     });
 
     it('should require admin role', async () => {
       await expect(
-        adminResolvers.Mutation.adminChangePlan({}, { orgId: 'org-1', planId: 'starter' }, mockUserContext)
+        adminResolvers.Query.adminPlans({}, {}, mockUserContext)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Mutation: adminCreatePlan', () => {
+    const validInput = {
+      id: 'pro',
+      name: 'Pro Plan',
+      description: 'A new tier',
+      prices: [{ currency: 'USD', period: 'monthly', priceInSmallestUnit: 900 }],
+      limits: { views: null, submissions: 25000, aiCredits: 5000 },
+      visibleOnPricingPage: false,
+    };
+
+    beforeEach(() => {
+      vi.mocked(createPlan).mockResolvedValue(undefined);
+      vi.mocked(getAdminPlanCatalog).mockResolvedValue([
+        {
+          id: 'pro', name: 'Pro Plan', description: 'A new tier', status: 'active',
+          visibleOnPricingPage: false, prices: [], limits: { views: null, submissions: 25000, aiCredits: 5000 },
+        },
+      ] as any);
+      vi.mocked(prisma.subscription.groupBy).mockResolvedValue([] as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+    });
+
+    it('should create the plan and write an audit log entry', async () => {
+      const result = await adminResolvers.Mutation.adminCreatePlan({}, { input: validInput }, mockAdminContext);
+
+      expect(vi.mocked(createPlan)).toHaveBeenCalledWith({
+        id: 'pro',
+        name: 'Pro Plan',
+        description: 'A new tier',
+        prices: [{ currency: 'USD', period: 'monthly', priceInSmallestUnit: 900 }],
+        limits: { views: null, submissions: 25000, aiCredits: 5000 },
+        visibleOnPricingPage: false,
+      });
+      expect(result.id).toBe('pro');
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ action: 'plan_created', resourceType: 'Plan', resourceId: 'pro' }),
+        })
+      );
+    });
+
+    it('should reject an invalid currency', async () => {
+      await expect(
+        adminResolvers.Mutation.adminCreatePlan(
+          {},
+          { input: { ...validInput, prices: [{ currency: 'EUR', period: 'monthly', priceInSmallestUnit: 900 }] } },
+          mockAdminContext
+        )
+      ).rejects.toThrow('Invalid currency');
+      expect(vi.mocked(createPlan)).not.toHaveBeenCalled();
+    });
+
+    it('should reject a negative price', async () => {
+      await expect(
+        adminResolvers.Mutation.adminCreatePlan(
+          {},
+          { input: { ...validInput, prices: [{ currency: 'USD', period: 'monthly', priceInSmallestUnit: -1 }] } },
+          mockAdminContext
+        )
+      ).rejects.toThrow('non-negative');
+    });
+
+    it('should reject when no prices are provided', async () => {
+      await expect(
+        adminResolvers.Mutation.adminCreatePlan({}, { input: { ...validInput, prices: [] } }, mockAdminContext)
+      ).rejects.toThrow('At least one price');
+    });
+
+    it('should propagate service errors without writing an audit log', async () => {
+      vi.mocked(createPlan).mockRejectedValue(new Error('The enterprise plan id is reserved for per-organization deals'));
+
+      await expect(
+        adminResolvers.Mutation.adminCreatePlan({}, { input: validInput }, mockAdminContext)
+      ).rejects.toThrow('reserved');
+      expect(vi.mocked(prisma.auditLog.create)).not.toHaveBeenCalled();
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminCreatePlan({}, { input: validInput }, mockUserContext)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Mutation: adminUpdatePlan', () => {
+    beforeEach(() => {
+      vi.mocked(updatePlan).mockResolvedValue({ backfilledOrganizations: 3 });
+      vi.mocked(getAdminPlanCatalog).mockResolvedValue([
+        {
+          id: 'starter', name: 'Starter Plan', description: '', status: 'active',
+          visibleOnPricingPage: true, prices: [], limits: { views: null, submissions: 20000, aiCredits: 2000 },
+        },
+      ] as any);
+      vi.mocked(prisma.subscription.groupBy).mockResolvedValue([] as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+    });
+
+    it('should update the plan and record the backfilled org count in the audit log', async () => {
+      const result = await adminResolvers.Mutation.adminUpdatePlan(
+        {},
+        { input: { id: 'starter', limits: { views: null, submissions: 20000, aiCredits: 2000 } } },
+        mockAdminContext
+      );
+
+      expect(vi.mocked(updatePlan)).toHaveBeenCalledWith({
+        id: 'starter',
+        name: undefined,
+        description: undefined,
+        prices: undefined,
+        limits: { views: null, submissions: 20000, aiCredits: 2000 },
+        visibleOnPricingPage: undefined,
+      });
+      expect(result.id).toBe('starter');
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'plan_updated',
+            metadata: expect.objectContaining({ backfilledOrganizations: 3 }),
+          }),
+        })
+      );
+    });
+
+    it('should pass a visibility-only toggle through', async () => {
+      await adminResolvers.Mutation.adminUpdatePlan(
+        {},
+        { input: { id: 'starter', visibleOnPricingPage: false } },
+        mockAdminContext
+      );
+
+      expect(vi.mocked(updatePlan)).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'starter', visibleOnPricingPage: false, limits: undefined })
+      );
+    });
+
+    it('should reject a non-integer limit', async () => {
+      await expect(
+        adminResolvers.Mutation.adminUpdatePlan(
+          {},
+          { input: { id: 'starter', limits: { views: 1.5, submissions: null, aiCredits: null } } },
+          mockAdminContext
+        )
+      ).rejects.toThrow('non-negative integer');
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminUpdatePlan({}, { input: { id: 'starter' } }, mockUserContext)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Mutation: adminArchivePlan / adminUnarchivePlan', () => {
+    beforeEach(() => {
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+    });
+
+    it('should archive the plan and write an audit log entry', async () => {
+      vi.mocked(archivePlan).mockResolvedValue(undefined);
+
+      const result = await adminResolvers.Mutation.adminArchivePlan({}, { planId: 'pro' }, mockAdminContext);
+
+      expect(result).toBe(true);
+      expect(vi.mocked(archivePlan)).toHaveBeenCalledWith('pro');
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ action: 'plan_archived', resourceId: 'pro' }) })
+      );
+    });
+
+    it('should surface service rejections (e.g. archiving free)', async () => {
+      vi.mocked(archivePlan).mockRejectedValue(new Error('The free plan cannot be archived'));
+
+      await expect(
+        adminResolvers.Mutation.adminArchivePlan({}, { planId: 'free' }, mockAdminContext)
+      ).rejects.toThrow('cannot be archived');
+      expect(vi.mocked(prisma.auditLog.create)).not.toHaveBeenCalled();
+    });
+
+    it('should restore the plan and write an audit log entry', async () => {
+      vi.mocked(unarchivePlan).mockResolvedValue(undefined);
+
+      const result = await adminResolvers.Mutation.adminUnarchivePlan({}, { planId: 'pro' }, mockAdminContext);
+
+      expect(result).toBe(true);
+      expect(vi.mocked(unarchivePlan)).toHaveBeenCalledWith('pro');
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ action: 'plan_unarchived' }) })
+      );
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminArchivePlan({}, { planId: 'pro' }, mockUserContext)
+      ).rejects.toThrow();
+      await expect(
+        adminResolvers.Mutation.adminUnarchivePlan({}, { planId: 'pro' }, mockUserContext)
+      ).rejects.toThrow();
+    });
+  });
+
+  describe('Mutation: adminAssignPlan', () => {
+    beforeEach(() => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', planId: 'free', status: 'active',
+        chargebeeSubscriptionId: 'cb_sub_1', viewsUsed: 0, submissionsUsed: 0,
+        currentPeriodStart: new Date(), currentPeriodEnd: new Date(),
+      } as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+      vi.mocked(changeOrganizationPlan).mockResolvedValue(undefined);
+    });
+
+    it('should assign the plan via Chargebee and write an audit log entry', async () => {
+      const result = await adminResolvers.Mutation.adminAssignPlan(
+        {}, { orgId: 'org-1', planId: 'starter' }, mockAdminContext
+      );
+
+      expect(result).toBe(true);
+      expect(vi.mocked(changeOrganizationPlan)).toHaveBeenCalledWith('org-1', 'starter');
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'plan_changed',
+            metadata: expect.objectContaining({ from: 'free', to: 'starter' }),
+          }),
+        })
+      );
+    });
+
+    it('should propagate Chargebee failures without writing an audit log', async () => {
+      vi.mocked(changeOrganizationPlan).mockRejectedValue(new Error('Failed to update Chargebee subscription: down'));
+
+      await expect(
+        adminResolvers.Mutation.adminAssignPlan({}, { orgId: 'org-1', planId: 'starter' }, mockAdminContext)
+      ).rejects.toThrow('Failed to update Chargebee subscription');
+      expect(vi.mocked(prisma.auditLog.create)).not.toHaveBeenCalled();
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminAssignPlan({}, { orgId: 'org-1', planId: 'starter' }, mockUserContext)
       ).rejects.toThrow();
     });
 
@@ -1195,8 +1460,138 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
 
       await expect(
-        adminResolvers.Mutation.adminChangePlan({}, { orgId: 'org-1', planId: 'starter' }, mockAdminContext)
+        adminResolvers.Mutation.adminAssignPlan({}, { orgId: 'org-1', planId: 'starter' }, mockAdminContext)
       ).rejects.toThrow();
+    });
+  });
+
+  describe('Mutation: adminSetEnterprisePlan', () => {
+    const validArgs = {
+      orgId: 'org-1',
+      currency: 'USD',
+      period: 'monthly',
+      priceInSmallestUnit: 250000,
+      viewsLimit: null,
+      submissionsLimit: 50000,
+      aiCreditsLimit: null,
+    };
+
+    beforeEach(() => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        organizationId: 'org-1', planId: 'advanced', status: 'active',
+        chargebeeSubscriptionId: 'chargebee_sub_1', viewsUsed: 0, submissionsUsed: 0,
+        currentPeriodStart: new Date(), currentPeriodEnd: new Date(),
+      } as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
+      vi.mocked(setEnterpriseSubscription).mockResolvedValue({
+        checkoutUrl: 'https://test-site.chargebee.com/pages/v4/checkout123',
+      });
+    });
+
+    it('should call setEnterpriseSubscription, return the checkout URL, and write an audit log entry', async () => {
+      const result = await adminResolvers.Mutation.adminSetEnterprisePlan({}, validArgs, mockAdminContext);
+
+      expect(result).toEqual({
+        requiresPayment: true,
+        checkoutUrl: 'https://test-site.chargebee.com/pages/v4/checkout123',
+      });
+      expect(vi.mocked(setEnterpriseSubscription)).toHaveBeenCalledWith('org-1', {
+        currency: 'USD',
+        period: 'monthly',
+        priceInSmallestUnit: 250000,
+        viewsLimit: null,
+        submissionsLimit: 50000,
+        aiCreditsLimit: null,
+      });
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'enterprise_plan_set',
+            metadata: expect.objectContaining({
+              from: 'advanced',
+              to: 'enterprise',
+              priceInSmallestUnit: 250000,
+              requiresPayment: true,
+            }),
+          }),
+        })
+      );
+    });
+
+    it('should accept 0 as an explicit price (no payment required) and as an explicit limit', async () => {
+      vi.mocked(setEnterpriseSubscription).mockResolvedValue({ checkoutUrl: null });
+
+      const result = await adminResolvers.Mutation.adminSetEnterprisePlan(
+        {},
+        { ...validArgs, priceInSmallestUnit: 0, viewsLimit: 0, submissionsLimit: 0, aiCreditsLimit: 0 },
+        mockAdminContext
+      );
+
+      expect(result).toEqual({ requiresPayment: false, checkoutUrl: null });
+      expect(vi.mocked(setEnterpriseSubscription)).toHaveBeenCalledWith(
+        'org-1',
+        expect.objectContaining({ priceInSmallestUnit: 0, viewsLimit: 0, submissionsLimit: 0, aiCreditsLimit: 0 })
+      );
+    });
+
+    it.each(['GBP', 'jpy', ''])('should reject an invalid currency (%s)', async (currency) => {
+      await expect(
+        adminResolvers.Mutation.adminSetEnterprisePlan({}, { ...validArgs, currency }, mockAdminContext)
+      ).rejects.toThrow();
+      expect(vi.mocked(setEnterpriseSubscription)).not.toHaveBeenCalled();
+    });
+
+    it('should reject an invalid billing period', async () => {
+      await expect(
+        adminResolvers.Mutation.adminSetEnterprisePlan({}, { ...validArgs, period: 'weekly' }, mockAdminContext)
+      ).rejects.toThrow();
+    });
+
+    it('should reject a negative price', async () => {
+      await expect(
+        adminResolvers.Mutation.adminSetEnterprisePlan(
+          {}, { ...validArgs, priceInSmallestUnit: -100 }, mockAdminContext
+        )
+      ).rejects.toThrow();
+    });
+
+    it('should reject a negative or non-integer limit', async () => {
+      await expect(
+        adminResolvers.Mutation.adminSetEnterprisePlan(
+          {}, { ...validArgs, viewsLimit: -5 }, mockAdminContext
+        )
+      ).rejects.toThrow();
+
+      await expect(
+        adminResolvers.Mutation.adminSetEnterprisePlan(
+          {}, { ...validArgs, submissionsLimit: 1.5 }, mockAdminContext
+        )
+      ).rejects.toThrow();
+    });
+
+    it('should require admin role', async () => {
+      await expect(
+        adminResolvers.Mutation.adminSetEnterprisePlan({}, validArgs, mockUserContext)
+      ).rejects.toThrow();
+      expect(vi.mocked(setEnterpriseSubscription)).not.toHaveBeenCalled();
+    });
+
+    it('should throw NOT_FOUND when subscription does not exist', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+
+      await expect(
+        adminResolvers.Mutation.adminSetEnterprisePlan({}, validArgs, mockAdminContext)
+      ).rejects.toThrow();
+      expect(vi.mocked(setEnterpriseSubscription)).not.toHaveBeenCalled();
+    });
+
+    it('should propagate errors from setEnterpriseSubscription without writing an audit log', async () => {
+      vi.mocked(setEnterpriseSubscription).mockRejectedValueOnce(new Error('Chargebee down'));
+
+      await expect(
+        adminResolvers.Mutation.adminSetEnterprisePlan({}, validArgs, mockAdminContext)
+      ).rejects.toThrow('Chargebee down');
+      expect(vi.mocked(prisma.auditLog.create)).not.toHaveBeenCalled();
     });
   });
 

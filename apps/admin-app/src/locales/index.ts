@@ -7,6 +7,7 @@ import enLayout from './en/layout.json';
 import enLogin from './en/login.json';
 import enApp from './en/app.json';
 import enEmailPreviews from './en/emailPreviews.json';
+import enPlans from './en/plans.json';
 
 import taCommon from './ta/common.json';
 import taDashboard from './ta/dashboard.json';
@@ -17,6 +18,7 @@ import taLayout from './ta/layout.json';
 import taLogin from './ta/login.json';
 import taApp from './ta/app.json';
 import taEmailPreviews from './ta/emailPreviews.json';
+import taPlans from './ta/plans.json';
 
 const enTranslations = {
   common: enCommon,
@@ -28,6 +30,7 @@ const enTranslations = {
   login: enLogin,
   app: enApp,
   emailPreviews: enEmailPreviews,
+  plans: enPlans,
 };
 
 const taTranslations = {
@@ -40,6 +43,7 @@ const taTranslations = {
   login: taLogin,
   app: taApp,
   emailPreviews: taEmailPreviews,
+  plans: taPlans,
 };
 
 export const translations = {

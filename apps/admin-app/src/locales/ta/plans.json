@@ -1,0 +1,88 @@
+{
+  "title": "Plans",
+  "subtitle": "Manage Chargebee billing plans — create, edit prices and limits, and control pricing page visibility",
+  "createPlan": "Create Plan",
+  "table": {
+    "plan": "Plan",
+    "status": "Status",
+    "visibility": "Pricing Page",
+    "prices": "Prices",
+    "limits": "Limits",
+    "subscribers": "Subscribers",
+    "actions": "Actions"
+  },
+  "status": {
+    "active": "Active",
+    "archived": "Archived"
+  },
+  "visibility": {
+    "visible": "Visible",
+    "hidden": "Hidden",
+    "enterpriseAlwaysHidden": "Enterprise is always assigned by an admin and never listed publicly"
+  },
+  "limits": {
+    "views": "Views",
+    "submissions": "Submissions",
+    "aiCredits": "AI credits",
+    "unlimited": "Unlimited"
+  },
+  "actions": {
+    "edit": "Edit",
+    "archive": "Archive",
+    "restore": "Restore"
+  },
+  "empty": {
+    "title": "No plans found",
+    "subtitle": "Create your first plan to get started."
+  },
+  "error": {
+    "unableToLoad": "Unable to load plans",
+    "checkConnection": "Please check your connection and try again.",
+    "tryAgain": "Try again"
+  },
+  "form": {
+    "createTitle": "Create Plan",
+    "editTitle": "Edit Plan",
+    "id": "Plan ID",
+    "idHint": "Lowercase letters, numbers, and hyphens. Cannot be changed later.",
+    "name": "Name",
+    "description": "Description",
+    "visibleOnPricingPage": "Visible on pricing page",
+    "visibleHint": "New plans start hidden so you can finish setting them up before customers see them.",
+    "prices": "Prices",
+    "pricesHint": "Amounts are per billing period in major units (e.g. 6 = $6.00). Currency and period are fixed once created — a Chargebee restriction.",
+    "priceLocked": "Fixed once created",
+    "limitsTitle": "Limits",
+    "backfillWarning": "Saving new limits immediately updates every organization on this plan ({{count}} currently subscribed).",
+    "enableCombo": "Offer this price",
+    "cancel": "Cancel",
+    "create": "Create Plan",
+    "save": "Save Changes",
+    "creating": "Creating...",
+    "saving": "Saving..."
+  },
+  "confirm": {
+    "archiveTitle": "Archive Plan",
+    "archiveBody": "Archive \"{{name}}\"? It disappears from the pricing page and can no longer be assigned, but existing subscriptions keep renewing on it.",
+    "restoreTitle": "Restore Plan",
+    "restoreBody": "Restore \"{{name}}\"? It becomes assignable again (pricing page visibility is controlled separately).",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "toasts": {
+    "created": "Plan created",
+    "createdDetail": "The plan has been created in Chargebee.",
+    "updated": "Plan updated",
+    "updatedDetail": "Changes saved to Chargebee.",
+    "archived": "Plan archived",
+    "archivedDetail": "The plan can no longer be assigned or purchased.",
+    "restored": "Plan restored",
+    "restoredDetail": "The plan is active again.",
+    "visibilityOn": "Plan is now visible on the pricing page",
+    "visibilityOff": "Plan is now hidden from the pricing page",
+    "createFailed": "Failed to create plan",
+    "updateFailed": "Failed to update plan",
+    "archiveFailed": "Failed to archive plan",
+    "restoreFailed": "Failed to restore plan"
+  }
+}
