@@ -1753,6 +1753,7 @@ jobs:
     needs: [ determine-environment, terraform-infrastructure-deploy ]
     if: |
       always() && !cancelled() &&
+      needs.determine-environment.outputs.should_deploy == 'true' &&
       needs.terraform-infrastructure-deploy.result == 'success'
     steps:
       - name: Wait for backend to be ready
