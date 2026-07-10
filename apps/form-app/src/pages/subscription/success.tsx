@@ -31,8 +31,11 @@ export const CheckoutSuccess = () => {
 
   // Stop polling as soon as the plan upgrade is confirmed or the component unmounts.
   // Also stop after 60 seconds and show a calm timeout message.
+  // The status check matters for enterprise pay-to-activate: planId is already
+  // 'enterprise' (status past_due) before checkout, so plan alone can't tell
+  // whether the payment webhook has synced yet.
   useEffect(() => {
-    if (subscription && subscription.planId !== 'free') {
+    if (subscription && subscription.planId !== 'free' && subscription.status === 'active') {
       stopPolling();
       return;
     }
@@ -78,6 +81,17 @@ export const CheckoutSuccess = () => {
           t('plans.advanced.features.prioritySupport'),
           t('plans.advanced.features.customIntegrations'),
           t('plans.advanced.features.whiteLabel'),
+        ],
+      },
+      enterprise: {
+        name: t('plans.enterprise.name'),
+        icon: Sparkles,
+        gradient: 'from-slate-700 to-slate-900',
+        color: 'slate',
+        features: [
+          t('plans.enterprise.features.customLimits'),
+          t('plans.enterprise.features.negotiatedPricing'),
+          t('plans.enterprise.features.prioritySupport'),
         ],
       },
     };
@@ -222,7 +236,7 @@ export const CheckoutSuccess = () => {
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <p className="text-sm text-blue-800 dark:text-blue-200">
                 <strong>{t('billing.nextBilling')}</strong>{' '}
-                {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                {new Date(Number(subscription.currentPeriodEnd)).toLocaleDateString('en-US', {
                   month: 'long',
                   day: 'numeric',
                   year: 'numeric',

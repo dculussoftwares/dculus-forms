@@ -27,6 +27,14 @@
         "customIntegrations": "Custom integrations",
         "whiteLabel": "White-label options"
       }
+    },
+    "enterprise": {
+      "name": "Enterprise Plan",
+      "features": {
+        "customLimits": "Custom usage limits for your organization",
+        "negotiatedPricing": "Negotiated pricing",
+        "prioritySupport": "Priority support"
+      }
     }
   },
   "usage": {
