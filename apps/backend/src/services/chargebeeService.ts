@@ -210,7 +210,7 @@ export const setEnterpriseSubscription = async (
       const result: any = await chargebee.subscription.updateForItems(
         subscription.chargebeeSubscriptionId,
         {
-          subscription_items: [{ item_price_id: itemPriceId, unit_price: 0 }],
+          subscription_items: [{ item_price_id: itemPriceId, unit_price: 0, quantity: 1 }],
           replace_items_list: true,
           auto_collection: 'off',
         } as any

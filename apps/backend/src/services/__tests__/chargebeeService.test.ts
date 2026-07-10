@@ -1267,7 +1267,14 @@ describe('Chargebee Service', () => {
       expect(mockChargebee.hostedPage.checkoutExistingForItems).not.toHaveBeenCalled();
       expect(mockChargebee.subscription.updateForItems).toHaveBeenCalledWith(
         'chargebee_sub_ent_0',
-        expect.objectContaining({ auto_collection: 'off' })
+        expect.objectContaining({
+          // Chargebee rejects subscription items without an explicit quantity
+          subscription_items: [
+            { item_price_id: 'enterprise-usd-monthly', unit_price: 0, quantity: 1 },
+          ],
+          replace_items_list: true,
+          auto_collection: 'off',
+        })
       );
       expect(subscriptionRepository.update).toHaveBeenCalledWith(
         expect.objectContaining({
