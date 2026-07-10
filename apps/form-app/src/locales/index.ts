@@ -40,6 +40,8 @@ import enResponseEdit from './en/responseEdit.json';
 import taResponseEdit from './ta/responseEdit.json';
 import enIntegrations from './en/integrations.json';
 import taIntegrations from './ta/integrations.json';
+import enPdfTemplates from './en/pdfTemplates.json';
+import taPdfTemplates from './ta/pdfTemplates.json';
 import enTabNavigation from './en/tabNavigation.json';
 import taTabNavigation from './ta/tabNavigation.json';
 import enLayoutSidebar from './en/layoutSidebar.json';
@@ -262,6 +264,7 @@ const enTranslations = {
   responseEditHistory: enResponseEditHistory,
   responseEdit: enResponseEdit,
   integrations: enIntegrations,
+  pdfTemplates: enPdfTemplates,
   tabNavigation: enTabNavigation,
   layoutSidebar: enLayoutSidebar,
   fieldTypesPanel: enFieldTypesPanel,
@@ -386,6 +389,7 @@ const taTranslations = {
   responseEditHistory: taResponseEditHistory,
   responseEdit: taResponseEdit,
   integrations: taIntegrations,
+  pdfTemplates: taPdfTemplates,
   tabNavigation: taTabNavigation,
   layoutSidebar: taLayoutSidebar,
   fieldTypesPanel: taFieldTypesPanel,

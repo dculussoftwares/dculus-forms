@@ -21,6 +21,7 @@ const ALLOWED_UPLOAD_TYPES = new Set([
   'UserAvatar',
   'OrganizationLogo',
   'FormResponse',
+  'PdfTemplateAsset',
 ]);
 
 const router: Router = Router();
@@ -88,6 +89,17 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       const accessCheck = await checkFormAccess(callerUser.id, formId, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
         return res.status(403).json({ error: 'EDITOR access required for form background uploads', code: 'FORBIDDEN' });
+      }
+    } else if (type === 'PdfTemplateAsset') {
+      if (!formId) {
+        return res.status(400).json({ error: 'formId is required for PdfTemplateAsset uploads', code: 'BAD_USER_INPUT' });
+      }
+      if (!callerUser) {
+        return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' });
+      }
+      const accessCheck = await checkFormAccess(callerUser.id, formId, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        return res.status(403).json({ error: 'EDITOR access required for PDF template uploads', code: 'FORBIDDEN' });
       }
     } else if (type === 'UserAvatar') {
       if (!callerUser) {

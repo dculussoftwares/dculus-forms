@@ -34,6 +34,8 @@ const ResponseEdit = lazy(() => import('./pages/ResponseEdit'));
 const CreateFormWizard = lazy(() => import('./pages/CreateFormWizard'));
 const FormDashboard = lazy(() => import('./pages/FormDashboard'));
 const Responses = lazy(() => import('./pages/Responses'));
+const PdfTemplates = lazy(() => import('./pages/PdfTemplates'));
+const PdfTemplateDesigner = lazy(() => import('./pages/PdfTemplateDesigner'));
 const Settings = lazy(() => import('./pages/Settings'));
 const ResponseEditHistory = lazy(() =>
   import('./pages/ResponseEditHistory').then(m => ({ default: m.ResponseEditHistory }))
@@ -92,6 +94,12 @@ function App() {
           } />
           <Route path="/dashboard/form/:formId/integrations/:pluginId/edit" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PluginConfiguration /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/pdf-templates" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplates /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/pdf-templates/:templateId" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplateDesigner /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/settings/:section?" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Settings /></Suspense></PageErrorBoundary></ProtectedRoute>

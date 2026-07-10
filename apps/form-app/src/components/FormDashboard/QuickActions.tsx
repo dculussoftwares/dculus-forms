@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
-import { PencilLine, Database, LineChart, Settings, ArrowRight, Plug } from 'lucide-react';
+import { PencilLine, Database, LineChart, Settings, ArrowRight, Plug, FileText } from 'lucide-react';
 import AIIcon from '../icons/AIIcon';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -119,6 +119,15 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId, isFormEmpty 
       testId: 'quick-action-integrations',
     },
     {
+      title: t('quickActions.items.pdfTemplates.title'),
+      description: t('quickActions.items.pdfTemplates.description'),
+      icon: FileText,
+      iconBg: 'rgba(220,38,38,0.08)',    // soft red — PDF association
+      iconColor: 'rgb(185,28,28)',
+      path: `/dashboard/form/${formId}/pdf-templates`,
+      testId: 'quick-action-pdf-templates',
+    },
+    {
       title: t('quickActions.items.settings.title'),
       description: t('quickActions.items.settings.description'),
       icon: Settings,
@@ -140,7 +149,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId, isFormEmpty 
         </p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {actions.map((action) => (
           <ActionCard
             key={action.title}

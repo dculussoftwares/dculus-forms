@@ -1,0 +1,117 @@
+{
+  "layout": {
+    "title": "PDF வார்ப்புருக்கள்",
+    "dynamicTitle": "PDF வார்ப்புருக்கள் - {formTitle}",
+    "designerTitle": "PDF வார்ப்புரு வடிவமைப்பாளர்",
+    "breadcrumbs": {
+      "dashboard": "டாஷ்போர்டு",
+      "formDashboard": "படிவ டாஷ்போர்டு",
+      "pdfTemplates": "PDF வார்ப்புருக்கள்",
+      "designer": "வடிவமைப்பாளர்"
+    }
+  },
+  "header": {
+    "title": "PDF வார்ப்புருக்கள்",
+    "description": "சான்றிதழ்கள், கடிதங்கள் போன்ற PDF ஆவணங்களை வடிவமைத்து, ஒவ்வொரு பதிலின் விடைகளுடன் நிரப்புங்கள்"
+  },
+  "create": {
+    "blank": {
+      "title": "வெற்றுப் பக்கத்தில் தொடங்குங்கள்",
+      "description": "வெற்று A4 பக்கத்தில் வடிவமைக்கவும்"
+    },
+    "upload": {
+      "title": "PDF பதிவேற்றவும்",
+      "description": "ஏற்கனவே உள்ள PDF மீது வடிவமைக்கவும் (அதிகபட்சம் 10MB)"
+    }
+  },
+  "createDialog": {
+    "blankTitle": "புதிய வெற்று வார்ப்புரு",
+    "uploadTitle": "PDF இலிருந்து புதிய வார்ப்புரு",
+    "blankDescription": "வடிவமைப்பைத் தொடங்க உங்கள் வார்ப்புருவுக்கு ஒரு பெயரைக் கொடுங்கள்.",
+    "uploadDescription": "\"{fileName}\" அடிப்படை PDF ஆகப் பயன்படுத்தப்படும். வடிவமைப்பைத் தொடங்க ஒரு பெயரைக் கொடுங்கள்.",
+    "namePlaceholder": "வார்ப்புரு பெயர்",
+    "cancelButton": "ரத்துசெய்",
+    "createButton": "உருவாக்கு",
+    "creatingButton": "உருவாக்கப்படுகிறது..."
+  },
+  "list": {
+    "uploadedSource": "{fileName} இலிருந்து",
+    "blankSource": "வெற்றுப் பக்கம்",
+    "pageCount": "{count} பக்கம்(கள்)",
+    "openButton": "வடிவமைப்பாளரைத் திற",
+    "viewButton": "காண்க"
+  },
+  "empty": {
+    "title": "இன்னும் PDF வார்ப்புருக்கள் இல்லை",
+    "description": "வெற்றுப் பக்கம் அல்லது பதிவேற்றிய PDF இலிருந்து உங்கள் முதல் வார்ப்புருவை உருவாக்குங்கள்.",
+    "viewerDescription": "இந்தப் படிவத்திற்கு இன்னும் PDF வார்ப்புருக்கள் உருவாக்கப்படவில்லை."
+  },
+  "deleteDialog": {
+    "title": "PDF வார்ப்புருவை நீக்கவா?",
+    "description": "\"{name}\" நிரந்தரமாக நீக்கப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+    "cancelButton": "ரத்துசெய்",
+    "deleteButton": "நீக்கு",
+    "deletingButton": "நீக்கப்படுகிறது..."
+  },
+  "designer": {
+    "saveButton": "வார்ப்புருவைச் சேமி",
+    "savingButton": "சேமிக்கப்படுகிறது...",
+    "basePdfUnavailable": "அடிப்படை PDF ஐ ஏற்ற முடியவில்லை",
+    "loadFailed": "வடிவமைப்பாளரை ஏற்ற முடியவில்லை"
+  },
+  "fieldsPanel": {
+    "heading": "படிவப் புலங்கள்",
+    "description": "ஒரு புலத்தை கிளிக் செய்து அதன் பதில் மதிப்பைப் பக்கத்தில் வைக்கவும். ஒரே புலத்தைப் பலமுறை வைக்கலாம்.",
+    "noFields": "இந்தப் படிவத்தில் இன்னும் புலங்கள் இல்லை."
+  },
+  "palette": {
+    "text": "உரை",
+    "image": "படம்",
+    "line": "கோடு",
+    "rectangle": "செவ்வகம்",
+    "ellipse": "நீள்வட்டம்",
+    "table": "அட்டவணை",
+    "qrcode": "QR குறியீடு"
+  },
+  "generate": {
+    "menuLabel": "PDF உருவாக்கு",
+    "dialogTitle": "PDF உருவாக்கு",
+    "dialogDescription": "இந்தப் பதிலின் விடைகளுடன் நிரப்ப ஒரு வார்ப்புருவைத் தேர்ந்தெடுக்கவும்.",
+    "generateButton": "உருவாக்கி பதிவிறக்கு",
+    "generatingButton": "உருவாக்கப்படுகிறது...",
+    "cancelButton": "ரத்துசெய்",
+    "noTemplates": "இந்தப் படிவத்திற்கு இன்னும் PDF வார்ப்புருக்கள் இல்லை. படிவ டாஷ்போர்டில் இருந்து ஒன்றை உருவாக்குங்கள்."
+  },
+  "toasts": {
+    "createdTitle": "வார்ப்புரு உருவாக்கப்பட்டது",
+    "createdDescription": "வடிவமைப்பாளர் திறக்கப்படுகிறது...",
+    "createFailedTitle": "வார்ப்புருவை உருவாக்க முடியவில்லை",
+    "deletedTitle": "வார்ப்புரு நீக்கப்பட்டது",
+    "deletedDescription": "PDF வார்ப்புரு அகற்றப்பட்டது.",
+    "deleteFailedTitle": "வார்ப்புருவை நீக்க முடியவில்லை",
+    "savedTitle": "வார்ப்புரு சேமிக்கப்பட்டது",
+    "savedDescription": "உங்கள் வடிவமைப்பு சேமிக்கப்பட்டது.",
+    "saveFailedTitle": "வார்ப்புருவைச் சேமிக்க முடியவில்லை",
+    "invalidFileTitle": "தவறான கோப்பு",
+    "invalidFileDescription": "PDF கோப்புகள் மட்டுமே அனுமதிக்கப்படும்.",
+    "fileTooLargeTitle": "கோப்பு மிகப் பெரியது",
+    "fileTooLargeDescription": "அடிப்படை PDF அதிகபட்சம் 10MB ஆக இருக்கலாம்.",
+    "generatedTitle": "PDF உருவாக்கப்பட்டது",
+    "generatedDescription": "உங்கள் பதிவிறக்கம் விரைவில் தொடங்கும்.",
+    "generateFailedTitle": "PDF ஐ உருவாக்க முடியவில்லை",
+    "genericError": "ஏதோ தவறு நடந்துவிட்டது. மீண்டும் முயற்சிக்கவும்."
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "படிவம் கிடைக்கவில்லை",
+      "description": "நீங்கள் தேடும் படிவம் இல்லை அல்லது உங்களுக்கு அணுகல் இல்லை."
+    },
+    "templateNotFound": {
+      "title": "வார்ப்புரு கிடைக்கவில்லை",
+      "description": "நீங்கள் தேடும் PDF வார்ப்புரு இல்லை அல்லது உங்களுக்கு அணுகல் இல்லை."
+    },
+    "designerLoadFailed": {
+      "title": "வடிவமைப்பாளரை ஏற்ற முடியவில்லை"
+    }
+  }
+}

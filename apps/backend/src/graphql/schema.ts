@@ -881,6 +881,39 @@ export const typeDefs = gql`
     percentage: Float!
   }
 
+  # PDF Template Types (issue #87)
+  type PdfTemplate {
+    id: ID!
+    formId: ID!
+    name: String!
+    template: JSON!
+    fileKey: String
+    fileName: String
+    pageCount: Int!
+    basePdfUrl: String
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type GeneratedPdfResult {
+    downloadUrl: String!
+    expiresAt: String!
+    filename: String!
+  }
+
+  input CreatePdfTemplateInput {
+    formId: ID!
+    name: String!
+    template: JSON!
+    fileKey: String
+    fileName: String
+  }
+
+  input UpdatePdfTemplateInput {
+    name: String
+    template: JSON
+  }
+
   # Plugin System Types
   type FormPlugin {
     id: ID!
@@ -1121,6 +1154,10 @@ export const typeDefs = gql`
     pluginDeliveries(pluginId: ID!, limit: Int): [PluginDelivery!]!
     pluginBackfillStatus(pluginId: ID!): PluginBackfillJob
 
+    # PDF Template Queries
+    pdfTemplates(formId: ID!): [PdfTemplate!]!
+    pdfTemplate(id: ID!): PdfTemplate
+
     # Subscription Queries
     availablePlans: [AvailablePlan!]!
 
@@ -1311,6 +1348,12 @@ export const typeDefs = gql`
     testFormPlugin(id: ID!): PluginMutationResponse!
     startPluginBackfill(pluginId: ID!): PluginBackfillJob!
     cancelPluginBackfill(jobId: ID!): PluginBackfillJob!
+
+    # PDF Template Mutations
+    createPdfTemplate(input: CreatePdfTemplateInput!): PdfTemplate!
+    updatePdfTemplate(id: ID!, input: UpdatePdfTemplateInput!): PdfTemplate!
+    deletePdfTemplate(id: ID!): Boolean!
+    generatePdfFromResponse(templateId: ID!, responseId: ID!): GeneratedPdfResult!
 
     # AI Mutations
     generateFormWithAI(

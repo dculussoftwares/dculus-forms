@@ -1,0 +1,117 @@
+{
+  "layout": {
+    "title": "PDF Templates",
+    "dynamicTitle": "PDF Templates - {formTitle}",
+    "designerTitle": "PDF Template Designer",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "formDashboard": "Form Dashboard",
+      "pdfTemplates": "PDF Templates",
+      "designer": "Designer"
+    }
+  },
+  "header": {
+    "title": "PDF Templates",
+    "description": "Design PDF documents like certificates and letters, filled with each response's answers"
+  },
+  "create": {
+    "blank": {
+      "title": "Start from a blank page",
+      "description": "Design on an empty A4 page"
+    },
+    "upload": {
+      "title": "Upload a PDF",
+      "description": "Design on top of an existing PDF (max 10MB)"
+    }
+  },
+  "createDialog": {
+    "blankTitle": "New blank template",
+    "uploadTitle": "New template from PDF",
+    "blankDescription": "Give your template a name to start designing.",
+    "uploadDescription": "Using \"{fileName}\" as the base PDF. Give your template a name to start designing.",
+    "namePlaceholder": "Template name",
+    "cancelButton": "Cancel",
+    "createButton": "Create",
+    "creatingButton": "Creating..."
+  },
+  "list": {
+    "uploadedSource": "From {fileName}",
+    "blankSource": "Blank page",
+    "pageCount": "{count} page(s)",
+    "openButton": "Open designer",
+    "viewButton": "View"
+  },
+  "empty": {
+    "title": "No PDF templates yet",
+    "description": "Create your first template from a blank page or an uploaded PDF.",
+    "viewerDescription": "No PDF templates have been created for this form yet."
+  },
+  "deleteDialog": {
+    "title": "Delete PDF template?",
+    "description": "\"{name}\" will be permanently deleted. This cannot be undone.",
+    "cancelButton": "Cancel",
+    "deleteButton": "Delete",
+    "deletingButton": "Deleting..."
+  },
+  "designer": {
+    "saveButton": "Save template",
+    "savingButton": "Saving...",
+    "basePdfUnavailable": "The base PDF could not be loaded",
+    "loadFailed": "Failed to load the designer"
+  },
+  "fieldsPanel": {
+    "heading": "Form fields",
+    "description": "Click a field to place its response value on the page. You can place the same field multiple times.",
+    "noFields": "This form has no fields yet."
+  },
+  "palette": {
+    "text": "Text",
+    "image": "Image",
+    "line": "Line",
+    "rectangle": "Rectangle",
+    "ellipse": "Ellipse",
+    "table": "Table",
+    "qrcode": "QR Code"
+  },
+  "generate": {
+    "menuLabel": "Generate PDF",
+    "dialogTitle": "Generate PDF",
+    "dialogDescription": "Choose a template to fill with this response's answers.",
+    "generateButton": "Generate & download",
+    "generatingButton": "Generating...",
+    "cancelButton": "Cancel",
+    "noTemplates": "No PDF templates exist for this form yet. Create one from the form dashboard."
+  },
+  "toasts": {
+    "createdTitle": "Template created",
+    "createdDescription": "Opening the designer...",
+    "createFailedTitle": "Failed to create template",
+    "deletedTitle": "Template deleted",
+    "deletedDescription": "The PDF template has been removed.",
+    "deleteFailedTitle": "Failed to delete template",
+    "savedTitle": "Template saved",
+    "savedDescription": "Your design has been saved.",
+    "saveFailedTitle": "Failed to save template",
+    "invalidFileTitle": "Invalid file",
+    "invalidFileDescription": "Only PDF files are allowed.",
+    "fileTooLargeTitle": "File too large",
+    "fileTooLargeDescription": "Base PDFs can be at most 10MB.",
+    "generatedTitle": "PDF generated",
+    "generatedDescription": "Your download should begin shortly.",
+    "generateFailedTitle": "Failed to generate PDF",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "Form not found",
+      "description": "The form you're looking for doesn't exist or you don't have access to it."
+    },
+    "templateNotFound": {
+      "title": "Template not found",
+      "description": "The PDF template you're looking for doesn't exist or you don't have access to it."
+    },
+    "designerLoadFailed": {
+      "title": "Designer failed to load"
+    }
+  }
+}

@@ -14,6 +14,7 @@ import { FillableFormField, FormResponse, FieldType } from '@dculus/types';
 import { formatFieldValue } from '@dculus/utils';
 import { Download, Edit2, Trash2 } from 'lucide-react';
 import { TagsCell } from './TagsCell';
+import { GeneratePdfButton } from './GeneratePdfButton';
 import { GET_FORM_TAGS } from '../../graphql/queries';
 
 const GET_RESPONSE_FILE_DOWNLOAD_URL : TypedDocumentNode<any, any> = gql`
@@ -188,6 +189,7 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
             <Edit2 className="h-3.5 w-3.5" />
             {t('table.actions.edit')}
           </Button>
+          <GeneratePdfButton formId={formId} responseId={response.id} />
           <Button
             variant="outline"
             size="sm"

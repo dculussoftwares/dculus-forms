@@ -80,6 +80,10 @@
         "title": "Integrations",
         "description": "Connect with external services"
       },
+      "pdfTemplates": {
+        "title": "PDF Templates",
+        "description": "Design PDFs filled with responses"
+      },
       "settings": {
         "title": "Settings",
         "description": "Configure form preferences"
