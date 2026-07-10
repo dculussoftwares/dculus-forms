@@ -42,7 +42,17 @@ export function pdfmeWorkerAssetFallbackPlugin(): Plugin {
         if (!assetPath) return next();
 
         res.setHeader('Content-Type', 'text/javascript');
-        fs.createReadStream(assetPath).pipe(res);
+        fs.createReadStream(assetPath)
+          .on('error', (err) => {
+            // Guards against a race between the existsSync check in
+            // findConverterAsset and this read (e.g. a concurrent
+            // node_modules reinstall) — an unhandled stream error here would
+            // otherwise crash the dev server process.
+            if (!res.headersSent) res.statusCode = 500;
+            res.end();
+            console.error('[pdfme-worker-asset-fallback] failed to stream asset:', err);
+          })
+          .pipe(res);
       });
     },
   };
