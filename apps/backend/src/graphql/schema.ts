@@ -54,6 +54,13 @@ export const typeDefs = gql`
     updatedAt: String!
     organization: Organization!
     usage: SubscriptionUsage!
+    # True only while a PAID enterprise deal is set but the customer has never
+    # completed Chargebee checkout — status is 'past_due' and the org is
+    # blocked. The form-app pricing/subscription UI uses this (rather than just
+    # status === past_due, which is ambiguous with ordinary dunning on an
+    # already-active enterprise org) to decide whether to show a "complete
+    # payment" checkout link or the normal billing-portal "manage billing" flow.
+    enterprisePendingActivation: Boolean!
   }
 
   type SubscriptionUsage {
@@ -1236,6 +1243,11 @@ export const typeDefs = gql`
     initializeOrganizationSubscription(
       organizationId: ID!
     ): SubscriptionInitResult!
+    # Regenerates a fresh Chargebee checkout hosted page for the active org's
+    # pending (unpaid) Enterprise deal — lets the org owner complete payment
+    # themselves instead of relying solely on the admin-shared/emailed link.
+    # Only valid while Subscription.enterprisePendingActivation is true.
+    completeEnterprisePayment: CheckoutSessionResponse!
 
     # Form Mutations
     createForm(input: CreateFormInput!): Form!

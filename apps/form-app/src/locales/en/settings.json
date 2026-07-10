@@ -252,7 +252,17 @@
     "portalOpeningDesc": "Manage your subscription in the new tab",
     "portalError": "Failed to open portal",
     "aiCreditsLabel": "AI credits",
-    "aiCreditsResetOn": "Your credits reset on {{date}}"
+    "aiCreditsResetOn": "Your credits reset on {{date}}",
+    "enterprisePendingTitle": "Enterprise plan awaiting payment",
+    "enterprisePendingDescription": "Your Enterprise plan is set up but access is on hold until payment is completed.",
+    "completePayment": "Complete payment",
+    "checkoutOpening": "Opening checkout",
+    "checkoutOpeningDesc": "Complete your payment in the new tab",
+    "checkoutError": "Failed to open checkout",
+    "opening": "Opening…",
+    "invalidRedirectUrl": "Invalid redirect URL",
+    "popupBlocked": "Popup blocked — please allow popups for this site and try again",
+    "genericError": "Something went wrong. Please try again."
   },
   "membersPage": {
     "title": "Members",

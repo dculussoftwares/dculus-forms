@@ -153,6 +153,110 @@ export const createFreeSubscription = async (
   }
 };
 
+// Enterprise item prices use pricing_model: 'per_unit' (same convention as
+// every catalog item price, see createOrUpdatePlanPrice). Chargebee's hosted
+// checkout shows an editable quantity selector by default for per_unit prices,
+// and the charge is unit_price × quantity — so a payer bumping quantity from
+// 1 to 2 on an enterprise checkout would double the negotiated invoice. This
+// best-effort call sets Chargebee's documented per-item-price quantity lock
+// (metadata.quantity_meta, type 'fixed', values [1]) so the checkout widget
+// pins quantity to 1 when rendering this item price. NOTE: this metadata is
+// only honored by Chargebee's hosted page if the site-wide toggle "Customize
+// plan/addon quantity based on meta configuration" (Settings → Configure
+// Chargebee → Checkout & Self-Serve Portal → Advanced settings) is enabled —
+// that toggle has no API equivalent and must be turned on once, manually, in
+// the Chargebee dashboard. Fail closed: if the lock can't be applied (e.g.
+// insufficient API key permissions), abort checkout creation rather than open
+// a hosted page where the payer could edit the quantity and change the amount.
+const lockEnterpriseItemPriceQuantity = async (itemPriceId: string): Promise<void> => {
+  try {
+    await chargebee.itemPrice.update(itemPriceId, {
+      metadata: { quantity_meta: { type: 'fixed', values: [1] } },
+    } as any);
+  } catch (error: any) {
+    logger.error(
+      `[Chargebee Service] Could not lock quantity on item price ${itemPriceId}:`,
+      error
+    );
+    throw new Error(
+      `Failed to lock checkout quantity on item price ${itemPriceId} — checkout not created`
+    );
+  }
+};
+
+// Shared by the initial paid-deal checkout (setEnterpriseSubscription) and by
+// getEnterpriseCheckoutUrl (regenerating a fresh page for an org still
+// awaiting payment — Chargebee hosted pages expire, so we never persist and
+// reuse a URL, only the deal terms needed to recreate it).
+const buildEnterpriseCheckoutUrl = async (
+  chargebeeSubscriptionId: string,
+  itemPriceId: string,
+  priceInSmallestUnit: number
+): Promise<{ url: string; id: string }> => {
+  await lockEnterpriseItemPriceQuantity(itemPriceId);
+
+  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const result: any = await chargebee.hostedPage.checkoutExistingForItems({
+    subscription: { id: chargebeeSubscriptionId, auto_collection: 'on' },
+    subscription_items: [{ item_price_id: itemPriceId, unit_price: priceInSmallestUnit, quantity: 1 }],
+    replace_items_list: true,
+    redirect_url: `${baseUrl}/subscription/success`,
+    cancel_url: `${baseUrl}/subscription/cancel`,
+  } as any);
+  return { url: result.hosted_page.url, id: result.hosted_page.id };
+};
+
+/**
+ * Regenerate a Chargebee checkout hosted page for an organization's pending
+ * (unpaid) Enterprise deal — called on demand by the org owner from form-app,
+ * since the admin-generated hosted page is never persisted (it expires) and
+ * the org would otherwise have no self-serve way to complete payment except
+ * the link an admin copies/emails manually.
+ *
+ * Only valid while `enterprisePendingActivation` is true, i.e. a paid deal was
+ * set but checkout has never been completed. Once checkout succeeds, the
+ * resulting webhook flips this flag off (see syncSubscriptionFromWebhook) —
+ * after that, a later past_due is ordinary dunning and should go through the
+ * normal billing portal (createPortalSession), not this function.
+ */
+export const getEnterpriseCheckoutUrl = async (
+  organizationId: string
+): Promise<{ url: string; hostedPageId: string }> => {
+  const subscription = await subscriptionRepository.findUnique({ where: { organizationId } });
+  if (!subscription) {
+    throw new Error(`No subscription found for organization ${organizationId}`);
+  }
+  if (subscription.planId !== 'enterprise' || !subscription.enterprisePendingActivation) {
+    throw new Error('No pending enterprise payment for this organization');
+  }
+  if (!subscription.chargebeeSubscriptionId) {
+    throw new Error('Organization has no Chargebee subscription');
+  }
+  if (
+    !subscription.enterpriseCurrency ||
+    !subscription.enterprisePeriod ||
+    subscription.enterprisePriceInSmallestUnit == null
+  ) {
+    // Shouldn't happen — set alongside enterprisePendingActivation in the same
+    // write. Surface clearly rather than generating a checkout for $0/wrong plan.
+    throw new Error('Enterprise deal terms are missing for this organization — contact support');
+  }
+
+  const itemPriceId = `enterprise-${subscription.enterpriseCurrency.toLowerCase()}-${subscription.enterprisePeriod}`;
+
+  try {
+    const { url, id } = await buildEnterpriseCheckoutUrl(
+      subscription.chargebeeSubscriptionId,
+      itemPriceId,
+      subscription.enterprisePriceInSmallestUnit
+    );
+    return { url, hostedPageId: id };
+  } catch (error: any) {
+    logger.error('[Chargebee Service] Error regenerating enterprise checkout page:', error);
+    throw new Error(`Failed to create enterprise checkout page: ${error.message}`);
+  }
+};
+
 /**
  * Set a negotiated Enterprise deal for an organization — pay-to-activate.
  *
@@ -235,6 +339,10 @@ export const setEnterpriseSubscription = async (
         aiCreditsLimit,
         currentPeriodStart,
         currentPeriodEnd,
+        enterpriseCurrency: currency,
+        enterprisePeriod: period,
+        enterprisePriceInSmallestUnit: priceInSmallestUnit,
+        enterprisePendingActivation: false,
       },
     });
 
@@ -246,15 +354,12 @@ export const setEnterpriseSubscription = async (
   // Chargebee subscription is only switched when the customer pays.
   let checkoutUrl: string;
   try {
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const result: any = await chargebee.hostedPage.checkoutExistingForItems({
-      subscription: { id: subscription.chargebeeSubscriptionId, auto_collection: 'on' },
-      subscription_items: [{ item_price_id: itemPriceId, unit_price: priceInSmallestUnit, quantity: 1 }],
-      replace_items_list: true,
-      redirect_url: `${baseUrl}/subscription/success`,
-      cancel_url: `${baseUrl}/subscription/cancel`,
-    } as any);
-    checkoutUrl = result.hosted_page.url;
+    const result = await buildEnterpriseCheckoutUrl(
+      subscription.chargebeeSubscriptionId,
+      itemPriceId,
+      priceInSmallestUnit
+    );
+    checkoutUrl = result.url;
   } catch (error: any) {
     logger.error('[Chargebee Service] Error creating enterprise checkout page:', error);
     throw new Error(`Failed to create enterprise checkout page: ${error.message}`);
@@ -263,6 +368,9 @@ export const setEnterpriseSubscription = async (
   // Block the org until payment: past_due is the status usage checks enforce
   // (views, submissions, and AI credits are all rejected). The webhook fired
   // by a completed checkout flips this to active while preserving these limits.
+  // enterprisePendingActivation lets the org owner regenerate this checkout page
+  // themselves later (getEnterpriseCheckoutUrl) without needing the admin to
+  // resend the (expiring) hosted page link.
   await subscriptionRepository.update({
     where: { organizationId },
     data: {
@@ -271,6 +379,10 @@ export const setEnterpriseSubscription = async (
       viewsLimit,
       submissionsLimit,
       aiCreditsLimit,
+      enterpriseCurrency: currency,
+      enterprisePeriod: period,
+      enterprisePriceInSmallestUnit: priceInSmallestUnit,
+      enterprisePendingActivation: true,
     },
   });
 
@@ -471,6 +583,22 @@ export const syncSubscriptionFromWebhook = async (
       ? null
       : await getPlanLimits(planId); // falls back to hardcoded values if Chargebee API fails
 
+    // Defense-in-depth against the enterprise checkout quantity risk (see
+    // lockEnterpriseItemPriceQuantity): if a payer still managed to change
+    // quantity away from 1 — e.g. the Chargebee dashboard toggle for the
+    // metadata-based lock isn't enabled — the resulting charge no longer
+    // matches the negotiated price. We can't undo a completed charge from
+    // here, but we must not let it pass silently.
+    if (isEnterprise && firstItem?.quantity != null && Number(firstItem.quantity) !== 1) {
+      logger.error(
+        `[Chargebee Service] Enterprise subscription item quantity is ${firstItem.quantity} (expected 1) for organization ${organizationId} — charge may not match the negotiated price. Investigate in Chargebee.`
+      );
+      Sentry.captureMessage('Enterprise subscription quantity mismatch', {
+        level: 'error',
+        extra: { organizationId, quantity: firstItem.quantity, subscriptionId: subscriptionData.id },
+      });
+    }
+
     // Map Chargebee status to our status
     let status = 'active';
     if (subscriptionData.status === 'cancelled') status = 'cancelled';
@@ -491,6 +619,12 @@ export const syncSubscriptionFromWebhook = async (
               aiCreditsLimit: limits.aiCredits,
             }
           : {}),
+        // Reaching this point with isEnterprise true means Chargebee itself now
+        // reports the enterprise item on this subscription — i.e. checkout (or
+        // an admin's $0 activation) has genuinely gone through, so any pending
+        // "awaiting payment" flag is resolved. Non-enterprise plans never set
+        // this — it stays whatever it was (irrelevant for those planIds).
+        ...(isEnterprise ? { enterprisePendingActivation: false } : {}),
         currentPeriodStart: new Date(
           subscriptionData.current_term_start * 1000
         ),
@@ -511,6 +645,7 @@ export const syncSubscriptionFromWebhook = async (
         viewsLimit: limits ? limits.views : null,
         submissionsLimit: limits ? limits.submissions : null,
         aiCreditsLimit: limits ? limits.aiCredits : null,
+        ...(isEnterprise ? { enterprisePendingActivation: false } : {}),
         currentPeriodStart: new Date(
           subscriptionData.current_term_start * 1000
         ),
@@ -1315,6 +1450,13 @@ export const changeOrganizationPlan = async (
       aiCreditsLimit: targetPlan.limits.aiCredits,
       currentPeriodStart,
       currentPeriodEnd,
+      // Assigning a catalog plan abandons any pending (unpaid) enterprise
+      // deal — clear its terms so a later past_due goes through ordinary
+      // dunning instead of the stale enterprise-checkout flow.
+      enterpriseCurrency: null,
+      enterprisePeriod: null,
+      enterprisePriceInSmallestUnit: null,
+      enterprisePendingActivation: false,
     },
   });
   invalidateAIBudgetCache(organizationId);

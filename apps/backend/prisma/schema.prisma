@@ -523,6 +523,21 @@ model Subscription {
   submissionsLimit Int? // null = unlimited
   aiCreditsLimit   Int? // null = not yet synced from Chargebee; falls back to plan defaults (see aiUsageService)
 
+  // Negotiated Enterprise deal terms — set by setEnterpriseSubscription, used to
+  // regenerate a fresh Chargebee checkout hosted page on demand (hosted pages
+  // expire; we never persist the URL itself). Only meaningful when planId is
+  // 'enterprise'; irrelevant/stale for every other plan.
+  enterpriseCurrency            String? // 'USD' | 'INR'
+  enterprisePeriod               String? // 'monthly' | 'yearly'
+  enterprisePriceInSmallestUnit Int? // negotiated price, smallest currency unit
+  // true from the moment a PAID enterprise deal is set (status flips to
+  // past_due) until the customer completes the Chargebee checkout and a
+  // webhook confirms the enterprise subscription item — distinguishes an
+  // org that has never paid (needs the checkout page) from an already-active
+  // enterprise org that later went past_due via normal dunning (needs the
+  // billing portal instead). See syncSubscriptionFromWebhook.
+  enterprisePendingActivation Boolean @default(false)
+
   // Billing period (resets usage counters)
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime

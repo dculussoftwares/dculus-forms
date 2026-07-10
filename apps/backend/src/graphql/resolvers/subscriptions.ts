@@ -6,9 +6,12 @@ import {
   getAvailablePlans,
   createChargebeeCustomer,
   createFreeSubscription,
+  getEnterpriseCheckoutUrl,
 } from '../../services/chargebeeService.js';
 import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { GraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
+import { createGraphQLError } from '../../lib/graphqlErrors.js';
 import { logger } from '../../lib/logger.js';
 
 /**
@@ -114,6 +117,44 @@ export const subscriptionResolvers = {
       } catch (error: any) {
         logger.error('[Subscription Resolver] Error creating portal session:', error);
         throw new GraphQLError(`Failed to create portal session: ${error.message}`);
+      }
+    },
+
+    /**
+     * Regenerate a Chargebee checkout hosted page for the active org's pending
+     * (unpaid) Enterprise deal. Admins set enterprise deals via
+     * adminSetEnterprisePlan, which returns a checkout URL that is emailed to
+     * the owner and shown to the admin — but that URL is never persisted (it
+     * expires) and the org owner has no other in-product way to retrieve or
+     * resume it. This lets any member of the org regenerate a fresh one on
+     * demand, same as self-serve checkout/portal below.
+     */
+    completeEnterprisePayment: async (
+      _: any,
+      __: any,
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const session = context.auth.session;
+      if (!session?.activeOrganizationId) {
+        throw createGraphQLError('No active organization', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      // 🔒 SECURITY: Verify user is a member of the active organization
+      await requireOrganizationMembership(context.auth, session.activeOrganizationId);
+
+      try {
+        const { url, hostedPageId } = await getEnterpriseCheckoutUrl(session.activeOrganizationId);
+        return { url, hostedPageId };
+      } catch (error: unknown) {
+        // Keep the provider error server-side only — don't leak Chargebee
+        // messages to clients.
+        logger.error('[Subscription Resolver] Error resuming enterprise payment:', error);
+        throw createGraphQLError(
+          'Failed to resume enterprise payment',
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
       }
     },
 

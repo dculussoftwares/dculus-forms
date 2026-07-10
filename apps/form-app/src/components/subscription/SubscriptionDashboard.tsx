@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@apollo/client/react';
-import { GET_SUBSCRIPTION, CREATE_PORTAL_SESSION } from '../../graphql/subscription';
+import { GET_SUBSCRIPTION, CREATE_PORTAL_SESSION, COMPLETE_ENTERPRISE_PAYMENT } from '../../graphql/subscription';
 import { Card, Button, Badge, Alert, AlertTitle, AlertDescription, toastSuccess, toastError } from '@dculus/ui';
 import { CreditCard, TrendingUp, Eye, FileText, Calendar, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
@@ -12,36 +12,63 @@ export const SubscriptionDashboard = () => {
   const { t } = useTranslation('subscriptionDashboard');
   const { data, loading } = useQuery(GET_SUBSCRIPTION);
   const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
+  const [completeEnterprisePayment, { loading: enterpriseCheckoutLoading }] = useMutation(
+    COMPLETE_ENTERPRISE_PAYMENT
+  );
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const subscription = data?.activeOrganization?.subscription;
   const organizationId = data?.activeOrganization?.id ?? '';
 
-  const safeOpen = (url: string) => {
+  const isChargebeeUrl = (url: string): boolean => {
     try {
       const parsed = new URL(url);
       const host = parsed.hostname;
-      if (parsed.protocol !== 'https:' || (host !== 'chargebee.com' && !host.endsWith('.chargebee.com'))) {
-        toastError(t('toast.failedToOpenPortal'), 'Invalid redirect URL');
-        return;
-      }
-      window.open(url, '_blank');
+      return (
+        parsed.protocol === 'https:' && (host === 'chargebee.com' || host.endsWith('.chargebee.com'))
+      );
     } catch {
-      toastError(t('toast.failedToOpenPortal'), 'Malformed redirect URL');
+      return false;
     }
   };
 
-  const handleManageSubscription = async () => {
+  // Pre-open the tab synchronously in the click handler: calling window.open
+  // after `await` loses the click's transient activation and gets popup-blocked.
+  // The blank tab is navigated once the mutation returns, or closed on failure.
+  const openHostedPage = async (
+    fetchUrl: () => Promise<string | undefined>,
+    errorTitle: string,
+    onOpened: () => void
+  ) => {
+    const tab = window.open('', '_blank');
     try {
-      const { data } = await createPortalSession();
-      if (data?.createPortalSession?.url) {
-        safeOpen(data.createPortalSession.url);
-        toastSuccess(t('toast.openingPortal'), t('toast.manageInNewTab'));
+      const url = await fetchUrl();
+      if (url && isChargebeeUrl(url) && tab) {
+        tab.location.href = url;
+        onOpened();
+      } else {
+        tab?.close();
+        toastError(errorTitle, tab ? t('toast.invalidRedirectUrl') : t('toast.popupBlocked'));
       }
-    } catch (error: any) {
-      toastError(t('toast.failedToOpenPortal'), error.message);
+    } catch (error: unknown) {
+      tab?.close();
+      toastError(errorTitle, error instanceof Error ? error.message : t('toast.genericError'));
     }
   };
+
+  const handleManageSubscription = () =>
+    openHostedPage(
+      async () => (await createPortalSession()).data?.createPortalSession?.url,
+      t('toast.failedToOpenPortal'),
+      () => toastSuccess(t('toast.openingPortal'), t('toast.manageInNewTab'))
+    );
+
+  const handleCompleteEnterprisePayment = () =>
+    openHostedPage(
+      async () => (await completeEnterprisePayment()).data?.completeEnterprisePayment?.url,
+      t('toast.failedToOpenCheckout'),
+      () => toastSuccess(t('toast.openingCheckout'), t('toast.completePaymentInNewTab'))
+    );
 
   if (loading) {
     return (
@@ -72,7 +99,7 @@ export const SubscriptionDashboard = () => {
     );
   }
 
-  const { planId, status, usage, currentPeriodStart, currentPeriodEnd } = subscription;
+  const { planId, status, usage, currentPeriodStart, currentPeriodEnd, enterprisePendingActivation } = subscription;
 
   // Format plan name
   const planName = planId.charAt(0).toUpperCase() + planId.slice(1);
@@ -122,8 +149,36 @@ export const SubscriptionDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Past Due Payment Banner */}
-      {status === 'past_due' && (
+      {/* Enterprise plan awaiting first payment — distinct from ordinary dunning
+          below: the org has never paid, so "Manage Billing" (the Chargebee
+          self-serve portal) can't help here since Chargebee's subscription
+          hasn't switched to the enterprise item yet. This regenerates a fresh
+          checkout page instead. */}
+      {planId === 'enterprise' && status === 'past_due' && enterprisePendingActivation && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>{t('alerts.enterprisePending.title')}</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-4 flex-wrap">
+            <span>{t('alerts.enterprisePending.description')}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleCompleteEnterprisePayment}
+              disabled={enterpriseCheckoutLoading}
+              className="border-red-300 text-red-700 hover:bg-red-100 shrink-0"
+            >
+              <CreditCard className="h-3 w-3 mr-2" />
+              {t('alerts.enterprisePending.completePayment')}
+              <ExternalLink className="h-3 w-3 ml-2" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Past Due Payment Banner (ordinary dunning — payment method on file
+          failed, e.g. a renewal charge). Not shown for a still-unpaid
+          enterprise deal, which gets the banner above instead. */}
+      {status === 'past_due' && !(planId === 'enterprise' && enterprisePendingActivation) && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>{t('alerts.pastDue.title')}</AlertTitle>

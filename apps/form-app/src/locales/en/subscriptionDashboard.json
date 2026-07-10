@@ -9,13 +9,24 @@
   "toast": {
     "openingPortal": "Opening subscription portal",
     "manageInNewTab": "Manage your subscription in the new tab",
-    "failedToOpenPortal": "Failed to open portal"
+    "failedToOpenPortal": "Failed to open portal",
+    "openingCheckout": "Opening checkout",
+    "completePaymentInNewTab": "Complete your payment in the new tab",
+    "failedToOpenCheckout": "Failed to open checkout",
+    "invalidRedirectUrl": "Invalid redirect URL",
+    "popupBlocked": "Popup blocked — please allow popups for this site and try again",
+    "genericError": "Something went wrong. Please try again."
   },
   "alerts": {
     "pastDue": {
       "title": "Payment Failed",
       "description": "Payment failed — please update your payment method to avoid service interruption.",
       "manageBilling": "Manage Billing"
+    },
+    "enterprisePending": {
+      "title": "Enterprise Plan Awaiting Payment",
+      "description": "Your Enterprise plan is set up but access is on hold until payment is completed.",
+      "completePayment": "Complete Payment"
     },
     "exceeded": {
       "title": "Usage Limit Exceeded",
