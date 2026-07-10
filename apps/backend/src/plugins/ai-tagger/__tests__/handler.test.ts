@@ -8,8 +8,14 @@ vi.mock('ai', () => ({
   Output: { object: vi.fn(() => ({})) },
 }));
 
-vi.mock('../../../../lib/ai.js', () => ({
+vi.mock('../../../lib/ai.js', () => ({
   getFastModel: vi.fn(() => 'mock-model'),
+}));
+
+// Must be mocked: the real module reaches Prisma via collaborativeDocumentRepository,
+// which would attempt an actual database connection during unit tests.
+vi.mock('../../../services/hocuspocus.js', () => ({
+  getFormSchemaFromHocuspocus: vi.fn(async () => null),
 }));
 
 const TEST_PLUGIN_ID = 'plugin-abc';
