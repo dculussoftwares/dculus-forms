@@ -3,8 +3,9 @@ terraform {
 
   required_providers {
     cloudflare = {
-      source  = "cloudflare/cloudflare"
-      version = ">= 4.43.0"
+      source = "cloudflare/cloudflare"
+      # cloudflare_r2_bucket_cors (r2-cors.tf) requires the v5 provider
+      version = "~> 5.0"
     }
   }
 }

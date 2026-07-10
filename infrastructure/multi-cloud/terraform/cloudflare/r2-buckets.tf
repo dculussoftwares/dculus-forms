@@ -12,5 +12,5 @@ resource "cloudflare_r2_bucket" "public" {
   location   = var.r2_location
 }
 
-# Note: CORS configuration and lifecycle policies must be configured using the AWS S3 provider
-# See README.md for instructions on configuring CORS and other bucket policies
+# Note: CORS configuration for the private bucket lives in r2-cors.tf
+# (cloudflare_r2_bucket_cors, provider v5+).

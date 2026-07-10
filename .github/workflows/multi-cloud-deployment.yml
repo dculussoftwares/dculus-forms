@@ -491,6 +491,7 @@ jobs:
           cp ../../r2-buckets.tf .
           cp ../../r2-custom-domains.tf .
           cp ../../r2-api-token.tf .
+          cp ../../r2-cors.tf .
           cp ../../outputs.tf .
 
           # Initialize Terraform
