@@ -205,6 +205,17 @@ Has its own auth hook, locale support, and translation namespace.
 
 ## Key Conventions
 
+### Prisma Schema Changes
+
+Any change to `apps/backend/prisma/schema.prisma` requires **both** of these — the schema edit alone is not enough:
+
+1. **A committed migration** in `apps/backend/prisma/migrations/<timestamp>_<name>/migration.sql`. Deployments run `db:migrate:deploy`, which only applies checked-in migrations — never `db push`. Use `ADD COLUMN IF NOT EXISTS` guards, since dev databases may already have the columns via `pnpm db:push`.
+2. **After pulling a schema change** into a checkout: run `pnpm db:generate` and `pnpm db:push`. The Prisma client is generated into `apps/backend/src/generated/prisma` (inside the repo, gitignored), so pulling code does **not** refresh it.
+
+Failure signatures when this is skipped:
+- **Stale generated client** → silent missing fields: GraphQL throws `"Cannot return null for non-nullable field ..."` because the old client never selects the new column.
+- **Missing DB column** (client regenerated but DB not pushed) → loud Prisma error `P2022: column does not exist`.
+
 ### Import Rules
 
 ```typescript
