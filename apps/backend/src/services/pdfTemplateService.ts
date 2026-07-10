@@ -60,13 +60,14 @@ export function stripBasePdf(template: any, hasUploadedPdf: boolean): any {
 /**
  * Validate a pdfme template JSON with checkTemplate(). Stored/incoming
  * templates for uploaded PDFs have basePdf stripped, so validate against
- * BLANK_PDF in that case.
+ * BLANK_PDF in that case. Blank-page templates must supply their own
+ * basePdf ({ width, height, padding }) — a missing one is a genuine
+ * validation failure, not something to silently paper over, since the
+ * unrepaired template would otherwise pass validation here but fail
+ * later at generation time.
  */
 export function validatePdfTemplate(template: any, hasUploadedPdf: boolean): void {
-  const candidate =
-    hasUploadedPdf || !template?.basePdf
-      ? { ...template, basePdf: BLANK_PDF }
-      : template;
+  const candidate = hasUploadedPdf ? { ...template, basePdf: BLANK_PDF } : template;
   checkTemplate(candidate); // throws on invalid template
 }
 

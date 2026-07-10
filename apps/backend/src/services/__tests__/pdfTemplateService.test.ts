@@ -136,6 +136,14 @@ describe('validatePdfTemplate', () => {
   it('rejects invalid template JSON', () => {
     expect(() => validatePdfTemplate({ schemas: 'not-an-array' }, false)).toThrow();
   });
+
+  it('rejects a blank-page template missing its own basePdf instead of silently repairing it', () => {
+    // hasUploadedPdf=false means the caller must supply { width, height, padding } —
+    // masking a missing basePdf here would let an invalid template pass validation
+    // and only fail later, at generation time.
+    const template = { basePdf: null, schemas: [[textSchema('a', 'hello')]] };
+    expect(() => validatePdfTemplate(template, false)).toThrow();
+  });
 });
 
 describe('buildPdfFilename', () => {

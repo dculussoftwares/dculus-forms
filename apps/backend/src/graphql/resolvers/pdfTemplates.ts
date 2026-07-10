@@ -136,6 +136,16 @@ export const pdfTemplatesResolvers = {
         throw createGraphQLError('Template name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
+      // Reject fileKeys not issued for this form's PdfTemplateAsset upload path —
+      // otherwise a caller could attach (and later read/delete via basePdfUrl /
+      // deletePdfTemplate) a private object key belonging to another form.
+      if (input.fileKey && !input.fileKey.startsWith(`files/pdf-template-asset/${input.formId}/`)) {
+        throw createGraphQLError(
+          'Invalid fileKey: must be an uploaded PdfTemplateAsset for this form',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
       const hasUploadedPdf = !!input.fileKey;
       try {
         validatePdfTemplate(input.template, hasUploadedPdf);
@@ -324,7 +334,7 @@ export const pdfTemplatesResolvers = {
       } catch (error) {
         logger.error('generatePdfFromResponse failed:', error);
         throw createGraphQLError(
-          `Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'Failed to generate PDF',
           GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
         );
       }

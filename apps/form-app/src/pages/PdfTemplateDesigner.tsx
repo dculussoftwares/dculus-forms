@@ -186,11 +186,13 @@ const PdfTemplateDesigner: React.FC = () => {
       );
 
       const placedCount = schemas[pageIndex]?.length ?? 0;
+      const column = Math.floor(placedCount / 10);
+      const row = placedCount % 10;
       const newSchema = {
         name: `field_${generateId()}`,
         type: 'text',
         content: `{{${field.id}}}`,
-        position: { x: 20, y: 20 + (placedCount % 10) * 12 },
+        position: { x: 20 + column * 100, y: 20 + row * 12 },
         width: 80,
         height: 10,
         fontSize: 12,
