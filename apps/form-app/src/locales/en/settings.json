@@ -258,7 +258,11 @@
     "completePayment": "Complete payment",
     "checkoutOpening": "Opening checkout",
     "checkoutOpeningDesc": "Complete your payment in the new tab",
-    "checkoutError": "Failed to open checkout"
+    "checkoutError": "Failed to open checkout",
+    "opening": "Opening…",
+    "invalidRedirectUrl": "Invalid redirect URL",
+    "popupBlocked": "Popup blocked — please allow popups for this site and try again",
+    "genericError": "Something went wrong. Please try again."
   },
   "membersPage": {
     "title": "Members",

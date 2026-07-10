@@ -20,43 +20,55 @@ export const SubscriptionDashboard = () => {
   const subscription = data?.activeOrganization?.subscription;
   const organizationId = data?.activeOrganization?.id ?? '';
 
-  const safeOpen = (url: string) => {
+  const isChargebeeUrl = (url: string): boolean => {
     try {
       const parsed = new URL(url);
       const host = parsed.hostname;
-      if (parsed.protocol !== 'https:' || (host !== 'chargebee.com' && !host.endsWith('.chargebee.com'))) {
-        toastError(t('toast.failedToOpenPortal'), 'Invalid redirect URL');
-        return;
-      }
-      window.open(url, '_blank');
+      return (
+        parsed.protocol === 'https:' && (host === 'chargebee.com' || host.endsWith('.chargebee.com'))
+      );
     } catch {
-      toastError(t('toast.failedToOpenPortal'), 'Malformed redirect URL');
+      return false;
     }
   };
 
-  const handleManageSubscription = async () => {
+  // Pre-open the tab synchronously in the click handler: calling window.open
+  // after `await` loses the click's transient activation and gets popup-blocked.
+  // The blank tab is navigated once the mutation returns, or closed on failure.
+  const openHostedPage = async (
+    fetchUrl: () => Promise<string | undefined>,
+    errorTitle: string,
+    onOpened: () => void
+  ) => {
+    const tab = window.open('', '_blank');
     try {
-      const { data } = await createPortalSession();
-      if (data?.createPortalSession?.url) {
-        safeOpen(data.createPortalSession.url);
-        toastSuccess(t('toast.openingPortal'), t('toast.manageInNewTab'));
+      const url = await fetchUrl();
+      if (url && isChargebeeUrl(url) && tab) {
+        tab.location.href = url;
+        onOpened();
+      } else {
+        tab?.close();
+        toastError(errorTitle, tab ? t('toast.invalidRedirectUrl') : t('toast.popupBlocked'));
       }
-    } catch (error: any) {
-      toastError(t('toast.failedToOpenPortal'), error.message);
+    } catch (error: unknown) {
+      tab?.close();
+      toastError(errorTitle, error instanceof Error ? error.message : t('toast.genericError'));
     }
   };
 
-  const handleCompleteEnterprisePayment = async () => {
-    try {
-      const { data } = await completeEnterprisePayment();
-      if (data?.completeEnterprisePayment?.url) {
-        safeOpen(data.completeEnterprisePayment.url);
-        toastSuccess(t('toast.openingCheckout'), t('toast.completePaymentInNewTab'));
-      }
-    } catch (error: any) {
-      toastError(t('toast.failedToOpenCheckout'), error.message);
-    }
-  };
+  const handleManageSubscription = () =>
+    openHostedPage(
+      async () => (await createPortalSession()).data?.createPortalSession?.url,
+      t('toast.failedToOpenPortal'),
+      () => toastSuccess(t('toast.openingPortal'), t('toast.manageInNewTab'))
+    );
+
+  const handleCompleteEnterprisePayment = () =>
+    openHostedPage(
+      async () => (await completeEnterprisePayment()).data?.completeEnterprisePayment?.url,
+      t('toast.failedToOpenCheckout'),
+      () => toastSuccess(t('toast.openingCheckout'), t('toast.completePaymentInNewTab'))
+    );
 
   if (loading) {
     return (
@@ -142,7 +154,7 @@ export const SubscriptionDashboard = () => {
           self-serve portal) can't help here since Chargebee's subscription
           hasn't switched to the enterprise item yet. This regenerates a fresh
           checkout page instead. */}
-      {status === 'past_due' && enterprisePendingActivation && (
+      {planId === 'enterprise' && status === 'past_due' && enterprisePendingActivation && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>{t('alerts.enterprisePending.title')}</AlertTitle>
@@ -166,7 +178,7 @@ export const SubscriptionDashboard = () => {
       {/* Past Due Payment Banner (ordinary dunning — payment method on file
           failed, e.g. a renewal charge). Not shown for a still-unpaid
           enterprise deal, which gets the banner above instead. */}
-      {status === 'past_due' && !enterprisePendingActivation && (
+      {status === 'past_due' && !(planId === 'enterprise' && enterprisePendingActivation) && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>{t('alerts.pastDue.title')}</AlertTitle>

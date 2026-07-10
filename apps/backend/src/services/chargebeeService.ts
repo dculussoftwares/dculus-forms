@@ -165,17 +165,21 @@ export const createFreeSubscription = async (
 // plan/addon quantity based on meta configuration" (Settings → Configure
 // Chargebee → Checkout & Self-Serve Portal → Advanced settings) is enabled —
 // that toggle has no API equivalent and must be turned on once, manually, in
-// the Chargebee dashboard. Never let this best-effort call block checkout
-// creation if it fails (e.g. insufficient API key permissions).
+// the Chargebee dashboard. Fail closed: if the lock can't be applied (e.g.
+// insufficient API key permissions), abort checkout creation rather than open
+// a hosted page where the payer could edit the quantity and change the amount.
 const lockEnterpriseItemPriceQuantity = async (itemPriceId: string): Promise<void> => {
   try {
     await chargebee.itemPrice.update(itemPriceId, {
       metadata: { quantity_meta: { type: 'fixed', values: [1] } },
     } as any);
   } catch (error: any) {
-    logger.warn(
-      `[Chargebee Service] Could not lock quantity on item price ${itemPriceId} (non-fatal):`,
+    logger.error(
+      `[Chargebee Service] Could not lock quantity on item price ${itemPriceId}:`,
       error
+    );
+    throw new Error(
+      `Failed to lock checkout quantity on item price ${itemPriceId} — checkout not created`
     );
   }
 };
@@ -1446,6 +1450,13 @@ export const changeOrganizationPlan = async (
       aiCreditsLimit: targetPlan.limits.aiCredits,
       currentPeriodStart,
       currentPeriodEnd,
+      // Assigning a catalog plan abandons any pending (unpaid) enterprise
+      // deal — clear its terms so a later past_due goes through ordinary
+      // dunning instead of the stale enterprise-checkout flow.
+      enterpriseCurrency: null,
+      enterprisePeriod: null,
+      enterprisePriceInSmallestUnit: null,
+      enterprisePendingActivation: false,
     },
   });
   invalidateAIBudgetCache(organizationId);

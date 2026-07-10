@@ -12,7 +12,10 @@
     "failedToOpenPortal": "Failed to open portal",
     "openingCheckout": "Opening checkout",
     "completePaymentInNewTab": "Complete your payment in the new tab",
-    "failedToOpenCheckout": "Failed to open checkout"
+    "failedToOpenCheckout": "Failed to open checkout",
+    "invalidRedirectUrl": "Invalid redirect URL",
+    "popupBlocked": "Popup blocked — please allow popups for this site and try again",
+    "genericError": "Something went wrong. Please try again."
   },
   "alerts": {
     "pastDue": {

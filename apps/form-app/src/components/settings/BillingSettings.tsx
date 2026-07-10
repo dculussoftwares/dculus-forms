@@ -13,18 +13,14 @@ import { UpgradeModal } from '../subscription/UpgradeModal';
 import { UsageChart } from '../subscription/UsageChart';
 import { useTranslation } from '../../hooks/useTranslation';
 
-function safeOpen(url: string, onError: (msg: string) => void): boolean {
+function isChargebeeUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     const host = parsed.hostname;
-    if (parsed.protocol !== 'https:' || (host !== 'chargebee.com' && !host.endsWith('.chargebee.com'))) {
-      onError('Invalid redirect URL');
-      return false;
-    }
-    window.open(url, '_blank');
-    return true;
+    return (
+      parsed.protocol === 'https:' && (host === 'chargebee.com' || host.endsWith('.chargebee.com'))
+    );
   } catch {
-    onError('Malformed redirect URL');
     return false;
   }
 }
@@ -100,37 +96,43 @@ export function BillingSettings() {
     skip: !organizationId,
   });
 
-  const handleManageBilling = async () => {
+  // Pre-open the tab synchronously in the click handler: calling window.open
+  // after `await` loses the click's transient activation and gets popup-blocked.
+  // The blank tab is navigated once the mutation returns, or closed on failure.
+  const openHostedPage = async (
+    fetchUrl: () => Promise<string | undefined>,
+    errorTitle: string,
+    onOpened: () => void
+  ) => {
+    const tab = window.open('', '_blank');
     try {
-      const { data } = await createPortalSession();
-      if (data?.createPortalSession?.url) {
-        const opened = safeOpen(data.createPortalSession.url, (msg) =>
-          toastError(t('billing.portalError'), msg)
-        );
-        if (opened) {
-          toastSuccess(t('billing.portalOpening'), t('billing.portalOpeningDesc'));
-        }
+      const url = await fetchUrl();
+      if (url && isChargebeeUrl(url) && tab) {
+        tab.location.href = url;
+        onOpened();
+      } else {
+        tab?.close();
+        toastError(errorTitle, tab ? t('billing.invalidRedirectUrl') : t('billing.popupBlocked'));
       }
-    } catch (error: any) {
-      toastError(t('billing.portalError'), error.message);
+    } catch (error: unknown) {
+      tab?.close();
+      toastError(errorTitle, error instanceof Error ? error.message : t('billing.genericError'));
     }
   };
 
-  const handleCompleteEnterprisePayment = async () => {
-    try {
-      const { data } = await completeEnterprisePayment();
-      if (data?.completeEnterprisePayment?.url) {
-        const opened = safeOpen(data.completeEnterprisePayment.url, (msg) =>
-          toastError(t('billing.checkoutError'), msg)
-        );
-        if (opened) {
-          toastSuccess(t('billing.checkoutOpening'), t('billing.checkoutOpeningDesc'));
-        }
-      }
-    } catch (error: any) {
-      toastError(t('billing.checkoutError'), error.message);
-    }
-  };
+  const handleManageBilling = () =>
+    openHostedPage(
+      async () => (await createPortalSession()).data?.createPortalSession?.url,
+      t('billing.portalError'),
+      () => toastSuccess(t('billing.portalOpening'), t('billing.portalOpeningDesc'))
+    );
+
+  const handleCompleteEnterprisePayment = () =>
+    openHostedPage(
+      async () => (await completeEnterprisePayment()).data?.completeEnterprisePayment?.url,
+      t('billing.checkoutError'),
+      () => toastSuccess(t('billing.checkoutOpening'), t('billing.checkoutOpeningDesc'))
+    );
 
   if (subLoading) {
     return (
@@ -215,7 +217,7 @@ export function BillingSettings() {
           portal can't help (Chargebee's subscription hasn't switched to the
           enterprise item yet). This regenerates a fresh checkout page instead
           of relying on the admin's emailed/copied link, which expires. */}
-      {status === 'past_due' && enterprisePendingActivation && (
+      {planId === 'enterprise' && status === 'past_due' && enterprisePendingActivation && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3 flex-wrap">
           <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
           <p className="flex-1 text-sm text-red-700">{t('billing.enterprisePendingDescription')}</p>
@@ -225,14 +227,14 @@ export function BillingSettings() {
             disabled={enterpriseCheckoutLoading}
             className="shrink-0 bg-red-600 hover:bg-red-700 text-white"
           >
-            {enterpriseCheckoutLoading ? '…' : t('billing.completePayment')}
+            {enterpriseCheckoutLoading ? t('billing.opening') : t('billing.completePayment')}
           </Button>
         </div>
       )}
 
       {/* Past due alert (ordinary dunning) — not shown for a still-unpaid
           enterprise deal, which gets the banner above instead. */}
-      {status === 'past_due' && !enterprisePendingActivation && (
+      {status === 'past_due' && !(planId === 'enterprise' && enterprisePendingActivation) && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
           <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
           <p className="flex-1 text-sm text-red-700">

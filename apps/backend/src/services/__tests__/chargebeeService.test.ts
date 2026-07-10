@@ -1286,8 +1286,8 @@ describe('Chargebee Service', () => {
       const result = await setEnterpriseSubscription('org-ent', baseParams);
 
       expect(result).toEqual({ checkoutUrl: 'https://test-site.chargebee.com/pages/v4/checkout123' });
-      // Best-effort quantity lock on the shared enterprise item price — a payer
-      // must not be able to multiply the negotiated price by editing quantity.
+      // Quantity lock on the shared enterprise item price — a payer must not
+      // be able to multiply the negotiated price by editing quantity.
       expect(mockChargebee.itemPrice.update).toHaveBeenCalledWith(
         'enterprise-usd-monthly',
         expect.objectContaining({ metadata: { quantity_meta: { type: 'fixed', values: [1] } } })
@@ -1383,6 +1383,27 @@ describe('Chargebee Service', () => {
         'Failed to create enterprise checkout page: Chargebee down'
       );
 
+      expect(subscriptionRepository.update).not.toHaveBeenCalled();
+      loggerError.mockRestore();
+    });
+
+    it('fails closed when the quantity lock cannot be applied — no checkout, no Postgres update', async () => {
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue({
+        organizationId: 'org-ent-lock-fail',
+        chargebeeSubscriptionId: 'chargebee_sub_ent_lock_fail',
+        currentPeriodStart: new Date('2026-01-01'),
+        currentPeriodEnd: new Date('2026-02-01'),
+      } as any);
+      mockChargebee.itemPrice.update.mockRejectedValue(new Error('api_key has no write access'));
+
+      // A checkout page with an unlockable quantity selector could let a payer
+      // change the charged amount — abort instead.
+      await expect(setEnterpriseSubscription('org-ent-lock-fail', baseParams)).rejects.toThrow(
+        'Failed to lock checkout quantity'
+      );
+
+      expect(mockChargebee.hostedPage.checkoutExistingForItems).not.toHaveBeenCalled();
       expect(subscriptionRepository.update).not.toHaveBeenCalled();
       loggerError.mockRestore();
     });
@@ -1830,6 +1851,12 @@ describe('Chargebee Service', () => {
           viewsLimit: null,
           submissionsLimit: 10000,
           aiCreditsLimit: 2000,
+          // Abandons any pending (unpaid) enterprise deal so a later past_due
+          // goes through ordinary dunning, not the stale enterprise checkout.
+          enterpriseCurrency: null,
+          enterprisePeriod: null,
+          enterprisePriceInSmallestUnit: null,
+          enterprisePendingActivation: false,
         }),
       });
     });

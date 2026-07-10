@@ -10,6 +10,8 @@ import {
 } from '../../services/chargebeeService.js';
 import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { GraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
+import { createGraphQLError } from '../../lib/graphqlErrors.js';
 import { logger } from '../../lib/logger.js';
 
 /**
@@ -136,7 +138,7 @@ export const subscriptionResolvers = {
 
       const session = context.auth.session;
       if (!session?.activeOrganizationId) {
-        throw new GraphQLError('No active organization');
+        throw createGraphQLError('No active organization', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
       // 🔒 SECURITY: Verify user is a member of the active organization
@@ -145,9 +147,14 @@ export const subscriptionResolvers = {
       try {
         const { url, hostedPageId } = await getEnterpriseCheckoutUrl(session.activeOrganizationId);
         return { url, hostedPageId };
-      } catch (error: any) {
+      } catch (error: unknown) {
+        // Keep the provider error server-side only — don't leak Chargebee
+        // messages to clients.
         logger.error('[Subscription Resolver] Error resuming enterprise payment:', error);
-        throw new GraphQLError(`Failed to resume enterprise payment: ${error.message}`);
+        throw createGraphQLError(
+          'Failed to resume enterprise payment',
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
       }
     },
 
