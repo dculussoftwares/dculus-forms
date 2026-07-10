@@ -492,6 +492,7 @@ jobs:
           cp ../../r2-custom-domains.tf .
           cp ../../r2-api-token.tf .
           cp ../../r2-cors.tf .
+          cp ../../r2-cors-state-cleanup.tf .
           cp ../../outputs.tf .
 
           # Initialize Terraform
@@ -507,21 +508,27 @@ jobs:
           # Plan
           terraform plan
 
-          # Apply
-          terraform apply -auto-approve \
-            -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
-            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          # Apply — only for events that should actually deploy (push to main,
+          # workflow_dispatch, version tags). pull_request events set
+          # should_deploy=false so PRs only ever plan against real infra.
+          if [ "${{ needs.determine-environment.outputs.should_deploy }}" = "true" ]; then
+            terraform apply -auto-approve \
+              -var="cloudflare_account_id=${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" \
+              -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+              -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}"
 
-          # Capture outputs to environment variables (stays within job)
+            echo "✅ Cloudflare R2 deployed successfully"
+          fi
+
+          # Capture outputs to environment variables (stays within job).
+          # Safe even when apply was skipped above — these read from state,
+          # which already has real values for any previously-deployed environment.
           echo "R2_PRIVATE_BUCKET=$(terraform output -raw private_bucket_name)" >> $GITHUB_ENV
           echo "R2_PUBLIC_BUCKET=$(terraform output -raw public_bucket_name)" >> $GITHUB_ENV
           echo "R2_PUBLIC_CDN_URL=$(terraform output -raw public_cdn_url)" >> $GITHUB_ENV
           echo "R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id)" >> $GITHUB_ENV
           echo "R2_SECRET_ACCESS_KEY=$(terraform output -raw r2_secret_access_key)" >> $GITHUB_ENV
           echo "R2_ENDPOINT=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" >> $GITHUB_ENV
-
-          echo "✅ Cloudflare R2 deployed successfully"
 
       - name: Set Cloudflare outputs
         id: cloudflare-outputs
