@@ -50,6 +50,7 @@ const ALLOWED_IMAGE_TYPES = [
 ];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB (for image uploads; FormResponse uses multer limit)
+const MAX_PDF_TEMPLATE_SIZE = 10 * 1024 * 1024; // 10MB for uploaded base PDFs (PdfTemplateAsset)
 
 /**
  * Bucket routing — determines which R2 bucket and access model each upload type uses.
@@ -65,6 +66,7 @@ const UPLOAD_TYPE_BUCKET_MAP: Record<string, BucketMode> = {
   UserAvatar: 'PUBLIC', // Profile pictures shown across the app
   OrganizationLogo: 'PUBLIC', // Org logos shown in the UI
   FormResponse: 'PRIVATE', // Respondent-uploaded files — only form owners/editors may access
+  PdfTemplateAsset: 'PRIVATE', // Base PDFs for PDF templates — accessed only via pre-signed URLs
 };
 
 function getBucketForType(type: string): {
@@ -132,6 +134,10 @@ function generateS3Key(
       return formId
         ? `files/form-response/${formId}/${uniqueFilename}`
         : `files/form-response/${uniqueFilename}`;
+    case 'PdfTemplateAsset':
+      return formId
+        ? `files/pdf-template-asset/${formId}/${uniqueFilename}`
+        : `files/pdf-template-asset/${uniqueFilename}`;
     default:
       return `files/misc/${uniqueFilename}`;
   }
@@ -163,6 +169,7 @@ function getMimetypeFromExtension(filename: string | undefined): string {
     '.png': 'image/png',
     '.webp': 'image/webp',
     '.gif': 'image/gif',
+    '.pdf': 'application/pdf',
   };
   return mimeMap[ext] || '';
 }
@@ -198,9 +205,17 @@ export async function uploadFile(
     );
   }
 
+  // PdfTemplateAsset uploads must be PDFs
+  if (type === 'PdfTemplateAsset' && finalMimetype !== 'application/pdf') {
+    throw new Error(
+      `File type ${finalMimetype || 'unknown'} is not allowed. Allowed types: application/pdf`
+    );
+  }
+
   // For non-FormResponse uploads, additionally restrict to known image MIME types
   if (
     type !== 'FormResponse' &&
+    type !== 'PdfTemplateAsset' &&
     (!finalMimetype || !ALLOWED_IMAGE_TYPES.includes(finalMimetype))
   ) {
     throw new Error(
@@ -217,8 +232,15 @@ export async function uploadFile(
     const buffer = await streamToBuffer(stream);
 
     // Check file size — FormResponse relies on multer's 50 MB limit (enforced before this point);
+    // PdfTemplateAsset is capped at MAX_PDF_TEMPLATE_SIZE (10 MB);
     // all other upload types are capped at MAX_FILE_SIZE (5 MB)
-    if (type !== 'FormResponse' && buffer.length > MAX_FILE_SIZE) {
+    if (type === 'PdfTemplateAsset') {
+      if (buffer.length > MAX_PDF_TEMPLATE_SIZE) {
+        throw new Error(
+          `File size ${buffer.length} bytes exceeds maximum allowed size of ${MAX_PDF_TEMPLATE_SIZE} bytes`
+        );
+      }
+    } else if (type !== 'FormResponse' && buffer.length > MAX_FILE_SIZE) {
       throw new Error(
         `File size ${buffer.length} bytes exceeds maximum allowed size of ${MAX_FILE_SIZE} bytes`
       );
@@ -261,10 +283,11 @@ export async function uploadFile(
 
 /**
  * Infer the bucket for a given R2 key based on its path prefix.
- * Keys under files/form-response/ were written to the private bucket.
+ * Keys under files/form-response/ and files/pdf-template-asset/ were written to the private bucket.
  */
 function getBucketForKey(s3Key: string): string {
-  return s3Key.startsWith('files/form-response/')
+  return s3Key.startsWith('files/form-response/') ||
+    s3Key.startsWith('files/pdf-template-asset/')
     ? s3Config.privateBucketName
     : s3Config.publicBucketName;
 }
@@ -307,6 +330,23 @@ export async function generatePresignedDownloadUrl(
     command as unknown as Parameters<typeof getSignedUrl>[1],
     { expiresIn: expiresInSeconds }
   );
+}
+
+/**
+ * Download an R2 object into a Buffer (bucket inferred from key prefix).
+ * Used for server-side processing, e.g. hydrating PDF template base PDFs.
+ */
+export async function downloadFileBuffer(s3Key: string): Promise<Buffer> {
+  const command = new GetObjectCommand({
+    Bucket: getBucketForKey(s3Key),
+    Key: s3Key,
+  });
+  const response = await s3Client.send(command);
+  if (!response.Body) {
+    throw new Error(`Empty response body for key: ${s3Key}`);
+  }
+  const bytes = await response.Body.transformToByteArray();
+  return Buffer.from(bytes);
 }
 
 /**

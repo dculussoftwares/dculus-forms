@@ -67,7 +67,7 @@ export function substituteMentions(
   // No `i` flag — HTML attribute values for booleans are case-sensitive
   const mentionRegex = /<span[^>]{0,500}data-(?:lexical-)?beautiful-mention="true"[^>]{0,500}data-(?:lexical-beautiful-mention-)?value="([^"]{1,200})"[^>]{0,200}>([^<]{0,5000})<\/span>/g;
 
-  result = result.replace(mentionRegex, (match, fieldId, originalContent) => {
+  result = result.replace(mentionRegex, (match, fieldId, _originalContent) => {
     // Get the actual response value for this field ID
     const responseValue = responses[fieldId];
 
@@ -93,8 +93,46 @@ export function substituteMentions(
 }
 
 /**
+ * Plain-text variant of {{field-id}} placeholder substitution.
+ *
+ * Unlike substituteMentions, output is NOT HTML-escaped — use this for
+ * non-HTML targets such as PDF text elements, where escaped entities
+ * (&amp; etc.) would render literally.
+ *
+ * @param text - Plain text containing {{field-id}} placeholders
+ * @param responses - User responses as key-value pairs where key is field ID and value is the response
+ * @param fieldLabels - Optional mapping of field IDs to human-readable labels for fallback display
+ * @returns Text with placeholders replaced by actual values
+ */
+export function substitutePlaceholdersPlainText(
+  text: string,
+  responses: Record<string, any>,
+  fieldLabels?: Record<string, string>
+): string {
+  if (!text) return text;
+
+  // Use non-greedy quantifier with limit to prevent ReDoS (same pattern as substituteMentions)
+  const placeholderRegex = /\{\{([^}]{1,500})\}\}/g;
+  return text.replace(placeholderRegex, (_match, fieldId) => {
+    const responseValue = responses[fieldId];
+
+    if (responseValue !== undefined && responseValue !== null && responseValue !== '') {
+      return Array.isArray(responseValue)
+        ? responseValue.join(', ')
+        : String(responseValue);
+    }
+
+    // Fallback: show field label if available, otherwise the field ID, in brackets
+    if (fieldLabels && fieldLabels[fieldId]) {
+      return `[${fieldLabels[fieldId]}]`;
+    }
+    return `[${fieldId}]`;
+  });
+}
+
+/**
  * Extracts field IDs from mention HTML content
- * 
+ *
  * @param html - HTML content containing mentions
  * @returns Array of unique field IDs found in the content
  */

@@ -170,6 +170,7 @@ model Form {
   plugins             FormPlugin[]
   tags                ResponseTag[]
   aiChatConversations AIChatConversation[]
+  pdfTemplates        PdfTemplate[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -414,6 +415,25 @@ model ResponseFieldChange {
   @@index([editHistoryId])
   @@index([fieldId])
   @@map("response_field_change")
+}
+
+// PDF Template Model — pdfme designer templates per form
+model PdfTemplate {
+  id          String   @id @default(cuid())
+  formId      String
+  name        String
+  template    Json // pdfme Template JSON; basePdf stripped for uploaded PDFs (kept in R2 via fileKey), blank templates keep { width, height, padding } inline
+  fileKey     String? // Private-bucket R2 key of the uploaded base PDF (null for blank-page templates)
+  fileName    String? // Original filename of the uploaded base PDF
+  pageCount   Int      @default(1)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@map("pdf_template")
 }
 
 // Plugin System Models
