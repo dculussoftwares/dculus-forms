@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@apollo/client/react';
-import { GET_SUBSCRIPTION, CREATE_PORTAL_SESSION } from '../../graphql/subscription';
+import { GET_SUBSCRIPTION, CREATE_PORTAL_SESSION, COMPLETE_ENTERPRISE_PAYMENT } from '../../graphql/subscription';
 import { Card, Button, Badge, Alert, AlertTitle, AlertDescription, toastSuccess, toastError } from '@dculus/ui';
 import { CreditCard, TrendingUp, Eye, FileText, Calendar, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
@@ -12,6 +12,9 @@ export const SubscriptionDashboard = () => {
   const { t } = useTranslation('subscriptionDashboard');
   const { data, loading } = useQuery(GET_SUBSCRIPTION);
   const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
+  const [completeEnterprisePayment, { loading: enterpriseCheckoutLoading }] = useMutation(
+    COMPLETE_ENTERPRISE_PAYMENT
+  );
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const subscription = data?.activeOrganization?.subscription;
@@ -40,6 +43,18 @@ export const SubscriptionDashboard = () => {
       }
     } catch (error: any) {
       toastError(t('toast.failedToOpenPortal'), error.message);
+    }
+  };
+
+  const handleCompleteEnterprisePayment = async () => {
+    try {
+      const { data } = await completeEnterprisePayment();
+      if (data?.completeEnterprisePayment?.url) {
+        safeOpen(data.completeEnterprisePayment.url);
+        toastSuccess(t('toast.openingCheckout'), t('toast.completePaymentInNewTab'));
+      }
+    } catch (error: any) {
+      toastError(t('toast.failedToOpenCheckout'), error.message);
     }
   };
 
@@ -72,7 +87,7 @@ export const SubscriptionDashboard = () => {
     );
   }
 
-  const { planId, status, usage, currentPeriodStart, currentPeriodEnd } = subscription;
+  const { planId, status, usage, currentPeriodStart, currentPeriodEnd, enterprisePendingActivation } = subscription;
 
   // Format plan name
   const planName = planId.charAt(0).toUpperCase() + planId.slice(1);
@@ -122,8 +137,36 @@ export const SubscriptionDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Past Due Payment Banner */}
-      {status === 'past_due' && (
+      {/* Enterprise plan awaiting first payment — distinct from ordinary dunning
+          below: the org has never paid, so "Manage Billing" (the Chargebee
+          self-serve portal) can't help here since Chargebee's subscription
+          hasn't switched to the enterprise item yet. This regenerates a fresh
+          checkout page instead. */}
+      {status === 'past_due' && enterprisePendingActivation && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>{t('alerts.enterprisePending.title')}</AlertTitle>
+          <AlertDescription className="flex items-center justify-between gap-4 flex-wrap">
+            <span>{t('alerts.enterprisePending.description')}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleCompleteEnterprisePayment}
+              disabled={enterpriseCheckoutLoading}
+              className="border-red-300 text-red-700 hover:bg-red-100 shrink-0"
+            >
+              <CreditCard className="h-3 w-3 mr-2" />
+              {t('alerts.enterprisePending.completePayment')}
+              <ExternalLink className="h-3 w-3 ml-2" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Past Due Payment Banner (ordinary dunning — payment method on file
+          failed, e.g. a renewal charge). Not shown for a still-unpaid
+          enterprise deal, which gets the banner above instead. */}
+      {status === 'past_due' && !enterprisePendingActivation && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>{t('alerts.pastDue.title')}</AlertTitle>

@@ -7,6 +7,7 @@ import {
   GET_SUBSCRIPTION,
   GET_AI_TOKEN_USAGE,
   CREATE_PORTAL_SESSION,
+  COMPLETE_ENTERPRISE_PAYMENT,
 } from '../../graphql/subscription';
 import { UpgradeModal } from '../subscription/UpgradeModal';
 import { UsageChart } from '../subscription/UsageChart';
@@ -87,6 +88,9 @@ export function BillingSettings() {
 
   const { data: subData, loading: subLoading } = useQuery(GET_SUBSCRIPTION);
   const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
+  const [completeEnterprisePayment, { loading: enterpriseCheckoutLoading }] = useMutation(
+    COMPLETE_ENTERPRISE_PAYMENT
+  );
 
   const subscription = subData?.activeOrganization?.subscription;
   const organizationId = subData?.activeOrganization?.id ?? '';
@@ -109,6 +113,22 @@ export function BillingSettings() {
       }
     } catch (error: any) {
       toastError(t('billing.portalError'), error.message);
+    }
+  };
+
+  const handleCompleteEnterprisePayment = async () => {
+    try {
+      const { data } = await completeEnterprisePayment();
+      if (data?.completeEnterprisePayment?.url) {
+        const opened = safeOpen(data.completeEnterprisePayment.url, (msg) =>
+          toastError(t('billing.checkoutError'), msg)
+        );
+        if (opened) {
+          toastSuccess(t('billing.checkoutOpening'), t('billing.checkoutOpeningDesc'));
+        }
+      }
+    } catch (error: any) {
+      toastError(t('billing.checkoutError'), error.message);
     }
   };
 
@@ -142,7 +162,7 @@ export function BillingSettings() {
     );
   }
 
-  const { planId, status, usage, currentPeriodStart, currentPeriodEnd } = subscription;
+  const { planId, status, usage, currentPeriodStart, currentPeriodEnd, enterprisePendingActivation } = subscription;
   const planName = planId.charAt(0).toUpperCase() + planId.slice(1);
 
   const resetDateFormatted = new Date(Number(currentPeriodEnd)).toLocaleDateString('en-US', {
@@ -190,8 +210,29 @@ export function BillingSettings() {
         </div>
       )}
 
-      {/* Past due alert */}
-      {status === 'past_due' && (
+      {/* Enterprise plan awaiting first payment — distinct from ordinary
+          dunning below: the org has never paid, so the Chargebee self-serve
+          portal can't help (Chargebee's subscription hasn't switched to the
+          enterprise item yet). This regenerates a fresh checkout page instead
+          of relying on the admin's emailed/copied link, which expires. */}
+      {status === 'past_due' && enterprisePendingActivation && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3 flex-wrap">
+          <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+          <p className="flex-1 text-sm text-red-700">{t('billing.enterprisePendingDescription')}</p>
+          <Button
+            size="sm"
+            onClick={handleCompleteEnterprisePayment}
+            disabled={enterpriseCheckoutLoading}
+            className="shrink-0 bg-red-600 hover:bg-red-700 text-white"
+          >
+            {enterpriseCheckoutLoading ? '…' : t('billing.completePayment')}
+          </Button>
+        </div>
+      )}
+
+      {/* Past due alert (ordinary dunning) — not shown for a still-unpaid
+          enterprise deal, which gets the banner above instead. */}
+      {status === 'past_due' && !enterprisePendingActivation && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 flex items-start gap-3">
           <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
           <p className="flex-1 text-sm text-red-700">

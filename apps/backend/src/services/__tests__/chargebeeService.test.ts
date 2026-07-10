@@ -11,6 +11,7 @@ import {
   handleSubscriptionRenewal,
   getAvailablePlans,
   setEnterpriseSubscription,
+  getEnterpriseCheckoutUrl,
   invalidatePlansCache,
   getAdminPlanCatalog,
   createPlan,
@@ -73,7 +74,7 @@ vi.mock('chargebee', () => {
 vi.mock('../../subscriptions/usageService.js');
 vi.mock('../../repositories/index.js');
 vi.mock('../aiUsageService.js', () => ({ invalidateAIBudgetCache: vi.fn() }));
-vi.mock('@sentry/node', () => ({ captureException: vi.fn() }));
+vi.mock('@sentry/node', () => ({ captureException: vi.fn(), captureMessage: vi.fn() }));
 // The enterprise checkout flow looks up the org owner (to email the payment
 // link) via raw prisma and sends via emailService — mock both so tests stay
 // hermetic (no DB, no SMTP).
@@ -685,10 +686,69 @@ describe('Chargebee Service', () => {
         current_term_end: 1706745600,
       });
 
-      const [, updateArg] = vi.mocked(subscriptionRepository.upsertForOrganization).mock.calls[0];
+      const [, updateArg, createArg] = vi.mocked(subscriptionRepository.upsertForOrganization).mock.calls[0];
       // Checkout completed: org activates, negotiated limits stay untouched.
       expect(updateArg).toMatchObject({ planId: 'enterprise', status: 'active' });
       expect(updateArg).not.toHaveProperty('viewsLimit');
+      // A genuine enterprise-item webhook resolves any pending-payment flag —
+      // the org owner's "complete payment" UI should stop showing after this.
+      expect(updateArg).toMatchObject({ enterprisePendingActivation: false });
+      expect(createArg).toMatchObject({ enterprisePendingActivation: false });
+    });
+
+    it('should NOT touch enterprisePendingActivation for a non-enterprise plan sync', async () => {
+      vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+      await syncSubscriptionFromWebhook({
+        id: 'sub_starter',
+        customer_id: 'org_org-starter',
+        status: 'active',
+        subscription_items: [{ item_price_id: 'starter-usd-monthly' }],
+        current_term_start: 1704067200,
+        current_term_end: 1706745600,
+      });
+
+      const [, updateArg] = vi.mocked(subscriptionRepository.upsertForOrganization).mock.calls[0];
+      expect(updateArg).not.toHaveProperty('enterprisePendingActivation');
+    });
+
+    it('should log and alert Sentry when an enterprise subscription item quantity is not 1', async () => {
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+      await syncSubscriptionFromWebhook({
+        id: 'sub_qty',
+        customer_id: 'org_org-qty',
+        status: 'active',
+        subscription_items: [{ item_id: 'enterprise', item_price_id: 'enterprise-usd-monthly', quantity: 2 }],
+        current_term_start: 1704067200,
+        current_term_end: 1706745600,
+      });
+
+      // A payer changed quantity on the hosted checkout — the charge no longer
+      // matches the negotiated price. We can't undo it here, but it must not
+      // pass silently.
+      expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('quantity is 2'));
+      expect(vi.mocked(Sentry.captureMessage)).toHaveBeenCalledWith(
+        'Enterprise subscription quantity mismatch',
+        expect.objectContaining({ extra: expect.objectContaining({ quantity: 2 }) })
+      );
+      loggerError.mockRestore();
+    });
+
+    it('should not alert when the enterprise subscription item quantity is 1', async () => {
+      vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+      await syncSubscriptionFromWebhook({
+        id: 'sub_qty_ok',
+        customer_id: 'org_org-qty-ok',
+        status: 'active',
+        subscription_items: [{ item_id: 'enterprise', item_price_id: 'enterprise-usd-monthly', quantity: 1 }],
+        current_term_start: 1704067200,
+        current_term_end: 1706745600,
+      });
+
+      expect(vi.mocked(Sentry.captureMessage)).not.toHaveBeenCalled();
     });
 
     it('should handle sync errors', async () => {
@@ -1226,6 +1286,12 @@ describe('Chargebee Service', () => {
       const result = await setEnterpriseSubscription('org-ent', baseParams);
 
       expect(result).toEqual({ checkoutUrl: 'https://test-site.chargebee.com/pages/v4/checkout123' });
+      // Best-effort quantity lock on the shared enterprise item price — a payer
+      // must not be able to multiply the negotiated price by editing quantity.
+      expect(mockChargebee.itemPrice.update).toHaveBeenCalledWith(
+        'enterprise-usd-monthly',
+        expect.objectContaining({ metadata: { quantity_meta: { type: 'fixed', values: [1] } } })
+      );
       expect(mockChargebee.hostedPage.checkoutExistingForItems).toHaveBeenCalledWith(
         expect.objectContaining({
           // auto_collection 'on' so the card saved at checkout auto-charges renewals
@@ -1239,6 +1305,8 @@ describe('Chargebee Service', () => {
       // The Chargebee subscription itself must NOT be switched until the customer pays.
       expect(mockChargebee.subscription.updateForItems).not.toHaveBeenCalled();
       // Locally the org is blocked (past_due) with the negotiated limits pre-staged.
+      // enterprisePendingActivation lets the org owner regenerate this checkout
+      // themselves later (getEnterpriseCheckoutUrl) without the admin resending it.
       expect(subscriptionRepository.update).toHaveBeenCalledWith({
         where: { organizationId: 'org-ent' },
         data: {
@@ -1247,6 +1315,10 @@ describe('Chargebee Service', () => {
           viewsLimit: null,
           submissionsLimit: 50000,
           aiCreditsLimit: null,
+          enterpriseCurrency: 'USD',
+          enterprisePeriod: 'monthly',
+          enterprisePriceInSmallestUnit: 250000,
+          enterprisePendingActivation: true,
         },
       });
     });
@@ -1331,6 +1403,98 @@ describe('Chargebee Service', () => {
 
       expect(subscriptionRepository.update).not.toHaveBeenCalled();
       loggerError.mockRestore();
+    });
+  });
+
+  describe('getEnterpriseCheckoutUrl', () => {
+    it('regenerates a fresh checkout page from the stored deal terms', async () => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue({
+        organizationId: 'org-ent-resume',
+        planId: 'enterprise',
+        status: 'past_due',
+        chargebeeSubscriptionId: 'chargebee_sub_ent_resume',
+        enterprisePendingActivation: true,
+        enterpriseCurrency: 'USD',
+        enterprisePeriod: 'monthly',
+        enterprisePriceInSmallestUnit: 250000,
+      } as any);
+      mockChargebee.hostedPage.checkoutExistingForItems.mockResolvedValue({
+        hosted_page: { url: 'https://test-site.chargebee.com/pages/v4/resume123', id: 'page_resume123' },
+      });
+
+      const result = await getEnterpriseCheckoutUrl('org-ent-resume');
+
+      expect(result).toEqual({
+        url: 'https://test-site.chargebee.com/pages/v4/resume123',
+        hostedPageId: 'page_resume123',
+      });
+      // Quantity lock is attempted before generating the page (best-effort).
+      expect(mockChargebee.itemPrice.update).toHaveBeenCalledWith(
+        'enterprise-usd-monthly',
+        expect.objectContaining({ metadata: { quantity_meta: { type: 'fixed', values: [1] } } })
+      );
+      expect(mockChargebee.hostedPage.checkoutExistingForItems).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subscription: { id: 'chargebee_sub_ent_resume', auto_collection: 'on' },
+          subscription_items: [
+            { item_price_id: 'enterprise-usd-monthly', unit_price: 250000, quantity: 1 },
+          ],
+        })
+      );
+      // Never touches Postgres — this only regenerates the Chargebee-side page.
+      expect(subscriptionRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects when there is no pending enterprise payment for the org', async () => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue({
+        organizationId: 'org-active',
+        planId: 'enterprise',
+        status: 'active',
+        enterprisePendingActivation: false,
+      } as any);
+
+      await expect(getEnterpriseCheckoutUrl('org-active')).rejects.toThrow(
+        'No pending enterprise payment for this organization'
+      );
+      expect(mockChargebee.hostedPage.checkoutExistingForItems).not.toHaveBeenCalled();
+    });
+
+    it('rejects for a non-enterprise plan even if somehow past_due', async () => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue({
+        organizationId: 'org-starter-past-due',
+        planId: 'starter',
+        status: 'past_due',
+        enterprisePendingActivation: false,
+      } as any);
+
+      await expect(getEnterpriseCheckoutUrl('org-starter-past-due')).rejects.toThrow(
+        'No pending enterprise payment for this organization'
+      );
+    });
+
+    it('rejects when the negotiated deal terms are missing', async () => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue({
+        organizationId: 'org-ent-missing-terms',
+        planId: 'enterprise',
+        status: 'past_due',
+        chargebeeSubscriptionId: 'chargebee_sub_missing',
+        enterprisePendingActivation: true,
+        enterpriseCurrency: null,
+        enterprisePeriod: null,
+        enterprisePriceInSmallestUnit: null,
+      } as any);
+
+      await expect(getEnterpriseCheckoutUrl('org-ent-missing-terms')).rejects.toThrow(
+        'Enterprise deal terms are missing'
+      );
+    });
+
+    it('rejects when no subscription exists for the organization', async () => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(null);
+
+      await expect(getEnterpriseCheckoutUrl('org-none')).rejects.toThrow(
+        'No subscription found for organization org-none'
+      );
     });
   });
 

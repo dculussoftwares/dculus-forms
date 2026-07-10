@@ -42,6 +42,7 @@ export const GET_SUBSCRIPTION : TypedDocumentNode<any, any> = gql`
         submissionsLimit
         currentPeriodStart
         currentPeriodEnd
+        enterprisePendingActivation
         usage {
           views {
             used
@@ -90,6 +91,17 @@ export const CREATE_PORTAL_SESSION : TypedDocumentNode<any, any> = gql`
   mutation CreatePortalSession {
     createPortalSession {
       url
+    }
+  }
+`;
+
+// Regenerate a Chargebee checkout hosted page for a pending (unpaid)
+// Enterprise deal — see Subscription.enterprisePendingActivation
+export const COMPLETE_ENTERPRISE_PAYMENT: TypedDocumentNode<any, any> = gql`
+  mutation CompleteEnterprisePayment {
+    completeEnterprisePayment {
+      url
+      hostedPageId
     }
   }
 `;
