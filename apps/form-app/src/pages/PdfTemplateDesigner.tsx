@@ -63,6 +63,7 @@ import {
   type PaperViewport,
 } from '../components/pdf-designer/dropPlacement';
 import { DropGuides, type DragGhost } from '../components/pdf-designer/DropGuides';
+import { loadColumnGuides } from '../components/pdf-designer/canvasGuides';
 import {
   SelectionToolbar,
   type ToolbarSelection,
@@ -104,6 +105,7 @@ const PdfTemplateDesigner: React.FC = () => {
   const [placedCounts, setPlacedCounts] = useState<Record<string, number>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selection, setSelection] = useState<ToolbarSelection | null>(null);
+  const [movingElements, setMovingElements] = useState(false);
   const [textEditor, setTextEditor] = useState<
     { pageIndex: number; name: string; draft: TextElementDraft } | null
   >(null);
@@ -241,6 +243,12 @@ const PdfTemplateDesigner: React.FC = () => {
           setDirty(true);
           setPlacedCounts(countBoundFields((changed.schemas ?? []) as any[][]));
         });
+        designer.onPageChange(() => {
+          // Added pages get fresh (empty) rulers — re-inject column guides
+          setTimeout(() => {
+            if (designerContainerRef.current) loadColumnGuides(designerContainerRef.current);
+          }, 300);
+        });
         designer.onChangeSelection((sel) => {
           if (!sel.bounds || sel.schemas.length === 0) {
             setSelection(null);
@@ -285,6 +293,65 @@ const PdfTemplateDesigner: React.FC = () => {
   useEffect(() => {
     if (pdfTemplate?.name) setName(pdfTemplate.name);
   }, [pdfTemplate?.name]);
+
+  // Inject the column layout grid into pdfme's rulers once the canvas has
+  // rendered (idempotent; retried because pdfme commits asynchronously)
+  useEffect(() => {
+    if (!designerReady) return;
+    const timers = [200, 600, 1500].map((delay) =>
+      setTimeout(() => {
+        if (designerContainerRef.current) loadColumnGuides(designerContainerRef.current);
+      }, delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [designerReady]);
+
+  const selectionRef = useRef<ToolbarSelection | null>(null);
+  selectionRef.current = selection;
+  const activeDragRef = useRef(false);
+
+  // Show the guide lines while an existing element is being moved/resized —
+  // pdfme's moveable handles the drag itself, so detect it from pointer
+  // gestures: press on the canvas (or a moveable handle) with an active
+  // selection, then movement past a small threshold
+  useEffect(() => {
+    const container = designerContainerRef.current;
+    if (!designerReady || !container) return;
+
+    let pressed = false;
+    let startX = 0;
+    let startY = 0;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (activeDragRef.current) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!container.contains(target) && !target.closest('.moveable-control-box')) return;
+      pressed = true;
+      startX = event.clientX;
+      startY = event.clientY;
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (!pressed || !selectionRef.current) return;
+      if (Math.abs(event.clientX - startX) + Math.abs(event.clientY - startY) < 5) return;
+      setMovingElements(true);
+    };
+    const onPointerEnd = () => {
+      pressed = false;
+      setMovingElements(false);
+    };
+
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('pointermove', onPointerMove, true);
+    document.addEventListener('pointerup', onPointerEnd, true);
+    document.addEventListener('pointercancel', onPointerEnd, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('pointermove', onPointerMove, true);
+      document.removeEventListener('pointerup', onPointerEnd, true);
+      document.removeEventListener('pointercancel', onPointerEnd, true);
+    };
+  }, [designerReady]);
 
   // Select schemas once pdfme has committed a just-applied updateTemplate.
   // Its internal React root renders asynchronously with no completion
@@ -378,6 +445,7 @@ const PdfTemplateDesigner: React.FC = () => {
   );
 
   const clearDragState = useCallback(() => {
+    activeDragRef.current = false;
     setActiveDrag(null);
     setDragPapers(null);
     setDragGhost(null);
@@ -386,6 +454,7 @@ const PdfTemplateDesigner: React.FC = () => {
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
       const data = (event.active.data.current as PaletteDragData) ?? null;
+      activeDragRef.current = data !== null;
       setActiveDrag(data);
       if (!data) return;
 
@@ -712,6 +781,7 @@ const PdfTemplateDesigner: React.FC = () => {
           <div
             className="flex-1 min-w-0 rounded-xl overflow-hidden bg-white dark:bg-card relative"
             style={{ border: '1px solid var(--tf-border-medium)' }}
+            data-guides-visible={movingElements ? 'true' : 'false'}
           >
             {designerError ? (
               <div className="flex items-center justify-center h-full">

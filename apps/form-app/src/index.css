@@ -218,3 +218,19 @@ svg.lucide {
 .moveable-control-box .moveable-line {
   --moveable-line-thickness: 1.5px;
 }
+
+/* pdfme ruler guide lines (includes our injected column guides — see
+   canvasGuides.ts): hidden while idle, shown while moving/resizing elements
+   (data-guides-visible on the canvas wrapper) or when hovering a ruler. */
+[data-testid="pdf-designer-canvas"] .scena-guides-guide:not(.scena-guides-adder) {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+[data-guides-visible="true"] .scena-guides-guide:not(.scena-guides-adder) {
+  opacity: 1;
+}
+[data-testid="pdf-designer-canvas"] .scena-guides-manager:hover .scena-guides-guide:not(.scena-guides-adder) {
+  opacity: 1;
+  pointer-events: auto;
+}
