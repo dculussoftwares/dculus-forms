@@ -54,7 +54,11 @@ export interface MentionFieldOption {
 }
 
 export interface MentionPlainTextValue {
-  content: string;
+  /** Human-readable display text — mentions rendered as their field label */
+  display: string;
+  /** Generation source — mentions rendered as {token} placeholders */
+  template: string;
+  /** token → fieldId map */
   fieldVars: Record<string, string>;
 }
 
@@ -82,7 +86,10 @@ function slugToken(label: string): string {
   return slug || 'field';
 }
 
-/** Serialize the editor into `{token}` content + token→fieldId map. */
+/**
+ * Serialize the editor into a display string (mentions → labels), a
+ * generation template (mentions → {token}) and the token→fieldId map.
+ */
 function serializeEditorState(): MentionPlainTextValue {
   const fieldVars: Record<string, string> = {};
   const tokenByFieldId = new Map<string, string>();
@@ -98,36 +105,40 @@ function serializeEditorState(): MentionPlainTextValue {
     return token;
   };
 
-  const renderNodes = (nodes: LexicalNode[]): string =>
+  const renderNodes = (nodes: LexicalNode[], asTemplate: boolean): string =>
     nodes
       .map((node) => {
         if (node instanceof BeautifulMentionNode) {
           const fieldId = node.getValue();
           const label = String(node.getData()?.label ?? fieldId);
-          return `{${tokenFor(fieldId, label)}}`;
+          return asTemplate ? `{${tokenFor(fieldId, label)}}` : label;
         }
         if ($isLineBreakNode(node)) return '\n';
         return node.getTextContent();
       })
       .join('');
 
-  const content = $getRoot()
-    .getChildren()
-    .map((child: any) =>
-      typeof child.getChildren === 'function'
-        ? renderNodes(child.getChildren())
-        : child.getTextContent()
-    )
-    .join('\n');
+  const renderRoot = (asTemplate: boolean): string =>
+    $getRoot()
+      .getChildren()
+      .map((child: any) =>
+        typeof child.getChildren === 'function'
+          ? renderNodes(child.getChildren(), asTemplate)
+          : child.getTextContent()
+      )
+      .join('\n');
 
-  return { content, fieldVars };
+  // Template first so tokenFor() assigns tokens in document order
+  const template = renderRoot(true);
+  const display = renderRoot(false);
+  return { display, template, fieldVars };
 }
 
 /**
- * Build the initial editor state from stored `{token}` content: known tokens
- * become mention pills (labeled from the current form fields); tokens whose
- * field no longer exists stay as literal text so the user can see and remove
- * them.
+ * Build the initial editor state from the stored `{token}` template: known
+ * tokens become mention pills (labeled from the current form fields); tokens
+ * whose field no longer exists stay as literal text so the user can see and
+ * remove them.
  */
 function initializeEditorState(
   value: MentionPlainTextValue,
@@ -144,7 +155,7 @@ function initializeEditorState(
     : null;
 
   const paragraph = $createParagraphNode();
-  const lines = value.content.split('\n');
+  const lines = value.template.split('\n');
   lines.forEach((line, lineIndex) => {
     if (lineIndex > 0) paragraph.append($createLineBreakNode());
     const parts = splitter ? line.split(splitter) : [line];

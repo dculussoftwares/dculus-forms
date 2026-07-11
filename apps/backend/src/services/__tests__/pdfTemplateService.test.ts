@@ -266,12 +266,14 @@ describe('buildTemplateInputs', () => {
     });
   });
 
-  it('substitutes {token} occurrences via dculusFieldVars, leaving unmapped braces alone', () => {
+  it('substitutes {token}s from dculusTextTemplate, ignoring the display content', () => {
     const template: any = {
       basePdf: BLANK_A4,
       schemas: [
         [
-          textSchema('intro', 'Dear {full_name}, submitted on {date}. Literal {braces} stay.', {
+          textSchema('intro', 'Dear Full Name, submitted on Date. Literal {braces} stay.', {
+            dculusTextTemplate:
+              'Dear {full_name}, submitted on {date}. Literal {braces} stay.',
             dculusFieldVars: { full_name: 'f-name', date: 'f-date' },
           }),
         ],
@@ -287,7 +289,8 @@ describe('buildTemplateInputs', () => {
       basePdf: BLANK_A4,
       schemas: [
         [
-          textSchema('intro', 'Hello {gone}!', {
+          textSchema('intro', 'Hello Gone Field!', {
+            dculusTextTemplate: 'Hello {gone}!',
             dculusFieldVars: { gone: 'deleted-field' },
           }),
         ],
@@ -295,6 +298,22 @@ describe('buildTemplateInputs', () => {
     };
     expect(buildTemplateInputs(template, values, labels)).toEqual({
       intro: 'Hello !',
+    });
+  });
+
+  it('falls back to plain content when dculusTextTemplate is absent', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('orphan-vars', 'Plain text with {stray}', {
+            dculusFieldVars: { stray: 'f-name' },
+          }),
+        ],
+      ],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({
+      'orphan-vars': 'Plain text with {stray}',
     });
   });
 

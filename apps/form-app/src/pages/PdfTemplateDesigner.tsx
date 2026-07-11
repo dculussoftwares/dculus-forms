@@ -580,7 +580,10 @@ const PdfTemplateDesigner: React.FC = () => {
     setDirty(true);
   }, [selection]);
 
-  // Open the text editor for the single selected text element
+  // Open the text editor for the single selected text element. A bound
+  // field element (dculusFieldId) opens as an inline-text draft with its
+  // field as a pill — applying converts it to the inline-text model, so
+  // "label + more text around it" behaves predictably at generation.
   const openTextEditor = useCallback(() => {
     const designer = designerRef.current;
     if (!designer || !selection?.editableTextName) return;
@@ -588,18 +591,35 @@ const PdfTemplateDesigner: React.FC = () => {
     const page = designer.getTemplate().schemas?.[selection.pageIndex] ?? [];
     const schema: any = page.find((s: any) => s.name === selection.editableTextName);
     if (!schema) return;
-    setTextEditor({
-      pageIndex: selection.pageIndex,
-      name: schema.name,
-      draft: {
-        content: typeof schema.content === 'string' ? schema.content : '',
+
+    let draft: TextElementDraft;
+    if (typeof schema.dculusFieldId === 'string') {
+      const field = formFields.find((f) => f.id === schema.dculusFieldId);
+      if (field) {
+        const token = uniqueSchemaName(field.label, new Set());
+        draft = {
+          display: field.label.trim() || t('fieldsPanel.untitledField'),
+          template: `{${token}}`,
+          fieldVars: { [token]: field.id },
+        };
+      } else {
+        draft = { display: '', template: '', fieldVars: {} };
+      }
+    } else {
+      const content = typeof schema.content === 'string' ? schema.content : '';
+      const template =
+        typeof schema.dculusTextTemplate === 'string' ? schema.dculusTextTemplate : content;
+      draft = {
+        display: content,
+        template,
         fieldVars:
           schema.dculusFieldVars && typeof schema.dculusFieldVars === 'object'
             ? { ...schema.dculusFieldVars }
             : {},
-      },
-    });
-  }, [selection]);
+      };
+    }
+    setTextEditor({ pageIndex: selection.pageIndex, name: schema.name, draft });
+  }, [selection, formFields, t]);
 
   const saveTextEditor = useCallback(
     (draft: TextElementDraft) => {
@@ -611,10 +631,17 @@ const PdfTemplateDesigner: React.FC = () => {
       schemas[textEditor.pageIndex] = (schemas[textEditor.pageIndex] ?? []).map(
         (schema: any) => {
           if (schema.name !== textEditor.name) return schema;
-          const next = { ...schema, content: draft.content };
+          const next = { ...schema };
+          // Editing always yields an inline-text element; the field binding
+          // (if any) now lives in dculusFieldVars via its pill
+          delete next.dculusFieldId;
           if (Object.keys(draft.fieldVars).length > 0) {
+            next.content = draft.display;
+            next.dculusTextTemplate = draft.template;
             next.dculusFieldVars = draft.fieldVars;
           } else {
+            next.content = draft.template;
+            delete next.dculusTextTemplate;
             delete next.dculusFieldVars;
           }
           return next;

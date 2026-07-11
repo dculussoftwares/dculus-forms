@@ -97,10 +97,38 @@ export function buildBoundFieldSchema(params: {
 }
 
 /**
+ * Rebuild an inline-text element's display string from its {token} template:
+ * tokens of existing fields render as the field's current label; tokens of
+ * deleted fields stay literal so the user can see them.
+ */
+export function renderTextTemplateDisplay(
+  template: string,
+  fieldVars: Record<string, string>,
+  fieldsById: Map<string, FormFieldEntry>,
+  untitledLabel: string
+): { display: string; missingFieldIds: string[] } {
+  const missing = new Set<string>();
+  let display = template;
+  for (const [token, fieldId] of Object.entries(fieldVars)) {
+    if (typeof fieldId !== 'string') continue;
+    const field = fieldsById.get(fieldId);
+    if (!field) {
+      missing.add(fieldId);
+      continue;
+    }
+    display = display
+      .split(`{${token}}`)
+      .join(field.label.trim() || untitledLabel);
+  }
+  return { display, missingFieldIds: [...missing] };
+}
+
+/**
  * Prepare a stored template for the designer:
- * 1. Re-sync bound elements' display content to the field's current label
- *    (labels drift when the form is edited after placement).
- * 2. Report bound elements whose field no longer exists on the form.
+ * 1. Re-sync bound elements' display content to the field's current label,
+ *    and inline-text elements' display to their {token} template (labels
+ *    drift when the form is edited after placement).
+ * 2. Report elements referencing fields that no longer exist on the form.
  *
  * Pure/in-memory: returns the original template object when nothing changed
  * so callers can skip updateTemplate / avoid marking the template dirty.
@@ -135,6 +163,29 @@ export function prepareTemplateSchemas(
             next = { ...schema, content: label };
           }
         }
+      } else if (schema.dculusFieldVars && typeof schema.dculusFieldVars === 'object') {
+        // Elements saved before the display/template split carry the {token}
+        // string in content — adopt it as the template (one-time shim)
+        const textTemplate =
+          typeof schema.dculusTextTemplate === 'string'
+            ? schema.dculusTextTemplate
+            : typeof schema.content === 'string'
+              ? schema.content
+              : '';
+        const rendered = renderTextTemplateDisplay(
+          textTemplate,
+          schema.dculusFieldVars,
+          fieldsById,
+          untitledLabel
+        );
+        rendered.missingFieldIds.forEach((id) => missingFieldIds.add(id));
+        if (
+          schema.content !== rendered.display ||
+          schema.dculusTextTemplate !== textTemplate
+        ) {
+          changed = true;
+          next = { ...schema, content: rendered.display, dculusTextTemplate: textTemplate };
+        }
       }
       return next;
     })
@@ -148,7 +199,9 @@ export function prepareTemplateSchemas(
 }
 
 /**
- * Drop every element bound to a field that no longer exists on the form.
+ * Clean up references to fields that no longer exist on the form: bound
+ * elements are dropped entirely; inline-text elements keep their text but
+ * lose the dead tokens (removed from the template, vars and display).
  */
 export function removeMissingBoundFields(
   template: any,
@@ -156,9 +209,41 @@ export function removeMissingBoundFields(
 ): any {
   const missing = new Set(missingFieldIds);
   const schemas = (template?.schemas ?? []).map((page: any[]) =>
-    (page ?? []).filter(
-      (schema: any) => !missing.has(schema?.[DCULUS_FIELD_ID_KEY])
-    )
+    (page ?? [])
+      .filter((schema: any) => !missing.has(schema?.[DCULUS_FIELD_ID_KEY]))
+      .map((schema: any) => {
+        const fieldVars = schema?.dculusFieldVars;
+        if (
+          typeof schema?.dculusTextTemplate !== 'string' ||
+          !fieldVars ||
+          typeof fieldVars !== 'object'
+        ) {
+          return schema;
+        }
+        const deadTokens = Object.entries(fieldVars)
+          .filter(([, fieldId]) => missing.has(fieldId as string))
+          .map(([token]) => token);
+        if (deadTokens.length === 0) return schema;
+
+        let newTemplate = schema.dculusTextTemplate;
+        let newContent = typeof schema.content === 'string' ? schema.content : '';
+        const newVars = { ...fieldVars };
+        for (const token of deadTokens) {
+          newTemplate = newTemplate.split(`{${token}}`).join('');
+          newContent = newContent.split(`{${token}}`).join('');
+          delete newVars[token];
+        }
+        const next = { ...schema, content: newContent };
+        if (Object.keys(newVars).length > 0) {
+          next.dculusTextTemplate = newTemplate;
+          next.dculusFieldVars = newVars;
+        } else {
+          next.content = newTemplate;
+          delete next.dculusTextTemplate;
+          delete next.dculusFieldVars;
+        }
+        return next;
+      })
   );
   return { ...template, schemas };
 }

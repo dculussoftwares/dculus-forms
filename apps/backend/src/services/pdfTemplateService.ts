@@ -318,10 +318,13 @@ export async function hydrateTemplate(
  *    (inserted by the designer's form-fields panel; content is the display
  *    label and is ignored). Resolves to the formatted response value, or ''
  *    when the field was deleted / left unanswered.
- * 2. Inline field tokens — text elements carrying a `dculusFieldVars` map
- *    (token → fieldId, written by the designer's text editor). Each
- *    `{token}` occurrence in the content is replaced with the field's
- *    formatted value; unmapped `{…}` braces are left untouched.
+ * 2. Inline field tokens — text elements carrying `dculusTextTemplate`
+ *    (the `{token}` source string) plus a `dculusFieldVars` map
+ *    (token → fieldId), written by the designer's text editor. The
+ *    element's `content` is display-only (labels inline, shown on the
+ *    canvas) and is ignored; each `{token}` in the template is replaced
+ *    with the field's formatted value; unmapped `{…}` braces are left
+ *    untouched.
  * 3. Legacy/manual — {{fieldId}} placeholders inside text content (same
  *    {{…}} convention as the email plugin / thank-you page, but plain
  *    text — no HTML escaping).
@@ -349,7 +352,12 @@ export function buildTemplateInputs(
 
       if (schema.type === 'text') {
         const fieldVars = schema.dculusFieldVars;
-        if (fieldVars && typeof fieldVars === 'object') {
+        if (
+          fieldVars &&
+          typeof fieldVars === 'object' &&
+          typeof schema.dculusTextTemplate === 'string'
+        ) {
+          content = schema.dculusTextTemplate;
           for (const [token, fieldId] of Object.entries(fieldVars)) {
             if (typeof fieldId !== 'string') continue;
             content = content

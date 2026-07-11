@@ -19,11 +19,12 @@ import { Plus } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { FormFieldEntry } from './fieldBinding';
 
-export interface TextElementDraft {
-  content: string;
-  /** token → fieldId map stored on the element as dculusFieldVars */
-  fieldVars: Record<string, string>;
-}
+/**
+ * display → element content (labels inline, what the canvas shows),
+ * template → dculusTextTemplate ({token} generation source),
+ * fieldVars → dculusFieldVars (token → fieldId bindings).
+ */
+export type TextElementDraft = MentionPlainTextValue;
 
 interface TextElementEditorDialogProps {
   open: boolean;
@@ -58,7 +59,7 @@ export const TextElementEditorDialog: React.FC<TextElementEditorDialogProps> = (
 
   const handleSave = () => {
     const draft = draftRef.current ?? initial;
-    if (draft) onSave({ content: draft.content, fieldVars: draft.fieldVars });
+    if (draft) onSave(draft);
     onOpenChange(false);
   };
 
