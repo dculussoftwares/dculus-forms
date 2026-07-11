@@ -133,8 +133,11 @@ export function snappedDropPosition(
   const columnWidth = target.pageSize.width / GRID_COLUMNS;
 
   const snapAxis = (value: number, step: number) => {
+    // Cap the threshold well below half the step, or every value would be
+    // within range of some grid line and free placement would be impossible
+    const threshold = Math.min(SNAP_THRESHOLD_MM, step * 0.35);
     const nearest = Math.round(value / step) * step;
-    return Math.abs(nearest - value) <= SNAP_THRESHOLD_MM ? nearest : value;
+    return Math.abs(nearest - value) <= threshold ? nearest : value;
   };
 
   const clamp = (value: number, max: number) =>

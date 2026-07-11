@@ -55,6 +55,10 @@ export const PDF_GENERATOR_PLUGINS = {
  */
 export const TAMIL_FONT_NAME = 'NotoSansTamil';
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 let cachedFonts: Font | null = null;
 
 /**
@@ -360,9 +364,13 @@ export function buildTemplateInputs(
           content = schema.dculusTextTemplate;
           for (const [token, fieldId] of Object.entries(fieldVars)) {
             if (typeof fieldId !== 'string') continue;
-            content = content
-              .split(`{${token}}`)
-              .join(substitutionValues[fieldId] ?? '');
+            const value = substitutionValues[fieldId] ?? '';
+            // Standalone {token} only — never the inner braces of a legacy
+            // {{fieldId}} placeholder when a token name collides with an id
+            content = content.replace(
+              new RegExp(`(?<!\\{)\\{${escapeRegExp(token)}\\}(?!\\})`, 'g'),
+              () => value
+            );
           }
         }
         inputs[schema.name] = substitutePlaceholdersPlainText(

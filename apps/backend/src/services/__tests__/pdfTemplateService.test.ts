@@ -301,6 +301,25 @@ describe('buildTemplateInputs', () => {
     });
   });
 
+  it('never rewrites the inner braces of legacy {{id}} placeholders on token collision', () => {
+    // token name deliberately equals a legacy field id: {f-name} must
+    // substitute as a token while {{f-name}} stays intact for the legacy pass
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('mixed', 'Date + legacy name', {
+            dculusTextTemplate: 'Token: {f-name} | Legacy: {{f-name}}',
+            dculusFieldVars: { 'f-name': 'f-date' },
+          }),
+        ],
+      ],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({
+      mixed: 'Token: Jul 10, 2026 | Legacy: Alice Smith',
+    });
+  });
+
   it('falls back to plain content when dculusTextTemplate is absent', () => {
     const template: any = {
       basePdf: BLANK_A4,

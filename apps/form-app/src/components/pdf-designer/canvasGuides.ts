@@ -38,7 +38,9 @@ export function loadColumnGuides(container: HTMLElement): void {
     );
 
     rulers.forEach((ruler, index) => {
-      const pageWidth = papers[index]?.pageSize.width;
+      // getPaperViewports drops zero-sized (unmeasured) papers, so match by
+      // pageIndex rather than array position
+      const pageWidth = papers.find((p) => p.pageIndex === index)?.pageSize.width;
       const instance = guidesInstanceFromDom(ruler);
       if (!pageWidth || !instance) return;
 

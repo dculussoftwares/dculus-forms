@@ -107,6 +107,7 @@ export const TextElementEditorDialog: React.FC<TextElementEditorDialogProps> = (
               draftRef.current = value;
             }}
             placeholder={t('textEditor.placeholder')}
+            ariaLabel={t('textEditor.title')}
           />
         )}
 

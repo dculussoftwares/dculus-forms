@@ -71,6 +71,7 @@ interface MentionPlainTextEditorProps {
   mentionFields: MentionFieldOption[];
   onChange: (value: MentionPlainTextValue) => void;
   placeholder?: string;
+  ariaLabel?: string;
   className?: string;
 }
 
@@ -252,7 +253,7 @@ InsertFieldBridge.displayName = 'InsertFieldBridge';
 export const MentionPlainTextEditor = forwardRef<
   MentionPlainTextEditorHandle,
   MentionPlainTextEditorProps
->(({ initialValue, mentionFields, onChange, placeholder, className }, ref) => {
+>(({ initialValue, mentionFields, onChange, placeholder, ariaLabel, className }, ref) => {
   const initialValueRef = useRef(initialValue);
 
   const mentionItems = useMemo(
@@ -300,6 +301,7 @@ export const MentionPlainTextEditor = forwardRef<
             <ContentEditable
               className="min-h-40 max-h-72 overflow-y-auto px-3 py-2.5 text-sm leading-relaxed text-[#4c414e] dark:text-gray-200 outline-none whitespace-pre-wrap"
               data-testid="pdf-designer-text-content"
+              aria-label={ariaLabel}
             />
           }
           placeholder={

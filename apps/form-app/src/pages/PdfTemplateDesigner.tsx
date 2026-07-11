@@ -870,7 +870,12 @@ const PdfTemplateDesigner: React.FC = () => {
                     <LoadingSpinner />
                   </div>
                 )}
-                <div ref={designerContainerRef} className="w-full h-full" data-testid="pdf-designer-canvas" />
+                <div
+                  ref={designerContainerRef}
+                  className="w-full h-full"
+                  data-testid="pdf-designer-canvas"
+                  data-pdf-designer-canvas=""
+                />
                 {activeDrag && dragPapers && (
                   <DropGuides papers={dragPapers} ghost={dragGhost} />
                 )}

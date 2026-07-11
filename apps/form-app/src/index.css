@@ -222,7 +222,7 @@ svg.lucide {
 /* pdfme ruler guide lines (includes our injected column guides — see
    canvasGuides.ts): hidden while idle, shown while moving/resizing elements
    (data-guides-visible on the canvas wrapper) or when hovering a ruler. */
-[data-testid="pdf-designer-canvas"] .scena-guides-guide:not(.scena-guides-adder) {
+[data-pdf-designer-canvas] .scena-guides-guide:not(.scena-guides-adder) {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.12s ease;
@@ -230,7 +230,7 @@ svg.lucide {
 [data-guides-visible="true"] .scena-guides-guide:not(.scena-guides-adder) {
   opacity: 1;
 }
-[data-testid="pdf-designer-canvas"] .scena-guides-manager:hover .scena-guides-guide:not(.scena-guides-adder) {
+[data-pdf-designer-canvas] .scena-guides-manager:hover .scena-guides-guide:not(.scena-guides-adder) {
   opacity: 1;
   pointer-events: auto;
 }
@@ -238,7 +238,7 @@ svg.lucide {
 /* Hide pdfme's built-in add-element strip and bulk field-name tools: our
    Elements tab replaces the strip (labeled, i18n'd, drag + drop), and
    element names are auto-generated internals users never need to manage. */
-[data-testid="pdf-designer-canvas"] .pdfme-designer-left-sidebar,
-[data-testid="pdf-designer-canvas"] [class*="pdfme-designer-bulk-"] {
+[data-pdf-designer-canvas] .pdfme-designer-left-sidebar,
+[data-pdf-designer-canvas] [class*="pdfme-designer-bulk-"] {
   display: none !important;
 }

@@ -22,6 +22,19 @@ export const DCULUS_FIELD_ID_KEY = 'dculusFieldId';
  */
 export const PDF_FIELD_FONT_NAME = 'NotoSansTamil';
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Matches a standalone `{token}` only — never the inner braces of a legacy
+ * `{{fieldId}}` placeholder when a token name collides with a field id.
+ * Must stay in sync with the backend's substitution in pdfTemplateService.
+ */
+function tokenPattern(token: string): RegExp {
+  return new RegExp(`(?<!\\{)\\{${escapeRegExp(token)}\\}(?!\\})`, 'g');
+}
+
 export interface FormFieldEntry {
   id: string;
   label: string;
@@ -116,9 +129,8 @@ export function renderTextTemplateDisplay(
       missing.add(fieldId);
       continue;
     }
-    display = display
-      .split(`{${token}}`)
-      .join(field.label.trim() || untitledLabel);
+    const label = field.label.trim() || untitledLabel;
+    display = display.replace(tokenPattern(token), () => label);
   }
   return { display, missingFieldIds: [...missing] };
 }
@@ -229,8 +241,8 @@ export function removeMissingBoundFields(
         let newContent = typeof schema.content === 'string' ? schema.content : '';
         const newVars = { ...fieldVars };
         for (const token of deadTokens) {
-          newTemplate = newTemplate.split(`{${token}}`).join('');
-          newContent = newContent.split(`{${token}}`).join('');
+          newTemplate = newTemplate.replace(tokenPattern(token), '');
+          newContent = newContent.replace(tokenPattern(token), '');
           delete newVars[token];
         }
         const next = { ...schema, content: newContent };
