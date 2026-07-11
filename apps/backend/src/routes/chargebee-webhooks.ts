@@ -49,7 +49,12 @@ router.post('/webhooks/chargebee', async (req, res) => {
 
     const event = req.body;
 
-    logger.info('[Chargebee Webhook] Received event:', event.event_type);
+    logger.info('[Chargebee Webhook] Received event:', event.event_type, {
+      eventId: event.id,
+      subscriptionId: event.content?.subscription?.id,
+      subscriptionStatus: event.content?.subscription?.status,
+      customerId: event.content?.subscription?.customer_id ?? event.content?.customer?.id,
+    });
 
     // Handle different event types
     switch (event.event_type) {

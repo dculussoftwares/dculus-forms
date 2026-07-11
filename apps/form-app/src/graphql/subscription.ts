@@ -124,6 +124,23 @@ export const INITIALIZE_ORGANIZATION_SUBSCRIPTION: TypedDocumentNode<any, any> =
   }
 `;
 
+// Fallback sync for the /subscription/success redirect — retrieves the
+// Chargebee hosted page (by the id Chargebee appends to redirect_url) and
+// syncs Postgres immediately if checkout succeeded, instead of waiting on
+// webhook delivery.
+export const SYNC_CHECKOUT_SESSION: TypedDocumentNode<any, any> = gql`
+  mutation SyncCheckoutSession($hostedPageId: String!) {
+    syncCheckoutSession(hostedPageId: $hostedPageId) {
+      synced
+      subscription {
+        id
+        planId
+        status
+      }
+    }
+  }
+`;
+
 // Get AI token usage for organization
 export const GET_AI_TOKEN_USAGE : TypedDocumentNode<any, any> = gql`
   query GetAITokenUsage($organizationId: ID!) {

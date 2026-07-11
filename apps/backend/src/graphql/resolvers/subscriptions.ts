@@ -7,6 +7,7 @@ import {
   createChargebeeCustomer,
   createFreeSubscription,
   getEnterpriseCheckoutUrl,
+  syncFromHostedPage,
 } from '../../services/chargebeeService.js';
 import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { GraphQLError } from '#graphql-errors';
@@ -156,6 +157,48 @@ export const subscriptionResolvers = {
           GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
         );
       }
+    },
+
+    /**
+     * Fallback sync for the /subscription/success redirect. Chargebee
+     * appends ?id=<hostedPageId>&state=... on redirect — retrieving that
+     * hosted page server-side and syncing immediately means the org's plan
+     * doesn't have to wait on webhook delivery, which is slow in general and
+     * entirely unreachable in local dev (Chargebee can't deliver test-site
+     * webhooks to localhost).
+     */
+    syncCheckoutSession: async (
+      _: any,
+      { hostedPageId }: { hostedPageId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      if (!hostedPageId || !/^[a-zA-Z0-9_-]{1,100}$/.test(hostedPageId)) {
+        throw createGraphQLError('Invalid hosted page ID format', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      const session = context.auth.session;
+      if (!session?.activeOrganizationId) {
+        throw createGraphQLError('No active organization', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      // 🔒 SECURITY: Verify user is a member of the active organization
+      await requireOrganizationMembership(context.auth, session.activeOrganizationId);
+
+      let synced = false;
+      try {
+        ({ synced } = await syncFromHostedPage(hostedPageId, session.activeOrganizationId));
+      } catch (error: unknown) {
+        // Don't fail the redirect page over this — it's a best-effort fallback
+        // and the caller (success.tsx) still has webhook-driven polling as a
+        // safety net.
+        logger.error('[Subscription Resolver] Error syncing checkout session:', error);
+      }
+      const subscription = await prisma.subscription.findUnique({
+        where: { organizationId: session.activeOrganizationId },
+      });
+      return { synced, subscription };
     },
 
     /**

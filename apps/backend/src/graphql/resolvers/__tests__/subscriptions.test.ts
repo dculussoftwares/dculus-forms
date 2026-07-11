@@ -26,6 +26,8 @@ vi.mock('../../../services/chargebeeService.js', () => ({
   createPortalSession: vi.fn(),
   createChargebeeCustomer: vi.fn(),
   createFreeSubscription: vi.fn(),
+  getEnterpriseCheckoutUrl: vi.fn(),
+  syncFromHostedPage: vi.fn(),
 }));
 
 vi.mock('../../../middleware/better-auth-middleware.js', () => ({
@@ -273,6 +275,120 @@ describe('Subscription Resolvers', () => {
           mockContext
         )
       ).rejects.toThrow('Invalid item price ID format');
+    });
+  });
+
+  describe('Mutation: syncCheckoutSession', () => {
+    it('syncs immediately and returns the refreshed subscription when the hosted page succeeded', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
+      vi.mocked(chargebeeService.syncFromHostedPage).mockResolvedValue({
+        synced: true,
+        state: 'succeeded',
+      });
+      const syncedSubscription = { ...mockSubscription, planId: 'starter', status: 'active' };
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(syncedSubscription as any);
+
+      const result = await subscriptionResolvers.Mutation.syncCheckoutSession(
+        {},
+        { hostedPageId: 'hosted_page_123' },
+        mockContext
+      );
+
+      expect(result).toEqual({ synced: true, subscription: syncedSubscription });
+      expect(chargebeeService.syncFromHostedPage).toHaveBeenCalledWith(
+        'hosted_page_123',
+        'org-123'
+      );
+    });
+
+    it('returns synced=false without throwing when checkout has not completed yet', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
+      vi.mocked(chargebeeService.syncFromHostedPage).mockResolvedValue({
+        synced: false,
+        state: 'created',
+      });
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(mockSubscription as any);
+
+      const result = await subscriptionResolvers.Mutation.syncCheckoutSession(
+        {},
+        { hostedPageId: 'hosted_page_123' },
+        mockContext
+      );
+
+      expect(result).toEqual({ synced: false, subscription: mockSubscription });
+    });
+
+    it('swallows Chargebee errors and returns synced=false instead of throwing (best-effort fallback)', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
+      vi.mocked(chargebeeService.syncFromHostedPage).mockRejectedValue(
+        new Error('Chargebee API error')
+      );
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(mockSubscription as any);
+
+      const result = await subscriptionResolvers.Mutation.syncCheckoutSession(
+        {},
+        { hostedPageId: 'hosted_page_123' },
+        mockContext
+      );
+
+      expect(result).toEqual({ synced: false, subscription: mockSubscription });
+    });
+
+    it('throws when hostedPageId is empty or invalid', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+
+      await expect(
+        subscriptionResolvers.Mutation.syncCheckoutSession(
+          {},
+          { hostedPageId: '' },
+          mockContext
+        )
+      ).rejects.toThrow('Invalid hosted page ID format');
+      expect(chargebeeService.syncFromHostedPage).not.toHaveBeenCalled();
+    });
+
+    it('throws when no active organization', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+
+      const contextWithoutOrg = {
+        auth: {
+          user: mockContext.auth.user,
+          session: { id: 'session-123' },
+          isAuthenticated: true,
+        },
+      };
+
+      await expect(
+        subscriptionResolvers.Mutation.syncCheckoutSession(
+          {},
+          { hostedPageId: 'hosted_page_123' },
+          contextWithoutOrg
+        )
+      ).rejects.toThrow('No active organization');
+    });
+
+    it('throws when user is not organization member', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Not a member of this organization')
+      );
+
+      await expect(
+        subscriptionResolvers.Mutation.syncCheckoutSession(
+          {},
+          { hostedPageId: 'hosted_page_123' },
+          mockContext
+        )
+      ).rejects.toThrow('Not a member of this organization');
     });
   });
 
