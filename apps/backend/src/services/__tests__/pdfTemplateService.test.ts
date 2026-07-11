@@ -4,6 +4,7 @@ import { substitutePlaceholdersPlainText } from '@dculus/utils';
 import {
   buildPdfFilename,
   buildSubstitutionValues,
+  buildTemplateInputs,
   formatResponseValueForPdf,
   generatePdfForResponse,
   stripBasePdf,
@@ -110,6 +111,95 @@ describe('buildSubstitutionValues', () => {
   });
 });
 
+describe('buildTemplateInputs', () => {
+  const values = { 'f-name': 'Alice Smith', 'f-date': 'Jul 10, 2026' };
+  const labels = { 'f-name': 'Full Name', 'f-date': 'Date' };
+
+  it('resolves bound fields from dculusFieldId, ignoring the display content', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [[textSchema('full_name', 'Full Name', { dculusFieldId: 'f-name' })]],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({
+      full_name: 'Alice Smith',
+    });
+  });
+
+  it('outputs an empty string for bound fields that were deleted or unanswered', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [[textSchema('gone', 'Old Label', { dculusFieldId: 'deleted-field' })]],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({ gone: '' });
+  });
+
+  it('still substitutes legacy {{fieldId}} placeholders in unbound text', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('legacy', '{{f-name}}'),
+          textSchema('mixed', 'Submitted by {{f-name}} on {{f-date}}'),
+        ],
+      ],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({
+      legacy: 'Alice Smith',
+      mixed: 'Submitted by Alice Smith on Jul 10, 2026',
+    });
+  });
+
+  it('lets bound and legacy elements coexist in one template', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('bound', 'Full Name', { dculusFieldId: 'f-name' }),
+          textSchema('legacy', '{{f-date}}'),
+        ],
+      ],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({
+      bound: 'Alice Smith',
+      legacy: 'Jul 10, 2026',
+    });
+  });
+
+  it('excludes readOnly elements even when bound', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('static', 'Certificate', { readOnly: true }),
+          textSchema('bound_ro', 'Full Name', { dculusFieldId: 'f-name', readOnly: true }),
+        ],
+      ],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({});
+  });
+
+  it('passes non-text schema content through untouched', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          {
+            name: 'qr',
+            type: 'qrcode',
+            content: 'https://example.com',
+            position: { x: 0, y: 0 },
+            width: 30,
+            height: 30,
+          },
+        ],
+      ],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({
+      qr: 'https://example.com',
+    });
+  });
+});
+
 describe('stripBasePdf', () => {
   it('nulls basePdf for uploaded-PDF templates', () => {
     const template = { basePdf: 'data:application/pdf;base64,AAAA', schemas: [[]] };
@@ -135,6 +225,14 @@ describe('validatePdfTemplate', () => {
 
   it('rejects invalid template JSON', () => {
     expect(() => validatePdfTemplate({ schemas: 'not-an-array' }, false)).toThrow();
+  });
+
+  it('accepts elements carrying the dculusFieldId custom prop (zod passthrough)', () => {
+    const template = {
+      basePdf: BLANK_A4,
+      schemas: [[textSchema('full_name', 'Full Name', { dculusFieldId: 'f1' })]],
+    };
+    expect(() => validatePdfTemplate(template, false)).not.toThrow();
   });
 
   it('rejects a blank-page template missing its own basePdf instead of silently repairing it', () => {
@@ -189,6 +287,30 @@ describe('generatePdfForResponse', () => {
 
     expect(Buffer.isBuffer(pdf)).toBe(true);
     expect(pdf.length).toBeGreaterThan(500);
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+  }, 30000);
+
+  it('generates a PDF with bound (dculusFieldId) elements end-to-end', async () => {
+    const storedTemplate = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('full_name', 'Full Name', { dculusFieldId: 'f-name' }),
+          textSchema('gone', 'Deleted Field', { dculusFieldId: 'f-deleted' }),
+        ],
+      ],
+    };
+    const deserializedSchema = {
+      pages: [{ fields: [{ id: 'f-name', type: FieldType.TEXT_INPUT_FIELD, label: 'Full Name' }] }],
+    };
+
+    const pdf = await generatePdfForResponse({
+      storedTemplate,
+      fileKey: null,
+      deserializedSchema,
+      responseData: { 'f-name': 'Alice Smith' },
+    });
+
     expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
   }, 30000);
 

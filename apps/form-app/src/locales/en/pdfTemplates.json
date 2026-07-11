@@ -62,7 +62,10 @@
   "fieldsPanel": {
     "heading": "Form fields",
     "description": "Click a field to place its response value on the page. You can place the same field multiple times.",
-    "noFields": "This form has no fields yet."
+    "noFields": "This form has no fields yet.",
+    "untitledField": "Untitled field",
+    "missingFields": "{{count}} placed field(s) no longer exist in this form and will print as empty.",
+    "removeMissingButton": "Remove missing fields"
   },
   "palette": {
     "text": "Text",

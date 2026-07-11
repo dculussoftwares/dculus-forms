@@ -155,12 +155,48 @@ export async function hydrateTemplate(
 }
 
 /**
- * Generate a filled PDF for one response.
+ * Build the single-record inputs map for @pdfme/generator from a template's
+ * schemas. Two binding conventions, checked in order:
  *
- * Walks the template's text schemas, substitutes {{fieldId}} placeholders
- * with the response's formatted values (same {{…}} convention as the email
- * plugin / thank-you page, but plain text — no HTML escaping), and runs
- * @pdfme/generator server-side.
+ * 1. Bound fields — text elements carrying a `dculusFieldId` custom prop
+ *    (inserted by the designer's form-fields panel; content is the display
+ *    label and is ignored). Resolves to the formatted response value, or ''
+ *    when the field was deleted / left unanswered.
+ * 2. Legacy/manual — {{fieldId}} placeholders inside text content (same
+ *    {{…}} convention as the email plugin / thank-you page, but plain
+ *    text — no HTML escaping).
+ *
+ * readOnly elements render from their own content and must not appear in
+ * inputs.
+ */
+export function buildTemplateInputs(
+  template: Template,
+  substitutionValues: Record<string, string>,
+  fieldLabels: Record<string, string>
+): Record<string, string> {
+  const inputs: Record<string, string> = {};
+  for (const page of (template.schemas ?? []) as any[][]) {
+    for (const schema of page ?? []) {
+      if (!schema?.name || schema.readOnly) continue;
+      const content = typeof schema.content === 'string' ? schema.content : '';
+      const boundFieldId =
+        typeof schema.dculusFieldId === 'string' ? schema.dculusFieldId : undefined;
+      if (boundFieldId && schema.type === 'text') {
+        inputs[schema.name] = substitutionValues[boundFieldId] ?? '';
+      } else {
+        inputs[schema.name] =
+          schema.type === 'text'
+            ? substitutePlaceholdersPlainText(content, substitutionValues, fieldLabels)
+            : content;
+      }
+    }
+  }
+  return inputs;
+}
+
+/**
+ * Generate a filled PDF for one response — builds inputs via
+ * buildTemplateInputs() and runs @pdfme/generator server-side.
  */
 export async function generatePdfForResponse(params: {
   storedTemplate: any;
@@ -174,20 +210,7 @@ export async function generatePdfForResponse(params: {
   const substitutionValues = buildSubstitutionValues(deserializedSchema, responseData);
   const fieldLabels = createFieldLabelsMap(deserializedSchema);
 
-  // Build the single-record inputs map from schema content, substituting
-  // placeholders in text elements. readOnly elements render from their own
-  // content and must not appear in inputs.
-  const inputs: Record<string, string> = {};
-  for (const page of (template.schemas ?? []) as any[][]) {
-    for (const schema of page ?? []) {
-      if (!schema?.name || schema.readOnly) continue;
-      const content = typeof schema.content === 'string' ? schema.content : '';
-      inputs[schema.name] =
-        schema.type === 'text'
-          ? substitutePlaceholdersPlainText(content, substitutionValues, fieldLabels)
-          : content;
-    }
-  }
+  const inputs = buildTemplateInputs(template, substitutionValues, fieldLabels);
 
   try {
     const pdf = await generate({

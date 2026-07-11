@@ -20,23 +20,26 @@ import {
   toastError,
 } from '@dculus/ui';
 import { deserializeFormSchema, FieldType } from '@dculus/types';
-import { generateId } from '@dculus/utils';
-import { AlertCircle, ArrowLeft, Plus, Save } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Plus, Save, Trash2 } from 'lucide-react';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_PDF_TEMPLATE, UPDATE_PDF_TEMPLATE } from '../graphql/pdfTemplates';
+import {
+  buildBoundFieldSchema,
+  cascadePosition,
+  collectSchemaNames,
+  prepareTemplateSchemas,
+  removeMissingBoundFields,
+  type FormFieldEntry,
+} from '../components/pdf-designer/fieldBinding';
 
 /**
  * PDF template designer — embeds the pdfme Designer (its own bundled
  * React + antd, mounted into a plain DOM node) with a Dculus form-fields
- * panel for inserting {{fieldId}} response placeholders.
+ * panel for placing bound field elements (label on canvas, field id in
+ * the dculusFieldId prop — see fieldBinding.ts).
  */
-
-interface FormFieldEntry {
-  id: string;
-  label: string;
-}
 
 const PdfTemplateDesigner: React.FC = () => {
   const { formId, templateId } = useParams<{ formId: string; templateId: string }>();
@@ -50,6 +53,7 @@ const PdfTemplateDesigner: React.FC = () => {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
+  const [missingFieldIds, setMissingFieldIds] = useState<string[]>([]);
 
   const { data: formData, loading: formLoading } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
@@ -89,6 +93,11 @@ const PdfTemplateDesigner: React.FC = () => {
     }
   }, [form?.formSchema]);
 
+  // Mount effect below intentionally has narrow deps; read the latest
+  // fields through a ref instead of re-mounting the designer on schema refetch
+  const formFieldsRef = useRef<FormFieldEntry[]>(formFields);
+  formFieldsRef.current = formFields;
+
   // Element palette — v6 requires non-text schema types to be passed
   // explicitly via `plugins`, which is also how we restrict the palette.
   // Keys are the (localizable) names shown in the designer sidebar.
@@ -113,7 +122,16 @@ const PdfTemplateDesigner: React.FC = () => {
 
     const mount = async () => {
       try {
-        const storedTemplate = pdfTemplate.template ?? { schemas: [[]] };
+        // Upgrade legacy {{fieldId}} elements to bound fields and re-sync
+        // bound labels before mounting — display-only, so it never marks
+        // the template dirty; the upgrade persists on the user's next save
+        const prepared = prepareTemplateSchemas(
+          pdfTemplate.template ?? { schemas: [[]] },
+          formFieldsRef.current,
+          t('fieldsPanel.untitledField')
+        );
+        setMissingFieldIds(prepared.missingFieldIds);
+        const storedTemplate = prepared.template;
         let basePdf: any = storedTemplate.basePdf;
 
         // Uploaded-PDF templates are stored with basePdf stripped — hydrate from R2
@@ -172,7 +190,9 @@ const PdfTemplateDesigner: React.FC = () => {
     if (pdfTemplate?.name) setName(pdfTemplate.name);
   }, [pdfTemplate?.name]);
 
-  // Insert a {{fieldId}} placeholder text element onto the current page
+  // Insert a bound field element (label as display text, field id as the
+  // binding) onto the current page, then select it so it can be dragged
+  // into place immediately
   const insertField = useCallback(
     (field: FormFieldEntry) => {
       const designer = designerRef.current;
@@ -185,25 +205,35 @@ const PdfTemplateDesigner: React.FC = () => {
         schemas.length - 1
       );
 
-      const placedCount = schemas[pageIndex]?.length ?? 0;
-      const column = Math.floor(placedCount / 10);
-      const row = placedCount % 10;
-      const newSchema = {
-        name: `field_${generateId()}`,
-        type: 'text',
-        content: `{{${field.id}}}`,
-        position: { x: 20 + column * 100, y: 20 + row * 12 },
-        width: 80,
-        height: 10,
-        fontSize: 12,
-      };
+      const newSchema = buildBoundFieldSchema({
+        field,
+        position: cascadePosition(schemas[pageIndex]?.length ?? 0),
+        existingNames: collectSchemaNames(schemas as any[][]),
+        untitledLabel: t('fieldsPanel.untitledField'),
+      });
 
       schemas[pageIndex] = [...(schemas[pageIndex] ?? []), newSchema as any];
       designer.updateTemplate({ ...template, schemas });
+      try {
+        designer.selectSchemas([{ name: newSchema.name, pageIndex }], { scroll: true });
+      } catch {
+        // selection is a nicety — never let it break the insert
+      }
       setDirty(true);
     },
-    []
+    [t]
   );
+
+  // Remove every element bound to a field that no longer exists on the form
+  const removeMissingFields = useCallback(() => {
+    const designer = designerRef.current;
+    if (!designer || missingFieldIds.length === 0) return;
+    designer.updateTemplate(
+      removeMissingBoundFields(designer.getTemplate(), missingFieldIds)
+    );
+    setMissingFieldIds([]);
+    setDirty(true);
+  }, [missingFieldIds]);
 
   const handleSave = useCallback(async () => {
     const designer = designerRef.current;
@@ -316,6 +346,30 @@ const PdfTemplateDesigner: React.FC = () => {
             <p className="text-[11px] mt-1 mb-3 leading-relaxed text-muted-foreground">
               {t('fieldsPanel.description')}
             </p>
+            {missingFieldIds.length > 0 && (
+              <div
+                className="mb-3 rounded-lg px-2.5 py-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900"
+                data-testid="pdf-designer-missing-fields"
+              >
+                <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-200">
+                  {t('fieldsPanel.missingFields', {
+                    values: { count: missingFieldIds.length },
+                  })}
+                </p>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={removeMissingFields}
+                    disabled={!designerReady}
+                    data-testid="pdf-designer-remove-missing"
+                    className="flex items-center gap-1 mt-1.5 text-[11px] font-medium text-amber-800 dark:text-amber-200 hover:underline disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    {t('fieldsPanel.removeMissingButton')}
+                  </button>
+                )}
+              </div>
+            )}
             {formFields.length === 0 ? (
               <p className="text-xs text-muted-foreground">{t('fieldsPanel.noFields')}</p>
             ) : (
