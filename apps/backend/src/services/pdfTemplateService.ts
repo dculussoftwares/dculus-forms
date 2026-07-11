@@ -312,13 +312,17 @@ export async function hydrateTemplate(
 
 /**
  * Build the single-record inputs map for @pdfme/generator from a template's
- * schemas. Two binding conventions, checked in order:
+ * schemas. Three binding conventions, checked in order:
  *
  * 1. Bound fields — text elements carrying a `dculusFieldId` custom prop
  *    (inserted by the designer's form-fields panel; content is the display
  *    label and is ignored). Resolves to the formatted response value, or ''
  *    when the field was deleted / left unanswered.
- * 2. Legacy/manual — {{fieldId}} placeholders inside text content (same
+ * 2. Inline field tokens — text elements carrying a `dculusFieldVars` map
+ *    (token → fieldId, written by the designer's text editor). Each
+ *    `{token}` occurrence in the content is replaced with the field's
+ *    formatted value; unmapped `{…}` braces are left untouched.
+ * 3. Legacy/manual — {{fieldId}} placeholders inside text content (same
  *    {{…}} convention as the email plugin / thank-you page, but plain
  *    text — no HTML escaping).
  *
@@ -334,16 +338,32 @@ export function buildTemplateInputs(
   for (const page of (template.schemas ?? []) as any[][]) {
     for (const schema of page ?? []) {
       if (!schema?.name || schema.readOnly) continue;
-      const content = typeof schema.content === 'string' ? schema.content : '';
+      let content = typeof schema.content === 'string' ? schema.content : '';
       const boundFieldId =
         typeof schema.dculusFieldId === 'string' ? schema.dculusFieldId : undefined;
+
       if (boundFieldId && schema.type === 'text') {
         inputs[schema.name] = substitutionValues[boundFieldId] ?? '';
+        continue;
+      }
+
+      if (schema.type === 'text') {
+        const fieldVars = schema.dculusFieldVars;
+        if (fieldVars && typeof fieldVars === 'object') {
+          for (const [token, fieldId] of Object.entries(fieldVars)) {
+            if (typeof fieldId !== 'string') continue;
+            content = content
+              .split(`{${token}}`)
+              .join(substitutionValues[fieldId] ?? '');
+          }
+        }
+        inputs[schema.name] = substitutePlaceholdersPlainText(
+          content,
+          substitutionValues,
+          fieldLabels
+        );
       } else {
-        inputs[schema.name] =
-          schema.type === 'text'
-            ? substitutePlaceholdersPlainText(content, substitutionValues, fieldLabels)
-            : content;
+        inputs[schema.name] = content;
       }
     }
   }

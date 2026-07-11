@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   type DragStartEvent,
+  type DragMoveEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { Designer } from '@pdfme/ui';
@@ -55,10 +56,21 @@ import {
   type PaletteDragData,
 } from '../components/pdf-designer/LeftPanel';
 import {
-  centeredClampedPosition,
+  getPaperViewports,
   resolveDropTarget,
+  snappedDropPosition,
   type DropTarget,
+  type PaperViewport,
 } from '../components/pdf-designer/dropPlacement';
+import { DropGuides, type DragGhost } from '../components/pdf-designer/DropGuides';
+import {
+  SelectionToolbar,
+  type ToolbarSelection,
+} from '../components/pdf-designer/SelectionToolbar';
+import {
+  TextElementEditorDialog,
+  type TextElementDraft,
+} from '../components/pdf-designer/TextElementEditorDialog';
 import { PreviewDialog } from '../components/pdf-designer/PreviewDialog';
 
 /**
@@ -67,6 +79,14 @@ import { PreviewDialog } from '../components/pdf-designer/PreviewDialog';
  * panel for placing bound field elements (label on canvas, field id in
  * the dculusFieldId prop — see fieldBinding.ts).
  */
+
+const elementDefaultSchema = (element: ElementKey): Record<string, any> | undefined => {
+  const plugin =
+    element === 'qrcode'
+      ? barcodes.qrcode
+      : { text, image, line, rectangle, ellipse, table }[element];
+  return (plugin as any)?.propPanel?.defaultSchema;
+};
 
 const PdfTemplateDesigner: React.FC = () => {
   const { formId, templateId } = useParams<{ formId: string; templateId: string }>();
@@ -83,6 +103,10 @@ const PdfTemplateDesigner: React.FC = () => {
   const [missingFieldIds, setMissingFieldIds] = useState<string[]>([]);
   const [placedCounts, setPlacedCounts] = useState<Record<string, number>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [selection, setSelection] = useState<ToolbarSelection | null>(null);
+  const [textEditor, setTextEditor] = useState<
+    { pageIndex: number; name: string; draft: TextElementDraft } | null
+  >(null);
 
   const { data: formData, loading: formLoading } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
@@ -217,6 +241,21 @@ const PdfTemplateDesigner: React.FC = () => {
           setDirty(true);
           setPlacedCounts(countBoundFields((changed.schemas ?? []) as any[][]));
         });
+        designer.onChangeSelection((sel) => {
+          if (!sel.bounds || sel.schemas.length === 0) {
+            setSelection(null);
+            return;
+          }
+          setSelection({
+            pageIndex: sel.pageIndex,
+            bounds: sel.bounds,
+            names: sel.schemas.map((s) => s.name),
+            editableTextName:
+              sel.schemas.length === 1 && sel.schemas[0].type === 'text'
+                ? sel.schemas[0].name
+                : null,
+          });
+        });
         designerRef.current = designer;
         setDesignerReady(true);
       } catch (error) {
@@ -247,6 +286,32 @@ const PdfTemplateDesigner: React.FC = () => {
     if (pdfTemplate?.name) setName(pdfTemplate.name);
   }, [pdfTemplate?.name]);
 
+  // Select schemas once pdfme has committed a just-applied updateTemplate.
+  // Its internal React root renders asynchronously with no completion
+  // signal — and a later commit can clear an early successful selection —
+  // so re-assert at increasing delays whenever the selection is not the
+  // requested one (idempotent; gives up quietly, selection is a nicety).
+  const selectSchemasWhenReady = useCallback(
+    (targets: { name: string; pageIndex: number }[], scroll = false) => {
+      const wanted = new Set(targets.map((target) => target.name));
+      for (const delay of [0, 80, 250, 500]) {
+        setTimeout(() => {
+          const designer = designerRef.current;
+          if (!designer) return;
+          try {
+            const current = designer.getSelectedSchemas();
+            const alreadySelected =
+              current.length === wanted.size && current.every((s) => wanted.has(s.name));
+            if (!alreadySelected) designer.selectSchemas(targets, { scroll });
+          } catch {
+            // keep trying at the next delay
+          }
+        }, delay);
+      }
+    },
+    []
+  );
+
   // Add a new element to the template: on a drop target's page centered
   // under the pointer (clamped inside the page), or cascaded on the current
   // page for click-to-insert. Selects the new element either way.
@@ -265,19 +330,15 @@ const PdfTemplateDesigner: React.FC = () => {
       ...schemaBase,
       name: uniqueSchemaName(schemaBase.name, collectSchemaNames(schemas as any[][])),
       position: drop
-        ? centeredClampedPosition(drop, schemaBase.width ?? 40, schemaBase.height ?? 10)
+        ? snappedDropPosition(drop, schemaBase.width ?? 40, schemaBase.height ?? 10)
         : cascadePosition(schemas[pageIndex]?.length ?? 0),
     };
 
     schemas[pageIndex] = [...(schemas[pageIndex] ?? []), newSchema as any];
     designer.updateTemplate({ ...template, schemas });
-    try {
-      designer.selectSchemas([{ name: newSchema.name, pageIndex }], { scroll: true });
-    } catch {
-      // selection is a nicety — never let it break the insert
-    }
+    selectSchemasWhenReady([{ name: newSchema.name, pageIndex }], true);
     setDirty(true);
-  }, []);
+  }, [selectSchemasWhenReady]);
 
   // Insert a bound field element (label as display text, field id as the
   // binding — see fieldBinding.ts)
@@ -300,9 +361,7 @@ const PdfTemplateDesigner: React.FC = () => {
   // pdfme plugin's own default schema
   const insertElement = useCallback(
     (element: ElementKey, drop?: DropTarget) => {
-      const plugin =
-        element === 'qrcode' ? barcodes.qrcode : { text, image, line, rectangle, ellipse, table }[element];
-      const defaultSchema = (plugin as any)?.propPanel?.defaultSchema;
+      const defaultSchema = elementDefaultSchema(element);
       if (!defaultSchema) return;
       placeSchema({ ...defaultSchema, name: element }, drop);
     },
@@ -311,31 +370,86 @@ const PdfTemplateDesigner: React.FC = () => {
 
   // Drag-and-drop from the left panel onto the canvas
   const [activeDrag, setActiveDrag] = useState<PaletteDragData | null>(null);
+  const [dragPapers, setDragPapers] = useState<PaperViewport[] | null>(null);
+  const [dragGhost, setDragGhost] = useState<DragGhost | null>(null);
+  const pendingSizeRef = useRef<{ width: number; height: number }>({ width: 40, height: 10 });
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveDrag((event.active.data.current as PaletteDragData) ?? null);
+  const clearDragState = useCallback(() => {
+    setActiveDrag(null);
+    setDragPapers(null);
+    setDragGhost(null);
+  }, []);
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const data = (event.active.data.current as PaletteDragData) ?? null;
+      setActiveDrag(data);
+      if (!data) return;
+
+      // The exact footprint the element will have, so the ghost matches
+      if (data.kind === 'field') {
+        const schema = buildBoundFieldSchema({
+          field: data.field,
+          position: { x: 0, y: 0 },
+          existingNames: new Set(),
+          untitledLabel: t('fieldsPanel.untitledField'),
+        });
+        pendingSizeRef.current = { width: schema.width, height: schema.height };
+      } else {
+        const defaultSchema = elementDefaultSchema(data.element);
+        pendingSizeRef.current = {
+          width: defaultSchema?.width ?? 40,
+          height: defaultSchema?.height ?? 10,
+        };
+      }
+      if (designerContainerRef.current) {
+        setDragPapers(getPaperViewports(designerContainerRef.current));
+      }
+    },
+    [t]
+  );
+
+  // Pointer position during/at the end of a drag = activator position + delta
+  const dragPointer = (event: DragMoveEvent | DragEndEvent): { x: number; y: number } | null => {
+    const activator = event.activatorEvent as Partial<PointerEvent>;
+    if (typeof activator?.clientX !== 'number' || typeof activator?.clientY !== 'number') {
+      return null;
+    }
+    return { x: activator.clientX + event.delta.x, y: activator.clientY + event.delta.y };
+  };
+
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
+    const container = designerContainerRef.current;
+    const pointer = container && dragPointer(event);
+    if (!pointer) return;
+    // Re-read paper geometry each move — wheel-scrolling mid-drag moves pages
+    setDragPapers(getPaperViewports(container));
+    const drop = resolveDropTarget(container, pointer.x, pointer.y);
+    if (!drop) {
+      setDragGhost(null);
+      return;
+    }
+    const { width, height } = pendingSizeRef.current;
+    setDragGhost({
+      pageIndex: drop.pageIndex,
+      ...snappedDropPosition(drop, width, height),
+      width,
+      height,
+    });
   }, []);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      setActiveDrag(null);
+      clearDragState();
       const data = event.active.data.current as PaletteDragData | undefined;
       const container = designerContainerRef.current;
-      if (!data || !container) return;
+      const pointer = container && dragPointer(event);
+      if (!data || !pointer) return;
 
-      // Pointer position at drop = activator position + total drag delta
-      const activator = event.activatorEvent as Partial<PointerEvent>;
-      if (typeof activator?.clientX !== 'number' || typeof activator?.clientY !== 'number') {
-        return;
-      }
-      const drop = resolveDropTarget(
-        container,
-        activator.clientX + event.delta.x,
-        activator.clientY + event.delta.y
-      );
+      const drop = resolveDropTarget(container, pointer.x, pointer.y);
       if (!drop) return; // dropped outside any page — treat as cancelled
 
       if (data.kind === 'field') {
@@ -344,7 +458,104 @@ const PdfTemplateDesigner: React.FC = () => {
         insertElement(data.element, drop);
       }
     },
-    [insertField, insertElement]
+    [clearDragState, insertField, insertElement]
+  );
+
+  // Duplicate the current selection: copies land 6mm down-right with fresh
+  // unique names and become the new selection
+  const duplicateSelection = useCallback(() => {
+    const designer = designerRef.current;
+    if (!designer || !selection) return;
+
+    const template = designer.getTemplate();
+    const schemas = [...(template.schemas ?? [])];
+    const page = [...(schemas[selection.pageIndex] ?? [])];
+    const allNames = collectSchemaNames(schemas as any[][]);
+
+    const copies = selection.names.flatMap((name) => {
+      const source = page.find((schema: any) => schema.name === name);
+      if (!source) return [];
+      const copyName = uniqueSchemaName(source.name, allNames);
+      allNames.add(copyName);
+      return [
+        {
+          ...source,
+          name: copyName,
+          position: { x: source.position.x + 6, y: source.position.y + 6 },
+        },
+      ];
+    });
+    if (copies.length === 0) return;
+
+    schemas[selection.pageIndex] = [...page, ...copies];
+    designer.updateTemplate({ ...template, schemas });
+    selectSchemasWhenReady(
+      copies.map((copy) => ({ name: copy.name, pageIndex: selection.pageIndex }))
+    );
+    setDirty(true);
+  }, [selection, selectSchemasWhenReady]);
+
+  // Delete the current selection
+  const deleteSelection = useCallback(() => {
+    const designer = designerRef.current;
+    if (!designer || !selection) return;
+
+    const template = designer.getTemplate();
+    const schemas = [...(template.schemas ?? [])];
+    const names = new Set(selection.names);
+    schemas[selection.pageIndex] = (schemas[selection.pageIndex] ?? []).filter(
+      (schema: any) => !names.has(schema.name)
+    );
+    designer.updateTemplate({ ...template, schemas });
+    setSelection(null);
+    setDirty(true);
+  }, [selection]);
+
+  // Open the text editor for the single selected text element
+  const openTextEditor = useCallback(() => {
+    const designer = designerRef.current;
+    if (!designer || !selection?.editableTextName) return;
+
+    const page = designer.getTemplate().schemas?.[selection.pageIndex] ?? [];
+    const schema: any = page.find((s: any) => s.name === selection.editableTextName);
+    if (!schema) return;
+    setTextEditor({
+      pageIndex: selection.pageIndex,
+      name: schema.name,
+      draft: {
+        content: typeof schema.content === 'string' ? schema.content : '',
+        fieldVars:
+          schema.dculusFieldVars && typeof schema.dculusFieldVars === 'object'
+            ? { ...schema.dculusFieldVars }
+            : {},
+      },
+    });
+  }, [selection]);
+
+  const saveTextEditor = useCallback(
+    (draft: TextElementDraft) => {
+      const designer = designerRef.current;
+      if (!designer || !textEditor) return;
+
+      const template = designer.getTemplate();
+      const schemas = [...(template.schemas ?? [])];
+      schemas[textEditor.pageIndex] = (schemas[textEditor.pageIndex] ?? []).map(
+        (schema: any) => {
+          if (schema.name !== textEditor.name) return schema;
+          const next = { ...schema, content: draft.content };
+          if (Object.keys(draft.fieldVars).length > 0) {
+            next.dculusFieldVars = draft.fieldVars;
+          } else {
+            delete next.dculusFieldVars;
+          }
+          return next;
+        }
+      );
+      designer.updateTemplate({ ...template, schemas });
+      setTextEditor(null);
+      setDirty(true);
+    },
+    [textEditor]
   );
 
   // Remove every element bound to a field that no longer exists on the form
@@ -431,8 +642,9 @@ const PdfTemplateDesigner: React.FC = () => {
       <DndContext
         sensors={dndSensors}
         onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
-        onDragCancel={() => setActiveDrag(null)}
+        onDragCancel={clearDragState}
       >
       <div className="flex flex-col gap-3 -mt-1 h-[calc(100vh-140px)]">
         {/* Toolbar */}
@@ -518,11 +730,30 @@ const PdfTemplateDesigner: React.FC = () => {
                   </div>
                 )}
                 <div ref={designerContainerRef} className="w-full h-full" data-testid="pdf-designer-canvas" />
+                {activeDrag && dragPapers && (
+                  <DropGuides papers={dragPapers} ghost={dragGhost} />
+                )}
+                {canEdit && !activeDrag && (
+                  <SelectionToolbar
+                    container={designerContainerRef.current}
+                    selection={selection}
+                    onDuplicate={duplicateSelection}
+                    onDelete={deleteSelection}
+                    onEditText={openTextEditor}
+                  />
+                )}
               </>
             )}
           </div>
         </div>
       </div>
+      <TextElementEditorDialog
+        open={textEditor !== null}
+        onOpenChange={(open) => !open && setTextEditor(null)}
+        initial={textEditor?.draft ?? null}
+        fields={formFields}
+        onSave={saveTextEditor}
+      />
       {formId && templateId && (
         <PreviewDialog
           open={previewOpen}

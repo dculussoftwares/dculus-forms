@@ -85,6 +85,19 @@
     "table": "Table",
     "qrcode": "QR Code"
   },
+  "selectionToolbar": {
+    "editText": "Edit text",
+    "duplicate": "Duplicate",
+    "delete": "Delete"
+  },
+  "textEditor": {
+    "title": "Edit text",
+    "description": "Write your text and insert form fields inline — each {field} is replaced with the response's answer in the generated PDF. Style the text in the panel on the right.",
+    "insertField": "Insert form field",
+    "placeholder": "Type your text here…",
+    "saveButton": "Apply",
+    "cancelButton": "Cancel"
+  },
   "preview": {
     "button": "Preview",
     "title": "Preview PDF",

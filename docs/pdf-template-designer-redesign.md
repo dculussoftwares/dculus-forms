@@ -190,6 +190,7 @@ Misc
 | 3 | Drag & drop: coordinate-mapping spike → dnd-kit wiring → overlay chip → select-on-drop (fallback: viewport-center insert) |
 | 4 | Preview: response picker + `previewPdfTemplate` mutation + sample data + iframe render |
 | 5 (optional) | Tamil font support, chip-styled custom plugin for bound fields, AI sample data |
+| 6 | JotForm-parity canvas UX: guided-drop column grid + snap ghost, floating selection toolbar (duplicate / delete / edit text), text editor modal with inline field tokens (`{token}` bound via `dculusFieldVars`), larger resize handles. Chip-styled bound fields dropped by decision (new schema type not worth cosmetic gain). pdfme built-ins worth knowing: rulers support dragging out guide lines, and elements snap to them while moving/resizing. |
 
 Spikes before committing to Phase 3/5: (a) page DOM rect/scale mapping under zoom,
 (b) duplicate-element naming, (c) custom font parity Designer ↔ generator.

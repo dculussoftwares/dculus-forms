@@ -203,3 +203,18 @@ svg.lucide {
   );
   animation: ai-spin-gradient 3s linear infinite;
 }
+
+/* pdfme designer (PDF templates) — enlarge react-moveable resize handles for
+   easier grabbing. Moveable portals its controls to document.body, so this
+   cannot be scoped to the designer container; pdfme is the only moveable
+   consumer in this app. */
+.moveable-control-box .moveable-control {
+  width: 12px !important;
+  height: 12px !important;
+  margin-top: -6px !important;
+  margin-left: -6px !important;
+  border-radius: 3px !important;
+}
+.moveable-control-box .moveable-line {
+  --moveable-line-thickness: 1.5px;
+}

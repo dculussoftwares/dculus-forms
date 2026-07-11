@@ -266,6 +266,38 @@ describe('buildTemplateInputs', () => {
     });
   });
 
+  it('substitutes {token} occurrences via dculusFieldVars, leaving unmapped braces alone', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('intro', 'Dear {full_name}, submitted on {date}. Literal {braces} stay.', {
+            dculusFieldVars: { full_name: 'f-name', date: 'f-date' },
+          }),
+        ],
+      ],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({
+      intro: 'Dear Alice Smith, submitted on Jul 10, 2026. Literal {braces} stay.',
+    });
+  });
+
+  it('renders empty for tokens whose field was deleted or unanswered', () => {
+    const template: any = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('intro', 'Hello {gone}!', {
+            dculusFieldVars: { gone: 'deleted-field' },
+          }),
+        ],
+      ],
+    };
+    expect(buildTemplateInputs(template, values, labels)).toEqual({
+      intro: 'Hello !',
+    });
+  });
+
   it('lets bound and legacy elements coexist in one template', () => {
     const template: any = {
       basePdf: BLANK_A4,

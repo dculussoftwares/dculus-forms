@@ -14,10 +14,17 @@
  * — no access to pdfme internals or the current zoom level required.
  */
 
-const ZOOM = 3.7795275591; // px per mm, mirrors @pdfme/ui's constant
+export const ZOOM = 3.7795275591; // px per mm, mirrors @pdfme/ui's constant
 
 // Pointer may be slightly off-page and still count as a drop on that page
 const SNAP_MARGIN_PX = 12;
+
+/** JotForm-style layout grid shown while dragging from the palette */
+export const GRID_COLUMNS = 12;
+/** Vertical snap step in mm */
+export const ROW_STEP_MM = 5;
+/** Snap only when within this distance of a grid line, in mm */
+const SNAP_THRESHOLD_MM = 4;
 
 export interface DropTarget {
   pageIndex: number;
@@ -108,4 +115,71 @@ export function centeredClampedPosition(
     x: clamp(target.point.x - width / 2, target.pageSize.width - width),
     y: clamp(target.point.y - height / 2, target.pageSize.height - height),
   };
+}
+
+/**
+ * Centered position with JotForm-style guided snapping: the element's left
+ * edge snaps to the nearest column line of a GRID_COLUMNS grid and its top
+ * to a ROW_STEP_MM grid, but only when already close (SNAP_THRESHOLD_MM) —
+ * free placement elsewhere. Result is clamped inside the page. Used for
+ * both the live drag ghost and the actual drop, so the ghost is exact.
+ */
+export function snappedDropPosition(
+  target: DropTarget,
+  width: number,
+  height: number
+): { x: number; y: number } {
+  const centered = centeredClampedPosition(target, width, height);
+  const columnWidth = target.pageSize.width / GRID_COLUMNS;
+
+  const snapAxis = (value: number, step: number) => {
+    const nearest = Math.round(value / step) * step;
+    return Math.abs(nearest - value) <= SNAP_THRESHOLD_MM ? nearest : value;
+  };
+
+  const clamp = (value: number, max: number) =>
+    Math.max(0, Math.min(value, Math.max(0, max)));
+
+  return {
+    x: clamp(snapAxis(centered.x, columnWidth), target.pageSize.width - width),
+    y: clamp(snapAxis(centered.y, ROW_STEP_MM), target.pageSize.height - height),
+  };
+}
+
+export interface PaperViewport {
+  pageIndex: number;
+  /** Paper rect relative to the given container element, in px */
+  rect: { left: number; top: number; width: number; height: number };
+  /** Current render scale (px per untransformed px) */
+  scale: number;
+  /** Page size in mm */
+  pageSize: { width: number; height: number };
+}
+
+/**
+ * Geometry of every rendered page relative to `container` — drives the
+ * drag-time grid overlay and the floating selection toolbar.
+ */
+export function getPaperViewports(container: HTMLElement): PaperViewport[] {
+  const containerRect = container.getBoundingClientRect();
+  return findPaperElements(container).flatMap((paper, pageIndex) => {
+    const rect = paper.getBoundingClientRect();
+    if (rect.width === 0 || paper.offsetWidth === 0) return [];
+    return [
+      {
+        pageIndex,
+        rect: {
+          left: rect.left - containerRect.left,
+          top: rect.top - containerRect.top,
+          width: rect.width,
+          height: rect.height,
+        },
+        scale: rect.width / paper.offsetWidth,
+        pageSize: {
+          width: paper.offsetWidth / ZOOM,
+          height: paper.offsetHeight / ZOOM,
+        },
+      },
+    ];
+  });
 }
