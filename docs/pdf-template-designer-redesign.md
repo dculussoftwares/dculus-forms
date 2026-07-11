@@ -196,9 +196,10 @@ Spikes before committing to Phase 3/5: (a) page DOM rect/scale mapping under zoo
 
 ## Files touched
 
-- `apps/form-app/src/pages/PdfTemplateDesigner.tsx` → split into
-  `apps/form-app/src/components/pdf-designer/` (`FieldsPanel`, `ElementsPanel`,
-  `PreviewSheet`, `useDesignerDnd`, insert/binding utils)
+- `apps/form-app/src/pages/PdfTemplateDesigner.tsx` → supporting modules in
+  `apps/form-app/src/components/pdf-designer/`: `LeftPanel.tsx` (tabbed
+  Fields/Elements palette), `PreviewDialog.tsx`, `fieldBinding.ts`,
+  `dropPlacement.ts`
 - `apps/backend/src/services/pdfTemplateService.ts` + `__tests__`
 - `apps/backend/src/graphql/schema.ts` + resolver (preview mutation)
 - `apps/form-app/src/graphql/pdfTemplates.ts`

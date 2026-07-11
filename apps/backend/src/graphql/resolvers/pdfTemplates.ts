@@ -355,7 +355,8 @@ export const pdfTemplatesResolvers = {
      *   changes preview accurately. Requires EDITOR (same right as saving
      *   it); omitted → the stored template is used (VIEWER is enough).
      * - `responseId` (optional): preview with that response's answers;
-     *   omitted → deterministic per-field-type sample data.
+     *   omitted → deterministic per-field-type sample data, or AI-generated
+     *   sample data when `aiSampleData` is set (EDITOR — spends AI credits).
      */
     previewPdfTemplate: async (
       _: any,
@@ -377,10 +378,13 @@ export const pdfTemplatesResolvers = {
       const stored = await getTemplateOrThrow(templateId);
 
       const usesWorkingCopy = template !== undefined && template !== null;
+      // EDITOR for working copies (equivalent to save rights) AND for AI
+      // sample data — it spends the org's AI credit budget, which VIEWER
+      // access must not be able to drain
       const accessCheck = await checkFormAccess(
         context.auth.user!.id,
         stored.formId,
-        usesWorkingCopy ? PermissionLevel.EDITOR : PermissionLevel.VIEWER
+        usesWorkingCopy || aiSampleData ? PermissionLevel.EDITOR : PermissionLevel.VIEWER
       );
       if (!accessCheck.hasAccess) {
         throw createGraphQLError(

@@ -164,7 +164,7 @@ export const PreviewDialog: React.FC<PreviewDialogProps> = ({
           <span className="text-xs font-medium text-[#655d67] dark:text-gray-400">
             {t('preview.dataSourceLabel')}
           </span>
-          <Select value={source} onValueChange={setSource}>
+          <Select value={source} onValueChange={setSource} disabled={loading}>
             <SelectTrigger
               className="w-80 h-8 text-xs"
               data-testid="pdf-designer-preview-source"
