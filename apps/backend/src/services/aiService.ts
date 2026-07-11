@@ -1,6 +1,6 @@
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
-import { getPrimaryModel } from '../lib/ai.js';
+import { getFastModel, getPrimaryModel } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
 export type AIFormMode = 'quick' | 'standard' | 'professional';
@@ -131,4 +131,67 @@ export async function generateFormWithAI(
   logger.info({ tokensUsed, fieldCount: output.fields.length, mode }, 'AI form generation complete');
 
   return { ...output, tokensUsed };
+}
+
+// ---------------------------------------------------------------------------
+// AI sample data for PDF template preview
+// ---------------------------------------------------------------------------
+
+const AISampleAnswersSchema = z.object({
+  answers: z.array(
+    z.object({
+      fieldId: z.string().describe('The exact field id, copied verbatim'),
+      value: z
+        .string()
+        .describe(
+          'The answer. For checkbox fields: chosen options joined with ", ". For select/radio: one option verbatim. For date: YYYY-MM-DD.'
+        ),
+    })
+  ),
+});
+
+export interface AISampleDataResult {
+  /** fieldId → raw answer string as produced by the model */
+  answers: Record<string, string>;
+  tokensUsed: number;
+}
+
+/**
+ * Generate realistic, persona-consistent sample answers for a form —
+ * used by the PDF template preview's "AI sample data" mode. Runs on the
+ * fast (nano) model; the caller is responsible for the credit budget
+ * check and usage recording, and for validating/coercing values per
+ * field type before use.
+ */
+export async function generateAiSampleData(fields: {
+  formTitle: string;
+  entries: { id: string; type: string; label: string; options?: string[] }[];
+}): Promise<AISampleDataResult> {
+  const fieldLines = fields.entries
+    .map((f) => {
+      const options = f.options?.length ? ` options: [${f.options.join(' | ')}]` : '';
+      return `- id: ${f.id} | type: ${f.type} | label: ${f.label}${options}`;
+    })
+    .join('\n');
+
+  const { output, usage } = await generateText({
+    model: getFastModel(),
+    output: Output.object({ schema: AISampleAnswersSchema }),
+    system: `You fill forms with realistic sample data for previewing documents.
+Invent ONE consistent fictional persona and answer every field as that persona.
+Rules:
+- Answer in the same language as the field label (e.g. Tamil labels get Tamil answers).
+- select/radio: copy exactly one of the listed options, verbatim.
+- checkbox: copy one or more listed options verbatim, joined with ", ".
+- date: YYYY-MM-DD. number: digits only. email/phone: plausible but clearly fictional.
+- Keep long-text answers to one or two sentences.
+- Include every field id exactly once.`,
+    prompt: `Form title: ${fields.formTitle || 'Untitled form'}\nFields:\n${fieldLines}`,
+  });
+
+  const answers: Record<string, string> = {};
+  for (const item of output.answers) {
+    answers[item.fieldId] = item.value;
+  }
+  return { answers, tokensUsed: usage?.totalTokens ?? 0 };
 }

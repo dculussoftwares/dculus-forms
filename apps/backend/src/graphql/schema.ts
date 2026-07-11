@@ -1370,6 +1370,7 @@ export const typeDefs = gql`
     updatePdfTemplate(id: ID!, input: UpdatePdfTemplateInput!): PdfTemplate!
     deletePdfTemplate(id: ID!): Boolean!
     generatePdfFromResponse(templateId: ID!, responseId: ID!): GeneratedPdfResult!
+    previewPdfTemplate(templateId: ID!, template: JSON, responseId: ID, aiSampleData: Boolean = false): GeneratedPdfResult!
 
     # AI Mutations
     generateFormWithAI(

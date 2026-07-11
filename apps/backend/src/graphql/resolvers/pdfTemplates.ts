@@ -15,11 +15,19 @@ import {
 } from '../../services/fileUploadService.js';
 import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import {
+  buildAiFieldEntries,
   buildPdfFilename,
+  buildSampleResponseData,
+  coerceAiSampleData,
   generatePdfForResponse,
   stripBasePdf,
   validatePdfTemplate,
 } from '../../services/pdfTemplateService.js';
+import { generateAiSampleData } from '../../services/aiService.js';
+import {
+  checkAITokenBudget,
+  recordAITokenUsage,
+} from '../../services/aiUsageService.js';
 
 /**
  * GraphQL Resolvers for PDF Templates (issue #87)
@@ -335,6 +343,137 @@ export const pdfTemplatesResolvers = {
         logger.error('generatePdfFromResponse failed:', error);
         throw createGraphQLError(
           'Failed to generate PDF',
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
+      }
+    },
+
+    /**
+     * Preview a template as a generated PDF, without persisting anything.
+     *
+     * - `template` (optional): the designer's working copy, so unsaved
+     *   changes preview accurately. Requires EDITOR (same right as saving
+     *   it); omitted → the stored template is used (VIEWER is enough).
+     * - `responseId` (optional): preview with that response's answers;
+     *   omitted → deterministic per-field-type sample data, or AI-generated
+     *   sample data when `aiSampleData` is set (EDITOR — spends AI credits).
+     */
+    previewPdfTemplate: async (
+      _: any,
+      {
+        templateId,
+        template,
+        responseId,
+        aiSampleData,
+      }: {
+        templateId: string;
+        template?: any;
+        responseId?: string | null;
+        aiSampleData?: boolean;
+      },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const stored = await getTemplateOrThrow(templateId);
+
+      const usesWorkingCopy = template !== undefined && template !== null;
+      // EDITOR for working copies (equivalent to save rights) AND for AI
+      // sample data — it spends the org's AI credit budget, which VIEWER
+      // access must not be able to drain
+      const accessCheck = await checkFormAccess(
+        context.auth.user!.id,
+        stored.formId,
+        usesWorkingCopy || aiSampleData ? PermissionLevel.EDITOR : PermissionLevel.VIEWER
+      );
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError(
+          'Access denied: You do not have permission to preview this PDF template',
+          GRAPHQL_ERROR_CODES.NO_ACCESS
+        );
+      }
+
+      let workingTemplate = stored.template;
+      if (usesWorkingCopy) {
+        try {
+          validatePdfTemplate(template, !!stored.fileKey);
+        } catch (error) {
+          throw createGraphQLError(
+            `Invalid PDF template: ${error instanceof Error ? error.message : 'validation failed'}`,
+            GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+          );
+        }
+        // The uploaded base PDF is never trusted from the client — it is
+        // re-hydrated from R2 via the stored fileKey inside generation
+        workingTemplate = stripBasePdf(template, !!stored.fileKey);
+      }
+
+      const form = await prisma.form.findUnique({
+        where: { id: stored.formId },
+        select: { formSchema: true, organizationId: true, title: true },
+      });
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+      const deserializedSchema = deserializeFormSchema(form.formSchema);
+
+      let responseData: Record<string, any>;
+      if (responseId) {
+        const response = await prisma.response.findUnique({ where: { id: responseId } });
+        if (!response || response.deletedAt || response.formId !== stored.formId) {
+          throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+        }
+        responseData = (response.data as Record<string, any>) ?? {};
+      } else if (aiSampleData) {
+        const budget = await checkAITokenBudget(form.organizationId);
+        if (!budget.allowed) {
+          throw createGraphQLError(
+            `AI credit limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} credits used this month). Upgrade your plan to continue.`,
+            GRAPHQL_ERROR_CODES.AI_TOKEN_LIMIT_EXCEEDED
+          );
+        }
+        try {
+          const aiResult = await generateAiSampleData({
+            formTitle: form.title,
+            entries: buildAiFieldEntries(deserializedSchema),
+          });
+          await recordAITokenUsage(form.organizationId, aiResult.tokensUsed, 'nano');
+          responseData = coerceAiSampleData(deserializedSchema, aiResult.answers);
+        } catch (error) {
+          logger.error('AI sample data generation failed:', error);
+          throw createGraphQLError(
+            'AI sample data generation failed. Please try again.',
+            GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+          );
+        }
+      } else {
+        responseData = buildSampleResponseData(deserializedSchema);
+      }
+
+      try {
+        const pdfBuffer = await generatePdfForResponse({
+          storedTemplate: workingTemplate,
+          fileKey: stored.fileKey,
+          deserializedSchema,
+          responseData,
+        });
+
+        const filename = buildPdfFilename(stored.name, responseId ?? 'preview');
+        const temporaryFile = await uploadTemporaryFile(
+          pdfBuffer,
+          filename,
+          'application/pdf'
+        );
+
+        return {
+          downloadUrl: temporaryFile.downloadUrl,
+          expiresAt: temporaryFile.expiresAt.toISOString(),
+          filename,
+        };
+      } catch (error) {
+        logger.error('previewPdfTemplate failed:', error);
+        throw createGraphQLError(
+          'Failed to generate the preview PDF',
           GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
         );
       }

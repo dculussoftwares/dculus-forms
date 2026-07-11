@@ -1,7 +1,7 @@
 {
   "layout": {
     "title": "PDF Templates",
-    "dynamicTitle": "PDF Templates - {formTitle}",
+    "dynamicTitle": "PDF Templates - {{formTitle}}",
     "designerTitle": "PDF Template Designer",
     "breadcrumbs": {
       "dashboard": "Dashboard",
@@ -28,16 +28,16 @@
     "blankTitle": "New blank template",
     "uploadTitle": "New template from PDF",
     "blankDescription": "Give your template a name to start designing.",
-    "uploadDescription": "Using \"{fileName}\" as the base PDF. Give your template a name to start designing.",
+    "uploadDescription": "Using \"{{fileName}}\" as the base PDF. Give your template a name to start designing.",
     "namePlaceholder": "Template name",
     "cancelButton": "Cancel",
     "createButton": "Create",
     "creatingButton": "Creating..."
   },
   "list": {
-    "uploadedSource": "From {fileName}",
+    "uploadedSource": "From {{fileName}}",
     "blankSource": "Blank page",
-    "pageCount": "{count} page(s)",
+    "pageCount": "{{count}} page(s)",
     "openButton": "Open designer",
     "viewButton": "View"
   },
@@ -48,7 +48,7 @@
   },
   "deleteDialog": {
     "title": "Delete PDF template?",
-    "description": "\"{name}\" will be permanently deleted. This cannot be undone.",
+    "description": "\"{{name}}\" will be permanently deleted. This cannot be undone.",
     "cancelButton": "Cancel",
     "deleteButton": "Delete",
     "deletingButton": "Deleting..."
@@ -59,10 +59,22 @@
     "basePdfUnavailable": "The base PDF could not be loaded",
     "loadFailed": "Failed to load the designer"
   },
+  "leftPanel": {
+    "fieldsTab": "Form fields",
+    "elementsTab": "Elements"
+  },
   "fieldsPanel": {
-    "heading": "Form fields",
     "description": "Click a field to place its response value on the page. You can place the same field multiple times.",
-    "noFields": "This form has no fields yet."
+    "searchPlaceholder": "Search fields",
+    "noFields": "This form has no fields yet.",
+    "noSearchResults": "No fields match your search.",
+    "untitledField": "Untitled field",
+    "placedCount": "Placed {{count}} time(s) on this template",
+    "missingFields": "{{count}} placed field(s) no longer exist in this form and will print as empty.",
+    "removeMissingButton": "Remove missing fields"
+  },
+  "elementsPanel": {
+    "description": "Click an element to add it to the page. Style it in the panel on the right."
   },
   "palette": {
     "text": "Text",
@@ -72,6 +84,30 @@
     "ellipse": "Ellipse",
     "table": "Table",
     "qrcode": "QR Code"
+  },
+  "selectionToolbar": {
+    "editText": "Edit text",
+    "duplicate": "Duplicate",
+    "delete": "Delete"
+  },
+  "textEditor": {
+    "title": "Edit text",
+    "description": "Write your text and insert form fields inline — each field pill is replaced with the response's answer in the generated PDF. Style the text in the panel on the right.",
+    "insertField": "Insert form field",
+    "mentionHint": "or type @ in the text",
+    "placeholder": "Type your text here… use @ to insert a field",
+    "saveButton": "Apply",
+    "cancelButton": "Cancel"
+  },
+  "preview": {
+    "button": "Preview",
+    "title": "Preview PDF",
+    "description": "See the filled PDF exactly as recipients will, using a real response or sample data. Unsaved changes are included.",
+    "dataSourceLabel": "Fill with:",
+    "sampleData": "Sample data",
+    "aiSampleData": "AI sample data (uses AI credits)",
+    "noResponses": "No responses yet — using sample data.",
+    "failed": "Failed to generate the preview. Please try again."
   },
   "generate": {
     "menuLabel": "Generate PDF",

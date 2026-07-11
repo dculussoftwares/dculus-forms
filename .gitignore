@@ -99,7 +99,7 @@ dist
 
 # Gatsby files
 .cache/
-public
+# (no bare "public" rule here — Vite apps commit their public/ source assets)
 
 # Storybook build outputs
 .out
@@ -183,3 +183,6 @@ skills-lock.json
 # Local secret references — never commit
 dculus-chargebee-webhook-passwords.txt
 *.env.bak*
+
+# Local UX reference screenshots (JotForm) — never commit
+/pdf-template/
