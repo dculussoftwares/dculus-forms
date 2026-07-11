@@ -29,22 +29,36 @@ export const CheckoutSuccess = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Stop polling as soon as the plan upgrade is confirmed or the component unmounts.
-  // Also stop after 60 seconds and show a calm timeout message.
-  // The status check matters for enterprise pay-to-activate: planId is already
+  // The upgrade is confirmed once the plan is paid AND active. The status
+  // check matters for enterprise pay-to-activate: planId is already
   // 'enterprise' (status past_due) before checkout, so plan alone can't tell
   // whether the payment webhook has synced yet.
+  const upgradeConfirmed =
+    !!subscription && subscription.planId !== 'free' && subscription.status === 'active';
+
   useEffect(() => {
-    if (subscription && subscription.planId !== 'free' && subscription.status === 'active') {
+    if (upgradeConfirmed) {
       stopPolling();
-      return;
     }
-    if (Date.now() - startTimeRef.current > POLLING_TIMEOUT_MS) {
+  }, [upgradeConfirmed, stopPolling]);
+
+  // Give the payment webhook 60 seconds on a dedicated timer, then show a calm
+  // timeout message. A timer is required: poll results only re-render when the
+  // data actually changes, so checking elapsed time inside a data-driven
+  // effect can never fire while the subscription stays unchanged.
+  useEffect(() => {
+    if (upgradeConfirmed) return;
+    const remaining = POLLING_TIMEOUT_MS - (Date.now() - startTimeRef.current);
+    const timer = setTimeout(() => {
       stopPolling();
       setTimedOut(true);
-    }
-    return () => stopPolling();
-  }, [subscription, stopPolling]);
+    }, Math.max(remaining, 0));
+    return () => clearTimeout(timer);
+  }, [upgradeConfirmed, stopPolling]);
+
+  // Stop polling on unmount only — a cleanup keyed on subscription changes
+  // would cancel polling on the first poll result, before activation is seen.
+  useEffect(() => () => stopPolling(), [stopPolling]);
 
   const getPlanInfo = (planId: string) => {
     const plans: Record<
@@ -102,7 +116,9 @@ export const CheckoutSuccess = () => {
   const planInfo = subscription ? getPlanInfo(subscription.planId) : null;
   const Icon = planInfo?.icon || TrendingUp;
 
-  if (timedOut) {
+  // A poll result may confirm the upgrade just after the timeout fires —
+  // prefer showing success over the stale timeout message.
+  if (timedOut && !upgradeConfirmed) {
     return (
       <div className="min-h-screen bg-background dark:bg-gray-900 flex items-center justify-center p-4">
         <Card className="max-w-md w-full p-8">
