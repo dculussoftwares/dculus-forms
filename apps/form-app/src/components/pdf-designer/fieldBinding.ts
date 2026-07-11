@@ -17,6 +17,7 @@ export const DCULUS_FIELD_ID_KEY = 'dculusFieldId';
 export interface FormFieldEntry {
   id: string;
   label: string;
+  type: string;
 }
 
 const MAX_LABEL_CHARS = 30;
@@ -86,15 +87,11 @@ export function buildBoundFieldSchema(params: {
   };
 }
 
-const EXACT_PLACEHOLDER_REGEX = /^\{\{([^}]{1,500})\}\}$/;
-
 /**
  * Prepare a stored template for the designer:
- * 1. Upgrade legacy elements whose content is exactly `{{<known fieldId>}}`
- *    to bound fields (persists on the user's next save).
- * 2. Re-sync bound elements' display content to the field's current label
+ * 1. Re-sync bound elements' display content to the field's current label
  *    (labels drift when the form is edited after placement).
- * 3. Report bound elements whose field no longer exists on the form.
+ * 2. Report bound elements whose field no longer exists on the form.
  *
  * Pure/in-memory: returns the original template object when nothing changed
  * so callers can skip updateTemplate / avoid marking the template dirty.
@@ -117,20 +114,6 @@ export function prepareTemplateSchemas(
         typeof schema[DCULUS_FIELD_ID_KEY] === 'string'
           ? schema[DCULUS_FIELD_ID_KEY]
           : undefined;
-
-      if (!boundId && schema.type === 'text' && typeof schema.content === 'string') {
-        const match = schema.content.trim().match(EXACT_PLACEHOLDER_REGEX);
-        const field = match ? fieldsById.get(match[1]) : undefined;
-        if (field) {
-          changed = true;
-          next = {
-            ...schema,
-            [DCULUS_FIELD_ID_KEY]: field.id,
-            content: displayLabel(field.label, untitledLabel),
-          };
-          return next;
-        }
-      }
 
       if (boundId) {
         const field = fieldsById.get(boundId);
@@ -169,6 +152,23 @@ export function removeMissingBoundFields(
     )
   );
   return { ...template, schemas };
+}
+
+/**
+ * How many times each form field is placed on the template, keyed by
+ * field id — drives the ×N badges in the fields panel.
+ */
+export function countBoundFields(schemas: any[][]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const page of schemas ?? []) {
+    for (const schema of page ?? []) {
+      const fieldId = schema?.[DCULUS_FIELD_ID_KEY];
+      if (typeof fieldId === 'string') {
+        counts[fieldId] = (counts[fieldId] ?? 0) + 1;
+      }
+    }
+  }
+  return counts;
 }
 
 /**

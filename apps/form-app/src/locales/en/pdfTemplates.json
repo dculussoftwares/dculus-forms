@@ -59,13 +59,22 @@
     "basePdfUnavailable": "The base PDF could not be loaded",
     "loadFailed": "Failed to load the designer"
   },
+  "leftPanel": {
+    "fieldsTab": "Form fields",
+    "elementsTab": "Elements"
+  },
   "fieldsPanel": {
-    "heading": "Form fields",
     "description": "Click a field to place its response value on the page. You can place the same field multiple times.",
+    "searchPlaceholder": "Search fields",
     "noFields": "This form has no fields yet.",
+    "noSearchResults": "No fields match your search.",
     "untitledField": "Untitled field",
+    "placedCount": "Placed {{count}} time(s) on this template",
     "missingFields": "{{count}} placed field(s) no longer exist in this form and will print as empty.",
     "removeMissingButton": "Remove missing fields"
+  },
+  "elementsPanel": {
+    "description": "Click an element to add it to the page. Style it in the panel on the right."
   },
   "palette": {
     "text": "Text",
