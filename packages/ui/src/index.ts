@@ -245,6 +245,12 @@ export {
 
 export { LexicalRichTextEditor as RichTextEditor } from "./rich-text-editor/LexicalRichTextEditor"
 export { SimpleRichTextEditor } from "./rich-text-editor/SimpleRichTextEditor"
+export {
+  MentionPlainTextEditor,
+  type MentionPlainTextEditorHandle,
+  type MentionPlainTextValue,
+  type MentionFieldOption,
+} from "./rich-text-editor/MentionPlainTextEditor"
 
 
 // Field Preview Component

@@ -92,9 +92,10 @@
   },
   "textEditor": {
     "title": "Edit text",
-    "description": "Write your text and insert form fields inline — each {field} is replaced with the response's answer in the generated PDF. Style the text in the panel on the right.",
+    "description": "Write your text and insert form fields inline — each field pill is replaced with the response's answer in the generated PDF. Style the text in the panel on the right.",
     "insertField": "Insert form field",
-    "placeholder": "Type your text here…",
+    "mentionHint": "or type @ in the text",
+    "placeholder": "Type your text here… use @ to insert a field",
     "saveButton": "Apply",
     "cancelButton": "Cancel"
   },
