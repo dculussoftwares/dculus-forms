@@ -22,7 +22,7 @@ export const CheckoutSuccess = () => {
   // 'poll' counts as loading) and bounce this page between the spinner and
   // the plan card every 3 seconds. We only want `loading` to reflect the
   // initial fetch.
-  const { data, loading, stopPolling } = useQuery(GET_SUBSCRIPTION, {
+  const { data, loading, stopPolling, refetch } = useQuery(GET_SUBSCRIPTION, {
     pollInterval: 3000, // Poll every 3 seconds for Chargebee webhook to sync
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: false,
@@ -38,7 +38,15 @@ export const CheckoutSuccess = () => {
   // the hosted page hasn't finished processing yet, the poll above still
   // catches the eventual webhook-driven sync.
   const hostedPageId = searchParams.get('id');
-  const [syncCheckoutSession] = useMutation(SYNC_CHECKOUT_SESSION);
+  const [syncCheckoutSession] = useMutation(SYNC_CHECKOUT_SESSION, {
+    onCompleted: (result) => {
+      // Refetch right away when the sync landed, instead of leaving the
+      // page waiting up to 3s for the next poll tick.
+      if (result?.syncCheckoutSession?.synced) {
+        refetch();
+      }
+    },
+  });
   const hasSyncedRef = useRef(false);
   useEffect(() => {
     if (!hostedPageId || hasSyncedRef.current) return;

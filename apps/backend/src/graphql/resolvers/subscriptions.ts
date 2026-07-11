@@ -186,22 +186,19 @@ export const subscriptionResolvers = {
       // 🔒 SECURITY: Verify user is a member of the active organization
       await requireOrganizationMembership(context.auth, session.activeOrganizationId);
 
+      let synced = false;
       try {
-        const { synced } = await syncFromHostedPage(hostedPageId, session.activeOrganizationId);
-        const subscription = await prisma.subscription.findUnique({
-          where: { organizationId: session.activeOrganizationId },
-        });
-        return { synced, subscription };
+        ({ synced } = await syncFromHostedPage(hostedPageId, session.activeOrganizationId));
       } catch (error: unknown) {
         // Don't fail the redirect page over this — it's a best-effort fallback
         // and the caller (success.tsx) still has webhook-driven polling as a
         // safety net.
         logger.error('[Subscription Resolver] Error syncing checkout session:', error);
-        const subscription = await prisma.subscription.findUnique({
-          where: { organizationId: session.activeOrganizationId },
-        });
-        return { synced: false, subscription };
       }
+      const subscription = await prisma.subscription.findUnique({
+        where: { organizationId: session.activeOrganizationId },
+      });
+      return { synced, subscription };
     },
 
     /**
