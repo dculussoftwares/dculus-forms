@@ -8,6 +8,7 @@ import {
   cancelChargebeeSubscription,
   reactivateChargebeeSubscription,
   syncSubscriptionFromWebhook,
+  syncFromHostedPage,
   handleSubscriptionRenewal,
   getAvailablePlans,
   setEnterpriseSubscription,
@@ -37,6 +38,7 @@ vi.mock('chargebee', () => {
     hostedPage: {
       checkoutNewForItems: vi.fn(),
       checkoutExistingForItems: vi.fn(),
+      retrieve: vi.fn(),
     },
     portalSession: {
       create: vi.fn(),
@@ -101,6 +103,7 @@ describe('Chargebee Service', () => {
     mockChargebee.customer.retrieve.mockReset();
     mockChargebee.hostedPage.checkoutNewForItems.mockReset();
     mockChargebee.hostedPage.checkoutExistingForItems.mockReset();
+    mockChargebee.hostedPage.retrieve.mockReset();
     mockChargebee.portalSession.create.mockReset();
     mockChargebee.subscription.retrieve.mockReset();
     mockChargebee.subscription.cancel.mockReset();
@@ -769,6 +772,87 @@ describe('Chargebee Service', () => {
 
       expect(loggerError).toHaveBeenCalled();
       loggerError.mockRestore();
+    });
+  });
+
+  describe('syncFromHostedPage', () => {
+    it('syncs Postgres immediately when the hosted page succeeded and belongs to the requesting org', async () => {
+      mockChargebee.hostedPage.retrieve.mockResolvedValue({
+        hosted_page: {
+          id: 'hp_123',
+          state: 'succeeded',
+          content: {
+            subscription: {
+              id: 'sub_123',
+              customer_id: 'org_org-123',
+              status: 'active',
+              subscription_items: [{ item_price_id: 'starter-usd-monthly' }],
+              current_term_start: 1704067200,
+              current_term_end: 1706745600,
+            },
+          },
+        },
+      });
+      vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+      const result = await syncFromHostedPage('hp_123', 'org-123');
+
+      expect(result).toEqual({ synced: true, state: 'succeeded' });
+      expect(mockChargebee.hostedPage.retrieve).toHaveBeenCalledWith('hp_123');
+      expect(subscriptionRepository.upsertForOrganization).toHaveBeenCalledWith(
+        'org-123',
+        expect.objectContaining({ planId: 'starter', status: 'active' }),
+        expect.any(Object)
+      );
+    });
+
+    it('does not sync when the hosted page has not succeeded yet', async () => {
+      mockChargebee.hostedPage.retrieve.mockResolvedValue({
+        hosted_page: { id: 'hp_123', state: 'created', content: {} },
+      });
+
+      const result = await syncFromHostedPage('hp_123', 'org-123');
+
+      expect(result).toEqual({ synced: false, state: 'created' });
+      expect(subscriptionRepository.upsertForOrganization).not.toHaveBeenCalled();
+    });
+
+    it('refuses to sync when the hosted page belongs to a different organization', async () => {
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      mockChargebee.hostedPage.retrieve.mockResolvedValue({
+        hosted_page: {
+          id: 'hp_123',
+          state: 'succeeded',
+          content: {
+            subscription: {
+              id: 'sub_123',
+              customer_id: 'org_some-other-org',
+              status: 'active',
+              subscription_items: [{ item_price_id: 'starter-usd-monthly' }],
+              current_term_start: 1704067200,
+              current_term_end: 1706745600,
+            },
+          },
+        },
+      });
+
+      const result = await syncFromHostedPage('hp_123', 'org-123');
+
+      expect(result).toEqual({ synced: false, state: 'succeeded' });
+      expect(subscriptionRepository.upsertForOrganization).not.toHaveBeenCalled();
+      expect(loggerWarn).toHaveBeenCalled();
+      loggerWarn.mockRestore();
+    });
+
+    it('does not sync when a succeeded hosted page has no subscription content', async () => {
+      mockChargebee.hostedPage.retrieve.mockResolvedValue({
+        hosted_page: { id: 'hp_123', state: 'succeeded', content: {} },
+      });
+
+      const result = await syncFromHostedPage('hp_123', 'org-123');
+
+      expect(result).toEqual({ synced: false, state: 'succeeded' });
+      expect(subscriptionRepository.upsertForOrganization).not.toHaveBeenCalled();
     });
   });
 

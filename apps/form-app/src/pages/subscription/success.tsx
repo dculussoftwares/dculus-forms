@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { useQuery } from '@apollo/client/react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { useQuery, useMutation } from '@apollo/client/react';
 import { Button, Card } from '@dculus/ui';
 import { CheckCircle2, Sparkles, TrendingUp, ArrowRight, Info } from 'lucide-react';
-import { GET_SUBSCRIPTION } from '../../graphql/subscription';
+import { GET_SUBSCRIPTION, SYNC_CHECKOUT_SESSION } from '../../graphql/subscription';
 import { useTranslation } from '../../hooks/useTranslation';
 
 const POLLING_TIMEOUT_MS = 60000;
@@ -11,17 +11,42 @@ const POLLING_TIMEOUT_MS = 60000;
 export const CheckoutSuccess = () => {
   const { t } = useTranslation('checkoutSuccess');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showConfetti, setShowConfetti] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
   const startTimeRef = useRef(Date.now());
 
-  // Fetch subscription to get updated details
+  // Fetch subscription to get updated details. notifyOnNetworkStatusChange
+  // is explicitly false here: Apollo Client 4 defaults it to true, which
+  // would flip `loading` back to true on every poll tick (networkStatus
+  // 'poll' counts as loading) and bounce this page between the spinner and
+  // the plan card every 3 seconds. We only want `loading` to reflect the
+  // initial fetch.
   const { data, loading, stopPolling } = useQuery(GET_SUBSCRIPTION, {
     pollInterval: 3000, // Poll every 3 seconds for Chargebee webhook to sync
     fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: false,
   });
 
   const subscription = data?.activeOrganization?.subscription;
+
+  // Chargebee's hosted-page checkout appends ?id=<hostedPageId>&state=...
+  // to this redirect. Chargebee's own docs recommend retrieving that hosted
+  // page immediately on redirect rather than relying solely on the webhook,
+  // which is asynchronous and — in local development — frequently can't
+  // reach the backend at all. This is a best-effort fallback: if it fails or
+  // the hosted page hasn't finished processing yet, the poll above still
+  // catches the eventual webhook-driven sync.
+  const hostedPageId = searchParams.get('id');
+  const [syncCheckoutSession] = useMutation(SYNC_CHECKOUT_SESSION);
+  const hasSyncedRef = useRef(false);
+  useEffect(() => {
+    if (!hostedPageId || hasSyncedRef.current) return;
+    hasSyncedRef.current = true;
+    syncCheckoutSession({ variables: { hostedPageId } }).catch(() => {
+      // Swallow — polling remains the safety net.
+    });
+  }, [hostedPageId, syncCheckoutSession]);
 
   useEffect(() => {
     // Stop confetti after 3 seconds

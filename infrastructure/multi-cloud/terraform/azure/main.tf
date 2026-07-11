@@ -40,6 +40,11 @@ locals {
   form_viewer_domain = var.environment == "production" ? "viewer.${var.root_domain}" : "viewer-app-${var.environment}.${var.root_domain}"
   admin_app_domain   = var.environment == "production" ? "form-admin-app.${var.root_domain}" : "form-admin-app-${var.environment}.${var.root_domain}"
 
+  # FRONTEND_URL for the backend: used as the Chargebee checkout redirect_url/
+  # cancel_url base. Falls back to the environment's form-app domain so dev/
+  # prod each redirect to their own frontend instead of a shared default.
+  resolved_frontend_url = var.frontend_url != "" ? var.frontend_url : "https://${local.form_app_domain}"
+
   # Production domains are now primary (no separate aliases needed)
   production_domains = []
 
@@ -124,6 +129,11 @@ resource "azurerm_container_app" "backend" {
       env {
         name  = "BETTER_AUTH_URL"
         value = local.resolved_auth_url
+      }
+
+      env {
+        name  = "FRONTEND_URL"
+        value = local.resolved_frontend_url
       }
 
       env {

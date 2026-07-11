@@ -1183,6 +1183,16 @@ export const typeDefs = gql`
     message: String
   }
 
+  # Result of the post-checkout fallback sync (see syncCheckoutSession).
+  # synced=true means the hosted page had already succeeded and Postgres was
+  # updated immediately; synced=false means checkout hasn't completed yet
+  # (still 'created'/'requested') or was cancelled — callers should keep
+  # relying on webhook-driven polling in that case.
+  type SyncCheckoutSessionResult {
+    synced: Boolean!
+    subscription: PlanSubscription
+  }
+
   type PlanPrice {
     id: String!
     currency: String!
@@ -1285,6 +1295,12 @@ export const typeDefs = gql`
     # themselves instead of relying solely on the admin-shared/emailed link.
     # Only valid while Subscription.enterprisePendingActivation is true.
     completeEnterprisePayment: CheckoutSessionResponse!
+    # Fallback sync called from /subscription/success on redirect. Chargebee
+    # appends ?id=<hostedPageId>&state=... to redirect_url — this retrieves
+    # that hosted page and, if it succeeded, syncs Postgres immediately
+    # instead of waiting on webhook delivery (which can be delayed, or in
+    # local dev, unreachable entirely).
+    syncCheckoutSession(hostedPageId: String!): SyncCheckoutSessionResult!
 
     # Form Mutations
     createForm(input: CreateFormInput!): Form!

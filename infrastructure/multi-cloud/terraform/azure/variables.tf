@@ -104,6 +104,12 @@ variable "better_auth_url" {
   default     = ""
 }
 
+variable "frontend_url" {
+  description = "Frontend (form-app) base URL, used as the Chargebee checkout redirect_url/cancel_url. Empty string derives it from environment + root_domain (see local.form_app_domain)."
+  type        = string
+  default     = ""
+}
+
 variable "public_s3_access_key" {
   description = "Public S3 bucket access key for file storage"
   type        = string

@@ -4,6 +4,7 @@ location            = "Central India"
 container_image     = "dculus/forms-backend"
 container_image_tag = "latest"
 better_auth_url     = "https://dculus-forms-staging-backend.kindocean-e9e3f3f1.eastus.azurecontainerapps.io"
+frontend_url        = ""
 
 # Root domain for frontend applications (CORS origins will be auto-generated)
 root_domain         = "dculus.com"

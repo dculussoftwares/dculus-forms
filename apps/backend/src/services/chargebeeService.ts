@@ -196,6 +196,12 @@ const buildEnterpriseCheckoutUrl = async (
   await lockEnterpriseItemPriceQuantity(itemPriceId);
 
   const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  logger.info('[Chargebee Service] Creating enterprise checkout hosted page', {
+    chargebeeSubscriptionId,
+    itemPriceId,
+    redirectBaseUrl: baseUrl,
+    frontendUrlSet: Boolean(process.env.FRONTEND_URL),
+  });
   const result: any = await chargebee.hostedPage.checkoutExistingForItems({
     subscription: { id: chargebeeSubscriptionId, auto_collection: 'on' },
     subscription_items: [{ item_price_id: itemPriceId, unit_price: priceInSmallestUnit, quantity: 1 }],
@@ -435,6 +441,12 @@ export const createCheckoutHostedPage = async (
   try {
     // Get base URL from environment or use default
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    logger.info('[Chargebee Service] Creating checkout hosted page', {
+      customerId,
+      itemPriceId,
+      redirectBaseUrl: baseUrl,
+      frontendUrlSet: Boolean(process.env.FRONTEND_URL),
+    });
 
     // Use checkoutNewForItems for Product Catalog 2.0
     const result = await chargebee.hostedPage.checkoutNewForItems({
@@ -658,6 +670,71 @@ export const syncSubscriptionFromWebhook = async (
     logger.error('[Chargebee Service] Error syncing subscription:', error);
     throw error;
   }
+};
+
+/**
+ * Fallback sync for the post-checkout redirect landing page.
+ *
+ * Chargebee's hosted-page checkout redirects the browser back to
+ * `redirect_url` with `?id=<hostedPageId>&state=<state>` query params.
+ * Per Chargebee's documented pattern, the receiving page should retrieve
+ * that hosted page server-side to get an immediate, synchronous read of the
+ * checkout outcome — the webhook that would otherwise drive the sync is
+ * asynchronous and, in local development, frequently can't reach the
+ * backend at all (Chargebee can't deliver test-site webhooks to
+ * localhost). This applies the exact same sync path a webhook would
+ * (`syncSubscriptionFromWebhook`), so it stays idempotent with — not a
+ * duplicate of — normal webhook-driven sync.
+ *
+ * Verifies the hosted page's customer belongs to the calling organization
+ * before syncing anything, so one org can't force a sync using another
+ * org's (guessable, sequential-looking) hosted page id.
+ */
+export const syncFromHostedPage = async (
+  hostedPageId: string,
+  organizationId: string
+): Promise<{ synced: boolean; state?: string }> => {
+  const result: any = await chargebee.hostedPage.retrieve(hostedPageId);
+  const hostedPage = result.hosted_page;
+  const state = hostedPage?.state;
+
+  if (state !== 'succeeded') {
+    // 'created'/'requested' — payment still in flight, let the caller keep
+    // polling. 'cancelled'/'acknowledged' — nothing new to sync.
+    logger.info('[Chargebee Service] Hosted page not in succeeded state — skipping sync', {
+      hostedPageId,
+      organizationId,
+      state,
+    });
+    return { synced: false, state };
+  }
+
+  const subscriptionData = hostedPage.content?.subscription;
+  if (!subscriptionData) {
+    logger.warn('[Chargebee Service] Hosted page succeeded but has no subscription content', {
+      hostedPageId,
+      organizationId,
+    });
+    return { synced: false, state };
+  }
+
+  const expectedCustomerId = `org_${organizationId}`;
+  if (subscriptionData.customer_id !== expectedCustomerId) {
+    logger.warn(
+      '[Chargebee Service] Hosted page customer does not match requesting organization — refusing to sync',
+      { hostedPageId, organizationId }
+    );
+    return { synced: false, state };
+  }
+
+  await syncSubscriptionFromWebhook(subscriptionData);
+  logger.info('[Chargebee Service] Synced subscription from hosted page', {
+    hostedPageId,
+    organizationId,
+    subscriptionId: subscriptionData.id,
+    subscriptionStatus: subscriptionData.status,
+  });
+  return { synced: true, state };
 };
 
 /**

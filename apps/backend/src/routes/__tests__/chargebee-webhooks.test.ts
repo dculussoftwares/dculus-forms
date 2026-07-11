@@ -67,7 +67,8 @@ describe('Chargebee Webhook Routes', () => {
       expect(response.body).toEqual({ received: true });
       expect(logger.info).toHaveBeenCalledWith(
         '[Chargebee Webhook] Received event:',
-        'subscription_created'
+        'subscription_created',
+        expect.objectContaining({ subscriptionId: 'sub_123', subscriptionStatus: 'active' })
       );
       expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
       expect(handleSubscriptionRenewal).not.toHaveBeenCalled();
@@ -232,7 +233,8 @@ describe('Chargebee Webhook Routes', () => {
       expect(response.body).toEqual({ received: true });
       expect(logger.info).toHaveBeenCalledWith(
         '[Chargebee Webhook] Received event:',
-        'payment_succeeded'
+        'payment_succeeded',
+        expect.any(Object)
       );
       expect(syncSubscriptionFromWebhook).not.toHaveBeenCalled();
     });
@@ -402,7 +404,8 @@ describe('Chargebee Webhook Routes', () => {
 
         expect(logger.info).toHaveBeenCalledWith(
           '[Chargebee Webhook] Received event:',
-          eventType
+          eventType,
+          expect.any(Object)
         );
       }
     });
