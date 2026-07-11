@@ -1,7 +1,7 @@
 {
   "layout": {
     "title": "PDF வார்ப்புருக்கள்",
-    "dynamicTitle": "PDF வார்ப்புருக்கள் - {formTitle}",
+    "dynamicTitle": "PDF வார்ப்புருக்கள் - {{formTitle}}",
     "designerTitle": "PDF வார்ப்புரு வடிவமைப்பாளர்",
     "breadcrumbs": {
       "dashboard": "டாஷ்போர்டு",
@@ -28,16 +28,16 @@
     "blankTitle": "புதிய வெற்று வார்ப்புரு",
     "uploadTitle": "PDF இலிருந்து புதிய வார்ப்புரு",
     "blankDescription": "வடிவமைப்பைத் தொடங்க உங்கள் வார்ப்புருவுக்கு ஒரு பெயரைக் கொடுங்கள்.",
-    "uploadDescription": "\"{fileName}\" அடிப்படை PDF ஆகப் பயன்படுத்தப்படும். வடிவமைப்பைத் தொடங்க ஒரு பெயரைக் கொடுங்கள்.",
+    "uploadDescription": "\"{{fileName}}\" அடிப்படை PDF ஆகப் பயன்படுத்தப்படும். வடிவமைப்பைத் தொடங்க ஒரு பெயரைக் கொடுங்கள்.",
     "namePlaceholder": "வார்ப்புரு பெயர்",
     "cancelButton": "ரத்துசெய்",
     "createButton": "உருவாக்கு",
     "creatingButton": "உருவாக்கப்படுகிறது..."
   },
   "list": {
-    "uploadedSource": "{fileName} இலிருந்து",
+    "uploadedSource": "{{fileName}} இலிருந்து",
     "blankSource": "வெற்றுப் பக்கம்",
-    "pageCount": "{count} பக்கம்(கள்)",
+    "pageCount": "{{count}} பக்கம்(கள்)",
     "openButton": "வடிவமைப்பாளரைத் திற",
     "viewButton": "காண்க"
   },
@@ -48,7 +48,7 @@
   },
   "deleteDialog": {
     "title": "PDF வார்ப்புருவை நீக்கவா?",
-    "description": "\"{name}\" நிரந்தரமாக நீக்கப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
+    "description": "\"{{name}}\" நிரந்தரமாக நீக்கப்படும். இதைச் செயல்தவிர்க்க முடியாது.",
     "cancelButton": "ரத்துசெய்",
     "deleteButton": "நீக்கு",
     "deletingButton": "நீக்கப்படுகிறது..."

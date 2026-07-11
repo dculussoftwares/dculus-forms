@@ -1,7 +1,7 @@
 {
   "layout": {
     "title": "PDF Templates",
-    "dynamicTitle": "PDF Templates - {formTitle}",
+    "dynamicTitle": "PDF Templates - {{formTitle}}",
     "designerTitle": "PDF Template Designer",
     "breadcrumbs": {
       "dashboard": "Dashboard",
@@ -28,16 +28,16 @@
     "blankTitle": "New blank template",
     "uploadTitle": "New template from PDF",
     "blankDescription": "Give your template a name to start designing.",
-    "uploadDescription": "Using \"{fileName}\" as the base PDF. Give your template a name to start designing.",
+    "uploadDescription": "Using \"{{fileName}}\" as the base PDF. Give your template a name to start designing.",
     "namePlaceholder": "Template name",
     "cancelButton": "Cancel",
     "createButton": "Create",
     "creatingButton": "Creating..."
   },
   "list": {
-    "uploadedSource": "From {fileName}",
+    "uploadedSource": "From {{fileName}}",
     "blankSource": "Blank page",
-    "pageCount": "{count} page(s)",
+    "pageCount": "{{count}} page(s)",
     "openButton": "Open designer",
     "viewButton": "View"
   },
@@ -48,7 +48,7 @@
   },
   "deleteDialog": {
     "title": "Delete PDF template?",
-    "description": "\"{name}\" will be permanently deleted. This cannot be undone.",
+    "description": "\"{{name}}\" will be permanently deleted. This cannot be undone.",
     "cancelButton": "Cancel",
     "deleteButton": "Delete",
     "deletingButton": "Deleting..."
