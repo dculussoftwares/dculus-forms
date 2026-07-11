@@ -29,7 +29,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { deserializeFormSchema, FieldType } from '@dculus/types';
-import { AlertCircle, ArrowLeft, Save } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Eye, Save } from 'lucide-react';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -57,6 +57,7 @@ import {
   resolveDropTarget,
   type DropTarget,
 } from '../components/pdf-designer/dropPlacement';
+import { PreviewDialog } from '../components/pdf-designer/PreviewDialog';
 
 /**
  * PDF template designer — embeds the pdfme Designer (its own bundled
@@ -79,6 +80,7 @@ const PdfTemplateDesigner: React.FC = () => {
   const [name, setName] = useState('');
   const [missingFieldIds, setMissingFieldIds] = useState<string[]>([]);
   const [placedCounts, setPlacedCounts] = useState<Record<string, number>>({});
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: formData, loading: formLoading } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
@@ -216,8 +218,11 @@ const PdfTemplateDesigner: React.FC = () => {
         designerRef.current = null;
       }
     };
-    // designerPlugins is stable per locale; remount on template identity change only
-  }, [pdfTemplate?.id, pdfTemplate?.basePdfUrl, !!pdfTemplate]);
+    // designerPlugins is stable per locale; remount on template identity change.
+    // The loading flags matter: while either query is in flight the component
+    // early-returns a spinner (no canvas div), so an effect run in that window
+    // sees a null container and must be retried once the full UI has rendered.
+  }, [pdfTemplate?.id, pdfTemplate?.basePdfUrl, !!pdfTemplate, formLoading, templateLoading]);
 
   useEffect(() => {
     if (pdfTemplate?.name) setName(pdfTemplate.name);
@@ -334,6 +339,15 @@ const PdfTemplateDesigner: React.FC = () => {
     setDirty(true);
   }, [missingFieldIds]);
 
+  // Working template for the preview, with the (multi-MB) uploaded base PDF
+  // stripped — the backend re-hydrates it from R2 via the stored fileKey
+  const getWorkingTemplate = useCallback(() => {
+    const designer = designerRef.current;
+    if (!designer) return null;
+    const template = designer.getTemplate();
+    return pdfTemplate?.fileKey ? { ...template, basePdf: null } : template;
+  }, [pdfTemplate?.fileKey]);
+
   const handleSave = useCallback(async () => {
     const designer = designerRef.current;
     if (!designer || !templateId) return;
@@ -426,6 +440,19 @@ const PdfTemplateDesigner: React.FC = () => {
           <div className="flex-1" />
           {canEdit && (
             <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-3 text-xs"
+              onClick={() => setPreviewOpen(true)}
+              disabled={!designerReady}
+              data-testid="pdf-designer-preview"
+            >
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              {t('preview.button')}
+            </Button>
+          )}
+          {canEdit && (
+            <Button
               size="sm"
               className="h-8 px-4 text-xs"
               onClick={handleSave}
@@ -477,6 +504,16 @@ const PdfTemplateDesigner: React.FC = () => {
           </div>
         </div>
       </div>
+      {formId && templateId && (
+        <PreviewDialog
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          templateId={templateId}
+          formId={formId}
+          fields={formFields}
+          getWorkingTemplate={getWorkingTemplate}
+        />
+      )}
       <DragOverlay dropAnimation={null}>
         {activeDrag &&
           (activeDrag.kind === 'field' ? (

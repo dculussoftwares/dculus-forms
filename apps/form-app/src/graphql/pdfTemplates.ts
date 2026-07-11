@@ -77,6 +77,16 @@ export const DELETE_PDF_TEMPLATE: TypedDocumentNode<any, any> = gql`
   }
 `;
 
+export const PREVIEW_PDF_TEMPLATE: TypedDocumentNode<any, any> = gql`
+  mutation PreviewPdfTemplate($templateId: ID!, $template: JSON, $responseId: ID) {
+    previewPdfTemplate(templateId: $templateId, template: $template, responseId: $responseId) {
+      downloadUrl
+      expiresAt
+      filename
+    }
+  }
+`;
+
 export const GENERATE_PDF_FROM_RESPONSE: TypedDocumentNode<any, any> = gql`
   mutation GeneratePdfFromResponse($templateId: ID!, $responseId: ID!) {
     generatePdfFromResponse(templateId: $templateId, responseId: $responseId) {

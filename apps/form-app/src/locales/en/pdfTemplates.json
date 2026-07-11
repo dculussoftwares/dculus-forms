@@ -85,6 +85,15 @@
     "table": "Table",
     "qrcode": "QR Code"
   },
+  "preview": {
+    "button": "Preview",
+    "title": "Preview PDF",
+    "description": "See the filled PDF exactly as recipients will, using a real response or sample data. Unsaved changes are included.",
+    "dataSourceLabel": "Fill with:",
+    "sampleData": "Sample data",
+    "noResponses": "No responses yet — using sample data.",
+    "failed": "Failed to generate the preview. Please try again."
+  },
   "generate": {
     "menuLabel": "Generate PDF",
     "dialogTitle": "Generate PDF",

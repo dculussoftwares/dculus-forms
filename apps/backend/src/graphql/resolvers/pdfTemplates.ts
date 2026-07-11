@@ -16,6 +16,7 @@ import {
 import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import {
   buildPdfFilename,
+  buildSampleResponseData,
   generatePdfForResponse,
   stripBasePdf,
   validatePdfTemplate,
@@ -335,6 +336,105 @@ export const pdfTemplatesResolvers = {
         logger.error('generatePdfFromResponse failed:', error);
         throw createGraphQLError(
           'Failed to generate PDF',
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
+      }
+    },
+
+    /**
+     * Preview a template as a generated PDF, without persisting anything.
+     *
+     * - `template` (optional): the designer's working copy, so unsaved
+     *   changes preview accurately. Requires EDITOR (same right as saving
+     *   it); omitted → the stored template is used (VIEWER is enough).
+     * - `responseId` (optional): preview with that response's answers;
+     *   omitted → deterministic per-field-type sample data.
+     */
+    previewPdfTemplate: async (
+      _: any,
+      {
+        templateId,
+        template,
+        responseId,
+      }: { templateId: string; template?: any; responseId?: string | null },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const stored = await getTemplateOrThrow(templateId);
+
+      const usesWorkingCopy = template !== undefined && template !== null;
+      const accessCheck = await checkFormAccess(
+        context.auth.user!.id,
+        stored.formId,
+        usesWorkingCopy ? PermissionLevel.EDITOR : PermissionLevel.VIEWER
+      );
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError(
+          'Access denied: You do not have permission to preview this PDF template',
+          GRAPHQL_ERROR_CODES.NO_ACCESS
+        );
+      }
+
+      let workingTemplate = stored.template;
+      if (usesWorkingCopy) {
+        try {
+          validatePdfTemplate(template, !!stored.fileKey);
+        } catch (error) {
+          throw createGraphQLError(
+            `Invalid PDF template: ${error instanceof Error ? error.message : 'validation failed'}`,
+            GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+          );
+        }
+        // The uploaded base PDF is never trusted from the client — it is
+        // re-hydrated from R2 via the stored fileKey inside generation
+        workingTemplate = stripBasePdf(template, !!stored.fileKey);
+      }
+
+      const form = await prisma.form.findUnique({
+        where: { id: stored.formId },
+        select: { formSchema: true },
+      });
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+      const deserializedSchema = deserializeFormSchema(form.formSchema);
+
+      let responseData: Record<string, any>;
+      if (responseId) {
+        const response = await prisma.response.findUnique({ where: { id: responseId } });
+        if (!response || response.deletedAt || response.formId !== stored.formId) {
+          throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+        }
+        responseData = (response.data as Record<string, any>) ?? {};
+      } else {
+        responseData = buildSampleResponseData(deserializedSchema);
+      }
+
+      try {
+        const pdfBuffer = await generatePdfForResponse({
+          storedTemplate: workingTemplate,
+          fileKey: stored.fileKey,
+          deserializedSchema,
+          responseData,
+        });
+
+        const filename = buildPdfFilename(stored.name, responseId ?? 'preview');
+        const temporaryFile = await uploadTemporaryFile(
+          pdfBuffer,
+          filename,
+          'application/pdf'
+        );
+
+        return {
+          downloadUrl: temporaryFile.downloadUrl,
+          expiresAt: temporaryFile.expiresAt.toISOString(),
+          filename,
+        };
+      } catch (error) {
+        logger.error('previewPdfTemplate failed:', error);
+        throw createGraphQLError(
+          'Failed to generate the preview PDF',
           GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
         );
       }

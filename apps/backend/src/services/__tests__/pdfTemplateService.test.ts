@@ -3,6 +3,7 @@ import { FieldType } from '@dculus/types';
 import { substitutePlaceholdersPlainText } from '@dculus/utils';
 import {
   buildPdfFilename,
+  buildSampleResponseData,
   buildSubstitutionValues,
   buildTemplateInputs,
   formatResponseValueForPdf,
@@ -108,6 +109,52 @@ describe('buildSubstitutionValues', () => {
       f3: ['x', 'y'],
     });
     expect(values).toEqual({ f1: 'Alice', f2: 'Jan 5, 2026', f3: 'x, y' });
+  });
+});
+
+describe('buildSampleResponseData', () => {
+  it('produces a value for every fillable field, honoring field options', () => {
+    const schema = {
+      pages: [
+        {
+          fields: [
+            { id: 'f-text', type: FieldType.TEXT_INPUT_FIELD },
+            { id: 'f-email', type: FieldType.EMAIL_FIELD },
+            { id: 'f-num', type: FieldType.NUMBER_FIELD },
+            { id: 'f-date', type: FieldType.DATE_FIELD },
+            { id: 'f-select', type: FieldType.SELECT_FIELD, options: ['Red', 'Blue'] },
+            { id: 'f-check', type: FieldType.CHECKBOX_FIELD, options: ['A', 'B', 'C'] },
+            { id: 'f-rich', type: FieldType.RICH_TEXT_FIELD },
+          ],
+        },
+      ],
+    };
+    const data = buildSampleResponseData(schema);
+    expect(data['f-text']).toBe('Sample answer');
+    expect(data['f-email']).toBe('sample@example.com');
+    expect(data['f-num']).toBe(42);
+    expect(data['f-date']).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(data['f-select']).toBe('Red');
+    expect(data['f-check']).toEqual(['A', 'B']);
+    expect(data).not.toHaveProperty('f-rich');
+  });
+
+  it('formats cleanly through the substitution pipeline', () => {
+    const schema = {
+      pages: [
+        {
+          fields: [
+            { id: 'f-date', type: FieldType.DATE_FIELD },
+            { id: 'f-check', type: FieldType.CHECKBOX_FIELD, options: ['A', 'B'] },
+            { id: 'f-file', type: FieldType.FILE_UPLOAD_FIELD },
+          ],
+        },
+      ],
+    };
+    const values = buildSubstitutionValues(schema, buildSampleResponseData(schema));
+    expect(values['f-date']).toMatch(/\w{3} \d{1,2}, \d{4}/);
+    expect(values['f-check']).toBe('A, B');
+    expect(values['f-file']).toBe('sample-document.pdf');
   });
 });
 

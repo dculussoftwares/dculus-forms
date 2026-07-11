@@ -142,6 +142,57 @@ export function buildSubstitutionValues(
 }
 
 /**
+ * Deterministic per-field-type sample answers for previewing a template
+ * before any real responses exist. Choice fields use the field's own
+ * options so the preview reflects the actual form.
+ */
+export function buildSampleResponseData(deserializedSchema: any): Record<string, any> {
+  const data: Record<string, any> = {};
+  for (const page of deserializedSchema?.pages ?? []) {
+    for (const field of page?.fields ?? []) {
+      if (!field?.id) continue;
+      const options: string[] = Array.isArray(field.options) ? field.options : [];
+      switch (field.type) {
+        case FieldType.RICH_TEXT_FIELD:
+          break;
+        case FieldType.EMAIL_FIELD:
+          data[field.id] = 'sample@example.com';
+          break;
+        case FieldType.NUMBER_FIELD:
+          data[field.id] = 42;
+          break;
+        case FieldType.DATE_FIELD: {
+          const now = new Date();
+          const pad = (n: number) => String(n).padStart(2, '0');
+          data[field.id] = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+          break;
+        }
+        case FieldType.PHONE_NUMBER_FIELD:
+          data[field.id] = '+14155552671';
+          break;
+        case FieldType.SELECT_FIELD:
+        case FieldType.RADIO_FIELD:
+          data[field.id] = options[0] ?? 'Option 1';
+          break;
+        case FieldType.CHECKBOX_FIELD:
+          data[field.id] = options.length > 0 ? options.slice(0, 2) : ['Option 1'];
+          break;
+        case FieldType.FILE_UPLOAD_FIELD:
+          data[field.id] = ['sample/sample-document.pdf'];
+          break;
+        case FieldType.TEXT_AREA_FIELD:
+          data[field.id] =
+            'This is a sample long answer that shows how a multi-line response will appear in the generated PDF.';
+          break;
+        default:
+          data[field.id] = 'Sample answer';
+      }
+    }
+  }
+  return data;
+}
+
+/**
  * Hydrate a stored template's basePdf: download the uploaded base PDF from
  * the private bucket when fileKey is set; blank templates pass through.
  */
