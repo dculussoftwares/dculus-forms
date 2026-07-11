@@ -9,6 +9,7 @@ cors_allowed_origins = [
   "http://localhost:3000",
   "http://localhost:5173",
   "http://localhost:3002",
+  "https://form-app-dev.dculus.com",
   "https://dculus-forms-app-dev.pages.dev",
   "https://dculus-forms-viewer-app-dev.pages.dev",
   "https://dculus-forms-admin-app-dev.pages.dev"

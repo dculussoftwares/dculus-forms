@@ -6,6 +6,7 @@ r2_location  = "APAC"
 
 # CORS allowed origins for production
 cors_allowed_origins = [
+  "https://forms.dculus.com",
   "https://dculus-forms-app.pages.dev",
   "https://dculus-forms-viewer-app.pages.dev",
   "https://dculus-forms-admin-app.pages.dev"
