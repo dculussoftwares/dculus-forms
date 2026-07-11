@@ -77,8 +77,10 @@ export const TextElementEditorDialog: React.FC<TextElementEditorDialogProps> = (
               className="w-72 h-8 text-xs"
               data-testid="pdf-designer-text-insert-field"
             >
-              <span className="flex items-center gap-1.5 text-[#655d67] dark:text-gray-400">
-                <Plus className="h-3 w-3" />
+              {/* !flex: the trigger's [&>span]:line-clamp-1 sets display:-webkit-box,
+                  which would stack the icon above the label */}
+              <span className="!flex items-center gap-1.5 text-[#655d67] dark:text-gray-400">
+                <Plus className="h-3 w-3 shrink-0" />
                 {t('textEditor.insertField')}
               </span>
             </SelectTrigger>
