@@ -234,3 +234,11 @@ svg.lucide {
   opacity: 1;
   pointer-events: auto;
 }
+
+/* Hide pdfme's built-in add-element strip and bulk field-name tools: our
+   Elements tab replaces the strip (labeled, i18n'd, drag + drop), and
+   element names are auto-generated internals users never need to manage. */
+[data-testid="pdf-designer-canvas"] .pdfme-designer-left-sidebar,
+[data-testid="pdf-designer-canvas"] [class*="pdfme-designer-bulk-"] {
+  display: none !important;
+}
