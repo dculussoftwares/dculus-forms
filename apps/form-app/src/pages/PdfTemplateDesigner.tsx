@@ -56,6 +56,7 @@ import {
   type PaletteDragData,
 } from '../components/pdf-designer/LeftPanel';
 import {
+  findPaperElements,
   getPaperViewports,
   resolveDropTarget,
   snappedDropPosition,
@@ -301,6 +302,49 @@ const PdfTemplateDesigner: React.FC = () => {
     const timers = [200, 600, 1500].map((delay) =>
       setTimeout(() => {
         if (designerContainerRef.current) loadColumnGuides(designerContainerRef.current);
+      }, delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [designerReady]);
+
+  // Open width-fit instead of pdfme's default height-fit (zoomLevel 1):
+  // mirrors pdfme's own fit-width math — measured scale at open IS the
+  // height-fit baseScale, and its formula reserves 30px ruler + 40px gutter.
+  // Retried because the page renders asynchronously after ready; applied
+  // only once so the user's own zooming is never fought.
+  useEffect(() => {
+    if (!designerReady) return;
+    let applied = false;
+    const timers = [300, 800, 1600, 3000].map((delay) =>
+      setTimeout(() => {
+        if (applied) return;
+        const container = designerContainerRef.current;
+        const designer = designerRef.current;
+        if (!container || !designer) return;
+        const [paper] = getPaperViewports(container);
+        const [paperEl] = findPaperElements(container);
+        if (!paper || !paperEl || paperEl.offsetWidth === 0) return;
+
+        // pdfme's zoom math uses its internal scroll container's width — the
+        // nearest scrollable ancestor of the page
+        let scroller: HTMLElement = container;
+        for (let el = paperEl.parentElement; el && el !== container; el = el.parentElement) {
+          const overflow = getComputedStyle(el).overflow + getComputedStyle(el).overflowY;
+          if (overflow.includes('auto') || overflow.includes('scroll')) {
+            scroller = el;
+            break;
+          }
+        }
+        const zoom = Math.min(
+          2,
+          Math.max(0.25, (scroller.clientWidth - 70) / paperEl.offsetWidth / paper.scale)
+        );
+        try {
+          designer.updateOptions({ zoomLevel: zoom });
+          applied = true;
+        } catch {
+          // keep the default zoom on failure
+        }
       }, delay)
     );
     return () => timers.forEach(clearTimeout);
