@@ -1,6 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
 import { Designer } from '@pdfme/ui';
 import {
   text,
@@ -35,7 +44,19 @@ import {
   uniqueSchemaName,
   type FormFieldEntry,
 } from '../components/pdf-designer/fieldBinding';
-import { LeftPanel, type ElementKey } from '../components/pdf-designer/LeftPanel';
+import {
+  LeftPanel,
+  PaletteChip,
+  elementVisual,
+  fieldVisual,
+  type ElementKey,
+  type PaletteDragData,
+} from '../components/pdf-designer/LeftPanel';
+import {
+  centeredClampedPosition,
+  resolveDropTarget,
+  type DropTarget,
+} from '../components/pdf-designer/dropPlacement';
 
 /**
  * PDF template designer — embeds the pdfme Designer (its own bundled
@@ -202,75 +223,104 @@ const PdfTemplateDesigner: React.FC = () => {
     if (pdfTemplate?.name) setName(pdfTemplate.name);
   }, [pdfTemplate?.name]);
 
+  // Add a new element to the template: on a drop target's page centered
+  // under the pointer (clamped inside the page), or cascaded on the current
+  // page for click-to-insert. Selects the new element either way.
+  const placeSchema = useCallback((schemaBase: Record<string, any>, drop?: DropTarget) => {
+    const designer = designerRef.current;
+    if (!designer) return;
+
+    const template = designer.getTemplate();
+    const schemas = template.schemas?.length ? [...template.schemas] : [[]];
+    const pageIndex = Math.min(
+      drop?.pageIndex ?? (designer as any).getPageCursor?.() ?? 0,
+      schemas.length - 1
+    );
+
+    const newSchema = {
+      ...schemaBase,
+      name: uniqueSchemaName(schemaBase.name, collectSchemaNames(schemas as any[][])),
+      position: drop
+        ? centeredClampedPosition(drop, schemaBase.width ?? 40, schemaBase.height ?? 10)
+        : cascadePosition(schemas[pageIndex]?.length ?? 0),
+    };
+
+    schemas[pageIndex] = [...(schemas[pageIndex] ?? []), newSchema as any];
+    designer.updateTemplate({ ...template, schemas });
+    try {
+      designer.selectSchemas([{ name: newSchema.name, pageIndex }], { scroll: true });
+    } catch {
+      // selection is a nicety — never let it break the insert
+    }
+    setDirty(true);
+  }, []);
+
   // Insert a bound field element (label as display text, field id as the
-  // binding) onto the current page, then select it so it can be dragged
-  // into place immediately
+  // binding — see fieldBinding.ts)
   const insertField = useCallback(
-    (field: FormFieldEntry) => {
-      const designer = designerRef.current;
-      if (!designer) return;
-
-      const template = designer.getTemplate();
-      const schemas = template.schemas?.length ? [...template.schemas] : [[]];
-      const pageIndex = Math.min(
-        (designer as any).getPageCursor?.() ?? 0,
-        schemas.length - 1
+    (field: FormFieldEntry, drop?: DropTarget) => {
+      placeSchema(
+        buildBoundFieldSchema({
+          field,
+          position: { x: 0, y: 0 }, // placeSchema decides the real position
+          existingNames: new Set(), // placeSchema dedupes against the live template
+          untitledLabel: t('fieldsPanel.untitledField'),
+        }),
+        drop
       );
-
-      const newSchema = buildBoundFieldSchema({
-        field,
-        position: cascadePosition(schemas[pageIndex]?.length ?? 0),
-        existingNames: collectSchemaNames(schemas as any[][]),
-        untitledLabel: t('fieldsPanel.untitledField'),
-      });
-
-      schemas[pageIndex] = [...(schemas[pageIndex] ?? []), newSchema as any];
-      designer.updateTemplate({ ...template, schemas });
-      try {
-        designer.selectSchemas([{ name: newSchema.name, pageIndex }], { scroll: true });
-      } catch {
-        // selection is a nicety — never let it break the insert
-      }
-      setDirty(true);
     },
-    [t]
+    [placeSchema, t]
   );
 
-  // Insert a static element (text, image, shape, table, QR) onto the
-  // current page using the pdfme plugin's own default schema
+  // Insert a static element (text, image, shape, table, QR) using the
+  // pdfme plugin's own default schema
   const insertElement = useCallback(
-    (element: ElementKey) => {
-      const designer = designerRef.current;
-      if (!designer) return;
-
+    (element: ElementKey, drop?: DropTarget) => {
       const plugin =
         element === 'qrcode' ? barcodes.qrcode : { text, image, line, rectangle, ellipse, table }[element];
       const defaultSchema = (plugin as any)?.propPanel?.defaultSchema;
       if (!defaultSchema) return;
-
-      const template = designer.getTemplate();
-      const schemas = template.schemas?.length ? [...template.schemas] : [[]];
-      const pageIndex = Math.min(
-        (designer as any).getPageCursor?.() ?? 0,
-        schemas.length - 1
-      );
-
-      const newSchema = {
-        ...defaultSchema,
-        name: uniqueSchemaName(element, collectSchemaNames(schemas as any[][])),
-        position: cascadePosition(schemas[pageIndex]?.length ?? 0),
-      };
-
-      schemas[pageIndex] = [...(schemas[pageIndex] ?? []), newSchema as any];
-      designer.updateTemplate({ ...template, schemas });
-      try {
-        designer.selectSchemas([{ name: newSchema.name, pageIndex }], { scroll: true });
-      } catch {
-        // selection is a nicety — never let it break the insert
-      }
-      setDirty(true);
+      placeSchema({ ...defaultSchema, name: element }, drop);
     },
-    []
+    [placeSchema]
+  );
+
+  // Drag-and-drop from the left panel onto the canvas
+  const [activeDrag, setActiveDrag] = useState<PaletteDragData | null>(null);
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDrag((event.active.data.current as PaletteDragData) ?? null);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveDrag(null);
+      const data = event.active.data.current as PaletteDragData | undefined;
+      const container = designerContainerRef.current;
+      if (!data || !container) return;
+
+      // Pointer position at drop = activator position + total drag delta
+      const activator = event.activatorEvent as Partial<PointerEvent>;
+      if (typeof activator?.clientX !== 'number' || typeof activator?.clientY !== 'number') {
+        return;
+      }
+      const drop = resolveDropTarget(
+        container,
+        activator.clientX + event.delta.x,
+        activator.clientY + event.delta.y
+      );
+      if (!drop) return; // dropped outside any page — treat as cancelled
+
+      if (data.kind === 'field') {
+        insertField(data.field, drop);
+      } else {
+        insertElement(data.element, drop);
+      }
+    },
+    [insertField, insertElement]
   );
 
   // Remove every element bound to a field that no longer exists on the form
@@ -345,6 +395,12 @@ const PdfTemplateDesigner: React.FC = () => {
 
   return (
     <MainLayout title={t('layout.designerTitle')} breadcrumbs={breadcrumbs}>
+      <DndContext
+        sensors={dndSensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => setActiveDrag(null)}
+      >
       <div className="flex flex-col gap-3 -mt-1 h-[calc(100vh-140px)]">
         {/* Toolbar */}
         <div className="flex items-center gap-3">
@@ -421,6 +477,21 @@ const PdfTemplateDesigner: React.FC = () => {
           </div>
         </div>
       </div>
+      <DragOverlay dropAnimation={null}>
+        {activeDrag &&
+          (activeDrag.kind === 'field' ? (
+            <PaletteChip
+              visual={fieldVisual(activeDrag.field.type)}
+              label={activeDrag.field.label.trim() || t('fieldsPanel.untitledField')}
+            />
+          ) : (
+            <PaletteChip
+              visual={elementVisual(activeDrag.element)}
+              label={t(`palette.${activeDrag.element}`)}
+            />
+          ))}
+      </DragOverlay>
+      </DndContext>
     </MainLayout>
   );
 };

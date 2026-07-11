@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useDraggable } from '@dnd-kit/core';
 import { FieldType } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import {
@@ -77,6 +78,70 @@ const IconBox: React.FC<{ visual: FieldVisual }> = ({ visual }) => (
     {visual.icon}
   </span>
 );
+
+export function fieldVisual(type: string): FieldVisual {
+  return FIELD_VISUALS[type] ?? DEFAULT_VISUAL;
+}
+
+export function elementVisual(key: ElementKey): FieldVisual {
+  const item = ELEMENT_ITEMS.find((e) => e.key === key);
+  return { icon: item?.icon ?? <Type />, bg: '#dedcde', fg: '#4c414e' };
+}
+
+/** Payload carried by dnd-kit drags started from this panel */
+export type PaletteDragData =
+  | { kind: 'field'; field: FormFieldEntry }
+  | { kind: 'element'; element: ElementKey };
+
+/** Floating chip rendered in the DragOverlay while dragging a palette row */
+export const PaletteChip: React.FC<{ visual: FieldVisual; label: string }> = ({
+  visual,
+  label,
+}) => (
+  <div
+    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-card text-xs font-medium text-[#3c323e] dark:text-white cursor-grabbing max-w-56"
+    style={{
+      border: '1px solid rgba(81,76,84,0.15)',
+      boxShadow: '0 8px 24px rgba(60,50,62,0.25)',
+    }}
+  >
+    <IconBox visual={visual} />
+    <span className="truncate">{label}</span>
+  </div>
+);
+
+/** Palette row that is both clickable (insert at cascade) and draggable */
+const PaletteRow: React.FC<{
+  dragId: string;
+  dragData: PaletteDragData;
+  disabled: boolean;
+  onClick: () => void;
+  title?: string;
+  testid: string;
+  className: string;
+  children: React.ReactNode;
+}> = ({ dragId, dragData, disabled, onClick, title, testid, className, children }) => {
+  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({
+    id: dragId,
+    data: dragData,
+    disabled,
+  });
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      title={title}
+      data-testid={testid}
+      className={cn(className, 'touch-none', isDragging && 'opacity-40')}
+      {...listeners}
+      {...attributes}
+    >
+      {children}
+    </button>
+  );
+};
 
 interface LeftPanelProps {
   fields: FormFieldEntry[];
@@ -206,16 +271,17 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 const count = placedCounts[field.id] ?? 0;
                 const label = field.label.trim() || t('fieldsPanel.untitledField');
                 return (
-                  <button
+                  <PaletteRow
                     key={field.id}
-                    type="button"
+                    dragId={`pdf-drag-field-${field.id}`}
+                    dragData={{ kind: 'field', field }}
                     disabled={disabled}
                     onClick={() => onInsertField(field)}
                     title={label}
-                    data-testid={`pdf-designer-insert-${field.id}`}
+                    testid={`pdf-designer-insert-${field.id}`}
                     className={itemClass}
                   >
-                    <IconBox visual={FIELD_VISUALS[field.type] ?? DEFAULT_VISUAL} />
+                    <IconBox visual={fieldVisual(field.type)} />
                     <span className="truncate flex-1">{label}</span>
                     {count > 0 && (
                       <span
@@ -225,7 +291,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                         ×{count}
                       </span>
                     )}
-                  </button>
+                  </PaletteRow>
                 );
               })}
             </div>
@@ -238,17 +304,18 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
           </p>
           <div className="space-y-0.5">
             {ELEMENT_ITEMS.map(({ key, labelKey, icon }) => (
-              <button
+              <PaletteRow
                 key={key}
-                type="button"
+                dragId={`pdf-drag-element-${key}`}
+                dragData={{ kind: 'element', element: key }}
                 disabled={disabled}
                 onClick={() => onInsertElement(key)}
-                data-testid={`pdf-designer-insert-element-${key}`}
+                testid={`pdf-designer-insert-element-${key}`}
                 className={itemClass}
               >
                 <IconBox visual={{ icon, bg: '#dedcde', fg: '#4c414e' }} />
                 <span className="truncate flex-1">{t(labelKey)}</span>
-              </button>
+              </PaletteRow>
             ))}
           </div>
         </div>
