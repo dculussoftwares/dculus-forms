@@ -183,3 +183,6 @@ skills-lock.json
 # Local secret references — never commit
 dculus-chargebee-webhook-passwords.txt
 *.env.bak*
+
+# Local UX reference screenshots (JotForm) — never commit
+/pdf-template/
