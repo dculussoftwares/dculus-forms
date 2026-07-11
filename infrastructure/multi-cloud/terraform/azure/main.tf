@@ -136,6 +136,20 @@ resource "azurerm_container_app" "backend" {
         value = local.resolved_frontend_url
       }
 
+      # Same form-app base URL as FRONTEND_URL — magic-link/invitation emails
+      # and the Google/Microsoft OAuth browser redirects read FORM_APP_URL.
+      env {
+        name  = "FORM_APP_URL"
+        value = local.resolved_frontend_url
+      }
+
+      # Form-viewer base URL — used for the public form link in
+      # form-published notification emails.
+      env {
+        name  = "FORM_VIEWER_URL"
+        value = "https://${local.form_viewer_domain}"
+      }
+
       env {
         name  = "NODE_ENV"
         value = var.environment

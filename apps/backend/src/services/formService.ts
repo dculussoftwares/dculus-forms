@@ -296,7 +296,7 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
     if (isBeingPublished) {
       try {
         // Send email notification to form owner
-        const formUrl = `${process.env.FORM_VIEWER_URL || 'http://localhost:5173'}/form/${updatedForm.shortUrl}`;
+        const formUrl = `${process.env.FORM_VIEWER_URL || 'http://localhost:5173'}/f/${updatedForm.shortUrl}`;
 
         await sendFormPublishedNotification({
           formTitle: updatedForm.title,
