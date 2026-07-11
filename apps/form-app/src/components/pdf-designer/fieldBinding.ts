@@ -14,6 +14,14 @@ import { slugify } from '@dculus/utils';
 
 export const DCULUS_FIELD_ID_KEY = 'dculusFieldId';
 
+/**
+ * Font every bound field uses (must match TAMIL_FONT_NAME in the backend's
+ * pdfTemplateService). Noto Sans Tamil covers Tamil AND basic Latin, so
+ * answers render correctly whichever script the respondent used — pdfme's
+ * default Roboto has no Tamil glyphs.
+ */
+export const PDF_FIELD_FONT_NAME = 'NotoSansTamil';
+
 export interface FormFieldEntry {
   id: string;
   label: string;
@@ -84,6 +92,7 @@ export function buildBoundFieldSchema(params: {
     width: boundFieldWidth(label),
     height: FIELD_HEIGHT_MM,
     fontSize: FIELD_FONT_SIZE,
+    fontName: PDF_FIELD_FONT_NAME,
   };
 }
 

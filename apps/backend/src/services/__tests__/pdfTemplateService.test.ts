@@ -2,10 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { FieldType } from '@dculus/types';
 import { substitutePlaceholdersPlainText } from '@dculus/utils';
 import {
+  buildAiFieldEntries,
   buildPdfFilename,
   buildSampleResponseData,
   buildSubstitutionValues,
   buildTemplateInputs,
+  coerceAiSampleData,
   formatResponseValueForPdf,
   generatePdfForResponse,
   stripBasePdf,
@@ -155,6 +157,74 @@ describe('buildSampleResponseData', () => {
     expect(values['f-date']).toMatch(/\w{3} \d{1,2}, \d{4}/);
     expect(values['f-check']).toBe('A, B');
     expect(values['f-file']).toBe('sample-document.pdf');
+  });
+});
+
+describe('coerceAiSampleData', () => {
+  const schema = {
+    pages: [
+      {
+        fields: [
+          { id: 'f-text', type: FieldType.TEXT_INPUT_FIELD },
+          { id: 'f-num', type: FieldType.NUMBER_FIELD },
+          { id: 'f-date', type: FieldType.DATE_FIELD },
+          { id: 'f-radio', type: FieldType.RADIO_FIELD, options: ['Red', 'Blue'] },
+          { id: 'f-check', type: FieldType.CHECKBOX_FIELD, options: ['A', 'B', 'C'] },
+          { id: 'f-file', type: FieldType.FILE_UPLOAD_FIELD },
+        ],
+      },
+    ],
+  };
+
+  it('accepts valid AI answers, coercing types', () => {
+    const data = coerceAiSampleData(schema, {
+      'f-text': 'Priya Raman',
+      'f-num': '29',
+      'f-date': '2026-03-15',
+      'f-radio': 'Blue',
+      'f-check': 'A, C',
+    });
+    expect(data['f-text']).toBe('Priya Raman');
+    expect(data['f-num']).toBe(29);
+    expect(data['f-date']).toBe('2026-03-15');
+    expect(data['f-radio']).toBe('Blue');
+    expect(data['f-check']).toEqual(['A', 'C']);
+  });
+
+  it('falls back to deterministic values for invalid or missing answers', () => {
+    const data = coerceAiSampleData(schema, {
+      'f-num': 'twenty nine',
+      'f-date': 'next Tuesday',
+      'f-radio': 'Green', // not an option
+      'f-check': 'X, Y', // no valid options
+      'f-file': 'invented-file.pdf', // never trusted from the model
+    });
+    expect(data['f-num']).toBe(42);
+    expect(data['f-date']).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(data['f-radio']).toBe('Red');
+    expect(data['f-check']).toEqual(['A', 'B']);
+    expect(data['f-file']).toEqual(['sample/sample-document.pdf']);
+    expect(data['f-text']).toBe('Sample answer');
+  });
+});
+
+describe('buildAiFieldEntries', () => {
+  it('describes fillable fields with friendly type names and options', () => {
+    const entries = buildAiFieldEntries({
+      pages: [
+        {
+          fields: [
+            { id: 'f1', type: FieldType.TEXT_INPUT_FIELD, label: 'Name' },
+            { id: 'f2', type: FieldType.RADIO_FIELD, label: 'Color', options: ['Red'] },
+            { id: 'f3', type: FieldType.RICH_TEXT_FIELD, label: 'Intro' },
+          ],
+        },
+      ],
+    });
+    expect(entries).toEqual([
+      { id: 'f1', type: 'text input', label: 'Name' },
+      { id: 'f2', type: 'radio', label: 'Color', options: ['Red'] },
+    ]);
   });
 });
 
@@ -359,6 +429,44 @@ describe('generatePdfForResponse', () => {
     });
 
     expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+  }, 30000);
+
+  it('renders Tamil labels and answers via the bundled Noto Sans Tamil font', async () => {
+    const storedTemplate = {
+      basePdf: BLANK_A4,
+      schemas: [
+        [
+          textSchema('பெயர்', 'முழுப் பெயர்', {
+            dculusFieldId: 'f-name',
+            fontName: 'NotoSansTamil',
+          }),
+          textSchema('mixed_latin', 'Full Name', {
+            dculusFieldId: 'f-city',
+            fontName: 'NotoSansTamil',
+          }),
+        ],
+      ],
+    };
+    const deserializedSchema = {
+      pages: [
+        {
+          fields: [
+            { id: 'f-name', type: FieldType.TEXT_INPUT_FIELD, label: 'முழுப் பெயர்' },
+            { id: 'f-city', type: FieldType.TEXT_INPUT_FIELD, label: 'Full Name' },
+          ],
+        },
+      ],
+    };
+
+    const pdf = await generatePdfForResponse({
+      storedTemplate,
+      fileKey: null,
+      deserializedSchema,
+      responseData: { 'f-name': 'நதீஷ்குமார்', 'f-city': 'Chennai 600001' },
+    });
+
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(pdf.length).toBeGreaterThan(500);
   }, 30000);
 
   it('substitutes a label-bracket fallback for unanswered fields', async () => {

@@ -15,12 +15,19 @@ import {
 } from '../../services/fileUploadService.js';
 import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import {
+  buildAiFieldEntries,
   buildPdfFilename,
   buildSampleResponseData,
+  coerceAiSampleData,
   generatePdfForResponse,
   stripBasePdf,
   validatePdfTemplate,
 } from '../../services/pdfTemplateService.js';
+import { generateAiSampleData } from '../../services/aiService.js';
+import {
+  checkAITokenBudget,
+  recordAITokenUsage,
+} from '../../services/aiUsageService.js';
 
 /**
  * GraphQL Resolvers for PDF Templates (issue #87)
@@ -356,7 +363,13 @@ export const pdfTemplatesResolvers = {
         templateId,
         template,
         responseId,
-      }: { templateId: string; template?: any; responseId?: string | null },
+        aiSampleData,
+      }: {
+        templateId: string;
+        template?: any;
+        responseId?: string | null;
+        aiSampleData?: boolean;
+      },
       context: { auth: BetterAuthContext }
     ) => {
       requireAuth(context.auth);
@@ -393,7 +406,7 @@ export const pdfTemplatesResolvers = {
 
       const form = await prisma.form.findUnique({
         where: { id: stored.formId },
-        select: { formSchema: true },
+        select: { formSchema: true, organizationId: true, title: true },
       });
       if (!form) {
         throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
@@ -407,6 +420,28 @@ export const pdfTemplatesResolvers = {
           throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
         responseData = (response.data as Record<string, any>) ?? {};
+      } else if (aiSampleData) {
+        const budget = await checkAITokenBudget(form.organizationId);
+        if (!budget.allowed) {
+          throw createGraphQLError(
+            `AI credit limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} credits used this month). Upgrade your plan to continue.`,
+            GRAPHQL_ERROR_CODES.AI_TOKEN_LIMIT_EXCEEDED
+          );
+        }
+        try {
+          const aiResult = await generateAiSampleData({
+            formTitle: form.title,
+            entries: buildAiFieldEntries(deserializedSchema),
+          });
+          await recordAITokenUsage(form.organizationId, aiResult.tokensUsed, 'nano');
+          responseData = coerceAiSampleData(deserializedSchema, aiResult.answers);
+        } catch (error) {
+          logger.error('AI sample data generation failed:', error);
+          throw createGraphQLError(
+            'AI sample data generation failed. Please try again.',
+            GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+          );
+        }
       } else {
         responseData = buildSampleResponseData(deserializedSchema);
       }

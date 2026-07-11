@@ -11,6 +11,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { Designer } from '@pdfme/ui';
+import { getDefaultFont } from '@pdfme/common';
 import {
   text,
   image,
@@ -42,6 +43,7 @@ import {
   prepareTemplateSchemas,
   removeMissingBoundFields,
   uniqueSchemaName,
+  PDF_FIELD_FONT_NAME,
   type FormFieldEntry,
 } from '../components/pdf-designer/fieldBinding';
 import {
@@ -178,6 +180,19 @@ const PdfTemplateDesigner: React.FC = () => {
           basePdf = await response.arrayBuffer();
         }
 
+        // Bound fields reference NotoSansTamil (covers Tamil + basic Latin).
+        // If the font asset can't be fetched, register the name with Roboto's
+        // data so templates referencing it still load — Tamil text degrades
+        // to tofu instead of the whole designer failing.
+        const defaultFont = getDefaultFont();
+        let tamilFontData: ArrayBuffer | string = defaultFont.Roboto.data as string;
+        try {
+          const fontResponse = await fetch('/fonts/NotoSansTamil-Regular.ttf');
+          if (fontResponse.ok) tamilFontData = await fontResponse.arrayBuffer();
+        } catch {
+          // keep Roboto fallback data
+        }
+
         if (cancelled || !designerContainerRef.current) return;
 
         const designer = new Designer({
@@ -186,6 +201,10 @@ const PdfTemplateDesigner: React.FC = () => {
           plugins: designerPlugins,
           options: {
             lang: 'en', // pdfme chrome has no Tamil; surrounding UI is i18n'd (en+ta)
+            font: {
+              ...defaultFont,
+              [PDF_FIELD_FONT_NAME]: { data: tamilFontData },
+            },
             theme: {
               token: {
                 colorPrimary: 'rgb(37, 99, 235)',

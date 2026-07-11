@@ -1,4 +1,5 @@
-import { checkTemplate, BLANK_PDF, type Template } from '@pdfme/common';
+import { readFile } from 'node:fs/promises';
+import { checkTemplate, getDefaultFont, BLANK_PDF, type Font, type Template } from '@pdfme/common';
 import { generate } from '@pdfme/generator';
 import {
   text,
@@ -45,6 +46,33 @@ export const PDF_GENERATOR_PLUGINS = {
   dateTime,
   qrcode: barcodes.qrcode,
 };
+
+/**
+ * Font name bound-field elements reference (must match PDF_FIELD_FONT_NAME
+ * in form-app's fieldBinding.ts). Noto Sans Tamil covers Tamil AND basic
+ * Latin, so it renders any answer regardless of script — pdfme's default
+ * Roboto has no Tamil glyphs.
+ */
+export const TAMIL_FONT_NAME = 'NotoSansTamil';
+
+let cachedFonts: Font | null = null;
+
+/**
+ * pdfme font map for generation: default Roboto (fallback) plus Noto Sans
+ * Tamil read from the backend's committed asset. src/services and
+ * dist/services sit at the same depth, so the relative URL resolves in
+ * dev (tsx), tests and the built image alike.
+ */
+export async function getPdfFonts(): Promise<Font> {
+  if (cachedFonts) return cachedFonts;
+  const fontUrl = new URL(
+    '../../assets/fonts/NotoSansTamil-Regular.ttf',
+    import.meta.url
+  );
+  const data = await readFile(fontUrl);
+  cachedFonts = { ...getDefaultFont(), [TAMIL_FONT_NAME]: { data } };
+  return cachedFonts;
+}
 
 /**
  * Strip the (potentially multi-MB base64) uploaded base PDF out of a template
@@ -193,6 +221,83 @@ export function buildSampleResponseData(deserializedSchema: any): Record<string,
 }
 
 /**
+ * Field descriptors for the AI sample-data prompt (id, friendly type name,
+ * label, options). Rich text is excluded; labels are capped defensively.
+ */
+export function buildAiFieldEntries(
+  deserializedSchema: any
+): { id: string; type: string; label: string; options?: string[] }[] {
+  const entries: { id: string; type: string; label: string; options?: string[] }[] = [];
+  for (const page of deserializedSchema?.pages ?? []) {
+    for (const field of page?.fields ?? []) {
+      if (!field?.id || field.type === FieldType.RICH_TEXT_FIELD) continue;
+      const options = Array.isArray(field.options) ? field.options : undefined;
+      entries.push({
+        id: field.id,
+        type: String(field.type).replace(/_field$/, '').replace(/_/g, ' '),
+        label: String(field.label ?? '').slice(0, 200),
+        ...(options?.length ? { options } : {}),
+      });
+    }
+  }
+  return entries;
+}
+
+/**
+ * Merge AI-generated answers over the deterministic sample data, accepting
+ * each value only when it is valid for the field's type (options verbatim,
+ * parseable numbers/dates); anything invalid keeps the deterministic value.
+ * File uploads always stay deterministic — the model cannot invent R2 keys.
+ */
+export function coerceAiSampleData(
+  deserializedSchema: any,
+  aiAnswers: Record<string, string>
+): Record<string, any> {
+  const data = buildSampleResponseData(deserializedSchema);
+  for (const page of deserializedSchema?.pages ?? []) {
+    for (const field of page?.fields ?? []) {
+      if (!field?.id) continue;
+      const raw = aiAnswers[field.id];
+      if (typeof raw !== 'string' || !raw.trim()) continue;
+      const value = raw.trim();
+      const options: string[] = Array.isArray(field.options) ? field.options : [];
+
+      switch (field.type) {
+        case FieldType.RICH_TEXT_FIELD:
+        case FieldType.FILE_UPLOAD_FIELD:
+          break;
+        case FieldType.NUMBER_FIELD: {
+          // Number('') === 0, so an entirely non-numeric answer must be
+          // rejected before parsing, not coerced to zero
+          const cleaned = value.replace(/[^\d.-]/g, '');
+          const num = Number(cleaned);
+          if (cleaned !== '' && Number.isFinite(num)) data[field.id] = num;
+          break;
+        }
+        case FieldType.DATE_FIELD:
+          if (/^\d{4}-\d{2}-\d{2}$/.test(value)) data[field.id] = value;
+          break;
+        case FieldType.SELECT_FIELD:
+        case FieldType.RADIO_FIELD:
+          if (options.includes(value)) data[field.id] = value;
+          break;
+        case FieldType.CHECKBOX_FIELD: {
+          const chosen = value
+            .split(',')
+            .map((part) => part.trim())
+            .filter((part) => options.includes(part));
+          if (chosen.length > 0) data[field.id] = chosen;
+          break;
+        }
+        default:
+          data[field.id] = value;
+      }
+    }
+  }
+  return data;
+}
+
+/**
  * Hydrate a stored template's basePdf: download the uploaded base PDF from
  * the private bucket when fileKey is set; blank templates pass through.
  */
@@ -268,6 +373,7 @@ export async function generatePdfForResponse(params: {
       template,
       inputs: [inputs],
       plugins: PDF_GENERATOR_PLUGINS,
+      options: { font: await getPdfFonts() },
     });
     return Buffer.from(pdf);
   } catch (error) {

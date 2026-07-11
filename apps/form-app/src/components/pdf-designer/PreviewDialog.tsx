@@ -14,13 +14,14 @@ import {
   SelectValue,
 } from '@dculus/ui';
 import { FieldType } from '@dculus/types';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Sparkles } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { GET_FORM_RESPONSES } from '../../graphql/queries';
 import { PREVIEW_PDF_TEMPLATE } from '../../graphql/pdfTemplates';
 import type { FormFieldEntry } from './fieldBinding';
 
 const SAMPLE_OPTION = '__sample__';
+const AI_SAMPLE_OPTION = '__ai_sample__';
 const RESPONSE_PICKER_LIMIT = 20;
 
 interface PreviewDialogProps {
@@ -109,11 +110,13 @@ export const PreviewDialog: React.FC<PreviewDialogProps> = ({
     setPdfUrl(null);
 
     const run = async () => {
+      const isPickedResponse = source !== SAMPLE_OPTION && source !== AI_SAMPLE_OPTION;
       const { data } = await previewPdfTemplate({
         variables: {
           templateId,
           template,
-          responseId: source === SAMPLE_OPTION ? null : source,
+          responseId: isPickedResponse ? source : null,
+          aiSampleData: source === AI_SAMPLE_OPTION,
         },
       });
       const downloadUrl = data?.previewPdfTemplate?.downloadUrl;
@@ -171,6 +174,12 @@ export const PreviewDialog: React.FC<PreviewDialogProps> = ({
             <SelectContent>
               <SelectItem value={SAMPLE_OPTION} className="text-xs">
                 {t('preview.sampleData')}
+              </SelectItem>
+              <SelectItem value={AI_SAMPLE_OPTION} className="text-xs">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3 text-[#5c2e6b]" />
+                  {t('preview.aiSampleData')}
+                </span>
               </SelectItem>
               {responses.map((response) => (
                 <SelectItem key={response.id} value={response.id} className="text-xs">
