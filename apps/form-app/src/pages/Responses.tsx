@@ -28,7 +28,12 @@ import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
-import { DELETE_RESPONSE, DELETE_PREVIEW_RESPONSES, GENERATE_FAKE_RESPONSES } from '../graphql/mutations';
+import {
+  DELETE_RESPONSE,
+  DELETE_PREVIEW_RESPONSES,
+  GENERATE_FAKE_RESPONSES,
+  DELETE_AI_GENERATED_RESPONSES,
+} from '../graphql/mutations';
 import { deserializeFormSchema, FillableFormField, FormResponse, FormSchema } from '@dculus/types';
 import { AlertCircle, ArrowLeft, FileSpreadsheet, FileText, RotateCcw, Trash2, X } from 'lucide-react';
 
@@ -147,8 +152,31 @@ const Responses: React.FC = () => {
 
   const [clearingPreview, setClearingPreview] = useState(false);
   const [showClearPreviewDialog, setShowClearPreviewDialog] = useState(false);
+  const [clearingFakeResponses, setClearingFakeResponses] = useState(false);
+  const [showClearFakeResponsesDialog, setShowClearFakeResponsesDialog] = useState(false);
 
   const [deletePreviewResponsesMutation] = useMutation(DELETE_PREVIEW_RESPONSES, {
+    refetchQueries: [
+      {
+        query: GET_FORM_RESPONSES,
+        variables: {
+          formId: actualFormId,
+          page: responsesState.currentPage,
+          limit: responsesState.pageSize,
+          sortBy: responsesState.sortBy,
+          sortOrder: responsesState.sortOrder,
+          filters: responsesState.graphqlFilters,
+          filterLogic:
+            responsesState.graphqlFilters &&
+            responsesState.graphqlFilters.length > 1
+              ? responsesState.filterLogic
+              : undefined,
+        },
+      },
+    ],
+  });
+
+  const [deleteAiGeneratedResponsesMutation] = useMutation(DELETE_AI_GENERATED_RESPONSES, {
     refetchQueries: [
       {
         query: GET_FORM_RESPONSES,
@@ -240,8 +268,9 @@ const Responses: React.FC = () => {
   });
   const formTags = tagsData?.formTags ?? [];
   const PREVIEW_TAG_NAME = '__preview__';
+  const AI_GENERATED_TAG_NAME = '__ai_generated__';
   const userFormTags = formTags.filter(
-    (t: { name: string }) => t.name !== PREVIEW_TAG_NAME
+    (t: { name: string }) => t.name !== PREVIEW_TAG_NAME && t.name !== AI_GENERATED_TAG_NAME
   );
 
   const { data: responsesData, previousData: previousResponsesData, loading: responsesLoading, error: responsesError } = useQuery(GET_FORM_RESPONSES, {
@@ -324,6 +353,10 @@ const Responses: React.FC = () => {
     r.tags?.some((tag: any) => tag.name === PREVIEW_TAG_NAME)
   ).length;
 
+  const aiGeneratedResponseCount = responses.filter((r: any) =>
+    r.tags?.some((tag: any) => tag.name === AI_GENERATED_TAG_NAME)
+  ).length;
+
   const handleClearPreviewResponses = async () => {
     if (!actualFormId) return;
     setClearingPreview(true);
@@ -341,6 +374,26 @@ const Responses: React.FC = () => {
     } finally {
       setClearingPreview(false);
       setShowClearPreviewDialog(false);
+    }
+  };
+
+  const handleClearFakeResponses = async () => {
+    if (!actualFormId) return;
+    setClearingFakeResponses(true);
+    try {
+      const result = await deleteAiGeneratedResponsesMutation({
+        variables: { formId: actualFormId },
+      });
+      const count = result.data?.deleteAiGeneratedResponses ?? 0;
+      toastSuccess(
+        t('toolbar.fakeResponses.clearSuccess'),
+        t('toolbar.fakeResponses.clearSuccessDetail', { values: { count } })
+      );
+    } catch {
+      toastError(t('toolbar.fakeResponses.clearError'));
+    } finally {
+      setClearingFakeResponses(false);
+      setShowClearFakeResponsesDialog(false);
     }
   };
 
@@ -485,19 +538,35 @@ const Responses: React.FC = () => {
 
             {/* Toolbar */}
             <div className="flex-shrink-0">
-              {/* Clear preview responses button — only shown when preview responses exist */}
-              {previewResponseCount > 0 && (
-                <div className="flex-shrink-0 flex items-center px-3 py-1.5 border-b" style={{ borderColor: 'var(--tf-border-medium)' }}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2.5 text-xs gap-1.5 border-red-200 text-red-600 hover:bg-red-50 ml-auto"
-                    onClick={() => setShowClearPreviewDialog(true)}
-                    disabled={clearingPreview}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    {t('toolbar.preview.clearButton', { values: { count: previewResponseCount } })}
-                  </Button>
+              {/* Clear preview / fake-response buttons — only shown when they exist */}
+              {(previewResponseCount > 0 || aiGeneratedResponseCount > 0) && (
+                <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 border-b" style={{ borderColor: 'var(--tf-border-medium)' }}>
+                  <div className="ml-auto flex items-center gap-2">
+                    {aiGeneratedResponseCount > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs gap-1.5 border-red-200 text-red-600 hover:bg-red-50"
+                        onClick={() => setShowClearFakeResponsesDialog(true)}
+                        disabled={clearingFakeResponses}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        {t('toolbar.fakeResponses.clearButton', { values: { count: aiGeneratedResponseCount } })}
+                      </Button>
+                    )}
+                    {previewResponseCount > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2.5 text-xs gap-1.5 border-red-200 text-red-600 hover:bg-red-50"
+                        onClick={() => setShowClearPreviewDialog(true)}
+                        disabled={clearingPreview}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        {t('toolbar.preview.clearButton', { values: { count: previewResponseCount } })}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
               <ResponsesToolbar
@@ -606,6 +675,29 @@ const Responses: React.FC = () => {
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {clearingPreview ? t('toolbar.preview.clearConfirmDeleting') : t('toolbar.preview.clearConfirmConfirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Clear fake (AI-generated) responses confirmation */}
+      <AlertDialog open={showClearFakeResponsesDialog} onOpenChange={setShowClearFakeResponsesDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('toolbar.fakeResponses.clearConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('toolbar.fakeResponses.clearConfirmDescription', { values: { count: aiGeneratedResponseCount } })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('toolbar.fakeResponses.clearConfirmCancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearFakeResponses}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {clearingFakeResponses
+                ? t('toolbar.fakeResponses.clearConfirmDeleting')
+                : t('toolbar.fakeResponses.clearConfirmConfirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

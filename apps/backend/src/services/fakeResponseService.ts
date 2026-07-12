@@ -5,6 +5,8 @@ import { prisma } from '../lib/prisma.js';
 import { generateAiFakeResponses } from './aiService.js';
 import { coerceAiSampleData } from './pdfTemplateService.js';
 import { ensureSyntheticResponseFile } from './fileUploadService.js';
+import { upsertAiGeneratedTag } from './tagService.js';
+import { logger } from '../lib/logger.js';
 
 /** Marks a Response row as synthetic test data rather than a real submission. */
 export const AI_GENERATED_RESPONSE_SOURCE = 'ai_generated';
@@ -111,6 +113,18 @@ export async function generateFakeResponsesForForm(
 
   if (rows.length > 0) {
     await prisma.response.createMany({ data: rows });
+
+    // Tag assignment is best-effort — the responses themselves (and their
+    // metadata.source marker used for analytics exclusion) are already
+    // persisted, so a tagging failure shouldn't fail the whole generation.
+    try {
+      const tag = await upsertAiGeneratedTag(formId);
+      await prisma.responseTagAssignment.createMany({
+        data: rows.map((row) => ({ responseId: row.id, tagId: tag.id })),
+      });
+    } catch (error) {
+      logger.error({ err: error, formId }, 'Failed to tag AI-generated responses');
+    }
   }
 
   return { created: rows.length, tokensUsed: aiResult.tokensUsed };

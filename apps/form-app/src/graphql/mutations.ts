@@ -231,3 +231,10 @@ export const GENERATE_FAKE_RESPONSES: TypedDocumentNode<any, any> = gql`
     generateFakeResponses(formId: $formId, count: $count)
   }
 `;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const DELETE_AI_GENERATED_RESPONSES: TypedDocumentNode<any, any> = gql`
+  mutation DeleteAiGeneratedResponses($formId: ID!) {
+    deleteAiGeneratedResponses(formId: $formId)
+  }
+`;

@@ -13,7 +13,7 @@ import {
   CommandGroup,
   CommandItem,
 } from '@dculus/ui';
-import { Check, Plus, Tag, X } from 'lucide-react';
+import { Check, Plus, Sparkles, Tag, X } from 'lucide-react';
 import { FormResponse } from '@dculus/types';
 import {
   ADD_TAG_TO_RESPONSE,
@@ -31,6 +31,8 @@ const TAG_FRAGMENT : TypedDocumentNode<any, any> = gql`
 `;
 
 const PREVIEW_TAG_NAME = '__preview__';
+const AI_GENERATED_TAG_NAME = '__ai_generated__';
+const SYSTEM_TAG_NAMES = [PREVIEW_TAG_NAME, AI_GENERATED_TAG_NAME];
 
 const PRESET_COLORS = [
   '#6366f1', // indigo (default)
@@ -115,12 +117,12 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
   const loading = adding || removing || creating;
 
   const filtered = formTags
-    .filter((t) => t.name !== PREVIEW_TAG_NAME)
+    .filter((t) => !SYSTEM_TAG_NAMES.includes(t.name))
     .filter((t) => t.name.toLowerCase().includes(search.toLowerCase()));
   const trimmed = search.trim();
   const canCreate =
     trimmed.length > 0 &&
-    trimmed !== PREVIEW_TAG_NAME &&
+    !SYSTEM_TAG_NAMES.includes(trimmed) &&
     !formTags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase());
 
   const handleToggle = async (tag: ResponseTagItem) => {
@@ -156,6 +158,18 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
               className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-amber-300 bg-amber-100 text-amber-700 select-none"
             >
               Preview
+            </span>
+          );
+        }
+        if (tag.name === AI_GENERATED_TAG_NAME) {
+          return (
+            <span
+              key={tag.id}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border border-violet-300 bg-violet-100 text-violet-700 select-none"
+              title={t('table.tags.aiGeneratedHint')}
+            >
+              <Sparkles className="h-2.5 w-2.5" />
+              {t('table.tags.aiGeneratedPill')}
             </span>
           );
         }

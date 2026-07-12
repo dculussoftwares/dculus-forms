@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 
 export const PREVIEW_TAG_NAME = '__preview__';
+export const AI_GENERATED_TAG_NAME = '__ai_generated__';
 
 export const getFormTags = async (formId: string) => {
   return prisma.responseTag.findMany({
@@ -92,6 +93,33 @@ export const deletePreviewResponses = async (formId: string): Promise<number> =>
 
   const assignments = await prisma.responseTagAssignment.findMany({
     where: { tagId: previewTag.id },
+    select: { responseId: true },
+  });
+  if (!assignments.length) return 0;
+
+  const responseIds = assignments.map((a) => a.responseId);
+  const { count } = await prisma.response.deleteMany({
+    where: { id: { in: responseIds } },
+  });
+  return count;
+};
+
+export const upsertAiGeneratedTag = async (formId: string) => {
+  return prisma.responseTag.upsert({
+    where: { formId_name: { formId, name: AI_GENERATED_TAG_NAME } },
+    update: {},
+    create: { formId, name: AI_GENERATED_TAG_NAME, color: '#8b5cf6' },
+  });
+};
+
+export const deleteAiGeneratedResponses = async (formId: string): Promise<number> => {
+  const aiTag = await prisma.responseTag.findFirst({
+    where: { formId, name: AI_GENERATED_TAG_NAME },
+  });
+  if (!aiTag) return 0;
+
+  const assignments = await prisma.responseTagAssignment.findMany({
+    where: { tagId: aiTag.id },
     select: { responseId: true },
   });
   if (!assignments.length) return 0;

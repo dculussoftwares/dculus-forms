@@ -49,7 +49,6 @@ import {
   Loader2,
   MoreHorizontal,
   Phone,
-  Sparkles,
   Tag,
   Type,
   Upload,
@@ -215,23 +214,12 @@ const createBaseColumns = (
       ),
       cell: ({ row }) => {
         const id = row.getValue('id') as string;
-        const isAiGenerated = row.original.metadata?.source === 'ai_generated';
         return (
           <div className="flex items-center space-x-2">
             <Hash className="h-4 w-4 text-muted-foreground" />
             <span className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium bg-slate-100/80 text-slate-800 border border-[var(--tf-border-medium)]/60 rounded-lg">
               {id?.slice(-6) || 'N/A'}
             </span>
-            {isAiGenerated && (
-              <Badge
-                variant="secondary"
-                className="gap-1 text-[10px] px-1.5 py-0"
-                title={t('table.badges.aiGeneratedHint')}
-              >
-                <Sparkles className="h-2.5 w-2.5" />
-                {t('table.badges.aiGenerated')}
-              </Badge>
-            )}
           </div>
         );
       },
