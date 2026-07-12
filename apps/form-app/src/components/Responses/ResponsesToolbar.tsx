@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -7,6 +7,12 @@ import {
   Button,
   Checkbox,
   DateTimeRangePicker,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,6 +32,7 @@ import {
   RotateCcw,
   Search,
   Settings2,
+  Sparkles,
   Tag,
   X,
 } from 'lucide-react';
@@ -109,6 +116,9 @@ interface ResponsesToolbarProps {
   isExporting: boolean;
   onExportExcel: () => void;
   onExportCsv: () => void;
+  isGeneratingFakeResponses: boolean;
+  maxFakeResponses: number;
+  onGenerateFakeResponses: (count: number) => void;
   t: (key: string, options?: { values?: Record<string, string | number>; defaultValue?: string }) => string;
 }
 
@@ -134,10 +144,15 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   isExporting,
   onExportExcel,
   onExportCsv,
+  isGeneratingFakeResponses,
+  maxFakeResponses,
+  onGenerateFakeResponses,
   t,
 }) => {
   const activeFilters = Object.values(filters).filter((f) => f.active);
   const hiddenColumns = columns.filter((col) => col.id && columnVisibility[col.id] === false);
+  const [showFakeResponsesDialog, setShowFakeResponsesDialog] = useState(false);
+  const [fakeResponseCount, setFakeResponseCount] = useState(5);
 
   // Hideable columns in their current display order
   const hideableColumnIds = columns
@@ -396,6 +411,37 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Fake Response (AI) */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 shrink-0"
+          disabled={isGeneratingFakeResponses}
+          aria-label={
+            isGeneratingFakeResponses
+              ? t('toolbar.fakeResponses.generating')
+              : t('toolbar.fakeResponses.buttonLabel')
+          }
+          onClick={() => {
+            setFakeResponseCount(Math.min(5, maxFakeResponses));
+            setShowFakeResponsesDialog(true);
+          }}
+        >
+          {isGeneratingFakeResponses ? (
+            <div
+              className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
+              style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
+            />
+          ) : (
+            <Sparkles className="h-3.5 w-3.5" />
+          )}
+          <span className="hidden sm:inline">
+            {isGeneratingFakeResponses
+              ? t('toolbar.fakeResponses.generating')
+              : t('toolbar.fakeResponses.buttonLabel')}
+          </span>
+        </Button>
+
         {/* Export */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -429,6 +475,67 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <Dialog open={showFakeResponsesDialog} onOpenChange={setShowFakeResponsesDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              {t('toolbar.fakeResponses.dialog.title')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('toolbar.fakeResponses.dialog.description')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="fake-response-count">
+              {t('toolbar.fakeResponses.dialog.countLabel')}
+            </Label>
+            <Input
+              id="fake-response-count"
+              type="number"
+              min={1}
+              max={maxFakeResponses}
+              step={1}
+              value={fakeResponseCount}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === '') {
+                  setFakeResponseCount(1);
+                  return;
+                }
+                const parsed = Number(raw);
+                // Reject non-integers (e.g. "3.5") instead of silently truncating them.
+                if (!Number.isInteger(parsed)) return;
+                setFakeResponseCount(Math.max(1, Math.min(parsed, maxFakeResponses)));
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t('toolbar.fakeResponses.dialog.countHint', { values: { max: maxFakeResponses } })}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowFakeResponsesDialog(false)}
+              disabled={isGeneratingFakeResponses}
+            >
+              {t('toolbar.fakeResponses.dialog.cancel')}
+            </Button>
+            <Button
+              onClick={() => {
+                setShowFakeResponsesDialog(false);
+                onGenerateFakeResponses(fakeResponseCount);
+              }}
+              disabled={isGeneratingFakeResponses}
+              className="gap-1.5"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              {t('toolbar.fakeResponses.dialog.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -5,6 +5,7 @@
  */
 
 import { responseRepository } from '../../repositories/index.js';
+import { isAiGeneratedResponse } from '../fakeResponseService.js';
 import { FieldResponse } from './types.js';
 
 /**
@@ -17,11 +18,15 @@ export const getFormResponses = async (formId: string): Promise<Array<{
 }>> => {
   const responses = await responseRepository.listByForm(formId);
 
-  return responses.map(response => ({
-    responseId: response.id,
-    data: response.data as Record<string, any>,
-    submittedAt: response.submittedAt,
-  }));
+  // AI-generated fake responses are synthetic test data — excluded from
+  // field-level stats so they don't skew option distributions, averages, etc.
+  return responses
+    .filter(response => !isAiGeneratedResponse(response.metadata))
+    .map(response => ({
+      responseId: response.id,
+      data: response.data as Record<string, any>,
+      submittedAt: response.submittedAt,
+    }));
 };
 
 /**

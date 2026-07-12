@@ -1313,6 +1313,8 @@ export const typeDefs = gql`
     deleteResponse(id: ID!): Boolean!
     deleteResponses(formId: ID!, ids: [ID!]!): Boolean!
     deletePreviewResponses(formId: ID!): Int!
+    generateFakeResponses(formId: ID!, count: Int!): Int!
+    deleteAiGeneratedResponses(formId: ID!): Int!
 
     # Response Tag Mutations
     createTag(formId: ID!, name: String!, color: String): ResponseTag!

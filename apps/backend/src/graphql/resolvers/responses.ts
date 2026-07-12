@@ -33,6 +33,11 @@ import { logger } from '../../lib/logger.js';
 import { audit } from '../../lib/audit.js';
 import { upsertPreviewTag, addTagToResponse } from '../../services/tagService.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
+import {
+  generateFakeResponsesForForm,
+  MAX_FAKE_RESPONSES_PER_REQUEST,
+} from '../../services/fakeResponseService.js';
+import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 
 interface ResponseParent {
   id: string;
@@ -455,6 +460,51 @@ export const responsesResolvers = {
       const result = await deleteResponses(formId, ids);
       await audit('response.bulk_deleted', 'Form', formId, context.auth.user?.id);
       return result;
+    },
+
+    generateFakeResponses: async (
+      _: any,
+      { formId, count }: { formId: string; count: number },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const form = await getFormById(formId);
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+      await requireOrganizationMembership(context.auth, form.organizationId);
+
+      // Spends the org's AI credit budget, same rights as saving the form.
+      const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need EDITOR access to generate fake responses', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      if (!Number.isInteger(count) || count < 1 || count > MAX_FAKE_RESPONSES_PER_REQUEST) {
+        throw createGraphQLError(
+          `count must be between 1 and ${MAX_FAKE_RESPONSES_PER_REQUEST}`,
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
+      const budget = await checkAITokenBudget(form.organizationId);
+      if (!budget.allowed) {
+        throw createGraphQLError(
+          `AI credit limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} credits used this month). Upgrade your plan to continue.`,
+          GRAPHQL_ERROR_CODES.AI_TOKEN_LIMIT_EXCEEDED
+        );
+      }
+
+      try {
+        const deserializedSchema = deserializeFormSchema(form.formSchema);
+        const result = await generateFakeResponsesForForm(formId, form.title, deserializedSchema, count);
+        await recordAITokenUsage(form.organizationId, result.tokensUsed, 'nano');
+        return result.created;
+      } catch (error) {
+        logger.error({ err: error, formId }, 'Fake response generation failed');
+        throw createGraphQLError('Fake response generation failed. Please try again.', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
     },
   },
 };

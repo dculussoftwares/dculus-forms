@@ -3,6 +3,7 @@ import {
   PutObjectCommand,
   CopyObjectCommand,
   GetObjectCommand,
+  HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
@@ -290,6 +291,49 @@ function getBucketForKey(s3Key: string): string {
     s3Key.startsWith('files/pdf-template-asset/')
     ? s3Config.privateBucketName
     : s3Config.publicBucketName;
+}
+
+// Deterministic filename so repeated generations for the same form reuse one
+// object instead of uploading a new copy every time.
+const SYNTHETIC_RESPONSE_FILENAME = 'ai-fake-response-placeholder.txt';
+const SYNTHETIC_RESPONSE_CONTENT = Buffer.from(
+  'This file was attached automatically to an AI-generated fake response, used for testing.\n' +
+    'Real file uploads are not simulated for AI-generated responses yet.\n'
+);
+
+/**
+ * Ensures a small placeholder file exists at a per-form, deterministic key in
+ * the private bucket, for FileUploadField answers in AI-generated fake
+ * responses. Idempotent (HEAD-check before upload) and keyed under
+ * files/form-response/{formId}/... so it satisfies the same key pattern (and
+ * therefore the same access checks) as a real respondent-uploaded file — see
+ * getResponseFileDownloadUrl's KEY_PATTERN in resolvers/fileUpload.ts.
+ */
+export async function ensureSyntheticResponseFile(formId: string): Promise<string> {
+  const key = `files/form-response/${formId}/${SYNTHETIC_RESPONSE_FILENAME}`;
+
+  try {
+    await s3Client.send(
+      new HeadObjectCommand({ Bucket: s3Config.privateBucketName, Key: key })
+    );
+    return key;
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata
+      ?.httpStatusCode;
+    const name = (error as { name?: string })?.name;
+    // Anything other than "object doesn't exist" is unexpected — surface it.
+    if (status !== 404 && name !== 'NotFound') throw error;
+  }
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: s3Config.privateBucketName,
+      Key: key,
+      Body: SYNTHETIC_RESPONSE_CONTENT,
+      ContentType: 'text/plain',
+    })
+  );
+  return key;
 }
 
 /**

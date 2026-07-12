@@ -224,3 +224,17 @@ export const DELETE_PREVIEW_RESPONSES: TypedDocumentNode<any, any> = gql`
     deletePreviewResponses(formId: $formId)
   }
 `;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const GENERATE_FAKE_RESPONSES: TypedDocumentNode<any, any> = gql`
+  mutation GenerateFakeResponses($formId: ID!, $count: Int!) {
+    generateFakeResponses(formId: $formId, count: $count)
+  }
+`;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const DELETE_AI_GENERATED_RESPONSES: TypedDocumentNode<any, any> = gql`
+  mutation DeleteAiGeneratedResponses($formId: ID!) {
+    deleteAiGeneratedResponses(formId: $formId)
+  }
+`;
