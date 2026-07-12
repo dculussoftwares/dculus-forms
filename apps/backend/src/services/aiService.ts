@@ -195,3 +195,79 @@ Rules:
   }
   return { answers, tokensUsed: usage?.totalTokens ?? 0 };
 }
+
+// ---------------------------------------------------------------------------
+// AI fake responses (bulk test-data generation for the Responses table)
+// ---------------------------------------------------------------------------
+
+const AIFakeResponsesSchema = z.object({
+  responses: z.array(
+    z.object({
+      answers: z.array(
+        z.object({
+          fieldId: z.string().describe('The exact field id, copied verbatim'),
+          value: z
+            .string()
+            .describe(
+              'The answer. For checkbox fields: chosen options joined with ", ". For select/radio: one option verbatim. For date: YYYY-MM-DD.'
+            ),
+        })
+      ),
+    })
+  ),
+});
+
+export interface AIFakeResponsesResult {
+  /** One fieldId → answer map per generated response, in order. */
+  responses: Record<string, string>[];
+  tokensUsed: number;
+}
+
+/**
+ * Generate `count` distinct, diverse fake form responses in a single model
+ * call — used by the Responses table's "Fake Response" AI action. Runs on
+ * the fast (nano) model; the caller is responsible for the credit budget
+ * check and usage recording, and for validating/coercing values per field
+ * type before use. File-upload fields must be excluded from `entries` —
+ * the model cannot invent real file keys.
+ */
+export async function generateAiFakeResponses(fields: {
+  formTitle: string;
+  entries: { id: string; type: string; label: string; options?: string[] }[];
+  count: number;
+}): Promise<AIFakeResponsesResult> {
+  const fieldLines = fields.entries
+    .map((f) => {
+      const options = f.options?.length ? ` options: [${f.options.join(' | ')}]` : '';
+      return `- id: ${f.id} | type: ${f.type} | label: ${f.label}${options}`;
+    })
+    .join('\n');
+
+  const { output, usage } = await generateText({
+    model: getFastModel(),
+    output: Output.object({ schema: AIFakeResponsesSchema }),
+    system: `You generate realistic, DIVERSE fake form submissions for testing a form builder.
+Invent ${fields.count} DIFFERENT fictional personas — one per response — varying age, background, tone, and answer length. Never repeat the same persona or the same set of answers across responses.
+Rules:
+- Answer in the same language as the field label (e.g. Tamil labels get Tamil answers).
+- select/radio: copy exactly one of the listed options, verbatim. Spread choices across the available options across the ${fields.count} responses — do not let every response pick the same option.
+- checkbox: copy one or more listed options verbatim, joined with ", ". Vary the selection across responses.
+- date: YYYY-MM-DD, spread across a plausible range rather than reusing one date.
+- number: digits only, varied values.
+- email/phone: plausible but clearly fictional, unique per persona.
+- Keep long-text answers to one or two sentences; vary length and tone across responses.
+- Include every field id exactly once per response.
+- Return exactly ${fields.count} responses.`,
+    prompt: `Form title: ${fields.formTitle || 'Untitled form'}\nFields:\n${fieldLines}`,
+  });
+
+  const responses = output.responses.map((r) => {
+    const answers: Record<string, string> = {};
+    for (const item of r.answers) {
+      answers[item.fieldId] = item.value;
+    }
+    return answers;
+  });
+
+  return { responses, tokensUsed: usage?.totalTokens ?? 0 };
+}

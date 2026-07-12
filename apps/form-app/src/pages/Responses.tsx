@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
+import { CombinedGraphQLErrors } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
 import {
   AlertDialog,
@@ -27,9 +28,12 @@ import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
-import { DELETE_RESPONSE, DELETE_PREVIEW_RESPONSES } from '../graphql/mutations';
+import { DELETE_RESPONSE, DELETE_PREVIEW_RESPONSES, GENERATE_FAKE_RESPONSES } from '../graphql/mutations';
 import { deserializeFormSchema, FillableFormField, FormResponse, FormSchema } from '@dculus/types';
 import { AlertCircle, ArrowLeft, FileSpreadsheet, FileText, RotateCcw, Trash2, X } from 'lucide-react';
+
+// Mirrors MAX_FAKE_RESPONSES_PER_REQUEST in the backend's fakeResponseService.ts.
+const MAX_FAKE_RESPONSES = 10;
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -171,6 +175,52 @@ const Responses: React.FC = () => {
       toastSuccess(t('table.actions.deleteSuccess'));
     } catch {
       toastError(t('table.actions.deleteError'));
+    }
+  };
+
+  const [generateFakeResponsesMutation, { loading: isGeneratingFakeResponses }] = useMutation(
+    GENERATE_FAKE_RESPONSES,
+    {
+      refetchQueries: [
+        {
+          query: GET_FORM_RESPONSES,
+          variables: {
+            formId: actualFormId,
+            page: responsesState.currentPage,
+            limit: responsesState.pageSize,
+            sortBy: responsesState.sortBy,
+            sortOrder: responsesState.sortOrder,
+            filters: responsesState.graphqlFilters,
+            filterLogic:
+              responsesState.graphqlFilters &&
+              responsesState.graphqlFilters.length > 1
+                ? responsesState.filterLogic
+                : undefined,
+          },
+        },
+      ],
+    }
+  );
+
+  const handleGenerateFakeResponses = async (count: number) => {
+    try {
+      const { data } = await generateFakeResponsesMutation({
+        variables: { formId: actualFormId, count },
+      });
+      toastSuccess(
+        t('toolbar.fakeResponses.success', {
+          values: { count: data?.generateFakeResponses ?? count },
+        })
+      );
+    } catch (error) {
+      const isLimitError =
+        CombinedGraphQLErrors.is(error) &&
+        error.errors.some((e) => e.extensions?.code === 'AI_TOKEN_LIMIT_EXCEEDED');
+      toastError(
+        isLimitError
+          ? t('toolbar.fakeResponses.creditLimitError')
+          : t('toolbar.fakeResponses.error')
+      );
     }
   };
 
@@ -472,6 +522,9 @@ const Responses: React.FC = () => {
                 isExporting={responsesState.isExporting}
                 onExportExcel={responsesState.exportToExcel}
                 onExportCsv={responsesState.exportToCsv}
+                isGeneratingFakeResponses={isGeneratingFakeResponses}
+                maxFakeResponses={MAX_FAKE_RESPONSES}
+                onGenerateFakeResponses={handleGenerateFakeResponses}
                 t={t}
               />
             </div>
