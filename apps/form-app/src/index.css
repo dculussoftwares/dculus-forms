@@ -219,6 +219,24 @@ svg.lucide {
   --moveable-line-thickness: 1.5px;
 }
 
+/* pdfme designer: replace the ambiguous 4-arrow "move" cursor on a field's
+   drag target with a Figma/Miro-style grab/grabbing hand. `.selectable` is
+   pdfme's own class for the draggable schema wrapper (@pdfme/ui's Wrapper
+   component, in the installed @pdfme/ui dist bundle) - it and its content
+   descendants set `cursor: pointer` / `cursor: default` inline, so this
+   needs !important to win. Resize handles and the rotation control are
+   separate `.moveable-control` elements portaled to document.body (not
+   descendants of `.selectable`) and keep pdfme's own direction-specific
+   cursors untouched. */
+[data-pdf-designer-canvas] .selectable,
+[data-pdf-designer-canvas] .selectable * {
+  cursor: grab !important;
+}
+[data-pdf-designer-canvas] .selectable:active,
+[data-pdf-designer-canvas] .selectable:active * {
+  cursor: grabbing !important;
+}
+
 /* pdfme ruler guide lines (includes our injected column guides — see
    canvasGuides.ts): hidden while idle, shown while moving/resizing elements
    (data-guides-visible on the canvas wrapper) or when hovering a ruler. */
