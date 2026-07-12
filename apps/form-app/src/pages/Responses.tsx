@@ -129,25 +129,29 @@ const Responses: React.FC = () => {
     }
   };
 
-  const [deleteResponseMutation] = useMutation(DELETE_RESPONSE, {
-    refetchQueries: [
-      {
-        query: GET_FORM_RESPONSES,
-        variables: {
-          formId: actualFormId,
-          page: responsesState.currentPage,
-          limit: responsesState.pageSize,
-          sortBy: responsesState.sortBy,
-          sortOrder: responsesState.sortOrder,
-          filters: responsesState.graphqlFilters,
-          filterLogic:
-            responsesState.graphqlFilters &&
-            responsesState.graphqlFilters.length > 1
-              ? responsesState.filterLogic
-              : undefined,
-        },
+  // Shared refetch config for every mutation that adds/removes responses —
+  // keeps the paginated/filtered GET_FORM_RESPONSES view in sync.
+  const responsesRefetchQueries = [
+    {
+      query: GET_FORM_RESPONSES,
+      variables: {
+        formId: actualFormId,
+        page: responsesState.currentPage,
+        limit: responsesState.pageSize,
+        sortBy: responsesState.sortBy,
+        sortOrder: responsesState.sortOrder,
+        filters: responsesState.graphqlFilters,
+        filterLogic:
+          responsesState.graphqlFilters &&
+          responsesState.graphqlFilters.length > 1
+            ? responsesState.filterLogic
+            : undefined,
       },
-    ],
+    },
+  ];
+
+  const [deleteResponseMutation] = useMutation(DELETE_RESPONSE, {
+    refetchQueries: responsesRefetchQueries,
   });
 
   const [clearingPreview, setClearingPreview] = useState(false);
@@ -156,45 +160,11 @@ const Responses: React.FC = () => {
   const [showClearFakeResponsesDialog, setShowClearFakeResponsesDialog] = useState(false);
 
   const [deletePreviewResponsesMutation] = useMutation(DELETE_PREVIEW_RESPONSES, {
-    refetchQueries: [
-      {
-        query: GET_FORM_RESPONSES,
-        variables: {
-          formId: actualFormId,
-          page: responsesState.currentPage,
-          limit: responsesState.pageSize,
-          sortBy: responsesState.sortBy,
-          sortOrder: responsesState.sortOrder,
-          filters: responsesState.graphqlFilters,
-          filterLogic:
-            responsesState.graphqlFilters &&
-            responsesState.graphqlFilters.length > 1
-              ? responsesState.filterLogic
-              : undefined,
-        },
-      },
-    ],
+    refetchQueries: responsesRefetchQueries,
   });
 
   const [deleteAiGeneratedResponsesMutation] = useMutation(DELETE_AI_GENERATED_RESPONSES, {
-    refetchQueries: [
-      {
-        query: GET_FORM_RESPONSES,
-        variables: {
-          formId: actualFormId,
-          page: responsesState.currentPage,
-          limit: responsesState.pageSize,
-          sortBy: responsesState.sortBy,
-          sortOrder: responsesState.sortOrder,
-          filters: responsesState.graphqlFilters,
-          filterLogic:
-            responsesState.graphqlFilters &&
-            responsesState.graphqlFilters.length > 1
-              ? responsesState.filterLogic
-              : undefined,
-        },
-      },
-    ],
+    refetchQueries: responsesRefetchQueries,
   });
 
   const handleDeleteResponse = async (responseId: string) => {
@@ -208,26 +178,7 @@ const Responses: React.FC = () => {
 
   const [generateFakeResponsesMutation, { loading: isGeneratingFakeResponses }] = useMutation(
     GENERATE_FAKE_RESPONSES,
-    {
-      refetchQueries: [
-        {
-          query: GET_FORM_RESPONSES,
-          variables: {
-            formId: actualFormId,
-            page: responsesState.currentPage,
-            limit: responsesState.pageSize,
-            sortBy: responsesState.sortBy,
-            sortOrder: responsesState.sortOrder,
-            filters: responsesState.graphqlFilters,
-            filterLogic:
-              responsesState.graphqlFilters &&
-              responsesState.graphqlFilters.length > 1
-                ? responsesState.filterLogic
-                : undefined,
-          },
-        },
-      ],
-    }
+    { refetchQueries: responsesRefetchQueries }
   );
 
   const handleGenerateFakeResponses = async (count: number) => {

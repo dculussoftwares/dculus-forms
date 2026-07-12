@@ -34,7 +34,11 @@ import {
   batchLoadTagsForResponses,
   upsertPreviewTag,
   deletePreviewResponses,
+  upsertAiGeneratedTag,
+  deleteAiGeneratedResponses,
   PREVIEW_TAG_NAME,
+  AI_GENERATED_TAG_NAME,
+  AI_GENERATED_RESPONSE_SOURCE,
 } from '../tagService.js';
 
 beforeEach(() => vi.clearAllMocks());
@@ -206,5 +210,47 @@ describe('deletePreviewResponses', () => {
       where: { id: { in: ['r1', 'r2'] } },
     });
     expect(count).toBe(2);
+  });
+});
+
+describe('upsertAiGeneratedTag', () => {
+  it('upserts tag with AI-generated name and violet color', async () => {
+    const tag = { id: 'ai-tag', name: AI_GENERATED_TAG_NAME, color: '#8b5cf6' };
+    (prisma.responseTag.upsert as any).mockResolvedValue(tag);
+
+    const result = await upsertAiGeneratedTag('form-1');
+
+    expect(prisma.responseTag.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { formId_name: { formId: 'form-1', name: AI_GENERATED_TAG_NAME } },
+        create: expect.objectContaining({ name: AI_GENERATED_TAG_NAME, color: '#8b5cf6' }),
+      })
+    );
+    expect(result).toEqual(tag);
+  });
+});
+
+describe('deleteAiGeneratedResponses', () => {
+  it('deletes by formId + metadata.source, independent of tag assignments', async () => {
+    (prisma.response.deleteMany as any).mockResolvedValue({ count: 3 });
+
+    const count = await deleteAiGeneratedResponses('form-1');
+
+    expect(prisma.response.deleteMany).toHaveBeenCalledWith({
+      where: {
+        formId: 'form-1',
+        metadata: { path: ['source'], equals: AI_GENERATED_RESPONSE_SOURCE },
+      },
+    });
+    expect(prisma.responseTag.findFirst).not.toHaveBeenCalled();
+    expect(count).toBe(3);
+  });
+
+  it('returns 0 when no matching responses exist', async () => {
+    (prisma.response.deleteMany as any).mockResolvedValue({ count: 0 });
+
+    const count = await deleteAiGeneratedResponses('form-1');
+
+    expect(count).toBe(0);
   });
 });

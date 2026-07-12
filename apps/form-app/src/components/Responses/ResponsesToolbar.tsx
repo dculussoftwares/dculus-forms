@@ -417,6 +417,11 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
           size="sm"
           className="gap-1.5 shrink-0"
           disabled={isGeneratingFakeResponses}
+          aria-label={
+            isGeneratingFakeResponses
+              ? t('toolbar.fakeResponses.generating')
+              : t('toolbar.fakeResponses.buttonLabel')
+          }
           onClick={() => {
             setFakeResponseCount(Math.min(5, maxFakeResponses));
             setShowFakeResponsesDialog(true);
@@ -491,13 +496,17 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
               type="number"
               min={1}
               max={maxFakeResponses}
+              step={1}
               value={fakeResponseCount}
               onChange={(e) => {
-                const parsed = parseInt(e.target.value, 10);
-                if (Number.isNaN(parsed)) {
+                const raw = e.target.value;
+                if (raw === '') {
                   setFakeResponseCount(1);
                   return;
                 }
+                const parsed = Number(raw);
+                // Reject non-integers (e.g. "3.5") instead of silently truncating them.
+                if (!Number.isInteger(parsed)) return;
                 setFakeResponseCount(Math.max(1, Math.min(parsed, maxFakeResponses)));
               }}
             />

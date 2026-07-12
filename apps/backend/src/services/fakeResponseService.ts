@@ -2,14 +2,14 @@ import { generateId } from '@dculus/utils';
 import { FieldType } from '@dculus/types';
 import { Prisma } from '#prisma-client';
 import { prisma } from '../lib/prisma.js';
+import { responseRepository } from '../repositories/index.js';
 import { generateAiFakeResponses } from './aiService.js';
 import { coerceAiSampleData } from './pdfTemplateService.js';
 import { ensureSyntheticResponseFile } from './fileUploadService.js';
-import { upsertAiGeneratedTag } from './tagService.js';
+import { upsertAiGeneratedTag, AI_GENERATED_RESPONSE_SOURCE } from './tagService.js';
 import { logger } from '../lib/logger.js';
 
-/** Marks a Response row as synthetic test data rather than a real submission. */
-export const AI_GENERATED_RESPONSE_SOURCE = 'ai_generated';
+export { AI_GENERATED_RESPONSE_SOURCE };
 
 /** Hard cap on how many fake responses can be generated per request — keeps
  * the single batched model call, and the resulting bulk insert, bounded. */
@@ -112,7 +112,7 @@ export async function generateFakeResponsesForForm(
   });
 
   if (rows.length > 0) {
-    await prisma.response.createMany({ data: rows });
+    await responseRepository.createMany({ data: rows });
 
     // Tag assignment is best-effort — the responses themselves (and their
     // metadata.source marker used for analytics exclusion) are already
