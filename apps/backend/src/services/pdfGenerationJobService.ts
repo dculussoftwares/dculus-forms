@@ -181,7 +181,12 @@ export const runPdfGenerationLoop = async (
 
     for (let i = 0; i < responses.length; i += BATCH_SIZE) {
       const run = await prisma.pdfGenerationRun.findUnique({ where: { id: runId } });
-      if (!run || run.status === 'cancelling') {
+      // The run row can vanish mid-loop (e.g. its generator was deleted,
+      // cascading the delete) — nothing to update in that case, and
+      // attempting one would throw "record not found" from inside a
+      // fire-and-forget void call, surfacing as an unhandled rejection.
+      if (!run) return;
+      if (run.status === 'cancelling') {
         await prisma.pdfGenerationRun.update({
           where: { id: runId },
           data: { status: 'cancelled', completedAt: new Date() },
@@ -229,19 +234,30 @@ export const runPdfGenerationLoop = async (
     });
   } catch (error: any) {
     logger.error(`[PDF Generator] Run ${runId} failed`, error);
-    await prisma.pdfGenerationRun.update({
-      where: { id: runId },
-      data: {
-        status: 'failed',
-        errorMessage: error.message || 'Unknown error',
-        completedAt: new Date(),
-      },
-    });
+    // Own try/catch: this runs inside a fire-and-forget `void` call, so if the
+    // run row is already gone (e.g. its generator was deleted concurrently),
+    // this update would itself throw and escape as an unhandled rejection.
+    try {
+      await prisma.pdfGenerationRun.update({
+        where: { id: runId },
+        data: {
+          status: 'failed',
+          errorMessage: error.message || 'Unknown error',
+          completedAt: new Date(),
+        },
+      });
+    } catch (updateError) {
+      logger.error(`[PDF Generator] Could not mark run ${runId} as failed:`, updateError);
+    }
   }
 };
 
+export const getPdfGenerationRun = async (runId: string) => {
+  return prisma.pdfGenerationRun.findUnique({ where: { id: runId } });
+};
+
 export const cancelPdfGenerationRun = async (runId: string) => {
-  const run = await prisma.pdfGenerationRun.findUnique({ where: { id: runId } });
+  const run = await getPdfGenerationRun(runId);
   if (!run) {
     throw createGraphQLError('PDF generation run not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }

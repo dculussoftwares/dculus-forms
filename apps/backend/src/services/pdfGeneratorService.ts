@@ -125,6 +125,37 @@ export const getPdfGenerator = async (id: string) => {
   return prisma.pdfGenerator.findUnique({ where: { id } });
 };
 
+export const countPdfGenerators = async (formId: string): Promise<number> => {
+  return prisma.pdfGenerator.count({ where: { formId } });
+};
+
+export const getPdfTemplateById = async (templateId: string) => {
+  return prisma.pdfTemplate.findUnique({ where: { id: templateId } });
+};
+
+export const getPdfGenerationResult = async (generatorId: string, responseId: string) => {
+  return prisma.pdfGenerationResult.findUnique({
+    where: { generatorId_responseId: { generatorId, responseId } },
+  });
+};
+
+/**
+ * All persisted results for a generator, excluding soft-deleted responses
+ * (see filterResultsToLiveResponses) — the source for the "View results"
+ * modal.
+ */
+export const listPdfGenerationResults = async (generatorId: string) => {
+  const results = await prisma.pdfGenerationResult.findMany({
+    where: { generatorId },
+    orderBy: { generatedAt: 'desc' },
+  });
+  return filterResultsToLiveResponses(results);
+};
+
+export const countSuccessfulResults = async (generatorId: string): Promise<number> => {
+  return prisma.pdfGenerationResult.count({ where: { generatorId, status: 'success' } });
+};
+
 /**
  * Count how many of a form's (non-deleted) responses match a filter set.
  * Reuses the same in-memory filter pass unifiedExportService uses — adequate

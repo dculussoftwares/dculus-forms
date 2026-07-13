@@ -123,6 +123,11 @@ const PdfGeneratorEditor: React.FC = () => {
 
   useEffect(() => {
     if (!formId) return;
+    // For an existing generator, wait for the prefill effect above to load
+    // its real filters first — otherwise this fires once with `filters` still
+    // `{}` (showing the unfiltered total count) and again moments later with
+    // the actual filters, a visible flash of the wrong number.
+    if (!isNew && !loadedExisting) return;
     fetchMatchCount({
       variables: {
         formId,
@@ -130,7 +135,7 @@ const PdfGeneratorEditor: React.FC = () => {
         filterLogic: graphqlFilters.length > 1 ? filterLogic : undefined,
       },
     });
-  }, [formId, graphqlFilters, filterLogic, fetchMatchCount]);
+  }, [formId, graphqlFilters, filterLogic, fetchMatchCount, isNew, loadedExisting]);
 
   const breadcrumbs = [
     { label: t('editor.backButton'), href: `/dashboard/form/${formId}/pdf-templates` },

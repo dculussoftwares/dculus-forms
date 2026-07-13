@@ -1,7 +1,6 @@
 import { GraphQLError } from 'graphql';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
@@ -14,12 +13,17 @@ import {
   listPdfGenerators,
   getPdfGenerator,
   countMatchingResponses,
-  filterResultsToLiveResponses,
+  countPdfGenerators,
+  getPdfTemplateById,
+  getPdfGenerationResult,
+  listPdfGenerationResults,
+  countSuccessfulResults,
 } from '../../services/pdfGeneratorService.js';
 import {
   startPdfGenerationRun,
   cancelPdfGenerationRun,
   getLatestPdfGenerationRun,
+  getPdfGenerationRun,
   generateSinglePdfForGenerator,
 } from '../../services/pdfGenerationJobService.js';
 import { buildZipForGenerator } from '../../services/pdfGeneratorZipService.js';
@@ -96,9 +100,7 @@ export const pdfGeneratorsResolvers = {
     ) => {
       const generator = await getGeneratorOrThrow(generatorId);
       await requireFormAccess(context, generator.formId, PermissionLevel.VIEWER, 'view this PDF generator');
-      return prisma.pdfGenerationResult.findUnique({
-        where: { generatorId_responseId: { generatorId, responseId } },
-      });
+      return getPdfGenerationResult(generatorId, responseId);
     },
 
     pdfGenerationResults: async (
@@ -108,14 +110,10 @@ export const pdfGeneratorsResolvers = {
     ) => {
       const generator = await getGeneratorOrThrow(generatorId);
       await requireFormAccess(context, generator.formId, PermissionLevel.VIEWER, 'view this PDF generator');
-      const results = await prisma.pdfGenerationResult.findMany({
-        where: { generatorId },
-        orderBy: { generatedAt: 'desc' },
-      });
-      // Exclude results for responses that have since been soft-deleted —
+      // Excludes results for responses that have since been soft-deleted —
       // responseId isn't a hard FK, so those rows (and their R2 files) would
-      // otherwise stay downloadable forever.
-      return filterResultsToLiveResponses(results);
+      // otherwise stay downloadable forever. See filterResultsToLiveResponses.
+      return listPdfGenerationResults(generatorId);
     },
 
     /**
@@ -162,7 +160,7 @@ export const pdfGeneratorsResolvers = {
         throw createGraphQLError('Generator name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      const existingGeneratorCount = await prisma.pdfGenerator.count({ where: { formId: input.formId } });
+      const existingGeneratorCount = await countPdfGenerators(input.formId);
       if (existingGeneratorCount >= MAX_PDF_GENERATORS_PER_FORM) {
         throw createGraphQLError(
           `This form already has the maximum of ${MAX_PDF_GENERATORS_PER_FORM} PDF generators`,
@@ -237,7 +235,7 @@ export const pdfGeneratorsResolvers = {
       { runId }: { runId: string },
       context: { auth: BetterAuthContext }
     ) => {
-      const run = await prisma.pdfGenerationRun.findUnique({ where: { id: runId } });
+      const run = await getPdfGenerationRun(runId);
       if (!run) {
         throw createGraphQLError('PDF generation run not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
@@ -287,9 +285,7 @@ export const pdfGeneratorsResolvers = {
       const generator = await getGeneratorOrThrow(generatorId);
       await requireFormAccess(context, generator.formId, PermissionLevel.VIEWER, 'download PDFs for this form');
 
-      const successCount = await prisma.pdfGenerationResult.count({
-        where: { generatorId, status: 'success' },
-      });
+      const successCount = await countSuccessfulResults(generatorId);
       if (successCount === 0) {
         throw createGraphQLError(
           'No generated PDFs are available for this generator yet',
@@ -315,8 +311,7 @@ export const pdfGeneratorsResolvers = {
 
   // Field resolvers
   PdfGenerator: {
-    template: async (parent: { templateId: string }) =>
-      prisma.pdfTemplate.findUnique({ where: { id: parent.templateId } }),
+    template: async (parent: { templateId: string }) => getPdfTemplateById(parent.templateId),
     latestRun: async (parent: { id: string }) => getLatestPdfGenerationRun(parent.id),
     matchingResponseCount: async (parent: { formId: string; filters: any; filterLogic: string }) =>
       countMatchingResponses(parent.formId, parent.filters as any, parent.filterLogic as 'AND' | 'OR'),

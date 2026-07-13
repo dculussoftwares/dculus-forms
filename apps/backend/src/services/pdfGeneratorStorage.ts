@@ -2,7 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   ListObjectsV2Command,
-  DeleteObjectCommand,
+  DeleteObjectsCommand,
 } from '@aws-sdk/client-s3';
 import { s3Config } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
@@ -70,14 +70,22 @@ export async function deleteGeneratedPdfsForGenerator(
         })
       );
 
-      for (const obj of result.Contents ?? []) {
-        if (!obj.Key) continue;
+      // ListObjectsV2 pages at up to 1,000 keys, matching DeleteObjectsCommand's
+      // own per-call limit — one batched delete per page instead of one
+      // DeleteObjectCommand per object.
+      const keys = (result.Contents ?? [])
+        .filter((obj): obj is { Key: string } => !!obj.Key)
+        .map((obj) => ({ Key: obj.Key }));
+      if (keys.length > 0) {
         try {
           await s3Client.send(
-            new DeleteObjectCommand({ Bucket: s3Config.privateBucketName, Key: obj.Key })
+            new DeleteObjectsCommand({
+              Bucket: s3Config.privateBucketName,
+              Delete: { Objects: keys },
+            })
           );
         } catch (error) {
-          logger.warn(`Failed to delete generated PDF ${obj.Key}:`, error);
+          logger.warn(`Failed to batch-delete generated PDFs under ${prefix}:`, error);
         }
       }
 

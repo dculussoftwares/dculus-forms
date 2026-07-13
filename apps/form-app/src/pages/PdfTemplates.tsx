@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
@@ -52,6 +52,13 @@ const PdfTemplates: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'templates' | 'generators'>(
     location.pathname.endsWith('/generators') ? 'generators' : 'templates'
   );
+
+  // /pdf-templates and /pdf-templates/generators render this same component
+  // without remounting, so the useState initializer above only runs once —
+  // keep activeTab in sync with the URL on browser back/forward navigation.
+  useEffect(() => {
+    setActiveTab(location.pathname.endsWith('/generators') ? 'generators' : 'templates');
+  }, [location.pathname]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [createMode, setCreateMode] = useState<CreateMode | null>(null);
