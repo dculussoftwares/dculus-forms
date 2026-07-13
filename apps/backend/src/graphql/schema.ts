@@ -914,6 +914,73 @@ export const typeDefs = gql`
     template: JSON
   }
 
+  # PDF Generator Types — saved template+filter combos for bulk/repeatable
+  # PDF generation from responses (existing and future), run in the background.
+  type PdfGenerator {
+    id: ID!
+    formId: ID!
+    templateId: ID!
+    name: String!
+    columnName: String
+    filenameFieldId: String
+    filters: JSON!
+    filterLogic: FilterLogic!
+    autoRunOnSubmit: Boolean!
+    enabled: Boolean!
+    createdAt: String!
+    updatedAt: String!
+    template: PdfTemplate
+    latestRun: PdfGenerationRun
+    matchingResponseCount: Int!
+  }
+
+  type PdfGenerationRun {
+    id: ID!
+    generatorId: ID!
+    trigger: String!
+    status: String!
+    totalCount: Int!
+    processedCount: Int!
+    succeededCount: Int!
+    failedCount: Int!
+    errorMessage: String
+    startedAt: String!
+    completedAt: String
+  }
+
+  type PdfGenerationResult {
+    id: ID!
+    generatorId: ID!
+    responseId: ID!
+    status: String!
+    filename: String
+    errorMessage: String
+    generatedAt: String!
+    downloadUrl: String
+  }
+
+  input CreatePdfGeneratorInput {
+    formId: ID!
+    templateId: ID!
+    name: String!
+    columnName: String
+    filenameFieldId: String
+    filters: [ResponseFilterInput!]!
+    filterLogic: FilterLogic = AND
+    autoRunOnSubmit: Boolean = false
+  }
+
+  input UpdatePdfGeneratorInput {
+    templateId: ID
+    name: String
+    columnName: String
+    filenameFieldId: String
+    filters: [ResponseFilterInput!]
+    filterLogic: FilterLogic
+    autoRunOnSubmit: Boolean
+    enabled: Boolean
+  }
+
   # Plugin System Types
   type FormPlugin {
     id: ID!
@@ -1158,6 +1225,14 @@ export const typeDefs = gql`
     pdfTemplates(formId: ID!): [PdfTemplate!]!
     pdfTemplate(id: ID!): PdfTemplate
 
+    # PDF Generator Queries
+    pdfGenerators(formId: ID!): [PdfGenerator!]!
+    pdfGenerator(id: ID!): PdfGenerator
+    pdfGenerationRunStatus(generatorId: ID!): PdfGenerationRun
+    pdfGenerationResult(generatorId: ID!, responseId: ID!): PdfGenerationResult
+    pdfGenerationResults(generatorId: ID!): [PdfGenerationResult!]!
+    previewPdfGeneratorMatchCount(formId: ID!, filters: [ResponseFilterInput!], filterLogic: FilterLogic = AND): Int!
+
     # Subscription Queries
     availablePlans: [AvailablePlan!]!
 
@@ -1373,6 +1448,15 @@ export const typeDefs = gql`
     deletePdfTemplate(id: ID!): Boolean!
     generatePdfFromResponse(templateId: ID!, responseId: ID!): GeneratedPdfResult!
     previewPdfTemplate(templateId: ID!, template: JSON, responseId: ID, aiSampleData: Boolean = false): GeneratedPdfResult!
+
+    # PDF Generator Mutations
+    createPdfGenerator(input: CreatePdfGeneratorInput!): PdfGenerator!
+    updatePdfGenerator(id: ID!, input: UpdatePdfGeneratorInput!): PdfGenerator!
+    deletePdfGenerator(id: ID!): Boolean!
+    startPdfGenerationRun(generatorId: ID!): PdfGenerationRun!
+    cancelPdfGenerationRun(runId: ID!): PdfGenerationRun!
+    generatePdfFromGenerator(generatorId: ID!, responseId: ID!): GeneratedPdfResult!
+    downloadPdfGenerationResultsZip(generatorId: ID!): GeneratedPdfResult!
 
     # AI Mutations
     generateFormWithAI(

@@ -387,8 +387,42 @@ export function buildTemplateInputs(
 }
 
 /**
- * Generate a filled PDF for one response — builds inputs via
- * buildTemplateInputs() and runs @pdfme/generator server-side.
+ * Render a filled PDF for one response against an already-hydrated template —
+ * builds inputs via buildTemplateInputs() and runs @pdfme/generator
+ * server-side. Split out from generatePdfForResponse so callers that render
+ * many responses against the same template (e.g. the PDF Generators bulk job)
+ * can hydrate the base PDF from R2 once and reuse it, instead of
+ * re-downloading it on every response.
+ */
+export async function renderPdfForResponse(
+  template: Template,
+  deserializedSchema: any,
+  responseData: Record<string, any>,
+  fonts: Font
+): Promise<Buffer> {
+  const substitutionValues = buildSubstitutionValues(deserializedSchema, responseData);
+  const fieldLabels = createFieldLabelsMap(deserializedSchema);
+  const inputs = buildTemplateInputs(template, substitutionValues, fieldLabels);
+
+  try {
+    const pdf = await generate({
+      template,
+      inputs: [inputs],
+      plugins: PDF_GENERATOR_PLUGINS,
+      options: { font: fonts },
+    });
+    return Buffer.from(pdf);
+  } catch (error) {
+    logger.error('PDF generation failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Generate a filled PDF for one response — hydrates the template's base PDF
+ * from R2 and delegates to renderPdfForResponse(). For bulk generation across
+ * many responses, hydrate the template once and call renderPdfForResponse()
+ * directly per response instead.
  */
 export async function generatePdfForResponse(params: {
   storedTemplate: any;
@@ -399,23 +433,8 @@ export async function generatePdfForResponse(params: {
   const { storedTemplate, fileKey, deserializedSchema, responseData } = params;
 
   const template = await hydrateTemplate(storedTemplate, fileKey);
-  const substitutionValues = buildSubstitutionValues(deserializedSchema, responseData);
-  const fieldLabels = createFieldLabelsMap(deserializedSchema);
-
-  const inputs = buildTemplateInputs(template, substitutionValues, fieldLabels);
-
-  try {
-    const pdf = await generate({
-      template,
-      inputs: [inputs],
-      plugins: PDF_GENERATOR_PLUGINS,
-      options: { font: await getPdfFonts() },
-    });
-    return Buffer.from(pdf);
-  } catch (error) {
-    logger.error('PDF generation failed:', error);
-    throw error;
-  }
+  const fonts = await getPdfFonts();
+  return renderPdfForResponse(template, deserializedSchema, responseData, fonts);
 }
 
 /**
@@ -426,4 +445,30 @@ export function buildPdfFilename(templateName: string, responseId: string): stri
     templateName.replace(/[^a-zA-Z0-9-_ ]/g, '').trim().replace(/\s+/g, '-').toLowerCase() ||
     'document';
   return `${safeName}-${responseId}.pdf`;
+}
+
+/**
+ * Build a downloaded filename for a PDF Generator result. When the generator
+ * has a filenameFieldId configured, uses that field's formatted value (from
+ * substitutionValues, the same map buildTemplateInputs consumes) plus a short
+ * random suffix for uniqueness — e.g. "jane-doe-4f8a2b.pdf" — so two
+ * responses with the same field value (or the same response regenerated)
+ * never collide. Falls back to buildPdfFilename (template name + responseId)
+ * when no field is configured or the field has no value for this response.
+ */
+export function buildGeneratorFilename(
+  filenameFieldId: string | null | undefined,
+  substitutionValues: Record<string, string>,
+  templateName: string,
+  responseId: string
+): string {
+  const fieldValue = filenameFieldId ? substitutionValues[filenameFieldId] : undefined;
+  if (!fieldValue) {
+    return buildPdfFilename(templateName, responseId);
+  }
+  const slug =
+    fieldValue.replace(/[^a-zA-Z0-9-_ ]/g, '').trim().replace(/\s+/g, '-').toLowerCase() ||
+    'document';
+  const randomSuffix = Math.random().toString(36).slice(2, 8);
+  return `${slug}-${randomSuffix}.pdf`;
 }

@@ -6,10 +6,12 @@ import './google-sheets/index.js';
 import './microsoft-sheets/index.js';
 
 import { initializePluginEvents } from './core/events.js';
+import { initializePdfGeneratorAutoRun } from './core/pdfGeneratorAutoRun.js';
 import { logger } from '../lib/logger.js';
 
 export const initializePluginSystem = (): void => {
   logger.info('[Plugin System] Initializing...');
   initializePluginEvents();
+  initializePdfGeneratorAutoRun();
   logger.info('[Plugin System] Initialized');
 };

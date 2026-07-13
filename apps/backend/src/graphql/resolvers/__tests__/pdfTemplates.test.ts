@@ -15,6 +15,7 @@ vi.mock('../../../lib/prisma.js', () => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     response: {
       findUnique: vi.fn(),

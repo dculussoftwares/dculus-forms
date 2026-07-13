@@ -1,0 +1,125 @@
+{
+  "tabs": {
+    "templates": "Templates",
+    "generators": "Generators"
+  },
+  "header": {
+    "title": "PDF Generators",
+    "description": "Bulk-generate PDFs for responses matching a saved filter, using one of your PDF templates"
+  },
+  "empty": {
+    "title": "No PDF generators yet",
+    "description": "Create a generator to bulk-generate PDFs for responses matching a filter.",
+    "viewerDescription": "No PDF generators have been created for this form yet."
+  },
+  "newButton": "New Generator",
+  "limits": {
+    "generatorLimitReached": "This form has reached the maximum of {{max}} PDF generators. Delete one to create another."
+  },
+  "list": {
+    "templateLabel": "Template: {{name}}",
+    "matchLabel": "{{count}} matching response(s)",
+    "autoRunBadge": "Auto-run on submit",
+    "lastRun": {
+      "never": "Never run",
+      "running": "Running... {{processed}}/{{total}}",
+      "cancelling": "Cancelling...",
+      "completed": "Completed {{time}} ago — {{succeeded}} succeeded, {{failed}} failed",
+      "cancelled": "Cancelled {{time}} ago",
+      "failed": "Failed {{time}} ago"
+    },
+    "runButton": "Run",
+    "cancelButton": "Cancel",
+    "editButton": "Edit",
+    "deleteButton": "Delete",
+    "viewResultsButton": "View results"
+  },
+  "results": {
+    "title": "Generated PDFs — {{name}}",
+    "description": "Every response this generator has produced a PDF for. Regenerating a response replaces its file here (no version history).",
+    "downloadAllButton": "Download all as ZIP",
+    "downloadingButton": "Preparing ZIP...",
+    "empty": "No PDFs generated yet. Run this generator, or wait for auto-run, to produce some.",
+    "statusSuccess": "Ready",
+    "statusFailed": "Failed",
+    "downloadButton": "Download",
+    "closeButton": "Close",
+    "responseIdLabel": "Response {{id}}",
+    "toasts": {
+      "zipReadyTitle": "ZIP ready",
+      "zipFailedTitle": "Failed to build ZIP",
+      "noResultsTitle": "Nothing to download yet"
+    }
+  },
+  "deleteDialog": {
+    "title": "Delete PDF generator?",
+    "description": "\"{{name}}\" and its generated PDFs will be permanently deleted. This cannot be undone.",
+    "cancelButton": "Cancel",
+    "deleteButton": "Delete",
+    "deletingButton": "Deleting..."
+  },
+  "editor": {
+    "titleNew": "New PDF Generator",
+    "titleEdit": "Edit PDF Generator",
+    "backButton": "Back to Generators",
+    "nameLabel": "Generator name",
+    "namePlaceholder": "e.g. Certificate for approved applicants",
+    "templateLabel": "PDF template",
+    "templatePlaceholder": "Select a template",
+    "columnNameLabel": "Column name",
+    "columnNamePlaceholder": "Defaults to the generator name",
+    "columnNameDescription": "The header shown for this generator's download column in the Responses table.",
+    "columnNameLockedDescription": "Locked — column names can only be set once and cannot be changed afterward.",
+    "filenameFieldLabel": "File name",
+    "filenameFieldPlaceholder": "Select a field",
+    "filenameFieldNone": "None — use a generic file name",
+    "filenameFieldDescription": "Pick a form field to name each downloaded PDF after (e.g. the respondent's name). A random string is always appended to keep every file unique.",
+    "filtersLabel": "Response filter",
+    "editFiltersButton": "Edit filter",
+    "noFilters": "No filter — matches all responses",
+    "matchCount": "{{count}} response(s) currently match this filter",
+    "autoRunLabel": "Automatically generate for new matching responses",
+    "autoRunDescription": "When enabled, a PDF is generated automatically whenever a new response matches this filter.",
+    "saveButton": "Save generator",
+    "savingButton": "Saving...",
+    "cancelButton": "Cancel"
+  },
+  "toasts": {
+    "createdTitle": "Generator created",
+    "createdDescription": "Your PDF generator has been created.",
+    "updatedTitle": "Generator updated",
+    "updatedDescription": "Your changes have been saved.",
+    "deletedTitle": "Generator deleted",
+    "deletedDescription": "The PDF generator has been deleted.",
+    "createFailedTitle": "Failed to create generator",
+    "updateFailedTitle": "Failed to save generator",
+    "deleteFailedTitle": "Failed to delete generator",
+    "runStartedTitle": "Run started",
+    "runStartFailedTitle": "Failed to start run",
+    "runCancelledTitle": "Run cancelled",
+    "runCancelFailedTitle": "Failed to cancel run",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "responseAction": {
+    "menuLabel": "Download via Generator",
+    "generatingButton": "Generating...",
+    "dialogTitle": "Choose a PDF generator",
+    "dialogDescription": "Pick a saved generator to download this response's PDF.",
+    "cancelButton": "Cancel",
+    "downloadButton": "Download",
+    "downloadedTitle": "PDF downloaded",
+    "downloadFailedTitle": "Failed to generate PDF"
+  },
+  "errors": {
+    "nameRequired": "Generator name is required",
+    "templateRequired": "Please select a PDF template",
+    "formNotFound": {
+      "title": "Form not found",
+      "description": "The form you're looking for doesn't exist or you don't have access to it."
+    },
+    "generatorNotFound": {
+      "title": "Generator not found",
+      "description": "This PDF generator doesn't exist or you don't have access to it."
+    }
+  }
+}
