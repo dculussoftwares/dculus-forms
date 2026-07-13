@@ -36,6 +36,19 @@ export const EmailOverviewSummary: React.FC<EmailOverviewSummaryProps> = ({ conf
           </p>
         </div>
       )}
+      {config.attachPdfTemplateId && (
+        <div
+          className="rounded-lg px-3 py-2.5"
+          style={{ background: 'var(--tf-faint)', border: '1px solid var(--tf-border-light)' }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5" style={{ color: 'var(--tf-light-muted)' }}>
+            {t('pluginSummary.email.pdfAttachment')}
+          </p>
+          <p className="text-xs" style={{ color: 'var(--tf-text)' }}>
+            {config.attachPdfTemplateName || config.attachPdfTemplateId}
+          </p>
+        </div>
+      )}
       {config.subject && (
         <div
           className="rounded-lg px-3 py-2.5"

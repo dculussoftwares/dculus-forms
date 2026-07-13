@@ -96,7 +96,8 @@
     "email": {
       "recipient": "பெறுநர்",
       "recipientField": "பெறுநர் (படிவ புலத்திலிருந்து)",
-      "subject": "பொருள்"
+      "subject": "பொருள்",
+      "pdfAttachment": "PDF இணைப்பு"
     },
     "quiz": {
       "passThreshold": "தேர்ச்சி வரம்பு",

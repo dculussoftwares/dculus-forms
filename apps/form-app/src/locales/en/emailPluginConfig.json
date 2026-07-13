@@ -47,6 +47,14 @@
     "hintWithoutFields_prefix": "Use rich formatting including",
     "hintWithoutFields_suffix": "headings, lists, quotes, and links. Add some fields to your form to enable @ mentions for personalizing messages."
   },
+  "pdfAttachment": {
+    "title": "PDF Attachment",
+    "description": "Optionally attach a generated PDF to this email, filled in with the response's data",
+    "placeholder": "Select a PDF template",
+    "none": "None (no attachment)",
+    "hint": "Generated fresh at send time from this form's response data. If the template is later deleted, the email still sends without the attachment.",
+    "noTemplatesHint": "This form has no PDF templates yet. Create one in PDF Templates to attach it to this notification."
+  },
   "triggerEvents": {
     "title": "Trigger Events",
     "description": "Select when this plugin should be triggered",

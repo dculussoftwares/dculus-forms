@@ -11,6 +11,10 @@ export interface EmailPluginConfig extends PluginConfig {
   subject: string;
   message: string;
   sendToSubmitter?: boolean;
+  /** ID of a PdfTemplate (this form's) to render for the response and attach to the email. Optional. */
+  attachPdfTemplateId?: string;
+  /** Denormalized name of attachPdfTemplateId, cached at save time for display (same pattern as recipientFieldLabel). */
+  attachPdfTemplateName?: string;
 }
 
 export const EMAIL_PLUGIN_TYPE = 'email' as const;
@@ -26,4 +30,8 @@ export interface EmailDeliveryResult {
   skipped?: boolean;
   skipReason?: string;
   error?: string;
+  /** Filename of the PDF attached to this send, when attachPdfTemplateId was configured and generation succeeded. */
+  attachedPdfFilename?: string;
+  /** Set when attachPdfTemplateId was configured but the PDF could not be generated — the email is still sent without the attachment. */
+  attachmentError?: string;
 }
