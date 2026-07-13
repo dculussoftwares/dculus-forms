@@ -133,16 +133,23 @@ export const getPdfTemplateById = async (templateId: string) => {
   return prisma.pdfTemplate.findUnique({ where: { id: templateId } });
 };
 
+// Single-result lookup, the results list, and the ZIP-availability count all
+// need the same soft-deleted-response exclusion (see
+// filterResultsToLiveResponses) — a response deleted after its PDF was
+// generated must disappear from every one of these, not just the list view.
+
 export const getPdfGenerationResult = async (generatorId: string, responseId: string) => {
-  return prisma.pdfGenerationResult.findUnique({
+  const result = await prisma.pdfGenerationResult.findUnique({
     where: { generatorId_responseId: { generatorId, responseId } },
   });
+  if (!result) return null;
+  const [live] = await filterResultsToLiveResponses([result]);
+  return live ?? null;
 };
 
 /**
- * All persisted results for a generator, excluding soft-deleted responses
- * (see filterResultsToLiveResponses) — the source for the "View results"
- * modal.
+ * All persisted results for a generator, excluding soft-deleted responses —
+ * the source for the "View results" modal.
  */
 export const listPdfGenerationResults = async (generatorId: string) => {
   const results = await prisma.pdfGenerationResult.findMany({
@@ -153,7 +160,12 @@ export const listPdfGenerationResults = async (generatorId: string) => {
 };
 
 export const countSuccessfulResults = async (generatorId: string): Promise<number> => {
-  return prisma.pdfGenerationResult.count({ where: { generatorId, status: 'success' } });
+  const results = await prisma.pdfGenerationResult.findMany({
+    where: { generatorId, status: 'success' },
+    select: { responseId: true },
+  });
+  const live = await filterResultsToLiveResponses(results);
+  return live.length;
 };
 
 /**
