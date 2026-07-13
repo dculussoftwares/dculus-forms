@@ -7,11 +7,18 @@ import { generateInvitationEmailHtml, generateInvitationEmailText, type Invitati
 import { generateMagicLinkEmailHtml, generateMagicLinkEmailText } from '../templates/magicLinkEmail.js';
 import { logger } from '../lib/logger.js';
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 export interface EmailOptions {
   to: string;
   subject: string;
   html: string;
   text?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface FormPublishedEmailData {
@@ -73,6 +80,11 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
       subject: options.subject,
       html: options.html,
       text: options.text,
+      attachments: options.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.content,
+        contentType: attachment.contentType ?? 'application/octet-stream',
+      })),
     };
 
     await transporter.sendMail(mailOptions);

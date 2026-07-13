@@ -13,8 +13,14 @@ vi.mock('@dculus/utils', () => ({
   createFieldLabelsMap: vi.fn(),
 }));
 
+vi.mock('../../../services/pdfTemplateService.js', () => ({
+  generatePdfForResponse: vi.fn(),
+  buildPdfFilename: vi.fn(),
+}));
+
 import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
+import { generatePdfForResponse, buildPdfFilename } from '../../../services/pdfTemplateService.js';
 
 describe('Email Handler', () => {
   let mockContext: PluginContext;
@@ -41,7 +47,7 @@ describe('Email Handler', () => {
       getOrganization: vi.fn(),
       getUserById: vi.fn(),
       sendEmail: vi.fn(),
-      prisma: {} as any,
+      prisma: { pdfTemplate: { findUnique: vi.fn() } } as any,
     };
 
     // Mock event
@@ -725,6 +731,142 @@ describe('Email Handler', () => {
         { name: 'John', email: 'john@test.com', score: '95' },
         { name: 'Name', email: 'Email', score: 'Score' }
       );
+    });
+  });
+
+  describe('PDF attachment', () => {
+    const config: ValidatedEmailConfig = {
+      type: 'email',
+      recipientEmail: 'admin@example.com',
+      subject: 'New Form Submission',
+      message: '<p>You have a new form submission!</p>',
+      attachPdfTemplateId: 'template-123',
+      attachPdfTemplateName: 'Confirmation Letter',
+    };
+
+    const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+    const mockResponse = { id: 'response-123', data: { name: 'John Doe' } };
+
+    beforeEach(() => {
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(createFieldLabelsMap).mockReturnValue({});
+      vi.mocked(substituteMentions).mockReturnValue(config.message);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+    });
+
+    it('renders and attaches the configured PDF template', async () => {
+      const mockTemplate = {
+        id: 'template-123',
+        formId: 'form-123',
+        name: 'Confirmation Letter',
+        template: { schemas: [] },
+        fileKey: 'templates/template-123.pdf',
+      };
+      vi.mocked(mockContext.prisma.pdfTemplate.findUnique).mockResolvedValue(mockTemplate as any);
+      const pdfBuffer = Buffer.from('%PDF-1.4 fake');
+      vi.mocked(generatePdfForResponse).mockResolvedValue(pdfBuffer);
+      vi.mocked(buildPdfFilename).mockReturnValue('confirmation-letter-response-123.pdf');
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(mockContext.prisma.pdfTemplate.findUnique).toHaveBeenCalledWith({
+        where: { id: 'template-123' },
+      });
+      expect(generatePdfForResponse).toHaveBeenCalledWith({
+        storedTemplate: mockTemplate.template,
+        fileKey: mockTemplate.fileKey,
+        deserializedSchema: { pages: [] },
+        responseData: mockResponse.data,
+      });
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachments: [
+            {
+              filename: 'confirmation-letter-response-123.pdf',
+              content: pdfBuffer,
+              contentType: 'application/pdf',
+            },
+          ],
+        })
+      );
+      expect(result.attachedPdfFilename).toBe('confirmation-letter-response-123.pdf');
+      expect(result.attachmentError).toBeUndefined();
+      expect(result.success).toBe(true);
+    });
+
+    it('sends the email without an attachment when the template no longer exists', async () => {
+      vi.mocked(mockContext.prisma.pdfTemplate.findUnique).mockResolvedValue(null);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(generatePdfForResponse).not.toHaveBeenCalled();
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ attachments: undefined })
+      );
+      expect(result.success).toBe(true);
+      expect(result.attachedPdfFilename).toBeUndefined();
+      expect(result.attachmentError).toContain('Confirmation Letter');
+    });
+
+    it('rejects a template belonging to a different form (cross-form config)', async () => {
+      const otherFormsTemplate = {
+        id: 'template-123',
+        formId: 'some-other-form-456',
+        name: 'Confirmation Letter',
+        template: { schemas: [] },
+        fileKey: 'templates/template-123.pdf',
+      };
+      vi.mocked(mockContext.prisma.pdfTemplate.findUnique).mockResolvedValue(otherFormsTemplate as any);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(generatePdfForResponse).not.toHaveBeenCalled();
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ attachments: undefined })
+      );
+      expect(result.success).toBe(true);
+      expect(result.attachedPdfFilename).toBeUndefined();
+      expect(result.attachmentError).toContain('Confirmation Letter');
+    });
+
+    it('sends the email without an attachment when PDF generation throws', async () => {
+      const mockTemplate = {
+        id: 'template-123',
+        formId: 'form-123',
+        name: 'Confirmation Letter',
+        template: { schemas: [] },
+        fileKey: 'templates/template-123.pdf',
+      };
+      vi.mocked(mockContext.prisma.pdfTemplate.findUnique).mockResolvedValue(mockTemplate as any);
+      vi.mocked(generatePdfForResponse).mockRejectedValue(new Error('pdfme render failed'));
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ attachments: undefined })
+      );
+      expect(result.success).toBe(true);
+      expect(result.attachmentError).toBe('pdfme render failed');
+    });
+
+    it('skips attachment generation for test events with no response data', async () => {
+      const testEvent: PluginEvent = {
+        type: 'plugin.test',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2024-01-01T12:00:00Z'),
+        data: {},
+      };
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(null as any);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, testEvent, mockContext);
+
+      expect(mockContext.prisma.pdfTemplate.findUnique).not.toHaveBeenCalled();
+      expect(generatePdfForResponse).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.attachedPdfFilename).toBeUndefined();
     });
   });
 });

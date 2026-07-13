@@ -2,6 +2,8 @@ import type { PluginHandler } from '../core/types.js';
 import type { ValidatedEmailConfig, EmailDeliveryResult } from './types.js';
 import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
+import type { EmailAttachment } from '../../services/emailService.js';
+import { generatePdfForResponse, buildPdfFilename } from '../../services/pdfTemplateService.js';
 
 /**
  * Resolves the set of recipient addresses for this send: the static
@@ -98,11 +100,10 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
 
     // Prepare email message
     let emailBody = config.message;
+    const formSchema = response && response.data ? deserializeFormSchema(form.formSchema) : null;
 
     // If this is a form submission (not a test), substitute mentions
-    if (response && response.data) {
-      // Extract field labels from form schema
-      const formSchema = deserializeFormSchema(form.formSchema);
+    if (response && response.data && formSchema) {
       const fieldLabels = createFieldLabelsMap(formSchema);
 
       // Substitute mentions with actual response values
@@ -120,6 +121,53 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
       </div>${config.message}`;
     }
 
+    // Optionally render a PDF from a configured template and attach it — a
+    // failure here should not block the notification itself, so it's
+    // recorded on the result but never thrown.
+    let attachments: EmailAttachment[] | undefined;
+    let attachedPdfFilename: string | undefined;
+    let attachmentError: string | undefined;
+
+    if (config.attachPdfTemplateId) {
+      if (response && response.data && formSchema) {
+        try {
+          const pdfTemplate = await context.prisma.pdfTemplate.findUnique({
+            where: { id: config.attachPdfTemplateId },
+          });
+
+          // Plugin config is arbitrary JSON, so attachPdfTemplateId could in
+          // principle reference a template belonging to a different form.
+          // Treat a cross-form template exactly like "not found" rather than
+          // generating/emailing another form's PDF.
+          if (!pdfTemplate || pdfTemplate.formId !== event.formId) {
+            attachmentError = `PDF template "${config.attachPdfTemplateName || config.attachPdfTemplateId}" no longer exists`;
+            context.logger.warn('Skipping PDF attachment: template not found', {
+              attachPdfTemplateId: config.attachPdfTemplateId,
+            });
+          } else {
+            const pdfBuffer = await generatePdfForResponse({
+              storedTemplate: pdfTemplate.template,
+              fileKey: pdfTemplate.fileKey,
+              deserializedSchema: formSchema,
+              responseData: response.data,
+            });
+            attachedPdfFilename = buildPdfFilename(pdfTemplate.name, response.id);
+            attachments = [{ filename: attachedPdfFilename, content: pdfBuffer, contentType: 'application/pdf' }];
+          }
+        } catch (error: any) {
+          attachmentError = error.message;
+          context.logger.error('PDF attachment generation failed; sending email without it', {
+            attachPdfTemplateId: config.attachPdfTemplateId,
+            error: error.message,
+          });
+        }
+      } else {
+        context.logger.info('Skipping PDF attachment: no response data available', {
+          attachPdfTemplateId: config.attachPdfTemplateId,
+        });
+      }
+    }
+
     const recipientHeader = recipients.join(', ');
 
     // Send email using context helper
@@ -127,17 +175,21 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
       to: recipientHeader,
       subject: config.subject,
       html: emailBody,
+      attachments,
     });
 
     context.logger.info('Email sent successfully', {
       recipient: recipientHeader,
       subject: config.subject,
+      attachedPdfFilename,
     });
 
     const result: EmailDeliveryResult = {
       success: true,
       recipient: recipientHeader,
       subject: config.subject,
+      attachedPdfFilename,
+      attachmentError,
     };
 
     return result;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
+import { useQuery } from '@apollo/client/react';
 import {
   Card,
   CardContent,
@@ -20,12 +21,14 @@ import {
   AlertDescription,
   toastError,
 } from '@dculus/ui';
-import { Mail, Loader2, Save, X, AlertTriangle } from 'lucide-react';
+import { Mail, Loader2, Save, X, AlertTriangle, FileText } from 'lucide-react';
 import { deserializeFormSchema, FillableFormField, EmailField } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
+import { GET_PDF_TEMPLATES } from '../../graphql/pdfTemplates';
 import type { ConfigFormProps } from '../core/registry';
 
 const NO_RECIPIENT_FIELD = '__none__';
+const NO_PDF_TEMPLATE = '__none__';
 
 const extractMentionFields = (form: any) => {
   if (!form?.formSchema) return [];
@@ -89,6 +92,15 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
   const [recipientFieldId, setRecipientFieldId] = useState<string>(
     initialData?.config?.recipientFieldId || NO_RECIPIENT_FIELD
   );
+  const [attachPdfTemplateId, setAttachPdfTemplateId] = useState<string>(
+    initialData?.config?.attachPdfTemplateId || NO_PDF_TEMPLATE
+  );
+
+  const { data: pdfTemplatesData } = useQuery(GET_PDF_TEMPLATES, {
+    variables: { formId: form?.id },
+    skip: !form?.id,
+  });
+  const pdfTemplates: { id: string; name: string }[] = pdfTemplatesData?.pdfTemplates || [];
 
   const {
     register,
@@ -117,6 +129,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       setMessage(initialData.config.message);
       setSelectedEvents(initialData.events);
       setRecipientFieldId(initialData.config.recipientFieldId || NO_RECIPIENT_FIELD);
+      setAttachPdfTemplateId(initialData.config.attachPdfTemplateId || NO_PDF_TEMPLATE);
     }
   }, [initialData, reset]);
 
@@ -141,6 +154,14 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       toastError(t('toasts.validationErrorTitle'), t('validation.noRecipient'));
       return;
     }
+    const hasPdfAttachment = attachPdfTemplateId !== NO_PDF_TEMPLATE;
+    const selectedPdfTemplate = pdfTemplates.find((template) => template.id === attachPdfTemplateId);
+    // pdfTemplates may not yet include the previously-saved template (query
+    // still in flight) — fall back to the cached name rather than wiping it.
+    const fallbackPdfTemplateName =
+      attachPdfTemplateId === initialData?.config?.attachPdfTemplateId
+        ? initialData?.config?.attachPdfTemplateName
+        : undefined;
     await onSave({
       type: 'email',
       name: data.name,
@@ -150,6 +171,10 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
         recipientFieldLabel: hasFieldRecipient ? selectedEmailField?.label : undefined,
         subject: data.subject,
         message,
+        attachPdfTemplateId: hasPdfAttachment ? attachPdfTemplateId : undefined,
+        attachPdfTemplateName: hasPdfAttachment
+          ? (selectedPdfTemplate?.name ?? fallbackPdfTemplateName)
+          : undefined,
       },
       events: selectedEvents,
     });
@@ -295,6 +320,42 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
               )}
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <FileText className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">{t('pdfAttachment.title')}</CardTitle>
+              <CardDescription>{t('pdfAttachment.description')}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {pdfTemplates.length > 0 ? (
+            <>
+              <Select value={attachPdfTemplateId} onValueChange={setAttachPdfTemplateId}>
+                <SelectTrigger id="attachPdfTemplateId">
+                  <SelectValue placeholder={t('pdfAttachment.placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_PDF_TEMPLATE}>{t('pdfAttachment.none')}</SelectItem>
+                  {pdfTemplates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t('pdfAttachment.hint')}</p>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">{t('pdfAttachment.noTemplatesHint')}</p>
+          )}
         </CardContent>
       </Card>
 

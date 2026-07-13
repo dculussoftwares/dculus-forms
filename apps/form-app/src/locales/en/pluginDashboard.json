@@ -96,7 +96,8 @@
     "email": {
       "recipient": "Recipient",
       "recipientField": "Recipient (from form field)",
-      "subject": "Subject"
+      "subject": "Subject",
+      "pdfAttachment": "PDF Attachment"
     },
     "quiz": {
       "passThreshold": "Pass Threshold",
