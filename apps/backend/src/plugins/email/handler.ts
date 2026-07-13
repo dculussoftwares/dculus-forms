@@ -135,7 +135,11 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
             where: { id: config.attachPdfTemplateId },
           });
 
-          if (!pdfTemplate) {
+          // Plugin config is arbitrary JSON, so attachPdfTemplateId could in
+          // principle reference a template belonging to a different form.
+          // Treat a cross-form template exactly like "not found" rather than
+          // generating/emailing another form's PDF.
+          if (!pdfTemplate || pdfTemplate.formId !== event.formId) {
             attachmentError = `PDF template "${config.attachPdfTemplateName || config.attachPdfTemplateId}" no longer exists`;
             context.logger.warn('Skipping PDF attachment: template not found', {
               attachPdfTemplateId: config.attachPdfTemplateId,
@@ -148,7 +152,7 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
               responseData: response.data,
             });
             attachedPdfFilename = buildPdfFilename(pdfTemplate.name, response.id);
-            attachments = [{ filename: attachedPdfFilename, content: pdfBuffer }];
+            attachments = [{ filename: attachedPdfFilename, content: pdfBuffer, contentType: 'application/pdf' }];
           }
         } catch (error: any) {
           attachmentError = error.message;
@@ -158,7 +162,7 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
           });
         }
       } else {
-        context.logger.info('Skipping PDF attachment: no response data available (test event)', {
+        context.logger.info('Skipping PDF attachment: no response data available', {
           attachPdfTemplateId: config.attachPdfTemplateId,
         });
       }

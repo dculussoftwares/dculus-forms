@@ -83,7 +83,7 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
       attachments: options.attachments?.map((attachment) => ({
         filename: attachment.filename,
         content: attachment.content,
-        contentType: attachment.contentType ?? 'application/pdf',
+        contentType: attachment.contentType ?? 'application/octet-stream',
       })),
     };
 

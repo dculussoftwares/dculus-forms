@@ -759,6 +759,7 @@ describe('Email Handler', () => {
     it('renders and attaches the configured PDF template', async () => {
       const mockTemplate = {
         id: 'template-123',
+        formId: 'form-123',
         name: 'Confirmation Letter',
         template: { schemas: [] },
         fileKey: 'templates/template-123.pdf',
@@ -781,7 +782,13 @@ describe('Email Handler', () => {
       });
       expect(mockContext.sendEmail).toHaveBeenCalledWith(
         expect.objectContaining({
-          attachments: [{ filename: 'confirmation-letter-response-123.pdf', content: pdfBuffer }],
+          attachments: [
+            {
+              filename: 'confirmation-letter-response-123.pdf',
+              content: pdfBuffer,
+              contentType: 'application/pdf',
+            },
+          ],
         })
       );
       expect(result.attachedPdfFilename).toBe('confirmation-letter-response-123.pdf');
@@ -803,9 +810,31 @@ describe('Email Handler', () => {
       expect(result.attachmentError).toContain('Confirmation Letter');
     });
 
+    it('rejects a template belonging to a different form (cross-form config)', async () => {
+      const otherFormsTemplate = {
+        id: 'template-123',
+        formId: 'some-other-form-456',
+        name: 'Confirmation Letter',
+        template: { schemas: [] },
+        fileKey: 'templates/template-123.pdf',
+      };
+      vi.mocked(mockContext.prisma.pdfTemplate.findUnique).mockResolvedValue(otherFormsTemplate as any);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(generatePdfForResponse).not.toHaveBeenCalled();
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ attachments: undefined })
+      );
+      expect(result.success).toBe(true);
+      expect(result.attachedPdfFilename).toBeUndefined();
+      expect(result.attachmentError).toContain('Confirmation Letter');
+    });
+
     it('sends the email without an attachment when PDF generation throws', async () => {
       const mockTemplate = {
         id: 'template-123',
+        formId: 'form-123',
         name: 'Confirmation Letter',
         template: { schemas: [] },
         fileKey: 'templates/template-123.pdf',

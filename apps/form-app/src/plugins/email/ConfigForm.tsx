@@ -155,7 +155,13 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       return;
     }
     const hasPdfAttachment = attachPdfTemplateId !== NO_PDF_TEMPLATE;
-    const selectedPdfTemplate = pdfTemplates.find((t) => t.id === attachPdfTemplateId);
+    const selectedPdfTemplate = pdfTemplates.find((template) => template.id === attachPdfTemplateId);
+    // pdfTemplates may not yet include the previously-saved template (query
+    // still in flight) — fall back to the cached name rather than wiping it.
+    const fallbackPdfTemplateName =
+      attachPdfTemplateId === initialData?.config?.attachPdfTemplateId
+        ? initialData?.config?.attachPdfTemplateName
+        : undefined;
     await onSave({
       type: 'email',
       name: data.name,
@@ -166,7 +172,9 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
         subject: data.subject,
         message,
         attachPdfTemplateId: hasPdfAttachment ? attachPdfTemplateId : undefined,
-        attachPdfTemplateName: hasPdfAttachment ? selectedPdfTemplate?.name : undefined,
+        attachPdfTemplateName: hasPdfAttachment
+          ? (selectedPdfTemplate?.name ?? fallbackPdfTemplateName)
+          : undefined,
       },
       events: selectedEvents,
     });
