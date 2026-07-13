@@ -5,7 +5,8 @@ Compact guide for AI agents. Deeper, domain-specific guidance already exists in 
 - `CLAUDE.md` — full architecture, conventions, env vars, authorization model
 - `.github/copilot-instructions.md` — architecture + patterns (mirrors `CLAUDE.md`)
 - `.github/instructions/*.md` — per-domain guides with `applyTo` globs: `backend`, `frontend`, `graphql`, `database`, `authentication`, `i18n`, `shared-packages`, `testing`
-- `.github/agents/*.agent.md` — specialized agent personas (code-reviewer, debugger, feature-developer, field-type-developer, deployment-guide)
+- `.github/agents/*.agent.md` — specialized agent personas (`code-reviewer`, `debugger`, `feature-developer`, `deployment-guide`, `Explore`)
+- `.claude/agents/*.md` — feature-specific personas (`pdf-template-expert`, `new-field-generator`, `subscription-billing-expert`, `plugin-generator`, `auth-permission-auditor`, `response-filter-auditor`, `e2e-test-writer`)
 - `apps/backend/prisma/schema.prisma` — canonical data model
 
 This file captures only what those don't make obvious.
@@ -55,6 +56,15 @@ This file captures only what those don't make obvious.
 - In resolvers, throw via `createGraphQLError(msg, GRAPHQL_ERROR_CODES.X)` from `@dculus/types/graphql.js` — never `throw new Error()`.
 - `db:migrate:deploy` runs a custom script (`src/scripts/migrate-deploy.ts`), not `prisma migrate deploy` directly.
 - Layering: Resolvers (thin) → Services → Repositories → Prisma. Don't call Prisma directly from resolvers.
+
+## PDF Templates subsystem (pdfme-based designer)
+
+A form-scoped PDF-template designer lets users drag form fields onto an uploaded PDF and render filled copies of responses. Full-stack feature; read `.claude/agents/pdf-template-expert.md` and `docs/pdf-template-designer-redesign.md` before non-trivial work here.
+
+- Backend: `apps/backend/src/graphql/resolvers/pdfTemplates.ts` → `services/pdfTemplateService.ts`. Prisma model `PdfTemplate` (table `pdf_template`, migration `20260710120000_add_pdf_template`); `template` column stores the pdfme schema as JSONB.
+- Frontend (form-app): designer lives in `src/components/pdf-designer/` (JotForm-style — tabbed field palette, drag & drop, field labels, response preview). Pages: `src/pages/PdfTemplateDesigner.tsx`, `src/pages/PdfTemplates.tsx`. GraphQL client: `src/graphql/pdfTemplates.ts`. Per-response rendering: `src/components/Responses/GeneratePdfButton.tsx`.
+- i18n namespace: `pdfTemplates` — `src/locales/{en,ta}/pdfTemplates.json`.
+- Worker asset gotcha: `@pdfme/converter` loads a PDF-render worker asset. In dev this is served via a Vite fallback (`vite-pdfme-worker-fallback.ts`) because pdfme's worker isn't resolvable through the normal asset pipeline — don't delete it expecting pdfme to "just work."
 
 ## Conventions that differ from defaults
 

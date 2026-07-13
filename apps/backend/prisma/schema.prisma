@@ -171,6 +171,7 @@ model Form {
   tags                ResponseTag[]
   aiChatConversations AIChatConversation[]
   pdfTemplates        PdfTemplate[]
+  pdfGenerators       PdfGenerator[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -430,10 +431,76 @@ model PdfTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+  form         Form          @relation(fields: [formId], references: [id], onDelete: Cascade)
+  pdfGenerators PdfGenerator[]
 
   @@index([formId])
   @@map("pdf_template")
+}
+
+// PDF Generator Models — saved template+filter combos for bulk/repeatable PDF generation from responses
+
+model PdfGenerator {
+  id              String   @id @default(cuid())
+  formId          String // Reference to Form (denormalized for querying without a join)
+  templateId      String // Reference to PdfTemplate
+  name            String
+  columnName      String? // Header shown for this generator's column in the Responses table; falls back to `name` when unset
+  filenameFieldId String? // Form field whose formatted value (+ a random suffix for uniqueness) becomes the downloaded PDF's filename; falls back to the template-name/responseId pattern when unset
+  filters         Json // ResponseFilter[] — same shape used by responseFilterService
+  filterLogic     String   @default("AND") // "AND" | "OR"
+  autoRunOnSubmit Boolean  @default(false) // generate automatically when a new matching response is submitted
+  enabled         Boolean  @default(true)
+  createdById     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  form     Form                  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  template PdfTemplate           @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  runs     PdfGenerationRun[]
+  results  PdfGenerationResult[]
+
+  @@index([formId])
+  @@index([templateId])
+  @@map("pdf_generator")
+}
+
+model PdfGenerationRun {
+  id             String    @id @default(cuid())
+  generatorId    String // Reference to PdfGenerator
+  trigger        String // "manual" | "auto"
+  status         String // "running" | "cancelling" | "cancelled" | "completed" | "failed"
+  totalCount     Int
+  processedCount Int       @default(0)
+  succeededCount Int       @default(0)
+  failedCount    Int       @default(0)
+  errorMessage   String?
+  startedAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  completedAt    DateTime?
+
+  generator PdfGenerator @relation(fields: [generatorId], references: [id], onDelete: Cascade)
+
+  @@index([generatorId])
+  @@map("pdf_generation_run")
+}
+
+model PdfGenerationResult {
+  id           String   @id @default(cuid())
+  generatorId  String // Reference to PdfGenerator
+  responseId   String // Reference to Response (not a hard FK — results are cleaned up alongside the generator, but a response can be deleted independently)
+  status       String // "success" | "failed"
+  fileKey      String? // Private-bucket R2 key; null if generation failed
+  filename     String?
+  errorMessage String?
+  generatedAt  DateTime @default(now())
+
+  generator PdfGenerator @relation(fields: [generatorId], references: [id], onDelete: Cascade)
+
+  @@unique([generatorId, responseId])
+  @@index([generatorId])
+  @@index([responseId])
+  @@map("pdf_generation_result")
 }
 
 // Plugin System Models

@@ -284,11 +284,14 @@ export async function uploadFile(
 
 /**
  * Infer the bucket for a given R2 key based on its path prefix.
- * Keys under files/form-response/ and files/pdf-template-asset/ were written to the private bucket.
+ * Keys under files/form-response/, files/pdf-template-asset/, and
+ * pdf-generated/ (PDF Generator output — see pdfGeneratorStorage.ts) were
+ * written to the private bucket.
  */
 function getBucketForKey(s3Key: string): string {
   return s3Key.startsWith('files/form-response/') ||
-    s3Key.startsWith('files/pdf-template-asset/')
+    s3Key.startsWith('files/pdf-template-asset/') ||
+    s3Key.startsWith('pdf-generated/')
     ? s3Config.privateBucketName
     : s3Config.publicBucketName;
 }

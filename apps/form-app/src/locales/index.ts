@@ -42,6 +42,8 @@ import enIntegrations from './en/integrations.json';
 import taIntegrations from './ta/integrations.json';
 import enPdfTemplates from './en/pdfTemplates.json';
 import taPdfTemplates from './ta/pdfTemplates.json';
+import enPdfGenerators from './en/pdfGenerators.json';
+import taPdfGenerators from './ta/pdfGenerators.json';
 import enTabNavigation from './en/tabNavigation.json';
 import taTabNavigation from './ta/tabNavigation.json';
 import enLayoutSidebar from './en/layoutSidebar.json';
@@ -265,6 +267,7 @@ const enTranslations = {
   responseEdit: enResponseEdit,
   integrations: enIntegrations,
   pdfTemplates: enPdfTemplates,
+  pdfGenerators: enPdfGenerators,
   tabNavigation: enTabNavigation,
   layoutSidebar: enLayoutSidebar,
   fieldTypesPanel: enFieldTypesPanel,
@@ -390,6 +393,7 @@ const taTranslations = {
   responseEdit: taResponseEdit,
   integrations: taIntegrations,
   pdfTemplates: taPdfTemplates,
+  pdfGenerators: taPdfGenerators,
   tabNavigation: taTabNavigation,
   layoutSidebar: taLayoutSidebar,
   fieldTypesPanel: taFieldTypesPanel,

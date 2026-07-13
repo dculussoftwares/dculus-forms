@@ -41,6 +41,8 @@ import {
  * delete templates.
  */
 
+const MAX_PDF_TEMPLATES_PER_FORM = 6;
+
 async function getTemplateOrThrow(id: string) {
   const template = await prisma.pdfTemplate.findUnique({ where: { id } });
   if (!template) {
@@ -142,6 +144,14 @@ export const pdfTemplatesResolvers = {
 
       if (!input.name?.trim()) {
         throw createGraphQLError('Template name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      const existingTemplateCount = await prisma.pdfTemplate.count({ where: { formId: input.formId } });
+      if (existingTemplateCount >= MAX_PDF_TEMPLATES_PER_FORM) {
+        throw createGraphQLError(
+          `This form already has the maximum of ${MAX_PDF_TEMPLATES_PER_FORM} PDF templates`,
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
       }
 
       // Reject fileKeys not issued for this form's PdfTemplateAsset upload path —

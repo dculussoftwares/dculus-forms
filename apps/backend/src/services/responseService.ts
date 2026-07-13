@@ -447,7 +447,7 @@ export const updateResponse = async (
         });
 
         // 2. Record the edit history inside the same transaction
-        await ResponseEditTrackingService.recordEdit(
+        const editHistory = await ResponseEditTrackingService.recordEdit(
           responseId,
           oldData,
           data,
@@ -462,15 +462,25 @@ export const updateResponse = async (
           tx
         );
 
-        return updated;
+        return { updated, editHistory };
       });
 
+      // Fire-and-forget outside the transaction (I/O-heavy — must not hold it
+      // open), and only when field values actually changed: regenerate any
+      // PdfGenerationResult rows tied to this response so a persisted PDF
+      // never silently goes stale after an edit.
+      if (updatedResponse.editHistory) {
+        import('./pdfGenerationJobService.js')
+          .then(({ regeneratePdfsForResponse }) => regeneratePdfsForResponse(responseId))
+          .catch((error) => logger.error('Error regenerating PDFs after response edit:', error));
+      }
+
       return {
-        id: updatedResponse.id,
-        formId: updatedResponse.formId,
-        data: (updatedResponse.data as Prisma.JsonObject) || {},
-        metadata: updatedResponse.metadata as FormResponse['metadata'],
-        submittedAt: updatedResponse.submittedAt,
+        id: updatedResponse.updated.id,
+        formId: updatedResponse.updated.formId,
+        data: (updatedResponse.updated.data as Prisma.JsonObject) || {},
+        metadata: updatedResponse.updated.metadata as FormResponse['metadata'],
+        submittedAt: updatedResponse.updated.submittedAt,
       };
     } else {
       // Legacy mode - just update without tracking

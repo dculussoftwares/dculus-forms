@@ -302,12 +302,13 @@ export class ResponseEditTrackingService {
     formSchema: FormSchema,
     editContext: EditContext,
     tx?: Prisma.TransactionClient
-  ): Promise<void> {
+  ): Promise<{ id: string; totalChanges: number } | null> {
     const changes = this.detectChanges(oldData, newData, formSchema);
 
     if (changes.length === 0) {
-      // No changes detected, skip recording
-      return;
+      // No changes detected, skip recording — callers (e.g. the PDF Generator
+      // edit-regeneration hook) use a null return to know nothing actually changed.
+      return null;
     }
 
     const editHistoryId = generateId();
@@ -354,6 +355,8 @@ export class ResponseEditTrackingService {
         await writeHistory(innerTx);
       });
     }
+
+    return { id: editHistoryId, totalChanges: changes.length };
   }
 
   /**

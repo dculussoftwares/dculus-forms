@@ -28,6 +28,7 @@ import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
+import { GET_PDF_GENERATORS } from '../graphql/pdfGenerators';
 import {
   DELETE_RESPONSE,
   DELETE_PREVIEW_RESPONSES,
@@ -213,6 +214,15 @@ const Responses: React.FC = () => {
     skip: !actualFormId,
   });
 
+  const { data: pdfGeneratorsData } = useQuery(GET_PDF_GENERATORS, {
+    variables: { formId: actualFormId },
+    skip: !actualFormId,
+  });
+  const enabledPdfGenerators = useMemo(
+    () => (pdfGeneratorsData?.pdfGenerators ?? []).filter((g: any) => g.enabled),
+    [pdfGeneratorsData]
+  );
+
   const { data: tagsData } = useQuery(GET_FORM_TAGS, {
     variables: { formId: actualFormId },
     skip: !actualFormId,
@@ -264,6 +274,7 @@ const Responses: React.FC = () => {
       pluginsData,
       locale,
       formTags: userFormTags,
+      generators: enabledPdfGenerators,
       responses,
       onPluginClick: (pluginType, metadata, responseId) => {
         responsesState.setPluginDialogState({ pluginType, metadata, responseId });
@@ -271,7 +282,7 @@ const Responses: React.FC = () => {
       onDeleteResponse: handleDeleteResponse,
       t,
     }),
-    [formData, pluginsData, formTags, locale, actualFormId, responses, t]
+    [formData, pluginsData, formTags, enabledPdfGenerators, locale, actualFormId, responses, t]
   );
 
   // Apply stored column order: fixed cols keep their positions; hideable cols are reordered

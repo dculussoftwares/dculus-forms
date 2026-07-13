@@ -52,6 +52,7 @@ import {
   Tag,
   Type,
   Upload,
+  Wand2,
   X,
 } from 'lucide-react';
 import {
@@ -64,6 +65,7 @@ import {
 import { formatFieldValue as formatFieldValueUtil } from '@dculus/utils';
 import { getPluginColumns, PluginInstance } from '../plugins/core/registry';
 import { TagsCell } from '../components/Responses/TagsCell';
+import { PdfGeneratorResultCell } from '../components/Responses/PdfGeneratorResultCell';
 import '../plugins/index';
 
 interface ResponseTagItem {
@@ -72,12 +74,19 @@ interface ResponseTagItem {
   color: string;
 }
 
+interface PdfGeneratorColumnItem {
+  id: string;
+  name: string;
+  columnName?: string | null;
+}
+
 interface CreateResponsesColumnsOptions {
   formSchema: any; // serialized form schema
   formId: string;
   pluginsData: any;
   locale: string;
   formTags?: ResponseTagItem[];
+  generators?: PdfGeneratorColumnItem[];
   onPluginClick: (
     pluginType: string,
     metadata: any,
@@ -711,6 +720,7 @@ export const createResponsesColumns = ({
   pluginsData,
   locale,
   formTags = [],
+  generators = [],
   onPluginClick,
   onDeleteResponse,
   responses = [],
@@ -793,9 +803,42 @@ export const createResponsesColumns = ({
     onPluginClick
   );
 
+  // PDF Generator columns — one per enabled generator, header defaults to the
+  // generator's name when no custom columnName is set. The cell handles its
+  // own generate/download state (see PdfGeneratorResultCell).
+  const generatorColumns: ColumnDef<FormResponse>[] = generators.map((generator) => ({
+    id: `pdf-generator-${generator.id}`,
+    header: ({ column }) => (
+      <TFColumnHeader
+        column={column}
+        icon={
+          <BaseIconChip bg="#f5f3ff" color="#7c3aed">
+            <Wand2 className="h-4 w-4" />
+          </BaseIconChip>
+        }
+        title={generator.columnName || generator.name}
+      />
+    ),
+    cell: ({ row }) => (
+      <PdfGeneratorResultCell generatorId={generator.id} responseId={row.original.id} />
+    ),
+    enableSorting: false,
+    enableHiding: true,
+    size: 90,
+  }));
+
   // Actions column
   const actionsColumn = createActionsColumn(formId, onDeleteResponse, t);
 
-  // Checkbox first, then Response ID, tags, field/plugin columns, Submitted At + Edit Status, actions
-  return [selectColumn, idColumn, tagsColumn, ...fieldColumns, ...pluginColumns, ...metaColumns, actionsColumn];
+  // Checkbox first, then Response ID, tags, field/plugin/generator columns, Submitted At + Edit Status, actions
+  return [
+    selectColumn,
+    idColumn,
+    tagsColumn,
+    ...fieldColumns,
+    ...pluginColumns,
+    ...generatorColumns,
+    ...metaColumns,
+    actionsColumn,
+  ];
 };

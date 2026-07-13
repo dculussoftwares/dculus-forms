@@ -36,6 +36,7 @@ const FormDashboard = lazy(() => import('./pages/FormDashboard'));
 const Responses = lazy(() => import('./pages/Responses'));
 const PdfTemplates = lazy(() => import('./pages/PdfTemplates'));
 const PdfTemplateDesigner = lazy(() => import('./pages/PdfTemplateDesigner'));
+const PdfGeneratorEditor = lazy(() => import('./pages/PdfGeneratorEditor'));
 const Settings = lazy(() => import('./pages/Settings'));
 const ResponseEditHistory = lazy(() =>
   import('./pages/ResponseEditHistory').then(m => ({ default: m.ResponseEditHistory }))
@@ -97,6 +98,12 @@ function App() {
           } />
           <Route path="/dashboard/form/:formId/pdf-templates" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplates /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/pdf-templates/generators" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplates /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/pdf-templates/generators/:generatorId" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfGeneratorEditor /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/pdf-templates/:templateId" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplateDesigner /></Suspense></PageErrorBoundary></ProtectedRoute>

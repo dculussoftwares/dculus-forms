@@ -46,6 +46,9 @@
     "description": "Create your first template from a blank page or an uploaded PDF.",
     "viewerDescription": "No PDF templates have been created for this form yet."
   },
+  "limits": {
+    "templateLimitReached": "This form has reached the maximum of {{max}} PDF templates. Delete one to create another."
+  },
   "deleteDialog": {
     "title": "Delete PDF template?",
     "description": "\"{{name}}\" will be permanently deleted. This cannot be undone.",

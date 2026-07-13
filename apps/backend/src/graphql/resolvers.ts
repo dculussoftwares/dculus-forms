@@ -12,6 +12,7 @@ import { invitationResolvers } from './resolvers/invitations.js';
 import { formSharingResolvers } from './resolvers/formSharing.js';
 import { pluginsResolvers } from './resolvers/plugins.js';
 import { pdfTemplatesResolvers } from './resolvers/pdfTemplates.js';
+import { pdfGeneratorsResolvers } from './resolvers/pdfGenerators.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { tagResolvers } from './resolvers/tags.js';
 import { aiResolvers } from './resolvers/ai.js';
@@ -48,6 +49,7 @@ export const resolvers = {
     ...formSharingResolvers.Query,
     ...pluginsResolvers.Query,
     ...pdfTemplatesResolvers.Query,
+    ...pdfGeneratorsResolvers.Query,
     ...subscriptionResolvers.Query,
     ...tagResolvers.Query,
   },
@@ -65,6 +67,7 @@ export const resolvers = {
     ...formSharingResolvers.Mutation,
     ...pluginsResolvers.Mutation,
     ...pdfTemplatesResolvers.Mutation,
+    ...pdfGeneratorsResolvers.Mutation,
     ...subscriptionResolvers.Mutation,
     ...tagResolvers.Mutation,
     ...adminResolvers.Mutation,
@@ -85,6 +88,12 @@ export const resolvers = {
   },
   PdfTemplate: {
     ...pdfTemplatesResolvers.PdfTemplate,
+  },
+  PdfGenerator: {
+    ...pdfGeneratorsResolvers.PdfGenerator,
+  },
+  PdfGenerationResult: {
+    ...pdfGeneratorsResolvers.PdfGenerationResult,
   },
   PluginDelivery: {
     ...pluginsResolvers.PluginDelivery,

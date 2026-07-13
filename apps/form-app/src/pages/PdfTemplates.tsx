@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Button,
@@ -12,6 +12,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  Tabs,
+  TabsList,
+  TabsTrigger,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
@@ -32,16 +35,30 @@ import {
   DELETE_PDF_TEMPLATE,
 } from '../graphql/pdfTemplates';
 import { uploadFileHTTP } from '../services/fileUploadService';
+import { PdfGeneratorsList } from '../components/PdfGenerators/PdfGeneratorsList';
 
 // A4 portrait in mm — default page for blank templates
 const BLANK_A4_BASE_PDF = { width: 210, height: 297, padding: [10, 10, 10, 10] };
+const MAX_PDF_TEMPLATES_PER_FORM = 6;
 
 type CreateMode = 'blank' | 'upload';
 
 const PdfTemplates: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation('pdfTemplates');
+  const { t: tGenerators } = useTranslation('pdfGenerators');
+  const [activeTab, setActiveTab] = useState<'templates' | 'generators'>(
+    location.pathname.endsWith('/generators') ? 'generators' : 'templates'
+  );
+
+  // /pdf-templates and /pdf-templates/generators render this same component
+  // without remounting, so the useState initializer above only runs once —
+  // keep activeTab in sync with the URL on browser back/forward navigation.
+  useEffect(() => {
+    setActiveTab(location.pathname.endsWith('/generators') ? 'generators' : 'templates');
+  }, [location.pathname]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [createMode, setCreateMode] = useState<CreateMode | null>(null);
@@ -67,6 +84,7 @@ const PdfTemplates: React.FC = () => {
   const form = formData?.form;
   const canEdit = form?.userPermission === 'EDITOR' || form?.userPermission === 'OWNER';
   const templates = templatesData?.pdfTemplates || [];
+  const atTemplateLimit = templates.length >= MAX_PDF_TEMPLATES_PER_FORM;
 
   const breadcrumbs = [
     { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
@@ -189,54 +207,90 @@ const PdfTemplates: React.FC = () => {
           </div>
         </div>
 
+        {/* Templates / Generators tabs */}
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => {
+            const tab = v as 'templates' | 'generators';
+            setActiveTab(tab);
+            navigate(
+              tab === 'generators'
+                ? `/dashboard/form/${formId}/pdf-templates/generators`
+                : `/dashboard/form/${formId}/pdf-templates`
+            );
+          }}
+        >
+          <TabsList>
+            <TabsTrigger value="templates" data-testid="pdf-templates-tab">
+              {tGenerators('tabs.templates')}
+            </TabsTrigger>
+            <TabsTrigger value="generators" data-testid="pdf-generators-tab">
+              {tGenerators('tabs.generators')}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {activeTab === 'generators' ? (
+          <PdfGeneratorsList formId={formId!} canEdit={canEdit} />
+        ) : (
+          <>
         {/* Create options */}
         {canEdit && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={openBlankDialog}
-              data-testid="pdf-template-create-blank"
-              className="group flex items-center gap-4 p-5 rounded-xl bg-white dark:bg-card text-left transition-all duration-200"
-              style={{
-                border: '1px solid var(--tf-border-medium)',
-                boxShadow: '0 1px 4px var(--tf-overlay)',
-              }}
-            >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
-                <FilePlus2 className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-primary">{t('create.blank.title')}</p>
-                <p className="text-xs mt-0.5 text-muted-foreground">{t('create.blank.description')}</p>
-              </div>
-            </button>
+          <>
+            {atTemplateLimit && (
+              <p className="text-xs text-muted-foreground">
+                {t('limits.templateLimitReached', { values: { max: MAX_PDF_TEMPLATES_PER_FORM } })}
+              </p>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={openBlankDialog}
+                disabled={atTemplateLimit}
+                data-testid="pdf-template-create-blank"
+                className="group flex items-center gap-4 p-5 rounded-xl bg-white dark:bg-card text-left transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  border: '1px solid var(--tf-border-medium)',
+                  boxShadow: '0 1px 4px var(--tf-overlay)',
+                }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
+                  <FilePlus2 className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-primary">{t('create.blank.title')}</p>
+                  <p className="text-xs mt-0.5 text-muted-foreground">{t('create.blank.description')}</p>
+                </div>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              data-testid="pdf-template-create-upload"
-              className="group flex items-center gap-4 p-5 rounded-xl bg-white dark:bg-card text-left transition-all duration-200"
-              style={{
-                border: '1px solid var(--tf-border-medium)',
-                boxShadow: '0 1px 4px var(--tf-overlay)',
-              }}
-            >
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
-                <FileUp className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-primary">{t('create.upload.title')}</p>
-                <p className="text-xs mt-0.5 text-muted-foreground">{t('create.upload.description')}</p>
-              </div>
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={onFileSelected}
-            />
-          </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={atTemplateLimit}
+                data-testid="pdf-template-create-upload"
+                className="group flex items-center gap-4 p-5 rounded-xl bg-white dark:bg-card text-left transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  border: '1px solid var(--tf-border-medium)',
+                  boxShadow: '0 1px 4px var(--tf-overlay)',
+                }}
+              >
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50">
+                  <FileUp className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-primary">{t('create.upload.title')}</p>
+                  <p className="text-xs mt-0.5 text-muted-foreground">{t('create.upload.description')}</p>
+                </div>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                onChange={onFileSelected}
+              />
+            </div>
+          </>
         )}
 
         {/* Template list */}
@@ -307,6 +361,8 @@ const PdfTemplates: React.FC = () => {
               </div>
             ))}
           </div>
+        )}
+          </>
         )}
       </div>
 
