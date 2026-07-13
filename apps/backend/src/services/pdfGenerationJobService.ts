@@ -27,6 +27,12 @@ import { getMatchingResponses } from './pdfGeneratorService.js';
 const BATCH_SIZE = 10;
 const BATCH_DELAY_MS = 500;
 const STALLED_THRESHOLD_MS = 5 * 60 * 1000;
+// getMatchingResponses() loads every one of the form's responses into memory
+// before filtering (same pattern unifiedExportService uses, which caps at a
+// much cheaper-per-row 50,000). PDF rendering is far heavier per item, so gate
+// on the form's total live-response count up front rather than risk a
+// request-path timeout/OOM on a broad or filterless generator.
+const MAX_RESPONSES_PER_RUN = 5000;
 
 export const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -124,6 +130,16 @@ export const startPdfGenerationRun = async (
   if (activeRun) {
     throw createGraphQLError(
       'A run is already in progress for this PDF generator',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  const totalResponseCount = await prisma.response.count({
+    where: { formId: generator.formId, deletedAt: null },
+  });
+  if (totalResponseCount > MAX_RESPONSES_PER_RUN) {
+    throw createGraphQLError(
+      `This form has ${totalResponseCount} responses, which exceeds the ${MAX_RESPONSES_PER_RUN}-response limit for a single PDF generation run`,
       GRAPHQL_ERROR_CODES.BAD_USER_INPUT
     );
   }
@@ -243,7 +259,12 @@ export const getLatestPdfGenerationRun = async (generatorId: string) => {
   });
   if (!run) return null;
 
-  if (run.status === 'running') {
+  // Also cover 'cancelling': if the process restarts between
+  // cancelPdfGenerationRun writing 'cancelling' and the loop observing it and
+  // writing 'cancelled', the run would otherwise never finalize — and
+  // startPdfGenerationRun's active-run guard treats 'cancelling' as active
+  // too, permanently blocking new runs for this generator.
+  if (run.status === 'running' || run.status === 'cancelling') {
     const staleMs = Date.now() - run.updatedAt.getTime();
     if (staleMs > STALLED_THRESHOLD_MS) {
       return prisma.pdfGenerationRun.update({

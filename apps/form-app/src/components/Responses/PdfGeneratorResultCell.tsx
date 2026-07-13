@@ -38,9 +38,13 @@ export const PdfGeneratorResultCell: React.FC<PdfGeneratorResultCellProps> = ({
   responseId,
 }) => {
   const { t } = useTranslation('pdfGenerators');
+  // cache-and-network (not cache-first): a bulk/auto run can flip this
+  // response's result from null to success in the background after the cell
+  // first mounted and cached a "not generated yet" answer — cache-first would
+  // keep serving that stale null indefinitely without a manual refetch.
   const { data, loading, refetch } = useQuery(GET_PDF_GENERATION_RESULT, {
     variables: { generatorId, responseId },
-    fetchPolicy: 'cache-first',
+    fetchPolicy: 'cache-and-network',
   });
   const [generateFromGenerator, { loading: generating }] = useMutation(GENERATE_PDF_FROM_GENERATOR);
 

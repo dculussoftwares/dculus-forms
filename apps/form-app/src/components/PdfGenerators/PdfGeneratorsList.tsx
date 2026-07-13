@@ -328,7 +328,7 @@ export const PdfGeneratorsList: React.FC<PdfGeneratorsListProps> = ({ formId, ca
         <PdfGeneratorResultsModal
           generatorId={resultsTarget.id}
           generatorName={resultsTarget.name}
-          open={resultsTarget !== null}
+          open={true}
           onClose={() => setResultsTarget(null)}
         />
       )}

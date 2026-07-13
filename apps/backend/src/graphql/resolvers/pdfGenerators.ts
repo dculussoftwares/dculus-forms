@@ -14,6 +14,7 @@ import {
   listPdfGenerators,
   getPdfGenerator,
   countMatchingResponses,
+  filterResultsToLiveResponses,
 } from '../../services/pdfGeneratorService.js';
 import {
   startPdfGenerationRun,
@@ -107,10 +108,14 @@ export const pdfGeneratorsResolvers = {
     ) => {
       const generator = await getGeneratorOrThrow(generatorId);
       await requireFormAccess(context, generator.formId, PermissionLevel.VIEWER, 'view this PDF generator');
-      return prisma.pdfGenerationResult.findMany({
+      const results = await prisma.pdfGenerationResult.findMany({
         where: { generatorId },
         orderBy: { generatedAt: 'desc' },
       });
+      // Exclude results for responses that have since been soft-deleted —
+      // responseId isn't a hard FK, so those rows (and their R2 files) would
+      // otherwise stay downloadable forever.
+      return filterResultsToLiveResponses(results);
     },
 
     /**

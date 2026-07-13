@@ -155,3 +155,21 @@ export const getMatchingResponses = async (
     data: r.data as Record<string, any>,
   }));
 };
+
+/**
+ * PdfGenerationResult.responseId is not a hard FK (results are cleaned up
+ * alongside the generator, not the response), so a soft-deleted response's
+ * result row — and its downloadable PDF — would otherwise stay visible
+ * forever. Filters a result list down to responses that are still live.
+ */
+export const filterResultsToLiveResponses = async <T extends { responseId: string }>(
+  results: T[]
+): Promise<T[]> => {
+  if (results.length === 0) return results;
+  const liveResponses = await prisma.response.findMany({
+    where: { id: { in: results.map((r) => r.responseId) }, deletedAt: null },
+    select: { id: true },
+  });
+  const liveIds = new Set(liveResponses.map((r) => r.id));
+  return results.filter((r) => liveIds.has(r.responseId));
+};

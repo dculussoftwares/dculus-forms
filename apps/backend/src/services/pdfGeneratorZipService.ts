@@ -2,6 +2,7 @@ import JSZip from 'jszip';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { downloadFileBuffer } from './fileUploadService.js';
+import { filterResultsToLiveResponses } from './pdfGeneratorService.js';
 
 /**
  * Bundles every successful PdfGenerationResult for a generator into a single
@@ -11,9 +12,11 @@ import { downloadFileBuffer } from './fileUploadService.js';
  * every run (manual or auto) — no run-scoping needed.
  */
 export async function buildZipForGenerator(generatorId: string): Promise<Buffer> {
-  const results = await prisma.pdfGenerationResult.findMany({
+  const allResults = await prisma.pdfGenerationResult.findMany({
     where: { generatorId, status: 'success', fileKey: { not: null } },
   });
+  // Exclude soft-deleted responses' PDFs — see filterResultsToLiveResponses.
+  const results = await filterResultsToLiveResponses(allResults);
 
   const zip = new JSZip();
   const usedNames = new Set<string>();
