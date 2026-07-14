@@ -5,12 +5,21 @@ import { RichTextEditor } from '@dculus/ui';
 interface ThankYouDisplayProps {
   message: string;
   isCustom: boolean;
+  /** When set, a copy of the response was emailed to this address. */
+  copyEmail?: string;
 }
 
 const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
   message,
-  isCustom
+  isCustom,
+  copyEmail,
 }) => {
+  const copyNotice = copyEmail && (
+    <p className="text-sm text-muted-foreground" data-testid="thank-you-copy-notice">
+      We've sent a copy of your responses to {copyEmail}.
+    </p>
+  );
+
   if (isCustom) {
     const safeMessage = DOMPurify.sanitize(message);
     // Display custom rich text message
@@ -41,6 +50,7 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
             placeholder=""
           />
         </div>
+        {copyNotice}
       </div>
     );
   }
@@ -65,6 +75,7 @@ const ThankYouDisplay: React.FC<ThankYouDisplayProps> = ({
       </div>
       <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="thank-you-default-title">Success!</h1>
       <p className="text-muted-foreground mb-6" data-testid="thank-you-default-message">{message}</p>
+      {copyNotice}
     </div>
   );
 };

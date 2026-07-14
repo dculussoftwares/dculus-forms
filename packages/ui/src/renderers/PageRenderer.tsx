@@ -5,6 +5,7 @@ import { SinglePageForm, LayoutStyles } from './SinglePageForm';
 import { useFormResponseStore, useFormResponseUtils } from '../stores/useFormResponseStore';
 import { FormValidationState, FormNavigationState } from '../types/validation';
 import { useFormResponseContext } from './FormRenderer';
+import { Checkbox } from '../checkbox';
 
 export type { LayoutStyles } from './SinglePageForm';
 
@@ -35,12 +36,26 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
 }) => {
   const store = useFormResponseStore();
   const { getFormattedResponses } = useFormResponseUtils();
-  const { onFormSubmit, onResponseUpdate, formId, responseId, mode: contextMode } = useFormResponseContext();
+  const {
+    onFormSubmit,
+    onResponseUpdate,
+    formId,
+    responseId,
+    mode: contextMode,
+    responseCopySettings,
+    onResponseCopyConsentChange,
+  } = useFormResponseContext();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [pageValidationStates, setPageValidationStates] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [pageAttemptCounts, setPageAttemptCounts] = useState<Record<string, number>>({});
   const [isNavigating, setIsNavigating] = useState(false);
+  const [sendResponseCopy, setSendResponseCopy] = useState(false);
+
+  const handleResponseCopyConsentChange = useCallback((checked: boolean) => {
+    setSendResponseCopy(checked);
+    onResponseCopyConsentChange?.(checked);
+  }, [onResponseCopyConsentChange]);
 
   const currentPageFormRef = useRef<{
     submit: () => void;
@@ -241,6 +256,29 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
           />
         )}
       </div>
+
+      {/* "Send me a copy of my responses" — only on the last page, only when the
+          form owner set responseCopy mode to respondentChoice. 'always' mode
+          sends automatically with no UI, matching Google Forms' receipts behavior. */}
+      {navigationState.isLastPage &&
+        contextMode !== RendererMode.EDIT &&
+        responseCopySettings?.enabled &&
+        responseCopySettings.mode === 'respondentChoice' && (
+          <div className="flex items-start space-x-2 mt-4 sm:mt-6">
+            <Checkbox
+              id="send-response-copy"
+              data-testid="send-response-copy-checkbox"
+              checked={sendResponseCopy}
+              onCheckedChange={(checked) => handleResponseCopyConsentChange(Boolean(checked))}
+            />
+            <label
+              htmlFor="send-response-copy"
+              className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer"
+            >
+              Send me a copy of my responses
+            </label>
+          </div>
+        )}
 
       {/* Typeform-style navigation footer */}
       {showPageNavigation && (

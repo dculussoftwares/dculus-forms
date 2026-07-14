@@ -41,6 +41,7 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
     saveThankYouSettings,
     updateSubmissionLimits,
     saveSubmissionLimits,
+    saveResponseCopySettings,
   } = useFormSettings({
     formId,
     initialSettings: formData?.form?.settings,
@@ -138,6 +139,10 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
     updateSetting('thankYou', key as keyof typeof settings.thankYou, value);
   };
 
+  const handleUpdateResponseCopySetting = (key: string, value: any) => {
+    updateSetting('responseCopy', key as keyof typeof settings.responseCopy, value);
+  };
+
   if (formLoading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -189,6 +194,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
           onSaveThankYouSettings={saveThankYouSettings}
           onUpdateSubmissionLimits={updateSubmissionLimits}
           onSaveSubmissionLimits={saveSubmissionLimits}
+          onUpdateResponseCopySetting={handleUpdateResponseCopySetting}
+          onSaveResponseCopySettings={saveResponseCopySettings}
         />
 
         {errors.general && (

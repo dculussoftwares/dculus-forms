@@ -160,7 +160,7 @@ export function extractMentionFieldIds(html: string): string[] {
  * @param text - Text to escape
  * @returns Escaped text safe for HTML insertion
  */
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   if (!text) return text;
 
   const htmlEscapes: Record<string, string> = {

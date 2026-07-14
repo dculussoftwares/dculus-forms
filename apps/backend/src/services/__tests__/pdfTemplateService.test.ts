@@ -10,6 +10,7 @@ import {
   coerceAiSampleData,
   formatResponseValueForPdf,
   generatePdfForResponse,
+  resolveResponsePdfAttachment,
   stripBasePdf,
   validatePdfTemplate,
 } from '../pdfTemplateService.js';
@@ -557,4 +558,99 @@ describe('generatePdfForResponse', () => {
 
     expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
   }, 30000);
+});
+
+describe('resolveResponsePdfAttachment', () => {
+  const deserializedSchema = {
+    pages: [{ fields: [{ id: 'f-name', type: FieldType.TEXT_INPUT_FIELD, label: 'Full Name' }] }],
+  };
+
+  const makePrisma = (pdfTemplate: any) => ({
+    pdfTemplate: { findUnique: async () => pdfTemplate },
+  });
+
+  it('looks up the template, generates the PDF, and returns an email-ready attachment', async () => {
+    const storedTemplate = {
+      basePdf: BLANK_A4,
+      schemas: [[textSchema('recipient', 'Awarded to {{f-name}}')]],
+    };
+    const prisma = makePrisma({
+      id: 'template-123',
+      formId: 'form-123',
+      name: 'Confirmation Letter #1!',
+      template: storedTemplate,
+      fileKey: null,
+    });
+
+    const result = await resolveResponsePdfAttachment(prisma, {
+      pdfTemplateId: 'template-123',
+      formId: 'form-123',
+      responseId: 'resp-1',
+      deserializedSchema,
+      responseData: { 'f-name': 'Alice Smith' },
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.attachment?.filename).toBe('confirmation-letter-1-resp-1.pdf');
+    expect(result.attachment?.contentType).toBe('application/pdf');
+    expect(Buffer.isBuffer(result.attachment?.content)).toBe(true);
+    expect(result.attachment?.content.subarray(0, 5).toString()).toBe('%PDF-');
+  }, 30000);
+
+  it('returns an error when the template no longer exists', async () => {
+    const prisma = makePrisma(null);
+
+    const result = await resolveResponsePdfAttachment(prisma, {
+      pdfTemplateId: 'template-123',
+      formId: 'form-123',
+      responseId: 'resp-1',
+      deserializedSchema,
+      responseData: {},
+    });
+
+    expect(result.attachment).toBeUndefined();
+    expect(result.error).toContain('template-123');
+  });
+
+  it('returns an error when the template belongs to a different form', async () => {
+    const prisma = makePrisma({
+      id: 'template-123',
+      formId: 'some-other-form-456',
+      name: 'Confirmation Letter',
+      template: { basePdf: BLANK_A4, schemas: [] },
+      fileKey: null,
+    });
+
+    const result = await resolveResponsePdfAttachment(prisma, {
+      pdfTemplateId: 'template-123',
+      formId: 'form-123',
+      responseId: 'resp-1',
+      deserializedSchema,
+      responseData: {},
+    });
+
+    expect(result.attachment).toBeUndefined();
+    expect(result.error).toContain('template-123');
+  });
+
+  it('returns an error instead of throwing when PDF generation fails', async () => {
+    const prisma = makePrisma({
+      id: 'template-123',
+      formId: 'form-123',
+      name: 'Broken Template',
+      template: null, // malformed — has no basePdf/schemas, causes generation to throw
+      fileKey: null,
+    });
+
+    const result = await resolveResponsePdfAttachment(prisma, {
+      pdfTemplateId: 'template-123',
+      formId: 'form-123',
+      responseId: 'resp-1',
+      deserializedSchema,
+      responseData: {},
+    });
+
+    expect(result.attachment).toBeUndefined();
+    expect(result.error).toBeTruthy();
+  });
 });

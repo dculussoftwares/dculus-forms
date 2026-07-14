@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { UPDATE_FORM } from '../graphql/mutations';
-import type { SubmissionLimitsSettings } from '@dculus/types';
+import type { SubmissionLimitsSettings, ResponseCopySettings } from '@dculus/types';
 import { toastSuccess, toastError } from '@dculus/ui';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { useTranslation } from './useTranslation';
@@ -12,6 +12,7 @@ interface FormSettingsData {
     message: string;
   };
   submissionLimits: SubmissionLimitsSettings;
+  responseCopy: ResponseCopySettings;
 }
 
 interface UseFormSettingsProps {
@@ -33,6 +34,10 @@ export const useFormSettings = ({
       message: 'Thank you! Your response has been submitted.',
     },
     submissionLimits: {},
+    responseCopy: {
+      enabled: false,
+      mode: 'respondentChoice',
+    },
   });
   
   const [isSaving, setIsSaving] = useState(false);
@@ -62,6 +67,13 @@ export const useFormSettings = ({
           message: initialSettings.thankYou?.message ?? 'Thank you! Your response has been submitted.',
         },
         submissionLimits: initialSettings.submissionLimits ?? {},
+        responseCopy: {
+          enabled: initialSettings.responseCopy?.enabled ?? false,
+          mode: initialSettings.responseCopy?.mode ?? 'respondentChoice',
+          emailFieldId: initialSettings.responseCopy?.emailFieldId,
+          pdfTemplateId: initialSettings.responseCopy?.pdfTemplateId,
+          subject: initialSettings.responseCopy?.subject,
+        },
       }));
     }
   }, [initialSettings]);
@@ -102,16 +114,19 @@ export const useFormSettings = ({
     return obj;
   };
 
-  // Save specific settings section
+  // Save specific settings section. The backend replaces the whole `settings`
+  // JSON column rather than merging it, so we always send the full current
+  // settings state (not just the changed section) to avoid clobbering the
+  // other sections (e.g. saving Thank You settings wiping out submissionLimits).
   const saveSettings = async (settingsToSave: Partial<FormSettingsData>) => {
     if (!formId) return;
-    
+
     setIsSaving(true);
 
     try {
       // Strip __typename fields from the settings object
-      const cleanedSettings = stripTypename(settingsToSave);
-      
+      const cleanedSettings = stripTypename({ ...settings, ...settingsToSave });
+
       await updateForm({
         variables: {
           id: formId,
@@ -160,6 +175,18 @@ export const useFormSettings = ({
     }
   };
 
+  // Save response copy settings
+  const saveResponseCopySettings = async () => {
+    try {
+      await saveSettings({
+        responseCopy: settings.responseCopy,
+      });
+      toastSuccess('Response copy settings saved successfully');
+    } catch {
+      // Error already handled in the mutation onError callback
+    }
+  };
+
   return {
     settings,
     isSaving,
@@ -168,5 +195,6 @@ export const useFormSettings = ({
     saveThankYouSettings,
     updateSubmissionLimits,
     saveSubmissionLimits,
+    saveResponseCopySettings,
   };
 };

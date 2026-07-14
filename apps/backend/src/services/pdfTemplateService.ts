@@ -447,6 +447,63 @@ export function buildPdfFilename(templateName: string, responseId: string): stri
   return `${safeName}-${responseId}.pdf`;
 }
 
+export interface ResponsePdfAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+}
+
+/**
+ * Looks up a stored PdfTemplate by id and renders it for one response,
+ * returning an email-ready attachment. Shared by the email plugin's
+ * attachPdfTemplateId handling and the respondent "send me a copy" feature,
+ * so the lookup/guard/render/filename steps aren't duplicated per caller.
+ *
+ * A pdfTemplateId travels through loosely-typed JSON (plugin config, form
+ * settings), so it could reference a deleted template or — in principle —
+ * one belonging to a different form; both are treated like "not found"
+ * rather than generating/emailing another form's PDF. Errors are returned,
+ * not thrown, so callers can fall back to a non-PDF notification instead of
+ * failing the whole send.
+ */
+export async function resolveResponsePdfAttachment(
+  prisma: any,
+  params: {
+    pdfTemplateId: string;
+    formId: string;
+    responseId: string;
+    deserializedSchema: any;
+    responseData: Record<string, any>;
+  }
+): Promise<{ attachment?: ResponsePdfAttachment; error?: string }> {
+  const { pdfTemplateId, formId, responseId, deserializedSchema, responseData } = params;
+
+  try {
+    const pdfTemplate = await prisma.pdfTemplate.findUnique({ where: { id: pdfTemplateId } });
+
+    if (!pdfTemplate || pdfTemplate.formId !== formId) {
+      return { error: `PDF template "${pdfTemplateId}" no longer exists` };
+    }
+
+    const content = await generatePdfForResponse({
+      storedTemplate: pdfTemplate.template,
+      fileKey: pdfTemplate.fileKey,
+      deserializedSchema,
+      responseData,
+    });
+
+    return {
+      attachment: {
+        filename: buildPdfFilename(pdfTemplate.name, responseId),
+        content,
+        contentType: 'application/pdf',
+      },
+    };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
 /**
  * Build a downloaded filename for a PDF Generator result. When the generator
  * has a filenameFieldId configured, uses that field's formatted value (from

@@ -3,7 +3,7 @@ import type { ValidatedEmailConfig, EmailDeliveryResult } from './types.js';
 import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 import type { EmailAttachment } from '../../services/emailService.js';
-import { generatePdfForResponse, buildPdfFilename } from '../../services/pdfTemplateService.js';
+import { resolveResponsePdfAttachment } from '../../services/pdfTemplateService.js';
 
 /**
  * Resolves the set of recipient addresses for this send: the static
@@ -130,35 +130,26 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
 
     if (config.attachPdfTemplateId) {
       if (response && response.data && formSchema) {
-        try {
-          const pdfTemplate = await context.prisma.pdfTemplate.findUnique({
-            where: { id: config.attachPdfTemplateId },
-          });
+        const { attachment, error } = await resolveResponsePdfAttachment(context.prisma, {
+          pdfTemplateId: config.attachPdfTemplateId,
+          formId: event.formId,
+          responseId: response.id,
+          deserializedSchema: formSchema,
+          responseData: response.data,
+        });
 
-          // Plugin config is arbitrary JSON, so attachPdfTemplateId could in
-          // principle reference a template belonging to a different form.
-          // Treat a cross-form template exactly like "not found" rather than
-          // generating/emailing another form's PDF.
-          if (!pdfTemplate || pdfTemplate.formId !== event.formId) {
-            attachmentError = `PDF template "${config.attachPdfTemplateName || config.attachPdfTemplateId}" no longer exists`;
-            context.logger.warn('Skipping PDF attachment: template not found', {
-              attachPdfTemplateId: config.attachPdfTemplateId,
-            });
-          } else {
-            const pdfBuffer = await generatePdfForResponse({
-              storedTemplate: pdfTemplate.template,
-              fileKey: pdfTemplate.fileKey,
-              deserializedSchema: formSchema,
-              responseData: response.data,
-            });
-            attachedPdfFilename = buildPdfFilename(pdfTemplate.name, response.id);
-            attachments = [{ filename: attachedPdfFilename, content: pdfBuffer, contentType: 'application/pdf' }];
-          }
-        } catch (error: any) {
-          attachmentError = error.message;
-          context.logger.error('PDF attachment generation failed; sending email without it', {
+        if (attachment) {
+          attachedPdfFilename = attachment.filename;
+          attachments = [attachment];
+        } else {
+          // Prefer the plugin config's cached template name over the shared
+          // helper's id-based message — friendlier for anyone reading plugin
+          // test/send results.
+          const templateLabel = config.attachPdfTemplateName || config.attachPdfTemplateId;
+          attachmentError = `PDF template "${templateLabel}" could not be attached: ${error}`;
+          context.logger.warn('Skipping PDF attachment', {
             attachPdfTemplateId: config.attachPdfTemplateId,
-            error: error.message,
+            error,
           });
         }
       } else {

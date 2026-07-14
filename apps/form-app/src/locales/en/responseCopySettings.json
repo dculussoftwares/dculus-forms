@@ -1,0 +1,33 @@
+{
+  "title": "Send a Copy",
+  "description": "Let respondents receive a copy of their own answers by email",
+  "enabled": "Email respondents a copy of their answers",
+  "enabledDescription": "Send the respondent's own submitted answers back to them after they submit the form",
+  "noEmailFieldWarning": "Add an Email field to your form to enable this — it's used to know where to send the copy.",
+  "mode": {
+    "label": "When to send",
+    "always": "Always send",
+    "alwaysDescription": "Every respondent automatically receives a copy — no extra step for them.",
+    "respondentChoice": "Let the respondent choose",
+    "respondentChoiceDescription": "A \"Send me a copy of my responses\" checkbox appears on the form; only checked submissions get one."
+  },
+  "emailField": {
+    "label": "Recipient email field",
+    "placeholder": "Select an Email field",
+    "hint": "The respondent's own answer to this field is used as the recipient address."
+  },
+  "pdfTemplate": {
+    "label": "Attach a PDF",
+    "placeholder": "Select a PDF template",
+    "none": "No PDF — send a plain summary instead",
+    "hint": "When no template is selected, the email includes a simple list of the respondent's questions and answers.",
+    "noTemplatesHint": "No PDF Templates exist for this form yet — a plain text summary will be sent instead."
+  },
+  "subject": {
+    "label": "Email subject",
+    "placeholder": "Your response to {{formTitle}}",
+    "hint": "Leave blank to use the default subject."
+  },
+  "saveButton": "Save Response Copy Settings",
+  "saving": "Saving..."
+}

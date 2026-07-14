@@ -103,6 +103,13 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
             endDate
           }
         }
+        responseCopy {
+          enabled
+          mode
+          emailFieldId
+          pdfTemplateId
+          subject
+        }
       }
       organization {
         id
