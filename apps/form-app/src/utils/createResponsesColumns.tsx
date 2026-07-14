@@ -811,7 +811,10 @@ export const createResponsesColumns = ({
         <span className="text-sm text-muted-foreground">—</span>
       );
     },
-    enableSorting: true,
+    // respondentEmail isn't in the backend's allowedSortFields (responseService.ts),
+    // so a sort click here would silently no-op / fall back to submittedAt — same
+    // reason tagsColumn below has sorting disabled.
+    enableSorting: false,
     enableHiding: true,
     size: 220,
   };

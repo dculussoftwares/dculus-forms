@@ -442,7 +442,7 @@ export const formsResolvers = {
         const currentCollectEmail = !!(accessCheck.form.settings as any)?.collectRespondentEmail;
         if (!!incomingCollectEmail !== currentCollectEmail && accessCheck.permission !== PermissionLevel.OWNER) {
           throw createGraphQLError(
-            'Access denied: owner permissions required to change who can respond to this form',
+            'Access denied: owner permissions required to change respondent email collection settings',
             GRAPHQL_ERROR_CODES.NO_ACCESS
           );
         }
