@@ -10,6 +10,7 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
       description
       shortUrl
       formSchemaPublic
+      accessStatus
       settings {
         submissionLimits {
           timeWindow {
@@ -26,6 +27,11 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
           enabled
           mode
           emailFieldId
+        }
+        accessControl {
+          enabled
+          requireSignIn
+          allowedDomains
         }
       }
       organization {

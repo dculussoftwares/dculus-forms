@@ -1,9 +1,11 @@
 import * as Sentry from '@sentry/node';
+import { fromNodeHeaders } from 'better-auth/node';
 import {
   BetterAuthContext,
   requireAuth,
   requireOrganizationMembership,
 } from '../../middleware/better-auth-middleware.js';
+import { auth } from '../../lib/better-auth.js';
 import { prisma } from '../../lib/prisma.js';
 import { nanoid } from 'nanoid';
 import { createGraphQLError } from '#graphql-errors';
@@ -191,5 +193,27 @@ export const betterAuthResolvers = {
       return organization;
     },
 
+    // better-auth's `setPassword` endpoint is server-only (no HTTP route —
+    // unreachable from authClient at all), so attaching a password to a
+    // session established via OTP/social sign-in (rather than the classic
+    // password-creates-the-session flow) has to go through here instead.
+    setAccountPassword: async (
+      _: any,
+      { password }: { password: string },
+      context: { auth: BetterAuthContext; req?: any }
+    ) => {
+      requireAuth(context.auth);
+
+      if (!password || password.length < 8) {
+        throw createGraphQLError('Password must be at least 8 characters', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await auth.api.setPassword({
+        body: { newPassword: password },
+        headers: fromNodeHeaders(context.req.headers),
+      });
+
+      return true;
+    },
   },
 };

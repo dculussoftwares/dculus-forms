@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { UPDATE_FORM } from '../graphql/mutations';
-import type { SubmissionLimitsSettings, ResponseCopySettings } from '@dculus/types';
+import type { SubmissionLimitsSettings, ResponseCopySettings, AccessControlSettings } from '@dculus/types';
 import { toastSuccess, toastError } from '@dculus/ui';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { useTranslation } from './useTranslation';
@@ -13,6 +13,7 @@ interface FormSettingsData {
   };
   submissionLimits: SubmissionLimitsSettings;
   responseCopy: ResponseCopySettings;
+  accessControl: AccessControlSettings;
 }
 
 interface UseFormSettingsProps {
@@ -37,6 +38,11 @@ export const useFormSettings = ({
     responseCopy: {
       enabled: false,
       mode: 'respondentChoice',
+    },
+    accessControl: {
+      enabled: false,
+      requireSignIn: false,
+      allowedDomains: [],
     },
   });
   
@@ -73,6 +79,15 @@ export const useFormSettings = ({
           emailFieldId: initialSettings.responseCopy?.emailFieldId,
           pdfTemplateId: initialSettings.responseCopy?.pdfTemplateId,
           subject: initialSettings.responseCopy?.subject,
+        },
+        // Without this, local accessControl state sits at its default
+        // forever and the next unrelated save (Thank You, submission
+        // limits) silently resets any configured access control back to
+        // disabled — saves always resend the whole JSON column.
+        accessControl: {
+          enabled: initialSettings.accessControl?.enabled ?? false,
+          requireSignIn: initialSettings.accessControl?.requireSignIn ?? false,
+          allowedDomains: initialSettings.accessControl?.allowedDomains ?? [],
         },
       }));
     }
@@ -187,6 +202,26 @@ export const useFormSettings = ({
     }
   };
 
+  // Update access control
+  const updateAccessControl = (accessControl: AccessControlSettings) => {
+    setSettings(prev => ({
+      ...prev,
+      accessControl,
+    }));
+  };
+
+  // Save access control settings
+  const saveAccessControlSettings = async () => {
+    try {
+      await saveSettings({
+        accessControl: settings.accessControl,
+      });
+      toastSuccess('Access control settings saved successfully');
+    } catch {
+      // Error already handled in the mutation onError callback
+    }
+  };
+
   return {
     settings,
     isSaving,
@@ -196,5 +231,7 @@ export const useFormSettings = ({
     updateSubmissionLimits,
     saveSubmissionLimits,
     saveResponseCopySettings,
+    updateAccessControl,
+    saveAccessControlSettings,
   };
 };

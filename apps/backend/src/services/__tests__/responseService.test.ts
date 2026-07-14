@@ -370,6 +370,8 @@ describe('Response Service', () => {
           formId: 'form-123',
           data: { field1: 'old-value' },
           metadata: {},
+          respondentUserId: null,
+          respondentEmail: null,
           submittedAt: new Date('2024-01-01'),
           updatedAt: new Date('2024-01-01'),
           deletedAt: null,

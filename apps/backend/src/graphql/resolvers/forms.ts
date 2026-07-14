@@ -20,6 +20,34 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
+import { resolveAccessStatus } from '../../lib/accessControlEnforcement.js';
+
+// Sibling field resolvers on `Form` only see the raw `parent` DB row, not
+// each other's resolved output, so both `accessStatus` and
+// `formSchemaPublic` independently parse `parent.settings` via this helper.
+const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
+
+// Order-insensitive on `allowedDomains` so re-saving the same domain list in
+// a different order isn't treated as a change requiring OWNER re-approval.
+// Never-configured (null/undefined) and explicitly-disabled-with-no-domains
+// must normalize to the SAME value — the frontend always sends a populated
+// default accessControl object on every settings save (useFormSettings.ts),
+// so treating "absent" and "default" as different would require OWNER
+// permission for every settings save on every form that predates this field.
+function normalizeAccessControlForComparison(accessControl: any) {
+  return {
+    enabled: !!accessControl?.enabled,
+    requireSignIn: !!accessControl?.requireSignIn,
+    allowedDomains: [...(accessControl?.allowedDomains ?? [])].map((d: string) => d.toLowerCase()).sort(),
+  };
+}
+
+function getFormAccessStatus(parent: any, context: { auth: BetterAuthContext }) {
+  const settings = parent.settings
+    ? JSON.parse(typeof parent.settings === 'string' ? parent.settings : JSON.stringify(parent.settings))
+    : null;
+  return resolveAccessStatus(settings?.accessControl, context.auth);
+}
 
 export const formsResolvers = {
   Query: {
@@ -92,7 +120,12 @@ export const formsResolvers = {
       // Fall back to the DB column when Hocuspocus is unavailable (e.g. pool pressure timeout)
       return schema ?? parent.formSchema ?? null;
     },
-    formSchemaPublic: async (parent: any) => {
+    formSchemaPublic: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
+      // Withhold form structure while access control isn't satisfied — this
+      // is what lets `formByShortUrl` return a gate-able Form instead of a
+      // hard error, so form-viewer can render an appropriate sign-in prompt.
+      if (getFormAccessStatus(parent, context) !== 'OPEN') return null;
+
       const formId = parent.id;
       const schema = await getFormSchemaFromHocuspocus(formId);
       const raw = schema ?? parent.formSchema ?? null;
@@ -104,6 +137,9 @@ export const formsResolvers = {
           fields: (page.fields || []).filter((f: any) => !f.deleted),
         })),
       };
+    },
+    accessStatus: (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
+      return getFormAccessStatus(parent, context);
     },
     settings: (parent: any) => {
       // Parse JSON settings from database or return null if no settings
@@ -361,6 +397,40 @@ export const formsResolvers = {
 
       if (hasProp('createdById')) {
         throw createGraphQLError('Access denied: Cannot change form ownership through update', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      // 🔒 Access control (who can respond) is security-relevant, so changing
+      // it specifically requires OWNER — even though `settings` as a whole is
+      // an EDITOR-level field. Compared against the PERSISTED value (not mere
+      // presence of the key): useFormSettings.ts always resends the full
+      // settings object on every save, so `input.settings.accessControl`
+      // would otherwise be present on every unrelated settings save too,
+      // once a form has ever visited the Access Control tab.
+      const incomingAccessControl = input.settings?.accessControl;
+      if (incomingAccessControl !== undefined) {
+        const currentAccessControl = (accessCheck.form.settings as any)?.accessControl ?? null;
+        const accessControlChanged =
+          JSON.stringify(normalizeAccessControlForComparison(incomingAccessControl)) !==
+          JSON.stringify(normalizeAccessControlForComparison(currentAccessControl));
+
+        if (accessControlChanged && accessCheck.permission !== PermissionLevel.OWNER) {
+          throw createGraphQLError(
+            'Access denied: owner permissions required to change who can respond to this form',
+            GRAPHQL_ERROR_CODES.NO_ACCESS
+          );
+        }
+
+        if (incomingAccessControl.allowedDomains) {
+          for (const domain of incomingAccessControl.allowedDomains) {
+            if (typeof domain !== 'string' || !DOMAIN_RE.test(domain)) {
+              throw createGraphQLError(
+                `"${domain}" is not a valid domain (expected e.g. "example.com")`,
+                GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+              );
+            }
+          }
+          incomingAccessControl.allowedDomains = incomingAccessControl.allowedDomains.map((d: string) => d.toLowerCase());
+        }
       }
 
       // ✅ VALIDATION: title and description length

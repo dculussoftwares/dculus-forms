@@ -125,10 +125,27 @@ export const typeDefs = gql`
     subject: String
   }
 
+  type AccessControlSettings {
+    enabled: Boolean!
+    requireSignIn: Boolean!
+    allowedDomains: [String!]
+  }
+
   type FormSettings {
     thankYou: ThankYouSettings
     submissionLimits: SubmissionLimitsSettings
     responseCopy: ResponseCopySettings
+    accessControl: AccessControlSettings
+  }
+
+  # Whether the current requester can see the form's real content.
+  # OPEN: no access control, or access control satisfied.
+  # SIGN_IN_REQUIRED: access control enabled and the requester isn't signed in.
+  # DOMAIN_REJECTED: signed in, but the verified email's domain isn't allowed.
+  enum FormAccessStatus {
+    OPEN
+    SIGN_IN_REQUIRED
+    DOMAIN_REJECTED
   }
 
   # Form Types
@@ -140,6 +157,7 @@ export const typeDefs = gql`
     formSchema: JSON
     formSchemaPublic: JSON
     settings: FormSettings
+    accessStatus: FormAccessStatus!
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!
@@ -224,6 +242,7 @@ export const typeDefs = gql`
     formId: ID!
     data: JSON!
     metadata: JSON
+    respondentEmail: String
     submittedAt: String!
     thankYouMessage: String!
     showCustomThankYou: Boolean!
@@ -355,10 +374,17 @@ export const typeDefs = gql`
     subject: String
   }
 
+  input AccessControlSettingsInput {
+    enabled: Boolean!
+    requireSignIn: Boolean!
+    allowedDomains: [String!]
+  }
+
   input FormSettingsInput {
     thankYou: ThankYouSettingsInput
     submissionLimits: SubmissionLimitsSettingsInput
     responseCopy: ResponseCopySettingsInput
+    accessControl: AccessControlSettingsInput
   }
 
   input UpdateFormInput {
@@ -1377,6 +1403,7 @@ export const typeDefs = gql`
     # Auth Mutations
     createOrganization(name: String!): Organization
     setActiveOrganization(organizationId: ID!): Organization
+    setAccountPassword(password: String!): Boolean!
 
     # Subscription Mutations
     createCheckoutSession(itemPriceId: String!): CheckoutSessionResponse!

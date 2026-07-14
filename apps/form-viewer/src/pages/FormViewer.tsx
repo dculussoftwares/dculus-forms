@@ -11,7 +11,10 @@ import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
 import { buildCompletionTimeInput } from '../lib/completionTime';
-import { getFormErrorMessage, isSubmissionLimitError } from '../lib/formError';
+import { getFormErrorMessage, isSubmissionLimitError, isAccessControlError } from '../lib/formError';
+import SignInGate from '../components/SignInGate';
+import AccessDeniedScreen from '../components/AccessDeniedScreen';
+import { signOut } from '../lib/auth-client';
 
 const SUBMISSION_TIMEOUT_MS = 30_000;
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB — matches backend multer limit
@@ -95,9 +98,13 @@ const FormViewer: React.FC = () => {
   } | null>(null);
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
   const [sendResponseCopy, setSendResponseCopy] = useState<boolean>(false);
+  // Set when a submit fails with SIGN_IN_REQUIRED/EMAIL_DOMAIN_NOT_ALLOWED
+  // (token expired/revoked mid-fill) — renders the gate as an overlay ON TOP
+  // of the still-mounted FormRenderer so in-progress answers survive.
+  const [needsReauth, setNeedsReauth] = useState<boolean>(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { loading, error, data } = useQuery(GET_FORM_BY_SHORT_URL, {
+  const { loading, error, data, refetch } = useQuery(GET_FORM_BY_SHORT_URL, {
     variables: { shortUrl: shortUrl || '' },
     skip: !shortUrl,
   });
@@ -259,6 +266,20 @@ const FormViewer: React.FC = () => {
       // Leave isSubmittingRef true on success — form is done, no re-submit needed
     } catch (err: unknown) {
       console.error('Form submission error:', err);
+
+      const errorCode = (CombinedGraphQLErrors.is(err) ? err.errors[0]?.extensions?.code : undefined) as string | undefined;
+      if (isAccessControlError(errorCode)) {
+        // A real sign-out (not just clearing the local token) — better-auth
+        // also sets a session cookie independent of the bearer plugin, and
+        // that cookie alone would otherwise keep re-authenticating the
+        // rejected identity on the next attempt.
+        void signOut();
+        setSubmissionState('idle');
+        setNeedsReauth(true);
+        isSubmittingRef.current = false;
+        return;
+      }
+
       setSubmissionState('error');
       setSubmissionMessage(
         (err instanceof Error ? err.message : null) ||
@@ -319,6 +340,29 @@ const FormViewer: React.FC = () => {
   }
 
   const form = data.formByShortUrl;
+  const allowedDomains = form.settings?.accessControl?.allowedDomains;
+
+  // Access control is checked before the "form not ready" guard below —
+  // `formSchemaPublic` is deliberately null while gated (see the backend
+  // field resolver), so that guard must not fire for a legitimately-gated form.
+  if (form.accessStatus === 'SIGN_IN_REQUIRED') {
+    return (
+      <SignInGate
+        formTitle={form.title}
+        allowedDomains={allowedDomains}
+        onSignedIn={() => refetch()}
+      />
+    );
+  }
+
+  if (form.accessStatus === 'DOMAIN_REJECTED') {
+    return (
+      <AccessDeniedScreen
+        allowedDomains={allowedDomains}
+        onSwitchAccount={() => refetch()}
+      />
+    );
+  }
 
   // Check if form schema exists
   if (!form.formSchemaPublic) {
@@ -432,6 +476,19 @@ const FormViewer: React.FC = () => {
         responseCopySettings={responseCopySettings}
         onResponseCopyConsentChange={setSendResponseCopy}
       />
+
+      {/* Re-auth overlay — token expired/revoked mid-fill. Rendered on top of
+          the still-mounted FormRenderer (not an early return) so in-progress
+          answers in useFormResponseStore survive. */}
+      {needsReauth && (
+        <div className="fixed inset-0 bg-background z-50">
+          <SignInGate
+            formTitle={form.title}
+            allowedDomains={allowedDomains}
+            onSignedIn={() => setNeedsReauth(false)}
+          />
+        </div>
+      )}
 
       {/* Loading overlay during submission */}
       {submissionState === 'submitting' && (

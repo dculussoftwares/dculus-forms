@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { admin, bearer, emailOTP, haveIBeenPwned, magicLink, organization } from 'better-auth/plugins';
+import { admin, bearer, emailOTP, haveIBeenPwned, magicLink, oneTimeToken, organization } from 'better-auth/plugins';
 import { adminAc } from 'better-auth/plugins/admin/access';
 import { prisma } from './prisma.js';
 import { authConfig, googleConfig } from './env.js';
@@ -74,6 +74,11 @@ export const auth = betterAuth({
 
   plugins: [
     bearer(),
+    // Bridges form-viewer's respondent sign-in across sites: the
+    // /respondent-oauth-callback route (see index.ts) generates a token here
+    // server-side, right after the OAuth callback sets its own-domain cookie,
+    // and hands it to form-viewer via a redirect query param.
+    oneTimeToken(),
     organization({
       allowUserToCreateOrganization: true,
       organizationLimit: process.env.NODE_ENV === 'test' ? 100 : 1, // Allow multiple orgs in test environment

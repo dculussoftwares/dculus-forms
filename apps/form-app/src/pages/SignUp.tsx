@@ -3,11 +3,12 @@ import { Link, useNavigate, useLocation } from 'react-router';
 import { useMutation, useApolloClient } from '@apollo/client/react';
 import { Button, Input, Label, OTPInput } from '@dculus/ui';
 import { FileText } from 'lucide-react';
-import { slugify } from '@dculus/utils';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
+import { ensureOrganization } from '../lib/ensureOrganization';
 import { ArrowLeft, Timer } from 'lucide-react';
 import { GoogleIcon } from '../components/icons/GoogleIcon';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
+import { SET_ACCOUNT_PASSWORD } from '../graphql/mutations';
 import { useTranslation } from '../hooks/useTranslation';
 
 const Field = ({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) => (
@@ -38,6 +39,7 @@ export const SignUp = () => {
 
   // GraphQL mutation for initializing organization subscription
   const [initializeSubscription] = useMutation(INITIALIZE_ORGANIZATION_SUBSCRIPTION);
+  const [setAccountPassword] = useMutation(SET_ACCOUNT_PASSWORD);
 
   // Check for invitation context
   const invitationEmail = location.state?.email;
@@ -128,10 +130,13 @@ export const SignUp = () => {
         return;
       }
 
-      // Send OTP for email verification
+      // type: 'sign-in' (not 'email-verification') — verifying this code
+      // establishes a session directly, whether formData.email belongs to a
+      // brand-new user or a pre-existing passwordless account (e.g. created
+      // via form-viewer's respondent sign-in). See handleVerifyOTP below.
       const otpResponse = await emailOtp.sendVerificationOtp({
         email: formData.email,
-        type: 'email-verification',
+        type: 'sign-in',
       });
 
       if (otpResponse.error) {
@@ -173,30 +178,42 @@ export const SignUp = () => {
     setErrors({});
     
     try {
-      // Verify the OTP
-      const verifyResponse = await emailOtp.verifyEmail({
+      // Verifying the code establishes a session directly — regardless of
+      // whether formData.email is a brand-new user or a pre-existing
+      // passwordless account. No signUp.email()/signIn.email() pair to fall
+      // out of sync with each other; `name` is only applied if this is a
+      // genuinely first-time registration (better-auth ignores it otherwise).
+      const signInResponse = await signIn.emailOtp({
         email: formData.email,
         otp: otp.trim(),
-      });
-
-      if (verifyResponse.error) {
-        setErrors({
-          otp: verifyResponse.error.message || t('messages.otpInvalid'),
-        });
-        return;
-      }
-
-      // Sign in the user
-      const signInResponse = await signIn.email({
-        email: formData.email,
-        password: formData.password,
+        name: formData.name,
       });
 
       if (signInResponse.error) {
         setErrors({
-          otp: t('messages.signInFailed'),
+          otp: signInResponse.error.message || t('messages.otpInvalid'),
         });
         return;
+      }
+
+      // Only attach the typed password if this account doesn't already have
+      // one — otherwise a real existing user who mistakenly hits "Sign Up"
+      // again would have their real password silently overwritten. Note:
+      // signUp.email() above already creates a credential account for a
+      // genuinely brand-new email too, so `hasCredentialAccount` being true
+      // does NOT reliably distinguish "new" from "returning" — it's only
+      // safe to use for this one skip-if-already-set decision, never for
+      // messaging (both cases already have the correct password either way).
+      const { data: existingAccounts } = await authClient.listAccounts();
+      const hasCredentialAccount = existingAccounts?.some((a: { providerId: string }) => a.providerId === 'credential');
+
+      if (!hasCredentialAccount) {
+        try {
+          await setAccountPassword({ variables: { password: formData.password } });
+        } catch (passwordError) {
+          // Non-fatal — they can set a password later; sign-in via email OTP still works.
+          console.error('[SignUp] ⚠️ Error attaching password:', passwordError);
+        }
       }
 
       // Check if there's a pending invitation to accept
@@ -205,15 +222,15 @@ export const SignUp = () => {
           await organization.acceptInvitation({
             invitationId: pendingInvitationId,
           });
-          
+
           // Clear the pending invitation
           sessionStorage.removeItem('pendingInvitationId');
-          
+
           // Navigate to dashboard with success message
-          navigate('/', { 
-            state: { 
-              message: t('messages.joinSuccess') 
-            } 
+          navigate('/', {
+            state: {
+              message: t('messages.joinSuccess')
+            }
           });
           return;
         } catch (invitationError) {
@@ -222,19 +239,17 @@ export const SignUp = () => {
         }
       }
 
-      // Create the organization if not accepting an invitation
+      // Ensure an organization exists if not accepting an invitation — a
+      // pre-existing account (e.g. from a respondent sign-in) may already
+      // have one, in which case this just reuses it instead of creating a
+      // second one.
       if (!pendingInvitationId) {
-        const organizationSlug = slugify(formData.organizationName);
-        const orgResult = await authClient.organization.create({
-          name: formData.organizationName,
-          slug: organizationSlug,
-        });
+        const orgResult = await ensureOrganization(formData.organizationName);
 
-        // Initialize free subscription for the new organization
-        if (orgResult?.data?.id) {
+        if (orgResult?.created) {
           try {
             const subscriptionResult = await initializeSubscription({
-              variables: { organizationId: orgResult.data.id },
+              variables: { organizationId: orgResult.organizationId },
             });
 
             if (!subscriptionResult.data?.initializeOrganizationSubscription?.success) {
@@ -244,20 +259,17 @@ export const SignUp = () => {
             // Log error but don't block signup flow
             console.error('[SignUp] ⚠️ Error initializing subscription:', subscriptionError);
           }
+        }
 
-          // Set active organization and refresh session
+        if (orgResult) {
           try {
-            await organization.setActive({
-              organizationId: orgResult.data.id,
-            });
             await authClient.getSession();
-            
             // Refetch Apollo queries to ensure activeOrganization is up to date
             await apolloClient.refetchQueries({
               include: ['ActiveOrganization'],
             });
           } catch (sessionError) {
-            console.error('[SignUp] Error setting active organization:', sessionError);
+            console.error('[SignUp] Error refreshing session:', sessionError);
           }
         }
       }
@@ -286,7 +298,7 @@ export const SignUp = () => {
     try {
       const response = await emailOtp.sendVerificationOtp({
         email: formData.email,
-        type: 'email-verification',
+        type: 'sign-in',
       });
 
       if (response.error) {

@@ -48,6 +48,8 @@ const FormSettings: React.FC = () => {
     updateSubmissionLimits,
     saveSubmissionLimits,
     saveResponseCopySettings,
+    updateAccessControl,
+    saveAccessControlSettings,
   } = useFormSettings({
     formId,
     initialSettings: formData?.form?.settings,
@@ -260,6 +262,8 @@ const FormSettings: React.FC = () => {
           onSaveSubmissionLimits={saveSubmissionLimits}
           onUpdateResponseCopySetting={handleUpdateResponseCopySetting}
           onSaveResponseCopySettings={saveResponseCopySettings}
+          onUpdateAccessControl={updateAccessControl}
+          onSaveAccessControlSettings={saveAccessControlSettings}
         />
 
         {/* Error display */}

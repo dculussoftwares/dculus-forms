@@ -74,10 +74,19 @@ export interface ResponseCopySettings {
   subject?: string;
 }
 
+export interface AccessControlSettings {
+  enabled: boolean;
+  requireSignIn: boolean;
+  // Lowercase, no leading "@" (e.g. "dculus.com") — matched against the
+  // verified respondent email's domain.
+  allowedDomains?: string[];
+}
+
 export interface FormSettings {
   thankYou?: ThankYouSettings;
   submissionLimits?: SubmissionLimitsSettings;
   responseCopy?: ResponseCopySettings;
+  accessControl?: AccessControlSettings;
 }
 
 // Form related types
@@ -904,6 +913,7 @@ export interface FormResponse {
   formId: string;
   data: Record<string, any>;
   metadata?: PluginMetadata;
+  respondentEmail?: string;
   submittedAt: Date;
   tags?: ResponseTag[];
   hasBeenEdited?: boolean;
