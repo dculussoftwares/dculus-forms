@@ -21,7 +21,7 @@ import {
   AlertDescription,
   toastError,
 } from '@dculus/ui';
-import { Mail, Loader2, Save, X, AlertTriangle, FileText } from 'lucide-react';
+import { Mail, Loader2, Save, X, AlertTriangle, FileText, ExternalLink } from 'lucide-react';
 import { deserializeFormSchema, FillableFormField, EmailField } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
 import { GET_PDF_TEMPLATES } from '../../graphql/pdfTemplates';
@@ -352,6 +352,17 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">{t('pdfAttachment.hint')}</p>
+              {attachPdfTemplateId !== NO_PDF_TEMPLATE && form?.id && (
+                <a
+                  href={`/dashboard/form/${form.id}/pdf-templates/${attachPdfTemplateId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  {t('pdfAttachment.openInDesigner')}
+                </a>
+              )}
             </>
           ) : (
             <p className="text-xs text-muted-foreground">{t('pdfAttachment.noTemplatesHint')}</p>

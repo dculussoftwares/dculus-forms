@@ -53,7 +53,8 @@
     "placeholder": "Select a PDF template",
     "none": "None (no attachment)",
     "hint": "Generated fresh at send time from this form's response data. If the template is later deleted, the email still sends without the attachment.",
-    "noTemplatesHint": "This form has no PDF templates yet. Create one in PDF Templates to attach it to this notification."
+    "noTemplatesHint": "This form has no PDF templates yet. Create one in PDF Templates to attach it to this notification.",
+    "openInDesigner": "Open template in PDF designer"
   },
   "triggerEvents": {
     "title": "Trigger Events",
