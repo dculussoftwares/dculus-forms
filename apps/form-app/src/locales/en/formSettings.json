@@ -53,7 +53,8 @@
       "thankYou": "Thank You Page",
       "submissionLimits": "Submission Limits",
       "responseCopy": "Send a Copy",
-      "emailNotifications": "Email & Notifications"
+      "emailNotifications": "Email & Notifications",
+      "accessControl": "Access Control"
     }
   },
   "thankYouSettings": {

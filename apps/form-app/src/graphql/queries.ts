@@ -110,6 +110,11 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
           pdfTemplateId
           subject
         }
+        accessControl {
+          enabled
+          requireSignIn
+          allowedDomains
+        }
       }
       organization {
         id
@@ -152,6 +157,7 @@ export const GET_FORM_RESPONSES : TypedDocumentNode<any, any> = gql`
         formId
         data
         metadata
+        respondentEmail
         submittedAt
         hasBeenEdited
         totalEdits

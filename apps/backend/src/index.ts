@@ -15,7 +15,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import depthLimit from 'graphql-depth-limit';
 import { validate } from 'graphql';
-import { toNodeHandler } from 'better-auth/node';
+import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
 import { auth, DEV_ORIGINS } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
 import { resolvers } from './graphql/resolvers.js';
@@ -189,6 +189,29 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms', 
 
 // Mount Better Auth handler AFTER CORS middleware — with rate limiting on auth routes
 app.all('/api/auth/*', authLimiter, toNodeHandler(auth));
+
+// Bridges form-viewer's respondent Google sign-in across sites. This route is
+// the OAuth `callbackURL` (same origin as the cookie better-auth's own
+// /api/auth/callback/google just set), so it can call generateOneTimeToken
+// server-side with no cross-site issue, then hands the token to form-viewer
+// via a redirect query param — form-viewer has no cookie and no bearer token
+// yet, so it can't call generateOneTimeToken itself. See
+// apps/form-viewer/src/pages/OAuthCallback.tsx for the receiving end.
+app.get('/respondent-oauth-callback', authLimiter, async (req, res) => {
+  const formViewerUrl = process.env.FORM_VIEWER_URL || 'http://localhost:5173';
+  const returnTo = typeof req.query.returnTo === 'string' ? req.query.returnTo : '/';
+
+  try {
+    const result = await auth.api.generateOneTimeToken({
+      headers: fromNodeHeaders(req.headers),
+    });
+    const redirectUrl = `${formViewerUrl}/auth/callback?ott=${encodeURIComponent(result.token)}&returnTo=${encodeURIComponent(returnTo)}`;
+    res.redirect(redirectUrl);
+  } catch (error) {
+    logger.error('Failed to generate one-time token for respondent OAuth callback:', error);
+    res.redirect(`${formViewerUrl}/auth/callback?error=sign_in_failed&returnTo=${encodeURIComponent(returnTo)}`);
+  }
+});
 
 // Apply express.json() AFTER Better Auth handler
 app.use(express.json({ limit: '10mb' }));

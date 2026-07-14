@@ -20,6 +20,12 @@ export const CREATE_ORGANIZATION : TypedDocumentNode<any, any> = gql`
   }
 `;
 
+export const SET_ACCOUNT_PASSWORD : TypedDocumentNode<any, any> = gql`
+  mutation SetAccountPassword($password: String!) {
+    setAccountPassword(password: $password)
+  }
+`;
+
 export const CREATE_FORM : TypedDocumentNode<any, any> = gql`
   mutation CreateForm($input: CreateFormInput!) {
     createForm(input: $input) {
@@ -67,6 +73,18 @@ export const UPDATE_FORM : TypedDocumentNode<any, any> = gql`
             startDate
             endDate
           }
+        }
+        responseCopy {
+          enabled
+          mode
+          emailFieldId
+          pdfTemplateId
+          subject
+        }
+        accessControl {
+          enabled
+          requireSignIn
+          allowedDomains
         }
       }
       isPublished

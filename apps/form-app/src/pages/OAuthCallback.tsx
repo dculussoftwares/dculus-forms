@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router';
 import { FileText, AlertCircle } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { useMutation } from '@apollo/client/react';
-import { slugify } from '@dculus/utils';
-import { authClient, organization } from '../lib/auth-client';
+import { authClient } from '../lib/auth-client';
+import { ensureOrganization } from '../lib/ensureOrganization';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 import { useTranslation } from '../hooks/useTranslation';
 
@@ -24,32 +24,22 @@ export const OAuthCallback = () => {
         }
 
         const user = data.user;
-        const hasOrg = !!data.session.activeOrganizationId;
+        const displayName = user.name?.trim() || user.email?.split('@')[0] || 'my';
+        const orgResult = await ensureOrganization(`${displayName}'s Organization`);
 
-        if (!hasOrg) {
-          const displayName = user.name?.trim() || user.email?.split('@')[0] || 'my';
-          const orgName = `${displayName}'s Organization`;
-          const orgSlug = slugify(orgName);
+        if (!orgResult) {
+          setError(true);
+          return;
+        }
 
-          const orgResult = await authClient.organization.create({
-            name: orgName,
-            slug: orgSlug,
-          });
-
-          if (!orgResult.data) {
-            setError(true);
-            return;
-          }
-
+        if (orgResult.created) {
           try {
             await initializeSubscription({
-              variables: { organizationId: orgResult.data.id },
+              variables: { organizationId: orgResult.organizationId },
             });
           } catch {
             // Non-fatal — subscription can be initialised later
           }
-
-          await organization.setActive({ organizationId: orgResult.data.id });
         }
 
         const redirect = sessionStorage.getItem('redirectAfterAuth') ?? '/';

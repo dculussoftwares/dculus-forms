@@ -33,6 +33,7 @@ import { logger } from '../../lib/logger.js';
 import { audit } from '../../lib/audit.js';
 import { upsertPreviewTag, addTagToResponse } from '../../services/tagService.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
+import { enforceAccessControlForSubmission } from '../../lib/accessControlEnforcement.js';
 import {
   generateFakeResponsesForForm,
   MAX_FAKE_RESPONSES_PER_REQUEST,
@@ -163,6 +164,17 @@ export const responsesResolvers = {
         throw createGraphQLError('Form is not published and cannot accept responses', GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
       }
 
+      // Check access control (require sign-in / email-domain allowlist) — the
+      // actual security boundary, re-validated here regardless of what
+      // form-viewer's gate UI showed, since this mutation is public and
+      // callable directly. Builders previewing their own form bypass this,
+      // same as the publish check above — no reason a preview session's
+      // email needs to be in the form's own allowlist.
+      const accessControl = form.settings?.accessControl;
+      if (accessControl?.enabled && !input.isPreview) {
+        enforceAccessControlForSubmission(accessControl, context.auth);
+      }
+
       // Check subscription usage limits
       const usageExceeded = await checkUsageExceeded(form.organizationId);
       if (usageExceeded.submissionsExceeded) {
@@ -185,10 +197,17 @@ export const responsesResolvers = {
       // Pre-assign the response ID so it can be used inside the serializable
       // transaction (maxResponses path) and also in the normal path below.
       const responseId = generateId();
+      // Only ever captured when the form's own settings ask for it — never
+      // record identity on a form that didn't require sign-in, even if a
+      // stale respondent token happens to be present on the request.
+      const respondentUserId = accessControl?.enabled ? context.auth?.user?.id ?? null : null;
+      const respondentEmail = accessControl?.enabled ? context.auth?.user?.email ?? null : null;
       const responseData = {
         id: responseId,
         formId: input.formId,
         data: input.data,
+        respondentUserId,
+        respondentEmail,
         submittedAt: new Date(),
       };
 
@@ -222,6 +241,8 @@ export const responsesResolvers = {
                   id: responseId,
                   formId: input.formId,
                   data: (input.data || {}) as Prisma.InputJsonValue,
+                  respondentUserId,
+                  respondentEmail,
                 },
               });
             },
@@ -233,6 +254,7 @@ export const responsesResolvers = {
             formId: inserted.formId,
             data: (inserted.data as Prisma.JsonObject) || {},
             metadata: inserted.metadata as import('@dculus/types').FormResponse['metadata'],
+            respondentEmail: inserted.respondentEmail ?? undefined,
             submittedAt: inserted.submittedAt,
           };
         }

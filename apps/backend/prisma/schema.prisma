@@ -180,13 +180,15 @@ model Form {
 }
 
 model Response {
-  id          String    @id @default(cuid())
-  formId      String
-  data        Json
-  metadata    Json? // Generic plugin metadata storage
-  submittedAt DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  id               String    @id @default(cuid())
+  formId           String
+  data             Json
+  metadata         Json? // Generic plugin metadata storage
+  respondentUserId String? // Set only when the form's accessControl setting is enabled
+  respondentEmail  String? // Snapshot of the verified email at submission time, not a live join
+  submittedAt      DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
 
   form                    Form                     @relation(fields: [formId], references: [id], onDelete: Cascade)
   formSubmissionAnalytics FormSubmissionAnalytics?
@@ -196,6 +198,7 @@ model Response {
   @@index([formId])
   @@index([formId, submittedAt])
   @@index([deletedAt])
+  @@index([respondentUserId])
   @@map("response")
 }
 

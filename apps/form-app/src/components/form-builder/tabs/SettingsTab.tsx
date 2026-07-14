@@ -42,6 +42,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
     updateSubmissionLimits,
     saveSubmissionLimits,
     saveResponseCopySettings,
+    updateAccessControl,
+    saveAccessControlSettings,
   } = useFormSettings({
     formId,
     initialSettings: formData?.form?.settings,
@@ -196,6 +198,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
           onSaveSubmissionLimits={saveSubmissionLimits}
           onUpdateResponseCopySetting={handleUpdateResponseCopySetting}
           onSaveResponseCopySettings={saveResponseCopySettings}
+          onUpdateAccessControl={updateAccessControl}
+          onSaveAccessControlSettings={saveAccessControlSettings}
         />
 
         {errors.general && (

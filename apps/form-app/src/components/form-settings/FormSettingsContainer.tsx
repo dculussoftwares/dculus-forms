@@ -5,6 +5,7 @@ import GeneralSettings from './GeneralSettings';
 import ThankYouSettings from './ThankYouSettings';
 import SubmissionLimitsSettings from './SubmissionLimitsSettings';
 import ResponseCopySettings from './ResponseCopySettings';
+import AccessControlSettings from './AccessControlSettings';
 
 interface FormSettingsContainerProps {
   form: any;
@@ -20,6 +21,8 @@ interface FormSettingsContainerProps {
   onSaveSubmissionLimits: () => void;
   onUpdateResponseCopySetting: (key: string, value: any) => void;
   onSaveResponseCopySettings: () => void;
+  onUpdateAccessControl: (accessControl: any) => void;
+  onSaveAccessControlSettings: () => void;
 }
 
 const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
@@ -27,6 +30,7 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
   onSaveGeneralSettings, onRegenerateShortUrl, onUpdateThankYouSetting,
   onSaveThankYouSettings, onUpdateSubmissionLimits, onSaveSubmissionLimits,
   onUpdateResponseCopySetting, onSaveResponseCopySettings,
+  onUpdateAccessControl, onSaveAccessControlSettings,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedSection = searchParams.get('section') || 'general';
@@ -66,6 +70,14 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
             form={form} settings={settings.responseCopy} isSaving={isSaving}
             onUpdateSetting={onUpdateResponseCopySetting}
             onSave={onSaveResponseCopySettings}
+          />
+        );
+      case 'access-control':
+        return (
+          <AccessControlSettings
+            settings={settings.accessControl || {}} isSaving={isSaving}
+            onUpdate={onUpdateAccessControl}
+            onSave={onSaveAccessControlSettings}
           />
         );
       default:

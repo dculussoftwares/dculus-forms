@@ -53,7 +53,8 @@
       "thankYou": "நன்றி பக்கம்",
       "submissionLimits": "சமர்ப்பிப்பு வரம்புகள்",
       "responseCopy": "நகல் அனுப்பு",
-      "emailNotifications": "மின்னஞ்சல் & அறிவிப்புகள்"
+      "emailNotifications": "மின்னஞ்சல் & அறிவிப்புகள்",
+      "accessControl": "அணுகல் கட்டுப்பாடு"
     }
   },
   "thankYouSettings": {

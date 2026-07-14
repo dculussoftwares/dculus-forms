@@ -401,6 +401,8 @@ export const submitResponse = async (responseData: Partial<FormResponse>): Promi
       id: generateId(),
       formId: responseData.formId!,
       data: responseDataForStorage,
+      respondentUserId: (responseData as any).respondentUserId ?? null,
+      respondentEmail: (responseData as any).respondentEmail ?? null,
     },
   });
 
@@ -409,6 +411,7 @@ export const submitResponse = async (responseData: Partial<FormResponse>): Promi
     formId: newResponse.formId,
     data: (newResponse.data as Prisma.JsonObject) || {},
     metadata: newResponse.metadata as FormResponse['metadata'],
+    respondentEmail: (newResponse as any).respondentEmail ?? undefined,
     submittedAt: newResponse.submittedAt,
   };
 };

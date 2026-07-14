@@ -1,0 +1,21 @@
+{
+  "title": "Access Control",
+  "description": "Restrict who can respond to this form",
+  "requireSignIn": {
+    "title": "Require sign-in to respond",
+    "description": "Respondents must sign in with Google or a one-time email code before they can fill out this form"
+  },
+  "allowedDomains": {
+    "title": "Restrict to email domains",
+    "description": "Only respondents with a verified email on one of these domains can respond",
+    "label": "Allowed domains",
+    "placeholder": "example.com, another-example.com",
+    "help": "Comma-separated list, without the @ (e.g. \"example.com\")"
+  },
+  "validation": {
+    "invalidDomain": "Invalid Domain",
+    "invalidDomainMessage": "\"{{domain}}\" doesn't look like a valid domain (e.g. \"example.com\")"
+  },
+  "save": "Save Access Control",
+  "saving": "Saving..."
+}
