@@ -11,6 +11,7 @@ import * as usageService from '../../../subscriptions/usageService.js';
 import * as subscriptionEvents from '../../../subscriptions/events.js';
 import * as editTrackingService from '../../../services/responseEditTrackingService.js';
 import * as tagService from '../../../services/tagService.js';
+import * as responseCopyService from '../../../services/responseCopyService.js';
 
 // Shared tx client for $transaction tests
 const mockTxClient = {
@@ -65,6 +66,9 @@ vi.mock('../../../services/responseEditTrackingService.js', () => ({
   ResponseEditTrackingService: {
     getEditHistory: vi.fn(),
   },
+}));
+vi.mock('../../../services/responseCopyService.js', () => ({
+  sendResponseCopyIfEnabled: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('Responses Resolvers', () => {
@@ -883,6 +887,56 @@ describe('Responses Resolvers', () => {
         );
 
         expect(tagService.upsertPreviewTag).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('response copy on preview submissions', () => {
+      const formWithResponseCopyEnabled = {
+        id: 'form-123',
+        organizationId: 'org-123',
+        title: 'Feedback Form',
+        isPublished: true,
+        settings: { responseCopy: { enabled: true, mode: 'always', emailFieldId: 'f-email' } },
+        formSchema: null,
+      };
+
+      beforeEach(() => {
+        vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+          submissionsExceeded: false,
+          viewsExceeded: false,
+        } as any);
+        vi.mocked(responseService.submitResponse).mockResolvedValue({
+          id: 'response-abc',
+          formId: 'form-123',
+          data: { 'f-email': 'respondent@example.com' },
+          submittedAt: new Date(),
+        } as any);
+      });
+
+      it('does not send a response copy email for a preview submission', async () => {
+        vi.mocked(formService.getFormById).mockResolvedValue(formWithResponseCopyEnabled as any);
+
+        await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: { formId: 'form-123', data: { 'f-email': 'respondent@example.com' }, isPreview: true } },
+          mockContext
+        );
+
+        expect(responseCopyService.sendResponseCopyIfEnabled).not.toHaveBeenCalled();
+      });
+
+      it('sends a response copy email for a real (non-preview) submission', async () => {
+        vi.mocked(formService.getFormById).mockResolvedValue(formWithResponseCopyEnabled as any);
+
+        await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: { formId: 'form-123', data: { 'f-email': 'respondent@example.com' } } },
+          mockContext
+        );
+
+        expect(responseCopyService.sendResponseCopyIfEnabled).toHaveBeenCalledWith(
+          expect.objectContaining({ form: formWithResponseCopyEnabled })
+        );
       });
     });
   });

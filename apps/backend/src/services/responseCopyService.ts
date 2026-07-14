@@ -50,7 +50,10 @@ export async function sendResponseCopyIfEnabled({
 }: SendResponseCopyParams): Promise<void> {
   const settings = form.settings?.responseCopy;
   if (!settings?.enabled) return;
-  if (settings.mode === 'respondentChoice' && !consent) return;
+  // Default-deny: consent is required unless mode is explicitly 'always'. `mode` is a
+  // plain string end to end (no GraphQL enum), so this must not treat an unexpected/
+  // malformed value as implicit consent to send — only the literal 'always' skips it.
+  if (settings.mode !== 'always' && !consent) return;
   if (!settings.emailFieldId || !form.formSchema) return;
 
   let schema: FormSchema;

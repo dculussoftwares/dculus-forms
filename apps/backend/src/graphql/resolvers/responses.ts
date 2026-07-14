@@ -360,7 +360,9 @@ export const responsesResolvers = {
 
       // Email the respondent a copy of their answers, if the form owner enabled it.
       // Fire-and-forget — must not add PDF-generation/email latency to the submit response.
-      if (formWithSettings) {
+      // Skipped for builder preview submissions so testing a form never sends a real email
+      // (mirrors the isPreview check used for tagging/publish-gating above).
+      if (formWithSettings && !input.isPreview) {
         sendResponseCopyIfEnabled({
           form: formWithSettings,
           response: savedResponse,

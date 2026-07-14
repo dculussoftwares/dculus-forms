@@ -86,6 +86,21 @@ describe('sendResponseCopyIfEnabled', () => {
     );
   });
 
+  it('defaults to requiring consent for any mode value other than the literal "always" (defense in depth against an unvalidated mode)', async () => {
+    await sendResponseCopyIfEnabled({
+      form: {
+        ...baseForm,
+        // `mode` has no GraphQL enum — simulate a stored value that isn't one of
+        // the two values the frontend RadioGroup can produce.
+        settings: { responseCopy: { enabled: true, mode: 'not-a-real-mode' as any, emailFieldId: 'f-email' } },
+      },
+      response: baseResponse,
+      consent: false,
+    });
+
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
   it('sends in always mode regardless of consent', async () => {
     await sendResponseCopyIfEnabled({
       form: {
