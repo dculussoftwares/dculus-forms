@@ -198,10 +198,14 @@ export const SignUp = () => {
 
       // Only attach the typed password if this account doesn't already have
       // one — otherwise a real existing user who mistakenly hits "Sign Up"
-      // again would have their real password silently overwritten.
+      // again would have their real password silently overwritten. Note:
+      // signUp.email() above already creates a credential account for a
+      // genuinely brand-new email too, so `hasCredentialAccount` being true
+      // does NOT reliably distinguish "new" from "returning" — it's only
+      // safe to use for this one skip-if-already-set decision, never for
+      // messaging (both cases already have the correct password either way).
       const { data: existingAccounts } = await authClient.listAccounts();
       const hasCredentialAccount = existingAccounts?.some((a: { providerId: string }) => a.providerId === 'credential');
-      let welcomeBackMessage: string | undefined;
 
       if (!hasCredentialAccount) {
         try {
@@ -210,8 +214,6 @@ export const SignUp = () => {
           // Non-fatal — they can set a password later; sign-in via email OTP still works.
           console.error('[SignUp] ⚠️ Error attaching password:', passwordError);
         }
-      } else {
-        welcomeBackMessage = t('messages.accountExists');
       }
 
       // Check if there's a pending invitation to accept
@@ -227,7 +229,7 @@ export const SignUp = () => {
           // Navigate to dashboard with success message
           navigate('/', {
             state: {
-              message: welcomeBackMessage || t('messages.joinSuccess')
+              message: t('messages.joinSuccess')
             }
           });
           return;
@@ -276,7 +278,7 @@ export const SignUp = () => {
       sessionStorage.removeItem('pendingSignupData');
 
       // Navigate to dashboard
-      navigate('/', welcomeBackMessage ? { state: { message: welcomeBackMessage } } : undefined);
+      navigate('/');
     } catch (error) {
       console.error('OTP verification error:', error);
       setErrors({

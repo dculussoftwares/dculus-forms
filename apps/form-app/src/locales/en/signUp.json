@@ -88,7 +88,6 @@
     "resendFailed": "Failed to resend verification code. Please try again.",
     "resendGenericFailed": "Failed to resend verification code",
     "joinSuccess": "Welcome! You have successfully joined the organization.",
-    "accountExists": "Welcome back! Logging you into your existing account.",
     "passwordCompromised": "This password has appeared in a known data breach. Please choose a different password."
   },
   "links": {

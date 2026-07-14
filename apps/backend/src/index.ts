@@ -197,9 +197,20 @@ app.all('/api/auth/*', authLimiter, toNodeHandler(auth));
 // via a redirect query param — form-viewer has no cookie and no bearer token
 // yet, so it can't call generateOneTimeToken itself. See
 // apps/form-viewer/src/pages/OAuthCallback.tsx for the receiving end.
+// Only a same-origin relative path is safe to redirect to — a bare "/x" is
+// fine, but "//evil.com" and "https://evil.com" are protocol-relative/absolute
+// URLs a browser will happily follow. Also reject a leading "/\" — some
+// browsers normalize backslashes to slashes when parsing a URL, so "/\evil.com"
+// can be reinterpreted as "//evil.com" (protocol-relative) after this check
+// would otherwise have let it through.
+function isSafeReturnPath(value: string): boolean {
+  return /^\/[^/\\]/.test(value);
+}
+
 app.get('/respondent-oauth-callback', authLimiter, async (req, res) => {
   const formViewerUrl = process.env.FORM_VIEWER_URL || 'http://localhost:5173';
-  const returnTo = typeof req.query.returnTo === 'string' ? req.query.returnTo : '/';
+  const requestedReturnTo = req.query.returnTo;
+  const returnTo = typeof requestedReturnTo === 'string' && isSafeReturnPath(requestedReturnTo) ? requestedReturnTo : '/';
 
   try {
     const result = await auth.api.generateOneTimeToken({

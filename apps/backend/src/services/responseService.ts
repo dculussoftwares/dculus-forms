@@ -40,6 +40,7 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
     formId: response.formId,
     data: (response.data as Prisma.JsonObject) || {},
     metadata: (response.metadata as FormResponse['metadata']) || undefined,
+    respondentEmail: (response as any).respondentEmail ?? undefined,
     submittedAt: response.submittedAt,
   }));
 };
@@ -130,6 +131,7 @@ export const getResponseById = async (id: string): Promise<FormResponse | null> 
       formId: response.formId,
       data: (response.data as Prisma.JsonObject) || {},
       metadata: response.metadata as FormResponse['metadata'],
+      respondentEmail: (response as any).respondentEmail ?? undefined,
       submittedAt: response.submittedAt,
     };
   } catch (error) {
@@ -229,7 +231,7 @@ export async function getResponsesByFormId(
       // Query with pagination and sorting — LIMIT/OFFSET passed as positional params
       const paginationStart = params.length + 1;
       const selectQuery = `
-        SELECT id, "formId", data, metadata, "submittedAt"
+        SELECT id, "formId", data, metadata, "respondentEmail", "submittedAt"
         FROM "response"
         ${whereClause}
         ${orderClause}
@@ -241,6 +243,7 @@ export async function getResponsesByFormId(
         formId: string;
         data: Prisma.JsonValue;
         metadata: Prisma.JsonValue;
+        respondentEmail: string | null;
         submittedAt: Date;
       }>>(selectQuery, ...params, validLimit, skip);
 
@@ -250,6 +253,7 @@ export async function getResponsesByFormId(
         formId: doc.formId,
         data: (doc.data as Prisma.JsonObject) || {},
         metadata: doc.metadata as FormResponse['metadata'],
+        respondentEmail: doc.respondentEmail ?? undefined,
         submittedAt: doc.submittedAt,
       }));
 
@@ -335,6 +339,7 @@ export async function getResponsesByFormId(
     formId: response.formId,
     data: (response.data as Prisma.JsonObject) || {},
     metadata: response.metadata as FormResponse['metadata'],
+    respondentEmail: (response as any).respondentEmail ?? undefined,
     submittedAt: response.submittedAt,
     tags: [] as { id: string; formId: string; name: string; color: string; createdAt: Date }[],
   }));
@@ -377,6 +382,7 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
       formId: response.formId,
       data: (response.data as Prisma.JsonObject) || {},
       metadata: response.metadata as FormResponse['metadata'],
+      respondentEmail: (response as any).respondentEmail ?? undefined,
       submittedAt: response.submittedAt,
     }));
 

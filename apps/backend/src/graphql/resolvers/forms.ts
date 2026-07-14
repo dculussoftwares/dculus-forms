@@ -29,12 +29,16 @@ const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])
 
 // Order-insensitive on `allowedDomains` so re-saving the same domain list in
 // a different order isn't treated as a change requiring OWNER re-approval.
+// Never-configured (null/undefined) and explicitly-disabled-with-no-domains
+// must normalize to the SAME value — the frontend always sends a populated
+// default accessControl object on every settings save (useFormSettings.ts),
+// so treating "absent" and "default" as different would require OWNER
+// permission for every settings save on every form that predates this field.
 function normalizeAccessControlForComparison(accessControl: any) {
-  if (!accessControl) return null;
   return {
-    enabled: !!accessControl.enabled,
-    requireSignIn: !!accessControl.requireSignIn,
-    allowedDomains: [...(accessControl.allowedDomains ?? [])].map((d: string) => d.toLowerCase()).sort(),
+    enabled: !!accessControl?.enabled,
+    requireSignIn: !!accessControl?.requireSignIn,
+    allowedDomains: [...(accessControl?.allowedDomains ?? [])].map((d: string) => d.toLowerCase()).sort(),
   };
 }
 
