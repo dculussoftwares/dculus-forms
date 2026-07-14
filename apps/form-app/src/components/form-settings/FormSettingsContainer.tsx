@@ -23,6 +23,7 @@ interface FormSettingsContainerProps {
   onSaveResponseCopySettings: () => void;
   onUpdateAccessControl: (accessControl: any) => void;
   onSaveAccessControlSettings: () => void;
+  onUpdateCollectRespondentEmail: (collectRespondentEmail: boolean) => void;
 }
 
 const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
@@ -30,7 +31,7 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
   onSaveGeneralSettings, onRegenerateShortUrl, onUpdateThankYouSetting,
   onSaveThankYouSettings, onUpdateSubmissionLimits, onSaveSubmissionLimits,
   onUpdateResponseCopySetting, onSaveResponseCopySettings,
-  onUpdateAccessControl, onSaveAccessControlSettings,
+  onUpdateAccessControl, onSaveAccessControlSettings, onUpdateCollectRespondentEmail,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedSection = searchParams.get('section') || 'general';
@@ -75,8 +76,9 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
       case 'access-control':
         return (
           <AccessControlSettings
-            settings={settings.accessControl || {}} isSaving={isSaving}
+            settings={settings.accessControl || {}} collectRespondentEmail={!!settings.collectRespondentEmail} isSaving={isSaving}
             onUpdate={onUpdateAccessControl}
+            onUpdateCollectRespondentEmail={onUpdateCollectRespondentEmail}
             onSave={onSaveAccessControlSettings}
           />
         );

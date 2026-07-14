@@ -87,6 +87,10 @@ interface CreateResponsesColumnsOptions {
   locale: string;
   formTags?: ResponseTagItem[];
   generators?: PdfGeneratorColumnItem[];
+  // Only forms that actually capture respondent identity (accessControl or
+  // collectRespondentEmail enabled) get the "Respondent" column — most forms
+  // are anonymous and every response's respondentEmail would just be empty.
+  showRespondentEmail?: boolean;
   onPluginClick: (
     pluginType: string,
     metadata: any,
@@ -724,6 +728,7 @@ export const createResponsesColumns = ({
   onPluginClick,
   onDeleteResponse,
   responses = [],
+  showRespondentEmail = false,
   t,
 }: CreateResponsesColumnsOptions): ColumnDef<FormResponse>[] => {
   if (!formSchema) return [];
@@ -784,6 +789,33 @@ export const createResponsesColumns = ({
     size: 220,
   };
 
+  const respondentEmailColumn: ColumnDef<FormResponse> = {
+    id: 'respondentEmail',
+    accessorFn: (row) => (row as any).respondentEmail,
+    header: ({ column }) => (
+      <TFColumnHeader
+        column={column}
+        icon={
+          <BaseIconChip bg="#dbeafe" color="#1d4ed8">
+            <AtSign className="h-4 w-4" />
+          </BaseIconChip>
+        }
+        title={t('table.columns.respondentEmail')}
+      />
+    ),
+    cell: ({ row }) => {
+      const email = (row.original as any).respondentEmail as string | undefined;
+      return email ? (
+        <span className="text-sm truncate">{email}</span>
+      ) : (
+        <span className="text-sm text-muted-foreground">—</span>
+      );
+    },
+    enableSorting: true,
+    enableHiding: true,
+    size: 220,
+  };
+
   // Field columns
   const fieldColumns = createFieldColumns(deserializedSchema, responses, t);
 
@@ -830,11 +862,12 @@ export const createResponsesColumns = ({
   // Actions column
   const actionsColumn = createActionsColumn(formId, onDeleteResponse, t);
 
-  // Checkbox first, then Response ID, tags, field/plugin/generator columns, Submitted At + Edit Status, actions
+  // Checkbox first, then Response ID, tags, respondent email, field/plugin/generator columns, Submitted At + Edit Status, actions
   return [
     selectColumn,
     idColumn,
     tagsColumn,
+    ...(showRespondentEmail ? [respondentEmailColumn] : []),
     ...fieldColumns,
     ...pluginColumns,
     ...generatorColumns,

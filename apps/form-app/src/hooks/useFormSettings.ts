@@ -14,6 +14,7 @@ interface FormSettingsData {
   submissionLimits: SubmissionLimitsSettings;
   responseCopy: ResponseCopySettings;
   accessControl: AccessControlSettings;
+  collectRespondentEmail: boolean;
 }
 
 interface UseFormSettingsProps {
@@ -44,6 +45,7 @@ export const useFormSettings = ({
       requireSignIn: false,
       allowedDomains: [],
     },
+    collectRespondentEmail: false,
   });
   
   const [isSaving, setIsSaving] = useState(false);
@@ -89,12 +91,19 @@ export const useFormSettings = ({
           requireSignIn: initialSettings.accessControl?.requireSignIn ?? false,
           allowedDomains: initialSettings.accessControl?.allowedDomains ?? [],
         },
+        collectRespondentEmail: initialSettings.collectRespondentEmail ?? false,
       }));
     }
   }, [initialSettings]);
 
-  // Update nested settings helper
-  const updateSetting = <T extends keyof FormSettingsData>(
+  // Update nested settings helper — restricted to object-valued sections
+  // (e.g. thankYou, responseCopy), since `collectRespondentEmail` is a plain
+  // boolean and can't be spread as `{ ...prev[section] }`.
+  type ObjectSettingKey = {
+    [K in keyof FormSettingsData]: FormSettingsData[K] extends object ? K : never;
+  }[keyof FormSettingsData];
+
+  const updateSetting = <T extends ObjectSettingKey>(
     section: T,
     key: keyof FormSettingsData[T],
     value: any
@@ -213,6 +222,9 @@ export const useFormSettings = ({
   // Save access control settings
   const saveAccessControlSettings = async () => {
     try {
+      // `saveSettings` always merges in the full current `settings` state (see
+      // its comment above), so `collectRespondentEmail` rides along even
+      // though it isn't listed in this partial payload.
       await saveSettings({
         accessControl: settings.accessControl,
       });
@@ -220,6 +232,14 @@ export const useFormSettings = ({
     } catch {
       // Error already handled in the mutation onError callback
     }
+  };
+
+  // Update whether respondent email is collected (independent of accessControl)
+  const updateCollectRespondentEmail = (collectRespondentEmail: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      collectRespondentEmail,
+    }));
   };
 
   return {
@@ -233,5 +253,6 @@ export const useFormSettings = ({
     saveResponseCopySettings,
     updateAccessControl,
     saveAccessControlSettings,
+    updateCollectRespondentEmail,
   };
 };

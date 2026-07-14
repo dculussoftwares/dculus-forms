@@ -817,6 +817,7 @@ describe('Unified Export Resolvers', () => {
           formSchema: mockForm.formSchema,
           format: 'excel',
           pluginConfigs: {},
+          includeRespondentEmail: false,
         });
         expect(result.format).toBe('EXCEL');
       });
@@ -930,6 +931,7 @@ describe('Unified Export Resolvers', () => {
           formSchema: mockForm.formSchema,
           format: 'csv',
           pluginConfigs: {},
+          includeRespondentEmail: false,
         });
         expect(result.format).toBe('CSV');
       });

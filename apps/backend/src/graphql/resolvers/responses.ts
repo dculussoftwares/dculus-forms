@@ -182,9 +182,14 @@ export const responsesResolvers = {
       // callable directly. Builders previewing their own form bypass this
       // (now that isPreview itself is verified above) — no reason a
       // preview session's email needs to be in the form's own allowlist.
+      // `collectRespondentEmail` also requires sign-in (to capture a
+      // verified email) even when accessControl.enabled is false and there's
+      // no domain restriction at all.
       const accessControl = form.settings?.accessControl;
-      if (accessControl?.enabled && !input.isPreview) {
-        enforceAccessControlForSubmission(accessControl, context.auth);
+      const collectRespondentEmail = form.settings?.collectRespondentEmail;
+      const requiresIdentity = !!accessControl?.enabled || !!collectRespondentEmail;
+      if (requiresIdentity && !input.isPreview) {
+        enforceAccessControlForSubmission(accessControl, collectRespondentEmail, context.auth);
       }
 
       // Check subscription usage limits
@@ -212,8 +217,8 @@ export const responsesResolvers = {
       // Only ever captured when the form's own settings ask for it — never
       // record identity on a form that didn't require sign-in, even if a
       // stale respondent token happens to be present on the request.
-      const respondentUserId = accessControl?.enabled ? context.auth?.user?.id ?? null : null;
-      const respondentEmail = accessControl?.enabled ? context.auth?.user?.email ?? null : null;
+      const respondentUserId = requiresIdentity ? context.auth?.user?.id ?? null : null;
+      const respondentEmail = requiresIdentity ? context.auth?.user?.email ?? null : null;
       const responseData = {
         id: responseId,
         formId: input.formId,

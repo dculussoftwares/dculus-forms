@@ -46,7 +46,7 @@ function getFormAccessStatus(parent: any, context: { auth: BetterAuthContext }) 
   const settings = parent.settings
     ? JSON.parse(typeof parent.settings === 'string' ? parent.settings : JSON.stringify(parent.settings))
     : null;
-  return resolveAccessStatus(settings?.accessControl, context.auth);
+  return resolveAccessStatus(settings?.accessControl, settings?.collectRespondentEmail, context.auth);
 }
 
 export const formsResolvers = {
@@ -430,6 +430,21 @@ export const formsResolvers = {
             }
           }
           incomingAccessControl.allowedDomains = incomingAccessControl.allowedDomains.map((d: string) => d.toLowerCase());
+        }
+      }
+
+      // 🔒 Collecting a verified respondent email is equally privacy-relevant
+      // even when it doesn't restrict who may respond, so it's gated the same
+      // OWNER-only way, compared against the persisted value for the same
+      // reason as accessControl above.
+      const incomingCollectEmail = input.settings?.collectRespondentEmail;
+      if (incomingCollectEmail !== undefined) {
+        const currentCollectEmail = !!(accessCheck.form.settings as any)?.collectRespondentEmail;
+        if (!!incomingCollectEmail !== currentCollectEmail && accessCheck.permission !== PermissionLevel.OWNER) {
+          throw createGraphQLError(
+            'Access denied: owner permissions required to change who can respond to this form',
+            GRAPHQL_ERROR_CODES.NO_ACCESS
+          );
         }
       }
 

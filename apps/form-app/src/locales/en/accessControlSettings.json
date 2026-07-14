@@ -16,6 +16,11 @@
     "invalidDomain": "Invalid Domain",
     "invalidDomainMessage": "\"{{domain}}\" doesn't look like a valid domain (e.g. \"example.com\")"
   },
+  "collectEmail": {
+    "title": "Collect respondent email addresses",
+    "description": "Ask respondents to sign in with Google or a one-time email code so you can see who submitted each response — without restricting who can respond",
+    "impliedByRequireSignIn": "Already collected because sign-in is required above"
+  },
   "save": "Save Access Control",
   "saving": "Saving..."
 }

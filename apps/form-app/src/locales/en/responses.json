@@ -104,6 +104,7 @@
       "submittedAt": "Submitted At",
       "editStatus": "Edit Status",
       "tags": "Tags",
+      "respondentEmail": "Respondent",
       "actions": "Actions"
     },
     "tags": {
