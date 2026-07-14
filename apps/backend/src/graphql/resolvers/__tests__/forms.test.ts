@@ -924,6 +924,47 @@ describe('Forms Resolvers', () => {
         )
       ).rejects.toThrow('Cannot change form ownership through update');
     });
+
+    it('should reject an invalid responseCopy.mode value', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+
+      await expect(
+        formsResolvers.Mutation.updateForm(
+          {},
+          {
+            id: 'form-123',
+            input: { settings: { responseCopy: { enabled: true, mode: 'not-a-real-mode' } } },
+          },
+          mockContext
+        )
+      ).rejects.toThrow("responseCopy.mode must be 'always' or 'respondentChoice'");
+    });
+
+    it('should accept a valid responseCopy.mode value', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      vi.mocked(formService.updateForm).mockResolvedValue(mockForm as any);
+
+      await expect(
+        formsResolvers.Mutation.updateForm(
+          {},
+          {
+            id: 'form-123',
+            input: { settings: { responseCopy: { enabled: true, mode: 'respondentChoice' } } },
+          },
+          mockContext
+        )
+      ).resolves.toBeDefined();
+    });
   });
 
   describe('Mutation: deleteForm', () => {

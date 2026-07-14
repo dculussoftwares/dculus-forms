@@ -4,6 +4,11 @@ import { LayoutRenderer } from './LayoutRenderer';
 import { RendererMode } from '@dculus/utils';
 import { useFormResponseStore, useFormResponseUtils } from '../stores/useFormResponseStore';
 
+export interface ResponseCopySettings {
+  enabled: boolean;
+  mode: 'always' | 'respondentChoice';
+}
+
 export interface FormRendererProps {
   formSchema?: FormSchema;
   cdnEndpoint?: string;
@@ -16,6 +21,9 @@ export interface FormRendererProps {
   formId?: string;
   existingResponseData?: Record<string, any>;
   responseId?: string;
+  /** "Send me a copy of my responses" — only relevant to the public form-viewer. */
+  responseCopySettings?: ResponseCopySettings;
+  onResponseCopyConsentChange?: (consent: boolean) => void;
 }
 
 // Context for sharing form response state throughout the form
@@ -26,6 +34,8 @@ export interface FormResponseContextValue {
   onResponseUpdate?: (responseId: string, responses: Record<string, any>) => void;
   formId?: string;
   responseId?: string;
+  responseCopySettings?: ResponseCopySettings;
+  onResponseCopyConsentChange?: (consent: boolean) => void;
 }
 
 export const FormResponseContext = createContext<FormResponseContextValue | null>(null);
@@ -49,14 +59,16 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   onLayoutChange,
   formId,
   existingResponseData,
-  responseId
+  responseId,
+  responseCopySettings,
+  onResponseCopyConsentChange,
 }) => {
   const { getFormattedResponses } = useFormResponseUtils();
   const store = useFormResponseStore();
   const [initializationKey, setInitializationKey] = useState<string>('');
 
   // Initialize form with existing response data when in EDIT mode - SYNCHRONOUSLY
-  const isInitialized = useMemo(() => {
+  useMemo(() => {
     // Only initialize in EDIT mode with valid data
     if (mode !== RendererMode.EDIT || !existingResponseData || Object.keys(existingResponseData).length === 0) {
       return false;
@@ -152,7 +164,9 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
     onResponseUpdate,
     formId,
     responseId,
-  }), [formSchema, mode, onFormSubmit, onResponseUpdate, formId, responseId]);
+    responseCopySettings,
+    onResponseCopyConsentChange,
+  }), [formSchema, mode, onFormSubmit, onResponseUpdate, formId, responseId, responseCopySettings, onResponseCopyConsentChange]);
 
   return (
     <FormResponseContext.Provider value={contextValue}>

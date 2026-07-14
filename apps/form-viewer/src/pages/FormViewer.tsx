@@ -3,7 +3,7 @@ import { useParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { CombinedGraphQLErrors } from '@apollo/client';
 import { Button, FormRenderer, useFormResponseStore, LoadingSpinner } from '@dculus/ui';
-import { deserializeFormSchema, FieldType } from '@dculus/types';
+import { deserializeFormSchema, extractEmailFields, FieldType } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
 import ThankYouDisplay from '../components/ThankYouDisplay';
@@ -91,8 +91,10 @@ const FormViewer: React.FC = () => {
   const [thankYouData, setThankYouData] = useState<{
     message: string;
     isCustom: boolean;
+    copyEmail?: string;
   } | null>(null);
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
+  const [sendResponseCopy, setSendResponseCopy] = useState<boolean>(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { loading, error, data } = useQuery(GET_FORM_BY_SHORT_URL, {
@@ -121,6 +123,20 @@ const FormViewer: React.FC = () => {
     () => (rawSchema ? deserializeFormSchema(rawSchema) : null),
     [rawSchema]
   );
+
+  // "Send me a copy of my responses" — only offered when the form owner enabled
+  // it AND the configured recipient field still exists on the form (it could
+  // have been deleted/renamed since the setting was saved).
+  const responseCopyRawSettings = data?.formByShortUrl?.settings?.responseCopy;
+  const responseCopyEmailFieldId: string | undefined = responseCopyRawSettings?.emailFieldId;
+  const responseCopySettings = useMemo(() => {
+    if (!responseCopyRawSettings?.enabled || !responseCopyEmailFieldId || !formSchema) return undefined;
+    const hasConfiguredEmailField = extractEmailFields(formSchema).some(
+      (f) => f.id === responseCopyEmailFieldId
+    );
+    if (!hasConfiguredEmailField) return undefined;
+    return { enabled: true as const, mode: responseCopyRawSettings.mode };
+  }, [responseCopyRawSettings, responseCopyEmailFieldId, formSchema]);
 
   // Handle first form interaction to track start time
   const handleFirstFormInteraction = () => {
@@ -189,6 +205,16 @@ const FormViewer: React.FC = () => {
         }
       }
 
+      // If the checkbox was checked but the recipient field ended up blank
+      // (e.g. it's optional and the respondent skipped it), don't tell the
+      // backend to send — it would silently skip anyway, but this keeps the
+      // "we sent you a copy" thank-you message from showing when nothing was sent.
+      const copyRecipientEmail = responseCopyEmailFieldId
+        ? (processedResponses[responseCopyEmailFieldId] as string | undefined)?.trim()
+        : undefined;
+      const effectiveSendResponseCopy =
+        sendResponseCopy && (!responseCopyEmailFieldId || Boolean(copyRecipientEmail));
+
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(
           () => reject(new Error('Request timed out. Please check your connection and try again.')),
@@ -202,6 +228,7 @@ const FormViewer: React.FC = () => {
             input: {
               formId,
               data: processedResponses,
+              sendResponseCopy: effectiveSendResponseCopy,
               ...(analyticsData && {
                 sessionId: analyticsData.sessionId,
                 userAgent: analyticsData.userAgent,
@@ -222,6 +249,12 @@ const FormViewer: React.FC = () => {
       setThankYouData({
         message: thankYouMessage,
         isCustom: showCustomThankYou,
+        // Optimistic client-side note only — the actual email send is async/
+        // fire-and-forget server-side, so there's no real delivery confirmation here.
+        copyEmail:
+          effectiveSendResponseCopy || responseCopySettings?.mode === 'always'
+            ? copyRecipientEmail
+            : undefined,
       });
       // Leave isSubmittingRef true on success — form is done, no re-submit needed
     } catch (err: unknown) {
@@ -326,6 +359,7 @@ const FormViewer: React.FC = () => {
           <ThankYouDisplay
             message={thankYouData.message}
             isCustom={thankYouData.isCustom}
+            copyEmail={thankYouData.copyEmail}
           />
           <div className="text-center mt-6">
             <Button
@@ -395,6 +429,8 @@ const FormViewer: React.FC = () => {
         formId={form.id}
         onFormSubmit={handleFormSubmit}
         onResponseChange={handleFirstFormInteraction}
+        responseCopySettings={responseCopySettings}
+        onResponseCopyConsentChange={setSendResponseCopy}
       />
 
       {/* Loading overlay during submission */}

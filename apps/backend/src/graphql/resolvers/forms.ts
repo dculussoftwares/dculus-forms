@@ -376,6 +376,17 @@ export const formsResolvers = {
         throw createGraphQLError('Description must be 5000 characters or less', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
+      // `responseCopy.mode` is a plain GraphQL String (no enum), so reject anything
+      // other than the two values the consent-gating logic understands — an
+      // unvalidated value would otherwise be treated as 'always' by responseCopyService.
+      const responseCopyMode = input.settings?.responseCopy?.mode;
+      if (responseCopyMode !== undefined && responseCopyMode !== 'always' && responseCopyMode !== 'respondentChoice') {
+        throw createGraphQLError(
+          "responseCopy.mode must be 'always' or 'respondentChoice'",
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
       const updateData = {
         ...input,
         updatedAt: new Date(),

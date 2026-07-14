@@ -4,6 +4,7 @@ import SettingsSidebar from './SettingsSidebar';
 import GeneralSettings from './GeneralSettings';
 import ThankYouSettings from './ThankYouSettings';
 import SubmissionLimitsSettings from './SubmissionLimitsSettings';
+import ResponseCopySettings from './ResponseCopySettings';
 
 interface FormSettingsContainerProps {
   form: any;
@@ -17,12 +18,15 @@ interface FormSettingsContainerProps {
   onSaveThankYouSettings: () => void;
   onUpdateSubmissionLimits: (limits: any) => void;
   onSaveSubmissionLimits: () => void;
+  onUpdateResponseCopySetting: (key: string, value: any) => void;
+  onSaveResponseCopySettings: () => void;
 }
 
 const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
   form, settings, isSaving, errors, currentResponseCount = 0,
   onSaveGeneralSettings, onRegenerateShortUrl, onUpdateThankYouSetting,
   onSaveThankYouSettings, onUpdateSubmissionLimits, onSaveSubmissionLimits,
+  onUpdateResponseCopySetting, onSaveResponseCopySettings,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedSection = searchParams.get('section') || 'general';
@@ -54,6 +58,14 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
             onUpdateMaxResponses={(enabled, limit) => onUpdateSubmissionLimits({ ...settings.submissionLimits, maxResponses: enabled ? { enabled, limit } : { enabled: false } })}
             onUpdateTimeWindow={(enabled, startDate, endDate) => onUpdateSubmissionLimits({ ...settings.submissionLimits, timeWindow: enabled ? { enabled, startDate, endDate } : { enabled: false } })}
             onSave={onSaveSubmissionLimits}
+          />
+        );
+      case 'response-copy':
+        return (
+          <ResponseCopySettings
+            form={form} settings={settings.responseCopy} isSaving={isSaving}
+            onUpdateSetting={onUpdateResponseCopySetting}
+            onSave={onSaveResponseCopySettings}
           />
         );
       default:

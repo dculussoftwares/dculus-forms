@@ -64,9 +64,20 @@ export interface SubmissionLimitsSettings {
   timeWindow?: TimeWindowSettings;
 }
 
+export type ResponseCopyMode = 'always' | 'respondentChoice';
+
+export interface ResponseCopySettings {
+  enabled: boolean;
+  mode: ResponseCopyMode;
+  emailFieldId?: string;
+  pdfTemplateId?: string;
+  subject?: string;
+}
+
 export interface FormSettings {
   thankYou?: ThankYouSettings;
   submissionLimits?: SubmissionLimitsSettings;
+  responseCopy?: ResponseCopySettings;
 }
 
 // Form related types
@@ -827,6 +838,32 @@ export const deserializeFormSchema = (data: any): FormSchema => {
         .filter((f: FormField | null): f is FormField => f !== null),
     })),
   };
+};
+
+export interface EmailFieldInfo {
+  id: string;
+  label: string;
+  required: boolean;
+}
+
+// Finds every EmailField in a (deserialized) form schema, in page/field order.
+// Shared by the email plugin config, the response-copy settings UI, and form-viewer's
+// respondent "send me a copy" checkbox, so recipient-field discovery stays consistent.
+export const extractEmailFields = (schema: FormSchema | null | undefined): EmailFieldInfo[] => {
+  if (!schema?.pages) return [];
+  const fields: EmailFieldInfo[] = [];
+  for (const page of schema.pages) {
+    for (const field of page.fields) {
+      if (field instanceof EmailField) {
+        fields.push({
+          id: field.id,
+          label: field.label || 'Unlabeled Field',
+          required: field.validation?.required ?? false,
+        });
+      }
+    }
+  }
+  return fields;
 };
 
 // Plugin Metadata Types

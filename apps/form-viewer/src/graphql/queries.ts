@@ -22,6 +22,11 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
             limit
           }
         }
+        responseCopy {
+          enabled
+          mode
+          emailFieldId
+        }
       }
       organization {
         id

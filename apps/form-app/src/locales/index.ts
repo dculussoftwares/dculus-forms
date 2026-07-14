@@ -24,6 +24,8 @@ import enResponses from './en/responses.json';
 import taResponses from './ta/responses.json';
 import enFormSettings from './en/formSettings.json';
 import taFormSettings from './ta/formSettings.json';
+import enResponseCopySettings from './en/responseCopySettings.json';
+import taResponseCopySettings from './ta/responseCopySettings.json';
 import enFormAnalytics from './en/formAnalytics.json';
 import taFormAnalytics from './ta/formAnalytics.json';
 import enCollaborativeFormBuilder from './en/collaborativeFormBuilder.json';
@@ -258,6 +260,7 @@ const enTranslations = {
   sharing: enSharing,
   responses: enResponses,
   formSettings: enFormSettings,
+  responseCopySettings: enResponseCopySettings,
   formAnalytics: enFormAnalytics,
   collaborativeFormBuilder: enCollaborativeFormBuilder,
   pluginConfiguration: enPluginConfiguration,
@@ -384,6 +387,7 @@ const taTranslations = {
   sharing: taSharing,
   responses: taResponses,
   formSettings: taFormSettings,
+  responseCopySettings: taResponseCopySettings,
   formAnalytics: taFormAnalytics,
   collaborativeFormBuilder: taCollaborativeFormBuilder,
   pluginConfiguration: taPluginConfiguration,

@@ -21,8 +21,8 @@ import {
   AlertDescription,
   toastError,
 } from '@dculus/ui';
-import { Mail, Loader2, Save, X, AlertTriangle, FileText } from 'lucide-react';
-import { deserializeFormSchema, FillableFormField, EmailField } from '@dculus/types';
+import { Mail, Loader2, Save, X, AlertTriangle, FileText, ExternalLink } from 'lucide-react';
+import { deserializeFormSchema, FillableFormField, extractEmailFields as extractEmailFieldsFromSchema, type EmailFieldInfo } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
 import { GET_PDF_TEMPLATES } from '../../graphql/pdfTemplates';
 import type { ConfigFormProps } from '../core/registry';
@@ -48,29 +48,10 @@ const extractMentionFields = (form: any) => {
   }
 };
 
-interface EmailFieldInfo {
-  id: string;
-  label: string;
-  required: boolean;
-}
-
 const extractEmailFields = (form: any): EmailFieldInfo[] => {
   if (!form?.formSchema) return [];
   try {
-    const schema = deserializeFormSchema(form.formSchema);
-    const fields: EmailFieldInfo[] = [];
-    for (const page of schema.pages) {
-      for (const field of page.fields) {
-        if (field instanceof EmailField) {
-          fields.push({
-            id: field.id,
-            label: field.label || 'Unlabeled Field',
-            required: field.validation?.required ?? false,
-          });
-        }
-      }
-    }
-    return fields;
+    return extractEmailFieldsFromSchema(deserializeFormSchema(form.formSchema));
   } catch {
     return [];
   }
@@ -352,6 +333,17 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">{t('pdfAttachment.hint')}</p>
+              {attachPdfTemplateId !== NO_PDF_TEMPLATE && form?.id && (
+                <a
+                  href={`/dashboard/form/${form.id}/pdf-templates/${attachPdfTemplateId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  {t('pdfAttachment.openInDesigner')}
+                </a>
+              )}
             </>
           ) : (
             <p className="text-xs text-muted-foreground">{t('pdfAttachment.noTemplatesHint')}</p>

@@ -117,9 +117,18 @@ export const typeDefs = gql`
     timeWindow: TimeWindowSettings
   }
 
+  type ResponseCopySettings {
+    enabled: Boolean!
+    mode: String!
+    emailFieldId: String
+    pdfTemplateId: String
+    subject: String
+  }
+
   type FormSettings {
     thankYou: ThankYouSettings
     submissionLimits: SubmissionLimitsSettings
+    responseCopy: ResponseCopySettings
   }
 
   # Form Types
@@ -338,9 +347,18 @@ export const typeDefs = gql`
     timeWindow: TimeWindowSettingsInput
   }
 
+  input ResponseCopySettingsInput {
+    enabled: Boolean!
+    mode: String!
+    emailFieldId: String
+    pdfTemplateId: String
+    subject: String
+  }
+
   input FormSettingsInput {
     thankYou: ThankYouSettingsInput
     submissionLimits: SubmissionLimitsSettingsInput
+    responseCopy: ResponseCopySettingsInput
   }
 
   input UpdateFormInput {
@@ -379,6 +397,7 @@ export const typeDefs = gql`
     language: String
     completionTimeSeconds: Int # Time taken to complete form in seconds
     isPreview: Boolean
+    sendResponseCopy: Boolean # Respondent opted in to receive a copy of their answers by email
   }
 
   input UpdateResponseInput {

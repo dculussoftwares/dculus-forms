@@ -47,6 +47,7 @@ const FormSettings: React.FC = () => {
     saveThankYouSettings,
     updateSubmissionLimits,
     saveSubmissionLimits,
+    saveResponseCopySettings,
   } = useFormSettings({
     formId,
     initialSettings: formData?.form?.settings,
@@ -145,6 +146,10 @@ const FormSettings: React.FC = () => {
 
   const handleUpdateThankYouSetting = (key: string, value: any) => {
     updateSetting('thankYou', key as keyof typeof settings.thankYou, value);
+  };
+
+  const handleUpdateResponseCopySetting = (key: string, value: any) => {
+    updateSetting('responseCopy', key as keyof typeof settings.responseCopy, value);
   };
 
   if (formLoading) {
@@ -253,6 +258,8 @@ const FormSettings: React.FC = () => {
           onSaveThankYouSettings={saveThankYouSettings}
           onUpdateSubmissionLimits={updateSubmissionLimits}
           onSaveSubmissionLimits={saveSubmissionLimits}
+          onUpdateResponseCopySetting={handleUpdateResponseCopySetting}
+          onSaveResponseCopySettings={saveResponseCopySettings}
         />
 
         {/* Error display */}

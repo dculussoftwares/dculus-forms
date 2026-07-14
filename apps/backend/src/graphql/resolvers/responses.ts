@@ -38,6 +38,7 @@ import {
   MAX_FAKE_RESPONSES_PER_REQUEST,
 } from '../../services/fakeResponseService.js';
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
+import { sendResponseCopyIfEnabled } from '../../services/responseCopyService.js';
 
 interface ResponseParent {
   id: string;
@@ -355,6 +356,20 @@ export const responsesResolvers = {
         emitSubscriptionFormSubmitted(form.organizationId, input.formId, savedResponse.id);
       } catch (error) {
         logger.error('Error emitting subscription event:', error);
+      }
+
+      // Email the respondent a copy of their answers, if the form owner enabled it.
+      // Fire-and-forget — must not add PDF-generation/email latency to the submit response.
+      // Skipped for builder preview submissions so testing a form never sends a real email
+      // (mirrors the isPreview check used for tagging/publish-gating above).
+      if (formWithSettings && !input.isPreview) {
+        sendResponseCopyIfEnabled({
+          form: formWithSettings,
+          response: savedResponse,
+          consent: Boolean(input.sendResponseCopy),
+        }).catch((error) => {
+          logger.error('Error sending response copy email:', error);
+        });
       }
 
       return {
