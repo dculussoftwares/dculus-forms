@@ -136,6 +136,7 @@ export const typeDefs = gql`
     submissionLimits: SubmissionLimitsSettings
     responseCopy: ResponseCopySettings
     accessControl: AccessControlSettings
+    collectRespondentEmail: Boolean
   }
 
   # Whether the current requester can see the form's real content.
@@ -385,6 +386,7 @@ export const typeDefs = gql`
     submissionLimits: SubmissionLimitsSettingsInput
     responseCopy: ResponseCopySettingsInput
     accessControl: AccessControlSettingsInput
+    collectRespondentEmail: Boolean
   }
 
   input UpdateFormInput {

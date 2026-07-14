@@ -87,6 +87,10 @@ export interface FormSettings {
   submissionLimits?: SubmissionLimitsSettings;
   responseCopy?: ResponseCopySettings;
   accessControl?: AccessControlSettings;
+  // Independent of accessControl.enabled — asks respondents to sign in
+  // (Google/OTP) purely to capture a verified email, without restricting
+  // who may respond (no domain allowlist applies to this flag alone).
+  collectRespondentEmail?: boolean;
 }
 
 // Form related types

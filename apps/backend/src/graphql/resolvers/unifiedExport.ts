@@ -115,6 +115,12 @@ export const unifiedExportResolvers = {
           }
         }
 
+        // Only forms that actually capture respondent identity get the
+        // "Respondent Email" export column — most forms are anonymous.
+        const includeRespondentEmail = !!(
+          form.settings?.accessControl?.enabled || form.settings?.collectRespondentEmail
+        );
+
         // Generate export file using unified service
         const exportResult = await generateExportFile({
           formTitle: form.title,
@@ -122,6 +128,7 @@ export const unifiedExportResolvers = {
           formSchema,
           format: exportFormat,
           pluginConfigs,
+          includeRespondentEmail,
         });
 
         logger.info(`${exportFormat.toUpperCase()} file generated, size: ${exportResult.buffer.length} bytes`);

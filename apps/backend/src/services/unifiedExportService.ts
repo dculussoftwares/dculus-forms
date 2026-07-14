@@ -24,6 +24,12 @@ export interface UnifiedExportData {
    * names (e.g. the quiz plugin's `columnName` setting).
    */
   pluginConfigs?: Record<string, Record<string, any>>;
+  /**
+   * Only forms that actually capture respondent identity (accessControl or
+   * collectRespondentEmail enabled) get a "Respondent Email" column — most
+   * forms are anonymous and `response.respondentEmail` is always null there.
+   */
+  includeRespondentEmail?: boolean;
 }
 
 export interface ExportResult {
@@ -195,7 +201,7 @@ const extractFieldInfo = (
 
 // Generate CSV content
 const generateCsvContent = (data: UnifiedExportData): string => {
-  const { responses, formSchema, pluginConfigs = {} } = data;
+  const { responses, formSchema, pluginConfigs = {}, includeRespondentEmail } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(
     formSchema,
     responses
@@ -206,6 +212,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
 
   // Build CSV header
   const headers = ['Response ID', 'Submitted At', 'Tags'];
+  if (includeRespondentEmail) headers.push('Respondent Email');
 
   // Add plugin columns — use getColumnsWithConfig when available and config is present
   // activePluginTypes is now a list of metadata keys (e.g. 'quiz-grading:pluginId')
@@ -258,6 +265,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
       )
     );
     row.push(escapeCsvFieldName((response.tags ?? []).map((t) => t.name).join(', ')));
+    if (includeRespondentEmail) row.push(escapeCsvFieldName(response.respondentEmail || ''));
 
     // Add plugin data
     activePluginTypes.forEach((metadataKey) => {
@@ -320,7 +328,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
 const generateExcelContent = async (
   data: UnifiedExportData
 ): Promise<Buffer> => {
-  const { responses, formSchema, pluginConfigs = {} } = data;
+  const { responses, formSchema, pluginConfigs = {}, includeRespondentEmail } = data;
   const { fieldInfo, orderedFieldIds } = extractFieldInfo(
     formSchema,
     responses
@@ -335,6 +343,7 @@ const generateExcelContent = async (
 
   // Build headers
   const headers = ['Response ID', 'Submitted At', 'Tags'];
+  if (includeRespondentEmail) headers.push('Respondent Email');
 
   // Add plugin columns to headers — use getColumnsWithConfig when available and config is present
   activePluginTypes.forEach((metadataKey) => {
@@ -389,6 +398,7 @@ const generateExcelContent = async (
       })
     );
     rowData.push((response.tags ?? []).map((t) => t.name).join(', '));
+    if (includeRespondentEmail) rowData.push(response.respondentEmail || '');
 
     // Add plugin data
     activePluginTypes.forEach((metadataKey) => {

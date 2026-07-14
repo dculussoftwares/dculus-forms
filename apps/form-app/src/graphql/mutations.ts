@@ -86,6 +86,7 @@ export const UPDATE_FORM : TypedDocumentNode<any, any> = gql`
           requireSignIn
           allowedDomains
         }
+        collectRespondentEmail
       }
       isPublished
       organization {

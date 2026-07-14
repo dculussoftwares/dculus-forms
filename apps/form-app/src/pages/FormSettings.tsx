@@ -50,6 +50,7 @@ const FormSettings: React.FC = () => {
     saveResponseCopySettings,
     updateAccessControl,
     saveAccessControlSettings,
+    updateCollectRespondentEmail,
   } = useFormSettings({
     formId,
     initialSettings: formData?.form?.settings,
@@ -264,6 +265,7 @@ const FormSettings: React.FC = () => {
           onSaveResponseCopySettings={saveResponseCopySettings}
           onUpdateAccessControl={updateAccessControl}
           onSaveAccessControlSettings={saveAccessControlSettings}
+          onUpdateCollectRespondentEmail={updateCollectRespondentEmail}
         />
 
         {/* Error display */}

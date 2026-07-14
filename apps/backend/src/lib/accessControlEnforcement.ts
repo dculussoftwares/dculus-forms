@@ -16,18 +16,25 @@ function emailDomainAllowed(email: string, allowedDomains: string[]): boolean {
  * can use it to decide what DATA to return (gate vs full form), not just
  * whether to error out. Shared with `enforceAccessControlForSubmission`
  * below so viewing and submitting a form are gated identically.
+ *
+ * `collectRespondentEmail` is independent of `accessControl.enabled` — it
+ * asks the respondent to sign in purely to capture a verified email for the
+ * response table/export, without restricting who may respond (the domain
+ * allowlist below only ever applies when `accessControl.enabled` is true).
  */
 export function resolveAccessStatus(
   accessControl: AccessControlSettings | undefined | null,
+  collectRespondentEmail: boolean | undefined,
   auth: BetterAuthContext
 ): FormAccessStatus {
-  if (!accessControl?.enabled) return 'OPEN';
+  const requiresIdentity = !!accessControl?.enabled || !!collectRespondentEmail;
+  if (!requiresIdentity) return 'OPEN';
 
   if (!auth.isAuthenticated || !auth.user?.email) {
     return 'SIGN_IN_REQUIRED';
   }
 
-  if (accessControl.allowedDomains?.length) {
+  if (accessControl?.enabled && accessControl.allowedDomains?.length) {
     if (!emailDomainAllowed(auth.user.email, accessControl.allowedDomains)) {
       return 'DOMAIN_REJECTED';
     }
@@ -41,10 +48,11 @@ export function resolveAccessStatus(
  * public mutation callable directly regardless of what the UI showed.
  */
 export function enforceAccessControlForSubmission(
-  accessControl: AccessControlSettings,
+  accessControl: AccessControlSettings | undefined | null,
+  collectRespondentEmail: boolean | undefined,
   auth: BetterAuthContext
 ): void {
-  const status = resolveAccessStatus(accessControl, auth);
+  const status = resolveAccessStatus(accessControl, collectRespondentEmail, auth);
 
   if (status === 'SIGN_IN_REQUIRED') {
     throw createGraphQLError(

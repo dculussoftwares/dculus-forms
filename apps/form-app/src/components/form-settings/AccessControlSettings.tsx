@@ -11,14 +11,16 @@ import {
   Input,
   toastError,
 } from '@dculus/ui';
-import { Lock, Save, Globe2 } from 'lucide-react';
+import { Lock, Save, Globe2, Mail } from 'lucide-react';
 import type { AccessControlSettings as AccessControlSettingsType } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface AccessControlSettingsProps {
   settings: AccessControlSettingsType;
+  collectRespondentEmail: boolean;
   isSaving: boolean;
   onUpdate: (accessControl: AccessControlSettingsType) => void;
+  onUpdateCollectRespondentEmail: (collectRespondentEmail: boolean) => void;
   onSave: () => void;
 }
 
@@ -27,8 +29,10 @@ const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])
 
 const AccessControlSettings: React.FC<AccessControlSettingsProps> = ({
   settings,
+  collectRespondentEmail,
   isSaving,
   onUpdate,
+  onUpdateCollectRespondentEmail,
   onSave,
 }) => {
   const { t } = useTranslation('accessControlSettings');
@@ -119,6 +123,27 @@ const AccessControlSettings: React.FC<AccessControlSettingsProps> = ({
               <p className="text-xs text-muted-foreground">{t('allowedDomains.help')}</p>
             </div>
           )}
+        </div>
+
+        <div className="space-y-4 border-t pt-6">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="collect-respondent-email"
+              data-testid="collect-respondent-email-checkbox"
+              checked={settings.enabled || collectRespondentEmail}
+              disabled={settings.enabled}
+              onCheckedChange={onUpdateCollectRespondentEmail}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="collect-respondent-email" className="text-sm font-medium cursor-pointer flex items-center">
+                <Mail className="mr-1 h-4 w-4" />
+                {t('collectEmail.title')}
+              </Label>
+              <p className="text-sm text-foreground">
+                {settings.enabled ? t('collectEmail.impliedByRequireSignIn') : t('collectEmail.description')}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="pt-4">

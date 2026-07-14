@@ -276,6 +276,10 @@ const Responses: React.FC = () => {
       formTags: userFormTags,
       generators: enabledPdfGenerators,
       responses,
+      showRespondentEmail: !!(
+        formData?.form?.settings?.accessControl?.enabled ||
+        formData?.form?.settings?.collectRespondentEmail
+      ),
       onPluginClick: (pluginType, metadata, responseId) => {
         responsesState.setPluginDialogState({ pluginType, metadata, responseId });
       },
@@ -372,6 +376,7 @@ const Responses: React.FC = () => {
     } else if (columnId === 'id') return t('table.columns.responseId');
     else if (columnId === 'submittedAt') return t('table.columns.submittedAt');
     else if (columnId === 'hasBeenEdited') return t('table.columns.editStatus');
+    else if (columnId === 'respondentEmail') return t('table.columns.respondentEmail');
     return columnId;
   };
 

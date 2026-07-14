@@ -115,6 +115,7 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
           requireSignIn
           allowedDomains
         }
+        collectRespondentEmail
       }
       organization {
         id
