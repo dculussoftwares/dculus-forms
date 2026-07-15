@@ -14,6 +14,8 @@ export class CustomWorld {
   viewerPage?: Page;
   expectedFieldSettings?: Record<string, any>;
   massResponseSuccessCount?: number;
+  consoleLogs: string[] = [];
+  networkFailures: string[] = [];
 
   constructor() {
     this.baseUrl = process.env.E2E_FORM_APP_URL ?? 'http://localhost:5173';
