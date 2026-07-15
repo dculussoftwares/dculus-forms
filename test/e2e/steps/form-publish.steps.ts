@@ -60,64 +60,33 @@ When('I get the form short URL', async function (this: CustomWorld) {
 
   const formId = formIdMatch[1];
 
-  // Extract shortUrl from Apollo Client cache in the browser
-  const shortUrl = await this.page.evaluate((id) => {
-    // Access the Apollo Client cache
-    const apolloState = (window as any).__APOLLO_STATE__;
-    if (apolloState) {
-      // Try to find the form in the cache
-      const formKey = `Form:${id}`;
-      if (apolloState[formKey] && apolloState[formKey].shortUrl) {
-        return apolloState[formKey].shortUrl;
-      }
-    }
+  // Fetch shortUrl directly via GraphQL — reading it off Apollo Client's
+  // browser-internal cache (window.__APOLLO_CLIENT__) is unreliable because
+  // Apollo Client only exposes that global when devtools are connected,
+  // which doesn't happen in a production Vite build (only `pnpm dev`).
+  // That silently fell through to a "formId as shortUrl" fallback, which is
+  // wrong since shortUrl is a separate, randomly generated value (see
+  // formService.ts's generateUniqueShortUrl) — causing "Form Not Found" in
+  // the viewer against any deployed (non-dev-server) environment.
+  const response = await this.page.evaluate(async ({ id, backendUrl }) => {
+    const query = `query GetForm($id: ID!) { form(id: $id) { id shortUrl } }`;
+    const res = await fetch(backendUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ query, variables: { id } }),
+    });
+    return res.json();
+  }, { id: formId, backendUrl: this.backendUrl });
 
-    // Fallback: try to get it from Apollo Client directly
-    const apolloClient = (window as any).__APOLLO_CLIENT__;
-    if (apolloClient) {
-      try {
-        const data = apolloClient.cache.readQuery({
-          query: {
-            kind: 'Document',
-            definitions: [{
-              kind: 'OperationDefinition',
-              operation: 'query',
-              selectionSet: {
-                kind: 'SelectionSet',
-                selections: [{
-                  kind: 'Field',
-                  name: { kind: 'Name', value: 'form' },
-                  arguments: [{
-                    kind: 'Argument',
-                    name: { kind: 'Name', value: 'id' },
-                    value: { kind: 'Variable', name: { kind: 'Name', value: 'id' } }
-                  }],
-                  selectionSet: {
-                    kind: 'SelectionSet',
-                    selections: [
-                      { kind: 'Field', name: { kind: 'Name', value: 'id' } },
-                      { kind: 'Field', name: { kind: 'Name', value: 'shortUrl' } }
-                    ]
-                  }
-                }]
-              }
-            }]
-          },
-          variables: { id }
-        });
-        if (data && data.form && data.form.shortUrl) {
-          return data.form.shortUrl;
-        }
-      } catch (e) {
-        console.error('Error reading from Apollo cache:', e);
-      }
-    }
+  if (response.errors) {
+    throw new Error(`GraphQL error fetching form shortUrl: ${JSON.stringify(response.errors)}`);
+  }
+  if (!response.data?.form?.shortUrl) {
+    throw new Error(`Form ${formId} has no shortUrl: ${JSON.stringify(response)}`);
+  }
 
-    // Last resort: use formId as shortUrl
-    return id;
-  }, formId);
-
-  this.formShortUrl = shortUrl;
+  this.formShortUrl = response.data.form.shortUrl;
 });
 
 /**
