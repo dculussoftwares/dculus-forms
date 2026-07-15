@@ -52,7 +52,7 @@ export const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: numbe
           <span
             key={word.word}
             className="px-1 py-0.5 font-semibold transition-transform cursor-default max-w-full truncate"
-            style={{ fontSize: `${size}px`, opacity, color: '#7C3AAE' }}
+            style={{ fontSize: `${size}px`, opacity, color: '#0E8C70' }}
             title={t('tooltips.wordAppears', { values: { word: word.word, count: word.count } })}
           >
             {word.word}
@@ -100,7 +100,7 @@ export const MiniBarChart: React.FC<{ data: Array<{ name: string; value: number 
             dataKey="value"
             fill={MINI_CHART_COLORS[0]}
             radius={[4, 4, 0, 0]}
-            style={{ filter: 'drop-shadow(0 2px 4px rgba(124, 58, 174, 0.25))' }}
+            style={{ filter: 'drop-shadow(0 2px 4px rgba(37, 99, 235, 0.25))' }}
           />
         </BarChart>
       </ResponsiveContainer>

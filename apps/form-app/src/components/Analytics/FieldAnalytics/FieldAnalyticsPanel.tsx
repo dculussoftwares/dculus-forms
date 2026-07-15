@@ -11,7 +11,7 @@ import { getFieldTypeDisplayName } from '@dculus/utils';
 import { FieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { getAnalyticsComponent, getAnalyticsDataKey, getAnalyticsIcon } from './registry';
 
-const FIELD_ICON_THEME: Record<string, { bg: string; color: string }> = {
+export const FIELD_ICON_THEME: Record<string, { bg: string; color: string }> = {
   text_input_field:  { bg: '#e6f7f4', color: '#0E8C70' },
   text_area_field:   { bg: '#e6f7f4', color: '#0E8C70' },
   number_field:      { bg: '#fef3e2', color: '#D97706' },
@@ -23,7 +23,7 @@ const FIELD_ICON_THEME: Record<string, { bg: string; color: string }> = {
   file_upload_field: { bg: '#e6f7f4', color: '#0E8C70' },
 };
 
-const DEFAULT_ICON_THEME = { bg: '#f0ebff', color: '#7C3AAE' };
+export const DEFAULT_ICON_THEME = { bg: '#e8f0fe', color: '#2563EB' };
 
 interface FieldAnalyticsPanelProps {
   field: FieldAnalyticsData;

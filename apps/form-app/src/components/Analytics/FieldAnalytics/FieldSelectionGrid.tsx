@@ -16,6 +16,7 @@ import { FieldAnalyticsData } from '../../../hooks/useFieldAnalytics';
 import { MiniPreviewChart } from './MiniChartComponents';
 import { getFieldTypeDisplayName } from '@dculus/utils';
 import { getAnalyticsIcon } from './registry';
+import { FIELD_ICON_THEME, DEFAULT_ICON_THEME } from './FieldAnalyticsPanel';
 
 interface FieldSelectionGridProps {
   fields: FieldAnalyticsData[];
@@ -60,11 +61,13 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
       {fields.map((field) => {
         const isSelected = selectedFieldId === field.fieldId;
 
+        const iconTheme = FIELD_ICON_THEME[field.fieldType] ?? DEFAULT_ICON_THEME;
+
         return (
           <Card
             key={field.fieldId}
             className={`cursor-pointer transition-all hover:shadow-lg overflow-hidden ${
-              isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:ring-1 hover:ring-gray-300'
+              isSelected ? 'ring-2 ring-[#2563EB] shadow-lg' : 'hover:ring-1 hover:ring-gray-300'
             }`}
             onClick={() => onFieldSelect(field.fieldId)}
           >
@@ -73,9 +76,10 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
               <div className="p-5 border-b bg-gradient-to-r from-gray-50 to-white">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className={`p-2.5 rounded-lg flex-shrink-0 ${
-                      isSelected ? 'bg-[#f0ebff] text-[#7C3AAE]' : 'bg-background text-foreground'
-                    }`}>
+                    <div
+                      className="p-2.5 rounded-lg flex-shrink-0"
+                      style={{ backgroundColor: iconTheme.bg, color: iconTheme.color }}
+                    >
                       {React.createElement(getAnalyticsIcon(field.fieldType as any), { className: 'h-5 w-5' })}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -117,7 +121,7 @@ export const FieldSelectionGrid: React.FC<FieldSelectionGridProps> = ({
               </div>
 
               {/* Chart Preview */}
-              <div className="bg-gradient-to-br from-blue-50/50 to-purple-50/50 p-4">
+              <div className="bg-[var(--tf-faint)] p-4">
                 <div className="h-48 flex items-center justify-center bg-white rounded-xl shadow-sm overflow-hidden">
                   <MiniPreviewChart field={field} />
                 </div>

@@ -21,24 +21,24 @@ import { useTranslation } from '../../../hooks/useTranslation';
 // Color palettes for different chart types — Typeform design system aligned
 export const CHART_COLORS = {
   primary: [
-    '#7C3AAE', // Violet  (matches --chart-1 hue)
-    '#0E8C70', // Emerald (matches --chart-2 hue)
     '#2563EB', // Blue    (matches --chart-3 hue)
+    '#0E8C70', // Emerald (matches --chart-2 hue)
     '#D97706', // Amber
     '#E85D4A', // Coral   (matches --chart-5 hue)
-    '#9B5CB5', // Soft violet
-    '#1D7A64', // Deep emerald
+    '#7C3AAE', // Violet  (matches --chart-1 hue) — 5th series onward, not the default
     '#1E50C8', // Deep blue
+    '#1D7A64', // Deep emerald
+    '#9B5CB5', // Soft violet
   ],
   secondary: [
-    '#f0ebff', // Light violet
-    '#e6f7f4', // Light emerald
     '#e8f0fe', // Light blue
+    '#e6f7f4', // Light emerald
     '#fef3e2', // Light amber
     '#fdecea', // Light coral
-    '#ede9fe', // Soft violet
-    '#d1fae5', // Soft emerald
+    '#f0ebff', // Light violet
     '#dbeafe', // Soft blue
+    '#d1fae5', // Soft emerald
+    '#ede9fe', // Soft violet
   ],
   gradient: [
     '#667eea',
@@ -222,7 +222,7 @@ export const FieldAnalyticsEmpty: React.FC<FieldAnalyticsEmptyProps> = ({ icon, 
   <Card className="w-full">
     <CardContent className="p-8">
       <div className="text-center">
-        <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-2xl bg-[#f0ebff] mb-4">
+        <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-2xl bg-[var(--tf-faint)] mb-4">
           {icon}
         </div>
         <h3 className="text-lg font-semibold text-primary mb-2">{title}</h3>

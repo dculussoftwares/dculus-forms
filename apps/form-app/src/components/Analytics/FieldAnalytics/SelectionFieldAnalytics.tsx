@@ -114,11 +114,11 @@ const OptionPerformanceTable: React.FC<{
                   }`}
               >
                 <div className="flex items-center gap-3">
-                  <div 
+                  <div
                     className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold
                       ${isTopOption ? 'bg-primary text-white' :
-                        isLowPerforming ? 'bg-red-500 text-white' : 
-                        'bg-gray-500 text-white'
+                        isLowPerforming ? 'bg-red-500 text-white' :
+                        'bg-[#a09aa2] text-white'
                       }`}
                   >
                     {index + 1}
@@ -146,8 +146,8 @@ const OptionPerformanceTable: React.FC<{
                     <div 
                       className={`h-2 rounded-full transition-all duration-500
                         ${isTopOption ? 'bg-primary' :
-                          isLowPerforming ? 'bg-red-500' : 
-                          'bg-[#7C3AAE]'
+                          isLowPerforming ? 'bg-red-500' :
+                          'bg-[#a09aa2]'
                         }`}
                       style={{ width: `${Math.max(5, option.percentage)}%` }}
                     />
@@ -316,7 +316,7 @@ const QuickInsights: React.FC<{
               <span className="text-2xl">{insight.icon}</span>
               <div>
                 <div className="font-semibold text-primary">{insight.title}</div>
-                <div className="text-lg font-bold text-[#7C3AAE]">{insight.value}</div>
+                <div className="text-lg font-bold text-[#1d5fa8]">{insight.value}</div>
                 <div className="text-sm text-foreground">{insight.subtitle}</div>
               </div>
             </div>

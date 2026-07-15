@@ -75,7 +75,7 @@ const SimpleWordCloud: React.FC<{
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-64 flex flex-wrap items-center justify-center gap-2 p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg overflow-hidden">
+        <div className="h-64 flex flex-wrap items-center justify-center gap-2 p-4 bg-[#e6f7f4] rounded-lg overflow-hidden">
           {words.slice(0, 30).map((word, index) => (
             <span
               key={word.word}
