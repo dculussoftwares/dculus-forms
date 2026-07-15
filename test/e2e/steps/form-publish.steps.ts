@@ -6,6 +6,7 @@
 import { When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
+import { attachDiagnostics } from '../support/diagnostics';
 
 /**
  * Publish the form
@@ -138,6 +139,7 @@ When('I navigate to the form viewer with the short URL', async function (this: C
   });
 
   this.viewerPage = await viewerContext.newPage();
+  attachDiagnostics(this, this.viewerPage, 'viewer');
 
   // Navigate to the form viewer with the short URL (format: /f/{shortUrl})
   await this.viewerPage.goto(`/f/${this.formShortUrl}`);

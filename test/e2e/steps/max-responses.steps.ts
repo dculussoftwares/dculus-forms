@@ -6,6 +6,7 @@
 import { When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
+import { attachDiagnostics } from '../support/diagnostics';
 
 /**
  * Create form schema with a simple field for max responses testing
@@ -400,6 +401,7 @@ When('I navigate to the form viewer with the short URL in a new context', async 
 
     // Replace the viewer page with a new one
     this.viewerPage = await newContext.newPage();
+    attachDiagnostics(this, this.viewerPage, 'viewer');
 
     // Navigate to the form viewer with the short URL (format: /f/{shortUrl})
     await this.viewerPage.goto(`/f/${this.formShortUrl}`);

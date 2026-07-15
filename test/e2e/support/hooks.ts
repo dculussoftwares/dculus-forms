@@ -3,6 +3,7 @@ import { chromium } from 'playwright';
 import { writeFileSync, mkdirSync } from 'fs';
 import { CustomWorld } from './world';
 import { hasStoredAuthState, STORAGE_STATE_PATH } from './authStorage';
+import { attachDiagnostics } from './diagnostics';
 
 setDefaultTimeout(120 * 1000);
 
@@ -17,20 +18,7 @@ Before(async function (this: CustomWorld) {
 
   this.consoleLogs = [];
   this.networkFailures = [];
-  this.page.on('console', (msg) => {
-    this.consoleLogs.push(`[${msg.type()}] ${msg.text()}`);
-  });
-  this.page.on('pageerror', (err) => {
-    this.consoleLogs.push(`[pageerror] ${err.message}`);
-  });
-  this.page.on('requestfailed', (req) => {
-    this.networkFailures.push(`[requestfailed] ${req.method()} ${req.url()} — ${req.failure()?.errorText}`);
-  });
-  this.page.on('response', (res) => {
-    if (res.status() >= 400) {
-      this.networkFailures.push(`[${res.status()}] ${res.request().method()} ${res.url()}`);
-    }
-  });
+  attachDiagnostics(this, this.page, 'main');
 });
 
 After(async function (this: CustomWorld, scenario) {
@@ -41,13 +29,21 @@ After(async function (this: CustomWorld, scenario) {
     const screenshotPath = `test-results/e2e/screenshots/${slug}.png`;
     await this.page?.screenshot({ path: screenshotPath, fullPage: true });
     console.log(`Screenshot saved to: ${screenshotPath}`);
+    console.log(`Failed at URL: ${this.page?.url()}`);
 
-    const url = this.page?.url();
-    console.log(`Failed at URL: ${url}`);
+    let viewerUrl: string | undefined;
+    if (this.viewerPage && !this.viewerPage.isClosed()) {
+      const viewerScreenshotPath = `test-results/e2e/screenshots/${slug}.viewer.png`;
+      await this.viewerPage.screenshot({ path: viewerScreenshotPath, fullPage: true }).catch(() => {});
+      console.log(`Viewer screenshot saved to: ${viewerScreenshotPath}`);
+      viewerUrl = this.viewerPage.url();
+      console.log(`Viewer page at URL: ${viewerUrl}`);
+    }
 
     const diagPath = `test-results/e2e/screenshots/${slug}.diagnostics.log`;
     const diagContent = [
-      `URL: ${url}`,
+      `Main page URL: ${this.page?.url()}`,
+      `Viewer page URL: ${viewerUrl ?? '(no viewer page opened)'}`,
       '--- console ---',
       ...this.consoleLogs,
       '--- network failures / 4xx+5xx ---',
@@ -58,6 +54,7 @@ After(async function (this: CustomWorld, scenario) {
   }
 
   await this.page?.close();
+  await this.viewerPage?.close();
   await this.context?.close();
   await this.browser?.close();
 });
