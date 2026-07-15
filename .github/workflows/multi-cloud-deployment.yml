@@ -1563,7 +1563,6 @@ jobs:
   run-form-app-e2e:
     name: 7.2. Run form-app E2E (Cloudflare Pages)
     runs-on: ubuntu-latest
-    continue-on-error: true
     environment: ${{ needs.determine-environment.outputs.environment }}
     needs:
       - determine-environment
