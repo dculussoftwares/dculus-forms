@@ -56,6 +56,15 @@ locals {
     "https://${local.admin_app_domain}"
   ]
 
+  # 1b. Cloudflare Pages' own *.pages.dev fallback domains — always reachable
+  # alongside the custom domain (project name mirrors the dev/staging naming
+  # scheme even in production, e.g. form-app-production.pages.dev).
+  pages_dev_domains = [
+    "https://form-app-${var.environment}.pages.dev",
+    "https://viewer-app-${var.environment}.pages.dev",
+    "https://form-admin-app-${var.environment}.pages.dev"
+  ]
+
   # 2. Development localhost URLs (only for dev/staging)
   localhost_origins = var.environment != "production" ? [
     "http://localhost:3000",
@@ -69,6 +78,7 @@ locals {
   # Combine all origins and remove duplicates
   all_cors_origins = distinct(concat(
     local.frontend_domains,
+    local.pages_dev_domains,
     local.production_domains,
     local.localhost_origins,
     local.custom_origins
