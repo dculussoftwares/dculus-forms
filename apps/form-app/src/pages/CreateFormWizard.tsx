@@ -442,20 +442,21 @@ const CreateFormWizard: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* AI Card — highlighted */}
+              {/* AI Card — highlighted, blue (matches AI accent used across the app) */}
               <button
                 type="button"
                 onClick={() => setStep('ai')}
-                className="relative group text-left p-7 rounded-2xl border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="relative group text-left p-7 rounded-2xl border-2 transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                style={{ borderColor: 'rgba(37,99,235,0.35)', backgroundColor: 'rgba(59,130,246,0.06)' }}
               >
                 <span className="absolute top-4 right-4">
-                  <Badge className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5">
+                  <Badge className="text-[10px] px-2 py-0.5 border-0" style={{ backgroundColor: 'rgb(37,99,235)', color: '#fff' }}>
                     {t('choice.ai.badge')}
                   </Badge>
                 </span>
 
-                <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/15">
-                  <AIIcon className="h-6 w-6 text-primary" />
+                <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-xl" style={{ backgroundColor: 'rgba(37,99,235,0.15)' }}>
+                  <AIIcon className="h-6 w-6 text-[rgb(37,99,235)]" />
                 </div>
                 <h2 className="text-xl font-semibold text-foreground mb-2">
                   {t('choice.ai.title')}
@@ -465,14 +466,14 @@ const CreateFormWizard: React.FC = () => {
                 </p>
               </button>
 
-              {/* Template Card */}
+              {/* Template Card — lavender */}
               <button
                 type="button"
                 onClick={() => setStep('template')}
-                className="relative group text-left p-7 rounded-2xl border-2 border-border bg-card hover:border-primary/40 hover:bg-accent/30 transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="relative group text-left p-7 rounded-2xl border-2 border-border bg-card hover:border-[#5c2e6b]/40 hover:bg-[var(--tf-icon-lavender)]/30 transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-xl bg-muted">
-                  <LayoutTemplate className="h-6 w-6 text-muted-foreground" />
+                <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-xl" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
+                  <LayoutTemplate className="h-6 w-6" style={{ color: '#5c2e6b' }} />
                 </div>
                 <h2 className="text-xl font-semibold text-foreground mb-2">
                   {t('choice.template.title')}

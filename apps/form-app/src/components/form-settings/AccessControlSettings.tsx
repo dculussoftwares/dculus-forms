@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Label,
-  Checkbox,
+  Switch,
   Input,
   toastError,
 } from '@dculus/ui';
@@ -81,79 +76,87 @@ const AccessControlSettings: React.FC<AccessControlSettingsProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Lock className="mr-2 h-5 w-5" />
-          {t('title')}
-        </CardTitle>
-        <CardDescription>{t('description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="require-sign-in-enabled"
-              data-testid="require-sign-in-checkbox"
-              checked={settings.enabled || false}
-              onCheckedChange={handleRequireSignInToggle}
-            />
-            <div className="space-y-1">
-              <Label htmlFor="require-sign-in-enabled" className="text-sm font-medium cursor-pointer">
-                {t('requireSignIn.title')}
-              </Label>
-              <p className="text-sm text-foreground">{t('requireSignIn.description')}</p>
-            </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#fbe19d' }}>
+          <Lock className="h-4 w-4" style={{ color: '#8b6a18' }} />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-primary">{t('title')}</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('description')}</p>
+        </div>
+      </div>
+
+      {/* Require Sign In */}
+      <div className="rounded-xl bg-white dark:bg-card" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
+            <Globe2 className="h-4 w-4" style={{ color: '#5c2e6b' }} />
           </div>
-
-          {settings.enabled && (
-            <div className="ml-6 space-y-2">
-              <Label htmlFor="allowed-domains" className="text-sm flex items-center">
-                <Globe2 className="mr-1 h-4 w-4" />
-                {t('allowedDomains.label')}
-              </Label>
-              <Input
-                id="allowed-domains"
-                data-testid="allowed-domains-input"
-                value={domainsText}
-                onChange={e => setDomainsText(e.target.value)}
-                onBlur={handleDomainsBlur}
-                placeholder={t('allowedDomains.placeholder')}
-              />
-              <p className="text-xs text-muted-foreground">{t('allowedDomains.help')}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-4 border-t pt-6">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="collect-respondent-email"
-              data-testid="collect-respondent-email-checkbox"
-              checked={settings.enabled || collectRespondentEmail}
-              disabled={settings.enabled}
-              onCheckedChange={onUpdateCollectRespondentEmail}
-            />
-            <div className="space-y-1">
-              <Label htmlFor="collect-respondent-email" className="text-sm font-medium cursor-pointer flex items-center">
-                <Mail className="mr-1 h-4 w-4" />
-                {t('collectEmail.title')}
-              </Label>
-              <p className="text-sm text-foreground">
-                {settings.enabled ? t('collectEmail.impliedByRequireSignIn') : t('collectEmail.description')}
-              </p>
-            </div>
+          <div className="flex-1 min-w-0">
+            <Label htmlFor="require-sign-in-enabled" className="text-sm font-medium text-primary cursor-pointer">
+              {t('requireSignIn.title')}
+            </Label>
+            <p className="text-sm text-muted-foreground">{t('requireSignIn.description')}</p>
           </div>
+          <Switch
+            id="require-sign-in-enabled"
+            data-testid="require-sign-in-checkbox"
+            checked={settings.enabled || false}
+            onCheckedChange={handleRequireSignInToggle}
+          />
         </div>
 
-        <div className="pt-4">
-          <Button onClick={handleSave} disabled={isSaving} data-testid="save-access-control-button">
-            <Save className="mr-2 h-4 w-4" />
-            {isSaving ? t('saving') : t('save')}
-          </Button>
+        {settings.enabled && (
+          <div className="px-4 pb-4 pt-3 space-y-2" style={{ borderTop: '1px solid var(--tf-border-light)' }}>
+            <Label htmlFor="allowed-domains" className="text-sm text-foreground pt-3 inline-block">
+              {t('allowedDomains.label')}
+            </Label>
+            <Input
+              id="allowed-domains"
+              data-testid="allowed-domains-input"
+              value={domainsText}
+              onChange={e => setDomainsText(e.target.value)}
+              onBlur={handleDomainsBlur}
+              placeholder={t('allowedDomains.placeholder')}
+            />
+            <p className="text-xs text-muted-foreground">{t('allowedDomains.help')}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Collect Respondent Email */}
+      <div className="rounded-xl bg-white dark:bg-card" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-salmon)' }}>
+            <Mail className="h-4 w-4" style={{ color: 'var(--tf-dark)' }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <Label htmlFor="collect-respondent-email" className="text-sm font-medium text-primary cursor-pointer">
+              {t('collectEmail.title')}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {settings.enabled ? t('collectEmail.impliedByRequireSignIn') : t('collectEmail.description')}
+            </p>
+          </div>
+          <Switch
+            id="collect-respondent-email"
+            data-testid="collect-respondent-email-checkbox"
+            checked={settings.enabled || collectRespondentEmail}
+            disabled={settings.enabled}
+            onCheckedChange={onUpdateCollectRespondentEmail}
+          />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div>
+        <Button onClick={handleSave} disabled={isSaving} data-testid="save-access-control-button">
+          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? t('saving') : t('save')}
+        </Button>
+      </div>
+    </div>
   );
 };
 

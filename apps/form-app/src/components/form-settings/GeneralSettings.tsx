@@ -1,17 +1,12 @@
 import React from 'react';
 import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Input,
   Label,
   Textarea,
   TypographyMuted,
 } from '@dculus/ui';
-import { Globe, RefreshCw, Save } from 'lucide-react';
+import { Globe, RefreshCw, Save, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface GeneralSettingsProps {
@@ -31,17 +26,19 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 }) => {
   const { t } = useTranslation('formSettings');
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Globe className="mr-2 h-5 w-5" />
-          {t('generalSettings.title')}
-        </CardTitle>
-        <CardDescription>
-          {t('generalSettings.description')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-teal)' }}>
+          <Globe className="h-4 w-4" style={{ color: 'var(--tf-green)' }} />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-primary">{t('generalSettings.title')}</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('generalSettings.description')}</p>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white dark:bg-card p-5 space-y-4" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
         <div className="space-y-2">
           <Label htmlFor="form-title">{t('generalSettings.formTitle')}</Label>
           <Input
@@ -94,29 +91,32 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = ({
         </div>
         <div className="space-y-2">
           <Label htmlFor="form-status">{t('generalSettings.publicationStatus')}</Label>
-          <div className="flex items-center space-x-2">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                form.isPublished ? 'bg-primary' : 'bg-yellow-500'
-              }`}
-            />
-            <span className="text-sm">
+          <div>
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+              style={
+                form.isPublished
+                  ? { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' }
+                  : { backgroundColor: 'rgba(190,153,58,0.10)', color: '#be993a', border: '1px solid rgba(190,153,58,0.25)' }
+              }
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
               {form.isPublished ? t('generalSettings.published') : t('generalSettings.draft')}
             </span>
           </div>
         </div>
-        <div className="pt-4">
-          <Button
-            onClick={onSave}
-            disabled={isSaving}
-            className=""
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {isSaving ? t('generalSettings.saving') : t('generalSettings.saveChanges')}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div>
+        <Button
+          onClick={onSave}
+          disabled={isSaving}
+        >
+          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? t('generalSettings.saving') : t('generalSettings.saveChanges')}
+        </Button>
+      </div>
+    </div>
   );
 };
 

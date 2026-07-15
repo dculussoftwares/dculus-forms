@@ -110,7 +110,7 @@ interface CreateResponsesColumnsOptions {
 const fieldIconStyle = (fieldType: FieldType): { bg: string; color: string } => {
   switch (fieldType) {
     case FieldType.DATE_FIELD:
-      return { bg: '#f4faf8', color: '#0f7a63' };
+      return { bg: '#c9ece3', color: '#0f7a63' };
     case FieldType.SELECT_FIELD:
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD:
@@ -245,7 +245,7 @@ const createBaseColumns = (
       header: ({ column }) => (
         <TFColumnHeader
           column={column}
-          icon={<BaseIconChip bg="#f4faf8" color="#0f7a63"><Clock className="h-4 w-4" /></BaseIconChip>}
+          icon={<BaseIconChip bg="#c9ece3" color="#0f7a63"><Clock className="h-4 w-4" /></BaseIconChip>}
           title={t('table.columns.submittedAt')}
         />
       ),

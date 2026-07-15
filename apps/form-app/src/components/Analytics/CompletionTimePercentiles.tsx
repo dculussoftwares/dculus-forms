@@ -84,7 +84,7 @@ export const CompletionTimePercentiles: React.FC<CompletionTimePercentilesProps>
   /* Typeform field-icon palette for percentile cards */
   const percentiles = [
     { label: t('average.label'), value: averageTime, description: t('average.description'), color: 'var(--tf-green)', bgColor: 'var(--tf-icon-teal)' },
-    { label: t('p50.label'), value: data?.p50 || null, description: t('p50.description'), color: 'var(--tf-muted)', bgColor: 'var(--tf-faint)' },
+    { label: t('p50.label'), value: data?.p50 || null, description: t('p50.description'), color: '#1d5fa8', bgColor: '#dbeafe' },
     { label: t('p75.label'), value: data?.p75 || null, description: t('p75.description'), color: '#8b6a18', bgColor: '#fbe19d' },
     { label: t('p90.label'), value: data?.p90 || null, description: t('p90.description'), color: '#5c2e6b', bgColor: 'var(--tf-icon-lavender)' },
     { label: t('p95.label'), value: data?.p95 || null, description: t('p95.description'), color: 'var(--tf-dark)', bgColor: 'var(--tf-icon-salmon)' },

@@ -34,7 +34,7 @@ export const StatsCard: Story = {
   render: () => (
     <div className="grid grid-cols-3 gap-4 max-w-2xl">
       {[
-        { title: 'Total Views', value: '1,284', icon: Users, iconBg: '#f4faf8', iconColor: '#177767' },
+        { title: 'Total Views', value: '1,284', icon: Users, iconBg: '#c9ece3', iconColor: '#177767' },
         { title: 'Submissions', value: '342', icon: FileText, iconBg: '#f8cdd8', iconColor: '#3c323e' },
         { title: 'Completion Rate', value: '26.6%', icon: TrendingUp, iconBg: '#ddd6fa', iconColor: '#5c2e6b' },
       ].map(({ title, value, icon: Icon, iconBg, iconColor }) => (

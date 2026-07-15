@@ -111,14 +111,14 @@ export const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
         iconColor="#5c2e6b"
       />
 
-      {/* This Week — gray icon */}
+      {/* This Week — yellow icon */}
       <StatCard
         title={t('stats.thisWeek.title')}
         value={stats.responsesThisWeek}
         subtitle={t('stats.thisWeek.subtitle')}
         icon={<Calendar className="w-4 h-4" />}
-        iconBg="var(--tf-icon-gray)"
-        iconColor="var(--tf-text)"
+        iconBg="#fbe19d"
+        iconColor="#8b6a18"
         trend={makeTrend(stats.trendThisWeek)}
       />
     </div>

@@ -155,8 +155,8 @@ export const AnalyticsOverview: React.FC<AnalyticsOverviewProps> = ({
       value: submissionData?.uniqueSessions || 0,
       subtitle: t('overview.metrics.submissionSessions.subtitle'),
       icon: Target,
-      iconColor: 'var(--tf-text)',   /* neutral gray */
-      iconBgColor: 'var(--tf-icon-gray)',
+      iconColor: '#1d5fa8',   /* blue */
+      iconBgColor: '#dbeafe',
     },
     {
       title: t('overview.metrics.topViewCountry.title'),

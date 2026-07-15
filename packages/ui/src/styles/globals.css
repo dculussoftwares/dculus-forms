@@ -59,7 +59,7 @@
 
     /* Typeform field-icon palette — used as utility CSS vars */
     --tf-icon-salmon: #f8cdd8;         /* address, location fields */
-    --tf-icon-teal: #f4faf8;           /* time, clock fields */
+    --tf-icon-teal: #c9ece3;           /* time, clock fields */
     --tf-icon-gray: #dedcde;           /* generic fields */
     --tf-icon-lavender: #ddd6fa;       /* rating, scale fields */
     --tf-green: #177767;               /* green CTA exact */
@@ -138,7 +138,7 @@
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
     --tf-icon-salmon: rgba(248,205,216,0.20);
-    --tf-icon-teal: rgba(244,250,248,0.15);
+    --tf-icon-teal: rgba(201,236,227,0.20);
     --tf-icon-gray: rgba(222,220,222,0.18);
     --tf-icon-lavender: rgba(221,214,250,0.20);
     --tf-green: #25a088;
