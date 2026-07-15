@@ -285,7 +285,6 @@ export const PluginCard: React.FC<PluginCardProps> = ({
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               variant="destructive"
-              className="bg-red-600 hover:bg-red-700"
             >
               {t('deleteDialog.delete')}
             </AlertDialogAction>

@@ -18,6 +18,7 @@ import {
   Badge,
   Alert,
   AlertDescription,
+  toastError,
 } from '@dculus/ui';
 import { GraduationCap, AlertCircle } from 'lucide-react';
 import type { Form } from '@dculus/types';
@@ -105,10 +106,10 @@ export const QuizConfigForm: React.FC<ConfigFormProps> = ({
 
   const onSubmit = (data: any) => {
     const includedFields = Object.values(quizFields).filter((qf) => qf.included);
-    if (includedFields.length === 0) { alert(t('validation.noFieldsIncluded')); return; }
+    if (includedFields.length === 0) { toastError(t('toasts.validationErrorTitle'), t('validation.noFieldsIncluded')); return; }
     for (const qf of includedFields) {
-      if (!qf.correctAnswer) { alert(t('validation.missingCorrectAnswer')); return; }
-      if (qf.marks <= 0) { alert(t('validation.invalidMarks')); return; }
+      if (!qf.correctAnswer) { toastError(t('toasts.validationErrorTitle'), t('validation.missingCorrectAnswer')); return; }
+      if (qf.marks <= 0) { toastError(t('toasts.validationErrorTitle'), t('validation.invalidMarks')); return; }
     }
     onSave({
       type: 'quiz-grading',
@@ -133,8 +134,8 @@ export const QuizConfigForm: React.FC<ConfigFormProps> = ({
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <GraduationCap className="h-6 w-6 text-primary" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
+                <GraduationCap className="h-4 w-4" style={{ color: '#5c2e6b' }} />
               </div>
               <div>
                 <CardTitle>{t('title')}</CardTitle>
