@@ -66,10 +66,10 @@ const CalendarHeatmap: React.FC<{
     if (maxCount === 0) return 'bg-background';
     const intensity = count / maxCount;
     if (intensity === 0) return 'bg-background';
-    if (intensity <= 0.25) return 'bg-[#c4b5fd]';
-    if (intensity <= 0.5) return 'bg-[#9B5CB5]';
-    if (intensity <= 0.75) return 'bg-[#7C3AAE]';
-    return 'bg-[#5b2882]';
+    if (intensity <= 0.25) return 'bg-[#f4a79e]';
+    if (intensity <= 0.5) return 'bg-[#e8735f]';
+    if (intensity <= 0.75) return 'bg-[#E85D4A]';
+    return 'bg-[#a83f2e]';
   };
 
   if (loading) {
@@ -149,7 +149,7 @@ const CalendarHeatmap: React.FC<{
           <div className="flex items-center gap-1">
             <span className="text-xs text-muted-foreground">{t('calendar.less')}</span>
             <div className="flex gap-1">
-              {['bg-background', 'bg-[#c4b5fd]', 'bg-[#9B5CB5]', 'bg-[#7C3AAE]', 'bg-[#5b2882]'].map((color, index) => (
+              {['bg-background', 'bg-[#f4a79e]', 'bg-[#e8735f]', 'bg-[#E85D4A]', 'bg-[#a83f2e]'].map((color, index) => (
                 <div key={index} className={`w-3 h-3 ${color} rounded`} />
               ))}
             </div>
@@ -183,7 +183,7 @@ const SeasonalAnalysis: React.FC<{
       case 'spring': return 'bg-primary/10 border-primary/30';
       case 'summer': return 'bg-yellow-100 border-yellow-300';
       case 'fall': case 'autumn': return 'bg-orange-100 border-orange-300';
-      case 'winter': return 'bg-[#f0ebff] border-[#c4b5fd]';
+      case 'winter': return 'bg-[#e8f0fe] border-[#93c5fd]';
       default: return 'bg-background border-[var(--tf-border-strong)]';
     }
   };
@@ -209,7 +209,7 @@ const SeasonalAnalysis: React.FC<{
               <div 
                 key={season.season}
                 className={`border-2 rounded-lg p-4 transition-all ${
-                  isTopSeason ? 'border-[#c4b5fd] bg-[#ede9fe]' : getSeasonColor(season.season)
+                  isTopSeason ? 'border-[#f4a79e] bg-[#fdecea]' : getSeasonColor(season.season)
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -218,7 +218,7 @@ const SeasonalAnalysis: React.FC<{
                     <span className="font-medium text-primary">{season.season}</span>
                   </div>
                   {isTopSeason && (
-                    <div className="text-xs bg-[#ede9fe]0 text-white px-2 py-1 rounded-full">
+                    <div className="text-xs bg-[#E85D4A] text-white px-2 py-1 rounded-full">
                       {t('seasonal.peak')}
                     </div>
                   )}
@@ -232,7 +232,7 @@ const SeasonalAnalysis: React.FC<{
                 <div className="w-full bg-[#ebe9ec] rounded-full h-2 mt-2">
                   <div 
                     className={`h-2 rounded-full transition-all duration-500 ${
-                      isTopSeason ? 'bg-[#ede9fe]0' : 
+                      isTopSeason ? 'bg-[#E85D4A]' :
                       season.season.toLowerCase() === 'spring' ? 'bg-primary' :
                       season.season.toLowerCase() === 'summer' ? 'bg-yellow-500' :
                       season.season.toLowerCase() === 'fall' ? 'bg-orange-500' :
@@ -248,7 +248,7 @@ const SeasonalAnalysis: React.FC<{
         
         <div className="p-4 bg-background rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-4 w-4 text-[#7C3AAE]" />
+            <TrendingUp className="h-4 w-4 text-[#E85D4A]" />
             <span className="font-medium text-primary">{t('seasonal.insightsTitle')}</span>
           </div>
           <div className="text-sm text-foreground space-y-1">
@@ -306,20 +306,20 @@ const DateRangeAnalysis: React.FC<{
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-[#ede9fe] rounded-lg">
-              <Calendar className="h-8 w-8 mx-auto mb-2 text-[#7C3AAE]" />
+            <div className="text-center p-4 bg-[#fdecea] rounded-lg">
+              <Calendar className="h-8 w-8 mx-auto mb-2 text-[#E85D4A]" />
               <div className="text-sm font-medium text-foreground mb-1">{t('rangeOverview.earliest')}</div>
               <div className="text-sm text-primary">{dateRange.earliest}</div>
             </div>
-            
+
             <div className="text-center p-4 bg-primary/5 rounded-lg">
               <Sunrise className="h-8 w-8 mx-auto mb-2 text-primary" />
               <div className="text-sm font-medium text-foreground mb-1">{t('rangeOverview.mostCommon')}</div>
               <div className="text-sm text-primary">{dateRange.common}</div>
             </div>
-            
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <Clock className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+
+            <div className="text-center p-4 bg-[#e6f7f4] rounded-lg">
+              <Clock className="h-8 w-8 mx-auto mb-2 text-[#0E8C70]" />
               <div className="text-sm font-medium text-foreground mb-1">{t('rangeOverview.latest')}</div>
               <div className="text-sm text-primary">{dateRange.latest}</div>
             </div>

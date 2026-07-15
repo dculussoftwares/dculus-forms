@@ -23,28 +23,28 @@ export const ANALYTICS_COLORS = {
    * Hue angles match --chart-1…5 CSS variables, boosted saturation for legibility.
    */
   primary: [
-    '#7C3AAE', // Violet  (matches --chart-1 hue)
-    '#0E8C70', // Emerald (matches --chart-2 hue)
     '#2563EB', // Blue    (matches --chart-3 hue)
+    '#0E8C70', // Emerald (matches --chart-2 hue)
     '#D97706', // Amber
     '#E85D4A', // Coral   (matches --chart-5 hue)
-    '#9B5CB5', // Soft violet (6th+ series)
-    '#1D7A64', // Deep emerald
+    '#7C3AAE', // Violet  (matches --chart-1 hue) — 5th series onward, not the default
     '#1E50C8', // Deep blue
+    '#1D7A64', // Deep emerald
+    '#9B5CB5', // Soft violet
   ],
 
   /**
    * Secondary color palette - Light tints of primary colors for backgrounds/hover states.
    */
   secondary: [
-    '#f0ebff', // Light violet
-    '#e6f7f4', // Light emerald
     '#e8f0fe', // Light blue
+    '#e6f7f4', // Light emerald
     '#fef3e2', // Light amber
     '#fdecea', // Light coral
-    '#ede9fe', // Soft violet
-    '#d1fae5', // Soft emerald
+    '#f0ebff', // Light violet
     '#dbeafe', // Soft blue
+    '#d1fae5', // Soft emerald
+    '#ede9fe', // Soft violet
   ],
 
   /**
@@ -65,11 +65,11 @@ export const ANALYTICS_COLORS = {
    * Mini chart color palette - Subset of primary palette for small preview charts.
    */
   mini: [
-    '#7C3AAE', // Violet
-    '#0E8C70', // Emerald
     '#2563EB', // Blue
+    '#0E8C70', // Emerald
     '#D97706', // Amber
     '#E85D4A', // Coral
+    '#7C3AAE', // Violet
     '#9B5CB5', // Soft violet
   ],
 

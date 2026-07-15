@@ -267,7 +267,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
           </Button>
 
           {totalResponses > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f0ebff] text-[#7C3AAE] rounded-lg text-sm">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f6fafd] text-[#01487f] rounded-lg text-sm">
               <Eye className="h-4 w-4" />
               {t('responseCount', { values: { count: totalResponses } })}
             </div>
@@ -284,7 +284,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-[#f0ebff] text-[#7C3AAE] rounded-lg">
+                    <div className="p-2 bg-[#e6f7f4] text-[#0E8C70] rounded-lg">
                       <BarChart3 className="h-5 w-5" />
                     </div>
                     <div>
@@ -314,7 +314,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-yellow-100 text-yellow-600 rounded-lg">
+                    <div className="p-2 bg-[#fef3e2] text-[#D97706] rounded-lg">
                       <Users className="h-5 w-5" />
                     </div>
                     <div>
@@ -330,7 +330,7 @@ export const FieldAnalyticsViewer: React.FC<FieldAnalyticsViewerProps> = ({
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
+                    <div className="p-2 bg-[#e8f0fe] text-[#2563EB] rounded-lg">
                       <Eye className="h-5 w-5" />
                     </div>
                     <div>

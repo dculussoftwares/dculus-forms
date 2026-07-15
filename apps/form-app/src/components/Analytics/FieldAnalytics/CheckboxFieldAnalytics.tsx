@@ -55,7 +55,7 @@ const CorrelationMatrix: React.FC<{
   const getCorrelationColor = (correlation: number) => {
     if (correlation >= 2.0) return 'bg-primary';
     if (correlation >= 1.5) return 'bg-yellow-500';
-    return 'bg-[#ede9fe]0';
+    return 'bg-[#93c5fd]';
   };
 
   const getCorrelationDescription = (correlation: number) => {
@@ -98,7 +98,7 @@ const CorrelationMatrix: React.FC<{
           ))}
         </div>
         
-        <div className="mt-6 p-4 bg-[#ede9fe] rounded-lg">
+        <div className="mt-6 p-4 bg-[#dbeafe] rounded-lg">
           <h4 className="font-medium text-blue-900 mb-2">{t('correlations.understandingTitle')}</h4>
           <div className="text-sm text-blue-800 space-y-1">
             <p>• {t('correlations.strongDescription')}</p>
@@ -153,7 +153,7 @@ const PopularCombinations: React.FC<{
   const getComboColor = (percentage: number) => {
     if (percentage >= 20) return 'border-primary/30 bg-primary/5';
     if (percentage >= 10) return 'border-yellow-300 bg-yellow-50';
-    return 'border-[#c4b5fd] bg-[#ede9fe]';
+    return 'border-[#93c5fd] bg-[#dbeafe]';
   };
 
   return (
@@ -272,7 +272,7 @@ const SelectionDistribution: React.FC<{
                             {t('selectionCount.responses')}: {data.value} ({data.percentage.toFixed(1)}%)
                           </span>
                           {isAverage && (
-                            <span className="text-xs text-[#7C3AAE] font-medium bg-[#ede9fe] px-1 rounded">
+                            <span className="text-xs text-[#1d4ed8] font-medium bg-[#dbeafe] px-1 rounded">
                               {t('selectionDistribution.average')}
                             </span>
                           )}
@@ -308,15 +308,15 @@ const SelectionDistribution: React.FC<{
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="text-center p-4 bg-[#ede9fe] rounded-lg">
-              <div className="text-2xl font-bold text-[#7C3AAE]">
+            <div className="text-center p-4 bg-[#dbeafe] rounded-lg">
+              <div className="text-2xl font-bold text-[#1d4ed8]">
                 {averageSelections.toFixed(1)}
               </div>
               <div className="text-sm text-blue-800">
                 Average selections per response
               </div>
             </div>
-            
+
             <div className="space-y-3">
               {chartData.map((item, index) => {
                 const isAverage = Math.abs(item.selectionCount - averageSelections) < 0.5;
@@ -324,11 +324,11 @@ const SelectionDistribution: React.FC<{
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm text-foreground">{item.name}:</span>
                     <div className="flex items-center gap-2">
-                      <span className={`font-medium ${isAverage ? 'text-[#7C3AAE]' : 'text-primary'}`}>
+                      <span className={`font-medium ${isAverage ? 'text-[#1d4ed8]' : 'text-primary'}`}>
                         {item.percentage.toFixed(1)}%
                       </span>
                       {isAverage && (
-                        <span className="text-xs text-[#7C3AAE] font-medium">
+                        <span className="text-xs text-[#1d4ed8] font-medium">
                           (avg)
                         </span>
                       )}

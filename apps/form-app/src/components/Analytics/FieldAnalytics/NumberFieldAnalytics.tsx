@@ -135,7 +135,7 @@ const BoxPlot: React.FC<{
         </div>
       </CardHeader>
       <CardContent>
-        <div className="relative h-32 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 rounded-lg p-4">
+        <div className="relative h-32 bg-[#e8f0fe] rounded-lg p-4">
           {/* Scale */}
           <div className="flex justify-between text-xs text-muted-foreground mb-4">
             <span>{data.min.toFixed(1)}</span>
@@ -166,17 +166,17 @@ const BoxPlot: React.FC<{
             />
             
             {/* Box */}
-            <div 
-              className="absolute top-4 h-8 bg-[#c4b5fd] border-2 border-[#7C3AAE] rounded"
+            <div
+              className="absolute top-4 h-8 bg-[#bfdbfe] border-2 border-[#2563EB] rounded"
               style={{
                 left: `${getPosition(data.percentiles.p25)}%`,
                 width: `${getPosition(data.percentiles.p75) - getPosition(data.percentiles.p25)}%`
               }}
             />
-            
+
             {/* Median line */}
-            <div 
-              className="absolute top-4 h-8 w-0.5 bg-blue-800"
+            <div
+              className="absolute top-4 h-8 w-0.5 bg-[#1d4ed8]"
               style={{
                 left: `${getPosition(data.median)}%`
               }}
@@ -196,8 +196,8 @@ const BoxPlot: React.FC<{
               >
                 {data.percentiles.p25.toFixed(1)}
               </div>
-              <div 
-                className="absolute text-xs text-center font-bold text-blue-800"
+              <div
+                className="absolute text-xs text-center font-bold text-[#1d4ed8]"
                 style={{ left: `${getPosition(data.median)}%`, transform: 'translateX(-50%)' }}
               >
                 {data.median.toFixed(1)}
