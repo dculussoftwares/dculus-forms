@@ -110,8 +110,8 @@ export const WebhookConfigForm: React.FC<ConfigFormProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Webhook className="h-5 w-5 text-orange-600" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#fbe19d' }}>
+              <Webhook className="h-4 w-4" style={{ color: '#8b6a18' }} />
             </div>
             <div>
               <CardTitle>
@@ -148,6 +148,7 @@ export const WebhookConfigForm: React.FC<ConfigFormProps> = ({
             <Input
               id="url"
               type="url"
+              autoComplete="off"
               placeholder={t('basicInformation.url.placeholder')}
               {...register('url', {
                 required: t('basicInformation.url.required'),
@@ -163,6 +164,7 @@ export const WebhookConfigForm: React.FC<ConfigFormProps> = ({
             <Input
               id="secret"
               type="password"
+              autoComplete="new-password"
               placeholder={t('basicInformation.secret.placeholder')}
               {...register('secret')}
             />
@@ -236,7 +238,7 @@ export const WebhookConfigForm: React.FC<ConfigFormProps> = ({
           <X className="h-4 w-4 mr-2" />
           {t('actions.cancel')}
         </Button>
-        <Button type="submit" disabled={isSaving} className="bg-orange-600 hover:bg-orange-700">
+        <Button type="submit" disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isSaving && <Save className="mr-2 h-4 w-4" />}
           {mode === 'create' ? t('actions.create') : t('actions.update')}

@@ -133,8 +133,8 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="bg-green-50 p-3 rounded-xl">
-              <TableProperties className="h-5 w-5 text-green-700" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#c8e6c9' }}>
+              <TableProperties className="h-4 w-4" style={{ color: '#1a7340' }} />
             </div>
             <div className="flex-1 min-w-0">
               <CardTitle>
@@ -154,7 +154,8 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
                   href={`${import.meta.env.VITE_FORM_VIEWER_URL}/f/${form.shortUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-800 hover:underline shrink-0"
+                  className="inline-flex items-center gap-1 text-xs hover:underline shrink-0"
+                  style={{ color: '#1a7340' }}
                 >
                   <ExternalLink className="h-3 w-3" />
                   {t('header.viewForm')}
@@ -201,9 +202,9 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         <CardContent className="space-y-4">
           {googleToken ? (
             <div className="space-y-3">
-              <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
-                <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-                <p className="text-sm text-green-800">
+              <div className="flex items-center gap-2 p-3 rounded-lg" style={{ backgroundColor: 'var(--tf-green-bg)', border: '1px solid var(--tf-green-bg-md)' }}>
+                <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: 'var(--tf-green)' }} />
+                <p className="text-sm" style={{ color: 'var(--tf-green)' }}>
                   {t('connection.connectedAs', {
                     values: { email: googleToken.email },
                   })}
@@ -215,7 +216,8 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
                     href={spreadsheetUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-green-700 hover:text-green-800 hover:underline"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline"
+                    style={{ color: '#1a7340' }}
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                     {t('connection.openSheet')}
@@ -242,7 +244,8 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
               <Button
                 type="button"
                 onClick={handleConnectGoogle}
-                className="bg-green-700 hover:bg-green-800 text-white"
+                className="text-white hover:opacity-90"
+                style={{ backgroundColor: '#1a7340' }}
               >
                 <TableProperties className="h-4 w-4 mr-2" />
                 {t('connection.connectButton')}
@@ -284,7 +287,6 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
           type="button"
           onClick={handleSave}
           disabled={isSaving || !googleToken}
-          className="bg-green-700 hover:bg-green-800 text-white"
         >
           {isSaving ? (
             <>

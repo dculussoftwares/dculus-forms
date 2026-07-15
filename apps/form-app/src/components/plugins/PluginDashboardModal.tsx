@@ -799,7 +799,6 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
             <AlertDialogAction
               onClick={handleDelete}
               variant="destructive"
-              className="bg-red-600 hover:bg-red-700"
             >
               {t('deleteDialog.confirm')}
             </AlertDialogAction>

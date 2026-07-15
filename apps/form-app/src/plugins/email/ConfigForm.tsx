@@ -166,8 +166,8 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Mail className="h-5 w-5 text-blue-600" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-icon-salmon)' }}>
+              <Mail className="h-4 w-4" style={{ color: 'var(--tf-dark)' }} />
             </div>
             <div>
               <CardTitle>
@@ -202,6 +202,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
             <Input
               id="recipientEmail"
               type="email"
+              autoComplete="off"
               placeholder={t('basicInformation.recipientEmail.placeholder')}
               {...register('recipientEmail', {
                 validate: (value) =>
@@ -237,9 +238,9 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
                 </Select>
                 <p className="text-xs text-muted-foreground">{t('basicInformation.recipientField.hint')}</p>
                 {selectedEmailField && !selectedEmailField.required && (
-                  <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+                  <Alert style={{ backgroundColor: 'rgba(190,153,58,0.10)', borderColor: 'rgba(190,153,58,0.25)', color: '#8b6a18' }}>
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription>
+                    <AlertDescription style={{ color: '#8b6a18' }}>
                       {t('basicInformation.recipientField.notRequiredWarning')}
                     </AlertDescription>
                   </Alert>
@@ -307,8 +308,8 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FileText className="h-5 w-5 text-blue-600" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-icon-salmon)' }}>
+              <FileText className="h-4 w-4" style={{ color: 'var(--tf-dark)' }} />
             </div>
             <div>
               <CardTitle className="text-lg">{t('pdfAttachment.title')}</CardTitle>
@@ -338,7 +339,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
                   href={`/dashboard/form/${form.id}/pdf-templates/${attachPdfTemplateId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                 >
                   <ExternalLink className="h-3 w-3" />
                   {t('pdfAttachment.openInDesigner')}
@@ -384,7 +385,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
           <X className="h-4 w-4 mr-2" />
           {t('actions.cancel')}
         </Button>
-        <Button type="submit" disabled={isSaving} className="bg-blue-600 hover:bg-blue-700">
+        <Button type="submit" disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isSaving && <Save className="mr-2 h-4 w-4" />}
           {mode === 'create' ? t('actions.create') : t('actions.update')}

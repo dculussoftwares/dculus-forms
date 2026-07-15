@@ -5,8 +5,8 @@ export const aiTaggerManifest: PluginManifest = {
   name: 'AI Auto-Tagger',
   description: 'Automatically tag responses using AI based on definitions you provide for each tag.',
   icon: 'Tag',
-  iconColor: '#1d4ed8',
-  iconBgColor: '#dbeafe',
+  iconColor: '#3949ab',
+  iconBgColor: '#e8eaf6',
   category: 'Workflow',
   available: true,
 };

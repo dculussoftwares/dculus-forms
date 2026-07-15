@@ -25,6 +25,9 @@
       "radio": "Radio"
     }
   },
+  "toasts": {
+    "validationErrorTitle": "Validation Error"
+  },
   "validation": {
     "noFieldsIncluded": "Please include at least one field in the quiz",
     "missingCorrectAnswer": "Please select a correct answer for all included fields",

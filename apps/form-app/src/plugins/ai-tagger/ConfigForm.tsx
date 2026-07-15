@@ -155,8 +155,8 @@ export const AiTaggerConfigForm: React.FC<ConfigFormProps> = ({
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="bg-blue-50 p-3 rounded-xl">
-              <Tag className="h-5 w-5 text-blue-600" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#e8eaf6' }}>
+              <Tag className="h-4 w-4" style={{ color: '#3949ab' }} />
             </div>
             <div>
               <CardTitle>{t('title')}</CardTitle>
