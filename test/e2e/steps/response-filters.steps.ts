@@ -114,8 +114,8 @@ async function submitResponseWithDate(
         responseData['field-number-filter'] = numberValue;
     }
     if (dateValue !== null && dateValue !== '') {
-        // Convert date string to timestamp for storage
-        responseData['field-date-filter'] = new Date(dateValue).getTime();
+        // Store as "YYYY-MM-DD", matching what the real form-viewer submits
+        responseData['field-date-filter'] = dateValue;
     }
 
     const response = await world.page.evaluate(async ({ formId, data, backendUrl }) => {

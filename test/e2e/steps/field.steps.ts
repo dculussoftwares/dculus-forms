@@ -766,7 +766,7 @@ Then('I save the radio field settings', async function (this: CustomWorld) {
 When('I fill all radio field settings with test data', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   const ts = Date.now();
-  this.expectedFieldSettings = { label: `Complete Radio Field ${ts}`, hint: 'Radio field help', options: [{ value: 'option1', label: 'Option 1' }, { value: 'option2', label: 'Option 2' }], required: true };
+  this.expectedFieldSettings = { label: `Complete Radio Field ${ts}`, hint: 'Radio field help', defaultValue: '', options: ['Option 1', 'Option 2'], required: true };
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
   await this.page.fill('#field-label', this.expectedFieldSettings.label);
   await this.page.fill('#field-hint', this.expectedFieldSettings.hint);
@@ -876,7 +876,7 @@ When('I fill dropdown field with valid data in viewer', async function (this: Cu
 When('I fill all dropdown field settings with test data', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   const ts = Date.now();
-  this.expectedFieldSettings = { label: `Complete Dropdown Field ${ts}`, hint: 'Dropdown help', options: [{ value: 'opt1', label: 'Option 1' }, { value: 'opt2', label: 'Option 2' }], required: true };
+  this.expectedFieldSettings = { label: `Complete Dropdown Field ${ts}`, hint: 'Dropdown help', defaultValue: '', options: ['Option 1', 'Option 2'], required: true };
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
   await this.page.fill('#field-label', this.expectedFieldSettings.label);
   await this.page.fill('#field-hint', this.expectedFieldSettings.hint);
@@ -967,10 +967,12 @@ When('I test checkbox required and select options in viewer', async function (th
 When('I fill all checkbox field settings with test data', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   const ts = Date.now();
-  this.expectedFieldSettings = { label: `Complete Checkbox Field ${ts}`, hint: 'Checkbox help', options: [{ value: 'opt1', label: 'Option 1' }, { value: 'opt2', label: 'Option 2' }], minSelections: 1, maxSelections: 2, required: true };
+  this.expectedFieldSettings = { label: `Complete Checkbox Field ${ts}`, hint: 'Checkbox help', defaultValue: '', options: ['Option 1', 'Option 2'], minSelections: 1, maxSelections: 2, required: true };
   await this.page.waitForSelector('#field-label', { timeout: 10_000 });
   await this.page.fill('#field-label', this.expectedFieldSettings.label);
   await this.page.fill('#field-hint', this.expectedFieldSettings.hint);
+  await this.page.fill('#field-validation\\.minSelections', String(this.expectedFieldSettings.minSelections));
+  await this.page.fill('#field-validation\\.maxSelections', String(this.expectedFieldSettings.maxSelections));
   const req = this.page.locator('#field-required');
   if (!await req.isChecked()) await req.click();
 });

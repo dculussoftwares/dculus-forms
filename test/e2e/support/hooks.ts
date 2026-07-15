@@ -17,7 +17,7 @@ Before(async function (this: CustomWorld) {
 
 After(async function (this: CustomWorld, scenario) {
   if (scenario.result?.status === 'FAILED') {
-    const screenshotPath = `test-results/screenshots/${scenario.pickle.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
+    const screenshotPath = `test-results/e2e/screenshots/${scenario.pickle.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
     await this.page?.screenshot({ path: screenshotPath, fullPage: true });
     console.log(`Screenshot saved to: ${screenshotPath}`);
     

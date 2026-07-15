@@ -390,14 +390,17 @@ export function buildRawSQLCondition(
     }
 
     // Date operators
+    // Stored as YYYY-MM-DD string; WHEN isEpoch is a legacy fallback for
+    // epoch-ms numeric strings from before the ba4023b5 date-format migration.
     case 'DATE_EQUALS': {
       if (!filter.value) return { sql: '', values: [] };
-      // Safe date cast: validate timestamp format before casting
       return {
         sql: `(
-          CASE 
-            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'
+          CASE
+            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
             THEN DATE((${textAccessor})::timestamp) = DATE($${startIndex}::timestamp)
+            WHEN ${textAccessor} ~ '^[0-9]+$'
+            THEN DATE(to_timestamp((${textAccessor})::bigint / 1000)) = DATE($${startIndex}::timestamp)
             ELSE FALSE
           END
         )`,
@@ -407,12 +410,13 @@ export function buildRawSQLCondition(
 
     case 'DATE_BEFORE': {
       if (!filter.value) return { sql: '', values: [] };
-      // Safe date cast: validate timestamp format before casting
       return {
         sql: `(
-          CASE 
-            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'
+          CASE
+            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
             THEN (${textAccessor})::timestamp < $${startIndex}::timestamp
+            WHEN ${textAccessor} ~ '^[0-9]+$'
+            THEN to_timestamp((${textAccessor})::bigint / 1000) < $${startIndex}::timestamp
             ELSE FALSE
           END
         )`,
@@ -422,12 +426,13 @@ export function buildRawSQLCondition(
 
     case 'DATE_AFTER': {
       if (!filter.value) return { sql: '', values: [] };
-      // Safe date cast: validate timestamp format before casting
       return {
         sql: `(
-          CASE 
-            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'
+          CASE
+            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
             THEN (${textAccessor})::timestamp > $${startIndex}::timestamp
+            WHEN ${textAccessor} ~ '^[0-9]+$'
+            THEN to_timestamp((${textAccessor})::bigint / 1000) > $${startIndex}::timestamp
             ELSE FALSE
           END
         )`,
@@ -437,30 +442,35 @@ export function buildRawSQLCondition(
 
     case 'DATE_BETWEEN': {
       if (!filter.dateRange) return { sql: '', values: [] };
-      const dateConditions: string[] = [];
+      const ymdConditions: string[] = [];
+      const epochConditions: string[] = [];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const dateValues: any[] = [];
       let dateIdx = startIndex;
 
-      // Safe date cast: validate timestamp format before casting
-      const dateCheck = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' OR ${textAccessor} ~ '^[0-9]+$'`;
+      const isYMD = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'`;
+      const isEpoch = `${textAccessor} ~ '^[0-9]+$'`;
 
       if (filter.dateRange.from) {
-        dateConditions.push(`(${textAccessor})::timestamp >= $${dateIdx}::timestamp`);
+        ymdConditions.push(`(${textAccessor})::timestamp >= $${dateIdx}::timestamp`);
+        epochConditions.push(`to_timestamp((${textAccessor})::bigint / 1000) >= $${dateIdx}::timestamp`);
         dateValues.push(filter.dateRange.from);
         dateIdx++;
       }
       if (filter.dateRange.to) {
-        dateConditions.push(`(${textAccessor})::timestamp <= $${dateIdx}::timestamp`);
+        ymdConditions.push(`(${textAccessor})::timestamp <= $${dateIdx}::timestamp`);
+        epochConditions.push(`to_timestamp((${textAccessor})::bigint / 1000) <= $${dateIdx}::timestamp`);
         dateValues.push(filter.dateRange.to);
       }
 
-      if (dateConditions.length === 0) return { sql: '', values: [] };
+      if (ymdConditions.length === 0) return { sql: '', values: [] };
       return {
         sql: `(
-          CASE 
-            WHEN ${dateCheck}
-            THEN ${dateConditions.join(' AND ')}
+          CASE
+            WHEN ${isYMD}
+            THEN ${ymdConditions.join(' AND ')}
+            WHEN ${isEpoch}
+            THEN ${epochConditions.join(' AND ')}
             ELSE FALSE
           END
         )`,
