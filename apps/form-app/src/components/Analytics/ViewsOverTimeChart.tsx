@@ -37,10 +37,10 @@ const CustomTooltip = ({ active, payload, label, t }: any) => {
           {payload.map((entry: any) => {
             let color = entry.color;
             let label = entry.dataKey;
-            if (entry.dataKey === 'views') { color = 'var(--tf-muted)'; label = t('legend.totalViews'); }
+            if (entry.dataKey === 'views') { color = '#4c8dee'; label = t('legend.totalViews'); }
             else if (entry.dataKey === 'sessions') { color = 'var(--tf-green)'; label = t('legend.viewSessions'); }
             else if (entry.dataKey === 'submissions') { color = '#a25fba'; label = t('legend.submissions'); }
-            else if (entry.dataKey === 'submissionSessions') { color = 'var(--tf-dark)'; label = t('legend.subSessions'); }
+            else if (entry.dataKey === 'submissionSessions') { color = '#d9607a'; label = t('legend.subSessions'); }
             
             return (
               <p key={entry.dataKey} className="text-sm" style={{ color }}>
@@ -149,8 +149,8 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
     }
   };
 
-  /* Typeform chart palette */
-  const TF = { views: 'var(--tf-muted)', sessions: 'var(--tf-green)', submissions: '#a25fba', subSessions: 'var(--tf-dark)' };
+  /* Typeform chart palette — four distinct hues (blue/green/purple/rose), none near-black */
+  const TF = { views: '#4c8dee', sessions: 'var(--tf-green)', submissions: '#a25fba', subSessions: '#d9607a' };
 
   return (
     <div className="rounded-xl p-5 bg-white" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
@@ -194,8 +194,8 @@ export const ViewsOverTimeChart: React.FC<ViewsOverTimeChartProps> = ({
           { value: totalSessions, label: t('stats.viewSessions'), color: TF.sessions },
           { value: totalSubmissions, label: t('stats.submissions'), color: TF.submissions },
           { value: totalSubmissionSessions, label: t('stats.submissionSessions'), color: TF.subSessions },
-          { value: avgViewsPerDay, label: t('stats.avgViewsPerDay'), color: 'var(--tf-dark)' },
-          { value: avgSubmissionsPerDay, label: t('stats.avgSubsPerDay'), color: 'var(--tf-dark)' },
+          { value: avgViewsPerDay, label: t('stats.avgViewsPerDay'), color: TF.views },
+          { value: avgSubmissionsPerDay, label: t('stats.avgSubsPerDay'), color: TF.submissions },
         ].map(({ value, label, color }) => (
           <div key={label} className="text-center">
             <p className="text-lg font-light" style={{ color }}>{value}</p>

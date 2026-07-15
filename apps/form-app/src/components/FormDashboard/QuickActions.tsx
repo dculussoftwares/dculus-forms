@@ -113,8 +113,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId, isFormEmpty 
       title: t('quickActions.items.plugins.title'),
       description: t('quickActions.items.plugins.description'),
       icon: Plug,
-      iconBg: 'var(--tf-icon-gray)',    // neutral gray — Typeform generic icon color
-      iconColor: 'var(--tf-text)',
+      iconBg: '#fbe19d',    // yellow — Typeform number-field icon color
+      iconColor: '#8b6a18',
       path: `/dashboard/form/${formId}/integrations`,
       testId: 'quick-action-integrations',
     },
@@ -131,8 +131,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId, isFormEmpty 
       title: t('quickActions.items.settings.title'),
       description: t('quickActions.items.settings.description'),
       icon: Settings,
-      iconBg: 'rgba(81,76,84,0.07)',
-      iconColor: 'var(--tf-muted)',
+      iconBg: '#c4e3ba',    // green — Typeform opinion-scale icon color
+      iconColor: '#2d6236',
       path: `/dashboard/form/${formId}/settings`,
       testId: 'quick-action-settings',
     },

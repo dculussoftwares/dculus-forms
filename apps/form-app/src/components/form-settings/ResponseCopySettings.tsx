@@ -2,13 +2,8 @@ import React, { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
 import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Label,
-  Checkbox,
+  Switch,
   Input,
   Select,
   SelectContent,
@@ -18,7 +13,7 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from '@dculus/ui';
-import { Mail, Save } from 'lucide-react';
+import { Mail, Save, AlertTriangle } from 'lucide-react';
 import { deserializeFormSchema, extractEmailFields, type ResponseCopySettings as ResponseCopySettingsData } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
 import { GET_PDF_TEMPLATES } from '../../graphql/pdfTemplates';
@@ -60,40 +55,50 @@ const ResponseCopySettings: React.FC<ResponseCopySettingsProps> = ({
   const hasEmailFields = emailFields.length > 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Mail className="mr-2 h-5 w-5" />
-          {t('title')}
-        </CardTitle>
-        <CardDescription>{t('description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center space-x-2">
-          <Checkbox
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
+          <Mail className="h-4 w-4" style={{ color: '#5c2e6b' }} />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-primary">{t('title')}</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('description')}</p>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white dark:bg-card" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-lavender)' }}>
+            <Mail className="h-4 w-4" style={{ color: '#5c2e6b' }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <Label htmlFor="response-copy-enabled" className="text-sm font-medium text-primary cursor-pointer">
+              {t('enabled')}
+            </Label>
+            <p className="text-sm text-muted-foreground">{t('enabledDescription')}</p>
+          </div>
+          <Switch
             id="response-copy-enabled"
             data-testid="response-copy-enabled-checkbox"
             checked={settings.enabled}
             disabled={!hasEmailFields}
             onCheckedChange={(checked) => onUpdateSetting('enabled', checked)}
           />
-          <div className="space-y-1">
-            <Label
-              htmlFor="response-copy-enabled"
-              className="text-sm font-medium cursor-pointer"
-            >
-              {t('enabled')}
-            </Label>
-            <p className="text-sm text-foreground">{t('enabledDescription')}</p>
-          </div>
         </div>
 
         {!hasEmailFields && (
-          <p className="text-xs text-amber-600">{t('noEmailFieldWarning')}</p>
+          <div
+            className="mx-4 mb-4 flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+            style={{ backgroundColor: 'rgba(190,153,58,0.10)', color: '#8b6a18', border: '1px solid rgba(190,153,58,0.25)' }}
+          >
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            {t('noEmailFieldWarning')}
+          </div>
         )}
 
         {settings.enabled && hasEmailFields && (
-          <div className="space-y-6 pt-4 border-t border-[var(--tf-border-medium)]">
+          <div className="px-4 pb-4 pt-4 space-y-6" style={{ borderTop: '1px solid var(--tf-border-light)' }}>
             <div className="space-y-2">
               <Label className="text-sm font-medium">{t('mode.label')}</Label>
               <RadioGroup
@@ -178,19 +183,19 @@ const ResponseCopySettings: React.FC<ResponseCopySettingsProps> = ({
             </div>
           </div>
         )}
+      </div>
 
-        <div className="pt-4">
-          <Button
-            onClick={onSave}
-            disabled={isSaving}
-            data-testid="save-response-copy-settings-button"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {isSaving ? t('saving') : t('saveButton')}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <div>
+        <Button
+          onClick={onSave}
+          disabled={isSaving}
+          data-testid="save-response-copy-settings-button"
+        >
+          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? t('saving') : t('saveButton')}
+        </Button>
+      </div>
+    </div>
   );
 };
 

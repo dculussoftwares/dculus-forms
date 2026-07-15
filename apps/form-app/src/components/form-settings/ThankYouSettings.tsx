@@ -1,13 +1,8 @@
 import React, { useMemo } from 'react';
 import {
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Label,
-  Checkbox,
+  Switch,
 } from '@dculus/ui';
 import { CheckCircle, Save } from 'lucide-react';
 import { deserializeFormSchema, FillableFormField } from '@dculus/types';
@@ -69,83 +64,83 @@ const ThankYouSettings: React.FC<ThankYouSettingsProps> = ({
   const mentionFields = useMemo(() => extractMentionFields(form), [form]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <CheckCircle className="mr-2 h-5 w-5" />
-          {t('thankYouSettings.title')}
-        </CardTitle>
-        <CardDescription>
-          {t('thankYouSettings.description')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex items-center space-x-2">
-          <Checkbox
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#c4e3ba' }}>
+          <CheckCircle className="h-4 w-4" style={{ color: '#2d6236' }} />
+        </div>
+        <div>
+          <h3 className="text-base font-semibold text-primary">{t('thankYouSettings.title')}</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('thankYouSettings.description')}</p>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white dark:bg-card" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: '#c4e3ba' }}>
+            <CheckCircle className="h-4 w-4" style={{ color: '#2d6236' }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <Label htmlFor="thank-you-enabled" className="text-sm font-medium text-primary cursor-pointer">
+              {t('thankYouSettings.enabled')}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {t('thankYouSettings.enabledDescription')}
+            </p>
+          </div>
+          <Switch
             id="thank-you-enabled"
             data-testid="thank-you-enabled-checkbox"
             checked={settings.enabled}
             onCheckedChange={onToggleEnabled}
           />
-          <div className="space-y-1">
-            <Label
-              htmlFor="thank-you-enabled"
-              className="text-sm font-medium cursor-pointer"
-            >
-              {t('thankYouSettings.enabled')}
-            </Label>
-            <p className="text-sm text-foreground">
-              {t('thankYouSettings.enabledDescription')}
-            </p>
-          </div>
         </div>
 
         {settings.enabled && (
-          <div className="space-y-4 pt-4 border-t border-[var(--tf-border-medium)]">
-            <div className="space-y-2">
-              <Label
-                htmlFor="thank-you-message"
-                className="text-sm font-medium"
-              >
-                {t('thankYouSettings.messageLabel')}
-              </Label>
-              <div data-testid="thank-you-message-editor">
-                <RichTextEditor
-                  value={settings.message}
-                  onChange={onMessageChange}
-                  placeholder={t('thankYouSettings.messagePlaceholder')}
-                  className="w-full"
-                  mentionFields={mentionFields}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t('thankYouSettings.messageHelp')}
-                {mentionFields.length > 0 ? (
-                  <>
-                    {' '}{t('thankYouSettings.mentionHelp', { values: { count: mentionFields.length } })}
-                  </>
-                ) : (
-                  <>
-                    {' '}{t('thankYouSettings.noFieldsHelp')}
-                  </>
-                )}
-              </p>
+          <div className="px-4 pb-4 pt-1 space-y-2" style={{ borderTop: '1px solid var(--tf-border-light)' }}>
+            <Label
+              htmlFor="thank-you-message"
+              className="text-sm font-medium text-foreground pt-3 inline-block"
+            >
+              {t('thankYouSettings.messageLabel')}
+            </Label>
+            <div data-testid="thank-you-message-editor">
+              <RichTextEditor
+                value={settings.message}
+                onChange={onMessageChange}
+                placeholder={t('thankYouSettings.messagePlaceholder')}
+                className="w-full"
+                mentionFields={mentionFields}
+              />
             </div>
+            <p className="text-xs text-muted-foreground">
+              {t('thankYouSettings.messageHelp')}
+              {mentionFields.length > 0 ? (
+                <>
+                  {' '}{t('thankYouSettings.mentionHelp', { values: { count: mentionFields.length } })}
+                </>
+              ) : (
+                <>
+                  {' '}{t('thankYouSettings.noFieldsHelp')}
+                </>
+              )}
+            </p>
           </div>
         )}
+      </div>
 
-        <div className="pt-4">
-          <Button
-            onClick={onSave}
-            disabled={isSaving}
-            data-testid="save-thank-you-settings-button"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {isSaving ? t('thankYouSettings.saving') : t('thankYouSettings.saveButton')}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      <div>
+        <Button
+          onClick={onSave}
+          disabled={isSaving}
+          data-testid="save-thank-you-settings-button"
+        >
+          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? t('thankYouSettings.saving') : t('thankYouSettings.saveButton')}
+        </Button>
+      </div>
+    </div>
   );
 };
 

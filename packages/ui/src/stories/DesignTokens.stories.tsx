@@ -65,7 +65,7 @@ const DesignTokensComponent: React.FC = () => (
       {/* Interactive */}
       <TokenGroup title="Interactive & Status">
         <Swatch hex="#177767" name="Green CTA" usage="View plans, positive" />
-        <Swatch hex="#f4faf8" name="Teal tint" usage="Teal icon bg" />
+        <Swatch hex="#c9ece3" name="Teal tint" usage="Teal icon bg" />
         <Swatch hex="#ce5d55" name="Error" usage="Destructive, errors" />
         <Swatch hex="rgba(255,255,255,0.8)" name="Ghost bg" usage="Outline buttons" />
         <Swatch hex="rgba(87,84,91,0.06)" name="Active tab bg" usage="Hover / active" />
@@ -76,7 +76,7 @@ const DesignTokensComponent: React.FC = () => (
       {/* Field icon palette */}
       <TokenGroup title="Field Icon Palette">
         <Swatch hex="#f8cdd8" name="Salmon" usage="Input fields" />
-        <Swatch hex="#f4faf8" name="Teal" usage="Time / clock" />
+        <Swatch hex="#c9ece3" name="Teal" usage="Time / clock" />
         <Swatch hex="#dedcde" name="Gray" usage="Generic fields" />
         <Swatch hex="#ddd6fa" name="Lavender" usage="Choice / rating" />
         <Swatch hex="#fbe19d" name="Yellow" usage="Number fields" />
