@@ -146,7 +146,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     if (onPageSubmit) onPageSubmit(pageId, data);
   }, [onPageSubmit]);
 
-  const handleFormComplete = () => {
+  const handleFormComplete = useCallback(() => {
     // Submit-time enforcement gate (strategy doc §5): run a final visibility
     // pass over the complete answer set and strip hidden fields' values (and
     // whole hidden pages) before anything downstream — file upload, "send me
@@ -169,10 +169,17 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     } else if (onFormComplete) {
       onFormComplete(strippedData);
     }
-  };
+  }, [store, formSchema, pages, contextMode, onResponseUpdate, responseId, onFormSubmit, formId, onFormComplete]);
 
   const goToNextPage = useCallback(async () => {
-    if (!currentPage || isNavigating) return;
+    if (isNavigating) return;
+    if (!currentPage) {
+      // Conditional rules can hide every page; the footer still offers Submit,
+      // so complete the form (the submit gate strips everything hidden anyway)
+      // instead of leaving a blank, non-submittable screen
+      handleFormComplete();
+      return;
+    }
 
     setIsNavigating(true);
     try {

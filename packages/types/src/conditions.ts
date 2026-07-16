@@ -65,7 +65,7 @@ export const conditionTermSchema = z.object({
   value: z.union([z.string(), z.number(), z.array(z.string())]).optional(),
 });
 
-export const conditionActionSchema = z.union([
+export const conditionActionSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.enum(['showField', 'hideField']),
     fieldIds: z.array(z.string().min(1)),

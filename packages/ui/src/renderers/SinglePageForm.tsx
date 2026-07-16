@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useImperativeHandle, useMemo } from 'react';
+import React, { useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import { useForm, FormProvider, Resolver, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormPage } from '@dculus/types';
@@ -64,14 +64,33 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   const hiddenFieldIds = responseContext?.hiddenFieldIds;
   const getHiddenFieldIds = responseContext?.getHiddenFieldIds;
 
-  // Visibility can change while typing on this page, so the schema is rebuilt
-  // with the current hidden set at validation time instead of being memoized —
-  // a hidden required field must never block validation (strategy doc §4.1)
+  // Visibility can change while typing on this page, so the schema is looked
+  // up with the current hidden set at validation time instead of being
+  // memoized on [page] — a hidden required field must never block validation
+  // (strategy doc §4.1). Validation runs per keystroke (mode: onChange), so
+  // the built schema is cached by a signature of the hidden set and only
+  // rebuilt when visibility actually changes.
+  const schemaCacheRef = useRef<{ signature: string; resolver: Resolver<FieldValues> } | null>(null);
   const resolver = useCallback<Resolver<FieldValues>>(
-    (values, context, options) =>
-      zodResolver(createPageSchema(page, getHiddenFieldIds?.()))(values, context, options),
+    (values, context, options) => {
+      const hidden = getHiddenFieldIds?.();
+      const signature = hidden && hidden.size > 0 ? [...hidden].sort().join(',') : '';
+      if (schemaCacheRef.current?.signature !== signature) {
+        schemaCacheRef.current = {
+          signature,
+          resolver: zodResolver(createPageSchema(page, hidden)),
+        };
+      }
+      return schemaCacheRef.current.resolver(values, context, options);
+    },
     [page, getHiddenFieldIds]
   );
+
+  // A page change must invalidate the cached schema even if the hidden-set
+  // signature happens to match
+  useEffect(() => {
+    schemaCacheRef.current = null;
+  }, [page]);
 
   // Initialize React Hook Form
   const methods = useForm({
