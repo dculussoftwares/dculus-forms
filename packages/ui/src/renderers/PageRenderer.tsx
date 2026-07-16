@@ -1,8 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { FormPage } from '@dculus/types';
+import { FormPage, evaluateConditions, stripHiddenResponses } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { SinglePageForm, LayoutStyles } from './SinglePageForm';
-import { useFormResponseStore, useFormResponseUtils } from '../stores/useFormResponseStore';
+import { useFormResponseStore } from '../stores/useFormResponseStore';
 import { FormValidationState, FormNavigationState } from '../types/validation';
 import { useFormResponseContext } from './FormResponseContext';
 import { Checkbox } from '../checkbox';
@@ -35,7 +35,6 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   showValidationSummary = true,
 }) => {
   const store = useFormResponseStore();
-  const { getFormattedResponses } = useFormResponseUtils();
   const {
     onFormSubmit,
     onResponseUpdate,
@@ -45,6 +44,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     responseCopySettings,
     onResponseCopyConsentChange,
     hiddenPageIds,
+    formSchema,
   } = useFormResponseContext();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [pageValidationStates, setPageValidationStates] = useState<Record<string, boolean>>({});
@@ -147,15 +147,27 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   }, [onPageSubmit]);
 
   const handleFormComplete = () => {
+    // Submit-time enforcement gate (strategy doc §5): run a final visibility
+    // pass over the complete answer set and strip hidden fields' values (and
+    // whole hidden pages) before anything downstream — file upload, "send me
+    // a copy" recipient lookup, GraphQL submit, response-edit tracking —
+    // sees the data. EDIT mode flows through this same choke point.
     const allData = store.getAllResponses();
-    const formattedData = getFormattedResponses();
+    const finalVisibility = evaluateConditions(formSchema?.conditions, allData, { pages });
+    const strippedData = stripHiddenResponses(allData, finalVisibility);
+    const formattedData: Record<string, any> = {};
+    Object.values(strippedData).forEach((pageResponses) => {
+      Object.entries(pageResponses).forEach(([fieldId, value]) => {
+        formattedData[fieldId] = value;
+      });
+    });
 
     if (contextMode === RendererMode.EDIT && onResponseUpdate && responseId) {
       onResponseUpdate(responseId, formattedData);
     } else if (onFormSubmit && formId) {
       onFormSubmit(formId, formattedData);
     } else if (onFormComplete) {
-      onFormComplete(allData);
+      onFormComplete(strippedData);
     }
   };
 

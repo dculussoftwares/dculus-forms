@@ -270,6 +270,29 @@ const evaluateTerm = (
 };
 
 /**
+ * Removes hidden fields' values — and every value on hidden pages — from a
+ * page-keyed response map. This is the submit-time enforcement gate
+ * (strategy doc §5): values are kept in the store while filling and stripped
+ * exactly once here, before upload/validation/submission see them.
+ * Returns a new map; the input is not mutated.
+ */
+export const stripHiddenResponses = (
+  responses: FormResponsesByPage,
+  visibility: ConditionEvaluationResult
+): FormResponsesByPage => {
+  const stripped: FormResponsesByPage = {};
+  for (const [pageId, pageResponses] of Object.entries(responses ?? {})) {
+    if (visibility.hiddenPageIds.has(pageId)) continue;
+    const kept: Record<string, unknown> = {};
+    for (const [fieldId, value] of Object.entries(pageResponses ?? {})) {
+      if (!visibility.hiddenFieldIds.has(fieldId)) kept[fieldId] = value;
+    }
+    stripped[pageId] = kept;
+  }
+  return stripped;
+};
+
+/**
  * Pure, total evaluator for conditional rules (strategy doc §6).
  *
  * - A field/page targeted by any show* action of an active rule starts hidden
