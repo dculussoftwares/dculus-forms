@@ -1,0 +1,73 @@
+{
+  "title": "Conditions",
+  "subtitle": "Show or hide fields and pages based on answers",
+  "addRule": "Add rule",
+  "empty": {
+    "title": "No conditions yet",
+    "description": "Create rules like \"if the answer is Yes, show the details field\" to make your form dynamic."
+  },
+  "card": {
+    "if": "IF",
+    "then": "THEN",
+    "combinator": {
+      "any": "any of the following match",
+      "all": "all of the following match"
+    },
+    "enabled": "Rule enabled",
+    "edit": "Edit rule",
+    "delete": "Delete rule",
+    "brokenReference": "Broken reference",
+    "brokenReferenceHint": "This rule references a deleted field, a deleted page, or an option that no longer exists. It will not match until fixed.",
+    "deletedField": "deleted field",
+    "deletedPage": "deleted page"
+  },
+  "editor": {
+    "createTitle": "New condition",
+    "editTitle": "Edit condition",
+    "ifSection": "If…",
+    "thenSection": "Then…",
+    "addTerm": "Add condition",
+    "removeTerm": "Remove condition",
+    "addAction": "Add action",
+    "removeAction": "Remove action",
+    "selectField": "Select a field",
+    "selectOperator": "Select an operator",
+    "selectOption": "Select an option",
+    "selectPage": "Select a page",
+    "valuePlaceholder": "Value",
+    "numberPlaceholder": "Enter a number",
+    "pickDate": "Pick a date",
+    "combinatorLabel": "Match",
+    "combinatorAny": "Any condition",
+    "combinatorAll": "All conditions",
+    "targetFields": "Target fields",
+    "noTargetsSelected": "Select at least one field",
+    "page": "Page {{number}}",
+    "pageWithTitle": "Page {{number}} — {{title}}",
+    "save": "Save rule",
+    "cancel": "Cancel"
+  },
+  "actions": {
+    "showField": "Show field(s)",
+    "hideField": "Hide field(s)",
+    "hidePage": "Hide page"
+  },
+  "operators": {
+    "equals": "is equal to",
+    "notEquals": "is not equal to",
+    "contains": "contains",
+    "notContains": "does not contain",
+    "startsWith": "starts with",
+    "endsWith": "ends with",
+    "isEmpty": "is empty",
+    "isFilled": "is filled",
+    "lessThan": "is less than",
+    "greaterThan": "is greater than",
+    "before": "is before",
+    "after": "is after"
+  },
+  "toast": {
+    "ruleSaved": "Condition saved",
+    "ruleDeleted": "Condition deleted"
+  }
+}
