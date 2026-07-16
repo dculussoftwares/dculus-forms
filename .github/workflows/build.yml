@@ -4,8 +4,16 @@ on:
   push:
     branches: [ main, develop, release ]
     tags: [ 'v*' ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'infrastructure/**'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'infrastructure/**'
   workflow_dispatch:
 
 concurrency:
@@ -19,10 +27,9 @@ permissions:
 
 env:
   NODE_VERSION: '22.14.0'
-  PNPM_VERSION: '8.15.0'
   REGISTRY: docker.io
   IMAGE_NAME: dculus/forms-backend
-  # Backend URL for production builds 
+  # Backend URL for production builds
   BACKEND_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
   # Viewer URL used for linking out of the builder
   FORM_VIEWER_URL: https://dculus-forms-viewer-app.pages.dev
@@ -36,11 +43,13 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch full history for comprehensive scanning
+          persist-credentials: false
 
       - name: TruffleHog secret scan
         uses: trufflesecurity/trufflehog@v3.95.5
@@ -55,39 +64,17 @@ jobs:
   build-shared-packages:
     name: Build Shared Packages
     runs-on: ubuntu-latest
-    needs: security-scan
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
+          run-prisma-generate: 'true'
 
       - name: Build shared packages
         run: |
@@ -95,61 +82,36 @@ jobs:
           pnpm --filter @dculus/utils build
           pnpm --filter @dculus/ui build
 
-      - name: Cache built packages
-        uses: actions/cache@v4
+      - name: Upload built packages
+        uses: actions/upload-artifact@v4
         with:
+          name: packages-dist
           path: |
             packages/types/dist
             packages/utils/dist
             packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
+          retention-days: 1
 
   lint-and-type-check:
     runs-on: ubuntu-latest
     needs: build-shared-packages
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
+          run-prisma-generate: 'true'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Download built packages
+        uses: actions/download-artifact@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Restore built packages cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            packages/types/dist
-            packages/utils/dist
-            packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
+          name: packages-dist
+          path: packages
 
       - name: Run linting
         run: pnpm lint
@@ -165,41 +127,23 @@ jobs:
     name: Build Backend
     runs-on: ubuntu-latest
     needs: build-shared-packages
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
+          run-prisma-generate: 'true'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Download built packages
+        uses: actions/download-artifact@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Restore built packages cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            packages/types/dist
-            packages/utils/dist
-            packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
-
-      - name: Lint backend
-        run: pnpm --filter backend lint
-
-      - name: Type check backend
-        run: pnpm --filter backend type-check
+          name: packages-dist
+          path: packages
 
       - name: Run unit tests with coverage
         env:
@@ -231,35 +175,23 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: build-shared-packages
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
+          run-prisma-generate: 'true'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Download built packages
+        uses: actions/download-artifact@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Restore built packages cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            packages/types/dist
-            packages/utils/dist
-            packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client
-        run: pnpm db:generate
+          name: packages-dist
+          path: packages
 
       - name: Build backend
         run: pnpm --filter backend build
@@ -361,38 +293,22 @@ jobs:
     name: Build Form App
     runs-on: ubuntu-latest
     needs: build-shared-packages
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Download built packages
+        uses: actions/download-artifact@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Restore built packages cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            packages/types/dist
-            packages/utils/dist
-            packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint form-app
-        run: pnpm --filter form-app lint
-
-      - name: Type check form-app
-        run: pnpm --filter form-app type-check
+          name: packages-dist
+          path: packages
 
       - name: Build form-app with environment variables
         env:
@@ -414,38 +330,22 @@ jobs:
     name: Build Form Viewer
     runs-on: ubuntu-latest
     needs: build-shared-packages
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Download built packages
+        uses: actions/download-artifact@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Restore built packages cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            packages/types/dist
-            packages/utils/dist
-            packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint form-viewer
-        run: pnpm --filter form-viewer lint
-
-      - name: Type check form-viewer
-        run: pnpm --filter form-viewer type-check
+          name: packages-dist
+          path: packages
 
       - name: Run unit tests (form-viewer)
         run: pnpm --filter form-viewer test:unit
@@ -464,38 +364,22 @@ jobs:
     name: Build Admin App
     runs-on: ubuntu-latest
     needs: build-shared-packages
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Download built packages
+        uses: actions/download-artifact@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Restore built packages cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            packages/types/dist
-            packages/utils/dist
-            packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint admin-app
-        run: pnpm --filter admin-app lint
-
-      - name: Type check admin-app
-        run: pnpm --filter admin-app type-check
+          name: packages-dist
+          path: packages
 
       - name: Build admin-app with environment variables
         env:
@@ -513,7 +397,8 @@ jobs:
   e2e-local:
     name: E2E Tests (Local Runner)
     runs-on: ubuntu-latest
-    needs: [build-backend, build-form-app, build-form-viewer]
+    needs: [build-shared-packages, build-backend]
+    timeout-minutes: 20
 
     services:
       postgres:
@@ -555,34 +440,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
+          run-prisma-generate: 'true'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Download built packages
+        uses: actions/download-artifact@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          name: packages-dist
+          path: packages
 
-      - name: Restore built packages cache
-        uses: actions/cache@v4
+      - name: Download backend dist
+        uses: actions/download-artifact@v4
         with:
-          path: |
-            packages/types/dist
-            packages/utils/dist
-            packages/ui/dist
-            node_modules/.pnpm
-          key: built-packages-${{ github.sha }}
+          name: backend-dist-${{ github.sha }}
+          path: apps/backend/dist
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate Prisma client & run migrations
-        run: |
-          pnpm db:generate
-          pnpm db:migrate:deploy
+      - name: Run migrations
+        run: pnpm db:migrate:deploy
 
       - name: Seed templates (no S3 uploads)
         run: |
@@ -617,7 +496,6 @@ jobs:
 
       - name: Start backend
         run: |
-          pnpm --filter backend build
           node apps/backend/dist/apps/backend/src/index.js &
           echo "BACKEND_PID=$!" >> $GITHUB_ENV
         env:
@@ -661,6 +539,12 @@ jobs:
           done
           echo "❌ Frontends failed to start" && exit 1
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium --with-deps
 
@@ -680,9 +564,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-form-app, build-form-viewer, build-admin-app, build-backend]
     if: startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -691,8 +578,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Download form-app dist
         uses: actions/download-artifact@v4
@@ -824,11 +709,13 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Extract version from tag
         id: version
@@ -908,10 +795,10 @@ jobs:
             ```bash
             # Pull using version tag with v prefix
             docker pull dculus/forms-backend:v${{ steps.version.outputs.version }}
-            
+
             # Or pull latest
             docker pull dculus/forms-backend:latest
-            
+
             # Run with environment file
             docker run -d -p 4000:4000 --env-file .env dculus/forms-backend:v${{ steps.version.outputs.version }}
             ```
@@ -921,7 +808,7 @@ jobs:
             - `dculus/forms-backend:v{{ steps.version.outputs.major }}.{{ steps.version.outputs.minor }}` (e.g., v1.2)
             - `dculus/forms-backend:v{{ steps.version.outputs.major }}` (e.g., v1)
             - `dculus/forms-backend:latest` (always points to the most recent stable release)
-            
+
             **Option 2: Node.js Direct**
             ```bash
             unzip backend-build-v${{ steps.version.outputs.version }}.zip
@@ -1002,10 +889,13 @@ jobs:
       contents: read
       packages: write
       pull-requests: write
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -1108,6 +998,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [security-scan, build-shared-packages, lint-and-type-check, build-backend, integration-tests, build-and-push, e2e-local]
     if: always()
+    timeout-minutes: 5
     steps:
       - name: Generate build summary
         run: |
@@ -1123,7 +1014,7 @@ jobs:
           echo "| E2E Tests (Local) | ${{ needs.e2e-local.result == 'success' && '✅' || needs.e2e-local.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker Build & Push | ${{ needs.build-and-push.result == 'success' && '✅' || needs.build-and-push.result == 'skipped' && '⏭️ Skipped (tags only)' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ needs.build-and-push.result }}" == "success" ]]; then
             echo "### 🐳 Docker Image Built" >> $GITHUB_STEP_SUMMARY
             echo "✅ Backend Docker image built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY

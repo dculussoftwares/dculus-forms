@@ -33,19 +33,30 @@ on:
     paths:
       - "infrastructure/multi-cloud/terraform/**"
       - ".github/workflows/multi-cloud-deployment.yml"
+  # NOTE: `workflow_run` only supports `branches`/`branches-ignore` filters — there is
+  # no `tags:` key for this event type. A `branches: [main]` filter here would also be
+  # wrong: for a Build Pipeline run triggered by a version-tag push, GitHub reports
+  # `head_branch` as the TAG NAME (e.g. "v1.2.3"), not "main" — verified against this
+  # repo's actual run history, where every workflow_run-triggered deployment run has
+  # head_branch=main and tag-triggered runs never reach this trigger at all. So no
+  # branch filter is applied here; dev vs production is decided entirely in the
+  # `determine-environment` job below, by regex-matching `head_branch` against
+  # `^v[0-9]+\.[0-9]+` for production, "main" for dev, anything else is skipped.
   workflow_run:
     workflows: [ "Build Pipeline" ]
     types:
       - completed
-    branches:
-      - main
-    tags:
-      - 'v*'
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
   contents: read # Required for checking out code
-  pull-requests: write # Required for commenting on PRs
+  # id-token: write (Azure OIDC) is granted per-job, only on jobs that call azure/login
+
+# Prevent overlapping Terraform applies against the same environment's state.
+# Grouped by trigger-time context only (job outputs like `determine-environment`
+# aren't available at this scope).
+concurrency:
+  group: multi-cloud-deploy-${{ github.event.workflow_run.head_branch || github.event.inputs.environment || github.ref_name }}
+  cancel-in-progress: false
 
 env:
   TERRAFORM_VERSION: "1.9.8"
@@ -64,6 +75,7 @@ jobs:
   determine-environment:
     name: 1.1. Determine Deployment Environment
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
       should_deploy: ${{ steps.set-env.outputs.should_deploy }}
@@ -72,7 +84,19 @@ jobs:
       release_tag: ${{ steps.set-env.outputs.release_tag }}
       release_commit: ${{ steps.resolve-release.outputs.release_commit ||
         steps.set-env.outputs.release_commit }}
+      is_same_repo: ${{ steps.repo-check.outputs.is_same_repo }}
     steps:
+      - name: Check repo trust (fork PR guard)
+        id: repo-check
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ] && \
+             [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            echo "is_same_repo=false" >> $GITHUB_OUTPUT
+            echo "⚠️ PR from a fork (${{ github.event.pull_request.head.repo.full_name }}) — cloud credential steps will be skipped."
+          else
+            echo "is_same_repo=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Determine environment
         id: set-env
         run: |
@@ -188,6 +212,10 @@ jobs:
   setup-azure-backend:
     name: 1.2. Setup Azure Terraform Backend
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs: determine-environment
     if: needs.determine-environment.outputs.should_deploy == 'true'
     environment: ${{ needs.determine-environment.outputs.environment }}
@@ -335,6 +363,7 @@ jobs:
   check-docker-image:
     name: 2.1. Validate Docker Image Availability
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: [ determine-environment, setup-azure-backend ]
     if: needs.determine-environment.outputs.deploy_azure == 'true'
     outputs:
@@ -374,6 +403,7 @@ jobs:
   run-migrations:
     name: 4.0. Run Database Migrations
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [ determine-environment, setup-azure-backend ]
     if: |
       always() && !cancelled() && !failure() &&
@@ -421,6 +451,10 @@ jobs:
   terraform-infrastructure-deploy:
     name: 4.1. Deploy Core Infrastructure (R2 Storage + Azure Container Apps)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -430,6 +464,7 @@ jobs:
       ]
     if: |
       always() && !cancelled() && !failure() &&
+      needs.determine-environment.outputs.is_same_repo == 'true' &&
       (needs.determine-environment.outputs.deploy_cloudflare == 'true' ||
        needs.determine-environment.outputs.deploy_azure == 'true')
     environment: ${{ needs.determine-environment.outputs.environment }}
@@ -645,6 +680,10 @@ jobs:
   terraform-cloudflare-service-domain:
     name: 5.1. Configure Backend Service Domain DNS
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -738,6 +777,10 @@ jobs:
   terraform-cloudflare-pages:
     name: 5.2. Setup Pages Infrastructure & Domain (form-app)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -834,6 +877,7 @@ jobs:
   deploy-cloudflare-pages-form-app:
     name: 6.1. Build & Deploy Frontend (form-app)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs:
       - determine-environment
       - terraform-infrastructure-deploy
@@ -949,13 +993,16 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CUSTOM_DOMAIN: ${{ needs.terraform-cloudflare-pages.outputs.custom_domain }}
         run: |
-          echo "🔄 Purging Cloudflare cache for immediate visibility..."
+          echo "🔄 Purging Cloudflare cache for $CUSTOM_DOMAIN..."
 
+          # Vite emits content-hashed assets, so only the entry document needs purging —
+          # purge_everything wiped the whole zone (incl. the R2 public CDN and other apps).
           PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}' \
+            --data "{\"files\":[\"https://${CUSTOM_DOMAIN}/\",\"https://${CUSTOM_DOMAIN}/index.html\"]}" \
             --silent \
             --show-error)
 
@@ -972,12 +1019,8 @@ jobs:
           CUSTOM_DOMAIN="${{ needs.terraform-cloudflare-pages.outputs.custom_domain }}"
           echo "🔍 Checking deployment at: $CUSTOM_DOMAIN"
 
-          # Wait for DNS propagation and deployment
-          echo "⏳ Waiting 60 seconds for DNS propagation..."
-          sleep 60
-
-          # Retry health check up to 5 times
-          MAX_RETRIES=5
+          # Poll immediately instead of a fixed upfront wait — exits as soon as ready.
+          MAX_RETRIES=15
           RETRY_COUNT=0
 
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
@@ -992,8 +1035,8 @@ jobs:
               echo "⚠️ Health check attempt $RETRY_COUNT/$MAX_RETRIES failed (HTTP $HTTP_CODE)"
 
               if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                echo "⏳ Waiting 30 seconds before retry..."
-                sleep 30
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
               fi
             fi
           done
@@ -1019,6 +1062,10 @@ jobs:
   terraform-cloudflare-pages-admin:
     name: 5.3. Setup Pages Infrastructure & Domain (admin-app)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -1111,6 +1158,7 @@ jobs:
   deploy-cloudflare-pages-admin-app:
     name: 6.2. Build & Deploy Frontend (admin-app)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs:
       - determine-environment
       - terraform-infrastructure-deploy
@@ -1221,13 +1269,16 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CUSTOM_DOMAIN: ${{ needs.terraform-cloudflare-pages-admin.outputs.custom_domain }}
         run: |
-          echo "🔄 Purging Cloudflare cache for immediate visibility..."
+          echo "🔄 Purging Cloudflare cache for $CUSTOM_DOMAIN..."
 
+          # Vite emits content-hashed assets, so only the entry document needs purging —
+          # purge_everything wiped the whole zone (incl. the R2 public CDN and other apps).
           PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}' \
+            --data "{\"files\":[\"https://${CUSTOM_DOMAIN}/\",\"https://${CUSTOM_DOMAIN}/index.html\"]}" \
             --silent \
             --show-error)
 
@@ -1244,12 +1295,8 @@ jobs:
           CUSTOM_DOMAIN="${{ needs.terraform-cloudflare-pages-admin.outputs.custom_domain }}"
           echo "🔍 Checking deployment at: $CUSTOM_DOMAIN"
 
-          # Wait for DNS propagation and deployment
-          echo "⏳ Waiting 60 seconds for DNS propagation..."
-          sleep 60
-
-          # Retry health check up to 5 times
-          MAX_RETRIES=5
+          # Poll immediately instead of a fixed upfront wait — exits as soon as ready.
+          MAX_RETRIES=15
           RETRY_COUNT=0
 
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
@@ -1264,8 +1311,8 @@ jobs:
               echo "⚠️ Health check attempt $RETRY_COUNT/$MAX_RETRIES failed (HTTP $HTTP_CODE)"
 
               if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                echo "⏳ Waiting 30 seconds before retry..."
-                sleep 30
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
               fi
             fi
           done
@@ -1291,6 +1338,10 @@ jobs:
   terraform-cloudflare-pages-viewer:
     name: 5.4. Setup Pages Infrastructure & Domain (form-viewer)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -1383,6 +1434,7 @@ jobs:
   deploy-cloudflare-pages-viewer-app:
     name: 6.3. Build & Deploy Frontend (form-viewer)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs:
       - determine-environment
       - terraform-infrastructure-deploy
@@ -1493,13 +1545,16 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CUSTOM_DOMAIN: ${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}
         run: |
-          echo "🔄 Purging Cloudflare cache for immediate visibility..."
+          echo "🔄 Purging Cloudflare cache for $CUSTOM_DOMAIN..."
 
+          # Vite emits content-hashed assets, so only the entry document needs purging —
+          # purge_everything wiped the whole zone (incl. the R2 public CDN and other apps).
           PURGE_RESPONSE=$(curl -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}' \
+            --data "{\"files\":[\"https://${CUSTOM_DOMAIN}/\",\"https://${CUSTOM_DOMAIN}/index.html\"]}" \
             --silent \
             --show-error)
 
@@ -1516,12 +1571,8 @@ jobs:
           CUSTOM_DOMAIN="${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}"
           echo "🔍 Checking deployment at: $CUSTOM_DOMAIN"
 
-          # Wait for DNS propagation and deployment
-          echo "⏳ Waiting 60 seconds for DNS propagation..."
-          sleep 60
-
-          # Retry health check up to 5 times
-          MAX_RETRIES=5
+          # Poll immediately instead of a fixed upfront wait — exits as soon as ready.
+          MAX_RETRIES=15
           RETRY_COUNT=0
 
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
@@ -1536,8 +1587,8 @@ jobs:
               echo "⚠️ Health check attempt $RETRY_COUNT/$MAX_RETRIES failed (HTTP $HTTP_CODE)"
 
               if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                echo "⏳ Waiting 30 seconds before retry..."
-                sleep 30
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
               fi
             fi
           done
@@ -1563,6 +1614,7 @@ jobs:
   run-form-app-e2e:
     name: 7.2. Run form-app E2E (Cloudflare Pages)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: ${{ needs.determine-environment.outputs.environment }}
     needs:
       - determine-environment
@@ -1668,6 +1720,10 @@ jobs:
   configure-azure-custom-domain:
     name: 7.1. Configure Backend SSL Certificate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -1749,23 +1805,21 @@ jobs:
   health-checks:
     name: 8.1. Run Health Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs: [ determine-environment, terraform-infrastructure-deploy ]
     if: |
       always() && !cancelled() &&
       needs.determine-environment.outputs.should_deploy == 'true' &&
       needs.terraform-infrastructure-deploy.result == 'success'
     steps:
-      - name: Wait for backend to be ready
-        run: |
-          echo "⏳ Waiting 30 seconds for backend to stabilize..."
-          sleep 30
-
       - name: Check backend health endpoint
         run: |
           HEALTH_URL="${{ needs.terraform-infrastructure-deploy.outputs.health_endpoint }}"
           echo "🏥 Checking health endpoint: $HEALTH_URL"
 
-          MAX_RETRIES=5
+          # Poll immediately instead of a fixed upfront "stabilize" sleep — exits as
+          # soon as ready; same worst-case budget as before (5x15s retries).
+          MAX_RETRIES=10
           RETRY_COUNT=0
 
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
@@ -1808,6 +1862,7 @@ jobs:
   deployment-summary:
     name: 9.1. Generate Deployment Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
       [
         determine-environment,
@@ -1902,6 +1957,15 @@ jobs:
             echo "- **Pages URL**: [${{ needs.terraform-cloudflare-pages-viewer.outputs.pages_url }}](${{ needs.terraform-cloudflare-pages-viewer.outputs.pages_url }})" >> $GITHUB_STEP_SUMMARY
             echo "- **Backend**: \`https://${{ needs.terraform-cloudflare-service-domain.outputs.service_domain }}\`" >> $GITHUB_STEP_SUMMARY
             echo "- **Status**: ✅ Deployed and health check passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Post-deploy E2E is continue-on-error (doesn't block dev availability on flaky
+          # E2E), so surface a failure here instead of letting it pass silently.
+          if [ "${{ needs.run-form-app-e2e.result }}" != "success" ] && [ "${{ needs.run-form-app-e2e.result }}" != "skipped" ]; then
+            echo "## ⚠️ Post-deploy E2E failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The form-app E2E suite against the live deployment did not pass (result: \`${{ needs.run-form-app-e2e.result }}\`). Deployment was not blocked, but this needs a look — check the \`run-form-app-e2e\` job logs." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
 
