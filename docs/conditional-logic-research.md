@@ -86,8 +86,8 @@ behave identically: **`packages/`**, not the apps.
   uses the same renderer (`RendererMode.EDIT`), so conditions apply automatically; edit
   history will record cleared-by-condition fields as DELETEs.
 - **Circular rules** (A hides B, B hides A) — builder should warn; evaluator must not
-  loop (fixed-point iteration with repeated-state detection; on an oscillating cycle
-  the state with the fewest hidden items wins — see strategy doc §6).
+  loop (fixed-point iteration with repeated-state detection; items oscillating within
+  a cycle resolve to visible — see strategy doc §6).
 
 ## 3. Proposed data model (v1)
 

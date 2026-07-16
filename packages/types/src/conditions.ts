@@ -279,9 +279,9 @@ const evaluateTerm = (
  * - Matched rules apply their actions in list order — later rules win on
  *   conflict. Fixed-point iteration stops when the visibility state stabilizes
  *   or a previously seen state repeats (an oscillating show/hide cycle). On a
- *   cycle, the cycle state with the fewest hidden items wins (prefer
- *   visibility on paradoxes; ties broken by signature) — deterministic and
- *   unaffected by unrelated rules, unlike a rule-count-based iteration cap.
+ *   cycle, an item that oscillates within the cycle resolves to visible; only
+ *   items hidden in every cycle state stay hidden. Resolution is per item, so
+ *   the outcome is deterministic and independent of unrelated rules or cycles.
  * - A page is also hidden when it has ≥1 field and all of them are hidden
  *   (auto-skip, §9.8). Terms referencing unknown/deleted fields are false;
  *   disabled, term-less, or action-less rules are inactive (§9.9).
@@ -304,25 +304,46 @@ export const evaluateConditions = (
   }
 
   // Persisted rules may be malformed (collab races, hand-edited JSON) — drop
-  // anything non-object-shaped so evaluation stays total and never throws
-  const activeRules = (Array.isArray(rules) ? rules : []).filter(
-    (rule) =>
-      !!rule &&
-      typeof rule === 'object' &&
-      rule.enabled &&
-      Array.isArray(rule.terms) &&
-      rule.terms.length > 0 &&
-      Array.isArray(rule.actions) &&
-      rule.actions.some((action) => !!action && typeof action === 'object')
-  );
+  // anything whose shape does not match the action contract so evaluation
+  // stays total and never throws
+  const isWellFormedAction = (action: unknown): action is ConditionAction => {
+    if (!action || typeof action !== 'object') return false;
+    const candidate = action as { type?: unknown; fieldIds?: unknown; pageId?: unknown };
+    switch (candidate.type) {
+      case 'showField':
+      case 'hideField':
+        return (
+          Array.isArray(candidate.fieldIds) &&
+          candidate.fieldIds.every((id) => typeof id === 'string')
+        );
+      case 'showPage':
+      case 'hidePage':
+      case 'skipToPage':
+        return typeof candidate.pageId === 'string';
+      default:
+        return false;
+    }
+  };
+
+  const activeRules = (Array.isArray(rules) ? rules : [])
+    .filter(
+      (rule) =>
+        !!rule &&
+        typeof rule === 'object' &&
+        rule.enabled &&
+        Array.isArray(rule.terms) &&
+        rule.terms.length > 0 &&
+        Array.isArray(rule.actions) &&
+        rule.actions.some(isWellFormedAction)
+    )
+    .map((rule) => ({ ...rule, actions: rule.actions.filter(isWellFormedAction) }));
 
   const defaultHiddenFields = new Set<string>();
   const defaultHiddenPages = new Set<string>();
   for (const rule of activeRules) {
     for (const action of rule.actions) {
-      if (!action || typeof action !== 'object') continue;
       if (action.type === 'showField') {
-        for (const id of action.fieldIds ?? []) defaultHiddenFields.add(id);
+        for (const id of action.fieldIds) defaultHiddenFields.add(id);
       } else if (action.type === 'showPage') {
         defaultHiddenPages.add(action.pageId);
       }
@@ -354,13 +375,12 @@ export const evaluateConditions = (
           : rule.terms.every(termMatches);
       if (!matched) continue;
       for (const action of rule.actions) {
-        if (!action || typeof action !== 'object') continue;
         switch (action.type) {
           case 'showField':
-            for (const id of action.fieldIds ?? []) nextFields.delete(id);
+            for (const id of action.fieldIds) nextFields.delete(id);
             break;
           case 'hideField':
-            for (const id of action.fieldIds ?? []) nextFields.add(id);
+            for (const id of action.fieldIds) nextFields.add(id);
             break;
           case 'showPage':
             nextPages.delete(action.pageId);
@@ -390,43 +410,40 @@ export const evaluateConditions = (
     `${[...state.fields].sort().join('\u0001')}\u0002${[...state.pages].sort().join('\u0001')}`;
 
   // Iterate to a fixed point. Visibility states are finite so the trajectory
-  // must revisit a state; a repeat of the previous state is stability, any
-  // earlier repeat closes an oscillating show/hide cycle. Cycle policy: return
-  // the cycle state with the fewest hidden items (prefer visibility on
-  // paradoxes), tie-broken by signature. The choice depends only on the states
-  // inside the cycle - not the entry transient - so adding unrelated rules
-  // cannot flip an oscillating field's outcome. The numeric cap only bounds
-  // pathological rule sets that walk very many distinct states.
+  // must revisit a state: a repeat of the previous state is stability, any
+  // earlier repeat closes an oscillating show/hide cycle. Cycle policy: an
+  // item (field/page) that oscillates anywhere within the cycle resolves to
+  // VISIBLE; only items hidden in every cycle state stay hidden (intersection
+  // of the cycle states). Prefer-visibility is resolved per item, so
+  // independent cycles - whatever their phase - can never influence each
+  // other's outcome. The safety cap scales with form size: a legitimate
+  // cascade chain needs one iteration per chained rule, so it can only be hit
+  // by adversarial rule sets, in which case the last computed state returns.
   let current: VisibilityState = {
     fields: new Set(defaultHiddenFields),
     pages: new Set(defaultHiddenPages),
   };
   const seenIndex = new Map<string, number>([[stateSignature(current), 0]]);
-  const history: Array<{ state: VisibilityState; signature: string }> = [
-    { state: current, signature: stateSignature(current) },
-  ];
-  const maxIterations = 100;
+  const history: VisibilityState[] = [current];
+  const maxIterations = activeRules.length + fieldInfo.size + pageFieldIds.size + 2;
   for (let i = 0; i < maxIterations; i++) {
     const next = evaluateOnce(current.fields, current.pages);
     const signature = stateSignature(next);
     const firstSeenAt = seenIndex.get(signature);
     if (firstSeenAt !== undefined) {
-      let chosen = { state: next, signature };
-      for (const entry of history.slice(firstSeenAt)) {
-        const entrySize = entry.state.fields.size + entry.state.pages.size;
-        const chosenSize = chosen.state.fields.size + chosen.state.pages.size;
-        if (
-          entrySize < chosenSize ||
-          (entrySize === chosenSize && entry.signature < chosen.signature)
-        ) {
-          chosen = entry;
-        }
-      }
-      current = chosen.state;
+      const cycle = history.slice(firstSeenAt);
+      current = {
+        fields: new Set(
+          [...next.fields].filter((id) => cycle.every((s) => s.fields.has(id)))
+        ),
+        pages: new Set(
+          [...next.pages].filter((id) => cycle.every((s) => s.pages.has(id)))
+        ),
+      };
       break;
     }
     seenIndex.set(signature, history.length);
-    history.push({ state: next, signature });
+    history.push(next);
     current = next;
   }
 

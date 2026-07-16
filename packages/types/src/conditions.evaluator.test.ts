@@ -449,6 +449,17 @@ describe('rule mechanics', () => {
         terms: [{ operator: 'isFilled' }],
         actions: [{ type: 'hideField', fieldIds: ['file'] }],
       },
+      {
+        id: 'non-iterable-fieldIds',
+        enabled: true,
+        combinator: 'all',
+        terms: [{ fieldId: 'text', operator: 'isFilled' }],
+        actions: [
+          { type: 'showField', fieldIds: 42 },
+          { type: 'hideField', fieldIds: [7, 'date'] },
+          { type: 'hidePage' },
+        ],
+      },
     ] as unknown as ConditionalRule[];
 
     const result = evaluateConditions(malformed, responsesWith({ text: 'x' }), schema);
@@ -457,6 +468,9 @@ describe('rule mechanics', () => {
     expect(result.hiddenFieldIds.has('email')).toBe(true);
     // term without fieldId is false → its action never fires
     expect(result.hiddenFieldIds.has('file')).toBe(false);
+    // actions with non-array/non-string payloads are dropped, not iterated
+    expect(result.hiddenFieldIds.has('date')).toBe(false);
+    expect(result.hiddenPageIds.size).toBe(0);
   });
 
   it('skips disabled rules entirely — including their showField defaults', () => {
@@ -821,6 +835,59 @@ describe('cascading evaluation', () => {
       schema
     );
     expect(result.hiddenFieldIds.size).toBe(0);
+  });
+
+  it('resolves independent simultaneous cycles per item (both end visible)', () => {
+    const selfHide = (id: string, field: string): ConditionalRule => ({
+      id,
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: field, operator: 'isFilled' }],
+      actions: [{ type: 'hideField', fieldIds: [field] }],
+    });
+    const result = evaluateConditions(
+      [selfHide('c1', 'text'), selfHide('c2', 'textarea')],
+      responsesWith({ text: 'x', textarea: 'y' }),
+      schema
+    );
+    // each oscillating item resolves to visible independently of the other
+    expect(result.hiddenFieldIds.size).toBe(0);
+  });
+
+  it('converges through long directional cascade chains', () => {
+    // all filled: r1 hides textarea → textarea reads empty → r2 hides email
+    // → email reads empty → r3 hides phone; needs one pass per chained rule
+    const rules: ConditionalRule[] = [
+      {
+        id: 'r1',
+        enabled: true,
+        combinator: 'all',
+        terms: [{ fieldId: 'text', operator: 'isFilled' }],
+        actions: [{ type: 'hideField', fieldIds: ['textarea'] }],
+      },
+      {
+        id: 'r2',
+        enabled: true,
+        combinator: 'all',
+        terms: [{ fieldId: 'textarea', operator: 'isEmpty' }],
+        actions: [{ type: 'hideField', fieldIds: ['email'] }],
+      },
+      {
+        id: 'r3',
+        enabled: true,
+        combinator: 'all',
+        terms: [{ fieldId: 'email', operator: 'isEmpty' }],
+        actions: [{ type: 'hideField', fieldIds: ['phone'] }],
+      },
+    ];
+    const result = evaluateConditions(
+      rules,
+      responsesWith({ text: 'go', textarea: 'filled', email: 'a@b.co', phone: '+14155552671' }),
+      schema
+    );
+    expect(result.hiddenFieldIds.has('textarea')).toBe(true);
+    expect(result.hiddenFieldIds.has('email')).toBe(true);
+    expect(result.hiddenFieldIds.has('phone')).toBe(true);
   });
 
   it('cross-page triggers work (p1 answer controls p2 field)', () => {
