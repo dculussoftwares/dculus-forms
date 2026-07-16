@@ -21,7 +21,7 @@ rules — *not* attached to individual fields. Eight condition types:
 
 ### Rule anatomy (same shape for every condition type)
 
-```
+```text
 IF    [field]  [STATE operator]  [VALUE]     ← 1..N terms ("+" adds terms)
 IF    [field]  [STATE operator]  [VALUE]
       IF (Any | All) OF THE "IF" RULES ARE MATCHED   ← flat combinator, no nested groups
@@ -80,13 +80,14 @@ behave identically: **`packages/`**, not the apps.
   shuffle only shuffles within visible sets).
 - **Chained/cascading rules** — hiding field A can change the truth of a rule that
   depends on A. JotForm re-evaluates transitively (with "clear when hidden" making it
-  deterministic). Our evaluator should iterate to a fixed point, or simpler: treat
-  hidden fields' values as empty during evaluation (one pass, deterministic).
+  deterministic). Our evaluator does both: hidden fields' values read as empty during
+  evaluation, and it iterates to a fixed point (final model — see strategy doc §6).
 - **Response edit mode** (`ResponseEdit` + `responseEditTrackingService`) — the edit UI
   uses the same renderer (`RendererMode.EDIT`), so conditions apply automatically; edit
   history will record cleared-by-condition fields as DELETEs.
 - **Circular rules** (A hides B, B hides A) — builder should warn; evaluator must not
-  loop (fixed-point with a max-iteration cap, or the "hidden = empty" one-pass model).
+  loop (fixed-point iteration with repeated-state detection; on an oscillating cycle
+  the state with the fewest hidden items wins — see strategy doc §6).
 
 ## 3. Proposed data model (v1)
 
@@ -128,7 +129,8 @@ export interface FormSchema {
 Semantics recommendation (simplest deterministic set):
 - Default visibility: **visible**; a `showField` action implies the target starts hidden
   (JotForm works this way — "Show X" hides X until the rule matches).
-- Hidden fields evaluate as **empty** in other rules (single-pass, no cascade loops).
+- Hidden fields evaluate as **empty** in other rules; evaluation iterates to a fixed
+  point so cascades resolve deterministically (see strategy doc §6 for cycle handling).
 - Hidden-value policy: **clear at submit** (JotForm's default) — keep typed values while
   filling, strip hidden fields' values from the payload on submit. No setting in v1.
 - Hidden fields are excluded from the page zod schema (never block navigation).
@@ -138,7 +140,7 @@ Semantics recommendation (simplest deterministic set):
 Principle: **zod validation must never see a hidden field.** Conditions evaluate first;
 schema building, rendering, navigation, and the submit payload all consume the result.
 
-```
+```text
 responses → evaluateConditions → { hiddenFieldIds, hiddenPageIds }
                                    ├─ render      (SinglePageForm skips hidden FormFieldRenderer)
                                    ├─ zod schema  (createPageSchema omits hidden field keys)
@@ -164,8 +166,8 @@ responses → evaluateConditions → { hiddenFieldIds, hiddenPageIds }
    values are stripped only at submit ("clear when submitted" policy), which is the
    second enforcement gate in `handleFormComplete`.
 5. **Evaluator semantics**: hidden fields' values count as empty during rule evaluation
-   — single deterministic pass, hiding A auto-deactivates rules depending on A, no
-   cascade loops.
+   and rules re-evaluate to a fixed point — hiding A auto-deactivates rules depending
+   on A; oscillating cycles are detected and resolved deterministically (strategy §6).
 
 ## 4. Suggested phasing
 

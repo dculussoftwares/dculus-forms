@@ -129,7 +129,7 @@ Per-field validation nuances worth tests:
 `getFormattedResponses()` → `onFormSubmit/onResponseUpdate`. v1 inserts the strip
 **here**, before anything else sees the data:
 
-```
+```text
 getAllResponses() → evaluateConditions(rules, responses)   // final pass
                   → strip values of hidden fields AND all fields of hidden pages
                   → getFormattedResponses()                 // flatten
@@ -161,11 +161,16 @@ evaluateConditions(
   rule shows it (JotForm behavior); everything else is visible. Same for pages.
 - **Hidden = empty**: rules evaluate against *effective* values, where a currently
   hidden field's value reads as empty.
-- **Fixed-point iteration**: start from the default-visibility state, evaluate all
-  rules, recompute the hidden set, repeat until stable, hard cap at
-  `rules.length + 1` iterations (show/hide cycles can oscillate: A hides B → B empty
-  → rule deactivates → B shows → …). On hitting the cap, keep the last computed set —
-  deterministic, never loops. Builder-side circular-reference warnings are v1.5.
+- **Fixed-point iteration with repeated-state detection**: start from the
+  default-visibility state, evaluate all rules, recompute the hidden set, repeat until
+  the state stabilizes or a previously seen state repeats (show/hide cycles can
+  oscillate: A hides B → B empty → rule deactivates → B shows → …). On a repeat, the
+  cycle has closed: return the cycle state with the fewest hidden items (prefer
+  visibility on paradoxes; ties broken by a canonical signature). This is
+  deterministic, never loops, and — unlike a rule-count-based iteration cap — cannot
+  change an oscillating field's outcome when unrelated rules are added. A generous
+  numeric cap (100 passes) bounds pathological rule sets only. Builder-side
+  circular-reference warnings are v1.5.
 - **Page cascade**: a page is hidden iff an active `hidePage` rule targets it, **or**
   it has ≥1 field and *all* of its fields are hidden (auto-skip — otherwise the viewer
   renders an empty page with an OK button). A RichText-only info page counts: it stays

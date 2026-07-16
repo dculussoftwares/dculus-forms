@@ -53,11 +53,15 @@ export interface ConditionEvaluationResult {
 // Rule-side value coercion. A term whose value is missing or of the wrong
 // shape for its operator evaluates to false (misconfigured rules never match,
 // regardless of operator polarity — a broken notEquals must not fire).
-const termString = (value: ConditionTerm['value']): string | null => {
+// Text fields coerce numbers to strings; phone/date fields take strings only.
+const textTermString = (value: ConditionTerm['value']): string | null => {
   if (typeof value === 'string') return value.trim() === '' ? null : value;
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   return null;
 };
+
+const strictTermString = (value: ConditionTerm['value']): string | null =>
+  typeof value === 'string' && value.trim() !== '' ? value : null;
 
 const termNumber = (value: ConditionTerm['value']): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -85,7 +89,7 @@ const evaluateTextTerm = (
   const s = textValue(raw);
   if (operator === 'isEmpty') return s === '';
   if (operator === 'isFilled') return s !== '';
-  const rv = termString(value);
+  const rv = textTermString(value);
   if (rv === null) return false;
   const r = rv.trim().toLowerCase();
   switch (operator) {
@@ -115,7 +119,7 @@ const evaluatePhoneTerm = (
   const s = typeof raw === 'string' ? raw.trim() : '';
   if (operator === 'isEmpty') return s === '';
   if (operator === 'isFilled') return s !== '';
-  const rv = termString(value);
+  const rv = strictTermString(value);
   if (rv === null) return false;
   const r = rv.trim();
   switch (operator) {
@@ -170,7 +174,7 @@ const evaluateDateTerm = (
   const s = typeof raw === 'string' ? raw.trim() : '';
   if (operator === 'isEmpty') return s === '';
   if (operator === 'isFilled') return s !== '';
-  const rv = termString(value);
+  const rv = strictTermString(value);
   if (rv === null) return false;
   const r = rv.trim();
   switch (operator) {
@@ -265,12 +269,6 @@ const evaluateTerm = (
   }
 };
 
-const setEquals = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => {
-  if (a.size !== b.size) return false;
-  for (const item of a) if (!b.has(item)) return false;
-  return true;
-};
-
 /**
  * Pure, total evaluator for conditional rules (strategy doc §6).
  *
@@ -279,8 +277,11 @@ const setEquals = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => {
  * - Hidden fields (and every field on a hidden page) read as empty while
  *   evaluating terms, so hiding a trigger auto-deactivates dependent rules.
  * - Matched rules apply their actions in list order — later rules win on
- *   conflict. Fixed-point iteration with a hard cap of activeRules + 1 passes;
- *   on an oscillating cycle the last computed state is returned (never loops).
+ *   conflict. Fixed-point iteration stops when the visibility state stabilizes
+ *   or a previously seen state repeats (an oscillating show/hide cycle). On a
+ *   cycle, the cycle state with the fewest hidden items wins (prefer
+ *   visibility on paradoxes; ties broken by signature) — deterministic and
+ *   unaffected by unrelated rules, unlike a rule-count-based iteration cap.
  * - A page is also hidden when it has ≥1 field and all of them are hidden
  *   (auto-skip, §9.8). Terms referencing unknown/deleted fields are false;
  *   disabled, term-less, or action-less rules are inactive (§9.9).
@@ -302,19 +303,24 @@ export const evaluateConditions = (
     pageFieldIds.set(page.id, ids);
   }
 
-  const activeRules = (rules ?? []).filter(
+  // Persisted rules may be malformed (collab races, hand-edited JSON) — drop
+  // anything non-object-shaped so evaluation stays total and never throws
+  const activeRules = (Array.isArray(rules) ? rules : []).filter(
     (rule) =>
+      !!rule &&
+      typeof rule === 'object' &&
       rule.enabled &&
       Array.isArray(rule.terms) &&
       rule.terms.length > 0 &&
       Array.isArray(rule.actions) &&
-      rule.actions.length > 0
+      rule.actions.some((action) => !!action && typeof action === 'object')
   );
 
   const defaultHiddenFields = new Set<string>();
   const defaultHiddenPages = new Set<string>();
   for (const rule of activeRules) {
     for (const action of rule.actions) {
+      if (!action || typeof action !== 'object') continue;
       if (action.type === 'showField') {
         for (const id of action.fieldIds ?? []) defaultHiddenFields.add(id);
       } else if (action.type === 'showPage') {
@@ -328,6 +334,7 @@ export const evaluateConditions = (
     hiddenPages: ReadonlySet<string>
   ): { fields: Set<string>; pages: Set<string> } => {
     const termMatches = (term: ConditionTerm): boolean => {
+      if (!term || typeof term.fieldId !== 'string') return false;
       const info = fieldInfo.get(term.fieldId);
       if (!info) return false;
       const raw =
@@ -347,6 +354,7 @@ export const evaluateConditions = (
           : rule.terms.every(termMatches);
       if (!matched) continue;
       for (const action of rule.actions) {
+        if (!action || typeof action !== 'object') continue;
         switch (action.type) {
           case 'showField':
             for (const id of action.fieldIds ?? []) nextFields.delete(id);
@@ -376,17 +384,50 @@ export const evaluateConditions = (
     return { fields: nextFields, pages: nextPages };
   };
 
-  let current = {
+  type VisibilityState = { fields: Set<string>; pages: Set<string> };
+
+  const stateSignature = (state: VisibilityState): string =>
+    `${[...state.fields].sort().join('\u0001')}\u0002${[...state.pages].sort().join('\u0001')}`;
+
+  // Iterate to a fixed point. Visibility states are finite so the trajectory
+  // must revisit a state; a repeat of the previous state is stability, any
+  // earlier repeat closes an oscillating show/hide cycle. Cycle policy: return
+  // the cycle state with the fewest hidden items (prefer visibility on
+  // paradoxes), tie-broken by signature. The choice depends only on the states
+  // inside the cycle - not the entry transient - so adding unrelated rules
+  // cannot flip an oscillating field's outcome. The numeric cap only bounds
+  // pathological rule sets that walk very many distinct states.
+  let current: VisibilityState = {
     fields: new Set(defaultHiddenFields),
     pages: new Set(defaultHiddenPages),
   };
-  const maxIterations = activeRules.length + 1;
+  const seenIndex = new Map<string, number>([[stateSignature(current), 0]]);
+  const history: Array<{ state: VisibilityState; signature: string }> = [
+    { state: current, signature: stateSignature(current) },
+  ];
+  const maxIterations = 100;
   for (let i = 0; i < maxIterations; i++) {
     const next = evaluateOnce(current.fields, current.pages);
-    const stable =
-      setEquals(next.fields, current.fields) && setEquals(next.pages, current.pages);
+    const signature = stateSignature(next);
+    const firstSeenAt = seenIndex.get(signature);
+    if (firstSeenAt !== undefined) {
+      let chosen = { state: next, signature };
+      for (const entry of history.slice(firstSeenAt)) {
+        const entrySize = entry.state.fields.size + entry.state.pages.size;
+        const chosenSize = chosen.state.fields.size + chosen.state.pages.size;
+        if (
+          entrySize < chosenSize ||
+          (entrySize === chosenSize && entry.signature < chosen.signature)
+        ) {
+          chosen = entry;
+        }
+      }
+      current = chosen.state;
+      break;
+    }
+    seenIndex.set(signature, history.length);
+    history.push({ state: next, signature });
     current = next;
-    if (stable) break;
   }
 
   return { hiddenFieldIds: current.fields, hiddenPageIds: current.pages };

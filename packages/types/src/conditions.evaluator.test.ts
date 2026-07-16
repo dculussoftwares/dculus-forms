@@ -202,6 +202,12 @@ describe('phone triggers', () => {
     expectMatch('phone', 'contains', '98', '+919876543210', false);
     expectMatch('phone', 'endsWith', '10', '+919876543210', false);
   });
+
+  it('numeric rule values are rejected (string-only), even for notEquals', () => {
+    expectMatch('phone', 'equals', 919876543210, '+919876543210', false);
+    expectMatch('phone', 'notEquals', 42, '+919876543210', false);
+    expectMatch('phone', 'startsWith', 91, '+919876543210', false);
+  });
 });
 
 describe('number triggers', () => {
@@ -274,6 +280,12 @@ describe('date triggers', () => {
   it('unsupported operators are false', () => {
     expectMatch('date', 'lessThan', '2026-07-16', '2026-07-15', false);
     expectMatch('date', 'contains', '07', '2026-07-16', false);
+  });
+
+  it('numeric rule values are rejected (string-only), even for notEquals', () => {
+    expectMatch('date', 'equals', 20260716, '2026-07-16', false);
+    expectMatch('date', 'notEquals', 20260716, '2026-07-16', false);
+    expectMatch('date', 'before', 20260716, '2026-07-15', false);
   });
 });
 
@@ -402,11 +414,49 @@ describe('rule mechanics', () => {
   ];
 
   it('returns empty sets for no/undefined/empty rules', () => {
-    for (const rules of [undefined, null, []] as const) {
-      const result = evaluateConditions(rules as any, responsesWith({}), schema);
+    const cases: Array<ConditionalRule[] | null | undefined> = [undefined, null, []];
+    for (const rules of cases) {
+      const result = evaluateConditions(rules, responsesWith({}), schema);
       expect(result.hiddenFieldIds.size).toBe(0);
       expect(result.hiddenPageIds.size).toBe(0);
     }
+  });
+
+  it('never throws on malformed persisted rules (null entries, junk shapes)', () => {
+    const malformed = [
+      null,
+      42,
+      'rule',
+      { id: 'no-arrays', enabled: true, combinator: 'all', terms: 'x', actions: 'y' },
+      {
+        id: 'null-members',
+        enabled: true,
+        combinator: 'any',
+        terms: [null, { fieldId: 'text', operator: 'isFilled' }],
+        actions: [null, { type: 'hideField', fieldIds: ['email'] }],
+      },
+      {
+        id: 'all-null-actions',
+        enabled: true,
+        combinator: 'all',
+        terms: [{ fieldId: 'text', operator: 'isFilled' }],
+        actions: [null],
+      },
+      {
+        id: 'term-without-fieldId',
+        enabled: true,
+        combinator: 'any',
+        terms: [{ operator: 'isFilled' }],
+        actions: [{ type: 'hideField', fieldIds: ['file'] }],
+      },
+    ] as unknown as ConditionalRule[];
+
+    const result = evaluateConditions(malformed, responsesWith({ text: 'x' }), schema);
+    // the one well-formed term+action pair still works ('any' combinator
+    // ignores the null term; the null action is skipped)
+    expect(result.hiddenFieldIds.has('email')).toBe(true);
+    // term without fieldId is false → its action never fires
+    expect(result.hiddenFieldIds.has('file')).toBe(false);
   });
 
   it('skips disabled rules entirely — including their showField defaults', () => {
@@ -707,25 +757,47 @@ describe('cascading evaluation', () => {
     expect(result.hiddenFieldIds.has('email')).toBe(false);
   });
 
-  it('terminates deterministically on oscillating cycles (self-hiding field)', () => {
-    const rules: ConditionalRule[] = [
-      {
-        id: 'self-hide',
-        enabled: true,
-        combinator: 'all',
-        terms: [{ fieldId: 'text', operator: 'isFilled' }],
-        actions: [{ type: 'hideField', fieldIds: ['text'] }],
-      },
-    ];
-    // filled → hidden → reads empty → rule deactivates → visible → … must not hang
-    const result = evaluateConditions(rules, responsesWith({ text: 'x' }), schema);
-    expect(result.hiddenFieldIds).toBeInstanceOf(Set);
-    // run twice — same inputs, same output (deterministic under the cap)
-    const again = evaluateConditions(rules, responsesWith({ text: 'x' }), schema);
-    expect([...again.hiddenFieldIds].sort()).toEqual([...result.hiddenFieldIds].sort());
+  it('resolves oscillating cycles deterministically (self-hiding field ends visible)', () => {
+    const selfHide: ConditionalRule = {
+      id: 'self-hide',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'text', operator: 'isFilled' }],
+      actions: [{ type: 'hideField', fieldIds: ['text'] }],
+    };
+    // filled → hidden → reads empty → rule deactivates → visible: the state
+    // sequence is {} → {text} → {} — the repeat closes the cycle at {} (visible)
+    const result = evaluateConditions([selfHide], responsesWith({ text: 'x' }), schema);
+    expect(result.hiddenFieldIds.size).toBe(0);
+    expect(result.hiddenPageIds.size).toBe(0);
   });
 
-  it('terminates on mutual show/hide cycles between two rules', () => {
+  it('cycle outcome is unaffected by unrelated active rules', () => {
+    const selfHide: ConditionalRule = {
+      id: 'self-hide',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'text', operator: 'isFilled' }],
+      actions: [{ type: 'hideField', fieldIds: ['text'] }],
+    };
+    const unrelated: ConditionalRule = {
+      id: 'unrelated',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'select', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'hideField', fieldIds: ['file'] }],
+    };
+    const responses = responsesWith({ text: 'x', select: 'Yes' });
+    const alone = evaluateConditions([selfHide], responses, schema);
+    const together = evaluateConditions([selfHide, unrelated], responses, schema);
+    // with a rule-count-based iteration cap the extra rule would flip the
+    // oscillation parity; repeated-state detection must not
+    expect(together.hiddenFieldIds.has('text')).toBe(alone.hiddenFieldIds.has('text'));
+    expect(together.hiddenFieldIds.has('text')).toBe(false);
+    expect(together.hiddenFieldIds.has('file')).toBe(true);
+  });
+
+  it('resolves mutual show/hide cycles deterministically (both end visible)', () => {
     const rules: ConditionalRule[] = [
       {
         id: 'a-hides-b',
@@ -742,12 +814,13 @@ describe('cascading evaluation', () => {
         actions: [{ type: 'hideField', fieldIds: ['text'] }],
       },
     ];
+    // {} → {textarea, text} → {} (both hidden read empty) — cycle closes at {}
     const result = evaluateConditions(
       rules,
       responsesWith({ text: 'x', textarea: 'y' }),
       schema
     );
-    expect(result.hiddenFieldIds).toBeInstanceOf(Set);
+    expect(result.hiddenFieldIds.size).toBe(0);
   });
 
   it('cross-page triggers work (p1 answer controls p2 field)', () => {
