@@ -38,7 +38,7 @@
  * - Added TEXT_FIELD_VALIDATION type for specialized validation objects
  */
 
-import type { ConditionalRule } from './conditions.js';
+import { sanitizeConditions, type ConditionalRule } from './conditions.js';
 
 // Form Settings types
 export interface ThankYouSettings {
@@ -840,7 +840,7 @@ export const serializeFormSchema = (schema: FormSchema): any => {
 };
 
 export const deserializeFormSchema = (data: any): FormSchema => {
-  return {
+  const schema: FormSchema = {
     ...data,
     layout: data.layout, // Explicitly preserve layout object
     pages: (data.pages || []).map((page: any) => ({
@@ -854,6 +854,17 @@ export const deserializeFormSchema = (data: any): FormSchema => {
         .filter((f: FormField | null): f is FormField => f !== null),
     })),
   };
+
+  // Conditions come from persisted JSON / Y.js — validate at this trust
+  // boundary so malformed rules are dropped rather than propagated
+  const conditions = sanitizeConditions(data?.conditions);
+  if (conditions) {
+    schema.conditions = conditions;
+  } else {
+    delete schema.conditions;
+  }
+
+  return schema;
 };
 
 export interface EmailFieldInfo {

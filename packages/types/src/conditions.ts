@@ -7,6 +7,7 @@
  * docs/conditional-logic-research.md §3 and docs/conditional-logic-v1-strategy.md.
  */
 
+import { z } from 'zod';
 import { FieldType, type FormPage } from './index.js';
 
 export type ConditionOperator =
@@ -41,6 +42,65 @@ export interface ConditionalRule {
   terms: ConditionTerm[];
   actions: ConditionAction[];
 }
+
+// Runtime (Zod) schemas for the persisted rule shape. Used to sanitize
+// conditions at trust boundaries — Y.js deserialization and
+// deserializeFormSchema — so downstream code only ever sees valid rules.
+export const conditionTermSchema = z.object({
+  fieldId: z.string().min(1),
+  operator: z.enum([
+    'equals',
+    'notEquals',
+    'contains',
+    'notContains',
+    'startsWith',
+    'endsWith',
+    'isEmpty',
+    'isFilled',
+    'lessThan',
+    'greaterThan',
+    'before',
+    'after',
+  ]),
+  value: z.union([z.string(), z.number(), z.array(z.string())]).optional(),
+});
+
+export const conditionActionSchema = z.union([
+  z.object({
+    type: z.enum(['showField', 'hideField']),
+    fieldIds: z.array(z.string().min(1)),
+  }),
+  z.object({
+    type: z.enum(['showPage', 'hidePage', 'skipToPage']),
+    pageId: z.string().min(1),
+  }),
+]);
+
+export const conditionalRuleSchema = z.object({
+  id: z.string().min(1),
+  enabled: z.boolean(),
+  combinator: z.enum(['any', 'all']),
+  terms: z.array(conditionTermSchema),
+  actions: z.array(conditionActionSchema),
+});
+
+/**
+ * Validates untrusted persisted data into a clean ConditionalRule[].
+ * Invalid rules are dropped (not thrown) — collab races and hand-edited JSON
+ * must never take the whole schema down. Returns undefined when the input is
+ * not an array or nothing survives, preserving "absent = no conditions".
+ */
+export const sanitizeConditions = (
+  input: unknown
+): ConditionalRule[] | undefined => {
+  if (!Array.isArray(input)) return undefined;
+  const valid: ConditionalRule[] = [];
+  for (const candidate of input) {
+    const parsed = conditionalRuleSchema.safeParse(candidate);
+    if (parsed.success) valid.push(parsed.data as ConditionalRule);
+  }
+  return valid.length > 0 ? valid : undefined;
+};
 
 /** Answer state as held by useFormResponseStore: pageId → fieldId → value. */
 export type FormResponsesByPage = Record<string, Record<string, unknown>>;

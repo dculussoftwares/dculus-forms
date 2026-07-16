@@ -167,6 +167,42 @@ describe('FormSchema conditions serialization', () => {
     expect(deserialized.pages[0].fields).toHaveLength(1);
   });
 
+  it('drops malformed rules at the deserialize boundary, keeping valid ones', () => {
+    const legacy = {
+      pages: [],
+      layout,
+      isShuffleEnabled: false,
+      conditions: [
+        null,
+        'junk',
+        { id: '', enabled: true, combinator: 'all', terms: [], actions: [] },
+        { id: 'bad-term', enabled: true, combinator: 'all', terms: [{ operator: 'isFilled' }], actions: [] },
+        { id: 'bad-action', enabled: true, combinator: 'any', terms: [], actions: [{ type: 'hideField', fieldIds: 42 }] },
+        {
+          id: 'valid',
+          enabled: true,
+          combinator: 'any',
+          terms: [{ fieldId: 'f1', operator: 'isFilled' }],
+          actions: [{ type: 'hideField', fieldIds: ['f2'] }],
+        },
+      ],
+    };
+
+    const deserialized = deserializeFormSchema(legacy);
+    expect(deserialized.conditions).toHaveLength(1);
+    expect(deserialized.conditions![0].id).toBe('valid');
+  });
+
+  it('removes a junk conditions value entirely (absent, not raw)', () => {
+    const deserialized = deserializeFormSchema({
+      pages: [],
+      layout,
+      isShuffleEnabled: false,
+      conditions: 'not-an-array',
+    });
+    expect('conditions' in deserialized).toBe(false);
+  });
+
   it('still deserializes fields correctly when conditions are present', () => {
     const schema: FormSchema = {
       pages: makePages(),
