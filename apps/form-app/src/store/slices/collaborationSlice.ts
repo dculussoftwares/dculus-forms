@@ -7,7 +7,7 @@
 
 import { CollaborationSlice, SliceCreator } from '../types/store.types';
 import { CollaborationManager } from '../collaboration/CollaborationManager';
-import { FormPage, FormLayout } from '@dculus/types';
+import { FormPage, FormLayout, ConditionalRule } from '@dculus/types';
 
 /**
  * Create the collaboration slice
@@ -31,9 +31,14 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
 
   /**
    * Callback when YJS document updates
-   * Updates pages, layout, and isShuffleEnabled in the store
+   * Updates pages, layout, isShuffleEnabled, and conditions in the store
    */
-  const updateCallback = (pages: FormPage[], layout?: FormLayout, isShuffleEnabled?: boolean) => {
+  const updateCallback = (
+    pages: FormPage[],
+    layout?: FormLayout,
+    isShuffleEnabled?: boolean,
+    conditions?: ConditionalRule[]
+  ) => {
     // P2-17: Mark document dirty on every incoming update
     isDirty = true;
 
@@ -45,6 +50,10 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
 
     if (isShuffleEnabled !== undefined) {
       updates.isShuffleEnabled = Boolean(isShuffleEnabled);
+    }
+
+    if (conditions !== undefined) {
+      updates.conditions = conditions;
     }
 
     set(updates);
@@ -182,6 +191,7 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
           provider: null,
           observerCleanups: [],
           pages: [],
+          conditions: [],
           selectedPageId: null,
           selectedFieldId: null,
         });

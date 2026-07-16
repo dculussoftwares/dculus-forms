@@ -12,15 +12,27 @@ export const useFormSubmission = (
   methods: UseFormReturn<FieldValues>,
   page: FormPage,
   store: any,
-  onSubmit: (pageId: string, data: Record<string, any>) => void
+  onSubmit: (pageId: string, data: Record<string, any>) => void,
+  // Read at validation time — this second, independent validation must see the
+  // same hidden set as the RHF resolver, or navigating with a hidden required
+  // field silently drops the page's visible answers (strategy doc §4.2)
+  getHiddenFieldIds?: () => ReadonlySet<string>
 ) => {
   const { getValues } = methods;
 
-  // Handle form submission with validation
+  // Handle form submission with validation.
+  //
+  // `data` is deliberately the RAW react-hook-form values, not the
+  // resolver-parsed output: the visibility-aware page schema omits hidden
+  // fields' keys, so persisting parsed output would wipe a hidden field's
+  // typed value from the store on every navigation. Policy is keep-while-
+  // filling, strip at final submit (strategy doc §9.5) — the store mirrors
+  // raw input (same shape useStoreSync writes) and normalization/stripping
+  // happens once, at handleFormComplete.
   const handleSubmit = useCallback(async (data: Record<string, any>) => {
     try {
       // Validate the data using our schema
-      const validationResult = validatePageData(page, data);
+      const validationResult = validatePageData(page, data, getHiddenFieldIds?.());
 
       if (validationResult.isValid) {
         // Save to store and trigger callback
@@ -42,7 +54,7 @@ export const useFormSubmission = (
         error: error instanceof Error ? error.message : 'Unknown submission error'
       };
     }
-  }, [page, store, onSubmit]);
+  }, [page, store, onSubmit, getHiddenFieldIds]);
 
   // Submit current form values programmatically
   const submitCurrentValues = useCallback(() => {

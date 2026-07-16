@@ -145,6 +145,11 @@ jobs:
           name: packages-dist
           path: packages
 
+      - name: Run shared package unit tests
+        run: |
+          pnpm --filter @dculus/types test
+          pnpm --filter @dculus/ui test
+
       - name: Run unit tests with coverage
         env:
           NODE_ENV: test

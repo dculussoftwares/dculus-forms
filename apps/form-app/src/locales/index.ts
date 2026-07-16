@@ -1,4 +1,6 @@
 import enCommon from './en/common.json';
+import enConditions from './en/conditions.json';
+import taConditions from './ta/conditions.json';
 import taCommon from './ta/common.json';
 import enSignIn from './en/signIn.json';
 import taSignIn from './ta/signIn.json';
@@ -250,6 +252,7 @@ import taPluginDashboard from './ta/pluginDashboard.json';
 
 const enTranslations = {
   common: enCommon,
+  conditions: enConditions,
   signIn: enSignIn,
   signUp: enSignUp,
   forgotPassword: enForgotPassword,
@@ -378,6 +381,7 @@ const enTranslations = {
 
 const taTranslations = {
   common: taCommon,
+  conditions: taConditions,
   signIn: taSignIn,
   signUp: taSignUp,
   forgotPassword: taForgotPassword,

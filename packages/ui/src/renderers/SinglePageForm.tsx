@@ -1,5 +1,5 @@
-import React, { useImperativeHandle, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import React, { useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
+import { useForm, FormProvider, Resolver, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FormPage } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
@@ -7,9 +7,10 @@ import { FormFieldRenderer } from './FormFieldRenderer';
 import { createPageSchema } from '../utils/zodSchemaBuilder';
 import { FormValidationState } from '../types/validation';
 import { useFormInitialization, useFormValidation, useStoreSync, useFormSubmission } from '../hooks';
-import { ValidationErrorSummary, FormControls } from '../components';
+import { FormControls } from '../components';
 import { DEFAULT_LAYOUT_STYLES, FORM_CONSTANTS } from '../constants/formStyles';
 import { useFormResponseStore } from '../stores/useFormResponseStore';
+import { FormResponseContext } from './FormResponseContext';
 
 interface FieldStyles {
   container: string;
@@ -57,14 +58,45 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   // Initialize custom hooks
   const { getInitialValues, store } = useFormInitialization(page);
 
-  // Create Zod schema for this page (memoized for performance)
-  const validationSchema = useMemo(() => createPageSchema(page), [page]);
+  // Conditional visibility — read null-safely so SinglePageForm keeps working
+  // outside a FormRenderer (stories, isolated previews): no context = nothing hidden
+  const responseContext = useContext(FormResponseContext);
+  const hiddenFieldIds = responseContext?.hiddenFieldIds;
+  const getHiddenFieldIds = responseContext?.getHiddenFieldIds;
+
+  // Visibility can change while typing on this page, so the schema is looked
+  // up with the current hidden set at validation time instead of being
+  // memoized on [page] — a hidden required field must never block validation
+  // (strategy doc §4.1). Validation runs per keystroke (mode: onChange), so
+  // the built schema is cached by a signature of the hidden set and only
+  // rebuilt when visibility actually changes.
+  const schemaCacheRef = useRef<{ signature: string; resolver: Resolver<FieldValues> } | null>(null);
+  const resolver = useCallback<Resolver<FieldValues>>(
+    (values, context, options) => {
+      const hidden = getHiddenFieldIds?.();
+      const signature = hidden && hidden.size > 0 ? [...hidden].sort().join(',') : '';
+      if (schemaCacheRef.current?.signature !== signature) {
+        schemaCacheRef.current = {
+          signature,
+          resolver: zodResolver(createPageSchema(page, hidden)),
+        };
+      }
+      return schemaCacheRef.current.resolver(values, context, options);
+    },
+    [page, getHiddenFieldIds]
+  );
+
+  // A page change must invalidate the cached schema even if the hidden-set
+  // signature happens to match
+  useEffect(() => {
+    schemaCacheRef.current = null;
+  }, [page]);
 
   // Initialize React Hook Form
   const methods = useForm({
     defaultValues: getInitialValues(),
     mode: enableRealtimeValidation ? 'onChange' : 'onSubmit',
-    resolver: zodResolver(validationSchema),
+    resolver,
     criteriaMode: 'all',
   });
 
@@ -74,7 +106,6 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   const {
     isValid,
     isSubmitting,
-    validationStates,
     validatePage,
     getValidationState,
     showAllValidationErrors,
@@ -82,15 +113,16 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   } = useFormValidation(methods, page, onValidationChange);
 
   // Initialize submission hook
-  const { handleSubmit: handleFormSubmit, submitCurrentValues } = useFormSubmission(
+  const { submitCurrentValues } = useFormSubmission(
     methods,
     page,
     store,
-    onSubmit
+    onSubmit,
+    getHiddenFieldIds
   );
 
   // Initialize store synchronization
-  useStoreSync(control, page.id, store, (values) => {
+  useStoreSync(control, page.id, store, () => {
     reset(getInitialValues());
   });
 
@@ -105,6 +137,16 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   // Determine styles to use
   const styles = layoutStyles || DEFAULT_LAYOUT_STYLES;
 
+  // Hidden fields unmount but keep their store values (re-showing restores the
+  // typed input); values are stripped only at submit — strategy doc §4/§5
+  const visibleFields = useMemo(
+    () =>
+      hiddenFieldIds && hiddenFieldIds.size > 0
+        ? page.fields.filter((field) => !hiddenFieldIds.has(field.id))
+        : page.fields,
+    [page.fields, hiddenFieldIds]
+  );
+
   // Early return for empty pages
   if (!page.fields || page.fields.length === 0) {
     return (
@@ -118,9 +160,17 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 ${className}`}>
+      {/* Both submit paths (this <form> and the imperative formRef.submit()
+          used by page navigation) go through submitCurrentValues so they
+          persist the identical raw-values payload — see useFormSubmission */}
+      <form
+        onSubmit={handleSubmit(() => {
+          void submitCurrentValues();
+        })}
+        className={`space-y-4 ${className}`}
+      >
         <div className="space-y-4">
-          {page.fields.map((field) => (
+          {visibleFields.map((field) => (
             <FormFieldRenderer
               key={field.id}
               field={field}

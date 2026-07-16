@@ -12,6 +12,10 @@
       "label": "Preview",
       "description": "Preview form before publishing"
     },
+    "conditions": {
+      "label": "Conditions",
+      "description": "Show or hide fields and pages based on answers"
+    },
     "settings": {
       "label": "Settings",
       "description": "Configure form settings and options"

@@ -35,6 +35,7 @@ import {
   SettingsTab,
   type BuilderTab,
 } from '../components/form-builder/tabs';
+import { ConditionsTab } from '../components/form-builder/conditions/ConditionsTab';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { useCollisionDetection } from '../hooks/useCollisionDetection';
 import { useFieldCreation } from '../hooks/useFieldCreation';
@@ -50,6 +51,7 @@ const VALID_TABS: readonly BuilderTab[] = [
   'layout',
   'page-builder',
   'preview',
+  'conditions',
   'settings',
 ] as const;
 const DEFAULT_TAB: BuilderTab = 'page-builder';
@@ -316,6 +318,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
         return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
       case 'preview':
         return <PreviewTab formId={formId || ''} />;
+      case 'conditions':
+        return <ConditionsTab />;
       case 'settings':
         return <SettingsTab formId={formId} />;
       default:

@@ -1,13 +1,23 @@
-import React, { createContext, useContext, useEffect, useMemo, useCallback, useState } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import type { FormSchema, FormLayout } from '@dculus/types';
 import { LayoutRenderer } from './LayoutRenderer';
 import { RendererMode } from '@dculus/utils';
 import { useFormResponseStore, useFormResponseUtils } from '../stores/useFormResponseStore';
+import { useConditionalVisibility } from '../hooks/useConditionalVisibility';
+import {
+  FormResponseContext,
+  type FormResponseContextValue,
+  type ResponseCopySettings,
+} from './FormResponseContext';
 
-export interface ResponseCopySettings {
-  enabled: boolean;
-  mode: 'always' | 'respondentChoice';
-}
+// Re-exported for existing importers; the definitions live in
+// FormResponseContext.ts to avoid circular imports through the renderer chain
+export {
+  FormResponseContext,
+  useFormResponseContext,
+  type FormResponseContextValue,
+  type ResponseCopySettings,
+} from './FormResponseContext';
 
 export interface FormRendererProps {
   formSchema?: FormSchema;
@@ -25,28 +35,6 @@ export interface FormRendererProps {
   responseCopySettings?: ResponseCopySettings;
   onResponseCopyConsentChange?: (consent: boolean) => void;
 }
-
-// Context for sharing form response state throughout the form
-export interface FormResponseContextValue {
-  formSchema?: FormSchema;
-  mode: RendererMode;
-  onFormSubmit?: (formId: string, responses: Record<string, any>) => void;
-  onResponseUpdate?: (responseId: string, responses: Record<string, any>) => void;
-  formId?: string;
-  responseId?: string;
-  responseCopySettings?: ResponseCopySettings;
-  onResponseCopyConsentChange?: (consent: boolean) => void;
-}
-
-export const FormResponseContext = createContext<FormResponseContextValue | null>(null);
-
-export const useFormResponseContext = () => {
-  const context = useContext(FormResponseContext);
-  if (!context) {
-    throw new Error('useFormResponseContext must be used within a FormRenderer');
-  }
-  return context;
-};
 
 export const FormRenderer: React.FC<FormRendererProps> = ({
   formSchema,
@@ -66,6 +54,8 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   const { getFormattedResponses } = useFormResponseUtils();
   const store = useFormResponseStore();
   const [initializationKey, setInitializationKey] = useState<string>('');
+  const { hiddenFieldIds, hiddenPageIds, getHiddenFieldIds } =
+    useConditionalVisibility(formSchema);
 
   // Initialize form with existing response data when in EDIT mode - SYNCHRONOUSLY
   useMemo(() => {
@@ -166,7 +156,10 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
     responseId,
     responseCopySettings,
     onResponseCopyConsentChange,
-  }), [formSchema, mode, onFormSubmit, onResponseUpdate, formId, responseId, responseCopySettings, onResponseCopyConsentChange]);
+    hiddenFieldIds,
+    hiddenPageIds,
+    getHiddenFieldIds,
+  }), [formSchema, mode, onFormSubmit, onResponseUpdate, formId, responseId, responseCopySettings, onResponseCopyConsentChange, hiddenFieldIds, hiddenPageIds, getHiddenFieldIds]);
 
   return (
     <FormResponseContext.Provider value={contextValue}>

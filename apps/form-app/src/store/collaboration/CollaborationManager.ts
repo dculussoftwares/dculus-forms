@@ -2,11 +2,13 @@ import { HocuspocusProvider } from '@hocuspocus/provider';
 import { getWebSocketUrl } from '../../lib/config';
 import { getBearerToken } from '../../lib/auth-client';
 import {
+  ConditionalRule,
   deserializeFormField,
   FieldType,
   FormField,
   FormLayout,
   FormPage,
+  sanitizeConditions,
 } from '@dculus/types';
 import * as Y from 'yjs';
 import { DEFAULT_LAYOUT } from '../helpers/defaultLayout';
@@ -175,7 +177,8 @@ const deserializePagesFromYJS = (
 type UpdateCallback = (
   pages: FormPage[],
   layout?: FormLayout,
-  isShuffleEnabled?: boolean
+  isShuffleEnabled?: boolean,
+  conditions?: ConditionalRule[]
 ) => void;
 type ConnectionCallback = (isConnected: boolean) => void;
 type LoadingCallback = (isLoading: boolean) => void;
@@ -307,6 +310,9 @@ export class CollaborationManager {
       if (event.keysChanged.has('pages')) {
         this.setupPageObservers();
       }
+      if (event.keysChanged.has('conditions')) {
+        this.setupConditionsObserver();
+      }
     };
 
     formSchemaMap.observe(formSchemaObserver);
@@ -315,6 +321,32 @@ export class CollaborationManager {
     );
 
     this.setupPageObservers();
+    this.setupConditionsObserver();
+  }
+
+  private conditionsObserverCleanup: (() => void) | null = null;
+
+  // Rules are plain JSON entries, so a single array observer covers every
+  // change (rule edits are whole-entry delete+insert operations)
+  private setupConditionsObserver(): void {
+    if (!this.ydoc) return;
+
+    this.conditionsObserverCleanup?.();
+    this.conditionsObserverCleanup = null;
+
+    const conditionsArray = this.ydoc.getMap('formSchema').get('conditions');
+    if (!(conditionsArray instanceof Y.Array)) return;
+
+    const conditionsObserver = () => {
+      this.scheduleUpdateFromYJS();
+    };
+    conditionsArray.observe(conditionsObserver);
+    this.conditionsObserverCleanup = () =>
+      conditionsArray.unobserve(conditionsObserver);
+    this.observerCleanups.push(() => {
+      this.conditionsObserverCleanup?.();
+      this.conditionsObserverCleanup = null;
+    });
   }
 
   private setupPageObservers(): void {
@@ -468,6 +500,12 @@ export class CollaborationManager {
       | boolean
       | undefined;
 
-    this.updateCallback(pages, layout, isShuffleEnabled);
+    const conditionsArray = formSchemaMap.get('conditions');
+    const conditions =
+      sanitizeConditions(
+        conditionsArray instanceof Y.Array ? conditionsArray.toJSON() : undefined
+      ) ?? [];
+
+    this.updateCallback(pages, layout, isShuffleEnabled, conditions);
   }
 }

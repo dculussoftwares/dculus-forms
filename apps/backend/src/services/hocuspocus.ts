@@ -1,6 +1,7 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import * as Y from 'yjs';
+import { sanitizeConditions } from '@dculus/types';
 import {
   extractFormStatsFromYDoc,
   updateFormMetadata,
@@ -562,10 +563,19 @@ export const getFormSchemaFromHocuspocus = async (
           layout.get('isCustomBackgroundColorEnabled') || false;
       }
 
+      // Conditional logic rules are stored as a Y.Array of plain JSON rules;
+      // sanitizeConditions validates this trust boundary (drops malformed
+      // rules, returns undefined when there are none)
+      const conditionsArray = formSchemaMap.get('conditions');
+      const conditions = sanitizeConditions(
+        conditionsArray instanceof Y.Array ? conditionsArray.toJSON() : undefined
+      );
+
       return {
         pages: convertedPages,
         layout: convertedLayout,
         isShuffleEnabled: Boolean(isShuffleEnabled),
+        ...(conditions ? { conditions } : {}),
       };
     };
 
@@ -779,6 +789,15 @@ export const initializeHocuspocusDocument = async (
 
     formSchemaMap.set('layout', layoutMap);
     formSchemaMap.set('isShuffleEnabled', Boolean(formSchema.isShuffleEnabled));
+
+    // Conditional logic rules — plain JSON entries in a Y.Array, validated
+    // on the way in so the document never starts with malformed rules
+    const conditions = sanitizeConditions(formSchema.conditions);
+    if (conditions) {
+      const conditionsArray = new Y.Array();
+      conditionsArray.push(conditions.map((rule) => JSON.parse(JSON.stringify(rule))));
+      formSchemaMap.set('conditions', conditionsArray);
+    }
 
     // Store the document state directly in the database
     const fullUpdate = Y.encodeStateAsUpdate(tempDoc);
