@@ -50,7 +50,9 @@
   "actions": {
     "showField": "Show field(s)",
     "hideField": "Hide field(s)",
-    "hidePage": "Hide page"
+    "hidePage": "Hide page",
+    "showPage": "Show page",
+    "skipToPage": "Skip to page"
   },
   "operators": {
     "equals": "is equal to",

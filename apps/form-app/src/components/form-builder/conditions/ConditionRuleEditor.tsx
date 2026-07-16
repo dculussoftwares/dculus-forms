@@ -53,6 +53,13 @@ interface ConditionRuleEditorProps {
 const emptyTerm = (): ConditionTerm => ({ fieldId: '', operator: 'equals' });
 const emptyAction = (): EditorAction => ({ type: 'showField', fieldIds: [], pageId: '' });
 
+// Actions this editor can't edit (showPage/skipToPage from newer clients)
+// are preserved verbatim on save rather than silently dropped
+const preservedActions = (rule: ConditionalRule | null): ConditionAction[] =>
+  (rule?.actions ?? []).filter(
+    (action) => !('fieldIds' in action) && action.type !== 'hidePage'
+  );
+
 const toEditorActions = (rule: ConditionalRule | null): EditorAction[] => {
   if (!rule) return [emptyAction()];
   const actions: EditorAction[] = [];
@@ -62,8 +69,10 @@ const toEditorActions = (rule: ConditionalRule | null): EditorAction[] => {
     } else if (action.type === 'hidePage') {
       actions.push({ type: 'hidePage', fieldIds: [], pageId: action.pageId });
     }
-    // showPage/skipToPage are not editable in v1 — preserved on save below
   }
+  // A rule holding only preserved actions must stay savable — start with no
+  // editable rows instead of an unsatisfiable empty placeholder
+  if (actions.length === 0 && preservedActions(rule).length > 0) return [];
   return actions.length > 0 ? actions : [emptyAction()];
 };
 
@@ -125,10 +134,12 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
   const actionValid = (action: EditorAction): boolean =>
     action.type === 'hidePage' ? action.pageId !== '' : action.fieldIds.length > 0;
 
+  const preserved = useMemo(() => preservedActions(initialRule), [initialRule]);
+
   const canSave =
     terms.length > 0 &&
     terms.every(termValid) &&
-    actions.length > 0 &&
+    actions.length + preserved.length > 0 &&
     actions.every(actionValid);
 
   const handleSave = () => {
@@ -136,11 +147,6 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
       action.type === 'hidePage'
         ? { type: 'hidePage', pageId: action.pageId }
         : { type: action.type, fieldIds: action.fieldIds }
-    );
-    // Preserve action kinds this editor doesn't handle (showPage/skipToPage
-    // written by future versions) instead of silently dropping them
-    const preserved = (initialRule?.actions ?? []).filter(
-      (action) => !('fieldIds' in action) && action.type !== 'hidePage'
     );
     onSave({
       id: initialRule?.id ?? generateId(),
@@ -387,6 +393,9 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
                 </Select>
               ) : (
                 <div className="flex-1 min-w-56 max-h-36 overflow-y-auto rounded-md border p-2 space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">
+                    {t('editor.targetFields')}
+                  </Label>
                   {targetOptions.map(({ field, label, page, pageIndex }) => (
                     <label
                       key={field.id}

@@ -3,6 +3,7 @@ import { GitBranch, Plus } from 'lucide-react';
 import { Button, toastSuccess } from '@dculus/ui';
 import { ConditionalRule } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { ConditionRuleCard } from './ConditionRuleCard';
 import { ConditionRuleEditor } from './ConditionRuleEditor';
@@ -20,6 +21,10 @@ export const ConditionsTab: React.FC = () => {
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ConditionalRule | null>(null);
+
+  // Same gate as field/page editing — viewers see rules read-only
+  const permissions = useFormPermissions();
+  const canEdit = permissions.canEditFields();
 
   const openCreate = () => {
     setEditingRule(null);
@@ -60,10 +65,12 @@ export const ConditionsTab: React.FC = () => {
               <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
             </div>
           </div>
-          <Button onClick={openCreate} data-testid="condition-add-rule">
-            <Plus className="h-4 w-4 mr-1.5" />
-            {t('addRule')}
-          </Button>
+          {canEdit && (
+            <Button onClick={openCreate} data-testid="condition-add-rule">
+              <Plus className="h-4 w-4 mr-1.5" />
+              {t('addRule')}
+            </Button>
+          )}
         </div>
 
         {conditions.length === 0 ? (
@@ -86,6 +93,7 @@ export const ConditionsTab: React.FC = () => {
                 key={rule.id}
                 rule={rule}
                 pages={pages}
+                canEdit={canEdit}
                 onEdit={() => openEdit(rule)}
                 onDelete={() => handleDelete(rule.id)}
                 onToggleEnabled={(enabled) => setConditionEnabled(rule.id, enabled)}

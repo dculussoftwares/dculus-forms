@@ -105,7 +105,7 @@ export interface TargetFieldOption {
   pageIndex: number;
 }
 
-const fieldDisplayLabel = (field: FormField): string => {
+export const fieldDisplayLabel = (field: FormField): string => {
   const labelled = field as { label?: string };
   if (labelled.label && labelled.label.trim() !== '') return labelled.label;
   if (field instanceof RichTextFormField) {

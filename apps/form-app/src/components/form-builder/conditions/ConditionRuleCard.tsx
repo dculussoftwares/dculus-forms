@@ -3,11 +3,12 @@ import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { Badge, Button, Card, Switch } from '@dculus/ui';
 import { ConditionalRule, FormPage } from '@dculus/types';
 import { useTranslation } from '../../../hooks/useTranslation';
-import { checkRuleReferences } from './conditionFieldConfig';
+import { checkRuleReferences, fieldDisplayLabel } from './conditionFieldConfig';
 
 interface ConditionRuleCardProps {
   rule: ConditionalRule;
   pages: FormPage[];
+  canEdit: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onToggleEnabled: (enabled: boolean) => void;
@@ -16,6 +17,7 @@ interface ConditionRuleCardProps {
 export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
   rule,
   pages,
+  canEdit,
   onEdit,
   onDelete,
   onToggleEnabled,
@@ -28,8 +30,7 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
     pages.forEach((page, index) => {
       pageLabels.set(page.id, page.title || `${index + 1}`);
       page.fields.forEach((field) => {
-        const label = (field as { label?: string }).label;
-        fieldLabels.set(field.id, label && label.trim() !== '' ? label : field.id);
+        fieldLabels.set(field.id, fieldDisplayLabel(field));
       });
     });
     return { fieldLabels, pageLabels };
@@ -79,9 +80,7 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
               {rule.actions.map((action, index) => (
                 <span key={index} className="inline-block mr-1">
                   <span className="text-muted-foreground">
-                    {'fieldIds' in action
-                      ? t(`actions.${action.type}`)
-                      : t('actions.hidePage')}
+                    {t(`actions.${action.type}`)}
                   </span>{' '}
                   <span className="font-medium">
                     {'fieldIds' in action
@@ -110,30 +109,35 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
         <div className="flex items-center gap-1 shrink-0">
           <Switch
             checked={rule.enabled}
+            disabled={!canEdit}
             onCheckedChange={onToggleEnabled}
             aria-label={t('card.enabled')}
             data-testid={`condition-toggle-${rule.id}`}
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={onEdit}
-            aria-label={t('card.edit')}
-            data-testid={`condition-edit-${rule.id}`}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive"
-            onClick={onDelete}
-            aria-label={t('card.delete')}
-            data-testid={`condition-delete-${rule.id}`}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          {canEdit && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={onEdit}
+                aria-label={t('card.edit')}
+                data-testid={`condition-edit-${rule.id}`}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                onClick={onDelete}
+                aria-label={t('card.delete')}
+                data-testid={`condition-delete-${rule.id}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </Card>

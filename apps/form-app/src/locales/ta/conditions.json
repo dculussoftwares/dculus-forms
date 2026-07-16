@@ -50,7 +50,9 @@
   "actions": {
     "showField": "புலத்தை(களை)க் காட்டு",
     "hideField": "புலத்தை(களை) மறை",
-    "hidePage": "பக்கத்தை மறை"
+    "hidePage": "பக்கத்தை மறை",
+    "showPage": "பக்கத்தைக் காட்டு",
+    "skipToPage": "பக்கத்திற்குச் செல்"
   },
   "operators": {
     "equals": "சமமாக உள்ளது",
