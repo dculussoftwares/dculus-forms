@@ -1,5 +1,5 @@
 name: Setup pnpm workspace
-description: Checkout, Node.js, pnpm, pnpm store cache, install dependencies, and optionally generate the Prisma client
+description: Node.js, pnpm, pnpm store cache, install dependencies, and optionally generate the Prisma client. The calling job must check out the repo before this step — a local composite action can't be resolved until the repo is on disk.
 
 inputs:
   node-version:
@@ -13,9 +13,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:

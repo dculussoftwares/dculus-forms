@@ -65,6 +65,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -91,6 +94,9 @@ jobs:
     needs: build-shared-packages
     timeout-minutes: 10
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -118,6 +124,9 @@ jobs:
     needs: build-shared-packages
     timeout-minutes: 15
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -161,6 +170,9 @@ jobs:
     needs: build-shared-packages
     timeout-minutes: 15
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -274,6 +286,9 @@ jobs:
     needs: build-shared-packages
     timeout-minutes: 10
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -306,6 +321,9 @@ jobs:
     needs: build-shared-packages
     timeout-minutes: 10
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -335,6 +353,9 @@ jobs:
     needs: build-shared-packages
     timeout-minutes: 10
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -402,6 +423,9 @@ jobs:
       E2E_HEADLESS: "true"
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/setup
         with:
           node-version: ${{ env.NODE_VERSION }}

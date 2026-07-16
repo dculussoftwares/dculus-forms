@@ -34,22 +34,22 @@ on:
       - "infrastructure/multi-cloud/terraform/**"
       - ".github/workflows/multi-cloud-deployment.yml"
   # NOTE: `workflow_run` only supports `branches`/`branches-ignore` filters — there is
-  # no `tags:` key for this event type, so a tag push never reaches this trigger directly.
-  # dev vs production is decided entirely in the `determine-environment` job below, by
-  # regex-matching `github.event.workflow_run.head_branch` against `^v[0-9]+\.[0-9]+`
-  # (true when Build Pipeline itself ran on a tag push, since `head_branch` then carries
-  # the tag name).
+  # no `tags:` key for this event type. A `branches: [main]` filter here would also be
+  # wrong: for a Build Pipeline run triggered by a version-tag push, GitHub reports
+  # `head_branch` as the TAG NAME (e.g. "v1.2.3"), not "main" — verified against this
+  # repo's actual run history, where every workflow_run-triggered deployment run has
+  # head_branch=main and tag-triggered runs never reach this trigger at all. So no
+  # branch filter is applied here; dev vs production is decided entirely in the
+  # `determine-environment` job below, by regex-matching `head_branch` against
+  # `^v[0-9]+\.[0-9]+` for production, "main" for dev, anything else is skipped.
   workflow_run:
     workflows: [ "Build Pipeline" ]
     types:
       - completed
-    branches:
-      - main
 
 permissions:
-  id-token: write # Required for OIDC authentication with Azure
   contents: read # Required for checking out code
-  pull-requests: write # Required for commenting on PRs
+  # id-token: write (Azure OIDC) is granted per-job, only on jobs that call azure/login
 
 # Prevent overlapping Terraform applies against the same environment's state.
 # Grouped by trigger-time context only (job outputs like `determine-environment`
@@ -213,6 +213,9 @@ jobs:
     name: 1.2. Setup Azure Terraform Backend
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs: determine-environment
     if: needs.determine-environment.outputs.should_deploy == 'true'
     environment: ${{ needs.determine-environment.outputs.environment }}
@@ -449,6 +452,9 @@ jobs:
     name: 4.1. Deploy Core Infrastructure (R2 Storage + Azure Container Apps)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -675,6 +681,9 @@ jobs:
     name: 5.1. Configure Backend Service Domain DNS
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -769,6 +778,9 @@ jobs:
     name: 5.2. Setup Pages Infrastructure & Domain (form-app)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -1051,6 +1063,9 @@ jobs:
     name: 5.3. Setup Pages Infrastructure & Domain (admin-app)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -1324,6 +1339,9 @@ jobs:
     name: 5.4. Setup Pages Infrastructure & Domain (form-viewer)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
@@ -1703,6 +1721,9 @@ jobs:
     name: 7.1. Configure Backend SSL Certificate
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      id-token: write # Required for OIDC authentication with Azure
+      contents: read
     needs:
       [
         determine-environment,
