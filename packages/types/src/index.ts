@@ -38,6 +38,8 @@
  * - Added TEXT_FIELD_VALIDATION type for specialized validation objects
  */
 
+import type { ConditionalRule } from './conditions.js';
+
 // Form Settings types
 export interface ThankYouSettings {
   enabled: boolean;
@@ -112,6 +114,7 @@ export interface FormSchema {
   pages: FormPage[];
   layout: FormLayout;
   isShuffleEnabled: boolean;
+  conditions?: ConditionalRule[]; // absent = no conditional logic (back-compat)
 }
 
 export interface FormPage {
@@ -1006,6 +1009,9 @@ export interface PaginatedResponse<T> {
   limit: number;
   totalPages: number;
 }
+
+// Re-export conditional logic types and evaluator
+export * from './conditions.js';
 
 // Re-export validation schemas and types
 export * from './validation.js';
