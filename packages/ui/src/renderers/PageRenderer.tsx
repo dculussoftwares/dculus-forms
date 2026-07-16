@@ -4,7 +4,7 @@ import { RendererMode } from '@dculus/utils';
 import { SinglePageForm, LayoutStyles } from './SinglePageForm';
 import { useFormResponseStore, useFormResponseUtils } from '../stores/useFormResponseStore';
 import { FormValidationState, FormNavigationState } from '../types/validation';
-import { useFormResponseContext } from './FormRenderer';
+import { useFormResponseContext } from './FormResponseContext';
 import { Checkbox } from '../checkbox';
 
 export type { LayoutStyles } from './SinglePageForm';

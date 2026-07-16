@@ -10,7 +10,7 @@ import { useFormInitialization, useFormValidation, useStoreSync, useFormSubmissi
 import { FormControls } from '../components';
 import { DEFAULT_LAYOUT_STYLES, FORM_CONSTANTS } from '../constants/formStyles';
 import { useFormResponseStore } from '../stores/useFormResponseStore';
-import { FormResponseContext } from './FormRenderer';
+import { FormResponseContext } from './FormResponseContext';
 
 interface FieldStyles {
   container: string;
@@ -94,7 +94,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   } = useFormValidation(methods, page, onValidationChange);
 
   // Initialize submission hook
-  const { handleSubmit: handleFormSubmit, submitCurrentValues } = useFormSubmission(
+  const { submitCurrentValues } = useFormSubmission(
     methods,
     page,
     store,
@@ -141,7 +141,15 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-4 ${className}`}>
+      {/* Both submit paths (this <form> and the imperative formRef.submit()
+          used by page navigation) go through submitCurrentValues so they
+          persist the identical raw-values payload — see useFormSubmission */}
+      <form
+        onSubmit={handleSubmit(() => {
+          void submitCurrentValues();
+        })}
+        className={`space-y-4 ${className}`}
+      >
         <div className="space-y-4">
           {visibleFields.map((field) => (
             <FormFieldRenderer
