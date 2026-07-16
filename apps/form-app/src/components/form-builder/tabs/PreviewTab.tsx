@@ -46,7 +46,7 @@ const MOBILE_PREVIEW_CSS = `
 `;
 
 export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
-  const { pages, layout } = useFormBuilderStore();
+  const { pages, layout, conditions } = useFormBuilderStore();
   const cdnEndpoint = getCdnEndpoint();
   const [submitCount, setSubmitCount] = useState(0);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
@@ -67,8 +67,9 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
         pageMode: 'single_page' as const,
       },
       isShuffleEnabled: false,
+      ...(conditions.length > 0 ? { conditions } : {}),
     }),
-    [pages, layout]
+    [pages, layout, conditions]
   );
 
   const handlePreviewSubmit = useCallback(

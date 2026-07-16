@@ -12,6 +12,7 @@ import { createCollaborationSlice } from './slices/collaborationSlice';
 import { createPagesSlice } from './slices/pagesSlice';
 import { createFieldsSlice } from './slices/fieldsSlice';
 import { createLayoutSlice } from './slices/layoutSlice';
+import { createConditionsSlice } from './slices/conditionsSlice';
 import { createSelectionSlice } from './slices/selectionSlice';
 import { createAISlice } from './slices/aiSlice';
 import { DEFAULT_LAYOUT } from './helpers/defaultLayout';
@@ -37,6 +38,7 @@ export const useFormBuilderStore = create<FormBuilderState>()(
       ...createPagesSlice(set, get),
       ...createFieldsSlice(set, get),
       ...createLayoutSlice(set, get),
+      ...createConditionsSlice(set, get),
       ...createSelectionSlice(set, get),
       ...createAISlice(set, get),
 
@@ -48,6 +50,7 @@ export const useFormBuilderStore = create<FormBuilderState>()(
         set({
           layout: DEFAULT_LAYOUT,
           isShuffleEnabled: false,
+          conditions: [],
           selectedPageId: null,
           selectedFieldId: null,
         });

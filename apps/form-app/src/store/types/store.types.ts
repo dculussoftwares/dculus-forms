@@ -6,7 +6,7 @@
 
 import * as Y from 'yjs';
 import { HocuspocusProvider } from '@hocuspocus/provider';
-import { FormField, FormPage, FormLayout, FieldType } from '@dculus/types';
+import { FormField, FormPage, FormLayout, FieldType, ConditionalRule } from '@dculus/types';
 import { FieldData } from '../collaboration/CollaborationManager';
 
 /**
@@ -117,6 +117,24 @@ export interface LayoutSlice {
 }
 
 /**
+ * Conditions Slice
+ *
+ * Manages the form-level conditional logic rules (show/hide fields, hide
+ * pages). Rules are plain JSON entries in a top-level 'conditions' Y.Array,
+ * edited whole-rule-at-a-time (JotForm-style editor semantics).
+ */
+export interface ConditionsSlice {
+  // State
+  conditions: ConditionalRule[];
+
+  // Actions
+  addCondition: (rule: ConditionalRule) => void;
+  updateCondition: (ruleId: string, rule: ConditionalRule) => void;
+  removeCondition: (ruleId: string) => void;
+  setConditionEnabled: (ruleId: string, enabled: boolean) => void;
+}
+
+/**
  * Selection Slice
  *
  * Manages current page and field selection state
@@ -218,6 +236,7 @@ export type FormBuilderState = CollaborationSlice &
   PagesSlice &
   FieldsSlice &
   LayoutSlice &
+  ConditionsSlice &
   SelectionSlice &
   AISlice &
   ResetSlice;
