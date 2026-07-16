@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { FormPage } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { SinglePageForm, LayoutStyles } from './SinglePageForm';
@@ -44,6 +44,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     mode: contextMode,
     responseCopySettings,
     onResponseCopyConsentChange,
+    hiddenPageIds,
   } = useFormResponseContext();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [pageValidationStates, setPageValidationStates] = useState<Record<string, boolean>>({});
@@ -64,11 +65,59 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     showAllValidationErrors: () => Promise<void>;
   }>(null);
 
-  const currentPage = pages[currentPageIndex];
+  // Conditional logic: navigation, progress, and submit-vs-OK all operate on
+  // the visible pages only (strategy doc §7). currentPageIndex indexes into
+  // visiblePages; currentPageIdRef remembers which page the user is actually
+  // on so the index can be reconciled when visibility changes shift the list.
+  const visiblePages = useMemo(
+    () =>
+      hiddenPageIds.size > 0
+        ? pages.filter((page) => !hiddenPageIds.has(page.id))
+        : pages,
+    [pages, hiddenPageIds]
+  );
+
+  const currentPage = visiblePages[currentPageIndex];
+  const currentPageIdRef = useRef<string | undefined>(undefined);
+  if (currentPageIdRef.current === undefined) {
+    currentPageIdRef.current = currentPage?.id;
+  }
+
+  const navigateToIndex = useCallback((index: number) => {
+    currentPageIdRef.current = visiblePages[index]?.id;
+    setCurrentPageIndex(index);
+  }, [visiblePages]);
+
+  // Reconcile the numeric index when visibility changes move or hide the
+  // page the user is on: follow the page if it just shifted position, and
+  // clamp to the nearest previous visible page (never strand the user) when
+  // an answer hid the current page itself.
+  useEffect(() => {
+    if (visiblePages.length === 0) return;
+    const intendedId = currentPageIdRef.current;
+    const intendedIndex = intendedId
+      ? visiblePages.findIndex((page) => page.id === intendedId)
+      : -1;
+    if (intendedIndex >= 0) {
+      if (intendedIndex !== currentPageIndex) setCurrentPageIndex(intendedIndex);
+      return;
+    }
+    const originalIndex = pages.findIndex((page) => page.id === intendedId);
+    let target = 0;
+    for (let i = visiblePages.length - 1; i >= 0; i--) {
+      const visibleOriginalIndex = pages.findIndex((page) => page.id === visiblePages[i].id);
+      if (visibleOriginalIndex <= originalIndex) {
+        target = i;
+        break;
+      }
+    }
+    currentPageIdRef.current = visiblePages[target]?.id;
+    if (target !== currentPageIndex) setCurrentPageIndex(target);
+  }, [visiblePages, currentPageIndex, pages]);
 
   const navigationState: FormNavigationState = useMemo(() => {
     const isFirstPage = currentPageIndex === 0;
-    const isLastPage = currentPageIndex >= pages.length - 1;
+    const isLastPage = currentPageIndex >= visiblePages.length - 1;
     const currentPageValid = pageValidationStates[currentPage?.id] ?? false;
     const currentPageAttempts = pageAttemptCounts[currentPage?.id] ?? 0;
     const isFirstAttempt = currentPageAttempts === 0;
@@ -83,7 +132,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
       isFirstAttempt,
       showLenientValidation,
     };
-  }, [currentPageIndex, pages.length, pageValidationStates, currentPage?.id, enableStrictValidation, pageAttemptCounts]);
+  }, [currentPageIndex, visiblePages.length, pageValidationStates, currentPage?.id, enableStrictValidation, pageAttemptCounts]);
 
   const handleValidationChange = useCallback((pageId: string, isValid: boolean) => {
     setPageValidationStates(prev => ({ ...prev, [pageId]: isValid }));
@@ -145,8 +194,8 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
       if (currentPageFormRef.current) currentPageFormRef.current.submit();
 
       const newIndex = currentPageIndex + 1;
-      if (newIndex < pages.length) {
-        setCurrentPageIndex(newIndex);
+      if (newIndex < visiblePages.length) {
+        navigateToIndex(newIndex);
       } else {
         handleFormComplete();
       }
@@ -156,14 +205,14 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     } finally {
       setIsNavigating(false);
     }
-  }, [currentPage, currentPageIndex, pages.length, isNavigating, enableStrictValidation, onValidationError, handleFormComplete, pageAttemptCounts]);
+  }, [currentPage, currentPageIndex, visiblePages.length, navigateToIndex, isNavigating, enableStrictValidation, onValidationError, handleFormComplete, pageAttemptCounts]);
 
   const goToPrevPage = useCallback(async () => {
     if (!currentPage || currentPageIndex <= 0) return;
     if (currentPageFormRef.current) currentPageFormRef.current.submit();
-    setCurrentPageIndex(currentPageIndex - 1);
+    navigateToIndex(currentPageIndex - 1);
     setValidationErrors([]);
-  }, [currentPage, currentPageIndex]);
+  }, [currentPage, currentPageIndex, navigateToIndex]);
 
   if (pages.length === 0) {
     return (
@@ -175,7 +224,9 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     );
   }
 
-  const progressPercent = Math.round(((currentPageIndex + 1) / pages.length) * 100);
+  const progressPercent = visiblePages.length > 0
+    ? Math.round(((currentPageIndex + 1) / visiblePages.length) * 100)
+    : 0;
 
   return (
     <div
@@ -184,7 +235,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
       data-page-index={currentPageIndex}
     >
       {/* Progress bar + page counter */}
-      {showPageNavigation && pages.length > 1 && (
+      {showPageNavigation && visiblePages.length > 1 && (
         <div className="flex items-center gap-3 mb-4 sm:mb-8">
           <div className="flex-1 h-0.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <div
@@ -196,19 +247,19 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
             className="text-xs text-gray-400 dark:text-gray-500 tabular-nums flex-shrink-0"
             data-testid="viewer-page-indicator"
           >
-            Page {currentPageIndex + 1} of {pages.length}
+            Page {currentPageIndex + 1} of {visiblePages.length}
           </span>
         </div>
       )}
 
       {/* Page title */}
-      {showPageNavigation && pages[currentPageIndex]?.title && (
+      {showPageNavigation && currentPage?.title && (
         <div className="mb-4 sm:mb-8">
           <h3
             className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight"
             data-testid="viewer-page-title"
           >
-            {pages[currentPageIndex]?.title}
+            {currentPage?.title}
           </h3>
         </div>
       )}
