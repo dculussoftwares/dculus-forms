@@ -22,6 +22,8 @@ import {
   substituteMentions,
 } from '@dculus/utils';
 import { deserializeFormSchema } from '@dculus/types';
+import { stripConditionallyHiddenValues } from '../../lib/conditionalStrip.js';
+import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/core/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
@@ -208,6 +210,22 @@ export const responsesResolvers = {
           if (typeof value === 'string' && value.length > 10_000) {
             throw createGraphQLError(`Field "${key}" exceeds the 10,000 character limit`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
           }
+        }
+      }
+
+      // Server-side conditional-logic enforcement (defense in depth): strip
+      // values of fields/pages the form's rules hide, evaluated against the
+      // same live schema the viewer was served (Hocuspocus, falling back to
+      // the DB column). The client strips too, but this mutation is public
+      // and callable directly. Runs before BOTH insert paths below.
+      if (input.data && typeof input.data === 'object') {
+        const liveSchema =
+          (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
+        if (liveSchema) {
+          input.data = stripConditionallyHiddenValues(
+            liveSchema,
+            input.data as Record<string, unknown>
+          );
         }
       }
 
@@ -449,6 +467,20 @@ export const responsesResolvers = {
       const accessCheck = await checkFormAccess(context.auth.user!.id, existingResponse.formId, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
         throw createGraphQLError('Access denied: You need EDITOR access to update responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      // Same conditional-logic enforcement as submitResponse — edits flow
+      // through the identical strip gate, so values cleared by rules are
+      // recorded as DELETE field changes by the edit tracker below
+      if (input.data && typeof input.data === 'object') {
+        const liveSchema =
+          (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
+        if (liveSchema) {
+          input.data = stripConditionallyHiddenValues(
+            liveSchema,
+            input.data as Record<string, unknown>
+          ) as Record<string, any>;
+        }
       }
 
       // 3. Prepare edit tracking context
