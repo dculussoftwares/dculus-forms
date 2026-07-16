@@ -357,12 +357,20 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
 };
 
 /**
- * Creates a Zod schema for an entire form page
+ * Creates a Zod schema for an entire form page.
+ *
+ * Fields hidden by conditional logic are omitted from the schema entirely
+ * (not relaxed to .optional()) so no validation rule of a hidden field can
+ * ever error or block navigation — see docs/conditional-logic-v1-strategy.md §4.
  */
-export const createPageSchema = (page: FormPage): z.ZodObject<any> => {
+export const createPageSchema = (
+  page: FormPage,
+  hiddenFieldIds?: ReadonlySet<string>
+): z.ZodObject<any> => {
   const schemaFields: Record<string, z.ZodTypeAny> = {};
 
   page.fields.forEach((field) => {
+    if (hiddenFieldIds?.has(field.id)) return;
     schemaFields[field.id] = createFieldSchema(field);
   });
 
@@ -410,13 +418,19 @@ export const createPageDefaultValues = (
 };
 
 /**
- * Validates a page's data and returns validation result
+ * Validates a page's data and returns validation result.
+ *
+ * Must receive the same hiddenFieldIds as the RHF resolver — this second,
+ * independent validation runs on navigation (submitCurrentValues) and would
+ * otherwise silently fail on hidden required fields and drop the page's
+ * visible answers (strategy doc §4.2).
  */
 export const validatePageData = (
   page: FormPage,
-  data: Record<string, any>
+  data: Record<string, any>,
+  hiddenFieldIds?: ReadonlySet<string>
 ): PageValidationResult => {
-  const schema = createPageSchema(page);
+  const schema = createPageSchema(page, hiddenFieldIds);
 
   try {
     schema.parse(data);
