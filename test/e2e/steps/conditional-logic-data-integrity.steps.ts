@@ -183,8 +183,10 @@ When(
         new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt })
       );
     }, fieldId);
-    // FileChip renders the file name in a span.truncate — the attach must land
-    await expect(this.viewerPage.locator('span.truncate')).toHaveCount(1, { timeout: 5_000 });
+    // The attach must land — the file chip shows the attached file's name
+    await expect(
+      this.viewerPage.getByText('stripped-file.txt', { exact: true })
+    ).toBeVisible({ timeout: 5_000 });
   }
 );
 
