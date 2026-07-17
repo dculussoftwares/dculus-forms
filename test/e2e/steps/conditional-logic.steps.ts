@@ -9,9 +9,7 @@
 import { When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
-import { createFormViaGraphQL } from './helpers';
-
-let currentFormId: string | null = null;
+import { createFormViaGraphQL, fetchLatestResponse } from './helpers';
 
 const conditionalLogicFields = () => ({
   layout: {
@@ -124,7 +122,7 @@ const conditionalLogicSchemaWithRules = () => ({
 When(
   'I create a form via GraphQL with conditional logic rules',
   async function (this: CustomWorld) {
-    currentFormId = await createFormViaGraphQL(
+    await createFormViaGraphQL(
       this,
       conditionalLogicSchemaWithRules(),
       'E2E Conditional Logic Test'
@@ -135,7 +133,7 @@ When(
 When(
   'I create a form via GraphQL with conditional logic fields',
   async function (this: CustomWorld) {
-    currentFormId = await createFormViaGraphQL(
+    await createFormViaGraphQL(
       this,
       conditionalLogicFields(),
       'E2E Conditional Builder Test'
@@ -211,42 +209,10 @@ When(
 // Stored-response assertions (submit-time strip)
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function fetchLatestResponseData(world: CustomWorld): Promise<Record<string, unknown>> {
-  if (!world.page) throw new Error('Page is not initialized');
-  if (!currentFormId) throw new Error('No form created in this scenario');
-
-  const response = await world.page.evaluate(
-    async ({ formId, backendUrl }) => {
-      const res = await fetch(backendUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          query: `query ResponsesByForm($formId: ID!) {
-            responsesByForm(formId: $formId, page: 1, limit: 1) {
-              data { id data }
-            }
-          }`,
-          variables: { formId },
-        }),
-      });
-      return res.json();
-    },
-    { formId: currentFormId, backendUrl: world.backendUrl }
-  );
-
-  if (response.errors) {
-    throw new Error(`GraphQL error fetching responses: ${JSON.stringify(response.errors)}`);
-  }
-  const first = response.data?.responsesByForm?.data?.[0];
-  if (!first) throw new Error('No stored response found for the form');
-  return first.data as Record<string, unknown>;
-}
-
 Then(
   'the stored response should include values for {string}',
   async function (this: CustomWorld, fieldIdsCsv: string) {
-    const data = await fetchLatestResponseData(this);
+    const { data } = await fetchLatestResponse(this);
     for (const fieldId of fieldIdsCsv.split(',').map((s) => s.trim())) {
       expect(
         data[fieldId],
@@ -259,7 +225,7 @@ Then(
 Then(
   'the stored response should not include values for {string}',
   async function (this: CustomWorld, fieldIdsCsv: string) {
-    const data = await fetchLatestResponseData(this);
+    const { data } = await fetchLatestResponse(this);
     for (const fieldId of fieldIdsCsv.split(',').map((s) => s.trim())) {
       expect(
         data[fieldId],
