@@ -736,3 +736,248 @@ When(
   }
 );
 
+const conditionalLogicPageEdgesSchema = () => ({
+  layout: {
+    theme: 'light',
+    textColor: '#000000',
+    spacing: 'normal',
+    code: 'L9',
+    content: '<h1>Conditional Page Edges Test</h1>',
+    customBackGroundColor: '#ffffff',
+    backgroundImageKey: '',
+    pageMode: 'multipage',
+    isCustomBackgroundColorEnabled: false,
+  },
+  isShuffleEnabled: false,
+  pages: [
+    {
+      id: 'p1',
+      title: 'Page 1',
+      order: 0,
+      fields: [
+        {
+          id: 'edge-skip-p1',
+          type: 'radio_field',
+          label: 'Skip page 1?',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          options: ['Yes', 'No'],
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+        {
+          id: 'edge-hide-all',
+          type: 'radio_field',
+          label: 'Hide all pages?',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          options: ['Yes', 'No'],
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+      ],
+    },
+    {
+      id: 'p2',
+      title: 'Page 2',
+      order: 1,
+      fields: [
+        {
+          id: 'edge-a',
+          type: 'text_input_field',
+          label: 'Text A',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Enter text a',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+      ],
+    },
+    {
+      id: 'p3',
+      title: 'Page 3',
+      order: 2,
+      fields: [
+        {
+          id: 'edge-b',
+          type: 'text_input_field',
+          label: 'Text B',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Enter text b',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'edge-hide-p1',
+          type: 'radio_field',
+          label: 'Hide page 1?',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          options: ['Yes', 'No'],
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+      ],
+    },
+    {
+      id: 'p4',
+      title: 'Page 4',
+      order: 3,
+      fields: [
+        {
+          id: 'richtext',
+          type: 'rich_text_field',
+          content: '<p>Info page</p>',
+        },
+      ],
+    },
+  ],
+  conditions: [
+    {
+      id: 'rule-edge-hide-p1',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'edge-hide-p1', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'hidePage', pageId: 'p1' }],
+    },
+    {
+      id: 'rule-edge-self-hide',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'edge-a', operator: 'equals', value: 'hide me' }],
+      actions: [{ type: 'hidePage', pageId: 'p2' }],
+    },
+    {
+      id: 'rule-edge-skip-p2',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'edge-b', operator: 'equals', value: 'skip p2' }],
+      actions: [{ type: 'hidePage', pageId: 'p2' }],
+    },
+    {
+      id: 'rule-edge-hide-p4-field',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'edge-a', operator: 'equals', value: 'hide p4' }],
+      actions: [{ type: 'hideField', fieldIds: ['richtext'] }],
+    },
+    {
+      id: 'rule-edge-hide-all-p1',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'edge-hide-all', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'hidePage', pageId: 'p1' }],
+    },
+    {
+      id: 'rule-edge-hide-all-p2',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'edge-hide-all', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'hidePage', pageId: 'p2' }],
+    },
+    {
+      id: 'rule-edge-hide-all-p3',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'edge-hide-all', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'hidePage', pageId: 'p3' }],
+    },
+    {
+      id: 'rule-edge-hide-all-p4',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'edge-hide-all', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'hidePage', pageId: 'p4' }],
+    },
+  ],
+});
+
+When(
+  'I create a form via GraphQL with the conditional logic page edges matrix',
+  async function (this: CustomWorld) {
+    await createFormViaGraphQL(
+      this,
+      conditionalLogicPageEdgesSchema(),
+      'E2E Conditional Page Edges Test'
+    );
+  }
+);
+
+When(
+  'I create a form via GraphQL with the conditional logic all pages hidden schema',
+  async function (this: CustomWorld) {
+    const schema = conditionalLogicPageEdgesSchema() as any;
+    const p1 = schema.pages.find((p: any) => p.id === 'p1');
+    if (p1) {
+      const f = p1.fields.find((field: any) => field.id === 'edge-hide-all');
+      if (f) {
+        f.defaultValue = 'No';
+      }
+    }
+    schema.conditions = schema.conditions.map((rule: any) => {
+      if (rule.id.startsWith('rule-edge-hide-all-')) {
+        return {
+          ...rule,
+          terms: [{ fieldId: 'edge-hide-all', operator: 'notEquals', value: 'No' }],
+        };
+      }
+      return rule;
+    });
+    await createFormViaGraphQL(
+      this,
+      schema,
+      'E2E Conditional Page Edges - All Pages Hidden'
+    );
+  }
+);
+
+Then(
+  'the viewer page indicator should be hidden',
+  async function (this: CustomWorld) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    const indicator = this.viewerPage.getByTestId('viewer-page-indicator');
+    await expect(indicator).toHaveCount(0, { timeout: 10_000 });
+  }
+);
+
+Then(
+  'the viewer submit button should be visible',
+  async function (this: CustomWorld) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    const submitBtn = this.viewerPage.getByTestId('viewer-submit-button');
+    await expect(submitBtn).toBeVisible({ timeout: 10_000 });
+  }
+);
+
+When(
+  'I click submit in the viewer',
+  async function (this: CustomWorld) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    await this.viewerPage.getByTestId('viewer-submit-button').click();
+    await expect(
+      this.viewerPage.getByTestId('viewer-submit-button')
+    ).toHaveCount(0, { timeout: 30_000 });
+  }
+);
+
+Then(
+  'the stored response should be empty',
+  async function (this: CustomWorld) {
+    const { data } = await fetchLatestResponse(this);
+    expect(Object.keys(data).length).toBe(0);
+  }
+);
+
+Then(
+  'I should see the rich text content {string} in the viewer',
+  async function (this: CustomWorld, content: string) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    await expect(
+      this.viewerPage.getByText(content).first()
+    ).toBeVisible({ timeout: 10_000 });
+  }
+);
+
+
