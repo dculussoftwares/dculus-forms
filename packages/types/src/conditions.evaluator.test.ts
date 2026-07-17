@@ -907,4 +907,76 @@ describe('cascading evaluation', () => {
       evaluateConditions(rules, responsesWith({ number: 21 }), schema).hiddenFieldIds.has('date')
     ).toBe(false);
   });
+
+  // ---------------------------------------------------------------------------
+  // Page-cycle resolution: prefer HIDDEN (union of cycle states)
+  // contrast with field-cycle resolution which prefers VISIBLE (intersection)
+  // ---------------------------------------------------------------------------
+
+  it('self-hiding page resolves to HIDDEN (page-cycle prefers hidden)', () => {
+    // Rule: IF select (on p2) equals "hide me" → hidePage p2
+    // Iteration trace:
+    //   State 0: p2 visible → select = "hide me" → rule fires → {p2} hidden
+    //   State 1: p2 hidden → select coerced to undefined → rule deactivates → {}
+    //   State 2 = State 0 → cycle [{p2}, {}] detected
+    //   Pages: union({p2}, {}) = {p2} → p2 HIDDEN ✓
+    const selfHidePage: ConditionalRule = {
+      id: 'self-hide-page',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'select', operator: 'equals', value: 'hide me' }],
+      actions: [{ type: 'hidePage', pageId: 'p2' }],
+    };
+    const result = evaluateConditions(
+      [selfHidePage],
+      responsesWith({ select: 'hide me' }),
+      schema
+    );
+    expect(result.hiddenPageIds.has('p2')).toBe(true);
+    // p1 is unaffected
+    expect(result.hiddenPageIds.has('p1')).toBe(false);
+  });
+
+  it('self-hiding page + unrelated rule — unrelated page unaffected', () => {
+    const selfHidePage: ConditionalRule = {
+      id: 'self-hide-page',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'select', operator: 'equals', value: 'hide me' }],
+      actions: [{ type: 'hidePage', pageId: 'p2' }],
+    };
+    // Separate rule that hides p1 when text on p1 is filled
+    const hideP1: ConditionalRule = {
+      id: 'hide-p1',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'text', operator: 'isFilled' }],
+      actions: [{ type: 'hidePage', pageId: 'p1' }],
+    };
+    // text filled → p1 hidden (stable, no cycle)
+    // select = "hide me" → self-hiding page cycle → p2 hidden
+    const result = evaluateConditions(
+      [selfHidePage, hideP1],
+      responsesWith({ select: 'hide me', text: 'go' }),
+      schema
+    );
+    expect(result.hiddenPageIds.has('p2')).toBe(true);
+    expect(result.hiddenPageIds.has('p1')).toBe(true);
+  });
+
+  it('self-hiding page does NOT hide when trigger value does not match', () => {
+    const selfHidePage: ConditionalRule = {
+      id: 'self-hide-page',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'select', operator: 'equals', value: 'hide me' }],
+      actions: [{ type: 'hidePage', pageId: 'p2' }],
+    };
+    const result = evaluateConditions(
+      [selfHidePage],
+      responsesWith({ select: 'keep visible' }),
+      schema
+    );
+    expect(result.hiddenPageIds.has('p2')).toBe(false);
+  });
 });

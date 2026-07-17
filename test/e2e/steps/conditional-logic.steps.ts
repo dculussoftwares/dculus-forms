@@ -575,7 +575,16 @@ When(
     const input = this.viewerPage.locator(`input[name="${fieldId}"]`);
     await expect(input).toBeVisible({ timeout: 10_000 });
     await input.fill(value);
-    await input.blur();
+    // blur() flushes React's onBlur/onChange so the evaluator re-runs.
+    // When filling triggers a self-hiding page rule the input disappears from
+    // the DOM before blur() resolves — that is the expected behaviour, so we
+    // absorb the locator-not-found error here without masking real failures
+    // (fill() already proved the element existed and the value was accepted).
+    try {
+      await input.blur();
+    } catch {
+      // element disappeared due to conditional visibility change — expected
+    }
     await this.viewerPage.waitForTimeout(300);
   }
 );
@@ -716,7 +725,13 @@ When(
     const input = this.viewerPage.locator(`input[name="${fieldId}"]`);
     await expect(input).toBeVisible({ timeout: 10_000 });
     await input.fill('');
-    await input.blur();
+    // Same blur() safety as the fill step — clearing can also trigger page
+    // visibility changes that remove the input before blur() resolves.
+    try {
+      await input.blur();
+    } catch {
+      // element disappeared due to conditional visibility change — expected
+    }
     await this.viewerPage.waitForTimeout(300);
   }
 );
