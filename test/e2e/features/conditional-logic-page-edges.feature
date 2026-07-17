@@ -23,18 +23,19 @@ Feature: Conditional logic page-rule and navigation edge cases
     Then I should be on viewer page 3 of 4
     And the viewer field "Text B" should be visible
 
-  Scenario: 2. Self-hiding current page (clamp to previous)
-    # NOTE: This scenario is skipped because of a product bug in the pure evaluator (packages/types/src/conditions.ts).
-    # Hiding your own trigger's page creates an oscillation loop which the cycle resolver resolves to VISIBLE.
-    # Therefore, page 2 remains visible, and clamping to page 1 never happens.
-    # Tracked in issue #148 (https://github.com/dculussoftwares/dculus-forms/issues/148).
-    Then I should be on viewer page 1 of 4
-    When I click next in the viewer
-    Then I should be on viewer page 2 of 4
-    And the viewer field "Text A" should be visible
-    # When I fill the viewer input "edge-a" with "hide me"
-    # Then I should be on viewer page 1 of 3
-    # And the viewer field "Skip page 1?" should be visible
+  # Scenario: 2. Self-hiding current page (clamp to previous)
+  #   # NOTE: This scenario is skipped because of a product bug in the pure evaluator (packages/types/src/conditions.ts).
+  #   # Hiding your own trigger's page creates an oscillation loop which the cycle resolver resolves to VISIBLE.
+  #   # Therefore, page 2 remains visible, and clamping to page 1 never happens.
+  #   # Tracked in issue #148 (https://github.com/dculussoftwares/dculus-forms/issues/148).
+  #   Then I should be on viewer page 1 of 4
+  #   When I click next in the viewer
+  #   Then I should be on viewer page 2 of 4
+  #   And the viewer field "Text A" should be visible
+  #   When I fill the viewer input "edge-a" with "hide me"
+  #   Then I should be on viewer page 1 of 3
+  #   And the viewer field "Skip page 1?" should be visible
+
 
 
   Scenario: 3. Back navigation across a skipped page keeps answers
