@@ -141,6 +141,393 @@ When(
   }
 );
 
+const triggerMatrixFields = () => ({
+  layout: {
+    theme: 'light',
+    textColor: '#000000',
+    spacing: 'normal',
+    code: 'L9',
+    content: '<h1>Conditional Logic Trigger Matrix</h1>',
+    customBackGroundColor: '#ffffff',
+    backgroundImageKey: '',
+    pageMode: 'multipage',
+    isCustomBackgroundColorEnabled: false,
+  },
+  isShuffleEnabled: false,
+  pages: [
+    {
+      id: 'matrix-page-1',
+      title: 'Main Page',
+      order: 0,
+      fields: [
+        // Triggers
+        {
+          id: 'trig-text',
+          type: 'text_input_field',
+          label: 'Text Trigger',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Type something',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'trig-email',
+          type: 'email_field',
+          label: 'Email Trigger',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Type email',
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+        {
+          id: 'trig-phone',
+          type: 'phone_number_field',
+          label: 'Phone Trigger',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          defaultCountry: 'IN',
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+        {
+          id: 'trig-number',
+          type: 'number_field',
+          label: 'Number Trigger',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Type number',
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+        {
+          id: 'trig-date',
+          type: 'date_field',
+          label: 'Date Trigger',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Pick a date',
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+        {
+          id: 'trig-select',
+          type: 'select_field',
+          label: 'Select Trigger',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          options: ['Option 1', 'Option 2'],
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+        {
+          id: 'trig-checkbox',
+          type: 'checkbox_field',
+          label: 'Checkbox Trigger',
+          defaultValues: [],
+          prefix: '',
+          hint: '',
+          options: ['Option A', 'Option B'],
+          validation: { required: false, type: 'checkbox_field_validation' },
+        },
+        {
+          id: 'trig-file',
+          type: 'file_upload_field',
+          label: 'File Trigger',
+          hint: 'Upload file',
+          maxFileSizeMb: 10,
+          maxFiles: 1,
+          allowedMimeTypes: [],
+          validation: { required: false },
+        },
+
+        // Probes
+        {
+          id: 'probe-text-equals',
+          type: 'text_input_field',
+          label: 'Probe Text Equals',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-text-contains',
+          type: 'text_input_field',
+          label: 'Probe Text Contains',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-text-starts',
+          type: 'text_input_field',
+          label: 'Probe Text Starts',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-text-ends',
+          type: 'text_input_field',
+          label: 'Probe Text Ends',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-text-empty',
+          type: 'text_input_field',
+          label: 'Probe Text Empty',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-email-ends',
+          type: 'text_input_field',
+          label: 'Probe Email Ends',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-phone-starts',
+          type: 'text_input_field',
+          label: 'Probe Phone Starts',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-number-gt',
+          type: 'text_input_field',
+          label: 'Probe Number GT',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-number-zero',
+          type: 'text_input_field',
+          label: 'Probe Number Zero',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-date-before',
+          type: 'text_input_field',
+          label: 'Probe Date Before',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-select-equals',
+          type: 'text_input_field',
+          label: 'Probe Select Equals',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-checkbox-contains',
+          type: 'text_input_field',
+          label: 'Probe Checkbox Contains',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-checkbox-not-contains',
+          type: 'text_input_field',
+          label: 'Probe Checkbox Not Contains',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-file-filled',
+          type: 'text_input_field',
+          label: 'Probe File Filled',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-multi-all',
+          type: 'text_input_field',
+          label: 'Probe Multi All',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+        {
+          id: 'probe-multi-any',
+          type: 'text_input_field',
+          label: 'Probe Multi Any',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+      ],
+    },
+  ],
+});
+
+const conditionalLogicTriggerMatrixSchema = () => ({
+  ...triggerMatrixFields(),
+  conditions: [
+    {
+      id: 'rule-text-equals',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-text', operator: 'equals', value: 'hello' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-text-equals'] }],
+    },
+    {
+      id: 'rule-text-contains',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-text', operator: 'contains', value: 'mid' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-text-contains'] }],
+    },
+    {
+      id: 'rule-text-starts',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-text', operator: 'startsWith', value: 'start' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-text-starts'] }],
+    },
+    {
+      id: 'rule-text-ends',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-text', operator: 'endsWith', value: 'end' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-text-ends'] }],
+    },
+    {
+      id: 'rule-text-empty',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-text', operator: 'isEmpty' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-text-empty'] }],
+    },
+    {
+      id: 'rule-email-ends',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-email', operator: 'endsWith', value: '@acme.com' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-email-ends'] }],
+    },
+    {
+      id: 'rule-phone-starts',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-phone', operator: 'startsWith', value: '+91' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-phone-starts'] }],
+    },
+    {
+      id: 'rule-number-gt',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-number', operator: 'greaterThan', value: 10 }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-number-gt'] }],
+    },
+    {
+      id: 'rule-number-zero',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-number', operator: 'equals', value: 0 }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-number-zero'] }],
+    },
+    {
+      id: 'rule-date-before',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-date', operator: 'before', value: '2026-01-01' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-date-before'] }],
+    },
+    {
+      id: 'rule-select-equals',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-select', operator: 'equals', value: 'Option 1' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-select-equals'] }],
+    },
+    {
+      id: 'rule-checkbox-contains',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-checkbox', operator: 'contains', value: 'Option A' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-checkbox-contains'] }],
+    },
+    {
+      id: 'rule-checkbox-not-contains',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-checkbox', operator: 'notContains', value: 'Option B' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-checkbox-not-contains'] }],
+    },
+    {
+      id: 'rule-file-filled',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'trig-file', operator: 'isFilled' }],
+      actions: [{ type: 'hideField', fieldIds: ['probe-file-filled'] }],
+    },
+    {
+      id: 'rule-multi-all',
+      enabled: true,
+      combinator: 'all',
+      terms: [
+        { fieldId: 'trig-text', operator: 'equals', value: 'hello' },
+        { fieldId: 'trig-number', operator: 'greaterThan', value: 10 },
+      ],
+      actions: [{ type: 'hideField', fieldIds: ['probe-multi-all'] }],
+    },
+    {
+      id: 'rule-multi-any',
+      enabled: true,
+      combinator: 'any',
+      terms: [
+        { fieldId: 'trig-text', operator: 'equals', value: 'hello' },
+        { fieldId: 'trig-number', operator: 'greaterThan', value: 10 },
+      ],
+      actions: [{ type: 'hideField', fieldIds: ['probe-multi-any'] }],
+    },
+  ],
+});
+
+When(
+  'I create a form via GraphQL with the conditional logic trigger matrix',
+  async function (this: CustomWorld) {
+    await createFormViaGraphQL(
+      this,
+      conditionalLogicTriggerMatrixSchema(),
+      'E2E Conditional Logic Trigger Matrix'
+    );
+  }
+);
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Viewer interactions
 // ─────────────────────────────────────────────────────────────────────────────
@@ -284,3 +671,68 @@ Then(
     await expect(card.first()).toContainText(triggerLabel);
   }
 );
+
+When(
+  'I choose viewer dropdown option {string} for {string}',
+  async function (this: CustomWorld, option: string, fieldLabel: string) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    const labelElement = this.viewerPage.locator('label', { hasText: fieldLabel }).first();
+    const container = labelElement.locator('..').locator('..');
+    const trigger = container.locator('button').first();
+    await trigger.click();
+    const optionElement = this.viewerPage.getByRole('option', { name: option, exact: true });
+    await optionElement.click();
+    await this.viewerPage.waitForTimeout(300);
+  }
+);
+
+When(
+  'I choose viewer checkbox option {string} for {string}',
+  async function (this: CustomWorld, option: string, fieldLabel: string) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    const labelElement = this.viewerPage.locator('label', { hasText: fieldLabel }).first();
+    const container = labelElement.locator('..').locator('..');
+    const label = container.getByText(option, { exact: true });
+    await label.click();
+    await this.viewerPage.waitForTimeout(300);
+  }
+);
+
+When(
+  'I set the viewer date input {string} to {string}',
+  async function (this: CustomWorld, name: string, value: string) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    const input = this.viewerPage.locator(`input[name="${name}"]`);
+    await input.waitFor({ state: 'attached', timeout: 10_000 });
+    await input.fill(value, { force: true });
+    await this.viewerPage.waitForTimeout(300);
+  }
+);
+
+When(
+  'I clear the viewer input {string}',
+  async function (this: CustomWorld, fieldId: string) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    const input = this.viewerPage.locator(`input[name="${fieldId}"]`);
+    await expect(input).toBeVisible({ timeout: 10_000 });
+    await input.fill('');
+    await input.blur();
+    await this.viewerPage.waitForTimeout(300);
+  }
+);
+
+When(
+  'I remove the attached file {string} in the viewer',
+  async function (this: CustomWorld, filename: string) {
+    if (!this.viewerPage) throw new Error('Viewer page is not initialized');
+    const chip = this.viewerPage
+      .locator('div')
+      .filter({ has: this.viewerPage.getByText(filename, { exact: true }) })
+      .locator('button')
+      .filter({ hasText: '×' })
+      .first();
+    await chip.click();
+    await this.viewerPage.waitForTimeout(300);
+  }
+);
+
