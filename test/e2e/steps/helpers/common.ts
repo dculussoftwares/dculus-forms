@@ -150,9 +150,49 @@ export async function createFormViaGraphQL(
 
   const formId = response.data.createForm.id;
   world.newFormTitle = formTitle;
+  world.currentFormId = formId;
   await world.page.goto(`${world.baseUrl}/dashboard/form/${formId}`);
   await expect(world.page.getByTestId('app-sidebar')).toBeVisible({ timeout: 30_000 });
   return formId;
+}
+
+/**
+ * Fetches the most recently submitted response for the scenario's form
+ * (world.currentFormId) via the authenticated builder page. Returns the
+ * response row's id and its stored data payload.
+ */
+export async function fetchLatestResponse(
+  world: CustomWorld
+): Promise<{ id: string; data: Record<string, unknown> }> {
+  if (!world.page) throw new Error('Page is not initialized');
+  if (!world.currentFormId) throw new Error('No form created in this scenario');
+
+  const response = await world.page.evaluate(
+    async ({ formId, backendUrl }) => {
+      const res = await fetch(backendUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          query: `query ResponsesByForm($formId: ID!) {
+            responsesByForm(formId: $formId, page: 1, limit: 1) {
+              data { id data }
+            }
+          }`,
+          variables: { formId },
+        }),
+      });
+      return res.json();
+    },
+    { formId: world.currentFormId, backendUrl: world.backendUrl }
+  );
+
+  if (response.errors) {
+    throw new Error(`GraphQL error fetching responses: ${JSON.stringify(response.errors)}`);
+  }
+  const first = response.data?.responsesByForm?.data?.[0];
+  if (!first) throw new Error('No stored response found for the form');
+  return { id: first.id as string, data: first.data as Record<string, unknown> };
 }
 
 /**

@@ -11,6 +11,8 @@ export class CustomWorld {
   readonly backendUrl: string;
   newFormTitle?: string;
   formShortUrl?: string;
+  /** Set by createFormViaGraphQL — the form the current scenario is exercising */
+  currentFormId?: string;
   viewerPage?: Page;
   expectedFieldSettings?: Record<string, any>;
   massResponseSuccessCount?: number;
