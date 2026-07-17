@@ -361,10 +361,15 @@ export const stripHiddenResponses = (
  *   evaluating terms, so hiding a trigger auto-deactivates dependent rules.
  * - Matched rules apply their actions in list order — later rules win on
  *   conflict. Fixed-point iteration stops when the visibility state stabilizes
- *   or a previously seen state repeats (an oscillating show/hide cycle). On a
- *   cycle, an item that oscillates within the cycle resolves to visible; only
- *   items hidden in every cycle state stay hidden. Resolution is per item, so
- *   the outcome is deterministic and independent of unrelated rules or cycles.
+ *   or a previously seen state repeats (an oscillating show/hide cycle). Cycle
+ *   resolution is per-item-type:
+ *     • Fields: intersection of cycle states → VISIBLE when oscillating.
+ *       Contradictory field rules are usually a misconfiguration; visibility is
+ *       the safer default.
+ *     • Pages: union of cycle states → HIDDEN when oscillating. A self-hiding
+ *       page rule (trigger field on the same page as the action) is intentional
+ *       by design — the user wants the page gone. The PageRenderer clamp guard
+ *       handles the resulting "current page hidden" state safely.
  * - A page is also hidden when it has ≥1 field and all of them are hidden
  *   (auto-skip, §9.8). Terms referencing unknown/deleted fields are false;
  *   disabled, term-less, or action-less rules are inactive (§9.9).
@@ -516,12 +521,12 @@ export const evaluateConditions = (
     if (firstSeenAt !== undefined) {
       const cycle = history.slice(firstSeenAt);
       current = {
+        // Fields: intersection → prefer VISIBLE (contradictory rules = misconfiguration)
         fields: new Set(
           [...next.fields].filter((id) => cycle.every((s) => s.fields.has(id)))
         ),
-        pages: new Set(
-          [...next.pages].filter((id) => cycle.every((s) => s.pages.has(id)))
-        ),
+        // Pages: union → prefer HIDDEN (self-hiding page rule is intentional)
+        pages: new Set(cycle.flatMap((s) => [...s.pages])),
       };
       break;
     }
