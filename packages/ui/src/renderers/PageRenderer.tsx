@@ -315,6 +315,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
       <div className="flex-1">
         {currentPage && (
           <SinglePageForm
+            key={currentPage.id}
             page={currentPage}
             layoutStyles={layoutStyles}
             mode={mode}
