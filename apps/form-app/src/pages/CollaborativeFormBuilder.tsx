@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
+import { z } from 'zod';
 import { useAuthContext } from '../contexts/AuthContext';
 import { AlertTriangle, X } from 'lucide-react';
 import {
@@ -131,19 +132,19 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
   const redirectToDefaultTab = useCallback(() => {
     if (formId && !tab) {
-      navigate(`/dashboard/form/${formId}/builder/${DEFAULT_TAB}`, {
+      navigate(`/dashboard/form/${formId}/builder/${DEFAULT_TAB}${location.search}`, {
         replace: true,
       });
     }
-  }, [formId, tab, navigate]);
+  }, [formId, tab, navigate, location.search]);
 
   const handleKeyboardTabChange = useCallback(
     (newTab: BuilderTab) => {
       if (formId) {
-        navigate(`/dashboard/form/${formId}/builder/${newTab}`);
+        navigate(`/dashboard/form/${formId}/builder/${newTab}${location.search}`);
       }
     },
-    [formId, navigate]
+    [formId, navigate, location.search]
   );
 
   const handleAddField = useCallback(
@@ -359,8 +360,15 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   }
 
   // Get user permission from form data, default to VIEWER if not available
+  const mockPermissionParam = searchParams.get('mockPermission');
+  const mockPermissionSchema = z.enum(['VIEWER']);
+  const parsedMockPermission = mockPermissionSchema.safeParse(mockPermissionParam).data;
+
+  const actualPermission = (formData?.form?.userPermission as PermissionLevel) || 'VIEWER';
   const userPermission =
-    (formData?.form?.userPermission as PermissionLevel) || 'VIEWER';
+    parsedMockPermission === 'VIEWER' && actualPermission !== 'NO_ACCESS'
+      ? 'VIEWER'
+      : actualPermission;
   const canEdit = userPermission === 'OWNER' || userPermission === 'EDITOR';
 
   return (

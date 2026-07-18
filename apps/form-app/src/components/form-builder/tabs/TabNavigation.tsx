@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import { Palette, FileText, Eye, GitBranch, Settings, Users } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
@@ -70,9 +70,10 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   const { t } = useTranslation('tabNavigation');
   const TABS = getTabsConfig(t);
 
+  const location = useLocation();
   const handleTabChange = (tabId: BuilderTab) => {
     if (formId) {
-      navigate(`/dashboard/form/${formId}/builder/${tabId}`);
+      navigate(`/dashboard/form/${formId}/builder/${tabId}${location.search}`);
     }
   };
 
@@ -117,6 +118,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
               style={{ color: isActive ? 'var(--tf-dark)' : 'var(--tf-muted)' }}
               aria-selected={isActive}
               title={tab.description}
+              data-testid={`tab-${tab.id}`}
             >
               <tab.icon className="w-3.5 h-3.5 shrink-0" />
               <span>{tab.label}</span>
@@ -158,7 +160,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
 
                 return (
                   <div key={tab.id} className="relative group">
-                    <Button
+                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleTabChange(tab.id)}
@@ -181,6 +183,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                       })}
                       role="tab"
                       aria-selected={isActive}
+                      data-testid={`tab-${tab.id}`}
                     >
                       <Icon
                         className={cn(

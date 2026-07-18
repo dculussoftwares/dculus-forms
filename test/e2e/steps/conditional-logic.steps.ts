@@ -637,8 +637,8 @@ Then(
 
 When('I open the conditions tab', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: 'Conditions' }).click();
-  await expect(this.page.getByTestId('condition-add-rule')).toBeVisible({ timeout: 15_000 });
+  await this.page.getByTestId('tab-conditions').click();
+  await expect(this.page.getByTestId('conditions-title')).toBeVisible({ timeout: 15_000 });
 });
 
 Then('I should see the conditions empty state', async function (this: CustomWorld) {
@@ -992,6 +992,309 @@ Then(
     await expect(
       this.viewerPage.getByText(content).first()
     ).toBeVisible({ timeout: 10_000 });
+  }
+);
+
+When(
+  'I edit the condition rule for {string}',
+  async function (this: CustomWorld, triggerLabel: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const card = this.page.locator('[data-testid^="condition-card-"]').filter({ hasText: triggerLabel });
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    const editBtn = card.locator('[data-testid^="condition-edit-"]');
+    await editBtn.click();
+  }
+);
+
+When(
+  'I update the rule terms at index {int} to field {string}, operator {string}, value {string}',
+  async function (this: CustomWorld, index: number, fieldLabel: string, operatorKey: string, value: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+
+    // Select field
+    await this.page.getByTestId(`condition-term-field-${index}`).click();
+    await this.page.getByRole('option', { name: fieldLabel }).click();
+
+    // Select operator
+    const operatorLabels: Record<string, string> = {
+      equals: 'is equal to',
+      notEquals: 'is not equal to',
+      contains: 'contains',
+      notContains: 'does not contain',
+      startsWith: 'starts with',
+      endsWith: 'ends with',
+      isEmpty: 'is empty',
+      isFilled: 'is filled',
+      lessThan: 'is less than',
+      greaterThan: 'is greater than',
+      before: 'is before',
+      after: 'is after',
+    };
+    const opLabel = operatorLabels[operatorKey] || operatorKey;
+
+    await this.page.getByTestId(`condition-term-operator-${index}`).click();
+    await this.page.getByRole('option', { name: opLabel }).click();
+
+    // Select/fill value
+    const valInput = this.page.getByTestId(`condition-term-value-${index}`);
+    const tagName = await valInput.evaluate(el => el.tagName.toLowerCase());
+    if (tagName === 'button') {
+      await valInput.click();
+      await this.page.getByRole('option', { name: value, exact: true }).click();
+    } else {
+      await valInput.fill(value);
+    }
+  }
+);
+
+When(
+  'I update the rule action at index {int} to type {string} and target field {string}',
+  async function (this: CustomWorld, index: number, actionTypeKey: string, targetFieldId: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+
+    const actionLabels: Record<string, string> = {
+      showField: 'Show field(s)',
+      hideField: 'Hide field(s)',
+      hidePage: 'Hide page',
+    };
+    const actLabel = actionLabels[actionTypeKey] || actionTypeKey;
+
+    await this.page.getByTestId(`condition-action-type-${index}`).click();
+    await this.page.getByRole('option', { name: actLabel }).click();
+
+    const checkbox = this.page.getByTestId(`condition-action-target-${index}-${targetFieldId}`);
+    const isChecked = await checkbox.isChecked();
+    if (!isChecked) {
+      await checkbox.click();
+    }
+  }
+);
+
+When(
+  'I save the condition rule',
+  async function (this: CustomWorld) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const saveBtn = this.page.getByTestId('condition-save');
+    await expect(saveBtn).toBeEnabled({ timeout: 5_000 });
+    await saveBtn.click();
+    await this.page.waitForTimeout(500);
+  }
+);
+
+Then(
+  'the condition card for {string} should show {string} in its summary',
+  async function (this: CustomWorld, triggerLabel: string, expectedText: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const card = this.page.locator('[data-testid^="condition-card-"]').filter({ hasText: triggerLabel });
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    
+    const textContent = await card.textContent();
+    if (!textContent) throw new Error('Card textContent is empty');
+    
+    const normalize = (str: string) => str.replace(/[\u201c\u201d]/g, '"').replace(/\s+/g, '').trim();
+    
+    const normalizedActual = normalize(textContent);
+    const normalizedExpected = normalize(expectedText);
+    
+    if (!normalizedActual.includes(normalizedExpected)) {
+      throw new Error(`Expected card summary to contain "${normalizedExpected}", but got "${normalizedActual}"`);
+    }
+  }
+);
+
+When(
+  'I toggle the condition rule for {string}',
+  async function (this: CustomWorld, triggerLabel: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const card = this.page.locator('[data-testid^="condition-card-"]').filter({ hasText: triggerLabel });
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    const toggle = card.locator('[data-testid^="condition-toggle-"]');
+    await toggle.click();
+    await this.page.waitForTimeout(500);
+  }
+);
+
+When(
+  'I delete the condition rule for {string}',
+  async function (this: CustomWorld, triggerLabel: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const card = this.page.locator('[data-testid^="condition-card-"]').filter({ hasText: triggerLabel });
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    const deleteBtn = card.locator('[data-testid^="condition-delete-"]');
+    await deleteBtn.click();
+    await this.page.waitForTimeout(500);
+  }
+);
+
+When('I open the preview tab', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await this.page.getByTestId('tab-preview').click();
+  await this.page.waitForTimeout(1000);
+});
+
+When('I open the page builder tab', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await this.page.getByTestId('tab-page-builder').click();
+  await this.page.waitForTimeout(500);
+});
+
+Then(
+  'the preview field {string} should be hidden',
+  async function (this: CustomWorld, label: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await expect(this.page.locator('.preview-mode').getByText(label, { exact: true })).toHaveCount(0, {
+      timeout: 10_000,
+    });
+  }
+);
+
+Then(
+  'the preview field {string} should be visible',
+  async function (this: CustomWorld, label: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await expect(this.page.locator('.preview-mode').getByText(label, { exact: true }).first()).toBeVisible({
+      timeout: 10_000,
+    });
+  }
+);
+
+When(
+  'I choose preview radio option {string} for {string}',
+  async function (this: CustomWorld, option: string, fieldLabel: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const container = this.page
+      .locator('.preview-mode form div')
+      .filter({ has: this.page.getByText(fieldLabel, { exact: true }) })
+      .filter({ has: this.page.getByRole('radiogroup') })
+      .last();
+    await container.getByRole('radio', { name: option, exact: true }).click();
+    await this.page.waitForTimeout(500);
+  }
+);
+
+When(
+  'I delete the field {string} in the builder',
+  async function (this: CustomWorld, fieldId: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const card = this.page.getByTestId(`draggable-field-${fieldId}`);
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    const deleteBtn = card.getByTitle('Delete field');
+    await deleteBtn.click({ force: true });
+    await expect(card).toHaveCount(0, { timeout: 10_000 });
+  }
+);
+
+When(
+  'I open the field settings for {string}',
+  async function (this: CustomWorld, fieldId: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const card = this.page.getByTestId(`draggable-field-${fieldId}`);
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    const settingsBtn = card.getByTitle('Field settings');
+    await settingsBtn.click({ force: true });
+    const panel = this.page.getByTestId('field-settings-panel');
+    await expect(panel).toBeVisible({ timeout: 10_000 });
+  }
+);
+
+When(
+  'I rename option {string} to {string}',
+  async function (this: CustomWorld, oldOptionValue: string, newOptionValue: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const inputs = this.page.locator('input[placeholder^="Option "]');
+    const count = await inputs.count();
+    let found = false;
+    for (let i = 0; i < count; i++) {
+      const val = await inputs.nth(i).inputValue();
+      if (val === oldOptionValue) {
+        await inputs.nth(i).fill(newOptionValue);
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      throw new Error(`Option input with value "${oldOptionValue}" not found`);
+    }
+  }
+);
+
+When(
+  'I save the builder field settings',
+  async function (this: CustomWorld) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await this.page.getByRole('button', { name: /save/i }).click();
+    await this.page.waitForTimeout(500);
+  }
+);
+
+Then(
+  'I should see a broken reference badge for the rule {string}',
+  async function (this: CustomWorld, triggerLabel: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    let card = this.page.locator('[data-testid^="condition-card-"]').filter({ hasText: triggerLabel });
+    if (await card.count() === 0) {
+      card = this.page.locator('[data-testid^="condition-card-"]').filter({
+        has: this.page.locator(':text("deleted field"), :text("நீக்கப்பட்ட புலம்")')
+      }).first();
+    }
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    const brokenBadge = card.locator('[data-testid^="condition-broken-"]');
+    await expect(brokenBadge).toBeVisible({ timeout: 10_000 });
+  }
+);
+
+When(
+  'I open the collaborative builder with viewer permission',
+  async function (this: CustomWorld) {
+    if (!this.page) throw new Error('Page is not initialized');
+    if (!this.currentFormId) throw new Error('No current form id');
+    await this.page.goto(`${this.baseUrl}/dashboard/form/${this.currentFormId}/builder/page-builder?mockPermission=VIEWER`);
+    const builderRoot = this.page.getByTestId('collaborative-form-builder');
+    await expect(builderRoot).toBeVisible({ timeout: 45_000 });
+  }
+);
+
+Then(
+  'I should see a read-only conditions tab',
+  async function (this: CustomWorld) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const addRuleBtn = this.page.getByTestId('condition-add-rule');
+    await expect(addRuleBtn).toHaveCount(0);
+
+    const cards = this.page.locator('[data-testid^="condition-card-"]');
+    await expect(cards.first()).toBeVisible({ timeout: 10_000 });
+    const cardCount = await cards.count();
+    expect(cardCount).toBeGreaterThan(0);
+
+    for (let i = 0; i < cardCount; i++) {
+      const card = cards.nth(i);
+      const toggle = card.locator('[data-testid^="condition-toggle-"]');
+      await expect(toggle).toBeDisabled();
+      const editBtn = card.locator('[data-testid^="condition-edit-"]');
+      await expect(editBtn).toHaveCount(0);
+      const deleteBtn = card.locator('[data-testid^="condition-delete-"]');
+      await expect(deleteBtn).toHaveCount(0);
+    }
+  }
+);
+
+When(
+  'I switch locale to {string} via the locale switcher',
+  async function (this: CustomWorld, localeCode: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await this.page.getByTestId('locale-switcher').click();
+    const optionName = localeCode === 'ta' ? 'Tamil' : 'English';
+    await this.page.getByRole('option', { name: optionName }).click();
+    await this.page.waitForTimeout(500);
+  }
+);
+
+Then(
+  'I should see the conditions tab header in Tamil',
+  async function (this: CustomWorld) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await expect(this.page.getByText('நிபந்தனைகள்').first()).toBeVisible({ timeout: 10_000 });
+    await expect(this.page.getByText('விதியைச் சேர்').first()).toBeVisible({ timeout: 10_000 });
   }
 );
 

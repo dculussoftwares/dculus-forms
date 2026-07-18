@@ -34,7 +34,7 @@ export function LocaleSwitcher() {
         {t('language.label', { defaultValue: 'Language' })}
       </span>
       <Select value={locale} onValueChange={handleChange}>
-        <SelectTrigger className="h-9 w-[140px]">
+        <SelectTrigger className="h-9 w-[140px]" data-testid="locale-switcher">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
