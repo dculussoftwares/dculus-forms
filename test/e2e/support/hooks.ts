@@ -40,10 +40,18 @@ After(async function (this: CustomWorld, scenario) {
       console.log(`Viewer page at URL: ${viewerUrl}`);
     }
 
+    if (this.pageB && !this.pageB.isClosed()) {
+      const pageBScreenshotPath = `test-results/e2e/screenshots/${slug}.pageB.png`;
+      await this.pageB.screenshot({ path: pageBScreenshotPath, fullPage: true }).catch(() => {});
+      console.log(`PageB screenshot saved to: ${pageBScreenshotPath}`);
+      console.log(`PageB at URL: ${this.pageB.url()}`);
+    }
+
     const diagPath = `test-results/e2e/screenshots/${slug}.diagnostics.log`;
     const diagContent = [
       `Main page URL: ${this.page?.url()}`,
       `Viewer page URL: ${viewerUrl ?? '(no viewer page opened)'}`,
+      `PageB URL: ${this.pageB && !this.pageB.isClosed() ? this.pageB.url() : '(no pageB opened)'}`,
       '--- console ---',
       ...this.consoleLogs,
       '--- network failures / 4xx+5xx ---',
@@ -54,7 +62,9 @@ After(async function (this: CustomWorld, scenario) {
   }
 
   await this.page?.close();
+  await this.pageB?.close();
   await this.viewerPage?.close();
   await this.context?.close();
+  await this.contextB?.close();
   await this.browser?.close();
 });
