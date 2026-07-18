@@ -15,6 +15,8 @@ const s3Client = new S3Client({
   },
 });
 
+export const tempFilesMockStore = new Map<string, { buffer: Buffer; contentType: string; filename: string }>();
+
 export interface TemporaryFileResult {
   downloadUrl: string;
   expiresAt: Date;
@@ -31,6 +33,20 @@ export async function uploadTemporaryFile(
 ): Promise<TemporaryFileResult> {
   const fileKey = `temp-exports/${Date.now()}-${randomUUID()}-${filename}`;
   const expiresAt = new Date(Date.now() + 5 * 60 * 60 * 1000); // 5 hours from now
+
+  const isMockS3 = !process.env.VITEST && (s3Config.endpoint.includes('localhost:9000') || process.env.PUBLIC_S3_ENDPOINT?.includes('localhost:9000'));
+
+  if (isMockS3) {
+    tempFilesMockStore.set(fileKey, { buffer, contentType, filename });
+    const backendPort = process.env.PORT || '4000';
+    const downloadUrl = `http://localhost:${backendPort}/api/temp-files-mock/${encodeURIComponent(fileKey)}`;
+    logger.info(`[MOCK S3] Temporary file stored in memory: ${fileKey}`);
+    return {
+      downloadUrl,
+      expiresAt,
+      fileKey
+    };
+  }
 
   try {
     // Upload file to private bucket
@@ -56,6 +72,7 @@ export async function uploadTemporaryFile(
       Key: fileKey,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const downloadUrl = await getSignedUrl(s3Client as any, getCommand as any, {
       expiresIn: 5 * 60 * 60, // 5 hours in seconds
     });
@@ -75,6 +92,13 @@ export async function uploadTemporaryFile(
  * Delete a temporary file from S3
  */
 export async function deleteTemporaryFile(fileKey: string): Promise<boolean> {
+  const isMockS3 = !process.env.VITEST && (s3Config.endpoint.includes('localhost:9000') || process.env.PUBLIC_S3_ENDPOINT?.includes('localhost:9000'));
+  if (isMockS3) {
+    const deleted = tempFilesMockStore.delete(fileKey);
+    logger.info(`[MOCK S3] Temporary file deleted from memory: ${fileKey}`);
+    return deleted;
+  }
+
   try {
     const deleteCommand = new DeleteObjectCommand({
       Bucket: s3Config.privateBucketName,
@@ -112,6 +136,21 @@ export const startPeriodicCleanup = (): void => {
  * Called on server startup to clean up files left by previous process restarts.
  */
 export async function cleanupExpiredFiles(): Promise<{ deleted: number; errors: number }> {
+  const isMockS3 = !process.env.VITEST && (s3Config.endpoint.includes('localhost:9000') || process.env.PUBLIC_S3_ENDPOINT?.includes('localhost:9000'));
+  if (isMockS3) {
+    const cutoff = Date.now() - 5 * 60 * 60 * 1000;
+    let deleted = 0;
+    for (const key of tempFilesMockStore.keys()) {
+      const ts = parseInt(key.replace('temp-exports/', '').split('-')[0], 10);
+      if (!isNaN(ts) && ts < cutoff) {
+        tempFilesMockStore.delete(key);
+        deleted++;
+      }
+    }
+    logger.info(`[MOCK S3] Temp-file mock cleanup complete: ${deleted} deleted`);
+    return { deleted, errors: 0 };
+  }
+
   const cutoff = Date.now() - 5 * 60 * 60 * 1000;
   let deleted = 0;
   let errors = 0;

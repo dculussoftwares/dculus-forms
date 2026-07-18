@@ -37,7 +37,7 @@ import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
-import { startPeriodicCleanup } from './services/temporaryFileService.js';
+import { startPeriodicCleanup, tempFilesMockStore } from './services/temporaryFileService.js';
 import { cleanupOldAnalytics } from './services/analyticsService.js';
 import { logger } from './lib/logger.js';
 import { deriveGraphQLErrorCode } from './lib/graphqlErrors.js';
@@ -241,6 +241,18 @@ app.use('/api', pexelsRouter);
 app.use('/api', googleOAuthRouter);
 app.use('/api', microsoftOAuthRouter);
 
+app.get('/api/temp-files-mock/*', (req, res) => {
+  const fileKey = (req.params as any)[0];
+  const file = tempFilesMockStore.get(fileKey);
+  if (!file) {
+    res.status(404).send('File not found');
+    return;
+  }
+  res.setHeader('Content-Type', file.contentType);
+  res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+  res.send(file.buffer);
+});
+
 // Add favicon route to prevent 404 errors
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end();
@@ -252,6 +264,7 @@ app.get('/favicon.ico', (req, res) => {
 const sentryApolloPlugin = {
   async requestDidStart() {
     return {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       async didResolveOperation(requestContext: any) {
         const operationName = requestContext.operationName || 'anonymous';
         const operation = requestContext.operation?.operation || 'query';
