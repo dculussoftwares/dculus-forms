@@ -14,6 +14,8 @@ export class CustomWorld {
   /** Set by createFormViaGraphQL — the form the current scenario is exercising */
   currentFormId?: string;
   viewerPage?: Page;
+  contextB?: BrowserContext;
+  pageB?: Page;
   expectedFieldSettings?: Record<string, any>;
   massResponseSuccessCount?: number;
   consoleLogs: string[] = [];
