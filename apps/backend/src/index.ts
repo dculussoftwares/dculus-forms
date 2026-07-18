@@ -242,7 +242,7 @@ app.use('/api', googleOAuthRouter);
 app.use('/api', microsoftOAuthRouter);
 
 app.get('/api/temp-files-mock/*', (req, res) => {
-  const fileKey = req.params[0];
+  const fileKey = (req.params as any)[0];
   const file = tempFilesMockStore.get(fileKey);
   if (!file) {
     res.status(404).send('File not found');
