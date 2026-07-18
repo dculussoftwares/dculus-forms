@@ -7,6 +7,7 @@ import { expect, type Page } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 import { STORAGE_STATE_PATH } from '../support/authStorage';
 import { expectPoll } from '../support/expectPoll';
+import { attachDiagnostics } from '../support/diagnostics';
 
 /**
  * Get the Playwright Page object for the specified session name
@@ -44,6 +45,7 @@ Given('I open two collaborative builder sessions on the conditions tab', async f
     viewport: { width: 1280, height: 720 },
   });
   this.pageB = await this.contextB.newPage();
+  attachDiagnostics(this, this.pageB, 'pageB');
   
   // Navigate session B to conditions tab
   await this.pageB.goto(`${this.baseUrl}/dashboard/form/${this.currentFormId}/builder/conditions`);
@@ -309,49 +311,56 @@ When(
 Then(
   'In both sessions there should be exactly one condition rule card for {string}',
   async function (this: CustomWorld, triggerLabel: string) {
-    if (!this.page || !this.pageB) throw new Error('Both pages must be initialized');
+    const pageA = this.page;
+    const pageB = this.pageB;
+    if (!pageA || !pageB) throw new Error('Both pages must be initialized');
 
-    // Wait for sync to settle
-    await this.page.waitForTimeout(1000);
-    await this.pageB.waitForTimeout(1000);
+    // Poll until both sessions have exactly one card
+    await expectPoll(async () => {
+      const countA = await pageA.locator('[data-testid^="condition-card-"]').count();
+      const countB = await pageB.locator('[data-testid^="condition-card-"]').count();
+      return countA === 1 && countB === 1;
+    }, { message: 'Expected exactly one condition card in both sessions', timeout: 15_000 });
 
-    const countA = await this.page.locator('[data-testid^="condition-card-"]').filter({ hasText: triggerLabel }).count();
-    const countB = await this.pageB.locator('[data-testid^="condition-card-"]').filter({ hasText: triggerLabel }).count();
-
+    const countA = await pageA.locator('[data-testid^="condition-card-"]').count();
+    const countB = await pageB.locator('[data-testid^="condition-card-"]').count();
     expect(countA).toBe(1);
     expect(countB).toBe(1);
   }
 );
 
 /**
- * Assert the rule card matches one of the two writes in both sessions
+ * Assert the rule card matches B's final write in both sessions
  */
 Then(
   'In both sessions that rule card\'s summary should equal one of the two writes',
   async function (this: CustomWorld) {
-    if (!this.page || !this.pageB) throw new Error('Both pages must be initialized');
+    const pageA = this.page;
+    const pageB = this.pageB;
+    if (!pageA || !pageB) throw new Error('Both pages must be initialized');
 
-    const cardA = this.page.locator('[data-testid^="condition-card-"]').first();
-    const cardB = this.pageB.locator('[data-testid^="condition-card-"]').first();
+    const cardA = pageA.locator('[data-testid^="condition-card-"]').first();
+    const cardB = pageB.locator('[data-testid^="condition-card-"]').first();
+
+    const expectedB = 'IF Show bonus field? is not equal to "Yes" THEN Show field(s) Bonus Field';
+    const normalize = (str: string) => str.replace(/[\u201c\u201d]/g, '"').replace(/\s+/g, '').trim();
+    const normExpected = normalize(expectedB);
+
+    await expectPoll(async () => {
+      const textA = await cardA.textContent();
+      const textB = await cardB.textContent();
+      if (!textA || !textB) return false;
+      const normA = normalize(textA);
+      const normB = normalize(textB);
+      return normA === normB && normA.includes(normExpected);
+    }, { message: 'Expected both rule cards to converge and match Session B\'s write', timeout: 15_000 });
 
     const textA = await cardA.textContent();
     const textB = await cardB.textContent();
-
-    if (!textA || !textB) throw new Error('Rule card summary text is empty');
-
-    const normalize = (str: string) => str.replace(/[\u201c\u201d]/g, '"').replace(/\s+/g, '').trim();
-
-    const normA = normalize(textA);
-    const normB = normalize(textB);
-
-    // Both sessions must have exactly the SAME content due to Y.js convergence
+    const normA = normalize(textA || '');
+    const normB = normalize(textB || '');
     expect(normA).toBe(normB);
-
-    const expected1 = normalize('IF Show bonus field? is equal to "No" THEN Show field(s) Bonus Field');
-    const expected2 = normalize('IF Show bonus field? is not equal to "Yes" THEN Show field(s) Bonus Field');
-
-    const matchesOneOfWrites = normA.includes(expected1) || normA.includes(expected2);
-    expect(matchesOneOfWrites).toBe(true);
+    expect(normA).toContain(normExpected);
   }
 );
 
