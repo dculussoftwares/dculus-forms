@@ -59,7 +59,7 @@ export const ConditionsTab: React.FC = () => {
               <GitBranch className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white" data-testid="conditions-title">
                 {t('title')}
               </h2>
               <p className="text-sm text-muted-foreground">{t('subtitle')}</p>

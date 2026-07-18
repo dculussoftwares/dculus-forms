@@ -40,6 +40,7 @@ Feature: Conditional Logic (show/hide fields and pages)
     And the stored response should not include values for "cond-details"
 
   # Builder UI: authoring a rule through the Conditions tab
+  @builder-ux
   Scenario: Create a condition rule through the builder Conditions tab
     Given I sign in with valid credentials
     When I create a form via GraphQL with conditional logic fields
@@ -48,3 +49,85 @@ Feature: Conditional Logic (show/hide fields and pages)
     Then I should see the conditions empty state
     When I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
     Then I should see a condition rule card for "Show bonus field?"
+
+  @builder-ux
+  Scenario: Rule lifecycle
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields
+    And I open the collaborative builder
+    And I open the conditions tab
+    Then I should see the conditions empty state
+    When I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
+    Then I should see a condition rule card for "Show bonus field?"
+    And the condition card for "Show bonus field?" should show "IF Show bonus field? is equal to “Yes” THEN Show field(s) Bonus Field" in its summary
+    When I edit the condition rule for "Show bonus field?"
+    And I update the rule terms at index 0 to field "Skip details page?", operator "notEquals", value "No"
+    And I update the rule action at index 0 to type "hideField" and target field "cond-bonus"
+    And I save the condition rule
+    Then the condition card for "Skip details page?" should show "IF Skip details page? is not equal to “No” THEN Hide field(s) Bonus Field" in its summary
+    When I toggle the condition rule for "Skip details page?"
+    And I open the preview tab
+    Then the preview field "Bonus Field" should be visible
+    When I open the conditions tab
+    And I toggle the condition rule for "Skip details page?"
+    And I open the preview tab
+    Then the preview field "Bonus Field" should be hidden
+    When I choose preview radio option "No" for "Skip details page?"
+    Then the preview field "Bonus Field" should be visible
+    When I open the conditions tab
+    And I delete the condition rule for "Skip details page?"
+    Then I should see the conditions empty state
+
+  @builder-ux
+  Scenario: Broken-reference badge (field)
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields
+    And I open the collaborative builder
+    And I open the conditions tab
+    When I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
+    And I open the page builder tab
+    And I delete the field "cond-show-bonus" in the builder
+    And I open the conditions tab
+    Then I should see a broken reference badge for the rule "Show bonus field?"
+
+  @builder-ux
+  Scenario: Broken-reference badge (option rename)
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields
+    And I open the collaborative builder
+    And I open the conditions tab
+    When I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
+    And I open the page builder tab
+    And I open the field settings for "cond-show-bonus"
+    And I rename option "Yes" to "Oui"
+    And I save the builder field settings
+    And I open the conditions tab
+    Then I should see a broken reference badge for the rule "Show bonus field?"
+
+  @builder-ux
+  Scenario: VIEWER permission read-only
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic rules
+    And I open the collaborative builder with viewer permission
+    And I open the conditions tab
+    Then I should see a read-only conditions tab
+
+  @builder-ux
+  Scenario: Tamil locale
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields
+    And I open the collaborative builder
+    When I switch locale to "ta" via the locale switcher
+    And I open the conditions tab
+    Then I should see the conditions tab header in Tamil
+
+  @builder-ux
+  Scenario: Preview parity
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic rules
+    And I open the collaborative builder
+    And I open the preview tab
+    Then the preview field "Bonus Field" should be hidden
+    When I choose preview radio option "Yes" for "Show bonus field?"
+    Then the preview field "Bonus Field" should be visible
+

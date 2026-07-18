@@ -30,7 +30,6 @@ export const FormPermissionProvider: React.FC<FormPermissionProviderProps> = ({
   const canDelete = userPermission === 'OWNER';
   const canSave = canEdit;
   const isReadOnly = userPermission === 'VIEWER';
-
   const value: FormPermissionContextType = {
     userPermission,
     canEdit,
