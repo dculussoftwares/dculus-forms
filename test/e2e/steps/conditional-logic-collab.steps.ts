@@ -333,7 +333,7 @@ Then(
  * Assert the rule card matches B's final write in both sessions
  */
 Then(
-  'In both sessions that rule card\'s summary should equal one of the two writes',
+  'In both sessions that rule card\'s summary should equal session B\'s write',
   async function (this: CustomWorld) {
     const pageA = this.page;
     const pageB = this.pageB;

@@ -44,7 +44,7 @@ Feature: Real-time Collaboration for Condition Rules
     And In session "A" I save the condition rule
     And In session "B" I save the condition rule
     Then In both sessions there should be exactly one condition rule card for "Show bonus field?"
-    And In both sessions that rule card's summary should equal one of the two writes
+    And In both sessions that rule card's summary should equal session B's write
 
   Scenario: Cross-session broken reference
     When In session "A" I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
