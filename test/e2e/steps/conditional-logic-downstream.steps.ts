@@ -258,7 +258,8 @@ Then('I export responses as CSV and parse the file', async function (this: Custo
   expect(lines.length).toBeGreaterThanOrEqual(4); // 1 header + 3 data rows
 
   // Parse header
-  const headers = lines[0].split(',');
+  const csvSplitRegex = /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+  const headers = lines[0].split(csvSplitRegex).map(h => h.replace(/^"|"$/g, '').trim());
   const bonusColIndex = headers.indexOf('Bonus Field');
   const detailsColIndex = headers.indexOf('Details Text');
 
@@ -268,10 +269,10 @@ Then('I export responses as CSV and parse the file', async function (this: Custo
   // Parse data rows
   const dataRows: Array<{ bonus: string; details: string }> = [];
   for (let i = 1; i < lines.length; i++) {
-    const cells = lines[i].split(',');
+    const cells = lines[i].split(csvSplitRegex);
     // Strip quotes if any
-    const bonusVal = cells[bonusColIndex]?.replace(/^"|"$/g, '') ?? '';
-    const detailsVal = cells[detailsColIndex]?.replace(/^"|"$/g, '') ?? '';
+    const bonusVal = cells[bonusColIndex]?.replace(/^"|"$/g, '').trim() ?? '';
+    const detailsVal = cells[detailsColIndex]?.replace(/^"|"$/g, '').trim() ?? '';
     dataRows.push({ bonus: bonusVal, details: detailsVal });
   }
 
