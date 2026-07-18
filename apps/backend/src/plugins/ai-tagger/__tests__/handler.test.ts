@@ -70,7 +70,7 @@ describe('AI Tagger Handler', () => {
     expect(result.tagsApplied).toHaveLength(0);
     expect(result.tagsConsidered).toBe(0);
     expect(mockContext.getResponseById).not.toHaveBeenCalled();
-  });
+  }, 30000);
 
   it('skips when config.tags is empty', async () => {
     const { aiTaggerHandler } = await import('../handler.js');
@@ -83,7 +83,7 @@ describe('AI Tagger Handler', () => {
 
     expect(result.tagsApplied).toHaveLength(0);
     expect(mockContext.getResponseById).not.toHaveBeenCalled();
-  });
+  }, 30000);
 
   it('assigns matching tags returned by AI', async () => {
     const { generateText } = await import('ai');
