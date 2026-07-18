@@ -226,6 +226,72 @@ Then('I export responses as Excel and parse the file', async function (this: Cus
   expect(hasPageHidden, `Excel: expected an empty Details Text cell when page hidden. Rows: ${JSON.stringify(dataRows)}`).toBe(true);
 });
 
+Then('I export responses as CSV and parse the file', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+
+  // Make sure we're on the responses page
+  const responsesTable = this.page.getByTestId('responses-table');
+  await expect(responsesTable).toBeVisible({ timeout: 15_000 });
+
+  // Open the Export dropdown
+  const exportBtn = this.page
+    .getByRole('button', { name: /export/i })
+    .filter({ hasNot: this.page.locator('[disabled]') })
+    .first();
+  await expect(exportBtn).toBeVisible({ timeout: 15_000 });
+  await exportBtn.click();
+
+  // Click "Export as CSV" menu item and capture the download
+  const downloadPromise = this.page.waitForEvent('download', { timeout: 60_000 });
+  await this.page.getByRole('menuitem', { name: /Export as CSV/i }).click();
+  const download = await downloadPromise;
+
+  // Save the downloaded file
+  const resultsDir = path.join(process.cwd(), 'test-results', 'e2e');
+  fs.mkdirSync(resultsDir, { recursive: true });
+  const destPath = path.join(resultsDir, `export-cond-logic-${Date.now()}.csv`);
+  await download.saveAs(destPath);
+
+  // Parse the CSV content
+  const csvContent = fs.readFileSync(destPath, 'utf8');
+  const lines = csvContent.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  expect(lines.length).toBeGreaterThanOrEqual(4); // 1 header + 3 data rows
+
+  // Parse header
+  const headers = lines[0].split(',');
+  const bonusColIndex = headers.indexOf('Bonus Field');
+  const detailsColIndex = headers.indexOf('Details Text');
+
+  expect(bonusColIndex, 'Bonus Field not found in CSV header').toBeGreaterThanOrEqual(0);
+  expect(detailsColIndex, 'Details Text not found in CSV header').toBeGreaterThanOrEqual(0);
+
+  // Parse data rows
+  const dataRows: Array<{ bonus: string; details: string }> = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = lines[i].split(',');
+    // Strip quotes if any
+    const bonusVal = cells[bonusColIndex]?.replace(/^"|"$/g, '') ?? '';
+    const detailsVal = cells[detailsColIndex]?.replace(/^"|"$/g, '') ?? '';
+    dataRows.push({ bonus: bonusVal, details: detailsVal });
+  }
+
+  // Assert that the stripped responses have empty cells in CSV
+  const hasFullyVisible = dataRows.some(r =>
+    r.bonus === 'bonus visible' && r.details === 'details visible'
+  );
+  const hasFieldHidden = dataRows.some(r =>
+    r.bonus === '' && r.details === 'details field hidden'
+  );
+  const hasPageHidden = dataRows.some(r =>
+    r.bonus === 'bonus page hidden' && r.details === ''
+  );
+
+  expect(hasFullyVisible, `CSV: expected a fully-visible row. Rows: ${JSON.stringify(dataRows)}`).toBe(true);
+  expect(hasFieldHidden, `CSV: expected an empty Bonus Field cell when hidden. Rows: ${JSON.stringify(dataRows)}`).toBe(true);
+  expect(hasPageHidden, `CSV: expected an empty Details Text cell when page hidden. Rows: ${JSON.stringify(dataRows)}`).toBe(true);
+});
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Field analytics
 // ─────────────────────────────────────────────────────────────────────────────

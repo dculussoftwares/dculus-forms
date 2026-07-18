@@ -98,9 +98,6 @@ importers:
       '@types/country-list':
         specifier: 2.1.4
         version: 2.1.4
-      '@types/exceljs':
-        specifier: 1.3.2
-        version: 1.3.2
       '@types/express':
         specifier: ^4.17.25
         version: 4.17.25
@@ -9245,13 +9242,6 @@ packages:
 
   /@types/estree@1.0.9:
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
-
-  /@types/exceljs@1.3.2:
-    resolution: {integrity: sha512-etq4LpmL5vZKzf29U5u7cWjoCWGc67hTc2WrvwmcBUyRiHydUPg5ZXGFwBHcEkTLinyT6fRmJiVSRwf4RdnjUA==}
-    deprecated: This is a stub types definition. exceljs provides its own type definitions, so you do not need this installed.
-    dependencies:
-      exceljs: 4.4.0
-    dev: true
 
   /@types/express-serve-static-core@4.19.8:
     resolution: {integrity: sha512-02S5fmqeoKzVZCHPZid4b8JH2eM5HzQLZWN2FohQEy/0eXTq8VXZfSN6Pcr3F6N9R/vNrj7cpgbhjie6m/1tCA==}

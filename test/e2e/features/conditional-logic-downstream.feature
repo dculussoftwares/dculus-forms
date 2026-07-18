@@ -58,8 +58,9 @@ Feature: Conditional Logic Downstream Surfaces
     Then I should see the responses table with 3 responses and correct stripped cells
     And I open the detail panel for each response and verify no crashes
 
-    # Scenario 3: Excel export download and parse check
+    # Scenario 3: Excel and CSV export download and parse check
     And I export responses as Excel and parse the file
+    And I export responses as CSV and parse the file
 
     # Scenario 4: Field analytics counts check
     When I navigate to the form analytics page
