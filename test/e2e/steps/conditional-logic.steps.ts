@@ -1441,7 +1441,7 @@ Then(
     if (!this.page) throw new Error('Page is not initialized');
     const card = this.page
       .locator('[data-testid^="condition-card-"]')
-      .filter({ hasText: new RegExp(`^IF\\s+${escapeRegExp(triggerLabel)}\\b`) });
+      .filter({ hasText: triggerLabel });
     await expect(card).toBeVisible({ timeout: 10_000 });
     const badge = card.locator('[data-testid^="condition-circular-"]');
     await expect(badge).toBeVisible({ timeout: 10_000 });
@@ -1454,7 +1454,7 @@ Then(
     if (!this.page) throw new Error('Page is not initialized');
     const card = this.page
       .locator('[data-testid^="condition-card-"]')
-      .filter({ hasText: new RegExp(`^IF\\s+${escapeRegExp(triggerLabel)}\\b`) });
+      .filter({ hasText: triggerLabel });
     await expect(card).toBeVisible({ timeout: 10_000 });
     const badge = card.locator('[data-testid^="condition-circular-"]');
     await expect(badge).toHaveCount(0, { timeout: 5_000 });
