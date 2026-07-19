@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { GitBranch, Plus } from 'lucide-react';
-import { Button, toastSuccess } from '@dculus/ui';
+import { GitBranch, Plus, Sparkles } from 'lucide-react';
+import { Button, Input, toastSuccess } from '@dculus/ui';
 import { ConditionalRule, detectConditionCycles } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
@@ -8,7 +8,7 @@ import { useTranslation } from '../../../hooks/useTranslation';
 import { ConditionRuleCard } from './ConditionRuleCard';
 import { ConditionRuleEditor } from './ConditionRuleEditor';
 
-export const ConditionsTab: React.FC = () => {
+export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) => void }> = ({ onDescribeWithAI }) => {
   const { t } = useTranslation('conditions');
   const {
     pages,
@@ -17,10 +17,14 @@ export const ConditionsTab: React.FC = () => {
     updateCondition,
     removeCondition,
     setConditionEnabled,
+    pendingConditionSuggestions,
+    acceptConditionSuggestion,
+    dismissConditionSuggestion,
   } = useFormBuilderStore();
 
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ConditionalRule | null>(null);
+  const [description, setDescription] = useState('');
 
   // Same gate as field/page editing — viewers see rules read-only
   const permissions = useFormPermissions();
@@ -55,6 +59,13 @@ export const ConditionsTab: React.FC = () => {
     toastSuccess(t('toast.ruleDeleted'));
   };
 
+  const submitDescription = () => {
+    const value = description.trim();
+    if (!value) return;
+    setDescription('');
+    onDescribeWithAI(value);
+  };
+
   return (
     <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-950">
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
@@ -77,6 +88,41 @@ export const ConditionsTab: React.FC = () => {
             </Button>
           )}
         </div>
+
+        {canEdit && (
+          <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/20">
+            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-violet-950 dark:text-violet-100">
+              <Sparkles className="h-4 w-4" />
+              {t('ai.title')}
+            </div>
+            <div className="flex gap-2">
+              <Input value={description} onChange={(event) => setDescription(event.target.value)} onKeyDown={(event) => {
+                if (event.key === 'Enter') submitDescription();
+              }} placeholder={t('ai.placeholder')} data-testid="condition-ai-description" />
+              <Button onClick={submitDescription} disabled={!description.trim()} data-testid="condition-ai-submit">
+                {t('ai.generate')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {pendingConditionSuggestions.map((suggestion) => (
+          <div key={suggestion.id} className="rounded-xl border border-violet-200 bg-violet-50 p-4" data-testid={`condition-suggestion-${suggestion.id}`}>
+            <p className="font-medium text-violet-950">{t('ai.suggestionTitle')}</p>
+            <p className="mt-1 text-sm text-violet-800">{suggestion.rationale}</p>
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" onClick={() => {
+                const accepted = acceptConditionSuggestion(suggestion.id);
+                if (accepted) addCondition(accepted.rule);
+              }} data-testid={`condition-suggestion-accept-${suggestion.id}`}>
+                {t('ai.accept')}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => dismissConditionSuggestion(suggestion.id)} data-testid={`condition-suggestion-dismiss-${suggestion.id}`}>
+                {t('ai.dismiss')}
+              </Button>
+            </div>
+          </div>
+        ))}
 
         {conditions.length === 0 ? (
           <div

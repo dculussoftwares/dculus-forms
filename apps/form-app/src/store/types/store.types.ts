@@ -202,6 +202,12 @@ export type DestructiveAction =
       responseCount: number;
     };
 
+export interface ConditionSuggestion {
+  id: string;
+  rule: ConditionalRule;
+  rationale: string;
+}
+
 export interface AISlice {
   aiHighlightedFieldId: string | null;
   setAIHighlightedFieldId: (id: string | null) => void;
@@ -209,6 +215,11 @@ export interface AISlice {
   setPendingValidationSuggestions: (suggestions: ValidationSuggestion[]) => void;
   acceptValidationSuggestion: (fieldId: string) => ValidationSuggestion | null;
   dismissValidationSuggestion: (fieldId: string) => void;
+
+  pendingConditionSuggestions: ConditionSuggestion[];
+  addPendingConditionSuggestion: (suggestion: ConditionSuggestion) => void;
+  acceptConditionSuggestion: (id: string) => ConditionSuggestion | null;
+  dismissConditionSuggestion: (id: string) => void;
 
   // Destructive-action confirmations (deletes + field-type conversion)
   pendingDestructiveActions: DestructiveAction[];

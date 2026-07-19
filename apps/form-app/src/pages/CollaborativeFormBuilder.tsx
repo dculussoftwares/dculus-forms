@@ -320,7 +320,10 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       case 'preview':
         return <PreviewTab formId={formId || ''} />;
       case 'conditions':
-        return <ConditionsTab />;
+        return <ConditionsTab onDescribeWithAI={(description) => {
+          setAIInitialMessage(`Create a condition rule from this request: ${description}. Use upsertConditionRule only. This must remain a pending suggestion for the user to review.`);
+          setIsAIDrawerOpen(true);
+        }} />;
       case 'settings':
         return <SettingsTab formId={formId} />;
       default:

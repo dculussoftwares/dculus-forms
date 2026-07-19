@@ -2,6 +2,14 @@
   "title": "Conditions",
   "subtitle": "Show or hide fields and pages based on answers",
   "addRule": "Add rule",
+  "ai": {
+    "title": "Describe your conditions",
+    "placeholder": "e.g. Hide the GST field unless Country is India",
+    "generate": "Generate",
+    "suggestionTitle": "AI condition suggestion",
+    "accept": "Accept rule",
+    "dismiss": "Dismiss"
+  },
   "empty": {
     "title": "No conditions yet",
     "description": "Create rules like \"if the answer is Yes, show the details field\" to make your form dynamic."

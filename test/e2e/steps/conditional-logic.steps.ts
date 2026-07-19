@@ -706,6 +706,22 @@ Then('I should see the conditions empty state', async function (this: CustomWorl
   await expect(this.page.getByTestId('conditions-empty-state')).toBeVisible({ timeout: 10_000 });
 });
 
+When('I describe the condition {string}', async function (this: CustomWorld, description: string) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await this.page.getByTestId('condition-ai-description').fill(description);
+  await this.page.getByTestId('condition-ai-submit').click();
+});
+
+Then('I should see an AI condition suggestion', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.locator('[data-testid^="condition-suggestion-"]')).toBeVisible({ timeout: 90_000 });
+});
+
+When('I accept the AI condition suggestion', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await this.page.locator('[data-testid^="condition-suggestion-accept-"]').first().click();
+});
+
 When(
   'I add a rule showing {string} when {string} is equal to {string}',
   async function (this: CustomWorld, targetFieldId: string, triggerLabel: string, optionValue: string) {

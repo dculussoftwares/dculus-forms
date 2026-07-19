@@ -1,4 +1,4 @@
-import { FieldType } from '@dculus/types';
+import { FieldType, sanitizeConditions } from '@dculus/types';
 import type { FormBuilderState } from '../store/types/store.types';
 import { getApiBaseUrl } from './config';
 
@@ -62,7 +62,7 @@ export function applyAIOp(
     | 'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField'
     | 'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
     | 'addPageAtPosition' | 'removePage' | 'setSelectedPage'
-    | 'setAIHighlightedFieldId' | 'setPendingValidationSuggestions'
+    | 'setAIHighlightedFieldId' | 'setPendingValidationSuggestions' | 'addPendingConditionSuggestion'
     | 'moveFieldBetweenPages' | 'addPendingDestructiveAction'
   >,
   formId?: string,
@@ -293,6 +293,19 @@ export function applyAIOp(
       break;
     }
 
+    case 'PROPOSE_CONDITION_RULE': {
+      // Treat streamed AI output as untrusted even though the backend validates it.
+      // Nothing reaches the conditions slice until an explicit user acceptance.
+      const rule = sanitizeConditions([op.rule])?.[0];
+      if (!rule) break;
+      store.addPendingConditionSuggestion({
+        id: toolCallId ?? rule.id,
+        rule,
+        rationale: typeof op.rationale === 'string' ? op.rationale : '',
+      });
+      break;
+    }
+
     default: {
       // Defensive no-op: legacy op types from old conversations are never
       // re-applied (applyAIOp only runs on live tool calls), but guard anyway.
@@ -308,6 +321,7 @@ export function applyAIOp(
     'PROPOSE_DELETE_FIELDS',
     'PROPOSE_DELETE_PAGE',
     'PROPOSE_FIELD_TYPE_CHANGE',
+    'PROPOSE_CONDITION_RULE',
   ]);
   if (formId && !PROPOSAL_OPS.has(op.type)) invalidateSchema(formId);
 }

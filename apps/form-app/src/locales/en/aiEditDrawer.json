@@ -37,6 +37,7 @@
     "navigateToPage": "Navigating to page…",
     "proposeValidation": "Analysing validation rules…",
     "proposeFieldTypeChange": "Preparing type change…",
+    "upsertConditionRule": "Preparing condition suggestion…",
     "default": "Working…"
   },
   "destructive": {
