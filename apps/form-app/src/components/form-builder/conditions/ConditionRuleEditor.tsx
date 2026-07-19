@@ -33,7 +33,7 @@ import {
   getValueInputKind,
 } from './conditionFieldConfig';
 
-type EditorActionType = 'showField' | 'hideField' | 'hidePage';
+type EditorActionType = 'showField' | 'hideField' | 'hidePage' | 'skipToPage';
 
 interface EditorAction {
   type: EditorActionType;
@@ -53,11 +53,14 @@ interface ConditionRuleEditorProps {
 const emptyTerm = (): ConditionTerm => ({ fieldId: '', operator: 'equals' });
 const emptyAction = (): EditorAction => ({ type: 'showField', fieldIds: [], pageId: '' });
 
-// Actions this editor can't edit (showPage/skipToPage from newer clients)
+// Actions this editor can't edit (showPage from newer clients)
 // are preserved verbatim on save rather than silently dropped
 const preservedActions = (rule: ConditionalRule | null): ConditionAction[] =>
   (rule?.actions ?? []).filter(
-    (action) => !('fieldIds' in action) && action.type !== 'hidePage'
+    (action) =>
+      !('fieldIds' in action) &&
+      action.type !== 'hidePage' &&
+      action.type !== 'skipToPage'
   );
 
 const toEditorActions = (rule: ConditionalRule | null): EditorAction[] => {
@@ -66,8 +69,8 @@ const toEditorActions = (rule: ConditionalRule | null): EditorAction[] => {
   for (const action of rule.actions) {
     if ('fieldIds' in action) {
       actions.push({ type: action.type, fieldIds: [...action.fieldIds], pageId: '' });
-    } else if (action.type === 'hidePage') {
-      actions.push({ type: 'hidePage', fieldIds: [], pageId: action.pageId });
+    } else if (action.type === 'hidePage' || action.type === 'skipToPage') {
+      actions.push({ type: action.type, fieldIds: [], pageId: action.pageId });
     }
   }
   // A rule holding only preserved actions must stay savable — start with no
@@ -132,7 +135,9 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
   };
 
   const actionValid = (action: EditorAction): boolean =>
-    action.type === 'hidePage' ? action.pageId !== '' : action.fieldIds.length > 0;
+    action.type === 'hidePage' || action.type === 'skipToPage'
+      ? action.pageId !== ''
+      : action.fieldIds.length > 0;
 
   const preserved = useMemo(() => preservedActions(initialRule), [initialRule]);
 
@@ -144,8 +149,8 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
 
   const handleSave = () => {
     const savedActions: ConditionAction[] = actions.map((action) =>
-      action.type === 'hidePage'
-        ? { type: 'hidePage', pageId: action.pageId }
+      action.type === 'hidePage' || action.type === 'skipToPage'
+        ? { type: action.type, pageId: action.pageId }
         : { type: action.type, fieldIds: action.fieldIds }
     );
     onSave({
@@ -372,10 +377,11 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
                   <SelectItem value="showField">{t('actions.showField')}</SelectItem>
                   <SelectItem value="hideField">{t('actions.hideField')}</SelectItem>
                   <SelectItem value="hidePage">{t('actions.hidePage')}</SelectItem>
+                  <SelectItem value="skipToPage">{t('actions.skipToPage')}</SelectItem>
                 </SelectContent>
               </Select>
 
-              {action.type === 'hidePage' ? (
+              {action.type === 'hidePage' || action.type === 'skipToPage' ? (
                 <Select
                   value={action.pageId}
                   onValueChange={(pageId) => updateAction(index, { pageId })}
