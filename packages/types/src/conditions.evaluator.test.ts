@@ -980,3 +980,224 @@ describe('cascading evaluation', () => {
     expect(result.hiddenPageIds.has('p2')).toBe(false);
   });
 });
+
+describe('skipToPage actions (v1.5)', () => {
+  const p1: FormPage = {
+    id: 'page1',
+    title: 'P1',
+    order: 0,
+    fields: [new TextInputField('f1', 'F1', '', '', '', '', tv)],
+  };
+  const p2: FormPage = {
+    id: 'page2',
+    title: 'P2',
+    order: 1,
+    fields: [new TextInputField('f2', 'F2', '', '', '', '', tv)],
+  };
+  const p3: FormPage = {
+    id: 'page3',
+    title: 'P3',
+    order: 2,
+    fields: [new TextInputField('f3', 'F3', '', '', '', '', tv)],
+  };
+  const p4: FormPage = {
+    id: 'page4',
+    title: 'P4',
+    order: 3,
+    fields: [new TextInputField('f4', 'F4', '', '', '', '', tv)],
+  };
+  const fourPageSchema = { pages: [p1, p2, p3, p4] };
+
+  it('forward skip: hides strictly in-between pages, trigger and target stay visible', () => {
+    const skipRule: ConditionalRule = {
+      id: 'r-skip',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f1', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'skipToPage', pageId: 'page4' }],
+    };
+
+    const res = evaluateConditions(
+      [skipRule],
+      { page1: { f1: 'Yes' } },
+      fourPageSchema
+    );
+
+    expect(res.hiddenPageIds.has('page1')).toBe(false);
+    expect(res.hiddenPageIds.has('page2')).toBe(true);
+    expect(res.hiddenPageIds.has('page3')).toBe(true);
+    expect(res.hiddenPageIds.has('page4')).toBe(false);
+  });
+
+  it('unmatched skip rule: no pages hidden', () => {
+    const skipRule: ConditionalRule = {
+      id: 'r-skip',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f1', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'skipToPage', pageId: 'page4' }],
+    };
+
+    const res = evaluateConditions(
+      [skipRule],
+      { page1: { f1: 'No' } },
+      fourPageSchema
+    );
+
+    expect(res.hiddenPageIds.has('page2')).toBe(false);
+    expect(res.hiddenPageIds.has('page3')).toBe(false);
+  });
+
+  it('backward target: inert (target page before trigger page)', () => {
+    const backwardSkip: ConditionalRule = {
+      id: 'r-back-skip',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f3', operator: 'equals', value: 'Back' }],
+      actions: [{ type: 'skipToPage', pageId: 'page1' }],
+    };
+
+    const res = evaluateConditions(
+      [backwardSkip],
+      { page3: { f3: 'Back' } },
+      fourPageSchema
+    );
+
+    expect(res.hiddenPageIds.size).toBe(0);
+  });
+
+  it('same-page target: inert (target page equals trigger page)', () => {
+    const samePageSkip: ConditionalRule = {
+      id: 'r-same-skip',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f2', operator: 'equals', value: 'Stay' }],
+      actions: [{ type: 'skipToPage', pageId: 'page2' }],
+    };
+
+    const res = evaluateConditions(
+      [samePageSkip],
+      { page2: { f2: 'Stay' } },
+      fourPageSchema
+    );
+
+    expect(res.hiddenPageIds.size).toBe(0);
+  });
+
+  it('multiple matched skip rules on same trigger page: farthest target wins', () => {
+    const skipToP3: ConditionalRule = {
+      id: 'r-skip-p3',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f1', operator: 'equals', value: 'Skip' }],
+      actions: [{ type: 'skipToPage', pageId: 'page3' }],
+    };
+    const skipToP4: ConditionalRule = {
+      id: 'r-skip-p4',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f1', operator: 'equals', value: 'Skip' }],
+      actions: [{ type: 'skipToPage', pageId: 'page4' }],
+    };
+
+    const res = evaluateConditions(
+      [skipToP3, skipToP4],
+      { page1: { f1: 'Skip' } },
+      fourPageSchema
+    );
+
+    // Farthest target (page4) wins -> page2 and page3 are hidden
+    expect(res.hiddenPageIds.has('page2')).toBe(true);
+    expect(res.hiddenPageIds.has('page3')).toBe(true);
+    expect(res.hiddenPageIds.has('page4')).toBe(false);
+  });
+
+  it('non-existent target page: inert', () => {
+    const invalidTargetRule: ConditionalRule = {
+      id: 'r-invalid-target',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f1', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'skipToPage', pageId: 'deleted-page-id' }],
+    };
+
+    const res = evaluateConditions(
+      [invalidTargetRule],
+      { page1: { f1: 'Yes' } },
+      fourPageSchema
+    );
+
+    expect(res.hiddenPageIds.size).toBe(0);
+  });
+
+  it('deleted trigger field: inert', () => {
+    const deletedFieldRule: ConditionalRule = {
+      id: 'r-deleted-field',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'unknown-field', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'skipToPage', pageId: 'page4' }],
+    };
+
+    const res = evaluateConditions(
+      [deletedFieldRule],
+      { page1: { 'unknown-field': 'Yes' } },
+      fourPageSchema
+    );
+
+    expect(res.hiddenPageIds.size).toBe(0);
+  });
+
+  it('multi-term rule: trigger page is max order among terms', () => {
+    const multiTermSkip: ConditionalRule = {
+      id: 'r-multi-term',
+      enabled: true,
+      combinator: 'all',
+      terms: [
+        { fieldId: 'f1', operator: 'equals', value: 'A' },
+        { fieldId: 'f2', operator: 'equals', value: 'B' },
+      ],
+      actions: [{ type: 'skipToPage', pageId: 'page4' }],
+    };
+
+    // Terms on page1 (idx 0) and page2 (idx 1) -> trigger page is page2 (idx 1)
+    const res = evaluateConditions(
+      [multiTermSkip],
+      { page1: { f1: 'A' }, page2: { f2: 'B' } },
+      fourPageSchema
+    );
+
+    expect(res.hiddenPageIds.has('page1')).toBe(false);
+    expect(res.hiddenPageIds.has('page2')).toBe(false);
+    expect(res.hiddenPageIds.has('page3')).toBe(true); // page3 strictly between page2 and page4
+    expect(res.hiddenPageIds.has('page4')).toBe(false);
+  });
+
+  it('skipped page fields evaluate as empty for dependent rules', () => {
+    const skipRule: ConditionalRule = {
+      id: 'r-skip',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f1', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'skipToPage', pageId: 'page4' }],
+    };
+    const dependentRule: ConditionalRule = {
+      id: 'r-dependent',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'f2', operator: 'equals', value: 'Secret' }],
+      actions: [{ type: 'hideField', fieldIds: ['f4'] }],
+    };
+
+    // f2 has 'Secret', but page2 is skipped by f1='Yes' -> f2 reads as empty -> f4 is NOT hidden
+    const res = evaluateConditions(
+      [skipRule, dependentRule],
+      { page1: { f1: 'Yes' }, page2: { f2: 'Secret' } },
+      fourPageSchema
+    );
+
+    expect(res.hiddenPageIds.has('page2')).toBe(true);
+    expect(res.hiddenFieldIds.has('f4')).toBe(false);
+  });
+});
+
