@@ -1439,11 +1439,14 @@ Then(
   'I should see a circular reference warning badge for the rule {string}',
   async function (this: CustomWorld, triggerLabel: string) {
     if (!this.page) throw new Error('Page is not initialized');
+    // Find the card that contains a circular-reference badge.
+    // We can't filter by triggerLabel alone (multiple cards share that text),
+    // so we find the card with the badge element inside it.
     const card = this.page
       .locator('[data-testid^="condition-card-"]')
-      .filter({ hasText: triggerLabel });
-    await expect(card).toBeVisible({ timeout: 10_000 });
-    const badge = card.locator('[data-testid^="condition-circular-"]');
+      .filter({ has: this.page.locator('[data-testid^="condition-circular-"]') });
+    await expect(card.first()).toBeVisible({ timeout: 10_000 });
+    const badge = card.first().locator('[data-testid^="condition-circular-"]');
     await expect(badge).toBeVisible({ timeout: 10_000 });
   }
 );
@@ -1452,9 +1455,12 @@ Then(
   'I should not see a circular reference warning badge for the rule {string}',
   async function (this: CustomWorld, triggerLabel: string) {
     if (!this.page) throw new Error('Page is not initialized');
+    // The card with the given trigger label must be visible but must not have a badge.
+    // Use .first() in case multiple cards contain the label text.
     const card = this.page
       .locator('[data-testid^="condition-card-"]')
-      .filter({ hasText: triggerLabel });
+      .filter({ hasText: triggerLabel })
+      .first();
     await expect(card).toBeVisible({ timeout: 10_000 });
     const badge = card.locator('[data-testid^="condition-circular-"]');
     await expect(badge).toHaveCount(0, { timeout: 5_000 });
