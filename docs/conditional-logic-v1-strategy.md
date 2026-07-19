@@ -8,8 +8,8 @@
 
 ## 1. v1 scope
 
-- **Actions**: `showField` / `hideField` (multi-target), `hidePage`. No skip-to-page,
-  no require/unrequire, no calculations.
+- **Actions**: `showField` / `hideField` (multi-target), `hidePage`, `skipToPage` (v1.5). No
+  require/unrequire, no calculations.
 - **Triggers**: any fillable field, cross-page references allowed.
 - **Combinator**: flat `any` / `all` per rule. No nested groups.
 - **Hidden-value policy**: keep values in the store while filling; strip hidden fields'
@@ -179,6 +179,11 @@ evaluateConditions(
   renders an empty page with an OK button). A RichText-only info page counts: it stays
   visible unless its RichText blocks are hidden. All fields on a hidden page evaluate
   as empty and are stripped at submit.
+- **skipToPage (v1.5)**: forward-only page jump. When a matched rule has `skipToPage(targetPageId)`,
+  the evaluator determines the trigger page index (max page order among its term fields)
+  and target page index. If target index > trigger index, pages strictly between them are
+  folded into `hiddenPageIds` (skipped pages). Backward or same-page targets are inert.
+  Multiple matched skip rules on the same trigger page resolve with the farthest target winning.
 - **Robustness**: a term referencing a deleted/unknown fieldId evaluates to `false`;
   a rule with zero terms is inactive; `enabled: false` rules are skipped. Type
   mismatches (e.g. lessThan on a string) evaluate to `false`, never throw — the
@@ -229,6 +234,7 @@ evaluateConditions(
 | 8 | Auto-skip pages whose fields are all hidden | avoids rendering empty pages; RichText counts as a field |
 | 9 | Broken references disable the term, never crash | collab editing means rules and fields race |
 | 10 | Client-side enforcement only | consistent with backend's current no-validation posture; server strip is a fast-follow |
+| 11 | `skipToPage` is forward-only & folds into `hiddenPageIds` | simplest execution path; reuses existing visibility, navigation, and submit-strip machinery |
 
 ## 10. Implementation order
 

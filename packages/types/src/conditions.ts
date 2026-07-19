@@ -33,7 +33,7 @@ export interface ConditionTerm {
 export type ConditionAction =
   | { type: 'showField' | 'hideField'; fieldIds: string[] }
   | { type: 'showPage' | 'hidePage'; pageId: string }
-  | { type: 'skipToPage'; pageId: string }; // reserved for v1.5 — ignored by the v1 evaluator
+  | { type: 'skipToPage'; pageId: string }; // v1.5 forward-only page skip
 
 export interface ConditionalRule {
   id: string;
@@ -381,7 +381,11 @@ export const evaluateConditions = (
 ): ConditionEvaluationResult => {
   const fieldInfo = new Map<string, { type: FieldType; pageId: string }>();
   const pageFieldIds = new Map<string, string[]>();
-  for (const page of schema.pages ?? []) {
+  const pageOrderMap = new Map<string, number>();
+  const pages = schema.pages ?? [];
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    pageOrderMap.set(page.id, i);
     const ids: string[] = [];
     for (const field of page.fields ?? []) {
       if (field.deleted) continue;
@@ -455,6 +459,7 @@ export const evaluateConditions = (
 
     const nextFields = new Set(defaultHiddenFields);
     const nextPages = new Set(defaultHiddenPages);
+    const maxSkipTargetByTriggerPage = new Map<number, number>();
 
     for (const rule of activeRules) {
       const matched =
@@ -476,9 +481,39 @@ export const evaluateConditions = (
           case 'hidePage':
             nextPages.add(action.pageId);
             break;
-          default:
-            // skipToPage (v1.5) and unknown types from newer clients — no-op
+          case 'skipToPage': {
+            const targetIdx = pageOrderMap.get(action.pageId);
+            if (targetIdx === undefined) break;
+            let triggerIdx: number | undefined = undefined;
+            for (const term of rule.terms) {
+              if (!term || typeof term.fieldId !== 'string') continue;
+              const info = fieldInfo.get(term.fieldId);
+              if (!info) continue;
+              const pIdx = pageOrderMap.get(info.pageId);
+              if (pIdx !== undefined) {
+                triggerIdx = triggerIdx === undefined ? pIdx : Math.max(triggerIdx, pIdx);
+              }
+            }
+            if (triggerIdx !== undefined && targetIdx > triggerIdx) {
+              const currentMax = maxSkipTargetByTriggerPage.get(triggerIdx);
+              maxSkipTargetByTriggerPage.set(
+                triggerIdx,
+                currentMax === undefined ? targetIdx : Math.max(currentMax, targetIdx)
+              );
+            }
             break;
+          }
+          default:
+            break;
+        }
+      }
+    }
+
+    for (const [triggerIdx, targetIdx] of maxSkipTargetByTriggerPage) {
+      for (let k = triggerIdx + 1; k < targetIdx; k++) {
+        const page = pages[k];
+        if (page) {
+          nextPages.add(page.id);
         }
       }
     }
