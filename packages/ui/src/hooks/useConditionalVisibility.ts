@@ -11,9 +11,14 @@ export interface ConditionalVisibility {
    * they can never capture a stale set in a closure.
    */
   getHiddenFieldIds: () => ReadonlySet<string>;
+  /** Conditional required/unrequired overrides (v2). true = required, false = unrequired. */
+  requiredOverrides: ReadonlyMap<string, boolean>;
+  /** Stable getter returning the latest required-overrides map. */
+  getRequiredOverrides: () => ReadonlyMap<string, boolean>;
 }
 
 const EMPTY_SET: ReadonlySet<string> = new Set();
+const EMPTY_MAP: ReadonlyMap<string, boolean> = new Map();
 
 /**
  * Evaluates the form's conditional rules against the live response store and
@@ -30,9 +35,9 @@ export const useConditionalVisibility = (
 
   const hasConditions = (formSchema?.conditions?.length ?? 0) > 0;
 
-  const { hiddenFieldIds, hiddenPageIds } = useMemo(() => {
+  const { hiddenFieldIds, hiddenPageIds, requiredOverrides } = useMemo(() => {
     if (!formSchema || !hasConditions) {
-      return { hiddenFieldIds: EMPTY_SET, hiddenPageIds: EMPTY_SET };
+      return { hiddenFieldIds: EMPTY_SET, hiddenPageIds: EMPTY_SET, requiredOverrides: EMPTY_MAP };
     }
     return evaluateConditions(formSchema.conditions, responses, formSchema);
   }, [formSchema, hasConditions, responses]);
@@ -41,5 +46,9 @@ export const useConditionalVisibility = (
   latestHiddenFieldIds.current = hiddenFieldIds;
   const getHiddenFieldIds = useCallback(() => latestHiddenFieldIds.current, []);
 
-  return { hiddenFieldIds, hiddenPageIds, getHiddenFieldIds };
+  const latestRequiredOverrides = useRef(requiredOverrides);
+  latestRequiredOverrides.current = requiredOverrides;
+  const getRequiredOverrides = useCallback(() => latestRequiredOverrides.current, []);
+
+  return { hiddenFieldIds, hiddenPageIds, getHiddenFieldIds, requiredOverrides, getRequiredOverrides };
 };

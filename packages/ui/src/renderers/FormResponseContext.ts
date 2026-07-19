@@ -25,6 +25,9 @@ export interface FormResponseContextValue {
   hiddenFieldIds: ReadonlySet<string>;
   hiddenPageIds: ReadonlySet<string>;
   getHiddenFieldIds: () => ReadonlySet<string>;
+  // Conditional required/unrequired overrides (v2)
+  requiredOverrides: ReadonlyMap<string, boolean>;
+  getRequiredOverrides: () => ReadonlyMap<string, boolean>;
 }
 
 export const FormResponseContext = createContext<FormResponseContextValue | null>(null);
