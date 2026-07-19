@@ -609,9 +609,13 @@ export const evaluateConditions = (
     if (!matched) continue;
     for (const action of rule.actions) {
       if (action.type === 'requireField') {
-        for (const id of action.fieldIds) requiredOverrides.set(id, true);
+        for (const id of action.fieldIds) {
+          if (fieldInfo.has(id)) requiredOverrides.set(id, true);
+        }
       } else if (action.type === 'unrequireField') {
-        for (const id of action.fieldIds) requiredOverrides.set(id, false);
+        for (const id of action.fieldIds) {
+          if (fieldInfo.has(id)) requiredOverrides.set(id, false);
+        }
       }
     }
   }
@@ -844,4 +848,3 @@ export const detectConditionCycles = (
 
   return cycles;
 };
-

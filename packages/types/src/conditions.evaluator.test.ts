@@ -179,6 +179,66 @@ describe('text-like triggers (TextInput / TextArea / Email)', () => {
   });
 });
 
+describe('conditional required-field actions', () => {
+  const requiredRule = (action: ConditionalRule['actions'][number], id = 'rule') => ({
+    id,
+    enabled: true,
+    combinator: 'all' as const,
+    terms: [{ fieldId: 'text', operator: 'equals' as const, value: 'yes' }],
+    actions: [action],
+  });
+
+  it('returns required and unrequired overrides when rules match', () => {
+    const result = evaluateConditions(
+      [requiredRule({ type: 'requireField', fieldIds: ['email'] })],
+      responsesWith({ text: 'yes' }),
+      schema
+    );
+    expect(result.requiredOverrides).toEqual(new Map([['email', true]]));
+
+    const optional = evaluateConditions(
+      [requiredRule({ type: 'unrequireField', fieldIds: ['email'] })],
+      responsesWith({ text: 'yes' }),
+      schema
+    );
+    expect(optional.requiredOverrides).toEqual(new Map([['email', false]]));
+  });
+
+  it('uses the later matching rule for the same field', () => {
+    const result = evaluateConditions(
+      [
+        requiredRule({ type: 'requireField', fieldIds: ['email'] }, 'first'),
+        requiredRule({ type: 'unrequireField', fieldIds: ['email'] }, 'second'),
+      ],
+      responsesWith({ text: 'yes' }),
+      schema
+    );
+    expect(result.requiredOverrides.get('email')).toBe(false);
+  });
+
+  it('does not require a field that is hidden by a matching action', () => {
+    const result = evaluateConditions(
+      [
+        requiredRule({ type: 'requireField', fieldIds: ['email'] }),
+        requiredRule({ type: 'hideField', fieldIds: ['email'] }, 'hide'),
+      ],
+      responsesWith({ text: 'yes' }),
+      schema
+    );
+    expect(result.hiddenFieldIds.has('email')).toBe(true);
+    expect(result.requiredOverrides.has('email')).toBe(false);
+  });
+
+  it('leaves unknown required targets inert', () => {
+    const result = evaluateConditions(
+      [requiredRule({ type: 'requireField', fieldIds: ['deleted-field'] })],
+      responsesWith({ text: 'yes' }),
+      schema
+    );
+    expect(result.requiredOverrides).toEqual(new Map());
+  });
+});
+
 describe('phone triggers', () => {
   it('compares raw E.164 exactly', () => {
     expectMatch('phone', 'equals', '+919876543210', '+919876543210', true);
@@ -1200,4 +1260,3 @@ describe('skipToPage actions (v1.5)', () => {
     expect(res.hiddenFieldIds.has('f4')).toBe(false);
   });
 });
-
