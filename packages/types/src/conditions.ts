@@ -572,3 +572,223 @@ export const evaluateConditions = (
 
   return { hiddenFieldIds: current.fields, hiddenPageIds: current.pages };
 };
+
+export interface ConditionCycle {
+  ruleIds: string[];
+}
+
+/**
+ * Detects circular dependencies (strongly-connected components with ≥1 edge)
+ * among active conditional rules.
+ *
+ * Rule R depends on field F if F is in R.terms.
+ * Rule R affects field G / page P via its actions (page actions affect all non-deleted fields on that page).
+ * An edge R1 -> R2 exists when R1 affects a field R2 depends on.
+ * Reports strongly-connected components with ≥1 edge (self-loops count: a rule whose action affects its own trigger).
+ * Disabled rules (enabled === false) and invalid rules are excluded.
+ */
+export const detectConditionCycles = (
+  rules: ConditionalRule[] | null | undefined,
+  schema?: { pages?: FormPage[] }
+): ConditionCycle[] => {
+  if (!Array.isArray(rules) || rules.length === 0) return [];
+
+  // 1. Build map of pageId -> set of non-deleted fieldIds, and fieldId -> pageId
+  const pageFieldMap = new Map<string, string[]>();
+  const fieldPageMap = new Map<string, string>();
+  const pageOrderMap = new Map<string, number>();
+
+  const pages = schema?.pages ?? [];
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    pageOrderMap.set(page.id, i);
+    const fieldIds: string[] = [];
+    for (const field of page.fields ?? []) {
+      if (field.deleted) continue;
+      fieldIds.push(field.id);
+      fieldPageMap.set(field.id, page.id);
+    }
+    pageFieldMap.set(page.id, fieldIds);
+  }
+
+  // 2. Filter active rules
+  const isWellFormedAction = (action: unknown): action is ConditionAction => {
+    if (!action || typeof action !== 'object') return false;
+    const candidate = action as { type?: unknown; fieldIds?: unknown; pageId?: unknown };
+    switch (candidate.type) {
+      case 'showField':
+      case 'hideField':
+        return (
+          Array.isArray(candidate.fieldIds) &&
+          candidate.fieldIds.every((id) => typeof id === 'string')
+        );
+      case 'showPage':
+      case 'hidePage':
+      case 'skipToPage':
+        return typeof candidate.pageId === 'string';
+      default:
+        return false;
+    }
+  };
+
+  const activeRules = rules.filter(
+    (rule): rule is ConditionalRule =>
+      !!rule &&
+      typeof rule === 'object' &&
+      rule.enabled === true &&
+      Array.isArray(rule.terms) &&
+      rule.terms.length > 0 &&
+      Array.isArray(rule.actions) &&
+      rule.actions.some(isWellFormedAction)
+  );
+
+  if (activeRules.length === 0) return [];
+
+  // 3. For each active rule, determine dependsOnFields & affectedFields
+  const ruleDependsOn = activeRules.map((rule) => {
+    const set = new Set<string>();
+    for (const term of rule.terms) {
+      if (term && typeof term.fieldId === 'string' && term.fieldId.length > 0) {
+        set.add(term.fieldId);
+      }
+    }
+    return set;
+  });
+
+  const ruleAffects = activeRules.map((rule) => {
+    const set = new Set<string>();
+    for (const action of rule.actions) {
+      if (!isWellFormedAction(action)) continue;
+      if (action.type === 'showField' || action.type === 'hideField') {
+        for (const fid of action.fieldIds) {
+          if (typeof fid === 'string' && fid.length > 0) {
+            set.add(fid);
+          }
+        }
+      } else if (action.type === 'showPage' || action.type === 'hidePage') {
+        const fieldsOnPage = pageFieldMap.get(action.pageId);
+        if (fieldsOnPage) {
+          for (const fid of fieldsOnPage) set.add(fid);
+        }
+      } else if (action.type === 'skipToPage') {
+        const targetIdx = pageOrderMap.get(action.pageId);
+        let triggerIdx: number | undefined = undefined;
+        for (const term of rule.terms) {
+          if (!term || typeof term.fieldId !== 'string') continue;
+          const pId = fieldPageMap.get(term.fieldId);
+          if (pId !== undefined) {
+            const pIdx = pageOrderMap.get(pId);
+            if (pIdx !== undefined) {
+              triggerIdx = triggerIdx === undefined ? pIdx : Math.max(triggerIdx, pIdx);
+            }
+          }
+        }
+        if (targetIdx !== undefined && triggerIdx !== undefined && targetIdx > triggerIdx) {
+          for (let k = triggerIdx + 1; k < targetIdx; k++) {
+            const intermediatePage = pages[k];
+            if (intermediatePage) {
+              const fieldsOnPage = pageFieldMap.get(intermediatePage.id);
+              if (fieldsOnPage) {
+                for (const fid of fieldsOnPage) set.add(fid);
+              }
+            }
+          }
+        } else if (action.pageId) {
+          const fieldsOnPage = pageFieldMap.get(action.pageId);
+          if (fieldsOnPage) {
+            for (const fid of fieldsOnPage) set.add(fid);
+          }
+        }
+      }
+    }
+    return set;
+  });
+
+  // 4. Build graph edges
+  const n = activeRules.length;
+  const adj: number[][] = Array.from({ length: n }, () => []);
+  const selfLoops = new Set<number>();
+
+  for (let i = 0; i < n; i++) {
+    const affects = ruleAffects[i];
+    for (let j = 0; j < n; j++) {
+      const depends = ruleDependsOn[j];
+      let hasEdge = false;
+      for (const fieldId of affects) {
+        if (depends.has(fieldId)) {
+          hasEdge = true;
+          break;
+        }
+      }
+      if (hasEdge) {
+        adj[i].push(j);
+        if (i === j) {
+          selfLoops.add(i);
+        }
+      }
+    }
+  }
+
+  // 5. Find SCCs using Tarjan's algorithm
+  let index = 0;
+  const indices = new Map<number, number>();
+  const lowlink = new Map<number, number>();
+  const onStack = new Map<number, boolean>();
+  const stack: number[] = [];
+  const rawSCCs: number[][] = [];
+
+  function strongConnect(u: number) {
+    indices.set(u, index);
+    lowlink.set(u, index);
+    index++;
+    stack.push(u);
+    onStack.set(u, true);
+
+    for (const v of adj[u]) {
+      if (!indices.has(v)) {
+        strongConnect(v);
+        lowlink.set(u, Math.min(lowlink.get(u)!, lowlink.get(v)!));
+      } else if (onStack.get(v)) {
+        lowlink.set(u, Math.min(lowlink.get(u)!, indices.get(v)!));
+      }
+    }
+
+    if (lowlink.get(u) === indices.get(u)) {
+      const scc: number[] = [];
+      let popDone = false;
+      while (!popDone) {
+        const w = stack.pop()!;
+        onStack.set(w, false);
+        scc.push(w);
+        if (w === u) popDone = true;
+      }
+      rawSCCs.push(scc);
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (!indices.has(i)) {
+      strongConnect(i);
+    }
+  }
+
+  // 6. Filter SCCs with >= 1 edge: scc.length > 1 OR (scc.length === 1 && selfLoops.has(scc[0]))
+  const cycles: ConditionCycle[] = [];
+  for (const scc of rawSCCs) {
+    if (scc.length > 1 || (scc.length === 1 && selfLoops.has(scc[0]))) {
+      scc.sort((a, b) => a - b);
+      const ruleIds = scc.map((idx) => activeRules[idx].id);
+      cycles.push({ ruleIds });
+    }
+  }
+
+  // Sort cycles by min rule index in original activeRules array
+  cycles.sort((a, b) => {
+    const minA = Math.min(...a.ruleIds.map((id) => activeRules.findIndex((r) => r.id === id)));
+    const minB = Math.min(...b.ruleIds.map((id) => activeRules.findIndex((r) => r.id === id)));
+    return minA - minB;
+  });
+
+  return cycles;
+};
+
