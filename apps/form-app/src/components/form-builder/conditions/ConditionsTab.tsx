@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { GitBranch, Plus } from 'lucide-react';
 import { Button, toastSuccess } from '@dculus/ui';
-import { ConditionalRule } from '@dculus/types';
+import { ConditionalRule, detectConditionCycles } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -25,6 +25,11 @@ export const ConditionsTab: React.FC = () => {
   // Same gate as field/page editing — viewers see rules read-only
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
+
+  const circularRuleIds = useMemo(() => {
+    const cycles = detectConditionCycles(conditions, { pages });
+    return new Set(cycles.flatMap((c) => c.ruleIds));
+  }, [conditions, pages]);
 
   const openCreate = () => {
     setEditingRule(null);
@@ -94,6 +99,7 @@ export const ConditionsTab: React.FC = () => {
                 rule={rule}
                 pages={pages}
                 canEdit={canEdit}
+                isCircular={circularRuleIds.has(rule.id)}
                 onEdit={() => openEdit(rule)}
                 onDelete={() => handleDelete(rule.id)}
                 onToggleEnabled={(enabled) => setConditionEnabled(rule.id, enabled)}
