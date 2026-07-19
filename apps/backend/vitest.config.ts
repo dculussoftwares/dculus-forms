@@ -24,10 +24,8 @@ export default defineConfig({
         lines: 80,
         functions: 80,
         // vitest 4.1 v8 counts ~3% more branches than 4.0 due to instrumentation changes;
-        // threshold is 77 (not 78) to absorb the 0.08pp gap introduced by new upsertConditionRule
-        // branches in aiChat.ts (Y.js field-mapping paths) that are hard to unit-test via the
-        // module-cached route test harness. Actual coverage: ~77.9%.
-        branches: 77,
+        // threshold is 78 (not 79) to absorb the 0.04pp CI/local V8 rounding gap
+        branches: 78,
         statements: 80,
       },
     },

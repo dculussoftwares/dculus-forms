@@ -337,6 +337,25 @@ describe('upsertConditionRule (proposal only)', () => {
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
   });
 
+  it('rejects ambiguous page title matching multiple pages', async () => {
+    const dupPageSchema = {
+      pages: [
+        { id: 'p1', title: 'Details', fields: [
+          { id: 'f1', type: 'SELECT_FIELD', label: 'Choice', options: ['A'] },
+        ]},
+        { id: 'p2', title: 'Details', fields: [] },
+      ],
+    };
+    const tools = makeFullTools(dupPageSchema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Choice', operator: 'equals', value: 'A' }],
+      actions: [{ type: 'skipToPage', page: 'Details' }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('matches multiple pages') }));
+  });
+
   it('rejects ambiguous field label matching multiple fields', async () => {
     const ambiguousSchema = {
       pages: [{ id: 'p1', title: 'Page', fields: [
