@@ -1411,7 +1411,7 @@ When(
 
     // IF: trigger field → set operator to "is filled"
     await this.page.getByTestId('condition-term-field-0').click();
-    await this.page.getByRole('option', { name: 'Bonus Field' }).click();
+    await this.page.getByRole('option', { name: 'Bonus Field', exact: true }).click();
 
     await this.page.getByTestId('condition-term-operator-0').click();
     await this.page.getByRole('option', { name: 'is filled' }).click();
