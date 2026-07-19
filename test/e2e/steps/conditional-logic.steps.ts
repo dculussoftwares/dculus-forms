@@ -1298,4 +1298,110 @@ Then(
   }
 );
 
+const skipToPageFormSchema = () => ({
+  layout: {
+    theme: 'light',
+    textColor: '#000000',
+    spacing: 'normal',
+    code: 'L9',
+    content: '<h1>skipToPage Test</h1>',
+    customBackGroundColor: '#ffffff',
+    backgroundImageKey: '',
+    pageMode: 'multipage',
+    isCustomBackgroundColorEnabled: false,
+  },
+  isShuffleEnabled: false,
+  pages: [
+    {
+      id: 'skip-p1',
+      title: 'Page 1',
+      order: 0,
+      fields: [
+        {
+          id: 'skip-trigger-radio',
+          type: 'radio_field',
+          label: 'Skip to Page 4?',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          options: ['Yes', 'No'],
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+      ],
+    },
+    {
+      id: 'skip-p2',
+      title: 'Page 2',
+      order: 1,
+      fields: [
+        {
+          id: 'skip-p2-text',
+          type: 'text_input_field',
+          label: 'Page 2 Field',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Page 2 value',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+      ],
+    },
+    {
+      id: 'skip-p3',
+      title: 'Page 3',
+      order: 2,
+      fields: [
+        {
+          id: 'skip-p3-text',
+          type: 'text_input_field',
+          label: 'Page 3 Field',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Page 3 value',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+      ],
+    },
+    {
+      id: 'skip-p4',
+      title: 'Page 4',
+      order: 3,
+      fields: [
+        {
+          id: 'skip-p4-text',
+          type: 'text_input_field',
+          label: 'Page 4 Field',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Page 4 value',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+      ],
+    },
+  ],
+  conditions: [
+    {
+      id: 'rule-skip-to-p4',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'skip-trigger-radio', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'skipToPage', pageId: 'skip-p4' }],
+    },
+  ],
+});
+
+When(
+  'I create a 4-page form via GraphQL with a skipToPage condition rule',
+  async function (this: CustomWorld) {
+    await createFormViaGraphQL(
+      this,
+      skipToPageFormSchema(),
+      'E2E skipToPage Condition Test'
+    );
+  }
+);
+
+
 
