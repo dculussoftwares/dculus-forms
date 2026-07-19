@@ -15,6 +15,15 @@
 - **Hidden-value policy**: keep values in the store while filling; strip hidden fields'
   values at submit ("clear when submitted"). No form-level setting in v1.
 
+## 1.1 v2 delivered: conditional requiredness
+
+v2 adds `requireField` and `unrequireField` actions. Matching rules produce a
+field-id → required boolean override map; later matching rules win for each
+field. Overrides are enforced in the client-side page schema and the renderer's
+required marker. Hidden fields always win over requiredness, so a hidden field
+cannot block navigation or submission. The backend still performs no schema
+validation; server-side required enforcement remains out of scope.
+
 ## 2. Runtime value model (what the evaluator actually sees)
 
 `useFormResponseStore` holds `pageId → fieldId → value`. Values are written by

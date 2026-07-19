@@ -119,6 +119,67 @@ const conditionalLogicSchemaWithRules = () => ({
   ],
 });
 
+const conditionalRequirednessSchema = () => ({
+  ...conditionalLogicFields(),
+  pages: [
+    {
+      ...conditionalLogicFields().pages[0],
+      fields: [
+        {
+          id: 'cond-require-trigger',
+          type: 'radio_field',
+          label: 'Make details required?',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          options: ['Yes', 'No'],
+          validation: { required: false, type: 'fillable_form_field' },
+        },
+      ],
+    },
+    {
+      id: 'cond-required-page-2',
+      title: 'Details',
+      order: 1,
+      fields: [
+        {
+          id: 'cond-required-details',
+          type: 'text_input_field',
+          label: 'Details',
+          defaultValue: '',
+          prefix: '',
+          hint: '',
+          placeholder: 'Details',
+          validation: { required: false, type: 'text_field_validation' },
+        },
+      ],
+    },
+  ],
+  conditions: [
+    {
+      id: 'rule-require-details',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'cond-require-trigger', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'requireField', fieldIds: ['cond-required-details'] }],
+    },
+    {
+      id: 'rule-unrequire-details',
+      enabled: true,
+      combinator: 'all',
+      terms: [{ fieldId: 'cond-require-trigger', operator: 'equals', value: 'No' }],
+      actions: [{ type: 'unrequireField', fieldIds: ['cond-required-details'] }],
+    },
+  ],
+});
+
+When(
+  'I create a form via GraphQL with conditional requiredness rules',
+  async function (this: CustomWorld) {
+    await createFormViaGraphQL(this, conditionalRequirednessSchema(), 'E2E Conditional Requiredness Test');
+  }
+);
+
 When(
   'I create a form via GraphQL with conditional logic rules',
   async function (this: CustomWorld) {

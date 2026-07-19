@@ -1,5 +1,20 @@
 Feature: Conditional Logic (show/hide fields and pages)
 
+  Scenario: Require and unrequire a field from a matching rule
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional requiredness rules
+    And I publish the form
+    Then the form should be published
+    When I get the form short URL
+    And I navigate to the form viewer with the short URL
+    When I choose viewer radio option "Yes" for "Make details required?"
+    And I click next in the viewer
+    Then I should still be on viewer page 1
+    And I should see a required field error in the viewer
+    When I choose viewer radio option "No" for "Make details required?"
+    And I click next in the viewer
+    Then I should be on viewer page 2 of 2
+
   # Viewer behavior for a form whose schema carries conditional rules:
   # - a showField target starts hidden and appears when its rule matches
   # - a hidePage rule removes the page from the flow (progress + navigation)
@@ -142,5 +157,4 @@ Feature: Conditional Logic (show/hide fields and pages)
     And I should not see a circular reference warning badge for the rule "Show bonus field?"
     When I add a self-hiding rule for field "cond-bonus" when filled
     Then I should see a circular reference warning badge for the rule "Bonus Field"
-
 
