@@ -33,7 +33,7 @@ export interface ConditionTerm {
 export type ConditionAction =
   | { type: 'showField' | 'hideField'; fieldIds: string[] }
   | { type: 'showPage' | 'hidePage'; pageId: string }
-  | { type: 'skipToPage'; pageId: string }; // reserved for v1.5 — ignored by the v1 evaluator
+  | { type: 'skipToPage'; pageId: string }; // v1.5 forward-only page skip
 
 export interface ConditionalRule {
   id: string;
