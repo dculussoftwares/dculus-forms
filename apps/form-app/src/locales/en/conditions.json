@@ -18,6 +18,8 @@
     "delete": "Delete rule",
     "brokenReference": "Broken reference",
     "brokenReferenceHint": "This rule references a deleted field, a deleted page, or an option that no longer exists. It will not match until fixed.",
+    "circular": "Circular reference",
+    "circularHint": "These rules can contradict each other; fields caught in the loop stay visible.",
     "deletedField": "deleted field",
     "deletedPage": "deleted page"
   },

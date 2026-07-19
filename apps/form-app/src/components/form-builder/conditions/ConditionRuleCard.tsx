@@ -9,6 +9,7 @@ interface ConditionRuleCardProps {
   rule: ConditionalRule;
   pages: FormPage[];
   canEdit: boolean;
+  isCircular?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onToggleEnabled: (enabled: boolean) => void;
@@ -18,6 +19,7 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
   rule,
   pages,
   canEdit,
+  isCircular,
   onEdit,
   onDelete,
   onToggleEnabled,
@@ -93,17 +95,31 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
             </span>
           </div>
 
-          {references.hasBrokenReferences && (
-            <Badge
-              variant="destructive"
-              className="gap-1"
-              title={t('card.brokenReferenceHint')}
-              data-testid={`condition-broken-${rule.id}`}
-            >
-              <AlertTriangle className="h-3 w-3" />
-              {t('card.brokenReference')}
-            </Badge>
-          )}
+          <div className="flex flex-wrap gap-2 pt-1">
+            {references.hasBrokenReferences && (
+              <Badge
+                variant="destructive"
+                className="gap-1"
+                title={t('card.brokenReferenceHint')}
+                data-testid={`condition-broken-${rule.id}`}
+              >
+                <AlertTriangle className="h-3 w-3" />
+                {t('card.brokenReference')}
+              </Badge>
+            )}
+
+            {isCircular && (
+              <Badge
+                variant="outline"
+                className="gap-1 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                title={t('card.circularHint')}
+                data-testid={`condition-circular-${rule.id}`}
+              >
+                <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                {t('card.circular')}
+              </Badge>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
