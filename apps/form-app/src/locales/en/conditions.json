@@ -52,6 +52,8 @@
   "actions": {
     "showField": "Show field(s)",
     "hideField": "Hide field(s)",
+    "requireField": "Require field(s)",
+    "unrequireField": "Unrequire field(s)",
     "hidePage": "Hide page",
     "showPage": "Show page",
     "skipToPage": "Skip to page"

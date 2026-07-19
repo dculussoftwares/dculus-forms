@@ -33,7 +33,7 @@ import {
   getValueInputKind,
 } from './conditionFieldConfig';
 
-type EditorActionType = 'showField' | 'hideField' | 'hidePage' | 'skipToPage';
+type EditorActionType = 'showField' | 'hideField' | 'hidePage' | 'skipToPage' | 'requireField' | 'unrequireField';
 
 interface EditorAction {
   type: EditorActionType;
@@ -376,6 +376,8 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
                 <SelectContent>
                   <SelectItem value="showField">{t('actions.showField')}</SelectItem>
                   <SelectItem value="hideField">{t('actions.hideField')}</SelectItem>
+                  <SelectItem value="requireField">{t('actions.requireField')}</SelectItem>
+                  <SelectItem value="unrequireField">{t('actions.unrequireField')}</SelectItem>
                   <SelectItem value="hidePage">{t('actions.hidePage')}</SelectItem>
                   <SelectItem value="skipToPage">{t('actions.skipToPage')}</SelectItem>
                 </SelectContent>

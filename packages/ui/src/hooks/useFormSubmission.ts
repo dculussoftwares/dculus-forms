@@ -16,7 +16,8 @@ export const useFormSubmission = (
   // Read at validation time — this second, independent validation must see the
   // same hidden set as the RHF resolver, or navigating with a hidden required
   // field silently drops the page's visible answers (strategy doc §4.2)
-  getHiddenFieldIds?: () => ReadonlySet<string>
+  getHiddenFieldIds?: () => ReadonlySet<string>,
+  getRequiredOverrides?: () => ReadonlyMap<string, boolean>
 ) => {
   const { getValues } = methods;
 
@@ -32,7 +33,12 @@ export const useFormSubmission = (
   const handleSubmit = useCallback(async (data: Record<string, any>) => {
     try {
       // Validate the data using our schema
-      const validationResult = validatePageData(page, data, getHiddenFieldIds?.());
+      const validationResult = validatePageData(
+        page,
+        data,
+        getHiddenFieldIds?.(),
+        getRequiredOverrides?.()
+      );
 
       if (validationResult.isValid) {
         // Save to store and trigger callback
@@ -54,7 +60,7 @@ export const useFormSubmission = (
         error: error instanceof Error ? error.message : 'Unknown submission error'
       };
     }
-  }, [page, store, onSubmit, getHiddenFieldIds]);
+  }, [page, store, onSubmit, getHiddenFieldIds, getRequiredOverrides]);
 
   // Submit current form values programmatically
   const submitCurrentValues = useCallback(() => {

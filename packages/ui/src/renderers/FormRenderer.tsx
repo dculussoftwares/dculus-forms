@@ -54,7 +54,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   const { getFormattedResponses } = useFormResponseUtils();
   const store = useFormResponseStore();
   const [initializationKey, setInitializationKey] = useState<string>('');
-  const { hiddenFieldIds, hiddenPageIds, getHiddenFieldIds } =
+  const { hiddenFieldIds, hiddenPageIds, getHiddenFieldIds, requiredOverrides, getRequiredOverrides } =
     useConditionalVisibility(formSchema);
 
   // Initialize form with existing response data when in EDIT mode - SYNCHRONOUSLY
@@ -159,7 +159,9 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
     hiddenFieldIds,
     hiddenPageIds,
     getHiddenFieldIds,
-  }), [formSchema, mode, onFormSubmit, onResponseUpdate, formId, responseId, responseCopySettings, onResponseCopyConsentChange, hiddenFieldIds, hiddenPageIds, getHiddenFieldIds]);
+    requiredOverrides,
+    getRequiredOverrides,
+  }), [formSchema, mode, onFormSubmit, onResponseUpdate, formId, responseId, responseCopySettings, onResponseCopyConsentChange, hiddenFieldIds, hiddenPageIds, getHiddenFieldIds, requiredOverrides, getRequiredOverrides]);
 
   return (
     <FormResponseContext.Provider value={contextValue}>

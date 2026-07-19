@@ -62,28 +62,36 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   // outside a FormRenderer (stories, isolated previews): no context = nothing hidden
   const responseContext = useContext(FormResponseContext);
   const hiddenFieldIds = responseContext?.hiddenFieldIds;
+  const requiredOverrides = responseContext?.requiredOverrides;
   const getHiddenFieldIds = responseContext?.getHiddenFieldIds;
+  const getRequiredOverrides = responseContext?.getRequiredOverrides;
 
   // Visibility can change while typing on this page, so the schema is looked
   // up with the current hidden set at validation time instead of being
   // memoized on [page] — a hidden required field must never block validation
   // (strategy doc §4.1). Validation runs per keystroke (mode: onChange), so
   // the built schema is cached by a signature of the hidden set and only
-  // rebuilt when visibility actually changes.
+  // rebuilt when visibility actually changes. Required overrides are included
+  // in the cache signature for the same reason.
   const schemaCacheRef = useRef<{ signature: string; resolver: Resolver<FieldValues> } | null>(null);
   const resolver = useCallback<Resolver<FieldValues>>(
     (values, context, options) => {
       const hidden = getHiddenFieldIds?.();
-      const signature = hidden && hidden.size > 0 ? [...hidden].sort().join(',') : '';
+      const overrides = getRequiredOverrides?.();
+      const hiddenSig = hidden && hidden.size > 0 ? [...hidden].sort().join(',') : '';
+      const overrideSig = overrides && overrides.size > 0
+        ? [...overrides.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}:${v}`).join(',')
+        : '';
+      const signature = `${hiddenSig}|${overrideSig}`;
       if (schemaCacheRef.current?.signature !== signature) {
         schemaCacheRef.current = {
           signature,
-          resolver: zodResolver(createPageSchema(page, hidden)),
+          resolver: zodResolver(createPageSchema(page, hidden, overrides)),
         };
       }
       return schemaCacheRef.current.resolver(values, context, options);
     },
-    [page, getHiddenFieldIds]
+    [page, getHiddenFieldIds, getRequiredOverrides]
   );
 
   // A page change must invalidate the cached schema even if the hidden-set
@@ -118,7 +126,8 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
     page,
     store,
     onSubmit,
-    getHiddenFieldIds
+    getHiddenFieldIds,
+    getRequiredOverrides
   );
 
   // Initialize store synchronization
@@ -177,6 +186,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
               control={control}
               fieldStyles={styles.field}
               mode={mode}
+              requiredOverride={requiredOverrides?.get(field.id)}
             />
           ))}
         </div>

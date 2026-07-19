@@ -33,7 +33,8 @@ export interface ConditionTerm {
 export type ConditionAction =
   | { type: 'showField' | 'hideField'; fieldIds: string[] }
   | { type: 'showPage' | 'hidePage'; pageId: string }
-  | { type: 'skipToPage'; pageId: string }; // v1.5 forward-only page skip
+  | { type: 'skipToPage'; pageId: string } // v1.5 forward-only page skip
+  | { type: 'requireField' | 'unrequireField'; fieldIds: string[] }; // v2 conditional required
 
 export interface ConditionalRule {
   id: string;
@@ -74,6 +75,10 @@ export const conditionActionSchema = z.discriminatedUnion('type', [
     type: z.enum(['showPage', 'hidePage', 'skipToPage']),
     pageId: z.string().min(1),
   }),
+  z.object({
+    type: z.enum(['requireField', 'unrequireField']),
+    fieldIds: z.array(z.string().min(1)),
+  }),
 ]);
 
 export const conditionalRuleSchema = z.object({
@@ -108,7 +113,32 @@ export type FormResponsesByPage = Record<string, Record<string, unknown>>;
 export interface ConditionEvaluationResult {
   hiddenFieldIds: Set<string>;
   hiddenPageIds: Set<string>;
+  /** Fields that should be required/unrequired by conditional logic.
+   *  true = required, false = not required (unrequired).
+   *  Last matched rule wins per field. Hidden fields NEVER end up required. */
+  requiredOverrides: Map<string, boolean>;
 }
+
+const isWellFormedAction = (action: unknown): action is ConditionAction => {
+  if (!action || typeof action !== 'object') return false;
+  const candidate = action as { type?: unknown; fieldIds?: unknown; pageId?: unknown };
+  switch (candidate.type) {
+    case 'showField':
+    case 'hideField':
+    case 'requireField':
+    case 'unrequireField':
+      return (
+        Array.isArray(candidate.fieldIds) &&
+        candidate.fieldIds.every((id) => typeof id === 'string')
+      );
+    case 'showPage':
+    case 'hidePage':
+    case 'skipToPage':
+      return typeof candidate.pageId === 'string';
+    default:
+      return false;
+  }
+};
 
 // Rule-side value coercion. A term whose value is missing or of the wrong
 // shape for its operator evaluates to false (misconfigured rules never match,
@@ -395,28 +425,6 @@ export const evaluateConditions = (
     pageFieldIds.set(page.id, ids);
   }
 
-  // Persisted rules may be malformed (collab races, hand-edited JSON) — drop
-  // anything whose shape does not match the action contract so evaluation
-  // stays total and never throws
-  const isWellFormedAction = (action: unknown): action is ConditionAction => {
-    if (!action || typeof action !== 'object') return false;
-    const candidate = action as { type?: unknown; fieldIds?: unknown; pageId?: unknown };
-    switch (candidate.type) {
-      case 'showField':
-      case 'hideField':
-        return (
-          Array.isArray(candidate.fieldIds) &&
-          candidate.fieldIds.every((id) => typeof id === 'string')
-        );
-      case 'showPage':
-      case 'hidePage':
-      case 'skipToPage':
-        return typeof candidate.pageId === 'string';
-      default:
-        return false;
-    }
-  };
-
   const activeRules = (Array.isArray(rules) ? rules : [])
     .filter(
       (rule) =>
@@ -442,21 +450,25 @@ export const evaluateConditions = (
     }
   }
 
+  const termMatches = (
+    term: ConditionTerm,
+    hiddenFields: ReadonlySet<string>,
+    hiddenPages: ReadonlySet<string>
+  ): boolean => {
+    if (!term || typeof term.fieldId !== 'string') return false;
+    const info = fieldInfo.get(term.fieldId);
+    if (!info) return false;
+    const raw =
+      hiddenFields.has(term.fieldId) || hiddenPages.has(info.pageId)
+        ? undefined // hidden = empty (§9.4)
+        : responses[info.pageId]?.[term.fieldId];
+    return evaluateTerm(term, info.type, raw);
+  };
+
   const evaluateOnce = (
     hiddenFields: ReadonlySet<string>,
     hiddenPages: ReadonlySet<string>
   ): { fields: Set<string>; pages: Set<string> } => {
-    const termMatches = (term: ConditionTerm): boolean => {
-      if (!term || typeof term.fieldId !== 'string') return false;
-      const info = fieldInfo.get(term.fieldId);
-      if (!info) return false;
-      const raw =
-        hiddenFields.has(term.fieldId) || hiddenPages.has(info.pageId)
-          ? undefined // hidden = empty (§9.4)
-          : responses[info.pageId]?.[term.fieldId];
-      return evaluateTerm(term, info.type, raw);
-    };
-
     const nextFields = new Set(defaultHiddenFields);
     const nextPages = new Set(defaultHiddenPages);
     const maxSkipTargetByTriggerPage = new Map<number, number>();
@@ -464,8 +476,8 @@ export const evaluateConditions = (
     for (const rule of activeRules) {
       const matched =
         rule.combinator === 'any'
-          ? rule.terms.some(termMatches)
-          : rule.terms.every(termMatches);
+          ? rule.terms.some((term) => termMatches(term, hiddenFields, hiddenPages))
+          : rule.terms.every((term) => termMatches(term, hiddenFields, hiddenPages));
       if (!matched) continue;
       for (const action of rule.actions) {
         switch (action.type) {
@@ -570,7 +582,35 @@ export const evaluateConditions = (
     current = next;
   }
 
-  return { hiddenFieldIds: current.fields, hiddenPageIds: current.pages };
+  // Compute requiredOverrides: evaluate active rules' requireField/unrequireField
+  // actions in list order. Last matched rule wins per field. Hidden fields NEVER
+  // end up required (hidden-beats-required invariant).
+  const requiredOverrides = new Map<string, boolean>();
+  for (const rule of activeRules) {
+    const matched =
+      rule.combinator === 'any'
+        ? rule.terms.some((term) => termMatches(term, current.fields, current.pages))
+        : rule.terms.every((term) => termMatches(term, current.fields, current.pages));
+    if (!matched) continue;
+    for (const action of rule.actions) {
+      if (action.type === 'requireField') {
+        for (const id of action.fieldIds) {
+          if (fieldInfo.has(id)) requiredOverrides.set(id, true);
+        }
+      } else if (action.type === 'unrequireField') {
+        for (const id of action.fieldIds) {
+          if (fieldInfo.has(id)) requiredOverrides.set(id, false);
+        }
+      }
+    }
+  }
+
+  // Hidden-beats-required: strip any override for hidden fields
+  for (const fieldId of current.fields) {
+    requiredOverrides.delete(fieldId);
+  }
+
+  return { hiddenFieldIds: current.fields, hiddenPageIds: current.pages, requiredOverrides };
 };
 
 export interface ConditionCycle {
@@ -612,25 +652,6 @@ export const detectConditionCycles = (
   }
 
   // 2. Filter active rules
-  const isWellFormedAction = (action: unknown): action is ConditionAction => {
-    if (!action || typeof action !== 'object') return false;
-    const candidate = action as { type?: unknown; fieldIds?: unknown; pageId?: unknown };
-    switch (candidate.type) {
-      case 'showField':
-      case 'hideField':
-        return (
-          Array.isArray(candidate.fieldIds) &&
-          candidate.fieldIds.every((id) => typeof id === 'string')
-        );
-      case 'showPage':
-      case 'hidePage':
-      case 'skipToPage':
-        return typeof candidate.pageId === 'string';
-      default:
-        return false;
-    }
-  };
-
   const activeRules = rules.filter(
     (rule): rule is ConditionalRule =>
       !!rule &&
@@ -659,7 +680,7 @@ export const detectConditionCycles = (
     const set = new Set<string>();
     for (const action of rule.actions) {
       if (!isWellFormedAction(action)) continue;
-      if (action.type === 'showField' || action.type === 'hideField') {
+      if (action.type === 'showField' || action.type === 'hideField' || action.type === 'requireField' || action.type === 'unrequireField') {
         for (const fid of action.fieldIds) {
           if (typeof fid === 'string' && fid.length > 0) {
             set.add(fid);
@@ -791,4 +812,3 @@ export const detectConditionCycles = (
 
   return cycles;
 };
-

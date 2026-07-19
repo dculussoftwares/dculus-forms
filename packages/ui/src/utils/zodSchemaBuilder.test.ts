@@ -162,3 +162,23 @@ describe('validatePageData with hidden fields (§4.2 second gate)', () => {
     expect(result.errors.some((e) => e.field === 'text')).toBe(false);
   });
 });
+
+describe('conditional required overrides', () => {
+  it('makes an optional text field required without mutating the field', () => {
+    const target = page.fields[0];
+    expect(createPageSchema(page, undefined, new Map([['text', true]])).safeParse({ ...validData, text: '' }).success).toBe(false);
+    expect(target.validation.required).toBe(true);
+  });
+
+  it('makes a required field optional in both schema gates', () => {
+    const overrides = new Map([['text', false]]);
+    expect(createPageSchema(page, undefined, overrides).safeParse({ ...validData, text: '' }).success).toBe(true);
+    expect(validatePageData(page, { ...validData, text: '' }, undefined, overrides).isValid).toBe(true);
+  });
+
+  it('hidden fields win over a required override', () => {
+    const overrides = new Map([['text', true]]);
+    expect(createPageSchema(page, new Set(['text']), overrides).safeParse({ ...validData, text: '' }).success).toBe(true);
+    expect(validatePageData(page, { ...validData, text: '' }, new Set(['text']), overrides).isValid).toBe(true);
+  });
+});

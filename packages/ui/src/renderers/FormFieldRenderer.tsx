@@ -46,6 +46,7 @@ interface FormFieldRendererProps<T extends FieldValues = FieldValues> {
   fieldStyles?: FieldStyles;
   className?: string;
   mode?: RendererMode;
+  requiredOverride?: boolean;
 }
 
 /* ── Error message ── */
@@ -81,12 +82,13 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   fieldStyles,
   className = '',
   mode = RendererMode.PREVIEW,
+  requiredOverride,
 }) => {
   const isFillableField = (f: FormField): f is FillableFormField =>
     f instanceof FillableFormField || (f as any).label !== undefined || f.type !== FieldType.FORM_FIELD;
 
   const fillableField = isFillableField(field) ? (field as FillableFormField) : null;
-  const isRequired = fillableField?.validation?.required || false;
+  const isRequired = requiredOverride ?? fillableField?.validation?.required ?? false;
 
   /* Container class — from formStyles or default */
   const containerClass = fieldStyles?.container ?? 'mb-5';

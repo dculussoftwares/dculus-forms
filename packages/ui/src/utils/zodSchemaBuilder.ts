@@ -22,6 +22,25 @@ export interface PageValidationResult {
   errors: ValidationError[];
 }
 
+/**
+ * Applies conditional required/unrequired overrides to a form field.
+ * Returns a copy of the field with the validation.required property replaced
+ * by the override value. Does NOT mutate the input field.
+ */
+export const applyRequiredOverrides = (
+  field: FillableFormField,
+  requiredOverride?: boolean
+): FillableFormField => {
+  if (requiredOverride === undefined) return field;
+  return {
+    ...field,
+    validation: {
+      ...field.validation,
+      required: requiredOverride,
+    },
+  };
+};
+
 const formatDateForDisplay = (isoDate: string): string => {
   try {
     const [year, month, day] = isoDate.split('-').map(Number);
@@ -362,16 +381,25 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
  * Fields hidden by conditional logic are omitted from the schema entirely
  * (not relaxed to .optional()) so no validation rule of a hidden field can
  * ever error or block navigation — see docs/conditional-logic-v1-strategy.md §4.
+ *
+ * @param requiredOverrides - Map of fieldId → boolean from condition evaluation.
+ *   When an override exists for a field, its validation.required is replaced
+ *   by the override value (true = required, false = not required).
  */
 export const createPageSchema = (
   page: FormPage,
-  hiddenFieldIds?: ReadonlySet<string>
+  hiddenFieldIds?: ReadonlySet<string>,
+  requiredOverrides?: ReadonlyMap<string, boolean>
 ): z.ZodObject<any> => {
   const schemaFields: Record<string, z.ZodTypeAny> = {};
 
   page.fields.forEach((field) => {
     if (hiddenFieldIds?.has(field.id)) return;
-    schemaFields[field.id] = createFieldSchema(field);
+    const override = requiredOverrides?.get(field.id);
+    const effectiveField = override !== undefined && isFillableField(field)
+      ? applyRequiredOverrides(field as FillableFormField, override)
+      : field;
+    schemaFields[field.id] = createFieldSchema(effectiveField);
   });
 
   return z.object(schemaFields);
@@ -428,9 +456,10 @@ export const createPageDefaultValues = (
 export const validatePageData = (
   page: FormPage,
   data: Record<string, any>,
-  hiddenFieldIds?: ReadonlySet<string>
+  hiddenFieldIds?: ReadonlySet<string>,
+  requiredOverrides?: ReadonlyMap<string, boolean>
 ): PageValidationResult => {
-  const schema = createPageSchema(page, hiddenFieldIds);
+  const schema = createPageSchema(page, hiddenFieldIds, requiredOverrides);
 
   try {
     schema.parse(data);
