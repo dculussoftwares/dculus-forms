@@ -456,9 +456,10 @@ export const createPageDefaultValues = (
 export const validatePageData = (
   page: FormPage,
   data: Record<string, any>,
-  hiddenFieldIds?: ReadonlySet<string>
+  hiddenFieldIds?: ReadonlySet<string>,
+  requiredOverrides?: ReadonlyMap<string, boolean>
 ): PageValidationResult => {
-  const schema = createPageSchema(page, hiddenFieldIds);
+  const schema = createPageSchema(page, hiddenFieldIds, requiredOverrides);
 
   try {
     schema.parse(data);

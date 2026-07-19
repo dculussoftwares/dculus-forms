@@ -62,6 +62,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
   // outside a FormRenderer (stories, isolated previews): no context = nothing hidden
   const responseContext = useContext(FormResponseContext);
   const hiddenFieldIds = responseContext?.hiddenFieldIds;
+  const requiredOverrides = responseContext?.requiredOverrides;
   const getHiddenFieldIds = responseContext?.getHiddenFieldIds;
   const getRequiredOverrides = responseContext?.getRequiredOverrides;
 
@@ -125,7 +126,8 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
     page,
     store,
     onSubmit,
-    getHiddenFieldIds
+    getHiddenFieldIds,
+    getRequiredOverrides
   );
 
   // Initialize store synchronization
@@ -184,6 +186,7 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
               control={control}
               fieldStyles={styles.field}
               mode={mode}
+              requiredOverride={requiredOverrides?.get(field.id)}
             />
           ))}
         </div>
