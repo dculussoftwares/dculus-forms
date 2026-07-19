@@ -135,13 +135,6 @@ const conditionalRequirednessSchema = () => ({
           options: ['Yes', 'No'],
           validation: { required: false, type: 'fillable_form_field' },
         },
-      ],
-    },
-    {
-      id: 'cond-required-page-2',
-      title: 'Details',
-      order: 1,
-      fields: [
         {
           id: 'cond-required-details',
           type: 'text_input_field',
@@ -153,6 +146,12 @@ const conditionalRequirednessSchema = () => ({
           validation: { required: false, type: 'text_field_validation' },
         },
       ],
+    },
+    {
+      id: 'cond-required-page-2',
+      title: 'Details',
+      order: 1,
+      fields: [],
     },
   ],
   conditions: [

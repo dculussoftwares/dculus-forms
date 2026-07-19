@@ -119,6 +119,27 @@ export interface ConditionEvaluationResult {
   requiredOverrides: Map<string, boolean>;
 }
 
+const isWellFormedAction = (action: unknown): action is ConditionAction => {
+  if (!action || typeof action !== 'object') return false;
+  const candidate = action as { type?: unknown; fieldIds?: unknown; pageId?: unknown };
+  switch (candidate.type) {
+    case 'showField':
+    case 'hideField':
+    case 'requireField':
+    case 'unrequireField':
+      return (
+        Array.isArray(candidate.fieldIds) &&
+        candidate.fieldIds.every((id) => typeof id === 'string')
+      );
+    case 'showPage':
+    case 'hidePage':
+    case 'skipToPage':
+      return typeof candidate.pageId === 'string';
+    default:
+      return false;
+  }
+};
+
 // Rule-side value coercion. A term whose value is missing or of the wrong
 // shape for its operator evaluates to false (misconfigured rules never match,
 // regardless of operator polarity — a broken notEquals must not fire).
@@ -404,30 +425,6 @@ export const evaluateConditions = (
     pageFieldIds.set(page.id, ids);
   }
 
-  // Persisted rules may be malformed (collab races, hand-edited JSON) — drop
-  // anything whose shape does not match the action contract so evaluation
-  // stays total and never throws
-  const isWellFormedAction = (action: unknown): action is ConditionAction => {
-    if (!action || typeof action !== 'object') return false;
-    const candidate = action as { type?: unknown; fieldIds?: unknown; pageId?: unknown };
-    switch (candidate.type) {
-      case 'showField':
-      case 'hideField':
-      case 'requireField':
-      case 'unrequireField':
-        return (
-          Array.isArray(candidate.fieldIds) &&
-          candidate.fieldIds.every((id) => typeof id === 'string')
-        );
-      case 'showPage':
-      case 'hidePage':
-      case 'skipToPage':
-        return typeof candidate.pageId === 'string';
-      default:
-        return false;
-    }
-  };
-
   const activeRules = (Array.isArray(rules) ? rules : [])
     .filter(
       (rule) =>
@@ -453,21 +450,25 @@ export const evaluateConditions = (
     }
   }
 
+  const termMatches = (
+    term: ConditionTerm,
+    hiddenFields: ReadonlySet<string>,
+    hiddenPages: ReadonlySet<string>
+  ): boolean => {
+    if (!term || typeof term.fieldId !== 'string') return false;
+    const info = fieldInfo.get(term.fieldId);
+    if (!info) return false;
+    const raw =
+      hiddenFields.has(term.fieldId) || hiddenPages.has(info.pageId)
+        ? undefined // hidden = empty (§9.4)
+        : responses[info.pageId]?.[term.fieldId];
+    return evaluateTerm(term, info.type, raw);
+  };
+
   const evaluateOnce = (
     hiddenFields: ReadonlySet<string>,
     hiddenPages: ReadonlySet<string>
   ): { fields: Set<string>; pages: Set<string> } => {
-    const termMatches = (term: ConditionTerm): boolean => {
-      if (!term || typeof term.fieldId !== 'string') return false;
-      const info = fieldInfo.get(term.fieldId);
-      if (!info) return false;
-      const raw =
-        hiddenFields.has(term.fieldId) || hiddenPages.has(info.pageId)
-          ? undefined // hidden = empty (§9.4)
-          : responses[info.pageId]?.[term.fieldId];
-      return evaluateTerm(term, info.type, raw);
-    };
-
     const nextFields = new Set(defaultHiddenFields);
     const nextPages = new Set(defaultHiddenPages);
     const maxSkipTargetByTriggerPage = new Map<number, number>();
@@ -475,8 +476,8 @@ export const evaluateConditions = (
     for (const rule of activeRules) {
       const matched =
         rule.combinator === 'any'
-          ? rule.terms.some(termMatches)
-          : rule.terms.every(termMatches);
+          ? rule.terms.some((term) => termMatches(term, hiddenFields, hiddenPages))
+          : rule.terms.every((term) => termMatches(term, hiddenFields, hiddenPages));
       if (!matched) continue;
       for (const action of rule.actions) {
         switch (action.type) {
@@ -588,24 +589,8 @@ export const evaluateConditions = (
   for (const rule of activeRules) {
     const matched =
       rule.combinator === 'any'
-        ? rule.terms.some((term) => {
-            if (!term || typeof term.fieldId !== 'string') return false;
-            const info = fieldInfo.get(term.fieldId);
-            if (!info) return false;
-            const raw = current.fields.has(term.fieldId) || current.pages.has(info.pageId)
-              ? undefined
-              : responses[info.pageId]?.[term.fieldId];
-            return evaluateTerm(term, info.type, raw);
-          })
-        : rule.terms.every((term) => {
-            if (!term || typeof term.fieldId !== 'string') return false;
-            const info = fieldInfo.get(term.fieldId);
-            if (!info) return false;
-            const raw = current.fields.has(term.fieldId) || current.pages.has(info.pageId)
-              ? undefined
-              : responses[info.pageId]?.[term.fieldId];
-            return evaluateTerm(term, info.type, raw);
-          });
+        ? rule.terms.some((term) => termMatches(term, current.fields, current.pages))
+        : rule.terms.every((term) => termMatches(term, current.fields, current.pages));
     if (!matched) continue;
     for (const action of rule.actions) {
       if (action.type === 'requireField') {
@@ -667,27 +652,6 @@ export const detectConditionCycles = (
   }
 
   // 2. Filter active rules
-  const isWellFormedAction = (action: unknown): action is ConditionAction => {
-    if (!action || typeof action !== 'object') return false;
-    const candidate = action as { type?: unknown; fieldIds?: unknown; pageId?: unknown };
-    switch (candidate.type) {
-      case 'showField':
-      case 'hideField':
-      case 'requireField':
-      case 'unrequireField':
-        return (
-          Array.isArray(candidate.fieldIds) &&
-          candidate.fieldIds.every((id) => typeof id === 'string')
-        );
-      case 'showPage':
-      case 'hidePage':
-      case 'skipToPage':
-        return typeof candidate.pageId === 'string';
-      default:
-        return false;
-    }
-  };
-
   const activeRules = rules.filter(
     (rule): rule is ConditionalRule =>
       !!rule &&
