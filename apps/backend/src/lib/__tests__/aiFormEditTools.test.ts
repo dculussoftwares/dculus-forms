@@ -247,6 +247,131 @@ describe('upsertConditionRule (proposal only)', () => {
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
   });
+
+  it('resolves trigger field by direct id (not label)', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'any',
+      terms: [{ field: 'country', operator: 'equals', value: 'USA' }],
+      actions: [{ type: 'hideField', fields: ['gst'] }],
+      rationale: 'Hide GST for USA.',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { combinator: 'any' } });
+  });
+
+  it('rejects unknown action target field', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Country', operator: 'equals', value: 'India' }],
+      actions: [{ type: 'showField', fields: ['Nonexistent field'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
+  });
+
+  it('handles page actions (showPage/hidePage/skipToPage) by page title', async () => {
+    const multiPageSchema = {
+      pages: [
+        { id: 'p1', title: 'Page One', fields: [
+          { id: 'f1', type: 'SELECT_FIELD', label: 'Choice', options: ['Yes', 'No'] },
+        ]},
+        { id: 'p2', title: 'Page Two', fields: [] },
+      ],
+    };
+    const tools = makeFullTools(multiPageSchema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Choice', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'skipToPage', page: 'Page Two' }],
+      rationale: 'Skip to page two when Yes.',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toMatchObject({
+      type: 'PROPOSE_CONDITION_RULE',
+      rule: { actions: [{ type: 'skipToPage', pageId: 'p2' }] },
+    });
+  });
+
+  it('handles showPage and hidePage actions', async () => {
+    const multiPageSchema = {
+      pages: [
+        { id: 'p1', title: 'Main', fields: [
+          { id: 'f1', type: 'RADIO_FIELD', label: 'Show extra?', options: ['Yes', 'No'] },
+        ]},
+        { id: 'p2', title: 'Extra', fields: [] },
+      ],
+    };
+    const tools = makeFullTools(multiPageSchema);
+    const showResult = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Show extra?', operator: 'equals', value: 'Yes' }],
+      actions: [{ type: 'showPage', page: 'Extra' }],
+      rationale: 'Show extra page.',
+    }, { messages: [], toolCallId: 'test' });
+    expect(showResult).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { actions: [{ type: 'showPage', pageId: 'p2' }] } });
+
+    const hideResult = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Show extra?', operator: 'equals', value: 'No' }],
+      actions: [{ type: 'hidePage', page: 'p2' }],
+      rationale: 'Hide extra page.',
+    }, { messages: [], toolCallId: 'test' });
+    expect(hideResult).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { actions: [{ type: 'hidePage', pageId: 'p2' }] } });
+  });
+
+  it('rejects unknown page target', async () => {
+    const multiPageSchema = {
+      pages: [
+        { id: 'p1', title: 'Main', fields: [
+          { id: 'f1', type: 'SELECT_FIELD', label: 'Choice', options: ['A'] },
+        ]},
+      ],
+    };
+    const tools = makeFullTools(multiPageSchema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Choice', operator: 'equals', value: 'A' }],
+      actions: [{ type: 'skipToPage', page: 'Nonexistent Page' }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
+  });
+
+  it('rejects ambiguous field label matching multiple fields', async () => {
+    const ambiguousSchema = {
+      pages: [{ id: 'p1', title: 'Page', fields: [
+        { id: 'f1', type: 'TEXT_INPUT_FIELD', label: 'Name' },
+        { id: 'f2', type: 'TEXT_INPUT_FIELD', label: 'Name' },
+      ]}],
+    };
+    const tools = makeFullTools(ambiguousSchema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Name', operator: 'isFilled' }],
+      actions: [{ type: 'showField', fields: ['f1'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
+  });
+
+  it('handles requireField and unrequireField actions', async () => {
+    const tools = makeFullTools(schema);
+    const reqResult = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Country', operator: 'equals', value: 'India' }],
+      actions: [{ type: 'requireField', fields: ['GST field'] }],
+      rationale: 'Require GST for India.',
+    }, { messages: [], toolCallId: 'test' });
+    expect(reqResult).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { actions: [{ type: 'requireField', fieldIds: ['gst'] }] } });
+
+    const unreqResult = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Country', operator: 'equals', value: 'USA' }],
+      actions: [{ type: 'unrequireField', fields: ['GST field'] }],
+      rationale: 'Unrequire GST for USA.',
+    }, { messages: [], toolCallId: 'test' });
+    expect(unreqResult).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { actions: [{ type: 'unrequireField', fieldIds: ['gst'] }] } });
+  });
 });
 
 describe('updateFields', () => {

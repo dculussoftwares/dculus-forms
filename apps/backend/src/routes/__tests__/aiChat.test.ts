@@ -56,6 +56,7 @@ describe('schema cache', () => {
     const schema = await getFormSchema('form-yjs-throw');
     expect(schema.pages).toHaveLength(1);
   });
+
 });
 
 vi.mock('../../services/aiChatService.js', () => ({
@@ -92,12 +93,16 @@ vi.mock('../../lib/formEditAgent.js', () => ({
   }),
 }));
 
-vi.mock('yjs', () => ({
-  Doc: vi.fn().mockImplementation(() => ({
-    getMap: vi.fn().mockReturnValue({ get: vi.fn() }),
-  })),
-  applyUpdate: vi.fn(),
-}));
+vi.mock('yjs', async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return {
+    ...actual,
+    Doc: vi.fn().mockImplementation(() => ({
+      getMap: vi.fn().mockReturnValue({ get: vi.fn() }),
+    })),
+    applyUpdate: vi.fn(),
+  };
+});
 
 vi.mock('ai', () => ({
   validateUIMessages: vi.fn().mockImplementation(({ messages }) => Promise.resolve(messages)),
