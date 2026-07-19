@@ -44,7 +44,9 @@ const CONDITION_OPERATORS_BY_TYPE: Record<string, readonly ConditionOperator[]> 
   file_upload_field: ['isEmpty', 'isFilled'],
 };
 
+/** Normalise a stored field type string to lowercase for map lookups (e.g. 'TEXT_INPUT_FIELD' → 'text_input_field'). */
 const normalizeFieldType = (type: unknown): string => String(type ?? '').toLowerCase();
+/** Normalise a label or title to lowercase alphanumeric words for fuzzy comparison. */
 const normalizeLabel = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
 /** Resolve an AI-supplied field label (or id) without ever guessing a weak match. */
@@ -393,6 +395,14 @@ export function createFormEditTools(
       },
     }),
 
+    /**
+     * AI tool: converts a natural-language condition description into a single
+     * `ConditionalRule` proposal.  The rule is returned as `PROPOSE_CONDITION_RULE`
+     * and must be explicitly accepted by the user — it is never auto-applied.
+     * Field and page references are resolved by label/title or id; every proposed
+     * rule is validated by `conditionalRuleSchema` and sanitised by
+     * `sanitizeConditions` before being returned.
+     */
     upsertConditionRule: tool({
       description:
         'PROPOSAL: turn a described condition into ONE ready-to-review rule. Never apply it directly. Terms may identify trigger fields by their visible label or id; targets may identify fields/pages by label/title or id. Use only operators appropriate for each trigger field type. Rich text/display-only fields cannot be triggers.',
@@ -435,8 +445,10 @@ export function createFormEditTools(
               resolvedActions.push({ type: action.type as 'requireField' | 'unrequireField', fieldIds });
             }
           } else {
-            const page = (workingSchema.pages ?? []).find((candidate: any) => candidate.id === action.page || normalizeLabel(String(candidate.title ?? '')) === normalizeLabel(action.page));
-            if (!page) return { error: `I couldn't find a page matching "${action.page}". Please use the exact page title.` };
+            const matchingPages = (workingSchema.pages ?? []).filter((candidate: any) => candidate.id === action.page || normalizeLabel(String(candidate.title ?? '')) === normalizeLabel(action.page));
+            if (matchingPages.length === 0) return { error: `I couldn't find a page matching "${action.page}". Please use the exact page title.` };
+            if (matchingPages.length > 1) return { error: `"${action.page}" matches multiple pages. Please use the exact page title to disambiguate.` };
+            const page = matchingPages[0];
             if (action.type === 'showPage' || action.type === 'hidePage' || action.type === 'skipToPage') {
               resolvedActions.push({ type: action.type, pageId: page.id });
             }

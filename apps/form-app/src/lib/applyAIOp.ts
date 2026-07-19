@@ -48,6 +48,7 @@ const AI_TYPE_MAP: Record<string, FieldType> = {
 
 const CHOICE_TYPES = new Set([FieldType.SELECT_FIELD, FieldType.RADIO_FIELD, FieldType.CHECKBOX_FIELD]);
 
+/** Returns the pageId that contains the given fieldId, or null if not found. */
 function findPageForField(pages: any[], fieldId: string): string | null {
   for (const page of pages) {
     if ((page.fields ?? []).some((f: any) => f.id === fieldId)) return page.id;
@@ -55,6 +56,14 @@ function findPageForField(pages: any[], fieldId: string): string | null {
   return null;
 }
 
+/**
+ * Applies a single AI operation to the form builder store.
+ *
+ * Mutation ops (ADD_FIELD, UPDATE_FIELDS, etc.) are applied immediately.
+ * Proposal ops (PROPOSE_*) are enqueued as pending actions/suggestions and
+ * require explicit user acceptance — they never mutate the form directly.
+ * After any mutation the backend schema cache is invalidated via `invalidateSchema`.
+ */
 export function applyAIOp(
   op: any,
   store: Pick<

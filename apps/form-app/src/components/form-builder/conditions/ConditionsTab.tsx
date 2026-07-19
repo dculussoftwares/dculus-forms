@@ -111,13 +111,17 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
             <p className="font-medium text-violet-950">{t('ai.suggestionTitle')}</p>
             <p className="mt-1 text-sm text-violet-800">{suggestion.rationale}</p>
             <div className="mt-3 flex gap-2">
-              <Button size="sm" onClick={() => {
+              <Button size="sm" disabled={!canEdit} onClick={() => {
+                if (!canEdit) return;
                 const accepted = acceptConditionSuggestion(suggestion.id);
                 if (accepted) addCondition(accepted.rule);
               }} data-testid={`condition-suggestion-accept-${suggestion.id}`}>
                 {t('ai.accept')}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => dismissConditionSuggestion(suggestion.id)} data-testid={`condition-suggestion-dismiss-${suggestion.id}`}>
+              <Button size="sm" variant="outline" disabled={!canEdit} onClick={() => {
+                if (!canEdit) return;
+                dismissConditionSuggestion(suggestion.id);
+              }} data-testid={`condition-suggestion-dismiss-${suggestion.id}`}>
                 {t('ai.dismiss')}
               </Button>
             </div>
