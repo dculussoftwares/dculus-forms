@@ -37,6 +37,7 @@
     "navigateToPage": "பக்கத்திற்கு செல்கிறது…",
     "proposeValidation": "சரிபார்ப்பு விதிகளை பகுப்பாய்கிறது…",
     "proposeFieldTypeChange": "வகை மாற்றத்திற்கு தயாராகிறது…",
+    "upsertConditionRule": "நிபந்தனை பரிந்துரையைத் தயாரிக்கிறது…",
     "default": "செயல்படுகிறது…"
   },
   "destructive": {

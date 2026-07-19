@@ -118,6 +118,14 @@ export interface ProposeFieldTypeChangeToolPart {
   output?: { type: 'PROPOSE_FIELD_TYPE_CHANGE'; fieldId: string; label: string; currentType: string; newFieldType: string; responseCount: number };
 }
 
+export interface UpsertConditionRuleToolPart {
+  type: 'tool-upsertConditionRule';
+  toolCallId: string;
+  state: ToolState;
+  input?: Record<string, unknown>;
+  output?: { type: 'PROPOSE_CONDITION_RULE'; rule: import('@dculus/types').ConditionalRule; rationale: string };
+}
+
 export type FormEditToolPart =
   | ListFieldsToolPart
   | GetFieldToolPart
@@ -132,7 +140,8 @@ export type FormEditToolPart =
   | RemovePageToolPart
   | NavigateToPageToolPart
   | ProposeValidationToolPart
-  | ProposeFieldTypeChangeToolPart;
+  | ProposeFieldTypeChangeToolPart
+  | UpsertConditionRuleToolPart;
 
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
@@ -163,4 +172,5 @@ export const MUTATION_TOOL_NAMES = new Set([
 // validation suggestions, field/page deletion, and field-type conversion.
 export const PROPOSAL_TOOL_NAMES = new Set([
   'proposeValidation', 'removeFields', 'removePage', 'proposeFieldTypeChange',
+  'upsertConditionRule',
 ]);

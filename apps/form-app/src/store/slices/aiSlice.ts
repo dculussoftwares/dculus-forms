@@ -4,7 +4,7 @@
  * Manages AI-driven field highlighting and pending validation suggestions.
  */
 
-import type { AISlice, DestructiveAction, SliceCreator, ValidationSuggestion } from '../types/store.types';
+import type { AISlice, ConditionSuggestion, DestructiveAction, SliceCreator, ValidationSuggestion } from '../types/store.types';
 
 export const createAISlice: SliceCreator<AISlice> = (set, get) => ({
   aiHighlightedFieldId: null,
@@ -30,6 +30,26 @@ export const createAISlice: SliceCreator<AISlice> = (set, get) => ({
     set({
       pendingValidationSuggestions: pendingValidationSuggestions.filter(
         (s: ValidationSuggestion) => s.fieldId !== fieldId
+      ),
+    });
+  },
+
+  pendingConditionSuggestions: [],
+  addPendingConditionSuggestion: (suggestion: ConditionSuggestion) => {
+    const pending = get().pendingConditionSuggestions;
+    if (pending.some((existing: ConditionSuggestion) => existing.id === suggestion.id)) return;
+    set({ pendingConditionSuggestions: [...pending, suggestion] });
+  },
+  acceptConditionSuggestion: (id: string) => {
+    const pending = get().pendingConditionSuggestions;
+    const suggestion = pending.find((item: ConditionSuggestion) => item.id === id) ?? null;
+    set({ pendingConditionSuggestions: pending.filter((item: ConditionSuggestion) => item.id !== id) });
+    return suggestion;
+  },
+  dismissConditionSuggestion: (id: string) => {
+    set({
+      pendingConditionSuggestions: get().pendingConditionSuggestions.filter(
+        (item: ConditionSuggestion) => item.id !== id
       ),
     });
   },

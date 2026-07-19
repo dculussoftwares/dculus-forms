@@ -65,6 +65,22 @@ Feature: Conditional Logic (show/hide fields and pages)
     When I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
     Then I should see a condition rule card for "Show bonus field?"
 
+  # Requires the configured AI backend and is intentionally excluded from CI.
+  @builder-ux @skip-ci
+  Scenario: Describe a condition with AI, review it, and apply it in preview
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields
+    And I open the collaborative builder
+    And I open the conditions tab
+    And I describe the condition "show the Bonus Field when Show bonus field? is Yes"
+    Then I should see an AI condition suggestion
+    When I accept the AI condition suggestion
+    Then I should see a condition rule card for "Show bonus field?"
+    When I open the preview tab
+    Then the preview field "Bonus Field" should be hidden
+    When I choose preview radio option "Yes" for "Show bonus field?"
+    Then the preview field "Bonus Field" should be visible
+
   @builder-ux
   Scenario: Rule lifecycle
     Given I sign in with valid credentials
@@ -157,4 +173,3 @@ Feature: Conditional Logic (show/hide fields and pages)
     And I should not see a circular reference warning badge for the rule "Show bonus field?"
     When I add a self-hiding rule for field "cond-bonus" when filled
     Then I should see a circular reference warning badge for the rule "Bonus Field"
-

@@ -300,5 +300,15 @@ jest.mock('@dculus/types', () => {
     PhoneNumberField,
     textInputFieldValidationSchema,
     getFieldValidationSchema: jest.fn(() => ({})),
+    // Keep AI proposal tests aligned with the production trust boundary.
+    sanitizeConditions: (input: unknown) => {
+      if (!Array.isArray(input)) return undefined;
+      const valid = input.filter((rule: any) =>
+        rule && typeof rule.id === 'string' && typeof rule.enabled === 'boolean' &&
+        (rule.combinator === 'any' || rule.combinator === 'all') &&
+        Array.isArray(rule.terms) && Array.isArray(rule.actions)
+      );
+      return valid.length ? valid : undefined;
+    },
   };
 });

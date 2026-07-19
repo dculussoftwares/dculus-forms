@@ -56,6 +56,7 @@ describe('schema cache', () => {
     const schema = await getFormSchema('form-yjs-throw');
     expect(schema.pages).toHaveLength(1);
   });
+
 });
 
 vi.mock('../../services/aiChatService.js', () => ({
@@ -92,17 +93,22 @@ vi.mock('../../lib/formEditAgent.js', () => ({
   }),
 }));
 
-vi.mock('yjs', () => ({
-  Doc: vi.fn().mockImplementation(() => ({
-    getMap: vi.fn().mockReturnValue({ get: vi.fn() }),
-  })),
-  applyUpdate: vi.fn(),
-}));
+vi.mock('yjs', async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return {
+    ...actual,
+    Doc: vi.fn().mockImplementation(() => ({
+      getMap: vi.fn().mockReturnValue({ get: vi.fn() }),
+    })),
+    applyUpdate: vi.fn(),
+  };
+});
 
 vi.mock('ai', () => ({
   validateUIMessages: vi.fn().mockImplementation(({ messages }) => Promise.resolve(messages)),
   convertToModelMessages: vi.fn().mockResolvedValue([{ role: 'user', content: 'hi' }]),
   pruneMessages: vi.fn().mockImplementation(({ messages }) => messages), // pass-through
+  streamText: vi.fn(),
 }));
 
 vi.mock('../../lib/prisma.js', () => ({
@@ -127,7 +133,7 @@ import {
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { createFormEditAgent } from '../../lib/formEditAgent.js';
 import { getConversation, saveConversationMessages, truncateToolResults } from '../../services/aiChatService.js';
-import { pruneMessages, validateUIMessages } from 'ai';
+import { pruneMessages, validateUIMessages, streamText } from 'ai';
 import { requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 
 function makeUIMessageStreamResponse(chunks: string[]) {
@@ -153,6 +159,13 @@ describe('POST /chat', () => {
     vi.clearAllMocks();
     (checkAITokenBudget as any).mockResolvedValue({ allowed: true, used: 0, limit: 50000 });
     (getConversation as any).mockResolvedValue({ id: 'conv-1', formId: 'form-1', messageCount: 2 });
+    // Restore streamText default after clearAllMocks wipes it.
+    // The route does `for await (const chunk of questionWebResponse.body)` so the
+    // body must be a proper async-iterable ReadableStream, not a plain string body.
+    vi.mocked(streamText).mockResolvedValue({
+      consumeStream: vi.fn(),
+      toTextStreamResponse: vi.fn().mockReturnValue(makeUIMessageStreamResponse(['data: hello\n\n'])),
+    } as any);
   });
 
   it('returns 401 when not authenticated', async () => {
@@ -224,6 +237,43 @@ describe('POST /chat', () => {
 
     expect(res.status).toBe(200);
     expect(mockAgent.stream).toHaveBeenCalled();
+  });
+
+  it('routes question-intent messages through streamText fast path', async () => {
+    // "explain" matches QUESTION_PATTERNS: /\bexplain\b/i and /\bcan\s+you\s+(help|explain...)\b/i
+    (createFormEditAgent as any).mockReturnValue({
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn().mockReturnValue(makeUIMessageStreamResponse([])),
+      }),
+    });
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: 'Can you explain how conditions work?', parts: [{ type: 'text', text: 'Can you explain how conditions work?' }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+    expect(res.status).toBe(200);
+    // streamText must have been invoked for the question fast path
+    expect(vi.mocked(streamText)).toHaveBeenCalled();
+  });
+
+  it('falls back to agent when question streamText throws', async () => {
+    vi.mocked(streamText).mockRejectedValueOnce(new Error('streamText failed'));
+    const streamData = 'data: {"type":"text","value":"fallback"}\n\n';
+    (createFormEditAgent as any).mockReturnValue({
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn().mockReturnValue(makeUIMessageStreamResponse([streamData])),
+      }),
+    });
+
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: 'Can you explain how conditions work?', parts: [{ type: 'text', text: 'Can you explain how conditions work?' }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+    expect(res.status).toBe(200);
+    expect(vi.mocked(createFormEditAgent)).toHaveBeenCalled();
   });
 
   it('returns 500 when agent stream throws', async () => {

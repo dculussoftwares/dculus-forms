@@ -38,6 +38,7 @@ function makeStore(overrides = {}) {
     convertFieldType: jest.fn(),
     setAIHighlightedFieldId: jest.fn(),
     setPendingValidationSuggestions: jest.fn(),
+    addPendingConditionSuggestion: jest.fn(),
     addPendingDestructiveAction: jest.fn(),
     ...overrides,
   };
@@ -158,6 +159,28 @@ describe('applyAIOp — PROPOSE_FIELD_TYPE_CHANGE (no immediate change)', () => 
       'call-5'
     );
     expect(store.addPendingDestructiveAction).not.toHaveBeenCalled();
+  });
+});
+
+describe('applyAIOp — PROPOSE_CONDITION_RULE (no immediate add)', () => {
+  const rule = {
+    id: 'condition-1', enabled: true, combinator: 'all',
+    terms: [{ fieldId: 'f-2', operator: 'equals', value: 'India' }],
+    actions: [{ type: 'showField', fieldIds: ['f-1'] }],
+  };
+
+  it('queues a sanitized suggestion and never adds a rule directly', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'PROPOSE_CONDITION_RULE', rule, rationale: 'Only show this in India.' }, store as any, undefined, 'call-condition');
+    expect(store.addPendingConditionSuggestion).toHaveBeenCalledWith({
+      id: 'call-condition', rule, rationale: 'Only show this in India.',
+    });
+  });
+
+  it('drops malformed rules before they reach pending suggestions', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'PROPOSE_CONDITION_RULE', rule: { ...rule, combinator: 'invalid' }, rationale: 'Bad rule' }, store as any);
+    expect(store.addPendingConditionSuggestion).not.toHaveBeenCalled();
   });
 });
 
