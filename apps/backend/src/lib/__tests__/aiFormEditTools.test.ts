@@ -47,7 +47,8 @@ describe('createFormEditTools', () => {
     expect(keys).toContain('relocateField');
     expect(keys).toContain('proposeValidation');
     expect(keys).toContain('proposeFieldTypeChange');
-    expect(keys).toHaveLength(14);
+    expect(keys).toContain('upsertConditionRule');
+    expect(keys).toHaveLength(15);
   });
 
   it('returns full tools when includeReadTools is explicitly true', () => {
@@ -186,6 +187,65 @@ describe('addField', () => {
       label: 'Last Name', required: false, placeholder: null, options: null,
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({ type: 'ADD_FIELD', pageId: 'page-1', insertAfterFieldId: 'f-1', fieldType: 'text', label: 'Last Name', required: false, placeholder: null, options: null });
+  });
+});
+
+describe('upsertConditionRule (proposal only)', () => {
+  const schema = {
+    pages: [{
+      id: 'page-1', title: 'Details', fields: [
+        { id: 'country', type: 'SELECT_FIELD', label: 'Country', options: ['India', 'USA'] },
+        { id: 'gst', type: 'TEXT_INPUT_FIELD', label: 'GST field' },
+        { id: 'heading', type: 'RICH_TEXT_FIELD', label: 'Information' },
+      ],
+    }],
+  };
+
+  it('resolves labels to ids and returns a pending condition proposal', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'country', operator: 'equals', value: 'India' }],
+      actions: [{ type: 'showField', fields: ['GST field'] }],
+      rationale: 'GST is only needed in India.',
+    }, { messages: [], toolCallId: 'test' });
+
+    expect(result).toMatchObject({
+      type: 'PROPOSE_CONDITION_RULE',
+      rule: {
+        enabled: true,
+        combinator: 'all',
+        terms: [{ fieldId: 'country', operator: 'equals', value: 'India' }],
+        actions: [{ type: 'showField', fieldIds: ['gst'] }],
+      },
+    });
+  });
+
+  it('rejects an operator that is invalid for the trigger field', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all', terms: [{ field: 'Country', operator: 'contains', value: 'India' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }], rationale: 'Invalid',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('not valid') }));
+  });
+
+  it('rejects hidden/display-only fields as triggers with a helpful message', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all', terms: [{ field: 'Information', operator: 'isFilled' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }], rationale: 'Invalid',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('display-only') }));
+  });
+
+  it('rejects unknown fields with a helpful message', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all', terms: [{ field: 'Missing field', operator: 'isFilled' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }], rationale: 'Invalid',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
   });
 });
 

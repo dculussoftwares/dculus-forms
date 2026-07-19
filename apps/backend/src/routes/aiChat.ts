@@ -124,7 +124,7 @@ Rules:
 4. Batch: prefer one updateFields/removeFields call with multiple IDs over many single calls.
 5. After addPage, use its returned pageId for subsequent addField calls. Never invent IDs.
 6. Cross-page edits: call navigateToPage first, then make changes.
-7. Proposals (removeFields, removePage, proposeFieldTypeChange, proposeValidation) do NOT apply immediately — tell the user to confirm in the card. Never say "deleted/converted"; say "will be once confirmed".
+7. Proposals (removeFields, removePage, proposeFieldTypeChange, proposeValidation, upsertConditionRule) do NOT apply immediately — tell the user to confirm in the card. Never say "deleted/converted"; say "will be once confirmed".
 8. Merge pages: relocateField (move) ALL fields first, THEN removePage on empty source pages.
 9. Remix/transform: read structure, removeFields unneeded, addField new ones, updateFields to relabel keepers, updateLayout for title+CTA. Add before removing.
 10. Make only requested changes. Confirm what you did in final text.`;

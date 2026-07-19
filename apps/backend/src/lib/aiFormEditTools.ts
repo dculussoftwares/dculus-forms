@@ -1,5 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { conditionalRuleSchema, sanitizeConditions, type ConditionOperator, type ConditionalRule } from '@dculus/types';
 import { countResponsesPerField, countResponsesReferencingAnyField } from '../services/responseService.js';
 
 // Field type tokens the AI uses (kept in sync with addField's fieldType enum).
@@ -28,6 +29,37 @@ function findFieldInSchema(
     if (field) return { pageId: page.id, field };
   }
   return null;
+}
+
+const CONDITION_OPERATORS_BY_TYPE: Record<string, readonly ConditionOperator[]> = {
+  text_input_field: ['equals', 'notEquals', 'contains', 'notContains', 'startsWith', 'endsWith', 'isEmpty', 'isFilled'],
+  text_area_field: ['equals', 'notEquals', 'contains', 'notContains', 'startsWith', 'endsWith', 'isEmpty', 'isFilled'],
+  email_field: ['equals', 'notEquals', 'contains', 'notContains', 'startsWith', 'endsWith', 'isEmpty', 'isFilled'],
+  phone_number_field: ['equals', 'notEquals', 'startsWith', 'isEmpty', 'isFilled'],
+  number_field: ['equals', 'notEquals', 'lessThan', 'greaterThan', 'isEmpty', 'isFilled'],
+  date_field: ['equals', 'notEquals', 'before', 'after', 'isEmpty', 'isFilled'],
+  select_field: ['equals', 'notEquals', 'isEmpty', 'isFilled'],
+  radio_field: ['equals', 'notEquals', 'isEmpty', 'isFilled'],
+  checkbox_field: ['contains', 'notContains', 'isEmpty', 'isFilled'],
+  file_upload_field: ['isEmpty', 'isFilled'],
+};
+
+const normalizeFieldType = (type: unknown): string => String(type ?? '').toLowerCase();
+const normalizeLabel = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+/** Resolve an AI-supplied field label (or id) without ever guessing a weak match. */
+function resolveField(schema: { pages: any[] }, reference: string): any | null {
+  const fields = (schema.pages ?? []).flatMap((page: any) => page.fields ?? []);
+  const direct = fields.find((field: any) => field.id === reference);
+  if (direct) return direct;
+  const wanted = normalizeLabel(reference);
+  const exact = fields.filter((field: any) => normalizeLabel(String(field.label ?? '')) === wanted);
+  if (exact.length === 1) return exact[0];
+  const partial = fields.filter((field: any) => {
+    const label = normalizeLabel(String(field.label ?? ''));
+    return wanted.length >= 3 && (label.includes(wanted) || wanted.includes(label));
+  });
+  return partial.length === 1 ? partial[0] : null;
 }
 
 const updatesSchema = z.object({
@@ -360,6 +392,72 @@ export function createFormEditTools(
         };
       },
     }),
+
+    upsertConditionRule: tool({
+      description:
+        'PROPOSAL: turn a described condition into ONE ready-to-review rule. Never apply it directly. Terms may identify trigger fields by their visible label or id; targets may identify fields/pages by label/title or id. Use only operators appropriate for each trigger field type. Rich text/display-only fields cannot be triggers.',
+      inputSchema: z.object({
+        combinator: z.enum(['any', 'all']),
+        terms: z.array(z.object({
+          field: z.string().min(1).describe('Trigger field label or id'),
+          operator: z.enum(['equals', 'notEquals', 'contains', 'notContains', 'startsWith', 'endsWith', 'isEmpty', 'isFilled', 'lessThan', 'greaterThan', 'before', 'after']),
+          value: z.union([z.string(), z.number(), z.array(z.string())]).optional(),
+        })).min(1),
+        actions: z.array(z.union([
+          z.object({ type: z.enum(['showField', 'hideField', 'requireField', 'unrequireField']), fields: z.array(z.string().min(1)).min(1).describe('Target field labels or ids') }),
+          z.object({ type: z.enum(['showPage', 'hidePage', 'skipToPage']), page: z.string().min(1).describe('Target page title or id') }),
+        ])).min(1),
+        rationale: z.string().min(1).describe('Brief explanation for the reviewer'),
+      }),
+      execute: async ({ combinator, terms, actions, rationale }) => {
+        const resolvedTerms = [] as ConditionalRule['terms'];
+        for (const term of terms) {
+          const field = resolveField(workingSchema, term.field);
+          if (!field) return { error: `I couldn't find a unique field matching "${term.field}". Please use the exact field label.` };
+          const allowed = CONDITION_OPERATORS_BY_TYPE[normalizeFieldType(field.type)];
+          if (!allowed) return { error: `"${field.label ?? term.field}" is a display-only or unsupported field and cannot trigger a condition.` };
+          if (!allowed.includes(term.operator)) return { error: `"${term.operator}" is not valid for the ${field.label ?? term.field} field. Choose an operator supported by its field type.` };
+          resolvedTerms.push({ fieldId: field.id, operator: term.operator, ...(term.value !== undefined && { value: term.value }) });
+        }
+
+        const resolvedActions: ConditionalRule['actions'] = [];
+        for (const action of actions) {
+          if ('fields' in action) {
+            const fieldIds: string[] = [];
+            for (const reference of action.fields) {
+              const field = resolveField(workingSchema, reference);
+              if (!field) return { error: `I couldn't find a unique target field matching "${reference}". Please use the exact field label.` };
+              fieldIds.push(field.id);
+            }
+            if (action.type === 'showField' || action.type === 'hideField') {
+              resolvedActions.push({ type: action.type, fieldIds });
+            } else {
+              resolvedActions.push({ type: action.type as 'requireField' | 'unrequireField', fieldIds });
+            }
+          } else {
+            const page = (workingSchema.pages ?? []).find((candidate: any) => candidate.id === action.page || normalizeLabel(String(candidate.title ?? '')) === normalizeLabel(action.page));
+            if (!page) return { error: `I couldn't find a page matching "${action.page}". Please use the exact page title.` };
+            if (action.type === 'showPage' || action.type === 'hidePage' || action.type === 'skipToPage') {
+              resolvedActions.push({ type: action.type, pageId: page.id });
+            }
+          }
+        }
+
+        const rule = {
+          id: `condition-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+          enabled: true,
+          combinator,
+          terms: resolvedTerms,
+          actions: resolvedActions,
+        };
+        // conditionalRuleSchema gives a clear final shape check; sanitizeConditions is the
+        // non-negotiable trust boundary used by persisted conditional logic too.
+        if (!conditionalRuleSchema.safeParse(rule).success) return { error: 'The proposed condition is invalid and was not created.' };
+        const sanitized = sanitizeConditions([rule]);
+        if (!sanitized?.[0]) return { error: 'The proposed condition did not pass validation and was not created.' };
+        return { type: 'PROPOSE_CONDITION_RULE' as const, rule: sanitized[0], rationale };
+      },
+    }),
   };
 
   // Conditional tool inclusion based on tier and form state:
@@ -388,6 +486,7 @@ export function createFormEditTools(
     ...(totalFields > 0 ? { relocateField: mutationTools.relocateField } : {}),
     ...(totalFields > 2 ? { proposeValidation: mutationTools.proposeValidation } : {}),
     ...(totalFields > 0 ? { proposeFieldTypeChange: mutationTools.proposeFieldTypeChange } : {}),
+    ...(totalFields > 0 ? { upsertConditionRule: mutationTools.upsertConditionRule } : {}),
   };
 
   const tieredTools = toolTier === 'minimal' ? minimalTools : toolTier === 'core' ? coreTools : fullTools;
@@ -410,4 +509,5 @@ export type FormOperation =
   | { type: 'PROPOSE_VALIDATION'; suggestions: Array<{ fieldId: string; fieldLabel: string; fieldType: string; validation?: { minLength?: number | null; maxLength?: number | null; minSelections?: number | null; maxSelections?: number | null }; min?: number | null; max?: number | null; required?: boolean }>; rationale: string }
   | { type: 'PROPOSE_DELETE_FIELDS'; fields: Array<{ fieldId: string; label: string; responseCount: number }> }
   | { type: 'PROPOSE_DELETE_PAGE'; pageId: string; pageTitle: string; fieldCount: number; responseCount: number }
-  | { type: 'PROPOSE_FIELD_TYPE_CHANGE'; fieldId: string; label: string; currentType: string; newFieldType: string; responseCount: number };
+  | { type: 'PROPOSE_FIELD_TYPE_CHANGE'; fieldId: string; label: string; currentType: string; newFieldType: string; responseCount: number }
+  | { type: 'PROPOSE_CONDITION_RULE'; rule: ConditionalRule; rationale: string };
