@@ -1402,6 +1402,61 @@ When(
     );
   }
 );
+When(
+  'I add a self-hiding rule for field {string} when filled',
+  async function (this: CustomWorld, fieldId: string) {
+    if (!this.page) throw new Error('Page is not initialized');
 
+    await this.page.getByTestId('condition-add-rule').click();
 
+    // IF: trigger field → set operator to "is filled"
+    await this.page.getByTestId('condition-term-field-0').click();
+    await this.page.getByRole('option', { name: 'Bonus Field' }).click();
 
+    await this.page.getByTestId('condition-term-operator-0').click();
+    await this.page.getByRole('option', { name: 'is filled' }).click();
+
+    // THEN: Action type "Hide field(s)"
+    await this.page.getByTestId('condition-action-type-0').click();
+    await this.page.getByRole('option', { name: 'Hide field(s)' }).click();
+
+    const checkbox = this.page.getByTestId(`condition-action-target-0-${fieldId}`);
+    const isChecked = await checkbox.isChecked();
+    if (!isChecked) {
+      await checkbox.click();
+    }
+
+    const save = this.page.getByTestId('condition-save');
+    await expect(save).toBeEnabled({ timeout: 5_000 });
+    await save.click();
+    await this.page.waitForTimeout(500);
+  }
+);
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+Then(
+  'I should see a circular reference warning badge for the rule {string}',
+  async function (this: CustomWorld, triggerLabel: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const card = this.page
+      .locator('[data-testid^="condition-card-"]')
+      .filter({ hasText: new RegExp(`^IF\\s+${escapeRegExp(triggerLabel)}\\b`) });
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    const badge = card.locator('[data-testid^="condition-circular-"]');
+    await expect(badge).toBeVisible({ timeout: 10_000 });
+  }
+);
+
+Then(
+  'I should not see a circular reference warning badge for the rule {string}',
+  async function (this: CustomWorld, triggerLabel: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const card = this.page
+      .locator('[data-testid^="condition-card-"]')
+      .filter({ hasText: new RegExp(`^IF\\s+${escapeRegExp(triggerLabel)}\\b`) });
+    await expect(card).toBeVisible({ timeout: 10_000 });
+    const badge = card.locator('[data-testid^="condition-circular-"]');
+    await expect(badge).toHaveCount(0, { timeout: 5_000 });
+  }
+);
