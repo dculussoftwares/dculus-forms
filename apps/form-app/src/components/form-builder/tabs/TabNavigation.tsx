@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
 import { Palette, FileText, Eye, GitBranch, Settings, CheckCircle, Users, AlertTriangle } from 'lucide-react';
-import { Button, Tabs, TabsList, TabsTrigger, Badge } from '@dculus/ui';
+import { Button, Tabs, TabsList, TabsTrigger, badgeVariants } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 
@@ -162,9 +162,11 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                   <tab.icon className="w-3.5 h-3.5 shrink-0" />
                   <span>{tab.label}</span>
                   {tab.id === 'page-builder' && typeof buildFieldCount === 'number' && (
-                    <Badge
-                      variant="outline"
-                      className="px-1.5 py-0 text-[10px] leading-4 min-w-[1.25rem] justify-center"
+                    <span
+                      className={cn(
+                        badgeVariants({ variant: 'outline' }),
+                        'px-1.5 py-0 text-[10px] leading-4 min-w-[1.25rem] justify-center'
+                      )}
                       title={t(
                         buildFieldCount === 1
                           ? 'badges.build.fieldCount.single'
@@ -174,22 +176,25 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                       data-testid="tab-badge-build-count"
                     >
                       {buildFieldCount}
-                    </Badge>
+                    </span>
                   )}
                   {tab.id === 'conditions' && logicHasWarning && (
-                    <Badge
-                      variant="outline"
-                      className="gap-0.5 px-1.5 py-0 text-[10px] leading-4 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                    <span
+                      className={cn(
+                        badgeVariants({ variant: 'outline' }),
+                        'gap-0.5 px-1.5 py-0 text-[10px] leading-4 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+                      )}
                       title={t('badges.logic.warning')}
                       data-testid="tab-badge-logic-warning"
                     >
                       <AlertTriangle className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
-                    </Badge>
+                      <span className="sr-only">{t('badges.logic.warning')}</span>
+                    </span>
                   )}
                   {tab.id === 'finish' && (
-                    <Badge
-                      variant={finishIsCustomized ? 'accent' : 'outline'}
+                    <span
                       className={cn(
+                        badgeVariants({ variant: finishIsCustomized ? 'accent' : 'outline' }),
                         'px-1.5 py-0 text-[10px] leading-4',
                         !finishIsCustomized &&
                           'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
@@ -202,7 +207,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                       data-testid="tab-badge-finish-status"
                     >
                       {finishIsCustomized ? t('badges.finish.customized') : t('badges.finish.default')}
-                    </Badge>
+                    </span>
                   )}
                 </TabsTrigger>
               </React.Fragment>

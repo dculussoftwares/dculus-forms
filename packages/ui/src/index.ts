@@ -1,5 +1,5 @@
 export { Button, buttonVariants } from "./button"
-export { Badge } from "./badge"
+export { Badge, badgeVariants } from "./badge"
 export { Chip } from "./chip"
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./accordion"
 export { Progress } from "./progress"
