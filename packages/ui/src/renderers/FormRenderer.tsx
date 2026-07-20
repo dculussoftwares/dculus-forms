@@ -34,6 +34,8 @@ export interface FormRendererProps {
   /** "Send me a copy of my responses" — only relevant to the public form-viewer. */
   responseCopySettings?: ResponseCopySettings;
   onResponseCopyConsentChange?: (consent: boolean) => void;
+  /** Page id to open on first render instead of the first page. Falls back to the first page if not found. */
+  initialPageId?: string;
 }
 
 export const FormRenderer: React.FC<FormRendererProps> = ({
@@ -50,6 +52,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   responseId,
   responseCopySettings,
   onResponseCopyConsentChange,
+  initialPageId,
 }) => {
   const { getFormattedResponses } = useFormResponseUtils();
   const store = useFormResponseStore();
@@ -173,6 +176,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         cdnEndpoint={cdnEndpoint}
         mode={mode}
         onLayoutChange={onLayoutChange}
+        initialPageId={initialPageId}
       />
     </FormResponseContext.Provider>
   );

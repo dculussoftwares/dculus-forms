@@ -1219,6 +1219,26 @@ When('I open the page builder tab', async function (this: CustomWorld) {
   await this.page.waitForTimeout(500);
 });
 
+When(
+  'I select the page {string} in the builder',
+  async function (this: CustomWorld, pageTitle: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const slug = pageTitle.replace(/\s+/g, '-').toLowerCase();
+    const pageCard = this.page.getByTestId(`select-page-${slug}`);
+    await expect(pageCard).toBeVisible({ timeout: 10_000 });
+    await pageCard.click();
+  }
+);
+
+Then(
+  'the preview should open on page {string}',
+  async function (this: CustomWorld, pageTitle: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const title = this.page.locator('.preview-mode [data-testid="viewer-page-title"]');
+    await expect(title).toHaveText(pageTitle, { timeout: 10_000 });
+  }
+);
+
 Then(
   'the preview field {string} should be hidden',
   async function (this: CustomWorld, label: string) {

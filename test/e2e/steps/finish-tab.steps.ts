@@ -4,7 +4,7 @@
  * the replacement surface for the old Settings > Thank You section (see #166).
  */
 
-import { When } from '@cucumber/cucumber';
+import { When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 
@@ -66,4 +66,38 @@ When('I navigate from the builder to the form dashboard', async function (this: 
     await expect(sidebar).toBeVisible({ timeout: 30_000 });
 
     await this.page.waitForTimeout(2000);
+});
+
+/**
+ * Contextual Preview (#175): switch between the "Form" and "Finish" preview
+ * steps in the Preview tab's step toggle.
+ */
+When('I switch the preview step to {string}', async function (this: CustomWorld, step: string) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const testId = step.toLowerCase() === 'finish' ? 'preview-step-finish' : 'preview-step-form';
+    const toggle = this.page.getByTestId(testId);
+    await expect(toggle).toBeVisible({ timeout: 10_000 });
+    await toggle.click();
+});
+
+Then('I should see the custom thank you message in the preview step', async function (this: CustomWorld) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const message = this.page.getByTestId('thank-you-preview-custom-message');
+    await expect(message).toBeVisible({ timeout: 10_000 });
+    await expect(message).toContainText('Thank you for your feedback!');
+});
+
+Then('I should see the form in the preview step', async function (this: CustomWorld) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const previewForm = this.page.locator('.preview-mode');
+    await expect(previewForm).toBeVisible({ timeout: 10_000 });
 });

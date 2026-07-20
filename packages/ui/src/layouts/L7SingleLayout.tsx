@@ -10,7 +10,8 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
   className = '',
   onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   // L7 Single layout styles - using default/classic styles
   const getLayoutStyles = () => ({
@@ -233,6 +234,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
+                  initialPageId={initialPageId}
                 />
               </div>
             </div>

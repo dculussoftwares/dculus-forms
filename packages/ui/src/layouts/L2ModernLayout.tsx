@@ -10,7 +10,8 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
   className = '',
   onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   // L2 Modern layout styles
   const getLayoutStyles = () => ({
@@ -247,6 +248,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
+                  initialPageId={initialPageId}
                 />
               </div>
             </div>

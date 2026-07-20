@@ -9,7 +9,8 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
   className = '',
   onLayoutChange: _onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   // L9 Pages layout styles - using modern page-focused styles
   const getLayoutStyles = () => ({
@@ -72,6 +73,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
                 pages={pages}
                 layoutStyles={getLayoutStyles()}
                 mode={mode}
+                initialPageId={initialPageId}
               />
             </div>
           </div>

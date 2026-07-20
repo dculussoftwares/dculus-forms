@@ -10,7 +10,8 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
   className = '',
   onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   // L3 Card layout styles
   const getLayoutStyles = () => ({
@@ -238,6 +239,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
+                  initialPageId={initialPageId}
                 />
               </div>
             </div>

@@ -10,7 +10,8 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
   className = '',
   onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   // L1 Classic layout styles
   const getLayoutStyles = () => ({
@@ -248,6 +249,7 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
+                  initialPageId={initialPageId}
                 />
               </div>
             </div>
