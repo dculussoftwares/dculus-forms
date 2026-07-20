@@ -32,7 +32,6 @@ import { useNavigate } from 'react-router';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';
-import { LocaleSwitcher } from '../LocaleSwitcher';
 import { PermissionBadge } from './PermissionBadge';
 import { DUPLICATE_FORM, UPDATE_FORM } from '../../graphql/mutations';
 import { getFormViewerUrl } from '../../lib/config';
@@ -298,9 +297,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             <Share2 className="w-4 h-4" />
                         </Button>
                     )}
-
-                    {/* Locale Switcher */}
-                    <LocaleSwitcher />
 
                     {/* More */}
                     <DropdownMenu>
