@@ -2,7 +2,7 @@
 
 > Companion to `conditional-logic-research.md` (§1 "Update Options", §3 data model) and
 > `conditional-logic-v1-strategy.md` (§3.1 per-field operator semantics, §9 locked
-> decisions). This doc is design-only — see §9 for the coding-agent-ready follow-up
+> decisions). This doc is design-only — see §11 for the coding-agent-ready follow-up
 > tickets. Canonical case used throughout: **Country → State** cascading select.
 
 ## 1. Recommendation summary
@@ -69,8 +69,22 @@ export type ConditionAction =
   shown" posture. There is no natural "hidden by default" reading for an option list.
 - Not validated against the target field's own `options` at the schema-parse layer —
   same posture as `hideField`'s `fieldIds` (which aren't checked against real fields
-  either). Dangling entries are inert, never crash (locked decision §9.9); the builder
-  surfaces them as broken references (§8).
+  either). Persisted-shape validation only checks `options` is a `string[]`
+  (`isWellFormedAction`, below); it does not check membership.
+- **Dangling entries must be inert at the point of use, not just "flagged."** A typo'd
+  or AI-authored entry (e.g. `"Californie"`) that isn't in the target field's own
+  `options` must never reach the render list, pass validation, or survive to submit —
+  otherwise a user could select (or a crafted payload could submit) a value that was
+  never a real option. Enforcement point: wherever `optionOverrides` is consumed
+  (render §4, schema §5, strip §4/server), **intersect the rule's configured
+  `options` with the target field's current authored `options`** before use — the
+  *effective* visible list is `action.options.filter(o =>
+  targetField.options.includes(o))`, never the raw configured list. This is a runtime
+  concern (evaluator or its consumers), not a builder-only one — it must hold even for
+  a hand-edited/AI-proposed rule that never went through the builder's options
+  checklist (§6). Broken-reference reporting (§9) stays a separate, presentation-only
+  concern: it shows the *raw* configured entry so the author can fix or remove it, even
+  though the effective (intersected) list has already silently dropped it at runtime.
 - Applies to **Select, Radio, and Checkbox** targets uniformly. Select/Radio compare
   a scalar string; Checkbox compares each element of the stored array (§5).
 
@@ -85,7 +99,9 @@ z.object({
 ```
 
 `isWellFormedAction` gains a `filterOptions` case (`typeof candidate.fieldId ===
-'string' && Array.isArray(candidate.options)`).
+'string' && Array.isArray(candidate.options) && candidate.options.every(o => typeof
+o === 'string')`) — the same per-element string check already used for `fieldIds` on
+every other action, not just an array-shape check.
 
 `ConditionEvaluationResult` gains:
 
@@ -237,7 +253,8 @@ the `requireField`/`unrequireField` entries at lines 379–380). Selecting it re
    keeps authored `filterOptions.options` values in sync with real option strings by
    construction for anything built through the UI (hand-edited/AI-proposed rules can
    still reference stale strings — that's exactly what the broken-reference check in
-   §8 is for).
+   §9 is for, and why the runtime-level intersection in §3 is required regardless of
+   which authoring path produced the rule).
 
 This single-rule editor is sufficient for a small filter set (e.g. a Yes/No field
 gating 2–3 visible choices on another field). It is **not** the intended authoring
@@ -248,8 +265,9 @@ path for Country→State — seeing that as one row in a 195-country dropdown, r
 
 ```typescript
 // One rule per Country value. 195 rules for a full country list — an authoring
-// UX problem (§8), not a runtime problem: the evaluator handles 195 rules exactly
-// as cheaply as 2.
+// UX problem (§8), not a correctness problem: evaluation cost scales with rule
+// count (same as every other action type), which is cheap enough for expected
+// form sizes; the authoring/presentation cost is the actual concern §8 solves.
 {
   id: 'cond-us', enabled: true, combinator: 'all',
   terms: [{ fieldId: 'country', operator: 'equals', value: 'United States' }],
@@ -262,15 +280,22 @@ path for Country→State — seeing that as one row in a 195-country dropdown, r
 its full/default option list — recommend the field's authored default list doubles as
 the "no country picked yet" fallback, so State isn't empty-and-confusing before
 Country is touched). Once a rule matches, State's rendered list becomes exactly that
-rule's `options`; changing Country re-evaluates and swaps the list; an unmatched
-Country value (an option added to Country but with no corresponding State rule)
-leaves State's *previous* override in place — same last-write-wins behavior as every
-other override in this system.
+rule's `options`; changing Country re-evaluates and swaps the list. **`evaluateConditions`
+is a pure function recomputed fresh on every response change (strategy §6) — there is
+no cross-call state to carry forward.** So an unmatched Country value (e.g. an option
+added to Country with no corresponding State rule yet) does **not** "keep" a prior
+override: that evaluation simply produces no `filterOptions` match for `state`, so
+`optionOverrides.get('state')` is `undefined` again and State falls back to its
+authored default list — the identical "no rule has matched yet" case as before Country
+was first answered, not a stale leftover from the previous Country value.
+"Last-matched-rule-wins" (§3) only resolves *ties within one evaluation* when multiple
+active rules target the same field and match simultaneously; it does not imply
+memory across evaluations.
 
 ## 8. Cascading-select authoring (the 30+ pairs case)
 
 The single-rule editor (§6) does not scale to Country→State. Recommend a dedicated
-**bulk-mapping generator**, scoped as its own follow-up (§9, Ticket D) so it doesn't
+**bulk-mapping generator**, scoped as its own follow-up (§11, Ticket D) so it doesn't
 block shipping the core action type:
 
 - New entry point in `ConditionsTab.tsx`, alongside "Add Rule": **"Add cascading
@@ -333,7 +358,7 @@ individually.
 - **AI "describe your conditions" support for `filterOptions`** — the
   `upsertConditionRule` tool (`aiFormEditTools.ts:409-419`) has a fixed action union
   that would need one more branch. Small, but deliberately excluded from the core
-  ticket (§9 Ticket A) to keep it reviewable; listed as an optional fast-follow.
+  ticket (§11 Ticket A) to keep it reviewable; listed as an optional fast-follow.
 - **Server-side full schema validation** — explicitly not proposed (§4, §5); backend
   enforcement stays limited to the strip step, consistent with locked decision #10.
 - **Calculated/derived option lists** (e.g. options populated from an external API or
