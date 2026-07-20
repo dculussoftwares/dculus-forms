@@ -34,6 +34,7 @@ import {
   PageBuilderTab,
   PreviewTab,
   SettingsTab,
+  FinishTab,
   type BuilderTab,
 } from '../components/form-builder/tabs';
 import { ConditionsTab } from '../components/form-builder/conditions/ConditionsTab';
@@ -53,6 +54,7 @@ const VALID_TABS: readonly BuilderTab[] = [
   'page-builder',
   'preview',
   'conditions',
+  'finish',
   'settings',
 ] as const;
 const DEFAULT_TAB: BuilderTab = 'page-builder';
@@ -324,6 +326,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           setAIInitialMessage(`Create a condition rule from this request: ${description}. Use upsertConditionRule only. This must remain a pending suggestion for the user to review.`);
           setIsAIDrawerOpen(true);
         }} />;
+      case 'finish':
+        return <FinishTab formId={formId} />;
       case 'settings':
         return <SettingsTab formId={formId} />;
       default:

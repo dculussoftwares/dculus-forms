@@ -2,7 +2,6 @@ import React from 'react';
 import { useSearchParams } from 'react-router';
 import SettingsSidebar from './SettingsSidebar';
 import GeneralSettings from './GeneralSettings';
-import ThankYouSettings from './ThankYouSettings';
 import SubmissionLimitsSettings from './SubmissionLimitsSettings';
 import ResponseCopySettings from './ResponseCopySettings';
 import AccessControlSettings from './AccessControlSettings';
@@ -15,8 +14,6 @@ interface FormSettingsContainerProps {
   currentResponseCount?: number;
   onSaveGeneralSettings: () => void;
   onRegenerateShortUrl: () => void;
-  onUpdateThankYouSetting: (key: string, value: any) => void;
-  onSaveThankYouSettings: () => void;
   onUpdateSubmissionLimits: (limits: any) => void;
   onSaveSubmissionLimits: () => void;
   onUpdateResponseCopySetting: (key: string, value: any) => void;
@@ -28,8 +25,8 @@ interface FormSettingsContainerProps {
 
 const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
   form, settings, isSaving, errors, currentResponseCount = 0,
-  onSaveGeneralSettings, onRegenerateShortUrl, onUpdateThankYouSetting,
-  onSaveThankYouSettings, onUpdateSubmissionLimits, onSaveSubmissionLimits,
+  onSaveGeneralSettings, onRegenerateShortUrl,
+  onUpdateSubmissionLimits, onSaveSubmissionLimits,
   onUpdateResponseCopySetting, onSaveResponseCopySettings,
   onUpdateAccessControl, onSaveAccessControlSettings, onUpdateCollectRespondentEmail,
 }) => {
@@ -44,15 +41,6 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
           <GeneralSettings
             form={form} errors={errors} isSaving={isSaving}
             onSave={onSaveGeneralSettings} onRegenerateShortUrl={onRegenerateShortUrl}
-          />
-        );
-      case 'thank-you':
-        return (
-          <ThankYouSettings
-            form={form} settings={settings.thankYou} isSaving={isSaving}
-            onToggleEnabled={(enabled) => onUpdateThankYouSetting('enabled', enabled)}
-            onMessageChange={(message) => onUpdateThankYouSetting('message', message)}
-            onSave={onSaveThankYouSettings}
           />
         );
       case 'submission-limits':

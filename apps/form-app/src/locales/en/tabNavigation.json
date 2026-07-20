@@ -16,6 +16,10 @@
       "label": "Conditions",
       "description": "Show or hide fields and pages based on answers"
     },
+    "finish": {
+      "label": "Finish",
+      "description": "Customize the thank you page respondents see after submitting"
+    },
     "settings": {
       "label": "Settings",
       "description": "Configure form settings and options"
