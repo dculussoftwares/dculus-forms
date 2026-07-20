@@ -4,7 +4,7 @@
  * the replacement surface for the old Settings > Thank You section (see #166).
  */
 
-import { When, Then } from '@cucumber/cucumber';
+import { When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 
