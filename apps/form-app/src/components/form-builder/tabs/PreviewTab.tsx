@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { Monitor, Smartphone } from 'lucide-react';
 import { useFormBuilderStore } from '@/store/useFormBuilderStore.ts';
 import { FormRenderer, toastSuccess, toastError } from '@dculus/ui';
@@ -7,8 +7,12 @@ import type { FormSchema } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { getCdnEndpoint } from '../../../lib/config';
 import { SUBMIT_RESPONSE } from '../../../graphql/mutations';
+import { GET_FORM_BY_ID } from '../../../graphql/queries';
+import { useTranslation } from '../../../hooks/useTranslation';
+import { ThankYouPreview } from './ThankYouPreview';
 
 type PreviewMode = 'desktop' | 'mobile';
+type PreviewStep = 'form' | 'finish';
 
 interface PreviewTabProps {
   formId?: string;
@@ -46,12 +50,19 @@ const MOBILE_PREVIEW_CSS = `
 `;
 
 export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
-  const { pages, layout, conditions } = useFormBuilderStore();
+  const { t } = useTranslation('previewTab');
+  const { pages, layout, conditions, selectedPageId } = useFormBuilderStore();
   const cdnEndpoint = getCdnEndpoint();
   const [submitCount, setSubmitCount] = useState(0);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
+  const [previewStep, setPreviewStep] = useState<PreviewStep>('form');
 
   const [submitResponse] = useMutation(SUBMIT_RESPONSE);
+  const { data: formData } = useQuery(GET_FORM_BY_ID, {
+    variables: { id: formId },
+    skip: !formId,
+  });
+  const thankYouSettings = formData?.form?.settings?.thankYou;
 
   const formSchema: FormSchema = React.useMemo(
     () => ({
@@ -104,16 +115,58 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
       mode={RendererMode.PREVIEW}
       formId={formId}
       onFormSubmit={formId ? handlePreviewSubmit : undefined}
+      initialPageId={selectedPageId ?? undefined}
     />
   );
 
+  const content =
+    previewStep === 'finish' ? (
+      <ThankYouPreview
+        enabled={Boolean(thankYouSettings?.enabled)}
+        message={thankYouSettings?.message ?? ''}
+      />
+    ) : (
+      renderer
+    );
+
   return (
     <div className="flex flex-col h-full">
-      {/* ── Viewport toggle bar ── */}
+      {/* ── Step + viewport toggle bar ── */}
       <div
-        className="flex justify-center items-center py-2.5 shrink-0"
+        className="flex justify-center items-center gap-4 py-2.5 shrink-0"
         style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
       >
+        <div
+          className="flex items-center rounded-lg overflow-hidden"
+          style={{ border: '1px solid var(--tf-border-strong)' }}
+        >
+          <button
+            onClick={() => setPreviewStep('form')}
+            title={t('stepToggle.formTooltip')}
+            data-testid="preview-step-form"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
+            style={{
+              background: previewStep === 'form' ? 'var(--tf-faint)' : 'transparent',
+              color: previewStep === 'form' ? 'var(--tf-dark)' : 'var(--tf-muted)',
+              borderRight: '1px solid var(--tf-border-strong)',
+            }}
+          >
+            {t('stepToggle.form')}
+          </button>
+          <button
+            onClick={() => setPreviewStep('finish')}
+            title={t('stepToggle.finishTooltip')}
+            data-testid="preview-step-finish"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
+            style={{
+              background: previewStep === 'finish' ? 'var(--tf-faint)' : 'transparent',
+              color: previewStep === 'finish' ? 'var(--tf-dark)' : 'var(--tf-muted)',
+            }}
+          >
+            {t('stepToggle.finish')}
+          </button>
+        </div>
+
         <div
           className="flex items-center rounded-lg overflow-hidden"
           style={{ border: '1px solid var(--tf-border-strong)' }}
@@ -148,7 +201,9 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
 
       {/* ── Preview area ── */}
       {previewMode === 'desktop' ? (
-        <div className="flex-1 overflow-hidden">{renderer}</div>
+        <div className={`flex-1 ${previewStep === 'finish' ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+          {content}
+        </div>
       ) : (
         /* Mobile: scrollable panel with centered phone frame */
         <div
@@ -175,7 +230,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
             />
             {/* Screen — scoped overrides applied via .mobile-preview wrapper */}
             <div className="mobile-preview w-full h-full overflow-y-auto bg-white">
-              {renderer}
+              {content}
             </div>
           </div>
 

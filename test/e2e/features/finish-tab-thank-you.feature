@@ -41,6 +41,22 @@ Feature: Finish Tab - Thank You Page Settings
     And I fill and submit the thank you test form
     Then I should see the custom thank you message
 
+  @finish-tab-preview
+  Scenario: Preview tab shows the Thank You screen without submitting (#175)
+    When I create a form via GraphQL for thank you page testing
+    Then I should be on the new form dashboard
+    When I navigate to the form builder
+    And I click on the finish tab
+    And I enable the custom thank you message
+    And I set the custom thank you message to "Thank you for your feedback!"
+    And I save the thank you settings
+    Then the thank you settings should be saved successfully
+    When I open the preview tab
+    And I switch the preview step to "Finish"
+    Then I should see the custom thank you message in the preview step
+    When I switch the preview step to "Form"
+    Then I should see the form in the preview step
+
   @finish-tab-substitution @skip-ci
   Scenario: Form shows field value substitution in thank you message configured from the Finish tab
     When I create a form via GraphQL for thank you page testing

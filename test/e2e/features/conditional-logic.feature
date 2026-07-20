@@ -183,3 +183,23 @@ Feature: Conditional Logic (show/hide fields and pages)
     And I should see a rule-count chip of "1" for field "cond-bonus"
     When I click the rule-count chip for field "cond-bonus"
     Then I should see a condition rule card for "Show bonus field?"
+
+  @builder-ux
+  Scenario: Preview opens to the page last selected in Build (#175)
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields
+    And I open the collaborative builder
+    And I open the page builder tab
+    And I select the page "Contact" in the builder
+    And I open the preview tab
+    Then the preview should open on page "Contact"
+
+  @builder-ux
+  Scenario: Preview opens past the intro on layouts with an intro CTA (#175)
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields and L1 layout
+    And I open the collaborative builder
+    And I open the page builder tab
+    And I select the page "Contact" in the builder
+    And I open the preview tab
+    Then the preview should open on page "Contact"

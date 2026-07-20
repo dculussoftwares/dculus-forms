@@ -10,7 +10,8 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
   className = '',
   onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   // L3 Card layout styles
   const getLayoutStyles = () => ({
@@ -23,7 +24,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
     },
     submitButton: 'w-full h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-md flex items-center justify-center'
   });
-  const [showPages, setShowPages] = useState(false);
+  const [showPages, setShowPages] = useState(() => Boolean(initialPageId));
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempContent, setTempContent] = useState(layout?.content || '<h1>Card Layout Survey</h1>');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -238,6 +239,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
+                  initialPageId={initialPageId}
                 />
               </div>
             </div>

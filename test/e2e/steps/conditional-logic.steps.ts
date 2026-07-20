@@ -201,6 +201,21 @@ When(
   }
 );
 
+// L1 (Classic) is the intro-CTA layout new forms default to — it gates the
+// pages section behind a "showPages" flag that #175's initialPageId fix had
+// to seed too, on top of the L9 (no-intro) fixture used elsewhere here.
+When(
+  'I create a form via GraphQL with conditional logic fields and L1 layout',
+  async function (this: CustomWorld) {
+    const fields = conditionalLogicFields();
+    await createFormViaGraphQL(
+      this,
+      { ...fields, layout: { ...fields.layout, code: 'L1' } },
+      'E2E Conditional Builder L1 Test'
+    );
+  }
+);
+
 const triggerMatrixFields = () => ({
   layout: {
     theme: 'light',
@@ -1218,6 +1233,26 @@ When('I open the page builder tab', async function (this: CustomWorld) {
   await this.page.getByTestId('tab-page-builder').click();
   await this.page.waitForTimeout(500);
 });
+
+When(
+  'I select the page {string} in the builder',
+  async function (this: CustomWorld, pageTitle: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const slug = pageTitle.replace(/\s+/g, '-').toLowerCase();
+    const pageCard = this.page.getByTestId(`select-page-${slug}`);
+    await expect(pageCard).toBeVisible({ timeout: 10_000 });
+    await pageCard.click();
+  }
+);
+
+Then(
+  'the preview should open on page {string}',
+  async function (this: CustomWorld, pageTitle: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const title = this.page.locator('.preview-mode [data-testid="viewer-page-title"]');
+    await expect(title).toHaveText(pageTitle, { timeout: 10_000 });
+  }
+);
 
 Then(
   'the preview field {string} should be hidden',

@@ -10,7 +10,8 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
   className = '',
   onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   // L6 Wizard layout styles
   const getLayoutStyles = () => ({
@@ -188,6 +189,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
                   className=""
                   showPageNavigation={true}
                   mode={mode}
+                  initialPageId={initialPageId}
                 />
               </div>
 

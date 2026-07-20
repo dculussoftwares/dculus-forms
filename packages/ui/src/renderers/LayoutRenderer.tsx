@@ -23,30 +23,31 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
   className = '',
   onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   const renderLayout = () => {
     switch (layoutCode) {
       case 'L1':
-        return <L1ClassicLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L1ClassicLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       case 'L2':
-        return <L2ModernLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L2ModernLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       case 'L3':
-        return <L3CardLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L3CardLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       case 'L4':
-        return <L4MinimalLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L4MinimalLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       case 'L5':
-        return <L5SplitLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L5SplitLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       case 'L6':
-        return <L6WizardLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L6WizardLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       case 'L7':
-        return <L7SingleLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L7SingleLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       case 'L8':
-        return <L8ImageLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L8ImageLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       case 'L9':
-        return <L9PagesLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L9PagesLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
       default:
-        return <L1ClassicLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} />;
+        return <L1ClassicLayout pages={pages} layout={layout} className={className} onLayoutChange={onLayoutChange} cdnEndpoint={cdnEndpoint} mode={mode} initialPageId={initialPageId} />;
     }
   };
 

@@ -10,7 +10,8 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
   className = '',
   onLayoutChange,
   cdnEndpoint,
-  mode = RendererMode.PREVIEW
+  mode = RendererMode.PREVIEW,
+  initialPageId
 }) => {
   // L4 Minimal layout styles
   const getLayoutStyles = () => ({
@@ -23,7 +24,7 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
     },
     submitButton: 'w-full h-12 bg-slate-800 rounded-lg flex items-center justify-center'
   });
-  const [showPages, setShowPages] = useState(false);
+  const [showPages, setShowPages] = useState(() => Boolean(initialPageId));
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempContent, setTempContent] = useState(layout?.content || '<h1>Minimal Form</h1><p>Clean and spacious design for better focus.</p>');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -247,6 +248,7 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
+                  initialPageId={initialPageId}
                 />
               </div>
             </div>

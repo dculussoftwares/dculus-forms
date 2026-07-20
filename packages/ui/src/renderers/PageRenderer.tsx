@@ -20,6 +20,8 @@ interface PageRendererProps {
   onValidationError?: (pageId: string, errors: string[]) => void;
   enableStrictValidation?: boolean;
   showValidationSummary?: boolean;
+  /** Page id to open on first render instead of the first page. Falls back to the first page if not found. */
+  initialPageId?: string;
 }
 
 export const PageRenderer: React.FC<PageRendererProps> = ({
@@ -33,6 +35,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   onValidationError,
   enableStrictValidation = true,
   showValidationSummary = true,
+  initialPageId,
 }) => {
   const store = useFormResponseStore();
   const {
@@ -46,7 +49,23 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     hiddenPageIds,
     formSchema,
   } = useFormResponseContext();
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+
+  // Conditional logic: navigation, progress, and submit-vs-OK all operate on
+  // the visible pages only (strategy doc §7). Computed before currentPageIndex's
+  // initial state so an initialPageId can be resolved against the right list.
+  const visiblePages = useMemo(
+    () =>
+      hiddenPageIds.size > 0
+        ? pages.filter((page) => !hiddenPageIds.has(page.id))
+        : pages,
+    [pages, hiddenPageIds]
+  );
+
+  const [currentPageIndex, setCurrentPageIndex] = useState(() => {
+    if (!initialPageId) return 0;
+    const index = visiblePages.findIndex((page) => page.id === initialPageId);
+    return index >= 0 ? index : 0;
+  });
   const [pageValidationStates, setPageValidationStates] = useState<Record<string, boolean>>({});
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [pageAttemptCounts, setPageAttemptCounts] = useState<Record<string, number>>({});
@@ -65,18 +84,9 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     showAllValidationErrors: () => Promise<void>;
   }>(null);
 
-  // Conditional logic: navigation, progress, and submit-vs-OK all operate on
-  // the visible pages only (strategy doc §7). currentPageIndex indexes into
-  // visiblePages; currentPageIdRef remembers which page the user is actually
-  // on so the index can be reconciled when visibility changes shift the list.
-  const visiblePages = useMemo(
-    () =>
-      hiddenPageIds.size > 0
-        ? pages.filter((page) => !hiddenPageIds.has(page.id))
-        : pages,
-    [pages, hiddenPageIds]
-  );
-
+  // currentPageIndex indexes into visiblePages; currentPageIdRef remembers
+  // which page the user is actually on so the index can be reconciled when
+  // visibility changes shift the list.
   const currentPage = visiblePages[currentPageIndex];
   const currentPageIdRef = useRef<string | undefined>(undefined);
   if (currentPageIdRef.current === undefined) {
