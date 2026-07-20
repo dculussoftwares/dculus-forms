@@ -1527,3 +1527,28 @@ Then(
     await expect(badge).toHaveCount(0, { timeout: 5_000 });
   }
 );
+
+// Builder rail Logic warning badge — see #167. Reuses the same rule-cycle setup as
+// the per-card circular-reference badge above; asserts the rail-level indicator too.
+Then('I should see a logic rail warning badge', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const badge = this.page.getByTestId('tab-badge-logic-warning');
+  await expect(badge).toBeVisible({ timeout: 10_000 });
+});
+
+Then('I should not see a logic rail warning badge', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const badge = this.page.getByTestId('tab-badge-logic-warning');
+  await expect(badge).toHaveCount(0, { timeout: 5_000 });
+});
+
+When('I disable the rule causing the circular reference', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const card = this.page
+    .locator('[data-testid^="condition-card-"]')
+    .filter({ has: this.page.locator('[data-testid^="condition-circular-"]') })
+    .first();
+  const toggle = card.locator('[data-testid^="condition-toggle-"]');
+  await toggle.click();
+  await this.page.waitForTimeout(500);
+});

@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { GitBranch, Plus, Sparkles } from 'lucide-react';
 import { Button, Input, toastSuccess } from '@dculus/ui';
-import { ConditionalRule, detectConditionCycles } from '@dculus/types';
+import { ConditionalRule } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
+import { useConditionCycles } from '../../../hooks/useConditionCycles';
 import { ConditionRuleCard } from './ConditionRuleCard';
 import { ConditionRuleEditor } from './ConditionRuleEditor';
 
@@ -30,10 +31,7 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
 
-  const circularRuleIds = useMemo(() => {
-    const cycles = detectConditionCycles(conditions, { pages });
-    return new Set(cycles.flatMap((c) => c.ruleIds));
-  }, [conditions, pages]);
+  const circularRuleIds = useConditionCycles(conditions, pages);
 
   const openCreate = () => {
     setEditingRule(null);
