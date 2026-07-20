@@ -1,7 +1,7 @@
 {
   "tabs": {
-    "layout": {
-      "label": "தளவமைப்பு",
+    "design": {
+      "label": "வடிவமைப்பு",
       "description": "படிவ அமைப்பை வடிவமைத்து தனிப்பயனாக்கவும்"
     },
     "pageBuilder": {
