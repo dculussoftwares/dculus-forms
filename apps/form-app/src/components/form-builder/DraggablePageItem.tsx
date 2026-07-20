@@ -57,10 +57,17 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
   const { pageRuleCounts } = useConditionReferenceCounts(conditions);
   const pageRuleCount = pageRuleCounts.get(page.id) ?? 0;
 
-  const handleRuleCountClick = (e: React.MouseEvent) => {
+  const handleRuleCountClick = (e: React.SyntheticEvent) => {
     e.stopPropagation();
     if (formId) {
       navigate(`/dashboard/form/${formId}/builder/conditions${location.search}`);
+    }
+  };
+
+  const handleRuleCountKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleRuleCountClick(e);
     }
   };
 
@@ -291,10 +298,13 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
               {pageRuleCount > 0 && (
                 <Badge
                   variant="outline"
+                  role="button"
+                  tabIndex={0}
                   onClick={handleRuleCountClick}
+                  onKeyDown={handleRuleCountKeyDown}
                   data-testid={`page-rule-count-${index + 1}`}
                   title={t('ruleReferences.tooltip', { values: { count: pageRuleCount } })}
-                  className="gap-1 px-1.5 py-0 text-[10px] leading-4 mb-2 cursor-pointer hover:bg-accent"
+                  className="gap-1 px-1.5 py-0 text-[10px] leading-4 mb-2 cursor-pointer hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Link2 className="w-2.5 h-2.5" />
                   {t(

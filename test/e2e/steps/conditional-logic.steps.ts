@@ -1578,7 +1578,9 @@ When(
   async function (this: CustomWorld, fieldId: string) {
     if (!this.page) throw new Error('Page is not initialized');
     const chip = this.page.getByTestId(`field-rule-count-${fieldId}`);
-    await chip.click();
-    await this.page.waitForTimeout(500);
+    await Promise.all([
+      this.page.waitForURL(/\/builder\/conditions(?:\?.*)?$/),
+      chip.click(),
+    ]);
   }
 );
