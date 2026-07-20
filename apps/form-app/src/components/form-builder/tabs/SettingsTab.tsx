@@ -38,7 +38,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
     settings,
     isSaving: settingsIsSaving,
     updateSetting,
-    saveThankYouSettings,
     updateSubmissionLimits,
     saveSubmissionLimits,
     saveResponseCopySettings,
@@ -138,10 +137,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
     }
   };
 
-  const handleUpdateThankYouSetting = (key: string, value: any) => {
-    updateSetting('thankYou', key as keyof typeof settings.thankYou, value);
-  };
-
   const handleUpdateResponseCopySetting = (key: string, value: any) => {
     updateSetting('responseCopy', key as keyof typeof settings.responseCopy, value);
   };
@@ -193,8 +188,6 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
           currentResponseCount={form?.responseCount || 0}
           onSaveGeneralSettings={handleSaveGeneralSettings}
           onRegenerateShortUrl={handleRegenerateShortUrl}
-          onUpdateThankYouSetting={handleUpdateThankYouSetting}
-          onSaveThankYouSettings={saveThankYouSettings}
           onUpdateSubmissionLimits={updateSubmissionLimits}
           onSaveSubmissionLimits={saveSubmissionLimits}
           onUpdateResponseCopySetting={handleUpdateResponseCopySetting}

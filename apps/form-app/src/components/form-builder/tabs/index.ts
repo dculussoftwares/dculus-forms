@@ -4,3 +4,4 @@ export { PageBuilderTab } from './PageBuilderTab.js';
 
 export { SettingsTab } from './SettingsTab.js';
 export { PreviewTab } from './PreviewTab.js';
+export { FinishTab } from './FinishTab.js';

@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
-import { Palette, FileText, Eye, GitBranch, Settings, Users } from 'lucide-react';
+import { Palette, FileText, Eye, GitBranch, Settings, CheckCircle, Users } from 'lucide-react';
 import { Button, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 
-export type BuilderTab = 'layout' | 'page-builder' | 'preview' | 'conditions' | 'settings';
+export type BuilderTab =
+  | 'layout'
+  | 'page-builder'
+  | 'preview'
+  | 'conditions'
+  | 'finish'
+  | 'settings';
 
 interface TabConfig {
   id: BuilderTab;
@@ -16,7 +22,7 @@ interface TabConfig {
 
 // Journey rail (connected, ordered steps) vs. tools cluster (Preview/Settings — reachable
 // from any step, not part of the journey order). See epic #170.
-const RAIL_TAB_IDS: BuilderTab[] = ['layout', 'page-builder', 'conditions'];
+const RAIL_TAB_IDS: BuilderTab[] = ['layout', 'page-builder', 'conditions', 'finish'];
 const TOOL_TAB_IDS: BuilderTab[] = ['preview', 'settings'];
 
 const getTabsConfig = (t: (key: string) => string): TabConfig[] => [
@@ -44,6 +50,12 @@ const getTabsConfig = (t: (key: string) => string): TabConfig[] => [
     label: t('tabs.conditions.label'),
     icon: GitBranch,
     description: t('tabs.conditions.description'),
+  },
+  {
+    id: 'finish',
+    label: t('tabs.finish.label'),
+    icon: CheckCircle,
+    description: t('tabs.finish.description'),
   },
   {
     id: 'settings',
@@ -359,15 +371,19 @@ export const TabKeyboardShortcuts: React.FC<{
             break;
           case '3':
             event.preventDefault();
-            onTabChange('preview');
+            onTabChange('conditions');
             break;
           case '4':
             event.preventDefault();
-            onTabChange('settings');
+            onTabChange('finish');
             break;
           case '5':
             event.preventDefault();
-            onTabChange('conditions');
+            onTabChange('preview');
+            break;
+          case '6':
+            event.preventDefault();
+            onTabChange('settings');
             break;
         }
       }

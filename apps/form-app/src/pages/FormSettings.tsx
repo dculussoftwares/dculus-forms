@@ -44,7 +44,6 @@ const FormSettings: React.FC = () => {
     settings,
     isSaving: settingsIsSaving,
     updateSetting,
-    saveThankYouSettings,
     updateSubmissionLimits,
     saveSubmissionLimits,
     saveResponseCopySettings,
@@ -145,10 +144,6 @@ const FormSettings: React.FC = () => {
     } catch {
       // Error handled by onError callback
     }
-  };
-
-  const handleUpdateThankYouSetting = (key: string, value: any) => {
-    updateSetting('thankYou', key as keyof typeof settings.thankYou, value);
   };
 
   const handleUpdateResponseCopySetting = (key: string, value: any) => {
@@ -257,8 +252,6 @@ const FormSettings: React.FC = () => {
           currentResponseCount={form?.responseCount || 0}
           onSaveGeneralSettings={handleSaveGeneralSettings}
           onRegenerateShortUrl={handleRegenerateShortUrl}
-          onUpdateThankYouSetting={handleUpdateThankYouSetting}
-          onSaveThankYouSettings={saveThankYouSettings}
           onUpdateSubmissionLimits={updateSubmissionLimits}
           onSaveSubmissionLimits={saveSubmissionLimits}
           onUpdateResponseCopySetting={handleUpdateResponseCopySetting}
