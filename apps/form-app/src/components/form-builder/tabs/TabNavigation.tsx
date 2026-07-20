@@ -158,7 +158,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 onKeyDown={(e) => handleKeyDown(e, tab.id)}
                 className="relative flex items-center gap-1.5 px-3 text-sm font-medium transition-colors focus:outline-none h-full rounded-none"
                 style={{ color: isActive ? 'var(--tf-dark)' : 'var(--tf-muted)' }}
-                aria-selected={isActive}
+                aria-current={isActive ? 'page' : undefined}
                 title={tab.description}
                 data-testid={`tab-${tab.id}`}
               >

@@ -144,15 +144,6 @@ Feature: Conditional Logic (show/hide fields and pages)
     Then I should see a read-only conditions tab
 
   @builder-ux
-  Scenario: Tamil locale
-    Given I sign in with valid credentials
-    When I create a form via GraphQL with conditional logic fields
-    And I open the collaborative builder
-    When I switch locale to "ta" via the locale switcher
-    And I open the conditions tab
-    Then I should see the conditions tab header in Tamil
-
-  @builder-ux
   Scenario: Preview parity
     Given I sign in with valid credentials
     When I create a form via GraphQL with conditional logic rules

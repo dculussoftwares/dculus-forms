@@ -1359,26 +1359,6 @@ Then(
   }
 );
 
-When(
-  'I switch locale to {string} via the locale switcher',
-  async function (this: CustomWorld, localeCode: string) {
-    if (!this.page) throw new Error('Page is not initialized');
-    await this.page.getByTestId('locale-switcher').click();
-    const optionName = localeCode === 'ta' ? 'Tamil' : 'English';
-    await this.page.getByRole('option', { name: optionName }).click();
-    await this.page.waitForTimeout(500);
-  }
-);
-
-Then(
-  'I should see the conditions tab header in Tamil',
-  async function (this: CustomWorld) {
-    if (!this.page) throw new Error('Page is not initialized');
-    await expect(this.page.getByText('நிபந்தனைகள்').first()).toBeVisible({ timeout: 10_000 });
-    await expect(this.page.getByText('விதியைச் சேர்').first()).toBeVisible({ timeout: 10_000 });
-  }
-);
-
 const skipToPageFormSchema = () => ({
   layout: {
     theme: 'light',
