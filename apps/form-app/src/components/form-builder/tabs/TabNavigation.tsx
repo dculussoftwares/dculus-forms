@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
-import { Palette, FileText, Eye, GitBranch, Settings, CheckCircle, Users } from 'lucide-react';
-import { Button, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
+import { Palette, FileText, Eye, GitBranch, Settings, CheckCircle, Users, AlertTriangle } from 'lucide-react';
+import { Button, Tabs, TabsList, TabsTrigger, Badge } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 
@@ -71,6 +71,12 @@ interface TabNavigationProps {
   collaboratorCount?: number;
   className?: string;
   position?: 'top' | 'bottom' | 'inline';
+  /** Total placed fields across all pages — rendered as a count badge on the Build step. See #167. */
+  buildFieldCount?: number;
+  /** Whether any condition rule has a circular reference — rendered as a warning badge on the Logic step. See #167. */
+  logicHasWarning?: boolean;
+  /** Whether the Thank You message has been customized (vs. still default) — rendered on the Finish step. See #167. */
+  finishIsCustomized?: boolean;
 }
 
 export const TabNavigation: React.FC<TabNavigationProps> = ({
@@ -79,6 +85,9 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   collaboratorCount = 0,
   className = '',
   position = 'bottom',
+  buildFieldCount,
+  logicHasWarning = false,
+  finishIsCustomized = false,
 }) => {
   const navigate = useNavigate();
   const { formId } = useParams<{ formId: string }>();
@@ -152,6 +161,49 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 >
                   <tab.icon className="w-3.5 h-3.5 shrink-0" />
                   <span>{tab.label}</span>
+                  {tab.id === 'page-builder' && typeof buildFieldCount === 'number' && (
+                    <Badge
+                      variant="outline"
+                      className="px-1.5 py-0 text-[10px] leading-4 min-w-[1.25rem] justify-center"
+                      title={t(
+                        buildFieldCount === 1
+                          ? 'badges.build.fieldCount.single'
+                          : 'badges.build.fieldCount.multiple',
+                        { values: { count: buildFieldCount } }
+                      )}
+                      data-testid="tab-badge-build-count"
+                    >
+                      {buildFieldCount}
+                    </Badge>
+                  )}
+                  {tab.id === 'conditions' && logicHasWarning && (
+                    <Badge
+                      variant="outline"
+                      className="gap-0.5 px-1.5 py-0 text-[10px] leading-4 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                      title={t('badges.logic.warning')}
+                      data-testid="tab-badge-logic-warning"
+                    >
+                      <AlertTriangle className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                    </Badge>
+                  )}
+                  {tab.id === 'finish' && (
+                    <Badge
+                      variant={finishIsCustomized ? 'accent' : 'outline'}
+                      className={cn(
+                        'px-1.5 py-0 text-[10px] leading-4',
+                        !finishIsCustomized &&
+                          'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
+                      )}
+                      title={
+                        finishIsCustomized
+                          ? t('badges.finish.customized')
+                          : t('badges.finish.default')
+                      }
+                      data-testid="tab-badge-finish-status"
+                    >
+                      {finishIsCustomized ? t('badges.finish.customized') : t('badges.finish.default')}
+                    </Badge>
+                  )}
                 </TabsTrigger>
               </React.Fragment>
             ))}

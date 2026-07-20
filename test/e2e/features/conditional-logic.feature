@@ -162,5 +162,9 @@ Feature: Conditional Logic (show/hide fields and pages)
     When I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
     Then I should see a condition rule card for "Show bonus field?"
     And I should not see a circular reference warning badge for the rule "Show bonus field?"
+    And I should not see a logic rail warning badge
     When I add a self-hiding rule for field "cond-bonus" when filled
     Then I should see a circular reference warning badge for the rule "Bonus Field"
+    And I should see a logic rail warning badge
+    When I disable the rule causing the circular reference
+    Then I should not see a logic rail warning badge

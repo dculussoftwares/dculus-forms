@@ -41,6 +41,7 @@ import { ConditionsTab } from '../components/form-builder/conditions/ConditionsT
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { useCollisionDetection } from '../hooks/useCollisionDetection';
 import { useFieldCreation } from '../hooks/useFieldCreation';
+import { useConditionCycles } from '../hooks/useConditionCycles';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { UPDATE_FORM } from '../graphql/mutations';
 import AIEditDrawer from '../components/form-builder/AIEditDrawer';
@@ -101,6 +102,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     isCollaborationFailed,
     pages,
     selectedPageId,
+    conditions,
 
     initializeCollaboration,
     disconnectCollaboration,
@@ -116,6 +118,17 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
     updateLayout,
   } = useFormBuilderStore();
+
+  // Builder rail health badges — Build field count, Logic circular-ref warning,
+  // Finish default-vs-customized status. See #167.
+  const totalFieldCount = useMemo(
+    () => pages.reduce((sum, p) => sum + p.fields.length, 0),
+    [pages]
+  );
+  const circularRuleIds = useConditionCycles(conditions, pages);
+  const logicHasWarning = circularRuleIds.size > 0;
+  const thankYou = formData?.form?.settings?.thankYou;
+  const finishIsCustomized = Boolean(thankYou?.enabled && thankYou?.message?.trim().length);
 
   const { createFieldData } = useFieldCreation();
   const collisionDetectionStrategy = useCollisionDetection();
@@ -494,6 +507,9 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                   isConnected={isConnected}
                   collaboratorCount={0}
                   position="inline"
+                  buildFieldCount={totalFieldCount}
+                  logicHasWarning={logicHasWarning}
+                  finishIsCustomized={finishIsCustomized}
                 />
               }
             />

@@ -35,5 +35,20 @@
   },
   "aria": {
     "switchToTab": "Switch to {{label}} tab - {{description}}"
+  },
+  "badges": {
+    "build": {
+      "fieldCount": {
+        "single": "{{count}} field placed",
+        "multiple": "{{count}} fields placed"
+      }
+    },
+    "logic": {
+      "warning": "One or more condition rules have a circular reference"
+    },
+    "finish": {
+      "default": "Default",
+      "customized": "Customized"
+    }
   }
 }

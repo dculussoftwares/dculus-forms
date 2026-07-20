@@ -35,5 +35,20 @@
   },
   "aria": {
     "switchToTab": "{{label}} தாவலுக்கு மாறவும் - {{description}}"
+  },
+  "badges": {
+    "build": {
+      "fieldCount": {
+        "single": "{{count}} புலம் வைக்கப்பட்டது",
+        "multiple": "{{count}} புலங்கள் வைக்கப்பட்டன"
+      }
+    },
+    "logic": {
+      "warning": "ஒன்று அல்லது அதற்கு மேற்பட்ட நிபந்தனை விதிகளில் வட்ட குறிப்பு உள்ளது"
+    },
+    "finish": {
+      "default": "இயல்பு",
+      "customized": "தனிப்பயனாக்கப்பட்டது"
+    }
   }
 }
