@@ -1552,3 +1552,33 @@ When('I disable the rule causing the circular reference', async function (this: 
   await toggle.click();
   await this.page.waitForTimeout(500);
 });
+
+// Build tab rule-count chips (field → Logic cross-references) — see #168.
+Then(
+  'I should not see a rule-count chip for field {string}',
+  async function (this: CustomWorld, fieldId: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const chip = this.page.getByTestId(`field-rule-count-${fieldId}`);
+    await expect(chip).toHaveCount(0, { timeout: 5_000 });
+  }
+);
+
+Then(
+  'I should see a rule-count chip of {string} for field {string}',
+  async function (this: CustomWorld, count: string, fieldId: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const chip = this.page.getByTestId(`field-rule-count-${fieldId}`);
+    await expect(chip).toBeVisible({ timeout: 10_000 });
+    await expect(chip).toContainText(count);
+  }
+);
+
+When(
+  'I click the rule-count chip for field {string}',
+  async function (this: CustomWorld, fieldId: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    const chip = this.page.getByTestId(`field-rule-count-${fieldId}`);
+    await chip.click();
+    await this.page.waitForTimeout(500);
+  }
+);

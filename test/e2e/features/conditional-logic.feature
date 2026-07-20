@@ -168,3 +168,18 @@ Feature: Conditional Logic (show/hide fields and pages)
     And I should see a logic rail warning badge
     When I disable the rule causing the circular reference
     Then I should not see a logic rail warning badge
+
+  @builder-ux
+  Scenario: Build tab rule-count chip links to Logic
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields
+    And I open the collaborative builder
+    Then I should not see a rule-count chip for field "cond-show-bonus"
+    When I open the conditions tab
+    And I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
+    Then I should see a condition rule card for "Show bonus field?"
+    When I open the page builder tab
+    Then I should see a rule-count chip of "1" for field "cond-show-bonus"
+    And I should see a rule-count chip of "1" for field "cond-bonus"
+    When I click the rule-count chip for field "cond-bonus"
+    Then I should see a condition rule card for "Show bonus field?"

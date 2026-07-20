@@ -33,5 +33,10 @@
   "deleteField": {
     "button": "Delete Field"
   },
-  "dragHint": "Drag a field type here to add it"
+  "dragHint": "Drag a field type here to add it",
+  "ruleReferences": {
+    "single": "{{count}} rule",
+    "multiple": "{{count}} rules",
+    "tooltip": "{{count}} condition rule(s) apply here — click to view in Logic"
+  }
 }
