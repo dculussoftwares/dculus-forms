@@ -109,24 +109,29 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
 
   // ── Inline mode: journey rail (Design → Build → Logic) + a separate tools cluster ──
   if (position === 'inline') {
-    const railTabs = TABS.filter((tab) => RAIL_TAB_IDS.includes(tab.id));
-    const toolTabs = TABS.filter((tab) => TOOL_TAB_IDS.includes(tab.id));
+    const findTab = (id: BuilderTab) => TABS.find((tab) => tab.id === id)!;
+    const railTabs = RAIL_TAB_IDS.map(findTab);
+    const toolTabs = TOOL_TAB_IDS.map(findTab);
 
     return (
       <div className={`flex items-stretch h-full ${className}`}>
-        {/* ── Journey rail: connected steps, in order ── */}
-        <div className="relative flex items-center">
-          <div
-            className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-[1.5px] bg-[rgba(81,76,84,0.22)] dark:bg-white/15"
-            aria-hidden="true"
-          />
-          <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as BuilderTab)}>
-            <TabsList className="border-b-0 bg-transparent gap-3 p-0">
-              {railTabs.map((tab) => (
+        {/* ── Journey rail: connected steps, in order. Same Tabs/TabsTrigger look used
+            everywhere else in the app (LayoutSidebar, PluginDashboardModal, etc.) — only
+            the short connector segments between triggers are new, so the active/hover
+            states never have to fight a custom background for visual precedence. ── */}
+        <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as BuilderTab)}>
+          <TabsList className="h-full items-center border-b-0 bg-transparent gap-0 p-0">
+            {railTabs.map((tab, index) => (
+              <React.Fragment key={tab.id}>
+                {index > 0 && (
+                  <span
+                    className="w-3 h-px shrink-0 bg-[rgba(81,76,84,0.22)] dark:bg-white/15"
+                    aria-hidden="true"
+                  />
+                )}
                 <TabsTrigger
-                  key={tab.id}
                   value={tab.id}
-                  className="relative z-10 gap-1.5 rounded-full bg-white dark:bg-card focus-visible:ring-offset-0"
+                  className="gap-1.5"
                   aria-label={t('aria.switchToTab', {
                     values: { label: tab.label, description: tab.description },
                   })}
@@ -136,10 +141,10 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                   <tab.icon className="w-3.5 h-3.5 shrink-0" />
                   <span>{tab.label}</span>
                 </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
+              </React.Fragment>
+            ))}
+          </TabsList>
+        </Tabs>
 
         {/* ── Divider between the journey rail and the tools cluster ── */}
         <div className="flex items-center px-2" aria-hidden="true">
