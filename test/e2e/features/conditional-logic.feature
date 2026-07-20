@@ -193,3 +193,13 @@ Feature: Conditional Logic (show/hide fields and pages)
     And I select the page "Contact" in the builder
     And I open the preview tab
     Then the preview should open on page "Contact"
+
+  @builder-ux
+  Scenario: Preview opens past the intro on layouts with an intro CTA (#175)
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields and L1 layout
+    And I open the collaborative builder
+    And I open the page builder tab
+    And I select the page "Contact" in the builder
+    And I open the preview tab
+    Then the preview should open on page "Contact"

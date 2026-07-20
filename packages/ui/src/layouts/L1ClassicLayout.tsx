@@ -24,7 +24,7 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
     },
     submitButton: 'w-full h-10 bg-blue-600 rounded-md flex items-center justify-center'
   });
-  const [showPages, setShowPages] = useState(false);
+  const [showPages, setShowPages] = useState(() => Boolean(initialPageId));
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempContent, setTempContent] = useState(layout?.content || '<h1>Employee satisfaction survey</h1>');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);

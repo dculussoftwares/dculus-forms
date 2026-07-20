@@ -201,6 +201,21 @@ When(
   }
 );
 
+// L1 (Classic) is the intro-CTA layout new forms default to — it gates the
+// pages section behind a "showPages" flag that #175's initialPageId fix had
+// to seed too, on top of the L9 (no-intro) fixture used elsewhere here.
+When(
+  'I create a form via GraphQL with conditional logic fields and L1 layout',
+  async function (this: CustomWorld) {
+    const fields = conditionalLogicFields();
+    await createFormViaGraphQL(
+      this,
+      { ...fields, layout: { ...fields.layout, code: 'L1' } },
+      'E2E Conditional Builder L1 Test'
+    );
+  }
+);
+
 const triggerMatrixFields = () => ({
   layout: {
     theme: 'light',

@@ -23,7 +23,7 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
     },
     submitButton: 'w-full h-12 bg-slate-800 rounded-lg flex items-center justify-center'
   });
-  const [showPages, setShowPages] = useState(false);
+  const [showPages, setShowPages] = useState(() => Boolean(initialPageId));
 
 
 

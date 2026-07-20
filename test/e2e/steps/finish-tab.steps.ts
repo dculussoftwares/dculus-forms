@@ -77,8 +77,11 @@ When('I switch the preview step to {string}', async function (this: CustomWorld,
         throw new Error('Page is not initialized');
     }
 
-    const testId = step.toLowerCase() === 'finish' ? 'preview-step-finish' : 'preview-step-form';
-    const toggle = this.page.getByTestId(testId);
+    const normalizedStep = step.trim().toLowerCase();
+    if (normalizedStep !== 'form' && normalizedStep !== 'finish') {
+        throw new Error(`Unsupported preview step: ${step}`);
+    }
+    const toggle = this.page.getByTestId(`preview-step-${normalizedStep}`);
     await expect(toggle).toBeVisible({ timeout: 10_000 });
     await toggle.click();
 });
