@@ -1,5 +1,5 @@
-import { Before, After, setDefaultTimeout } from '@cucumber/cucumber';
-import { chromium } from 'playwright';
+import { Before, After, BeforeAll, AfterAll, setDefaultTimeout } from '@cucumber/cucumber';
+import { chromium, type Browser } from 'playwright';
 import { writeFileSync, mkdirSync } from 'fs';
 import { CustomWorld } from './world';
 import { hasStoredAuthState, STORAGE_STATE_PATH } from './authStorage';
@@ -7,8 +7,20 @@ import { attachDiagnostics } from './diagnostics';
 
 setDefaultTimeout(120 * 1000);
 
+// One browser per parallel worker process, reused across all scenarios that worker runs.
+// Per-scenario isolation still comes from a fresh BrowserContext (and thus storage/cookies) below.
+let sharedBrowser: Browser;
+
+BeforeAll(async function () {
+  sharedBrowser = await chromium.launch({ headless: process.env.E2E_HEADLESS !== 'false' });
+});
+
+AfterAll(async function () {
+  await sharedBrowser?.close();
+});
+
 Before(async function (this: CustomWorld) {
-  this.browser = await chromium.launch({ headless: this.headless });
+  this.browser = sharedBrowser;
   this.context = await this.browser.newContext({
     baseURL: this.baseUrl,
     storageState: hasStoredAuthState() ? STORAGE_STATE_PATH : undefined,
@@ -66,5 +78,5 @@ After(async function (this: CustomWorld, scenario) {
   await this.viewerPage?.close();
   await this.context?.close();
   await this.contextB?.close();
-  await this.browser?.close();
+  // Note: browser is shared across scenarios in this worker (see BeforeAll) — do not close it here.
 });

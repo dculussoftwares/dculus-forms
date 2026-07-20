@@ -518,19 +518,30 @@ jobs:
           done
           echo "❌ Backend failed to start" && exit 1
 
-      - name: Build & serve form-app (localhost:3000)
+      - name: Build form-app & form-viewer (parallel)
         run: |
-          VITE_API_URL=http://localhost:4000 \
-          VITE_GRAPHQL_URL=http://localhost:4000/graphql \
-          VITE_FORM_VIEWER_URL=http://localhost:5173 \
-          pnpm --filter form-app build
-          pnpm --filter form-app preview --port 3000 --host &
+          set -e
+          (
+            VITE_API_URL=http://localhost:4000 \
+            VITE_GRAPHQL_URL=http://localhost:4000/graphql \
+            VITE_FORM_VIEWER_URL=http://localhost:5173 \
+            pnpm --filter form-app build
+          ) &
+          FORM_APP_PID=$!
 
-      - name: Build & serve form-viewer (localhost:5173)
+          (
+            VITE_API_URL=http://localhost:4000 \
+            VITE_GRAPHQL_URL=http://localhost:4000/graphql \
+            pnpm --filter form-viewer build
+          ) &
+          FORM_VIEWER_PID=$!
+
+          wait $FORM_APP_PID
+          wait $FORM_VIEWER_PID
+
+      - name: Serve form-app & form-viewer
         run: |
-          VITE_API_URL=http://localhost:4000 \
-          VITE_GRAPHQL_URL=http://localhost:4000/graphql \
-          pnpm --filter form-viewer build
+          pnpm --filter form-app preview --port 3000 --host &
           pnpm --filter form-viewer preview --port 5173 --host &
 
       - name: Wait for frontends
