@@ -1,7 +1,7 @@
 {
   "tabs": {
-    "layout": {
-      "label": "Layout",
+    "design": {
+      "label": "Design",
       "description": "Design and customize form layout"
     },
     "pageBuilder": {

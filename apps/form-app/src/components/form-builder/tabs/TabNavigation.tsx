@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
 import { Palette, FileText, Eye, GitBranch, Settings, Users } from 'lucide-react';
-import { Button } from '@dculus/ui';
+import { Button, Tabs, TabsList, TabsTrigger } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 
@@ -14,12 +14,17 @@ interface TabConfig {
   description: string;
 }
 
+// Journey rail (connected, ordered steps) vs. tools cluster (Preview/Settings — reachable
+// from any step, not part of the journey order). See epic #170.
+const RAIL_TAB_IDS: BuilderTab[] = ['layout', 'page-builder', 'conditions'];
+const TOOL_TAB_IDS: BuilderTab[] = ['preview', 'settings'];
+
 const getTabsConfig = (t: (key: string) => string): TabConfig[] => [
   {
     id: 'layout',
-    label: t('tabs.layout.label'),
+    label: t('tabs.design.label'),
     icon: Palette,
-    description: t('tabs.layout.description'),
+    description: t('tabs.design.description'),
   },
   {
     id: 'page-builder',
@@ -102,40 +107,85 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
     };
   }, [position]);
 
-  // ── Inline mode: Typeform-style underline tabs for use inside the header ──
+  // ── Inline mode: journey rail (Design → Build → Logic) + a separate tools cluster ──
   if (position === 'inline') {
+    const findTab = (id: BuilderTab) => TABS.find((tab) => tab.id === id)!;
+    const railTabs = RAIL_TAB_IDS.map(findTab);
+    const toolTabs = TOOL_TAB_IDS.map(findTab);
+
     return (
       <div className={`flex items-stretch h-full ${className}`}>
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <Button
-              key={tab.id}
-              variant="ghost"
-              onClick={() => handleTabChange(tab.id)}
-              onKeyDown={(e) => handleKeyDown(e, tab.id)}
-              className="relative flex items-center gap-1.5 px-3 text-sm font-medium transition-colors focus:outline-none h-full rounded-none"
-              style={{ color: isActive ? 'var(--tf-dark)' : 'var(--tf-muted)' }}
-              aria-selected={isActive}
-              title={tab.description}
-              data-testid={`tab-${tab.id}`}
-            >
-              <tab.icon className="w-3.5 h-3.5 shrink-0" />
-              <span>{tab.label}</span>
-              {/* Typeform underline indicator */}
-              {isActive && (
-                <span
-                  className="absolute bottom-[-1px] left-0 right-0 h-[2px] rounded-t-full"
-                  style={{ backgroundColor: 'var(--tf-dark)' }}
-                />
-              )}
-            </Button>
-          );
-        })}
+        {/* ── Journey rail: connected steps, in order. Same Tabs/TabsTrigger look used
+            everywhere else in the app (LayoutSidebar, PluginDashboardModal, etc.) — only
+            the short connector segments between triggers are new, so the active/hover
+            states never have to fight a custom background for visual precedence. ── */}
+        <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as BuilderTab)}>
+          <TabsList className="h-full items-center border-b-0 bg-transparent gap-0 p-0">
+            {railTabs.map((tab, index) => (
+              <React.Fragment key={tab.id}>
+                {index > 0 && (
+                  <span
+                    className="w-3 h-px shrink-0 bg-[rgba(81,76,84,0.22)] dark:bg-white/15"
+                    aria-hidden="true"
+                  />
+                )}
+                <TabsTrigger
+                  value={tab.id}
+                  className="gap-1.5"
+                  aria-label={t('aria.switchToTab', {
+                    values: { label: tab.label, description: tab.description },
+                  })}
+                  title={tab.description}
+                  data-testid={`tab-${tab.id}`}
+                >
+                  <tab.icon className="w-3.5 h-3.5 shrink-0" />
+                  <span>{tab.label}</span>
+                </TabsTrigger>
+              </React.Fragment>
+            ))}
+          </TabsList>
+        </Tabs>
+
+        {/* ── Divider between the journey rail and the tools cluster ── */}
+        <div className="flex items-center px-2" aria-hidden="true">
+          <div className="w-px h-5 border-l border-dashed border-[var(--tf-border-medium)] dark:border-white/10" />
+        </div>
+
+        {/* ── Tools cluster: Preview + Settings — off the rail, reachable from any step ── */}
+        <div className="flex items-stretch">
+          {toolTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <Button
+                key={tab.id}
+                variant="ghost"
+                onClick={() => handleTabChange(tab.id)}
+                onKeyDown={(e) => handleKeyDown(e, tab.id)}
+                className="relative flex items-center gap-1.5 px-3 text-sm font-medium transition-colors focus:outline-none h-full rounded-none"
+                style={{ color: isActive ? 'var(--tf-dark)' : 'var(--tf-muted)' }}
+                aria-current={isActive ? 'page' : undefined}
+                title={tab.description}
+                data-testid={`tab-${tab.id}`}
+              >
+                <tab.icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{tab.label}</span>
+                {/* Typeform underline indicator */}
+                {isActive && (
+                  <span
+                    className="absolute bottom-[-1px] left-0 right-0 h-[2px] rounded-t-full"
+                    style={{ backgroundColor: 'var(--tf-dark)' }}
+                  />
+                )}
+              </Button>
+            );
+          })}
+        </div>
       </div>
     );
   }
 
+  // `bottom` and default/`top` modes below aren't used by the current header (the only call
+  // site, CollaborativeFormBuilder.tsx, always passes position="inline") — left as-is, out of scope for this ticket.
   const positionClasses =
     position === 'bottom'
       ? 'fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50'
