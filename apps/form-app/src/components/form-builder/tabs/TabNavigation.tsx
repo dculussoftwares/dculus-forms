@@ -126,7 +126,7 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="relative z-10 gap-1.5 rounded-full bg-white dark:bg-card"
+                  className="relative z-10 gap-1.5 rounded-full bg-white dark:bg-card focus-visible:ring-offset-0"
                   aria-label={t('aria.switchToTab', {
                     values: { label: tab.label, description: tab.description },
                   })}
