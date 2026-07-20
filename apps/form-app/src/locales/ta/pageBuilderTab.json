@@ -33,5 +33,10 @@
   "deleteField": {
     "button": "Delete Field"
   },
-  "dragHint": "ஒரு புல வகையை இங்கே இழுக்கவும்"
+  "dragHint": "ஒரு புல வகையை இங்கே இழுக்கவும்",
+  "ruleReferences": {
+    "single": "{{count}} விதி",
+    "multiple": "{{count}} விதிகள்",
+    "tooltip": "{{count}} நிபந்தனை விதி(கள்) இங்கு பொருந்தும் — லாஜிக்கில் பார்க்க கிளிக் செய்யவும்"
+  }
 }

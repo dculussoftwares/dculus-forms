@@ -1,7 +1,10 @@
 import React from 'react';
-import { FieldPreview, Button } from '@dculus/ui';
+import { useNavigate, useParams, useLocation } from 'react-router';
+import { FieldPreview, Button, Badge } from '@dculus/ui';
 import { FormField, FormPage, FillableFormField } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import { useConditionReferenceCounts } from '../../../hooks/useConditionReferenceCounts';
+import { useTranslation } from '../../../hooks/useTranslation';
 
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import {
@@ -26,6 +29,7 @@ import {
   FileCode,
   Upload,
   Phone,
+  Link2,
 } from 'lucide-react';
 import { PageActionsSelector } from '../PageActionsSelector';
 
@@ -149,6 +153,29 @@ export const FieldCard: React.FC<{
   const isAIHighlighted = aiHighlightedFieldId === field.id;
   const cardRef = React.useRef<HTMLDivElement>(null);
 
+  // Logic cross-reference chip — see issue #168
+  const { t } = useTranslation('pageBuilderTab');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { formId } = useParams<{ formId: string }>();
+  const conditions = useFormBuilderStore((s) => s.conditions);
+  const { fieldRuleCounts } = useConditionReferenceCounts(conditions);
+  const fieldRuleCount = fieldRuleCounts.get(field.id) ?? 0;
+
+  const handleRuleCountClick = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    if (formId) {
+      navigate(`/dashboard/form/${formId}/builder/conditions${location.search}`);
+    }
+  };
+
+  const handleRuleCountKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleRuleCountClick(e);
+    }
+  };
+
   React.useEffect(() => {
     if (isAIHighlighted && cardRef.current) {
       cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -217,8 +244,26 @@ export const FieldCard: React.FC<{
                 </span>
               )}
           </div>
-          <div className="text-xs text-[#655d67] dark:text-gray-400">
-            {typeConfig.label}
+          <div className="text-xs text-[#655d67] dark:text-gray-400 flex items-center gap-1.5">
+            <span>{typeConfig.label}</span>
+            {fieldRuleCount > 0 && (
+              <Badge
+                variant="outline"
+                role="button"
+                tabIndex={0}
+                onClick={handleRuleCountClick}
+                onKeyDown={handleRuleCountKeyDown}
+                data-testid={`field-rule-count-${field.id}`}
+                title={t('ruleReferences.tooltip', { values: { count: fieldRuleCount } })}
+                className="gap-1 px-1.5 py-0 text-[10px] leading-4 cursor-pointer hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Link2 className="w-2.5 h-2.5" />
+                {t(
+                  fieldRuleCount === 1 ? 'ruleReferences.single' : 'ruleReferences.multiple',
+                  { values: { count: fieldRuleCount } }
+                )}
+              </Badge>
+            )}
           </div>
         </div>
       </div>

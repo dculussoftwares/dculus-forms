@@ -1,17 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router';
 import { useSortable } from '@dnd-kit/sortable';
 import { useDndContext, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { FormPage } from '@dculus/types';
-import { Button, Card, Input } from '@dculus/ui';
+import { Button, Card, Input, Badge } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useFormBuilderStore } from '../../store/useFormBuilderStore';
+import { useConditionReferenceCounts } from '../../hooks/useConditionReferenceCounts';
 import {
   GripVertical,
   Trash2,
   Copy,
   Plus,
+  Link2,
 } from 'lucide-react';
 import { ConfirmationDialog } from './ConfirmationDialog';
 
@@ -46,6 +50,26 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
   const pageItemRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { active, over } = useDndContext();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { formId } = useParams<{ formId: string }>();
+  const conditions = useFormBuilderStore((state) => state.conditions);
+  const { pageRuleCounts } = useConditionReferenceCounts(conditions);
+  const pageRuleCount = pageRuleCounts.get(page.id) ?? 0;
+
+  const handleRuleCountClick = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    if (formId) {
+      navigate(`/dashboard/form/${formId}/builder/conditions${location.search}`);
+    }
+  };
+
+  const handleRuleCountKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleRuleCountClick(e);
+    }
+  };
 
   // Update editedTitle when page.title changes (from collaboration)
   useEffect(() => {
@@ -270,6 +294,25 @@ export const DraggablePageItem: React.FC<DraggablePageItemProps> = ({
               >
                 {getFieldCountText(page.fields.length)}
               </div>
+
+              {pageRuleCount > 0 && (
+                <Badge
+                  variant="outline"
+                  role="button"
+                  tabIndex={0}
+                  onClick={handleRuleCountClick}
+                  onKeyDown={handleRuleCountKeyDown}
+                  data-testid={`page-rule-count-${index + 1}`}
+                  title={t('ruleReferences.tooltip', { values: { count: pageRuleCount } })}
+                  className="gap-1 px-1.5 py-0 text-[10px] leading-4 mb-2 cursor-pointer hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Link2 className="w-2.5 h-2.5" />
+                  {t(
+                    pageRuleCount === 1 ? 'ruleReferences.single' : 'ruleReferences.multiple',
+                    { values: { count: pageRuleCount } }
+                  )}
+                </Badge>
+              )}
 
               {/* Field Preview Bars (Thumbnail Style) */}
               <div className="space-y-1">
