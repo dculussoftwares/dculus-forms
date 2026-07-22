@@ -3,6 +3,7 @@ import {
   $getSelection,
   $isRangeSelection,
   $getRoot,
+  $setSelection,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -176,8 +177,8 @@ export function ToolbarPlugin(): JSX.Element {
 
   const applyFontSize = (size: string) => {
     editor.update(() => {
-      let selection = $getSelection();
-      if (!$isRangeSelection(selection)) {
+      const original = $getSelection();
+      if (!$isRangeSelection(original)) {
         return;
       }
       // A collapsed selection (cursor placed but no text highlighted) only
@@ -185,12 +186,17 @@ export function ToolbarPlugin(): JSX.Element {
       // any existing text. Since this toolbar is used to size short blocks of
       // already-typed content, fall back to the whole document so the click
       // visibly (and persistently) applies.
-      if (selection.isCollapsed()) {
-        selection = $getRoot().select();
-      }
+      const wasCollapsed = original.isCollapsed();
+      const caret = wasCollapsed ? original.clone() : null;
+      const selection = wasCollapsed ? $getRoot().select() : original;
       $patchStyleText(selection, {
         'font-size': size,
       });
+      // Restore the caret so the whole-document selection used above doesn't
+      // linger and get replaced by the user's next keystroke.
+      if (caret) {
+        $setSelection(caret);
+      }
     });
     setFontSize(size);
   };
