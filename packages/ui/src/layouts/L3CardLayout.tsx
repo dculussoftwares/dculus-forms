@@ -96,7 +96,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
             style={outerBackgroundStyle}
           >
             {/* Video background layer - fills the outer area, no blur (unlike images) */}
-            {hasVideoBackground && (
+            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && (
               <video
                 key={videoUrl}
                 autoPlay
@@ -110,7 +110,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
             )}
 
             {/* Backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-            {!layout?.isCustomBackgroundColorEnabled && layout?.backgroundImageKey && cdnEndpoint && (
+            {!layout?.isCustomBackgroundColorEnabled && !hasVideoBackground && layout?.backgroundImageKey && cdnEndpoint && (
               <div
                 className="absolute inset-0"
                 style={{
@@ -240,7 +240,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
             style={outerBackgroundStyle}
           >
             {/* Video background layer - fills the outer area, no blur (unlike images) */}
-            {hasVideoBackground && (
+            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && (
               <video
                 key={videoUrl}
                 autoPlay
@@ -254,7 +254,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
             )}
 
             {/* Backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-            {!layout?.isCustomBackgroundColorEnabled && layout?.backgroundImageKey && cdnEndpoint && (
+            {!layout?.isCustomBackgroundColorEnabled && !hasVideoBackground && layout?.backgroundImageKey && cdnEndpoint && (
               <div
                 className="absolute inset-0"
                 style={{
