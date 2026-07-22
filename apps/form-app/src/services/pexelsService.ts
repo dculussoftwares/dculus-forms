@@ -154,6 +154,18 @@ export async function downloadPexelsVideo(
     throw new Error('Failed to fetch video from Pexels');
   }
 
+  // Fast path: if the server tells us upfront it's oversized, fail before buffering
+  // the whole body into memory (a slower streaming-abort would catch the rare case
+  // where a CDN omits Content-Length, but that's not worth the complexity here).
+  const contentLengthHeader = videoResponse.headers.get('content-length');
+  const contentLength = contentLengthHeader ? Number(contentLengthHeader) : NaN;
+  if (Number.isFinite(contentLength) && contentLength > MAX_VIDEO_DOWNLOAD_BYTES) {
+    throw new UploadError(
+      `Video size ${contentLength} bytes exceeds maximum allowed size of ${MAX_VIDEO_DOWNLOAD_BYTES} bytes`,
+      'FILE_TOO_LARGE'
+    );
+  }
+
   const videoBlob = await videoResponse.blob();
   if (videoBlob.size > MAX_VIDEO_DOWNLOAD_BYTES) {
     throw new UploadError(

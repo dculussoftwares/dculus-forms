@@ -194,11 +194,15 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                       onUploadSuccess={handleImageUploadSuccess}
                     />
                     
-                    {/* Gallery of uploaded images */}
+                    {/* Gallery of uploaded images — excludes stock videos saved under the same
+                        FormBackground type (those are only ever applied via the Pexels/Pixabay
+                        Videos tab, never through this image-only gallery) */}
                     {formFilesData?.getFormFiles && (
                       <div className="space-y-3">
                         <BackgroundImageGallery
-                          images={formFilesData.getFormFiles}
+                          images={formFilesData.getFormFiles.filter(
+                            (file: { mimeType?: string }) => !file.mimeType?.startsWith('video/')
+                          )}
                           selectedImageKey={selectedImageKey || undefined}
                           onImageSelect={handleImageSelect}
                         />

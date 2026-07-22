@@ -17,12 +17,16 @@ export function useBackgroundVideo(
   layout: FormLayout | undefined,
   cdnEndpoint: string | undefined
 ): BackgroundVideo {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  // Lazy initializer reads the real preference on the first render — starting from a
+  // hardcoded `false` would briefly render the video for reduced-motion users before
+  // the effect below has a chance to run.
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
     const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);

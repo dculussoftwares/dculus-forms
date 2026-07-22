@@ -5,6 +5,14 @@ import { logger } from '../lib/logger.js';
 
 export const pixabayRouter: import('express').Router = Router();
 
+// Bounds how long we wait on Pixabay before giving up — without this, a stalled
+// upstream connection would keep the Express request (and its worker) open indefinitely.
+const UPSTREAM_TIMEOUT_MS = 10_000;
+
+function isAbortError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'AbortError';
+}
+
 pixabayRouter.get('/pixabay', async (req, res) => {
   // Require authentication so only signed-in users can use this proxy
   try {
@@ -43,7 +51,9 @@ pixabayRouter.get('/pixabay', async (req, res) => {
       per_page: String(perPageNum),
     });
 
-    const upstream = await fetch(`https://pixabay.com/api/?${params}`);
+    const upstream = await fetch(`https://pixabay.com/api/?${params}`, {
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
 
     if (!upstream.ok) {
       logger.warn(`Pixabay upstream error: ${upstream.status}`);
@@ -53,6 +63,10 @@ pixabayRouter.get('/pixabay', async (req, res) => {
     const data = await upstream.json();
     return res.json(data);
   } catch (err) {
+    if (isAbortError(err)) {
+      logger.warn('Pixabay proxy timed out');
+      return res.status(504).json({ error: 'Upstream request timed out' });
+    }
     logger.error('Pixabay proxy error:', err);
     return res.status(502).json({ error: 'Failed to fetch images' });
   }
@@ -92,7 +106,9 @@ pixabayRouter.get('/pixabay/videos', async (req, res) => {
       per_page: String(perPageNum),
     });
 
-    const upstream = await fetch(`https://pixabay.com/api/videos/?${params}`);
+    const upstream = await fetch(`https://pixabay.com/api/videos/?${params}`, {
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
 
     if (!upstream.ok) {
       logger.warn(`Pixabay video upstream error: ${upstream.status}`);
@@ -102,6 +118,10 @@ pixabayRouter.get('/pixabay/videos', async (req, res) => {
     const data = await upstream.json();
     return res.json(data);
   } catch (err) {
+    if (isAbortError(err)) {
+      logger.warn('Pixabay video proxy timed out');
+      return res.status(504).json({ error: 'Upstream request timed out' });
+    }
     logger.error('Pixabay video proxy error:', err);
     return res.status(502).json({ error: 'Failed to fetch videos' });
   }

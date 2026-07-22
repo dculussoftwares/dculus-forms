@@ -5,6 +5,14 @@ import { logger } from '../lib/logger.js';
 
 export const pexelsRouter: import('express').Router = Router();
 
+// Bounds how long we wait on Pexels before giving up — without this, a stalled
+// upstream connection would keep the Express request (and its worker) open indefinitely.
+const UPSTREAM_TIMEOUT_MS = 10_000;
+
+function isAbortError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'AbortError';
+}
+
 pexelsRouter.get('/pexels', async (req, res) => {
   try {
     const sessionData = await auth.api.getSession({
@@ -38,6 +46,7 @@ pexelsRouter.get('/pexels', async (req, res) => {
 
     const upstream = await fetch(`https://api.pexels.com/v1/search?${params}`, {
       headers: { Authorization: apiKey },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!upstream.ok) {
@@ -48,6 +57,10 @@ pexelsRouter.get('/pexels', async (req, res) => {
     const data = await upstream.json();
     return res.json(data);
   } catch (err) {
+    if (isAbortError(err)) {
+      logger.warn('Pexels proxy timed out');
+      return res.status(504).json({ error: 'Upstream request timed out' });
+    }
     logger.error('Pexels proxy error:', err);
     return res.status(502).json({ error: 'Failed to fetch images' });
   }
@@ -86,6 +99,7 @@ pexelsRouter.get('/pexels/videos', async (req, res) => {
 
     const upstream = await fetch(`https://api.pexels.com/videos/search?${params}`, {
       headers: { Authorization: apiKey },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!upstream.ok) {
@@ -96,6 +110,10 @@ pexelsRouter.get('/pexels/videos', async (req, res) => {
     const data = await upstream.json();
     return res.json(data);
   } catch (err) {
+    if (isAbortError(err)) {
+      logger.warn('Pexels video proxy timed out');
+      return res.status(504).json({ error: 'Upstream request timed out' });
+    }
     logger.error('Pexels video proxy error:', err);
     return res.status(502).json({ error: 'Failed to fetch videos' });
   }

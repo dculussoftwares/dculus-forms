@@ -54,9 +54,9 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
       setPage(pageNum);
     } catch {
       if (type === 'photo') {
-        toastError('Search failed', 'Failed to search Pixabay images. Please try again.');
+        toastError(t('searchFailedTitle'), t('imageSearchFailed'));
       } else {
-        toastError('Search failed', t('videoSearchFailed'));
+        toastError(t('searchFailedTitle'), t('videoSearchFailed'));
       }
     } finally {
       setLoading(false);
@@ -88,16 +88,16 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
     setUploading(true);
     try {
       const uploadResult = await downloadPixabayImage(image.fullHDURL ?? image.largeImageURL, formId);
-      toastSuccess('Image applied successfully');
+      toastSuccess(t('imageAppliedSuccess'));
       onImageApplied(uploadResult.key);
       onUploadSuccess();
       setSelectedImage(null);
       onClose();
     } catch (error) {
       if (error instanceof UploadError && error.code === 'FILE_TOO_LARGE') {
-        toastError('Image too large', 'The selected image exceeds the 5MB limit.');
+        toastError(t('imageTooLargeTitle'), t('imageTooLargeDescription'));
       } else {
-        toastError('Upload failed', 'Failed to apply image. Please try again.');
+        toastError(t('uploadFailedTitle'), t('imageApplyFailed'));
       }
       setSelectedImage(null);
     } finally {
@@ -119,7 +119,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
       if (error instanceof UploadError && error.code === 'FILE_TOO_LARGE') {
         toastError(t('videoTooLargeTitle'), t('videoTooLargeDescription'));
       } else {
-        toastError('Upload failed', t('videoApplyFailed'));
+        toastError(t('uploadFailedTitle'), t('videoApplyFailed'));
       }
       setSelectedVideo(null);
     } finally {

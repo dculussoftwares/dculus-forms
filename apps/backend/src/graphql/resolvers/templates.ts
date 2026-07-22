@@ -184,29 +184,19 @@ export const templatesResolvers = {
         // Clone the template schema to avoid modifying the original
         const formSchema = JSON.parse(JSON.stringify(template.formSchema));
 
+        // Copy the background image/video file in R2 (if present) — do this before form
+        // creation to get the new S3 key, but defer the FormFile DB record (below) until
+        // after the form row exists, since FormFile.formId is a real FK constraint.
+        type CopiedAsset = { key: string; originalName: string; url: string; size: number; mimeType: string };
+
         // Check if template has a background image and copy it for the new form
         // Check for both truthy value AND non-empty string
+        let copiedImageAsset: CopiedAsset | null = null;
         if (formSchema.layout && formSchema.layout.backgroundImageKey && formSchema.layout.backgroundImageKey.trim() !== '') {
           try {
-            // Copy the background image file
             const copiedFile = await copyFileForForm(formSchema.layout.backgroundImageKey, newFormId);
-
-            // Update the form schema with the new background image key
             formSchema.layout.backgroundImageKey = copiedFile.key;
-
-            // Create FormFile record for the copied image
-            await prisma.formFile.create({
-              data: {
-                id: randomUUID(),
-                key: copiedFile.key,
-                type: 'FormBackground',
-                formId: newFormId,
-                originalName: copiedFile.originalName,
-                url: copiedFile.url,
-                size: copiedFile.size,
-                mimeType: copiedFile.mimeType,
-              }
-            });
+            copiedImageAsset = copiedFile;
           } catch (copyError) {
             logger.error('Error copying background image:', copyError);
             // Continue with form creation even if image copy fails
@@ -221,24 +211,12 @@ export const templatesResolvers = {
         }
 
         // Same treatment for a background video, if the template has one
+        let copiedVideoAsset: CopiedAsset | null = null;
         if (formSchema.layout && formSchema.layout.backgroundVideoKey && formSchema.layout.backgroundVideoKey.trim() !== '') {
           try {
             const copiedVideo = await copyFileForForm(formSchema.layout.backgroundVideoKey, newFormId);
-
             formSchema.layout.backgroundVideoKey = copiedVideo.key;
-
-            await prisma.formFile.create({
-              data: {
-                id: randomUUID(),
-                key: copiedVideo.key,
-                type: 'FormBackground',
-                formId: newFormId,
-                originalName: copiedVideo.originalName,
-                url: copiedVideo.url,
-                size: copiedVideo.size,
-                mimeType: copiedVideo.mimeType,
-              }
-            });
+            copiedVideoAsset = copiedVideo;
           } catch (copyError) {
             logger.error('Error copying background video:', copyError);
             formSchema.layout.backgroundVideoKey = '';
@@ -257,6 +235,44 @@ export const templatesResolvers = {
           organizationId: args.organizationId,
           createdById: user.id,
         }, formSchema); // Initialize YJS document with modified schema
+
+        // Now that the form row exists, persist FormFile records for any copied assets
+        if (copiedImageAsset) {
+          try {
+            await prisma.formFile.create({
+              data: {
+                id: randomUUID(),
+                key: copiedImageAsset.key,
+                type: 'FormBackground',
+                formId: newFormId,
+                originalName: copiedImageAsset.originalName,
+                url: copiedImageAsset.url,
+                size: copiedImageAsset.size,
+                mimeType: copiedImageAsset.mimeType,
+              }
+            });
+          } catch (error) {
+            logger.error('Error creating FormFile record for copied background image:', error);
+          }
+        }
+        if (copiedVideoAsset) {
+          try {
+            await prisma.formFile.create({
+              data: {
+                id: randomUUID(),
+                key: copiedVideoAsset.key,
+                type: 'FormBackground',
+                formId: newFormId,
+                originalName: copiedVideoAsset.originalName,
+                url: copiedVideoAsset.url,
+                size: copiedVideoAsset.size,
+                mimeType: copiedVideoAsset.mimeType,
+              }
+            });
+          } catch (error) {
+            logger.error('Error creating FormFile record for copied background video:', error);
+          }
+        }
 
         return newForm;
       } catch (error) {
