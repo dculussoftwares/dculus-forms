@@ -274,6 +274,31 @@ describe('File Upload Service', () => {
       expect(result.mimeType).toBe('video/mp4');
     });
 
+    it('should allow a FormBackground video at exactly the 45MB cap', async () => {
+      mockSend.mockResolvedValue({});
+      const exactlyAtCap = 45 * 1024 * 1024;
+      const mockFile = createMockFile('exact.mp4', 'video/mp4', exactlyAtCap);
+
+      const result = await uploadFile({
+        file: mockFile,
+        type: 'FormBackground',
+      });
+
+      expect(result.mimeType).toBe('video/mp4');
+    });
+
+    it('should throw when a FormBackground video is exactly 1 byte over the 45MB cap', async () => {
+      const justOverCap = 45 * 1024 * 1024 + 1;
+      const mockFile = createMockFile('just-over.mp4', 'video/mp4', justOverCap);
+
+      await expect(
+        uploadFile({
+          file: mockFile,
+          type: 'FormBackground',
+        })
+      ).rejects.toThrow('File size');
+    });
+
     it('should handle S3 upload errors', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       mockSend.mockRejectedValue(new Error('S3 upload failed'));

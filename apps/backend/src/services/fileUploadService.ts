@@ -256,7 +256,7 @@ export async function uploadFile(
 
     // Check file size — FormResponse relies on multer's 50 MB limit (enforced before this point);
     // PdfTemplateAsset is capped at MAX_PDF_TEMPLATE_SIZE (10 MB);
-    // FormBackground videos are capped at MAX_VIDEO_FILE_SIZE (20 MB);
+    // FormBackground videos are capped at MAX_VIDEO_FILE_SIZE (45 MB);
     // all other upload types (including FormBackground images) are capped at MAX_FILE_SIZE (5 MB)
     if (type === 'PdfTemplateAsset') {
       if (buffer.length > MAX_PDF_TEMPLATE_SIZE) {
