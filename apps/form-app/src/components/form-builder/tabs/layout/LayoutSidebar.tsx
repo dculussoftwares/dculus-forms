@@ -55,12 +55,19 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
   };
 
   const handleApplyBackgroundImage = () => {
-    if (selectedImageKey) {
-      // No fresh blob available for re-applying an already-uploaded gallery asset, so we
-      // can't sample a new dominant color here — clear the old one rather than showing a
-      // stale/mismatched wash; rendering falls back to the flat tint when this is empty.
-      onLayoutUpdate({ backgroundImageKey: selectedImageKey, backgroundVideoKey: '', backgroundDominantColor: '' });
-    }
+    if (!selectedImageKey) return;
+    const selectedFile = formFilesData?.getFormFiles?.find(
+      (file: { key: string }) => file.key === selectedImageKey
+    );
+    const isVideo = selectedFile?.mimeType?.startsWith('video/');
+    // No fresh blob available for re-applying an already-uploaded gallery asset, so we
+    // can't sample a new dominant color here — clear the old one rather than showing a
+    // stale/mismatched wash; rendering falls back to the flat tint when this is empty.
+    onLayoutUpdate(
+      isVideo
+        ? { backgroundVideoKey: selectedImageKey, backgroundImageKey: '', backgroundDominantColor: '' }
+        : { backgroundImageKey: selectedImageKey, backgroundVideoKey: '', backgroundDominantColor: '' }
+    );
   };
   return (
     <div className="w-80 border-l border-[var(--tf-border-medium)] dark:border-gray-700 flex flex-col h-full">
@@ -197,23 +204,22 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
                       onUploadSuccess={handleImageUploadSuccess}
                     />
                     
-                    {/* Gallery of uploaded images — excludes stock videos saved under the same
-                        FormBackground type (those are only ever applied via the Pexels/Pixabay
-                        Videos tab, never through this image-only gallery) */}
+                    {/* Gallery of previously used background images and videos (including
+                        stock videos saved here from the Pexels/Pixabay tabs) */}
                     {formFilesData?.getFormFiles && (
                       <div className="space-y-3">
                         <BackgroundImageGallery
-                          images={formFilesData.getFormFiles.filter(
-                            (file: { mimeType?: string }) => !file.mimeType?.startsWith('video/')
-                          )}
+                          images={formFilesData.getFormFiles}
                           selectedImageKey={selectedImageKey || undefined}
                           onImageSelect={handleImageSelect}
                         />
                       </div>
                     )}
-                    
-                    {/* Apply button for custom images */}
-                    {selectedImageKey && selectedImageKey !== layout.backgroundImageKey && (
+
+                    {/* Apply button for custom images/videos */}
+                    {selectedImageKey &&
+                      selectedImageKey !== layout.backgroundImageKey &&
+                      selectedImageKey !== layout.backgroundVideoKey && (
                       <Button
                         onClick={handleApplyBackgroundImage}
                         className="w-full bg-purple-600 hover:bg-purple-700"

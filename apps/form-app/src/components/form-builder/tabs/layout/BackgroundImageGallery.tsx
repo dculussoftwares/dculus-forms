@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Trash2 } from 'lucide-react';
+import { Check, Trash2, Play } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../../../hooks';
 
@@ -9,6 +9,7 @@ interface FormFile {
   url: string;
   originalName: string;
   createdAt: string;
+  mimeType?: string;
 }
 
 interface BackgroundImageGalleryProps {
@@ -53,12 +54,27 @@ export const BackgroundImageGallery: React.FC<BackgroundImageGalleryProps> = ({
                 ? 'border-purple-500 shadow-md'
                 : 'border-[var(--tf-border-medium)] dark:border-gray-600 hover:border-purple-300'
             }`}>
-              <img
-                src={image.url}
-                alt={image.originalName}
-                className="w-full h-20 object-cover"
-              />
-              
+              {image.mimeType?.startsWith('video/') ? (
+                <>
+                  <video
+                    src={image.url}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="w-full h-20 object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+                    <Play className="w-5 h-5 text-white/90" />
+                  </div>
+                </>
+              ) : (
+                <img
+                  src={image.url}
+                  alt={image.originalName}
+                  className="w-full h-20 object-cover"
+                />
+              )}
+
               {/* Selection indicator */}
               {selectedImageKey === image.key && (
                 <div className="absolute top-1 right-1 bg-purple-500 text-white rounded-full p-1">
