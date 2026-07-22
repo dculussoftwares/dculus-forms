@@ -1,4 +1,4 @@
-import { uploadFileHTTP } from './fileUploadService';
+import { uploadFileHTTP, UploadError } from './fileUploadService';
 import { getApiBaseUrl } from '../lib/config';
 
 export interface PexelsPhoto {
@@ -133,6 +133,13 @@ function selectSmallestVideoFile(files: PexelsVideoFile[]): PexelsVideoFile | un
   return sorted.find((f) => f.width >= 640) || sorted[0];
 }
 
+// Keep in sync with the backend's MAX_VIDEO_FILE_SIZE (fileUploadService.ts). Pexels doesn't
+// report a byte size per rendition (unlike Pixabay), only width/height, so width is just a
+// proxy for size — a long or high-bitrate clip at the chosen width can still exceed the cap.
+// Checking the real blob size here avoids fetching-then-uploading a doomed multi-MB file only
+// to have the backend reject it after the fact.
+const MAX_VIDEO_DOWNLOAD_BYTES = 20 * 1024 * 1024;
+
 export async function downloadPexelsVideo(
   video: PexelsVideo,
   formId: string
@@ -148,6 +155,13 @@ export async function downloadPexelsVideo(
   }
 
   const videoBlob = await videoResponse.blob();
+  if (videoBlob.size > MAX_VIDEO_DOWNLOAD_BYTES) {
+    throw new UploadError(
+      `Video size ${videoBlob.size} bytes exceeds maximum allowed size of ${MAX_VIDEO_DOWNLOAD_BYTES} bytes`,
+      'FILE_TOO_LARGE'
+    );
+  }
+
   const filename = `pexels-${Date.now()}.mp4`;
   const file = new File([videoBlob], filename, { type: videoBlob.type || 'video/mp4' });
 

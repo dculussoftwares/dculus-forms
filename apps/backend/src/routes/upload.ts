@@ -215,6 +215,18 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     res.json(result);
   } catch (error) {
     logger.error('Error uploading file:', error);
+
+    // fileUploadService throws a plain Error (not a MulterError) when a file exceeds
+    // one of its type-specific caps (image 5MB, video 20MB, PDF 10MB) — surface it the
+    // same way as the multer-level 50MB rejection below so the frontend's FILE_TOO_LARGE
+    // handling (and its friendly "too large" messaging) actually applies to it too.
+    if (error instanceof Error && /exceeds maximum allowed size/.test(error.message)) {
+      return res.status(413).json({
+        error: error.message,
+        code: 'FILE_TOO_LARGE',
+      });
+    }
+
     res.status(500).json({
       error: `Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`,
       code: 'UPLOAD_FAILED',
