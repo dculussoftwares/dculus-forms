@@ -249,8 +249,8 @@ describe('File Upload Service', () => {
       ).rejects.toThrow('File type video/mp4 is not allowed');
     });
 
-    it('should throw when a FormBackground video exceeds the 20MB video cap', async () => {
-      const largeVideoSize = 21 * 1024 * 1024; // 21MB
+    it('should throw when a FormBackground video exceeds the 45MB video cap', async () => {
+      const largeVideoSize = 46 * 1024 * 1024; // 46MB
       const mockFile = createMockFile('large.mp4', 'video/mp4', largeVideoSize);
 
       await expect(
@@ -261,9 +261,9 @@ describe('File Upload Service', () => {
       ).rejects.toThrow('File size');
     });
 
-    it('should allow a FormBackground video just under the 20MB cap', async () => {
+    it('should allow a FormBackground video just under the 45MB cap', async () => {
       mockSend.mockResolvedValue({});
-      const justUnderCap = 19 * 1024 * 1024; // 19MB — under cap, over the 5MB image cap
+      const justUnderCap = 44 * 1024 * 1024; // 44MB — under cap, over the 5MB image cap
       const mockFile = createMockFile('ok.mp4', 'video/mp4', justUnderCap);
 
       const result = await uploadFile({
