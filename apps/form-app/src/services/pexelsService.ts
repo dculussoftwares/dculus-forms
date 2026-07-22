@@ -133,14 +133,14 @@ export async function searchPexelsVideos(
   return response.json();
 }
 
-// Picks the smallest mp4 rendition at/above ~640px width, so the client-side
-// fetch + re-upload to R2 stays small — falls back to the smallest rendition
-// available if nothing meets that width.
-function selectSmallestVideoFile(files: PexelsVideoFile[]): PexelsVideoFile | undefined {
+// Picks the highest-quality mp4 rendition at/below 1920px width (avoids unnecessary 4K), so
+// background videos look sharp without ballooning storage — falls back to the smallest
+// rendition available if every one exceeds that width.
+function selectBestVideoFile(files: PexelsVideoFile[]): PexelsVideoFile | undefined {
   const mp4Files = files.filter((f) => f.file_type === 'video/mp4');
   const candidates = mp4Files.length > 0 ? mp4Files : files;
-  const sorted = [...candidates].sort((a, b) => a.width - b.width);
-  return sorted.find((f) => f.width >= 640) || sorted[0];
+  const sorted = [...candidates].sort((a, b) => b.width - a.width);
+  return sorted.find((f) => f.width <= 1920) || sorted[sorted.length - 1];
 }
 
 // Keep in sync with the backend's MAX_VIDEO_FILE_SIZE (fileUploadService.ts). Pexels doesn't
@@ -148,13 +148,13 @@ function selectSmallestVideoFile(files: PexelsVideoFile[]): PexelsVideoFile | un
 // proxy for size — a long or high-bitrate clip at the chosen width can still exceed the cap.
 // Checking the real blob size here avoids fetching-then-uploading a doomed multi-MB file only
 // to have the backend reject it after the fact.
-const MAX_VIDEO_DOWNLOAD_BYTES = 20 * 1024 * 1024;
+const MAX_VIDEO_DOWNLOAD_BYTES = 45 * 1024 * 1024;
 
 export async function downloadPexelsVideo(
   video: PexelsVideo,
   formId: string
 ): Promise<BackgroundUploadResult> {
-  const videoFile = selectSmallestVideoFile(video.video_files);
+  const videoFile = selectBestVideoFile(video.video_files);
   if (!videoFile) {
     throw new Error('No downloadable video file found for this Pexels video');
   }

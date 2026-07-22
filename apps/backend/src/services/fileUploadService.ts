@@ -55,7 +55,10 @@ const ALLOWED_IMAGE_TYPES = [
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB (for image uploads; FormResponse uses multer limit)
-const MAX_VIDEO_FILE_SIZE = 20 * 1024 * 1024; // 20MB for FormBackground video uploads
+// 45MB for FormBackground video uploads (HD renditions) — kept below the route-level multer
+// ceiling (50MB, see upload.ts) so oversized uploads still fail via this controlled error path
+// (mapped to 413/FILE_TOO_LARGE) rather than multer's raw LIMIT_FILE_SIZE error.
+const MAX_VIDEO_FILE_SIZE = 45 * 1024 * 1024;
 const MAX_PDF_TEMPLATE_SIZE = 10 * 1024 * 1024; // 10MB for uploaded base PDFs (PdfTemplateAsset)
 
 /**
@@ -253,7 +256,7 @@ export async function uploadFile(
 
     // Check file size — FormResponse relies on multer's 50 MB limit (enforced before this point);
     // PdfTemplateAsset is capped at MAX_PDF_TEMPLATE_SIZE (10 MB);
-    // FormBackground videos are capped at MAX_VIDEO_FILE_SIZE (20 MB);
+    // FormBackground videos are capped at MAX_VIDEO_FILE_SIZE (45 MB);
     // all other upload types (including FormBackground images) are capped at MAX_FILE_SIZE (5 MB)
     if (type === 'PdfTemplateAsset') {
       if (buffer.length > MAX_PDF_TEMPLATE_SIZE) {

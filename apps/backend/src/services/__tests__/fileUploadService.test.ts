@@ -249,8 +249,8 @@ describe('File Upload Service', () => {
       ).rejects.toThrow('File type video/mp4 is not allowed');
     });
 
-    it('should throw when a FormBackground video exceeds the 20MB video cap', async () => {
-      const largeVideoSize = 21 * 1024 * 1024; // 21MB
+    it('should throw when a FormBackground video exceeds the 45MB video cap', async () => {
+      const largeVideoSize = 46 * 1024 * 1024; // 46MB
       const mockFile = createMockFile('large.mp4', 'video/mp4', largeVideoSize);
 
       await expect(
@@ -261,9 +261,9 @@ describe('File Upload Service', () => {
       ).rejects.toThrow('File size');
     });
 
-    it('should allow a FormBackground video just under the 20MB cap', async () => {
+    it('should allow a FormBackground video just under the 45MB cap', async () => {
       mockSend.mockResolvedValue({});
-      const justUnderCap = 19 * 1024 * 1024; // 19MB — under cap, over the 5MB image cap
+      const justUnderCap = 44 * 1024 * 1024; // 44MB — under cap, over the 5MB image cap
       const mockFile = createMockFile('ok.mp4', 'video/mp4', justUnderCap);
 
       const result = await uploadFile({
@@ -272,6 +272,31 @@ describe('File Upload Service', () => {
       });
 
       expect(result.mimeType).toBe('video/mp4');
+    });
+
+    it('should allow a FormBackground video at exactly the 45MB cap', async () => {
+      mockSend.mockResolvedValue({});
+      const exactlyAtCap = 45 * 1024 * 1024;
+      const mockFile = createMockFile('exact.mp4', 'video/mp4', exactlyAtCap);
+
+      const result = await uploadFile({
+        file: mockFile,
+        type: 'FormBackground',
+      });
+
+      expect(result.mimeType).toBe('video/mp4');
+    });
+
+    it('should throw when a FormBackground video is exactly 1 byte over the 45MB cap', async () => {
+      const justOverCap = 45 * 1024 * 1024 + 1;
+      const mockFile = createMockFile('just-over.mp4', 'video/mp4', justOverCap);
+
+      await expect(
+        uploadFile({
+          file: mockFile,
+          type: 'FormBackground',
+        })
+      ).rejects.toThrow('File size');
     });
 
     it('should handle S3 upload errors', async () => {
