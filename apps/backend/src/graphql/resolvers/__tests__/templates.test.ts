@@ -89,6 +89,7 @@ describe('Templates Resolvers', () => {
         content: '',
         customBackGroundColor: '#FFFFFF',
         backgroundImageKey: '',
+        backgroundVideoKey: '',
       },
       isShuffleEnabled: false,
     },
@@ -843,6 +844,79 @@ describe('Templates Resolvers', () => {
       // Form should still be created even if FormFile creation fails
       expect(result).toEqual(mockForm);
       expect(fileUploadService.copyFileForForm).toHaveBeenCalled();
+    });
+
+    it('should copy template background video when present', async () => {
+      const templateWithVideo = {
+        ...mockTemplate,
+        formSchema: {
+          ...mockTemplate.formSchema,
+          layout: {
+            ...mockTemplate.formSchema.layout,
+            backgroundVideoKey: 'templateDirectory/bg-video.mp4',
+          },
+        },
+      };
+
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(templateService.getTemplateById).mockResolvedValue(templateWithVideo as any);
+      vi.mocked(fileUploadService.copyFileForForm).mockResolvedValue({
+        key: 'form-123/bg-video.mp4',
+        url: 'https://cdn.example.com/form-123/bg-video.mp4',
+        originalName: 'bg-video.mp4',
+        size: 5242880,
+        mimeType: 'video/mp4',
+      } as any);
+      vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
+      vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+      const result = await templatesResolvers.Mutation.createFormFromTemplate(
+        {},
+        createFormArgs,
+        mockContext
+      );
+
+      expect(fileUploadService.copyFileForForm).toHaveBeenCalledWith(
+        'templateDirectory/bg-video.mp4',
+        expect.any(String)
+      );
+      expect(prisma.formFile.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          key: 'form-123/bg-video.mp4',
+          type: 'FormBackground',
+          mimeType: 'video/mp4',
+        }),
+      });
+      expect(result).toEqual(mockForm);
+    });
+
+    it('should continue form creation if background video copy fails', async () => {
+      const templateWithVideo = {
+        ...mockTemplate,
+        formSchema: {
+          ...mockTemplate.formSchema,
+          layout: {
+            ...mockTemplate.formSchema.layout,
+            backgroundVideoKey: 'templateDirectory/bg-video.mp4',
+          },
+        },
+      };
+
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(templateService.getTemplateById).mockResolvedValue(templateWithVideo as any);
+      vi.mocked(fileUploadService.copyFileForForm).mockRejectedValue(
+        new Error('Video copy failed')
+      );
+      vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+      const result = await templatesResolvers.Mutation.createFormFromTemplate(
+        {},
+        createFormArgs,
+        mockContext
+      );
+
+      // Form should still be created even if video copy fails
+      expect(result).toEqual(mockForm);
     });
 
     it('should handle template with empty backgroundImageKey', async () => {

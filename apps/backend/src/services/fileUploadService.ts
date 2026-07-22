@@ -50,7 +50,12 @@ const ALLOWED_IMAGE_TYPES = [
   'image/gif',
 ];
 
+// Background videos sourced from Pexels/Pixabay stock search (re-uploaded via the same
+// FormBackground upload type as images) — see downloadPexelsVideo/downloadPixabayVideo.
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm'];
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB (for image uploads; FormResponse uses multer limit)
+const MAX_VIDEO_FILE_SIZE = 20 * 1024 * 1024; // 20MB for FormBackground video uploads
 const MAX_PDF_TEMPLATE_SIZE = 10 * 1024 * 1024; // 10MB for uploaded base PDFs (PdfTemplateAsset)
 
 /**
@@ -171,6 +176,8 @@ function getMimetypeFromExtension(filename: string | undefined): string {
     '.webp': 'image/webp',
     '.gif': 'image/gif',
     '.pdf': 'application/pdf',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
   };
   return mimeMap[ext] || '';
 }
@@ -213,8 +220,20 @@ export async function uploadFile(
     );
   }
 
-  // For non-FormResponse uploads, additionally restrict to known image MIME types
-  if (
+  // FormBackground additionally accepts video (stock video backgrounds from Pexels/Pixabay)
+  const allowedTypesForFormBackground = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
+  const isVideoUpload =
+    type === 'FormBackground' && !!finalMimetype && ALLOWED_VIDEO_TYPES.includes(finalMimetype);
+
+  // For non-FormResponse uploads, additionally restrict to known image (or, for
+  // FormBackground, image/video) MIME types
+  if (type === 'FormBackground') {
+    if (!finalMimetype || !allowedTypesForFormBackground.includes(finalMimetype)) {
+      throw new Error(
+        `File type ${finalMimetype || 'unknown'} is not allowed. Allowed types: ${allowedTypesForFormBackground.join(', ')}`
+      );
+    }
+  } else if (
     type !== 'FormResponse' &&
     type !== 'PdfTemplateAsset' &&
     (!finalMimetype || !ALLOWED_IMAGE_TYPES.includes(finalMimetype))
@@ -234,11 +253,18 @@ export async function uploadFile(
 
     // Check file size — FormResponse relies on multer's 50 MB limit (enforced before this point);
     // PdfTemplateAsset is capped at MAX_PDF_TEMPLATE_SIZE (10 MB);
-    // all other upload types are capped at MAX_FILE_SIZE (5 MB)
+    // FormBackground videos are capped at MAX_VIDEO_FILE_SIZE (20 MB);
+    // all other upload types (including FormBackground images) are capped at MAX_FILE_SIZE (5 MB)
     if (type === 'PdfTemplateAsset') {
       if (buffer.length > MAX_PDF_TEMPLATE_SIZE) {
         throw new Error(
           `File size ${buffer.length} bytes exceeds maximum allowed size of ${MAX_PDF_TEMPLATE_SIZE} bytes`
+        );
+      }
+    } else if (isVideoUpload) {
+      if (buffer.length > MAX_VIDEO_FILE_SIZE) {
+        throw new Error(
+          `File size ${buffer.length} bytes exceeds maximum allowed size of ${MAX_VIDEO_FILE_SIZE} bytes`
         );
       }
     } else if (type !== 'FormResponse' && buffer.length > MAX_FILE_SIZE) {
@@ -429,7 +455,9 @@ export async function copyFileForForm(
       url: cdnUrl,
       originalName: originalFilename,
       size: 0, // Size not available from copy operation
-      mimeType: 'image/jpeg', // Default to jpeg, could be enhanced to detect from extension
+      // Detect from the source file's extension (jpg/png/mp4/webm/...) rather than assuming
+      // image/jpeg — background videos must keep their real mimeType when a form is duplicated.
+      mimeType: getMimetypeFromExtension(originalFilename) || 'image/jpeg',
     };
   } catch (error) {
     logger.error('Error copying file in Cloudflare R2:', error);

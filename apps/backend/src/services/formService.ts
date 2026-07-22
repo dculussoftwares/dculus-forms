@@ -183,8 +183,8 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
 
   const newFormId = generateId();
 
-  // Copy background image file in R2 (if present) — do this before form creation to get the
-  // new S3 key. The FormFile DB record must be created AFTER the form row exists (FK constraint).
+  // Copy background image/video file in R2 (if present) — do this before form creation to get
+  // the new S3 key. The FormFile DB record must be created AFTER the form row exists (FK constraint).
   let copiedFileAsset: { key: string; type: string; originalName: string; url: string; size: number; mimeType: string } | null = null;
   if (schemaClone?.layout?.backgroundImageKey) {
     try {
@@ -195,6 +195,20 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
       logger.error(`❌ Failed to copy background image for duplicated form ${formId}:`, error);
       if (schemaClone?.layout) {
         schemaClone.layout.backgroundImageKey = '';
+      }
+    }
+  }
+
+  let copiedVideoAsset: { key: string; type: string; originalName: string; url: string; size: number; mimeType: string } | null = null;
+  if (schemaClone?.layout?.backgroundVideoKey) {
+    try {
+      const copiedVideo = await copyFileForForm(schemaClone.layout.backgroundVideoKey, newFormId);
+      schemaClone.layout.backgroundVideoKey = copiedVideo.key;
+      copiedVideoAsset = copiedVideo;
+    } catch (error) {
+      logger.error(`❌ Failed to copy background video for duplicated form ${formId}:`, error);
+      if (schemaClone?.layout) {
+        schemaClone.layout.backgroundVideoKey = '';
       }
     }
   }
@@ -217,7 +231,7 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
     schemaClone
   );
 
-  // Now that the form row exists, create the FormFile record for the copied background image
+  // Now that the form row exists, create the FormFile record(s) for the copied background image/video
   if (copiedFileAsset) {
     try {
       await formRepository.createFormAsset({
@@ -229,6 +243,22 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
         url: copiedFileAsset.url,
         size: copiedFileAsset.size,
         mimeType: copiedFileAsset.mimeType,
+      });
+    } catch (error) {
+      logger.error(`❌ Failed to create FormFile record for duplicated form ${newFormId}:`, error);
+    }
+  }
+  if (copiedVideoAsset) {
+    try {
+      await formRepository.createFormAsset({
+        id: randomUUID(),
+        key: copiedVideoAsset.key,
+        type: 'FormBackground',
+        formId: newFormId,
+        originalName: copiedVideoAsset.originalName,
+        url: copiedVideoAsset.url,
+        size: copiedVideoAsset.size,
+        mimeType: copiedVideoAsset.mimeType,
       });
     } catch (error) {
       logger.error(`❌ Failed to create FormFile record for duplicated form ${newFormId}:`, error);

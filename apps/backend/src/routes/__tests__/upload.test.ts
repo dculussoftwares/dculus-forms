@@ -241,6 +241,24 @@ describe('Upload Routes', () => {
       );
     });
 
+    it('should map fileUploadService size-cap errors to 413 FILE_TOO_LARGE', async () => {
+      vi.mocked(uploadFile).mockRejectedValue(
+        new Error('File size 20971521 bytes exceeds maximum allowed size of 20971520 bytes')
+      );
+
+      const response = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormBackground')
+        .field('formId', 'form-123')
+        .attach('file', Buffer.from('test video content'), 'background.mp4');
+
+      expect(response.status).toBe(413);
+      expect(response.body).toEqual({
+        error: 'File size 20971521 bytes exceeds maximum allowed size of 20971520 bytes',
+        code: 'FILE_TOO_LARGE',
+      });
+    });
+
     it('should handle FormFile creation errors', async () => {
       const mockResult = {
         key: 'files/form-background/test.jpg',

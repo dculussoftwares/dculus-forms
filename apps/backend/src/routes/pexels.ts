@@ -5,6 +5,17 @@ import { logger } from '../lib/logger.js';
 
 export const pexelsRouter: import('express').Router = Router();
 
+// Bounds how long we wait on Pexels before giving up — without this, a stalled
+// upstream connection would keep the Express request (and its worker) open indefinitely.
+const UPSTREAM_TIMEOUT_MS = 10_000;
+
+// fetch(..., { signal: AbortSignal.timeout(...) }) rejects with a DOMException named
+// 'TimeoutError', not 'AbortError' — only a manually-aborted AbortController produces
+// 'AbortError'. Check both so our timeout actually reaches the 504 path below.
+function isAbortError(err: unknown): boolean {
+  return err instanceof Error && (err.name === 'AbortError' || err.name === 'TimeoutError');
+}
+
 pexelsRouter.get('/pexels', async (req, res) => {
   try {
     const sessionData = await auth.api.getSession({
@@ -38,6 +49,7 @@ pexelsRouter.get('/pexels', async (req, res) => {
 
     const upstream = await fetch(`https://api.pexels.com/v1/search?${params}`, {
       headers: { Authorization: apiKey },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     });
 
     if (!upstream.ok) {
@@ -48,7 +60,64 @@ pexelsRouter.get('/pexels', async (req, res) => {
     const data = await upstream.json();
     return res.json(data);
   } catch (err) {
+    if (isAbortError(err)) {
+      logger.warn('Pexels proxy timed out');
+      return res.status(504).json({ error: 'Upstream request timed out' });
+    }
     logger.error('Pexels proxy error:', err);
     return res.status(502).json({ error: 'Failed to fetch images' });
+  }
+});
+
+pexelsRouter.get('/pexels/videos', async (req, res) => {
+  try {
+    const sessionData = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+    if (!sessionData?.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const apiKey = process.env.PEXELS_API_KEY;
+  if (!apiKey) {
+    return res.status(503).json({ error: 'Video search not configured' });
+  }
+
+  const { q = 'background', page = '1', per_page = '15' } = req.query as Record<string, string>;
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const perPageNum = Math.min(80, Math.max(1, parseInt(per_page, 10) || 15));
+
+  try {
+    const params = new URLSearchParams({
+      query: String(q),
+      orientation: 'landscape',
+      size: 'medium',
+      page: String(pageNum),
+      per_page: String(perPageNum),
+    });
+
+    const upstream = await fetch(`https://api.pexels.com/videos/search?${params}`, {
+      headers: { Authorization: apiKey },
+      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    });
+
+    if (!upstream.ok) {
+      logger.warn(`Pexels video upstream error: ${upstream.status}`);
+      return res.status(502).json({ error: `Upstream error: ${upstream.status}` });
+    }
+
+    const data = await upstream.json();
+    return res.json(data);
+  } catch (err) {
+    if (isAbortError(err)) {
+      logger.warn('Pexels video proxy timed out');
+      return res.status(504).json({ error: 'Upstream request timed out' });
+    }
+    logger.error('Pexels video proxy error:', err);
+    return res.status(502).json({ error: 'Failed to fetch videos' });
   }
 });

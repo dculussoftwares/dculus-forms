@@ -690,18 +690,30 @@ export type FieldFormData =
   | RichTextFieldFormData;
 
 // Form layout validation schema
-export const formLayoutValidationSchema = z.object({
-  theme: z.enum(['light', 'dark', 'auto']),
-  textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),
-  spacing: z.enum(['compact', 'normal', 'spacious']),
-  code: z.string().regex(/^L[1-9]$/, 'Invalid layout code'),
-  content: z.string().max(10000, 'Content is too long'),
-  customBackGroundColor: z
-    .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),
-  customCTAButtonName: z.string().max(50, 'Button name is too long').optional(),
-  backgroundImageKey: z.string().max(200, 'Background image key is too long'),
-  pageMode: z.enum(['multipage']),
-});
+export const formLayoutValidationSchema = z
+  .object({
+    theme: z.enum(['light', 'dark', 'auto']),
+    textColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),
+    spacing: z.enum(['compact', 'normal', 'spacious']),
+    code: z.string().regex(/^L[1-9]$/, 'Invalid layout code'),
+    content: z.string().max(10000, 'Content is too long'),
+    customBackGroundColor: z
+      .string()
+      .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),
+    customCTAButtonName: z.string().max(50, 'Button name is too long').optional(),
+    backgroundImageKey: z.string().max(200, 'Background image key is too long'),
+    backgroundVideoKey: z
+      .string()
+      .max(200, 'Background video key is too long')
+      .optional(),
+    pageMode: z.enum(['multipage']),
+  })
+  // Only one background source is ever active at a time — the builder UI clears the
+  // other key when applying an image or video (see LayoutSidebar.tsx), so both being
+  // set at once signals a bug upstream rather than a state this schema should accept.
+  .refine(
+    (layout) => !(layout.backgroundImageKey && layout.backgroundVideoKey),
+    { message: 'backgroundImageKey and backgroundVideoKey are mutually exclusive', path: ['backgroundVideoKey'] }
+  );
 
 export type FormLayoutFormData = z.infer<typeof formLayoutValidationSchema>;

@@ -218,6 +218,62 @@ describe('File Upload Service', () => {
       });
     });
 
+    it('should accept video/mp4 and video/webm for FormBackground', async () => {
+      mockSend.mockResolvedValue({});
+
+      for (const { ext, mime } of [
+        { ext: 'mp4', mime: 'video/mp4' },
+        { ext: 'webm', mime: 'video/webm' },
+      ]) {
+        mockSend.mockClear();
+        const mockFile = createMockFile(`background.${ext}`, mime, 1024);
+
+        const result = await uploadFile({
+          file: mockFile,
+          type: 'FormBackground',
+        });
+
+        expect(result.mimeType).toBe(mime);
+        expect(result.key).toContain('files/form-background/');
+      }
+    });
+
+    it('should reject video uploads for non-FormBackground types', async () => {
+      const mockFile = createMockFile('avatar.mp4', 'video/mp4', 1024);
+
+      await expect(
+        uploadFile({
+          file: mockFile,
+          type: 'UserAvatar',
+        })
+      ).rejects.toThrow('File type video/mp4 is not allowed');
+    });
+
+    it('should throw when a FormBackground video exceeds the 20MB video cap', async () => {
+      const largeVideoSize = 21 * 1024 * 1024; // 21MB
+      const mockFile = createMockFile('large.mp4', 'video/mp4', largeVideoSize);
+
+      await expect(
+        uploadFile({
+          file: mockFile,
+          type: 'FormBackground',
+        })
+      ).rejects.toThrow('File size');
+    });
+
+    it('should allow a FormBackground video just under the 20MB cap', async () => {
+      mockSend.mockResolvedValue({});
+      const justUnderCap = 19 * 1024 * 1024; // 19MB — under cap, over the 5MB image cap
+      const mockFile = createMockFile('ok.mp4', 'video/mp4', justUnderCap);
+
+      const result = await uploadFile({
+        file: mockFile,
+        type: 'FormBackground',
+      });
+
+      expect(result.mimeType).toBe('video/mp4');
+    });
+
     it('should handle S3 upload errors', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       mockSend.mockRejectedValue(new Error('S3 upload failed'));
@@ -328,6 +384,27 @@ describe('File Upload Service', () => {
         ACL: 'public-read',
       });
       expect(copyCommand.input.Key).toContain('files/form-background/form-abc/');
+    });
+
+    it('should detect video mimetype from source key extension when copying', async () => {
+      mockSend.mockResolvedValue({});
+      vi.mocked(constructCdnUrl).mockReturnValue('https://cdn.example.com/video.mp4');
+
+      const result = await copyFileForForm(
+        'files/form-background/source-form/background-video.mp4',
+        'form-123'
+      );
+
+      expect(result.mimeType).toBe('video/mp4');
+    });
+
+    it('should fall back to image/jpeg mimetype for an unrecognized extension when copying', async () => {
+      mockSend.mockResolvedValue({});
+      vi.mocked(constructCdnUrl).mockReturnValue('https://cdn.example.com/file.bin');
+
+      const result = await copyFileForForm('files/form-background/source.bin', 'form-123');
+
+      expect(result.mimeType).toBe('image/jpeg');
     });
 
     it('should handle copy errors', async () => {
