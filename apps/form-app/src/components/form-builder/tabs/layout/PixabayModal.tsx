@@ -233,8 +233,11 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
                         className="w-full h-full object-cover"
                       />
                       
-                      {/* Overlay with stats - always visible on hover */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Overlay with stats - visible on hover, or while this item is uploading */}
+                      <div className={cn(
+                        'absolute inset-0 bg-black/40 transition-opacity',
+                        uploading && selectedImage?.id === image.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      )}>
                         <div className="absolute top-2 right-2 text-white text-xs space-y-1">
                           <div className="flex items-center gap-1 bg-black/50 rounded px-1">
                             <Eye className="h-3 w-3" />
@@ -249,7 +252,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
                             <span>{image.likes.toLocaleString()}</span>
                           </div>
                         </div>
-                        
+
                         {/* Apply button in center */}
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Button
@@ -299,8 +302,11 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
                         <Play className="h-8 w-8 text-white/90" />
                       </div>
 
-                      {/* Overlay with stats - always visible on hover */}
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Overlay with stats - visible on hover, or while this item is uploading */}
+                      <div className={cn(
+                        'absolute inset-0 bg-black/40 transition-opacity',
+                        uploading && selectedVideo?.id === video.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      )}>
                         <div className="absolute top-2 right-2 text-white text-xs space-y-1">
                           <div className="flex items-center gap-1 bg-black/50 rounded px-1">
                             <Eye className="h-3 w-3" />

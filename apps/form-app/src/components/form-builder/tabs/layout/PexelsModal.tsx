@@ -220,7 +220,10 @@ export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoAp
                         className="w-full h-full object-cover"
                       />
 
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className={cn(
+                        'absolute inset-0 bg-black/40 transition-opacity',
+                        uploading && selectedImage?.id === photo.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      )}>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Button
                             onClick={() => handleApplyImage(photo)}
@@ -269,7 +272,10 @@ export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoAp
                         <Play className="h-8 w-8 text-white/90" />
                       </div>
 
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className={cn(
+                        'absolute inset-0 bg-black/40 transition-opacity',
+                        uploading && selectedVideo?.id === video.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      )}>
                         <div className="absolute inset-0 flex items-center justify-center">
                           <Button
                             onClick={() => handleApplyVideo(video)}
