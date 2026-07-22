@@ -73,6 +73,39 @@ describe('Form Metadata Service', () => {
       expect(result.backgroundImageKey).toBe('bg-image-123');
     });
 
+    it('should extract video background key and dominant color from layout', () => {
+      const ydoc = new Y.Doc();
+      const formSchemaMap = ydoc.getMap('formSchema');
+      formSchemaMap.set('pages', new Y.Array());
+
+      const layoutMap = new Y.Map();
+      layoutMap.set('backgroundVideoKey', 'bg-video-123.mp4');
+      layoutMap.set('backgroundDominantColor', '#d5bbc1');
+      formSchemaMap.set('layout', layoutMap);
+
+      const result = extractFormStatsFromYDoc(ydoc);
+
+      expect(result.backgroundImageKey).toBeNull();
+      expect(result.backgroundVideoKey).toBe('bg-video-123.mp4');
+      expect(result.backgroundDominantColor).toBe('#d5bbc1');
+    });
+
+    it('should discard malformed non-string layout values', () => {
+      const ydoc = new Y.Doc();
+      const formSchemaMap = ydoc.getMap('formSchema');
+      formSchemaMap.set('pages', new Y.Array());
+
+      const layoutMap = new Y.Map();
+      layoutMap.set('backgroundVideoKey', 42);
+      layoutMap.set('backgroundDominantColor', {});
+      formSchemaMap.set('layout', layoutMap);
+
+      const result = extractFormStatsFromYDoc(ydoc);
+
+      expect(result.backgroundVideoKey).toBeNull();
+      expect(result.backgroundDominantColor).toBeNull();
+    });
+
     it('should handle empty YDoc', () => {
       const ydoc = new Y.Doc();
 
@@ -170,6 +203,35 @@ describe('Form Metadata Service', () => {
         backgroundImageKey: 'bg-123',
         backgroundVideoKey: null,
         backgroundDominantColor: null,
+        lastUpdated: expect.any(Date),
+      });
+      loggerInfo.mockRestore();
+    });
+
+    it('should update metadata with video key and dominant color', async () => {
+      const loggerInfo = vi.spyOn(logger, 'info').mockImplementation(() => {});
+      vi.mocked(formMetadataRepository.upsertMetadata).mockResolvedValue(
+        createMockMetadata('form-123') as any
+      );
+
+      const stats = {
+        pageCount: 1,
+        fieldCount: 4,
+        backgroundImageKey: null,
+        backgroundVideoKey: 'bg-video-123.mp4',
+        backgroundDominantColor: '#d5bbc1',
+      };
+
+      await updateFormMetadata('form-123', stats);
+
+      expect(formMetadataRepository.upsertMetadata).toHaveBeenCalledWith('form-123', {
+        id: 'metadata-form-123',
+        formId: 'form-123',
+        pageCount: 1,
+        fieldCount: 4,
+        backgroundImageKey: null,
+        backgroundVideoKey: 'bg-video-123.mp4',
+        backgroundDominantColor: '#d5bbc1',
         lastUpdated: expect.any(Date),
       });
       expect(loggerInfo).toHaveBeenCalledWith(

@@ -6,7 +6,9 @@
   },
   "actions": {
     "create": "Create Form",
-    "createPrimary": "Create Your First Form"
+    "createPrimary": "Create Your First Form",
+    "preview": "Preview",
+    "edit": "Edit"
   },
   "search": {
     "placeholder": "Search forms by name or description...",

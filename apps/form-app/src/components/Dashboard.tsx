@@ -638,7 +638,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
             className="gap-1.5 text-xs shadow-sm bg-white text-primary hover:bg-white/90 border-transparent"
           >
             <Eye className="h-3.5 w-3.5" />
-            Preview
+            {t('actions.preview')}
           </Button>
           <Button
             size="sm"
@@ -646,7 +646,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
             className="gap-1.5 text-xs shadow-sm"
           >
             <Edit3 className="h-3.5 w-3.5" />
-            Edit
+            {t('actions.edit')}
           </Button>
         </div>
       </div>

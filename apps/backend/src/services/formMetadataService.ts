@@ -16,6 +16,15 @@ export interface FormMetadataStats {
 }
 
 /**
+ * Read a layout field as a non-empty string, discarding malformed/non-string
+ * Y.js values before they reach Prisma or CDN URL construction.
+ */
+const getLayoutString = (layoutMap: Y.Map<any> | undefined, key: string): string | null => {
+  const value = layoutMap?.get(key);
+  return typeof value === 'string' && value.length > 0 ? value : null;
+};
+
+/**
  * Extract form statistics from a YJS document
  */
 export const extractFormStatsFromYDoc = (ydoc: Y.Doc): FormMetadataStats => {
@@ -41,22 +50,13 @@ export const extractFormStatsFromYDoc = (ydoc: Y.Doc): FormMetadataStats => {
 
     // Extract background image/video keys from layout
     const layoutMap = formSchemaMap.get('layout') as Y.Map<any>;
-    const backgroundImageKey = layoutMap?.get('backgroundImageKey') as
-      | string
-      | null;
-    const backgroundVideoKey = layoutMap?.get('backgroundVideoKey') as
-      | string
-      | null;
-    const backgroundDominantColor = layoutMap?.get('backgroundDominantColor') as
-      | string
-      | null;
 
     return {
       pageCount,
       fieldCount,
-      backgroundImageKey: backgroundImageKey || null,
-      backgroundVideoKey: backgroundVideoKey || null,
-      backgroundDominantColor: backgroundDominantColor || null,
+      backgroundImageKey: getLayoutString(layoutMap, 'backgroundImageKey'),
+      backgroundVideoKey: getLayoutString(layoutMap, 'backgroundVideoKey'),
+      backgroundDominantColor: getLayoutString(layoutMap, 'backgroundDominantColor'),
     };
   } catch (error) {
     logger.error('Error extracting form stats from YDoc:', error);
