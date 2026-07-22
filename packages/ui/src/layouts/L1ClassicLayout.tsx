@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
-import { getImageUrl, RendererMode } from '@dculus/utils';
+import { getImageUrl, hexToRgba, RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { LayoutProps } from '../types';
@@ -113,13 +113,16 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
             )}
 
             {/* Backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-            {!layout?.isCustomBackgroundColorEnabled && !hasVideoBackground && layout?.backgroundImageKey && cdnEndpoint && (
+            {!layout?.isCustomBackgroundColorEnabled && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
               <div
                 className="absolute inset-0"
                 style={{
-                  backdropFilter: 'blur(250px)',
-                  WebkitBackdropFilter: 'blur(250px)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)'
+                  backdropFilter: hasVideoBackground ? undefined : 'blur(250px)',
+                  WebkitBackdropFilter: hasVideoBackground ? undefined : 'blur(250px)',
+                  backgroundColor: layout?.backgroundDominantColor
+                    ? hexToRgba(layout.backgroundDominantColor, 0.1)
+                    : 'rgba(0, 0, 0, 0.1)',
+                  transition: 'background-color 0.5s ease-in-out'
                 }}
               ></div>
             )}
@@ -266,13 +269,16 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
             )}
 
             {/* Backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-            {!layout?.isCustomBackgroundColorEnabled && !hasVideoBackground && layout?.backgroundImageKey && cdnEndpoint && (
+            {!layout?.isCustomBackgroundColorEnabled && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
               <div
                 className="absolute inset-0"
                 style={{
-                  backdropFilter: 'blur(250px)',
-                  WebkitBackdropFilter: 'blur(250px)',
-                  backgroundColor: 'rgba(0, 0, 0, 0.1)'
+                  backdropFilter: hasVideoBackground ? undefined : 'blur(250px)',
+                  WebkitBackdropFilter: hasVideoBackground ? undefined : 'blur(250px)',
+                  backgroundColor: layout?.backgroundDominantColor
+                    ? hexToRgba(layout.backgroundDominantColor, 0.1)
+                    : 'rgba(0, 0, 0, 0.1)',
+                  transition: 'background-color 0.5s ease-in-out'
                 }}
               ></div>
             )}

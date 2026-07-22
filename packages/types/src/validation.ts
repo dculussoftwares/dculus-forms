@@ -706,6 +706,13 @@ export const formLayoutValidationSchema = z
       .string()
       .max(200, 'Background video key is too long')
       .optional(),
+    backgroundDominantColor: z
+      .string()
+      .refine(
+        (v) => v === '' || /^#[0-9A-Fa-f]{6}$/.test(v),
+        'Invalid hex color format'
+      )
+      .optional(),
     pageMode: z.enum(['multipage']),
   })
   // Only one background source is ever active at a time — the builder UI clears the

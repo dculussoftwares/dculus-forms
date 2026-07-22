@@ -559,6 +559,7 @@ export const getFormSchemaFromHocuspocus = async (
         convertedLayout.customCTAButtonName = layout.get('customCTAButtonName');
         convertedLayout.backgroundImageKey = layout.get('backgroundImageKey');
         convertedLayout.backgroundVideoKey = layout.get('backgroundVideoKey');
+        convertedLayout.backgroundDominantColor = layout.get('backgroundDominantColor');
         convertedLayout.pageMode = layout.get('pageMode');
         convertedLayout.isCustomBackgroundColorEnabled =
           layout.get('isCustomBackgroundColorEnabled') || false;
@@ -783,6 +784,7 @@ export const initializeHocuspocusDocument = async (
     );
     layoutMap.set('backgroundImageKey', layout.backgroundImageKey || '');
     layoutMap.set('backgroundVideoKey', layout.backgroundVideoKey || '');
+    layoutMap.set('backgroundDominantColor', layout.backgroundDominantColor || '');
     layoutMap.set('pageMode', layout.pageMode || 'multipage');
     layoutMap.set(
       'isCustomBackgroundColorEnabled',

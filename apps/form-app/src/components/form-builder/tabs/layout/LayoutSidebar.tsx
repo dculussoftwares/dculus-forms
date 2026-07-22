@@ -56,7 +56,10 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
 
   const handleApplyBackgroundImage = () => {
     if (selectedImageKey) {
-      onLayoutUpdate({ backgroundImageKey: selectedImageKey, backgroundVideoKey: '' });
+      // No fresh blob available for re-applying an already-uploaded gallery asset, so we
+      // can't sample a new dominant color here — clear the old one rather than showing a
+      // stale/mismatched wash; rendering falls back to the flat tint when this is empty.
+      onLayoutUpdate({ backgroundImageKey: selectedImageKey, backgroundVideoKey: '', backgroundDominantColor: '' });
     }
   };
   return (
@@ -275,7 +278,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
             {(layout.backgroundImageKey || layout.backgroundVideoKey) && (
               <Button
                 variant="outline"
-                onClick={() => canEditLayout && onLayoutUpdate({ backgroundImageKey: '', backgroundVideoKey: '' })}
+                onClick={() => canEditLayout && onLayoutUpdate({ backgroundImageKey: '', backgroundVideoKey: '', backgroundDominantColor: '' })}
                 disabled={!canEditLayout}
                 className="w-full"
               >
@@ -303,8 +306,8 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         isOpen={isPexelsModalOpen}
         onClose={() => setIsPexelsModalOpen(false)}
         formId={formId}
-        onImageApplied={(imageKey) => onLayoutUpdate({ backgroundImageKey: imageKey, backgroundVideoKey: '' })}
-        onVideoApplied={(videoKey) => onLayoutUpdate({ backgroundVideoKey: videoKey, backgroundImageKey: '' })}
+        onImageApplied={(imageKey, dominantColor) => onLayoutUpdate({ backgroundImageKey: imageKey, backgroundVideoKey: '', backgroundDominantColor: dominantColor })}
+        onVideoApplied={(videoKey, dominantColor) => onLayoutUpdate({ backgroundVideoKey: videoKey, backgroundImageKey: '', backgroundDominantColor: dominantColor })}
         onUploadSuccess={handleImageUploadSuccess}
       />
 
@@ -312,8 +315,8 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         isOpen={isPixabayModalOpen}
         onClose={() => setIsPixabayModalOpen(false)}
         formId={formId}
-        onImageApplied={(imageKey) => onLayoutUpdate({ backgroundImageKey: imageKey, backgroundVideoKey: '' })}
-        onVideoApplied={(videoKey) => onLayoutUpdate({ backgroundVideoKey: videoKey, backgroundImageKey: '' })}
+        onImageApplied={(imageKey, dominantColor) => onLayoutUpdate({ backgroundImageKey: imageKey, backgroundVideoKey: '', backgroundDominantColor: dominantColor })}
+        onVideoApplied={(videoKey, dominantColor) => onLayoutUpdate({ backgroundVideoKey: videoKey, backgroundImageKey: '', backgroundDominantColor: dominantColor })}
         onUploadSuccess={handleImageUploadSuccess}
       />
     </div>

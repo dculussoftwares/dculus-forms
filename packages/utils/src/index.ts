@@ -184,6 +184,22 @@ export function getImageUrl(s3Key: string, cdnEndpoint: string): string {
 }
 
 /**
+ * Converts a "#rrggbb" hex color to an "rgba(r, g, b, alpha)" string.
+ * Returns a neutral black at the given alpha if the input isn't a valid hex color,
+ * so callers can pass a possibly-empty/unset value without a separate guard.
+ */
+export function hexToRgba(hex: string, alpha: number): string {
+  const match = /^#([0-9A-Fa-f]{6})$/.exec(hex);
+  if (!match) {
+    return `rgba(0, 0, 0, ${alpha})`;
+  }
+  const r = parseInt(match[1].slice(0, 2), 16);
+  const g = parseInt(match[1].slice(2, 4), 16);
+  const b = parseInt(match[1].slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/**
  * Strips HTML tags from text and truncates with ellipsis
  * @param html - HTML string to process
  * @param maxLength - Maximum length before truncation (default: 50)

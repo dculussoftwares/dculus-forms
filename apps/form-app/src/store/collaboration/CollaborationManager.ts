@@ -491,6 +491,8 @@ export class CollaborationManager {
           layoutMap.get('customCTAButtonName') || DEFAULT_LAYOUT.customCTAButtonName,
         backgroundImageKey: layoutMap.get('backgroundImageKey') || DEFAULT_LAYOUT.backgroundImageKey,
         backgroundVideoKey: layoutMap.get('backgroundVideoKey') || DEFAULT_LAYOUT.backgroundVideoKey,
+        backgroundDominantColor:
+          layoutMap.get('backgroundDominantColor') || DEFAULT_LAYOUT.backgroundDominantColor,
         pageMode: layoutMap.get('pageMode') || DEFAULT_LAYOUT.pageMode,
         isCustomBackgroundColorEnabled:
           layoutMap.get('isCustomBackgroundColorEnabled') ?? DEFAULT_LAYOUT.isCustomBackgroundColorEnabled,
