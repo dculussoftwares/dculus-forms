@@ -40,6 +40,9 @@ export const FORM_LIST_FIELDS : TypedDocumentNode<any, any> = gql`
       fieldCount
       backgroundImageKey
       backgroundImageUrl
+      backgroundVideoKey
+      backgroundVideoUrl
+      backgroundDominantColor
       lastUpdated
     }
   }
@@ -134,6 +137,9 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
         fieldCount
         backgroundImageKey
         backgroundImageUrl
+        backgroundVideoKey
+        backgroundVideoUrl
+        backgroundDominantColor
         lastUpdated
       }
       dashboardStats {

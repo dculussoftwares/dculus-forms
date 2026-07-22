@@ -269,12 +269,14 @@ model CollaborativeDocument {
 
 // Form Metadata Cache Model
 model FormMetadata {
-  id                 String   @id @default(cuid())
-  formId             String   @unique
-  pageCount          Int      @default(0)
-  fieldCount         Int      @default(0)
-  backgroundImageKey String?
-  lastUpdated        DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  formId                  String   @unique
+  pageCount               Int      @default(0)
+  fieldCount              Int      @default(0)
+  backgroundImageKey      String?
+  backgroundVideoKey      String?
+  backgroundDominantColor String?
+  lastUpdated             DateTime @updatedAt
 
   @@map("form_metadata")
 }

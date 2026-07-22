@@ -179,6 +179,9 @@ export const typeDefs = gql`
     fieldCount: Int!
     backgroundImageKey: String
     backgroundImageUrl: String
+    backgroundVideoKey: String
+    backgroundVideoUrl: String
+    backgroundDominantColor: String
     lastUpdated: String!
   }
 

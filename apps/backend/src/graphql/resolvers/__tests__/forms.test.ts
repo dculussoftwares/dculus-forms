@@ -378,10 +378,13 @@ describe('Forms Resolvers', () => {
         pageCount: 3,
         fieldCount: 10,
         backgroundImageKey: 'test-key',
+        backgroundVideoKey: null,
+        backgroundDominantColor: null,
         lastUpdated: new Date('2024-01-01'),
       };
       vi.mocked(formMetadataService.getFormMetadata).mockResolvedValue(mockMetadata);
       vi.mocked(formMetadataService.constructBackgroundImageUrl).mockReturnValue('https://cdn.example.com/test-key');
+      vi.mocked(formMetadataService.constructBackgroundVideoUrl).mockReturnValue(null);
 
       const result = await formsResolvers.Form.metadata({ id: 'form-123' });
 
@@ -390,6 +393,37 @@ describe('Forms Resolvers', () => {
         fieldCount: 10,
         backgroundImageKey: 'test-key',
         backgroundImageUrl: 'https://cdn.example.com/test-key',
+        backgroundVideoKey: null,
+        backgroundVideoUrl: null,
+        backgroundDominantColor: null,
+        lastUpdated: mockMetadata.lastUpdated.toISOString(),
+      });
+    });
+
+    it('should return form metadata with background video URL and dominant color', async () => {
+      const mockMetadata = {
+        pageCount: 1,
+        fieldCount: 4,
+        backgroundImageKey: null,
+        backgroundVideoKey: 'test-video-key.mp4',
+        backgroundDominantColor: '#d5bbc1',
+        lastUpdated: new Date('2024-01-01'),
+      };
+      vi.mocked(formMetadataService.getFormMetadata).mockResolvedValue(mockMetadata);
+      vi.mocked(formMetadataService.constructBackgroundImageUrl).mockReturnValue(null);
+      vi.mocked(formMetadataService.constructBackgroundVideoUrl).mockReturnValue('https://cdn.example.com/test-video-key.mp4');
+
+      const result = await formsResolvers.Form.metadata({ id: 'form-123' });
+
+      expect(formMetadataService.constructBackgroundVideoUrl).toHaveBeenCalledWith('test-video-key.mp4');
+      expect(result).toEqual({
+        pageCount: 1,
+        fieldCount: 4,
+        backgroundImageKey: null,
+        backgroundImageUrl: null,
+        backgroundVideoKey: 'test-video-key.mp4',
+        backgroundVideoUrl: 'https://cdn.example.com/test-video-key.mp4',
+        backgroundDominantColor: '#d5bbc1',
         lastUpdated: mockMetadata.lastUpdated.toISOString(),
       });
     });

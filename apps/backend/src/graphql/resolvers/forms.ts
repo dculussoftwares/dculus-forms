@@ -7,7 +7,7 @@ import {
   duplicateForm as duplicateFormService,
 } from '../../services/formService.js';
 import { getTemplateById } from '../../services/templateService.js';
-import { getFormMetadata, constructBackgroundImageUrl } from '../../services/formMetadataService.js';
+import { getFormMetadata, constructBackgroundImageUrl, constructBackgroundVideoUrl } from '../../services/formMetadataService.js';
 import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { generateId } from '@dculus/utils';
@@ -111,6 +111,9 @@ export const formsResolvers = {
         fieldCount: metadata.fieldCount,
         backgroundImageKey: metadata.backgroundImageKey,
         backgroundImageUrl: constructBackgroundImageUrl(metadata.backgroundImageKey),
+        backgroundVideoKey: metadata.backgroundVideoKey,
+        backgroundVideoUrl: constructBackgroundVideoUrl(metadata.backgroundVideoKey),
+        backgroundDominantColor: metadata.backgroundDominantColor,
         lastUpdated: metadata.lastUpdated.toISOString(),
       };
     },

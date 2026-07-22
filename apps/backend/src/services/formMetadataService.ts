@@ -11,7 +11,18 @@ export interface FormMetadataStats {
   pageCount: number;
   fieldCount: number;
   backgroundImageKey: string | null;
+  backgroundVideoKey: string | null;
+  backgroundDominantColor: string | null;
 }
+
+/**
+ * Read a layout field as a non-empty string, discarding malformed/non-string
+ * Y.js values before they reach Prisma or CDN URL construction.
+ */
+const getLayoutString = (layoutMap: Y.Map<any> | undefined, key: string): string | null => {
+  const value = layoutMap?.get(key);
+  return typeof value === 'string' && value.length > 0 ? value : null;
+};
 
 /**
  * Extract form statistics from a YJS document
@@ -37,16 +48,15 @@ export const extractFormStatsFromYDoc = (ydoc: Y.Doc): FormMetadataStats => {
       });
     }
 
-    // Extract background image key from layout
+    // Extract background image/video keys from layout
     const layoutMap = formSchemaMap.get('layout') as Y.Map<any>;
-    const backgroundImageKey = layoutMap?.get('backgroundImageKey') as
-      | string
-      | null;
 
     return {
       pageCount,
       fieldCount,
-      backgroundImageKey: backgroundImageKey || null,
+      backgroundImageKey: getLayoutString(layoutMap, 'backgroundImageKey'),
+      backgroundVideoKey: getLayoutString(layoutMap, 'backgroundVideoKey'),
+      backgroundDominantColor: getLayoutString(layoutMap, 'backgroundDominantColor'),
     };
   } catch (error) {
     logger.error('Error extracting form stats from YDoc:', error);
@@ -54,6 +64,8 @@ export const extractFormStatsFromYDoc = (ydoc: Y.Doc): FormMetadataStats => {
       pageCount: 0,
       fieldCount: 0,
       backgroundImageKey: null,
+      backgroundVideoKey: null,
+      backgroundDominantColor: null,
     };
   }
 };
@@ -74,6 +86,8 @@ export const extractFormStatsFromState = (
       pageCount: 0,
       fieldCount: 0,
       backgroundImageKey: null,
+      backgroundVideoKey: null,
+      backgroundDominantColor: null,
     };
   }
 };
@@ -92,6 +106,8 @@ export const updateFormMetadata = async (
       pageCount: stats.pageCount,
       fieldCount: stats.fieldCount,
       backgroundImageKey: stats.backgroundImageKey,
+      backgroundVideoKey: stats.backgroundVideoKey,
+      backgroundDominantColor: stats.backgroundDominantColor,
       lastUpdated: new Date(),
     });
 
@@ -210,6 +226,17 @@ export const constructBackgroundImageUrl = (
   if (!backgroundImageKey) return null;
 
   return constructCdnUrl(backgroundImageKey);
+};
+
+/**
+ * Construct CDN URL from background video key
+ */
+export const constructBackgroundVideoUrl = (
+  backgroundVideoKey: string | null
+): string | null => {
+  if (!backgroundVideoKey) return null;
+
+  return constructCdnUrl(backgroundVideoKey);
 };
 
 /**
