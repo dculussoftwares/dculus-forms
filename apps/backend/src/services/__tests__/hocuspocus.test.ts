@@ -338,7 +338,7 @@ describe('Hocuspocus Service', () => {
 
   describe('onChange hook', () => {
     const mockDoc = new Y.Doc();
-    const mockStats = { pageCount: 1, fieldCount: 5, backgroundImageKey: null };
+    const mockStats = { pageCount: 1, fieldCount: 5, backgroundImageKey: null, backgroundVideoKey: null, backgroundDominantColor: null };
 
     beforeEach(() => {
       vi.mocked(extractFormStatsFromYDoc).mockReturnValue(mockStats);

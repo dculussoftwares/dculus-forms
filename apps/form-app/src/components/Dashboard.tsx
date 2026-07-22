@@ -24,6 +24,7 @@ import {
   ArrowRight,
   ChevronRight,
   Inbox,
+  Video,
 } from 'lucide-react';
 import { useNavigate, Routes, Route, useSearchParams } from 'react-router';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -519,6 +520,8 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
   const { t, locale } = useTranslation('dashboard');
   const metadata      = form.metadata;
   const bgImageUrl    = metadata?.backgroundImageUrl ?? null;
+  const bgVideoUrl    = metadata?.backgroundVideoUrl ?? null;
+  const bgDominantColor = metadata?.backgroundDominantColor ?? null;
   const pageCount     = metadata?.pageCount ?? 0;
   const fieldCount    = metadata?.fieldCount ?? 0;
   const responseCount = form.responseCount ?? 0;
@@ -556,10 +559,23 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
     return date.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
   })();
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   const handleCardClick     = () => onNavigate(`/dashboard/form/${form.id}`);
   const handlePreview       = (e: React.MouseEvent) => { e.stopPropagation(); window.open(getFormViewerUrl(form.shortUrl), '_blank'); };
   const handleEdit          = (e: React.MouseEvent) => { e.stopPropagation(); onNavigate(`/dashboard/form/${form.id}/builder/page-builder`); };
   const handleResponseClick = (e: React.MouseEvent) => { e.stopPropagation(); onNavigate(`/dashboard/form/${form.id}/responses`); };
+
+  const handleThumbnailEnter = () => {
+    if (!bgVideoUrl || !videoRef.current) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    videoRef.current.play().catch(() => {});
+  };
+  const handleThumbnailLeave = () => {
+    if (!videoRef.current) return;
+    videoRef.current.pause();
+    videoRef.current.currentTime = 0;
+  };
 
   return (
     <div
@@ -567,13 +583,37 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
       className="group relative rounded-xl bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 border border-[var(--tf-border-medium)] shadow-[0_1px_4px_var(--tf-overlay)] hover:shadow-[0_6px_20px_rgba(60,50,62,0.12)]"
     >
       {/* Thumbnail */}
-      <div className="relative h-40 overflow-hidden">
+      <div
+        className="relative h-40 overflow-hidden"
+        onMouseEnter={handleThumbnailEnter}
+        onMouseLeave={handleThumbnailLeave}
+      >
         {bgImageUrl ? (
           <div
             className="w-full h-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
             style={{ backgroundImage: `url(${bgImageUrl})` }}
           >
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          </div>
+        ) : bgVideoUrl ? (
+          <div
+            className="w-full h-full relative"
+            style={{ backgroundColor: bgDominantColor || 'var(--tf-faint)' }}
+          >
+            <video
+              ref={videoRef}
+              src={bgVideoUrl}
+              muted
+              loop
+              playsInline
+              preload="none"
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+            <div className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm">
+              <Video className="w-3.5 h-3.5 text-white" />
+            </div>
           </div>
         ) : (
           <div

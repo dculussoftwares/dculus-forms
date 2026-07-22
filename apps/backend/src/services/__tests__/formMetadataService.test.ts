@@ -104,6 +104,8 @@ describe('Form Metadata Service', () => {
         pageCount: 0,
         fieldCount: 0,
         backgroundImageKey: null,
+        backgroundVideoKey: null,
+        backgroundDominantColor: null,
       });
       expect(loggerError).toHaveBeenCalled();
       loggerError.mockRestore();
@@ -135,6 +137,8 @@ describe('Form Metadata Service', () => {
         pageCount: 0,
         fieldCount: 0,
         backgroundImageKey: null,
+        backgroundVideoKey: null,
+        backgroundDominantColor: null,
       });
       expect(loggerError).toHaveBeenCalled();
       loggerError.mockRestore();
@@ -152,6 +156,8 @@ describe('Form Metadata Service', () => {
         pageCount: 2,
         fieldCount: 5,
         backgroundImageKey: 'bg-123',
+        backgroundVideoKey: null,
+        backgroundDominantColor: null,
       };
 
       await updateFormMetadata('form-123', stats);
@@ -162,6 +168,8 @@ describe('Form Metadata Service', () => {
         pageCount: 2,
         fieldCount: 5,
         backgroundImageKey: 'bg-123',
+        backgroundVideoKey: null,
+        backgroundDominantColor: null,
         lastUpdated: expect.any(Date),
       });
       expect(loggerInfo).toHaveBeenCalledWith(
@@ -177,7 +185,7 @@ describe('Form Metadata Service', () => {
         new Error('Database error')
       );
 
-      const stats = { pageCount: 2, fieldCount: 5, backgroundImageKey: null };
+      const stats = { pageCount: 2, fieldCount: 5, backgroundImageKey: null, backgroundVideoKey: null, backgroundDominantColor: null };
 
       await expect(updateFormMetadata('form-123', stats)).rejects.toThrow('Database error');
       expect(loggerError).toHaveBeenCalled();
@@ -309,6 +317,8 @@ describe('Form Metadata Service', () => {
           pageCount: 1,
           fieldCount: 2,
           backgroundImageKey: null,
+          backgroundVideoKey: null,
+          backgroundDominantColor: null,
         });
 
       await batchUpdateFormMetadata(['form-error', 'form-success']);
