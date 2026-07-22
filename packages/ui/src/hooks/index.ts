@@ -5,3 +5,5 @@ export { useStoreSync } from './useStoreSync';
 export { useFormSubmission } from './useFormSubmission';
 export { useConditionalVisibility } from './useConditionalVisibility';
 export type { ConditionalVisibility } from './useConditionalVisibility';
+export { useBackgroundVideo } from './useBackgroundVideo';
+export type { BackgroundVideo } from './useBackgroundVideo';

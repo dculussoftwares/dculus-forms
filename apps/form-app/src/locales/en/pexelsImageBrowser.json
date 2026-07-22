@@ -1,10 +1,21 @@
 {
   "searchPlaceholder": "Search for background images...",
+  "videoSearchPlaceholder": "Search for background videos...",
   "title": "Browse Background Images",
   "subtitle": "Search and select images from Pexels",
   "searchButton": "Search",
   "applyingButton": "Applying...",
   "applyBackgroundButton": "Apply Background",
+  "applyVideoBackgroundButton": "Apply Video Background",
   "byAuthor": "by {{author}}",
-  "loadMoreButton": "Load More"
+  "loadMoreButton": "Load More",
+  "mediaType": {
+    "photos": "Photos",
+    "videos": "Videos"
+  },
+  "videoAppliedSuccess": "Video applied successfully",
+  "videoSearchFailed": "Failed to search Pexels videos. Please try again.",
+  "videoTooLargeTitle": "Video too large",
+  "videoTooLargeDescription": "The selected video exceeds the 20MB limit.",
+  "videoApplyFailed": "Failed to apply video. Please try again."
 }

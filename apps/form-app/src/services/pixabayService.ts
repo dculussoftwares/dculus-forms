@@ -73,4 +73,87 @@ export async function downloadPixabayImage(
   return result;
 }
 
-export type { PixabayImage, PixabayResponse };
+interface PixabayVideoRendition {
+  url: string;
+  width: number;
+  height: number;
+  size: number; // bytes
+  thumbnail: string;
+}
+
+interface PixabayVideo {
+  id: number;
+  tags: string;
+  duration: number;
+  videos: {
+    large: PixabayVideoRendition;
+    medium: PixabayVideoRendition;
+    small: PixabayVideoRendition;
+    tiny: PixabayVideoRendition;
+  };
+  userImageURL: string;
+  user: string;
+  views: number;
+  downloads: number;
+  likes: number;
+}
+
+interface PixabayVideoResponse {
+  total: number;
+  totalHits: number;
+  hits: PixabayVideo[];
+}
+
+export async function searchPixabayVideos(
+  query: string = 'background',
+  page: number = 1,
+  perPage: number = 20
+): Promise<PixabayVideoResponse> {
+  const params = new URLSearchParams({
+    q: query,
+    page: page.toString(),
+    per_page: perPage.toString(),
+  });
+
+  const response = await fetch(`${getApiBaseUrl()}/api/pixabay/videos?${params}`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Video search error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+const MAX_VIDEO_DOWNLOAD_BYTES = 20 * 1024 * 1024; // keep in sync with backend MAX_VIDEO_FILE_SIZE
+
+// Picks the smallest rendition that fits under the upload cap — Pixabay reports
+// an exact byte size per rendition, so we don't need to guess.
+function selectSmallestVideoRendition(videos: PixabayVideo['videos']): PixabayVideoRendition {
+  const renditions = [videos.tiny, videos.small, videos.medium, videos.large].filter(Boolean);
+  return renditions.find((r) => r.size <= MAX_VIDEO_DOWNLOAD_BYTES) || renditions[0];
+}
+
+export async function downloadPixabayVideo(
+  video: PixabayVideo,
+  formId: string
+): Promise<UploadResult> {
+  const rendition = selectSmallestVideoRendition(video.videos);
+  if (!rendition) {
+    throw new Error('No downloadable video rendition found for this Pixabay video');
+  }
+
+  const videoResponse = await fetch(rendition.url);
+  if (!videoResponse.ok) {
+    throw new Error('Failed to fetch video from Pixabay');
+  }
+
+  const videoBlob = await videoResponse.blob();
+  const filename = `pixabay-${Date.now()}.mp4`;
+  const file = new File([videoBlob], filename, { type: videoBlob.type || 'video/mp4' });
+
+  return uploadFileHTTP(file, 'FormBackground', formId);
+}
+
+export type { PixabayImage, PixabayResponse, PixabayVideo, PixabayVideoResponse };

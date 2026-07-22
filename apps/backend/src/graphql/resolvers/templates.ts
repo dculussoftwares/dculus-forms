@@ -220,6 +220,33 @@ export const templatesResolvers = {
           }
         }
 
+        // Same treatment for a background video, if the template has one
+        if (formSchema.layout && formSchema.layout.backgroundVideoKey && formSchema.layout.backgroundVideoKey.trim() !== '') {
+          try {
+            const copiedVideo = await copyFileForForm(formSchema.layout.backgroundVideoKey, newFormId);
+
+            formSchema.layout.backgroundVideoKey = copiedVideo.key;
+
+            await prisma.formFile.create({
+              data: {
+                id: randomUUID(),
+                key: copiedVideo.key,
+                type: 'FormBackground',
+                formId: newFormId,
+                originalName: copiedVideo.originalName,
+                url: copiedVideo.url,
+                size: copiedVideo.size,
+                mimeType: copiedVideo.mimeType,
+              }
+            });
+          } catch (copyError) {
+            logger.error('Error copying background video:', copyError);
+            formSchema.layout.backgroundVideoKey = '';
+          }
+        } else if (formSchema.layout) {
+          formSchema.layout.backgroundVideoKey = formSchema.layout.backgroundVideoKey || '';
+        }
+
         // Create a new form using the modified schema and initialize YJS
         const newForm = await createForm({
           id: newFormId,

@@ -1,10 +1,21 @@
 {
   "searchPlaceholder": "பின்னணிப் படங்களைத் தேடு...",
+  "videoSearchPlaceholder": "பின்னணி வீடியோக்களைத் தேடு...",
   "title": "பின்னணி படங்களை உலாவவும்",
   "subtitle": "Pexels இலிருந்து படங்களைத் தேடித் தேர்ந்தெடுக்கவும்",
   "searchButton": "தேடு",
   "applyingButton": "விண்ணப்பிக்கிறது...",
   "applyBackgroundButton": "பின்னணியைப் பயன்படுத்தவும்",
+  "applyVideoBackgroundButton": "வீடியோ பின்னணியைப் பயன்படுத்தவும்",
   "byAuthor": "{{author}} மூலம்",
-  "loadMoreButton": "மேலும் ஏற்றவும்"
+  "loadMoreButton": "மேலும் ஏற்றவும்",
+  "mediaType": {
+    "photos": "படங்கள்",
+    "videos": "வீடியோக்கள்"
+  },
+  "videoAppliedSuccess": "வீடியோ வெற்றிகரமாகப் பயன்படுத்தப்பட்டது",
+  "videoSearchFailed": "Pexels வீடியோக்களைத் தேட முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  "videoTooLargeTitle": "வீடியோ மிகப் பெரியது",
+  "videoTooLargeDescription": "தேர்ந்தெடுக்கப்பட்ட வீடியோ 20MB வரம்பை மீறுகிறது.",
+  "videoApplyFailed": "வீடியோவைப் பயன்படுத்த முடியவில்லை. மீண்டும் முயற்சிக்கவும்."
 }

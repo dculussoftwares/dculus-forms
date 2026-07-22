@@ -56,7 +56,7 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
 
   const handleApplyBackgroundImage = () => {
     if (selectedImageKey) {
-      onLayoutUpdate({ backgroundImageKey: selectedImageKey });
+      onLayoutUpdate({ backgroundImageKey: selectedImageKey, backgroundVideoKey: '' });
     }
   };
   return (
@@ -268,10 +268,10 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
               </TabsContent>
             </Tabs>
             
-            {layout.backgroundImageKey && (
+            {(layout.backgroundImageKey || layout.backgroundVideoKey) && (
               <Button
                 variant="outline"
-                onClick={() => canEditLayout && onLayoutUpdate({ backgroundImageKey: '' })}
+                onClick={() => canEditLayout && onLayoutUpdate({ backgroundImageKey: '', backgroundVideoKey: '' })}
                 disabled={!canEditLayout}
                 className="w-full"
               >
@@ -299,7 +299,8 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         isOpen={isPexelsModalOpen}
         onClose={() => setIsPexelsModalOpen(false)}
         formId={formId}
-        onImageApplied={(imageKey) => onLayoutUpdate({ backgroundImageKey: imageKey })}
+        onImageApplied={(imageKey) => onLayoutUpdate({ backgroundImageKey: imageKey, backgroundVideoKey: '' })}
+        onVideoApplied={(videoKey) => onLayoutUpdate({ backgroundVideoKey: videoKey, backgroundImageKey: '' })}
         onUploadSuccess={handleImageUploadSuccess}
       />
 
@@ -307,7 +308,8 @@ export const LayoutSidebar: React.FC<LayoutSidebarProps> = ({
         isOpen={isPixabayModalOpen}
         onClose={() => setIsPixabayModalOpen(false)}
         formId={formId}
-        onImageApplied={(imageKey) => onLayoutUpdate({ backgroundImageKey: imageKey })}
+        onImageApplied={(imageKey) => onLayoutUpdate({ backgroundImageKey: imageKey, backgroundVideoKey: '' })}
+        onVideoApplied={(videoKey) => onLayoutUpdate({ backgroundVideoKey: videoKey, backgroundImageKey: '' })}
         onUploadSuccess={handleImageUploadSuccess}
       />
     </div>

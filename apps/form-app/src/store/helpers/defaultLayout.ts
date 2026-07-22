@@ -13,6 +13,7 @@ export const DEFAULT_LAYOUT: FormLayout = {
   customBackGroundColor: '#ffffff',
   customCTAButtonName: 'Get Started',
   backgroundImageKey: '',
+  backgroundVideoKey: '',
   pageMode: PageModeType.MULTIPAGE,
   isCustomBackgroundColorEnabled: false,
 };

@@ -701,6 +701,10 @@ export const formLayoutValidationSchema = z.object({
     .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),
   customCTAButtonName: z.string().max(50, 'Button name is too long').optional(),
   backgroundImageKey: z.string().max(200, 'Background image key is too long'),
+  backgroundVideoKey: z
+    .string()
+    .max(200, 'Background video key is too long')
+    .optional(),
   pageMode: z.enum(['multipage']),
 });
 

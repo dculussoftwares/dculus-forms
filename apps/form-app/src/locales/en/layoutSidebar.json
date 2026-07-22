@@ -31,14 +31,14 @@
       "viewOnlyDescription": "Background image upload disabled"
     },
     "pexelsTab": {
-      "browseButton": "Browse Images from Pexels",
-      "helpTextEnabled": "Search and select from high-quality Pexels photos",
-      "helpTextDisabled": "View-only mode - image browsing disabled"
+      "browseButton": "Browse Photos & Videos from Pexels",
+      "helpTextEnabled": "Search and select from high-quality Pexels photos and videos",
+      "helpTextDisabled": "View-only mode - browsing disabled"
     },
     "pixabayTab": {
-      "browseButton": "Browse Images from Pixabay",
-      "helpTextEnabled": "Search and select from thousands of free background images",
-      "helpTextDisabled": "View-only mode - image browsing disabled"
+      "browseButton": "Browse Photos & Videos from Pixabay",
+      "helpTextEnabled": "Search and select from thousands of free background photos and videos",
+      "helpTextDisabled": "View-only mode - browsing disabled"
     },
     "clearButton": "Clear Background"
   },

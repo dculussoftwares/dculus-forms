@@ -89,6 +89,7 @@ describe('Templates Resolvers', () => {
         content: '',
         customBackGroundColor: '#FFFFFF',
         backgroundImageKey: '',
+        backgroundVideoKey: '',
       },
       isShuffleEnabled: false,
     },
