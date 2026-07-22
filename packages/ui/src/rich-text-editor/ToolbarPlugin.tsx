@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   $getSelection,
   $isRangeSelection,
+  $getRoot,
+  $setSelection,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -15,7 +17,11 @@ import {
   REMOVE_LIST_COMMAND,
 } from '@lexical/list';
 import { $isHeadingNode, $createHeadingNode } from '@lexical/rich-text';
-import { $setBlocksType, $patchStyleText } from '@lexical/selection';
+import {
+  $setBlocksType,
+  $patchStyleText,
+  $getSelectionStyleValueForProperty,
+} from '@lexical/selection';
 import { $findMatchingParent, mergeRegister } from '@lexical/utils';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { 
@@ -107,6 +113,9 @@ export function ToolbarPlugin(): JSX.Element {
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
+      setFontSize(
+        $getSelectionStyleValueForProperty(selection, 'font-size', '16px')
+      );
     }
   }, [editor]);
 
@@ -168,11 +177,25 @@ export function ToolbarPlugin(): JSX.Element {
 
   const applyFontSize = (size: string) => {
     editor.update(() => {
-      const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        $patchStyleText(selection, {
-          'font-size': size,
-        });
+      const original = $getSelection();
+      if (!$isRangeSelection(original)) {
+        return;
+      }
+      // A collapsed selection (cursor placed but no text highlighted) only
+      // records a pending style for characters typed next - it doesn't touch
+      // any existing text. Since this toolbar is used to size short blocks of
+      // already-typed content, fall back to the whole document so the click
+      // visibly (and persistently) applies.
+      const wasCollapsed = original.isCollapsed();
+      const caret = wasCollapsed ? original.clone() : null;
+      const selection = wasCollapsed ? $getRoot().select() : original;
+      $patchStyleText(selection, {
+        'font-size': size,
+      });
+      // Restore the caret so the whole-document selection used above doesn't
+      // linger and get replaced by the user's next keystroke.
+      if (caret) {
+        $setSelection(caret);
       }
     });
     setFontSize(size);

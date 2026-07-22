@@ -137,6 +137,14 @@ function OnChangeHandler({
 
   return (
     <OnChangePlugin
+      // Without this, a pure selection move (e.g. AutoFocusPlugin placing the
+      // caret on mount) fires onChange too. Consumers that gate a "Save/Cancel"
+      // UI on "did the content change" then compare this re-serialized HTML
+      // against the originally-stored string and see a false mismatch (Lexical's
+      // export wraps text in `<span style="white-space: pre-wrap;">` that
+      // hand-authored/legacy content never had) - showing unsaved changes, and
+      // reappearing the same way right after Cancel, before any real edit.
+      ignoreSelectionChange
       onChange={(editorState: EditorState) => {
         editorState.read(() => {
           const htmlString = $generateHtmlFromNodes(editor, null);
