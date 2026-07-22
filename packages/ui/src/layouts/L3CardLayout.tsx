@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
+import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { LayoutProps } from '../types';
 
 export const L3CardLayout: React.FC<LayoutProps> = ({
@@ -61,12 +62,16 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
     }
   }, [layout?.content, hasUnsavedChanges]);
 
-  // Create outer background - custom color when enabled, otherwise background image with blur
+  const { hasVideoBackground, videoUrl } = useBackgroundVideo(layout, cdnEndpoint);
+
+  // Create outer background - custom color when enabled, video/image next, otherwise gradient
   const outerBackgroundStyle = layout?.isCustomBackgroundColorEnabled && layout?.customBackGroundColor
     ? {
         backgroundColor: layout.customBackGroundColor,
         transition: 'background-color 0.5s ease-in-out'
       }
+    : hasVideoBackground
+    ? { transition: 'all 0.5s ease-in-out' }
     : layout?.backgroundImageKey && cdnEndpoint
     ? {
         backgroundImage: `url(${getImageUrl(layout.backgroundImageKey, cdnEndpoint)})`,
@@ -86,13 +91,26 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
       <div className="flex-1 overflow-y-auto">
         {!showPages ? (
           /* Intro Section - Full view with background image */
-          <div 
+          <div
             className="h-full relative"
             style={outerBackgroundStyle}
           >
+            {/* Video background layer - fills the outer area, no blur (unlike images) */}
+            {hasVideoBackground && (
+              <video
+                key={videoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+                src={videoUrl}
+              />
+            )}
+
             {/* Backdrop blur overlay on top of background image in outer area - only when not using custom color */}
             {!layout?.isCustomBackgroundColorEnabled && layout?.backgroundImageKey && cdnEndpoint && (
-              <div 
+              <div
                 className="absolute inset-0"
                 style={{
                   backdropFilter: 'blur(250px)',
@@ -101,14 +119,24 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                 }}
               ></div>
             )}
-            
+
             {/* Background image container with padding */}
             <div className="h-full flex items-center justify-center relative z-10 px-3 py-4 sm:px-[10%] sm:py-[5%]">
               {/* Background image area with white paper chunk centered */}
               <div className="w-full h-full relative rounded-sm overflow-hidden shadow-2xl">
-                {/* Clear background image in center area */}
-                {layout?.backgroundImageKey && cdnEndpoint ? (
-                  <div 
+                {/* Clear background image/video in center area */}
+                {hasVideoBackground ? (
+                  <video
+                    key={videoUrl}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                    src={videoUrl}
+                  />
+                ) : layout?.backgroundImageKey && cdnEndpoint ? (
+                  <div
                     className="absolute inset-0 bg-center bg-no-repeat bg-cover"
                     style={{ backgroundImage: `url(${getImageUrl(layout.backgroundImageKey, cdnEndpoint)})` }}
                   ></div>
@@ -205,13 +233,26 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
           </div>
         ) : (
           /* Pages Section - Full height without center background */
-          <div 
+          <div
             className="h-full relative"
             style={outerBackgroundStyle}
           >
+            {/* Video background layer - fills the outer area, no blur (unlike images) */}
+            {hasVideoBackground && (
+              <video
+                key={videoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+                src={videoUrl}
+              />
+            )}
+
             {/* Backdrop blur overlay on top of background image in outer area - only when not using custom color */}
             {!layout?.isCustomBackgroundColorEnabled && layout?.backgroundImageKey && cdnEndpoint && (
-              <div 
+              <div
                 className="absolute inset-0"
                 style={{
                   backdropFilter: 'blur(250px)',
@@ -220,7 +261,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                 }}
               ></div>
             )}
-            
+
             {/* Pages content with white background container */}
             <div className="h-full relative z-10 p-3 sm:p-8 overflow-y-auto">
               <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
