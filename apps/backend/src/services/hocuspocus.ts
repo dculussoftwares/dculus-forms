@@ -1,7 +1,7 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import * as Y from 'yjs';
-import { sanitizeConditions } from '@dculus/types';
+import { sanitizeConditions, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import {
   extractFormStatsFromYDoc,
   updateFormMetadata,
@@ -553,6 +553,8 @@ export const getFormSchemaFromHocuspocus = async (
         convertedLayout.spacing = layout.get('spacing');
         convertedLayout.code = layout.get('code');
         convertedLayout.content = layout.get('content');
+        convertedLayout.thankYouContent =
+          layout.get('thankYouContent') || DEFAULT_THANK_YOU_CONTENT;
         convertedLayout.customBackGroundColor = layout.get(
           'customBackGroundColor'
         );
@@ -774,6 +776,7 @@ export const initializeHocuspocusDocument = async (
     layoutMap.set('spacing', layout.spacing || 'normal');
     layoutMap.set('code', layout.code || '');
     layoutMap.set('content', layout.content || '');
+    layoutMap.set('thankYouContent', layout.thankYouContent || DEFAULT_THANK_YOU_CONTENT);
     layoutMap.set(
       'customBackGroundColor',
       layout.customBackGroundColor || '#ffffff'

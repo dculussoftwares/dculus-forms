@@ -1,7 +1,8 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { randomBytes } from 'crypto';
+import * as Y from 'yjs';
 import { CustomWorld } from '../support/world';
-import { expect, expectDefined, expectDeepEqual, expectEqual } from '../utils/expect-helper';
+import { expectDefined, expectDeepEqual, expectEqual } from '../utils/expect-helper';
 
 /**
  * Generates unbiased random index using rejection sampling.
@@ -100,33 +101,67 @@ Given('I configure a custom thank you message {string} on the published form',
   async function (this: CustomWorld, messageTemplate: string) {
     const form = this.getSharedTestData('createdForm');
     expectDefined(form, 'Form must exist before configuring thank you message');
-    expectDefined(this.authToken, 'Auth token is required to update form settings');
+    expectDefined(this.prisma, 'Prisma client must be available to update the form layout');
 
-    const existingSettings = (() => {
-      if (!form.settings) return {};
-      if (typeof form.settings === 'string') {
+    // Thank-you content now lives on formSchema.layout.thankYouContent (edited live in
+    // the builder's Layout tab, synced via Y.js/Hocuspocus in the real app — see #170).
+    // There's no GraphQL mutation surface for it outside that collaborative document, so
+    // this API-level test writes the layout field directly via Prisma, same as the DB
+    // assertions elsewhere in this suite (e.g. "the form should have N stored responses").
+    const existingSchema = (() => {
+      if (!form.formSchema) return { pages: [], layout: {} };
+      if (typeof form.formSchema === 'string') {
         try {
-          return JSON.parse(form.settings);
+          return JSON.parse(form.formSchema);
         } catch {
-          return {};
+          return { pages: [], layout: {} };
         }
       }
-      return form.settings;
+      return form.formSchema;
     })();
 
-    const updatedForm = await this.formTestUtils.updateForm(this.authToken!, form.id, {
-      settings: {
-        ...existingSettings,
-        thankYou: {
-          enabled: true,
-          message: messageTemplate,
-        },
+    const updatedSchema = {
+      ...existingSchema,
+      layout: {
+        ...existingSchema.layout,
+        thankYouContent: messageTemplate,
       },
+    };
+
+    await this.prisma.form.update({
+      where: { id: form.id },
+      data: { formSchema: updatedSchema },
     });
 
-    this.setSharedTestData('createdForm', updatedForm);
+    // submitResponse resolves the thank-you template from the live Hocuspocus document
+    // first, only falling back to this Form.formSchema column if no collaborative
+    // document exists (see responses.ts) — and createForm always initializes one. So the
+    // Prisma write above alone would be invisible to the resolver; patch the stored Y.Doc's
+    // layout.thankYouContent to match, the same way a real builder edit would.
+    const collabDoc = await this.prisma.collaborativeDocument.findUnique({
+      where: { documentName: form.id },
+    });
+    if (collabDoc) {
+      const doc = new Y.Doc();
+      Y.applyUpdate(doc, new Uint8Array(collabDoc.state));
+      const formSchemaMap = doc.getMap('formSchema');
+      let layoutMap = formSchemaMap.get('layout') as Y.Map<any>;
+      if (!(layoutMap instanceof Y.Map)) {
+        layoutMap = new Y.Map();
+        formSchemaMap.set('layout', layoutMap);
+      }
+      layoutMap.set('thankYouContent', messageTemplate);
+      const state = Buffer.from(Y.encodeStateAsUpdate(doc));
+      await this.prisma.collaborativeDocument.update({
+        where: { documentName: form.id },
+        data: { state },
+      });
+      doc.destroy();
+    }
+
+    this.setSharedTestData('createdForm', { ...form, formSchema: updatedSchema });
     this.setSharedTestData('thankYouTemplate', messageTemplate);
-    console.log(`💬 Configured custom thank you message on form ${updatedForm.id}`);
+    console.log(`💬 Configured custom thank you message on form ${form.id}`);
   }
 );
 
@@ -226,7 +261,6 @@ Then('the submission should succeed with thank you message {string}',
       expectedMessage,
       'Thank you message should match expected default'
     );
-    expect(response.showCustomThankYou === false, 'Default thank you message should not mark custom');
   }
 );
 
@@ -280,6 +314,5 @@ Then('the custom thank you message should render with submitted data',
     });
 
     expectEqual(response.thankYouMessage, renderedExpectation, 'Thank you message should include substituted field values');
-    expect(response.showCustomThankYou === true, 'Custom thank you message should set showCustomThankYou to true');
   }
 );

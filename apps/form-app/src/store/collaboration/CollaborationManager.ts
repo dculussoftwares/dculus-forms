@@ -485,6 +485,7 @@ export class CollaborationManager {
         spacing: layoutMap.get('spacing') || DEFAULT_LAYOUT.spacing,
         code: layoutMap.get('code') || DEFAULT_LAYOUT.code,
         content: layoutMap.get('content') || DEFAULT_LAYOUT.content,
+        thankYouContent: layoutMap.get('thankYouContent') || DEFAULT_LAYOUT.thankYouContent,
         customBackGroundColor:
           layoutMap.get('customBackGroundColor') || DEFAULT_LAYOUT.customBackGroundColor,
         customCTAButtonName:

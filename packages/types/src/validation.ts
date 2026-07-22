@@ -697,6 +697,7 @@ export const formLayoutValidationSchema = z
     spacing: z.enum(['compact', 'normal', 'spacious']),
     code: z.string().regex(/^L[1-9]$/, 'Invalid layout code'),
     content: z.string().max(10000, 'Content is too long'),
+    thankYouContent: z.string().max(10000, 'Thank-you content is too long'),
     customBackGroundColor: z
       .string()
       .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),

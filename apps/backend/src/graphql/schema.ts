@@ -96,11 +96,6 @@ export const typeDefs = gql`
   }
 
   # Form Settings Types
-  type ThankYouSettings {
-    enabled: Boolean!
-    message: String!
-  }
-
   type MaxResponsesSettings {
     enabled: Boolean!
     limit: Int!
@@ -132,7 +127,6 @@ export const typeDefs = gql`
   }
 
   type FormSettings {
-    thankYou: ThankYouSettings
     submissionLimits: SubmissionLimitsSettings
     responseCopy: ResponseCopySettings
     accessControl: AccessControlSettings
@@ -246,7 +240,6 @@ export const typeDefs = gql`
     respondentEmail: String
     submittedAt: String!
     thankYouMessage: String!
-    showCustomThankYou: Boolean!
     hasBeenEdited: Boolean!
     totalEdits: Int!
     lastEditedAt: String
@@ -346,11 +339,6 @@ export const typeDefs = gql`
     organizationId: ID!
   }
 
-  input ThankYouSettingsInput {
-    enabled: Boolean!
-    message: String!
-  }
-
   input MaxResponsesSettingsInput {
     enabled: Boolean!
     limit: Int!
@@ -382,7 +370,6 @@ export const typeDefs = gql`
   }
 
   input FormSettingsInput {
-    thankYou: ThankYouSettingsInput
     submissionLimits: SubmissionLimitsSettingsInput
     responseCopy: ResponseCopySettingsInput
     accessControl: AccessControlSettingsInput

@@ -21,7 +21,7 @@ import {
   generateId,
   substituteMentions,
 } from '@dculus/utils';
-import { deserializeFormSchema } from '@dculus/types';
+import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import { stripConditionallyHiddenValues } from '../../lib/conditionalStrip.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { analyticsService } from '../../services/analyticsService.js';
@@ -356,44 +356,40 @@ export const responsesResolvers = {
         }
       }
 
-      // Get form with settings to determine thank you message
+      // Get form to resolve the thank-you message from its layout
       const formWithSettings = await getFormById(input.formId);
 
-      // Determine thank you message
-      let thankYouMessage =
-        'Thank you! Your form has been submitted successfully.';
-      let showCustomThankYou = false;
+      // Thank you message always comes from formSchema.layout.thankYouContent
+      // (falling back to the default for forms saved before this field existed),
+      // with field mentions substituted against the submitted answers. Reads the
+      // live Hocuspocus document first (same "Hocuspocus, then DB column" fallback
+      // used by the Form.formSchema/formSchemaPublic GraphQL field resolvers in
+      // forms.ts) — the Form.formSchema DB column is only a periodic snapshot and
+      // can lag behind in-progress collaborative edits.
+      let thankYouMessage = DEFAULT_THANK_YOU_CONTENT;
 
-      if (
-        formWithSettings?.settings?.thankYou?.enabled &&
-        formWithSettings.settings.thankYou.message
-      ) {
-        thankYouMessage = formWithSettings.settings.thankYou.message;
-        showCustomThankYou = true;
+      try {
+        let fieldLabels: Record<string, string> = {};
+        let template = DEFAULT_THANK_YOU_CONTENT;
 
-        // Apply mention substitution if we have a custom message
-        try {
-          // Create field labels map from form schema for better fallback display
-          let fieldLabels: Record<string, string> = {};
+        const rawSchema =
+          (await getFormSchemaFromHocuspocus(input.formId)) ?? formWithSettings?.formSchema;
 
-          if (formWithSettings.formSchema) {
-            const deserializedSchema = deserializeFormSchema(
-              formWithSettings.formSchema
-            );
-            fieldLabels = createFieldLabelsMap(deserializedSchema);
-          }
-
-          // Apply mention substitution to replace field IDs with actual user responses
-          thankYouMessage = substituteMentions(
-            thankYouMessage,
-            input.data, // User responses as field_id: value pairs
-            fieldLabels // Field labels for fallback display
-          );
-        } catch (error) {
-          // If substitution fails, log error but continue with original message
-          logger.error('Failed to apply mention substitution:', error);
-          // thankYouMessage remains the original HTML with mentions
+        if (rawSchema) {
+          const deserializedSchema = deserializeFormSchema(rawSchema);
+          fieldLabels = createFieldLabelsMap(deserializedSchema);
+          template =
+            deserializedSchema.layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT;
         }
+
+        thankYouMessage = substituteMentions(
+          template,
+          input.data, // User responses as field_id: value pairs
+          fieldLabels // Field labels for fallback display
+        );
+      } catch (error) {
+        // If substitution fails, log error but continue with original message
+        logger.error('Failed to apply mention substitution:', error);
       }
 
       // Emit plugin event for form submission
@@ -432,7 +428,6 @@ export const responsesResolvers = {
       return {
         ...savedResponse,
         thankYouMessage,
-        showCustomThankYou,
       };
     },
     updateResponse: async (

@@ -13,7 +13,7 @@ Feature: Form response submissions
   @Smoke
   Scenario: Public user submits a response to a published form
     When a public user submits a response to the published form
-    Then the submission should succeed with thank you message "Thank you! Your form has been submitted successfully."
+    Then the submission should succeed with thank you message "<h1>Thank you!</h1><p>Your response has been submitted.</p>"
     And the form should have 1 stored responses
     And the stored response data should match the submitted payload
 

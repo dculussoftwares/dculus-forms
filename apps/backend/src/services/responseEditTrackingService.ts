@@ -4,6 +4,7 @@ import {
   ThemeType,
   SpacingType,
   PageModeType,
+  DEFAULT_THANK_YOU_CONTENT,
 } from '@dculus/types';
 import { generateId } from '@dculus/utils';
 import { responseRepository } from '../repositories/index.js';
@@ -448,6 +449,7 @@ export class ResponseEditTrackingService {
             spacing: SpacingType.NORMAL,
             code: 'L1' as const,
             content: '',
+            thankYouContent: DEFAULT_THANK_YOU_CONTENT,
             customBackGroundColor: '#ffffff',
             backgroundImageKey: '',
             pageMode: PageModeType.MULTIPAGE,

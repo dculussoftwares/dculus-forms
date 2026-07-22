@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation } from '@apollo/client/react';
 import { Monitor, Smartphone } from 'lucide-react';
 import { useFormBuilderStore } from '@/store/useFormBuilderStore.ts';
 import { FormRenderer, toastSuccess, toastError } from '@dculus/ui';
@@ -7,9 +7,7 @@ import type { FormSchema } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { getCdnEndpoint } from '../../../lib/config';
 import { SUBMIT_RESPONSE } from '../../../graphql/mutations';
-import { GET_FORM_BY_ID } from '../../../graphql/queries';
 import { useTranslation } from '../../../hooks/useTranslation';
-import { ThankYouPreview } from './ThankYouPreview';
 
 type PreviewMode = 'desktop' | 'mobile';
 type PreviewStep = 'form' | 'finish';
@@ -58,11 +56,6 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
   const [previewStep, setPreviewStep] = useState<PreviewStep>('form');
 
   const [submitResponse] = useMutation(SUBMIT_RESPONSE);
-  const { data: formData } = useQuery(GET_FORM_BY_ID, {
-    variables: { id: formId },
-    skip: !formId,
-  });
-  const thankYouSettings = formData?.form?.settings?.thankYou;
 
   const formSchema: FormSchema = React.useMemo(
     () => ({
@@ -106,7 +99,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
     [formId, submitResponse]
   );
 
-  const renderer = (
+  const content = (
     <FormRenderer
       key={`${previewMode}-${submitCount}`}
       formSchema={formSchema}
@@ -116,18 +109,9 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
       formId={formId}
       onFormSubmit={formId ? handlePreviewSubmit : undefined}
       initialPageId={selectedPageId ?? undefined}
+      screenOverride={previewStep === 'finish' ? 'thankYou' : undefined}
     />
   );
-
-  const content =
-    previewStep === 'finish' ? (
-      <ThankYouPreview
-        enabled={Boolean(thankYouSettings?.enabled)}
-        message={thankYouSettings?.message ?? ''}
-      />
-    ) : (
-      renderer
-    );
 
   return (
     <div className="flex flex-col h-full">

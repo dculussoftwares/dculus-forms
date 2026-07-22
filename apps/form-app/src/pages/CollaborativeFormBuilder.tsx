@@ -34,7 +34,6 @@ import {
   PageBuilderTab,
   PreviewTab,
   SettingsTab,
-  FinishTab,
   type BuilderTab,
 } from '../components/form-builder/tabs';
 import { ConditionsTab } from '../components/form-builder/conditions/ConditionsTab';
@@ -55,7 +54,6 @@ const VALID_TABS: readonly BuilderTab[] = [
   'page-builder',
   'preview',
   'conditions',
-  'finish',
   'settings',
 ] as const;
 const DEFAULT_TAB: BuilderTab = 'page-builder';
@@ -119,16 +117,13 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     updateLayout,
   } = useFormBuilderStore();
 
-  // Builder rail health badges — Build field count, Logic circular-ref warning,
-  // Finish default-vs-customized status. See #167.
+  // Builder rail health badges — Build field count, Logic circular-ref warning. See #167.
   const totalFieldCount = useMemo(
     () => pages.reduce((sum, p) => sum + p.fields.length, 0),
     [pages]
   );
   const circularRuleIds = useConditionCycles(conditions, pages);
   const logicHasWarning = circularRuleIds.size > 0;
-  const thankYou = formData?.form?.settings?.thankYou;
-  const finishIsCustomized = Boolean(thankYou?.enabled && thankYou?.message?.trim().length);
 
   const { createFieldData } = useFieldCreation();
   const collisionDetectionStrategy = useCollisionDetection();
@@ -339,8 +334,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           setAIInitialMessage(`Create a condition rule from this request: ${description}. Use upsertConditionRule only. This must remain a pending suggestion for the user to review.`);
           setIsAIDrawerOpen(true);
         }} />;
-      case 'finish':
-        return <FinishTab formId={formId} />;
       case 'settings':
         return <SettingsTab formId={formId} />;
       default:
@@ -509,7 +502,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                   position="inline"
                   buildFieldCount={totalFieldCount}
                   logicHasWarning={logicHasWarning}
-                  finishIsCustomized={finishIsCustomized}
                 />
               }
             />

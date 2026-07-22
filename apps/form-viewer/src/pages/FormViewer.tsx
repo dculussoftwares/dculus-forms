@@ -6,7 +6,6 @@ import { Button, FormRenderer, useFormResponseStore, LoadingSpinner } from '@dcu
 import { deserializeFormSchema, extractEmailFields, FieldType } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
-import ThankYouDisplay from '../components/ThankYouDisplay';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
@@ -93,7 +92,6 @@ const FormViewer: React.FC = () => {
   const [submissionMessage, setSubmissionMessage] = useState<string>('');
   const [thankYouData, setThankYouData] = useState<{
     message: string;
-    isCustom: boolean;
     copyEmail?: string;
   } | null>(null);
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
@@ -249,13 +247,11 @@ const FormViewer: React.FC = () => {
         timeoutPromise,
       ]);
 
-      const { thankYouMessage, showCustomThankYou } =
-        result.data.submitResponse;
+      const { thankYouMessage } = result.data.submitResponse;
 
       setSubmissionState('success');
       setThankYouData({
         message: thankYouMessage,
-        isCustom: showCustomThankYou,
         // Optimistic client-side note only — the actual email send is async/
         // fire-and-forget server-side, so there's no real delivery confirmation here.
         copyEmail:
@@ -395,30 +391,10 @@ const FormViewer: React.FC = () => {
     setHasStartedForm(false);
   };
 
-  // Show success message after submission
-  if (submissionState === 'success' && thankYouData) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <div className="w-full">
-          <ThankYouDisplay
-            message={thankYouData.message}
-            isCustom={thankYouData.isCustom}
-            copyEmail={thankYouData.copyEmail}
-          />
-          <div className="text-center mt-6">
-            <Button
-              onClick={handleSubmitAnother}
-              className="px-4 py-2"
-            >
-              Submit Another Response
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Render the form in fullscreen mode
+  // Render the form in fullscreen mode. After a successful submission, the
+  // layout's thank-you screen is shown by forcing `screenOverride` — FormRenderer
+  // stays mounted rather than being swapped for a separate component, so the
+  // thank-you screen inherits the same layout's theme/spacing/background.
   return (
     <div className="h-screen w-full" data-testid="form-viewer-renderer">
       {/* Submission error message */}
@@ -475,6 +451,14 @@ const FormViewer: React.FC = () => {
         onResponseChange={handleFirstFormInteraction}
         responseCopySettings={responseCopySettings}
         onResponseCopyConsentChange={setSendResponseCopy}
+        screenOverride={submissionState === 'success' ? 'thankYou' : undefined}
+        thankYouMessage={thankYouData?.message}
+        onSubmitAnother={submissionState === 'success' ? handleSubmitAnother : undefined}
+        responseCopyNotice={
+          thankYouData?.copyEmail
+            ? `We've sent a copy of your responses to ${thankYouData.copyEmail}.`
+            : undefined
+        }
       />
 
       {/* Re-auth overlay — token expired/revoked mid-fill. Rendered on top of

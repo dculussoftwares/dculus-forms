@@ -4,9 +4,5 @@
     "finish": "Finish",
     "formTooltip": "Preview the form",
     "finishTooltip": "Preview the Thank You screen"
-  },
-  "finishPreview": {
-    "defaultTitle": "Success!",
-    "defaultMessage": "Thank you! Your form has been submitted successfully."
   }
 }

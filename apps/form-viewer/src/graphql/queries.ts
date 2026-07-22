@@ -54,7 +54,6 @@ export const SUBMIT_RESPONSE: TypedDocumentNode<any, any> = gql`
       data
       submittedAt
       thankYouMessage
-      showCustomThankYou
     }
   }
 `;

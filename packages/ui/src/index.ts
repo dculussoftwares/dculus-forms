@@ -277,7 +277,7 @@ export { SinglePageForm, useSinglePageForm } from "./renderers/SinglePageForm"
 export type { LayoutStyles } from "./renderers/PageRenderer"
 export type { FormRendererProps } from "./renderers/FormRenderer"
 export type { SinglePageFormProps } from "./renderers/SinglePageForm"
-export type { LayoutProps } from "./types"
+export type { LayoutProps, LayoutScreen } from "./types"
 
 // Form Response Store
 export { useFormResponseStore, useFormResponseUtils } from "./stores/useFormResponseStore"

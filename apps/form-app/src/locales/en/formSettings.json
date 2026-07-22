@@ -55,18 +55,5 @@
       "emailNotifications": "Email & Notifications",
       "accessControl": "Access Control"
     }
-  },
-  "thankYouSettings": {
-    "title": "Thank You Page",
-    "description": "Customize the message displayed after form submission",
-    "enabled": "Enable thank you page",
-    "enabledDescription": "Show a custom message to users after they submit the form",
-    "messageLabel": "Thank You Message",
-    "messagePlaceholder": "Thank you! Your response has been submitted.",
-    "messageHelp": "This message will be displayed to users after they submit the form. You can use rich formatting including bold, italic, headings, lists, quotes, and links.",
-    "mentionHelp": "Type @ to mention form fields ({{count}} available) and reference user responses.",
-    "noFieldsHelp": "Add some fields to your form to enable @ mentions for personalizing messages.",
-    "saveButton": "Save Thank You Settings",
-    "saving": "Saving..."
   }
 }

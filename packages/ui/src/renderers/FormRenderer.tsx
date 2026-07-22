@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import type { FormSchema, FormLayout } from '@dculus/types';
 import { LayoutRenderer } from './LayoutRenderer';
+import type { LayoutScreen } from '../types';
 import { RendererMode } from '@dculus/utils';
 import { useFormResponseStore, useFormResponseUtils } from '../stores/useFormResponseStore';
 import { useConditionalVisibility } from '../hooks/useConditionalVisibility';
@@ -36,6 +37,14 @@ export interface FormRendererProps {
   onResponseCopyConsentChange?: (consent: boolean) => void;
   /** Page id to open on first render instead of the first page. Falls back to the first page if not found. */
   initialPageId?: string;
+  /** Forces which screen the layout shows (intro/pages/thankYou), overriding its own toggle state. */
+  screenOverride?: LayoutScreen;
+  /** Resolved (mention-substituted) thank-you message. Falls back to `formSchema.layout.thankYouContent` when absent. */
+  thankYouMessage?: string;
+  /** Present only after a real submission — renders the "Submit another response" action on the thank-you screen. */
+  onSubmitAnother?: () => void;
+  /** e.g. "We've sent a copy of your responses to you@example.com." shown under the thank-you message. */
+  responseCopyNotice?: string;
 }
 
 export const FormRenderer: React.FC<FormRendererProps> = ({
@@ -53,6 +62,10 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   responseCopySettings,
   onResponseCopyConsentChange,
   initialPageId,
+  screenOverride,
+  thankYouMessage,
+  onSubmitAnother,
+  responseCopyNotice,
 }) => {
   const { getFormattedResponses } = useFormResponseUtils();
   const store = useFormResponseStore();
@@ -177,6 +190,10 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         mode={mode}
         onLayoutChange={onLayoutChange}
         initialPageId={initialPageId}
+        screenOverride={screenOverride}
+        thankYouMessage={thankYouMessage}
+        onSubmitAnother={onSubmitAnother}
+        responseCopyNotice={responseCopyNotice}
       />
     </FormResponseContext.Provider>
   );

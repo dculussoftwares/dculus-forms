@@ -14,7 +14,8 @@ import {
   ThemeType,
   SpacingType,
   PageModeType,
-  deserializeFormField 
+  deserializeFormField,
+  DEFAULT_THANK_YOU_CONTENT
 } from '@dculus/types';
 import { generateId } from '@dculus/utils';
 
@@ -318,17 +319,6 @@ export const createRealFormPages = (): FormPage[] => {
   ];
 };
 
-// Mock validation objects
-const requiredValidation: FillableFormFieldValidation = {
-  required: true,
-  type: FieldType.FILLABLE_FORM_FIELD
-};
-
-const optionalValidation: FillableFormFieldValidation = {
-  required: false,
-  type: FieldType.FILLABLE_FORM_FIELD
-};
-
 // Sample form fields
 export const createSampleFields = () => [
   new TextInputField(
@@ -444,6 +434,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L1',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
@@ -456,6 +447,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L2',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
@@ -468,6 +460,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L3',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
@@ -480,6 +473,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L4',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
@@ -492,6 +486,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L5',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
@@ -504,6 +499,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L6',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
@@ -516,6 +512,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L7',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
@@ -528,6 +525,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L8',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',
@@ -540,6 +538,7 @@ export const sampleLayouts: Record<string, FormLayout> = {
     spacing: SpacingType.COMPACT,
     code: 'L9',
     content: '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>',
+    thankYouContent: DEFAULT_THANK_YOU_CONTENT,
     customBackGroundColor: '#e8f5e8',
     customCTAButtonName: 'Submit',
     backgroundImageKey: 'files/form-background/1755534544285-1ce176ab-9b91-410e-bfb8-a4278f7d7477-pixabay-1755534544279.jpg',

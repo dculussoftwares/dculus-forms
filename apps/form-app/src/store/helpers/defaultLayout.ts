@@ -1,4 +1,4 @@
-import { FormLayout, ThemeType, SpacingType, LayoutCode, PageModeType } from '@dculus/types';
+import { FormLayout, ThemeType, SpacingType, LayoutCode, PageModeType, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 
 /**
  * Single source of truth for the default form layout.
@@ -10,6 +10,7 @@ export const DEFAULT_LAYOUT: FormLayout = {
   spacing: SpacingType.NORMAL,
   code: 'L1' as LayoutCode,
   content: '',
+  thankYouContent: DEFAULT_THANK_YOU_CONTENT,
   customBackGroundColor: '#ffffff',
   customCTAButtonName: 'Get Started',
   backgroundImageKey: '',

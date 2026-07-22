@@ -15,7 +15,8 @@ import {
   ThemeType,
   SpacingType,
   PageModeType,
-  LayoutCode
+  LayoutCode,
+  DEFAULT_THANK_YOU_CONTENT
 } from '@dculus/types';
 import { randomUUID } from 'crypto';
 import { logger } from '../lib/logger.js';
@@ -148,6 +149,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           spacing: SpacingType.NORMAL,
           code: "L1" as LayoutCode,
           content: getHtmlContent('contact'),
+          thankYouContent: DEFAULT_THANK_YOU_CONTENT,
           customBackGroundColor: "#ffffff",
           customCTAButtonName: "Send a Message",
           backgroundImageKey: getImageKey(0),
@@ -216,6 +218,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           spacing: SpacingType.NORMAL,
           code: "L2" as LayoutCode,
           content: getHtmlContent('feedback'),
+          thankYouContent: DEFAULT_THANK_YOU_CONTENT,
           customBackGroundColor: "#f8f9fa",
           customCTAButtonName: "Share Feedback",
           backgroundImageKey: getImageKey(1),
@@ -317,6 +320,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           spacing: SpacingType.NORMAL,
           code: "L3" as LayoutCode,
           content: getHtmlContent('registration'),
+          thankYouContent: DEFAULT_THANK_YOU_CONTENT,
           customBackGroundColor: "#e3f2fd",
           customCTAButtonName: "Register Now",
           backgroundImageKey: getImageKey(0),
@@ -417,6 +421,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           spacing: SpacingType.SPACIOUS,
           code: "L4" as LayoutCode,
           content: getHtmlContent('job'),
+          thankYouContent: DEFAULT_THANK_YOU_CONTENT,
           customBackGroundColor: "#fff3e0",
           customCTAButtonName: "Apply Now",
           backgroundImageKey: getImageKey(1),
@@ -486,6 +491,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           spacing: SpacingType.NORMAL,
           code: "L5" as LayoutCode,
           content: getHtmlContent('survey'),
+          thankYouContent: DEFAULT_THANK_YOU_CONTENT,
           customBackGroundColor: "#f3e5f5",
           customCTAButtonName: "Start Survey",
           backgroundImageKey: getImageKey(0),
@@ -553,6 +559,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           spacing: SpacingType.COMPACT,
           code: "L6" as LayoutCode,
           content: getHtmlContent('newsletter'),
+          thankYouContent: DEFAULT_THANK_YOU_CONTENT,
           customBackGroundColor: "#e8f5e8",
           customCTAButtonName: "Subscribe Now",
           backgroundImageKey: getImageKey(1),
@@ -685,6 +692,7 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
           spacing: SpacingType.NORMAL,
           code: "L1" as LayoutCode,
           content: '<h1><strong>All Fields Showcase</strong></h1><p>This template demonstrates all 9 available form field types with their unique capabilities and validation features.</p>',
+          thankYouContent: DEFAULT_THANK_YOU_CONTENT,
           customBackGroundColor: "#f0f4f8",
           customCTAButtonName: "Get Started",
           backgroundImageKey: getImageKey(0),

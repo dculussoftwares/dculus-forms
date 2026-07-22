@@ -7,7 +7,8 @@ import {
   ThemeType,
   SpacingType,
   LayoutCode,
-  PageModeType
+  PageModeType,
+  DEFAULT_THANK_YOU_CONTENT
 } from '@dculus/types';
 import { initializeHocuspocusDocument } from './hocuspocus.js';
 import { generateShortUrl, generateId } from '@dculus/utils';
@@ -24,7 +25,7 @@ import { audit } from '../lib/audit.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
-  settings?: any; // JsonValue from Prisma - includes thankYou settings
+  settings?: any; // JsonValue from Prisma
 }
 
 export type { FormSchema, FormPage, FormField, FormLayout, ThemeType, SpacingType };
@@ -108,6 +109,7 @@ export const createForm = async (
       spacing: SpacingType.NORMAL,
       code: 'L1' as LayoutCode,
       content: '',
+      thankYouContent: DEFAULT_THANK_YOU_CONTENT,
       customBackGroundColor: '#ffffff',
       customCTAButtonName: 'Get Started',
       backgroundImageKey: '',

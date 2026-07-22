@@ -4,7 +4,7 @@ import {
   generateExcelFilename,
   generateCsvFilename,
 } from '../unifiedExportService.js';
-import { FormSchema, FieldType, ThemeType, SpacingType, PageModeType } from '@dculus/types';
+import { FormSchema, FieldType, ThemeType, SpacingType, PageModeType, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 
 // Mock dependencies
 vi.mock('exceljs', () => {
@@ -94,6 +94,7 @@ describe('Unified Export Service', () => {
       spacing: SpacingType.NORMAL,
       code: 'L1' as const,
       content: '',
+      thankYouContent: DEFAULT_THANK_YOU_CONTENT,
       customBackGroundColor: '#ffffff',
       backgroundImageKey: '',
       pageMode: PageModeType.MULTIPAGE,
