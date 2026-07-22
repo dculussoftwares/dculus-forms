@@ -1,6 +1,7 @@
 import React from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, RendererMode } from '@dculus/utils';
+import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { LayoutProps } from '../types';
 
 export const L9PagesLayout: React.FC<LayoutProps> = ({
@@ -26,12 +27,16 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
 
 
 
-  // Create outer background - custom color when enabled, otherwise background image with minimal blur
+  const { hasVideoBackground, videoUrl } = useBackgroundVideo(layout, cdnEndpoint);
+
+  // Create outer background - custom color when enabled, video/image next, otherwise gradient
   const outerBackgroundStyle = layout?.isCustomBackgroundColorEnabled && layout?.customBackGroundColor
     ? {
         backgroundColor: layout.customBackGroundColor,
         transition: 'background-color 0.5s ease-in-out'
       }
+    : hasVideoBackground
+    ? { transition: 'all 0.5s ease-in-out' }
     : layout?.backgroundImageKey && cdnEndpoint
     ? {
         backgroundImage: `url(${getImageUrl(layout.backgroundImageKey, cdnEndpoint)})`,
@@ -50,13 +55,26 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
       {/* Content - Pages Only */}
       <div className="flex-1 overflow-y-auto">
         {/* Pages Section - Direct display without intro */}
-        <div 
+        <div
           className="h-full relative"
           style={outerBackgroundStyle}
         >
+          {/* Video background layer - fills the outer area, no blur (unlike images) */}
+          {hasVideoBackground && (
+            <video
+              key={videoUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+              src={videoUrl}
+            />
+          )}
+
           {/* Minimal backdrop blur overlay on top of background image in outer area - only when not using custom color */}
           {!layout?.isCustomBackgroundColorEnabled && layout?.backgroundImageKey && cdnEndpoint && (
-            <div 
+            <div
               className="absolute inset-0"
               style={{
                 backdropFilter: 'blur(50px)',
@@ -65,7 +83,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
               }}
             ></div>
           )}
-          
+
           {/* Pages content with white background container */}
           <div className="h-full relative z-10 p-3 sm:p-8 overflow-y-auto">
             <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
