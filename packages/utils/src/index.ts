@@ -200,6 +200,23 @@ export function hexToRgba(hex: string, alpha: number): string {
 }
 
 /**
+ * Blends a "#rrggbb" hex color toward white by `ratio` (0-1), producing the pale/pastel
+ * wash used behind media backgrounds. Returns a light neutral gray if the input isn't a
+ * valid hex color, so callers can pass a possibly-empty/unset value without a separate guard.
+ */
+export function mixWithWhite(hex: string, ratio: number): string {
+  const match = /^#([0-9A-Fa-f]{6})$/.exec(hex);
+  if (!match) {
+    return `rgb(245, 245, 245)`;
+  }
+  const r = parseInt(match[1].slice(0, 2), 16);
+  const g = parseInt(match[1].slice(2, 4), 16);
+  const b = parseInt(match[1].slice(4, 6), 16);
+  const mix = (channel: number) => Math.round(channel + (255 - channel) * ratio);
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
+/**
  * Strips HTML tags from text and truncates with ellipsis
  * @param html - HTML string to process
  * @param maxLength - Maximum length before truncation (default: 50)

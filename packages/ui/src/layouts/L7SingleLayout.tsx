@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
-import { getImageUrl, hexToRgba, RendererMode } from '@dculus/utils';
+import { getImageUrl, mixWithWhite, RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { LayoutProps } from '../types';
@@ -70,6 +70,11 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
         backgroundColor: layout.customBackGroundColor,
         transition: 'background-color 0.5s ease-in-out'
       }
+    : layout?.backgroundDominantColor
+    ? {
+        backgroundColor: mixWithWhite(layout.backgroundDominantColor, 0.6),
+        transition: 'background-color 0.5s ease-in-out'
+      }
     : hasVideoBackground
     ? { transition: 'all 0.5s ease-in-out' }
     : layout?.backgroundImageKey && cdnEndpoint
@@ -96,7 +101,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
             style={outerBackgroundStyle}
           >
             {/* Video background layer - fills the outer area, no blur (unlike images) */}
-            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && (
+            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && !layout?.backgroundDominantColor && (
               <video
                 key={videoUrl}
                 autoPlay
@@ -110,15 +115,13 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
             )}
 
             {/* Minimal backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-            {!layout?.isCustomBackgroundColorEnabled && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
+            {!layout?.isCustomBackgroundColorEnabled && !layout?.backgroundDominantColor && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
               <div
                 className="absolute inset-0"
                 style={{
                   backdropFilter: hasVideoBackground ? undefined : 'blur(50px)',
                   WebkitBackdropFilter: hasVideoBackground ? undefined : 'blur(50px)',
-                  backgroundColor: layout?.backgroundDominantColor
-                    ? hexToRgba(layout.backgroundDominantColor, 0.05)
-                    : 'rgba(255, 255, 255, 0.05)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   transition: 'background-color 0.5s ease-in-out'
                 }}
               ></div>
@@ -227,7 +230,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
             style={outerBackgroundStyle}
           >
             {/* Video background layer - fills the outer area, no blur (unlike images) */}
-            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && (
+            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && !layout?.backgroundDominantColor && (
               <video
                 key={videoUrl}
                 autoPlay
@@ -241,15 +244,13 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
             )}
 
             {/* Minimal backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-            {!layout?.isCustomBackgroundColorEnabled && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
+            {!layout?.isCustomBackgroundColorEnabled && !layout?.backgroundDominantColor && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
               <div
                 className="absolute inset-0"
                 style={{
                   backdropFilter: hasVideoBackground ? undefined : 'blur(50px)',
                   WebkitBackdropFilter: hasVideoBackground ? undefined : 'blur(50px)',
-                  backgroundColor: layout?.backgroundDominantColor
-                    ? hexToRgba(layout.backgroundDominantColor, 0.05)
-                    : 'rgba(255, 255, 255, 0.05)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   transition: 'background-color 0.5s ease-in-out'
                 }}
               ></div>
