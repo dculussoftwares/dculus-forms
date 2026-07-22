@@ -9,8 +9,11 @@ export const pixabayRouter: import('express').Router = Router();
 // upstream connection would keep the Express request (and its worker) open indefinitely.
 const UPSTREAM_TIMEOUT_MS = 10_000;
 
+// fetch(..., { signal: AbortSignal.timeout(...) }) rejects with a DOMException named
+// 'TimeoutError', not 'AbortError' — only a manually-aborted AbortController produces
+// 'AbortError'. Check both so our timeout actually reaches the 504 path below.
 function isAbortError(err: unknown): boolean {
-  return err instanceof Error && err.name === 'AbortError';
+  return err instanceof Error && (err.name === 'AbortError' || err.name === 'TimeoutError');
 }
 
 pixabayRouter.get('/pixabay', async (req, res) => {
