@@ -759,6 +759,68 @@ describe('Form Service', () => {
       loggerError.mockRestore();
     });
 
+    it('should copy background video if present', async () => {
+      const schemaWithVideo = {
+        ...mockSchemaFromHocuspocus,
+        layout: {
+          ...mockSchemaFromHocuspocus.layout,
+          backgroundVideoKey: 'old-video-key',
+        },
+      };
+
+      vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue(schemaWithVideo as any);
+      vi.mocked(copyFileForForm).mockResolvedValue({
+        key: 'new-video-key',
+        originalName: 'background.mp4',
+        url: 'https://cdn.example.com/new-video-key',
+        size: 54321,
+        mimeType: 'video/mp4',
+      } as any);
+      vi.mocked(formRepository.createFormAsset).mockResolvedValue({} as any);
+
+      await duplicateForm('form-123', 'user-456');
+
+      expect(copyFileForForm).toHaveBeenCalledWith('old-video-key', 'new-form-id');
+      expect(formRepository.createFormAsset).toHaveBeenCalledWith(
+        expect.objectContaining({
+          key: 'new-video-key',
+          type: 'FormBackground',
+          formId: 'new-form-id',
+          mimeType: 'video/mp4',
+        })
+      );
+    });
+
+    it('should handle background video copy failure', async () => {
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      const schemaWithVideo = {
+        ...mockSchemaFromHocuspocus,
+        layout: {
+          ...mockSchemaFromHocuspocus.layout,
+          backgroundVideoKey: 'old-video-key',
+        },
+      };
+
+      vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue(schemaWithVideo as any);
+      vi.mocked(copyFileForForm).mockRejectedValue(new Error('Copy failed'));
+
+      await duplicateForm('form-123', 'user-456');
+
+      expect(loggerError).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to copy background video'),
+        expect.any(Error)
+      );
+      expect(initializeHocuspocusDocument).toHaveBeenCalledWith(
+        'new-form-id',
+        expect.objectContaining({
+          layout: expect.objectContaining({
+            backgroundVideoKey: '',
+          }),
+        })
+      );
+      loggerError.mockRestore();
+    });
+
     it('should handle null schema from Hocuspocus', async () => {
       vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue(null);
 
