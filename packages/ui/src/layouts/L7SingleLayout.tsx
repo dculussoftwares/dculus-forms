@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
+import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { LayoutProps } from '../types';
 
 export const L7SingleLayout: React.FC<LayoutProps> = ({
@@ -61,12 +62,16 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
     }
   }, [layout?.content, hasUnsavedChanges]);
 
-  // Create outer background - custom color when enabled, otherwise background image with minimal blur
+  const { hasVideoBackground, videoUrl } = useBackgroundVideo(layout, cdnEndpoint);
+
+  // Create outer background - custom color when enabled, video/image next, otherwise gradient
   const outerBackgroundStyle = layout?.isCustomBackgroundColorEnabled && layout?.customBackGroundColor
     ? {
         backgroundColor: layout.customBackGroundColor,
         transition: 'background-color 0.5s ease-in-out'
       }
+    : hasVideoBackground
+    ? { transition: 'all 0.5s ease-in-out' }
     : layout?.backgroundImageKey && cdnEndpoint
     ? {
         backgroundImage: `url(${getImageUrl(layout.backgroundImageKey, cdnEndpoint)})`,
@@ -90,9 +95,23 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
             className="h-full relative"
             style={outerBackgroundStyle}
           >
+            {/* Video background layer - fills the outer area, no blur (unlike images) */}
+            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && (
+              <video
+                key={videoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover"
+                src={videoUrl}
+              />
+            )}
+
             {/* Minimal backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-            {!layout?.isCustomBackgroundColorEnabled && layout?.backgroundImageKey && cdnEndpoint && (
-              <div 
+            {!layout?.isCustomBackgroundColorEnabled && !hasVideoBackground && layout?.backgroundImageKey && cdnEndpoint && (
+              <div
                 className="absolute inset-0"
                 style={{
                   backdropFilter: 'blur(50px)',
@@ -204,9 +223,23 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
             className="h-full relative"
             style={outerBackgroundStyle}
           >
+            {/* Video background layer - fills the outer area, no blur (unlike images) */}
+            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && (
+              <video
+                key={videoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover"
+                src={videoUrl}
+              />
+            )}
+
             {/* Minimal backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-            {!layout?.isCustomBackgroundColorEnabled && layout?.backgroundImageKey && cdnEndpoint && (
-              <div 
+            {!layout?.isCustomBackgroundColorEnabled && !hasVideoBackground && layout?.backgroundImageKey && cdnEndpoint && (
+              <div
                 className="absolute inset-0"
                 style={{
                   backdropFilter: 'blur(50px)',
