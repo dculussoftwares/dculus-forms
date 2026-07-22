@@ -103,6 +103,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                 muted
                 loop
                 playsInline
+                aria-hidden="true"
                 className="absolute inset-0 w-full h-full object-cover"
                 src={videoUrl}
               />
@@ -132,6 +133,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                     muted
                     loop
                     playsInline
+                    aria-hidden="true"
                     className="absolute inset-0 w-full h-full object-cover"
                     src={videoUrl}
                   />
@@ -245,6 +247,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                 muted
                 loop
                 playsInline
+                aria-hidden="true"
                 className="absolute inset-0 w-full h-full object-cover"
                 src={videoUrl}
               />

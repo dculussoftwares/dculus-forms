@@ -69,6 +69,7 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
                 muted
                 loop
                 playsInline
+                aria-hidden="true"
                 className="absolute inset-0 w-full h-full object-cover"
                 src={videoUrl}
               />
@@ -105,6 +106,7 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
                         muted
                         loop
                         playsInline
+                        aria-hidden="true"
                         className="absolute inset-0 w-full h-full object-cover"
                         src={videoUrl}
                       />
@@ -147,6 +149,7 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
                 muted
                 loop
                 playsInline
+                aria-hidden="true"
                 className="absolute inset-0 w-full h-full object-cover"
                 src={videoUrl}
               />
