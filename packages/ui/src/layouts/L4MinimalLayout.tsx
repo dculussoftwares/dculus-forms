@@ -137,7 +137,10 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
                 {/* Two chunks layout - 50/50 split */}
                 <div className="relative z-10 h-full flex flex-col sm:flex-row">
                   {/* First chunk - IMAGE CHUNK - Background image display area (50%) */}
-                  <div className="hidden sm:flex flex-1 items-center justify-center relative">
+                  {/* Shown on mobile too when there's a dominant-color wash — the wash lives in the
+                      outer area, which has no other display surface, so hiding this chunk on
+                      narrow viewports would make the applied media invisible there. */}
+                  <div className={`${layout?.backgroundDominantColor ? 'flex' : 'hidden sm:flex'} flex-1 items-center justify-center relative`}>
                     {/* Background image/video showcase only in this chunk */}
                     {hasVideoBackground ? (
                       <video

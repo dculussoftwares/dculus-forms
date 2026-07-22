@@ -221,7 +221,10 @@ export const L5SplitLayout: React.FC<LayoutProps> = ({
                   </div>
                   
                   {/* Second chunk - IMAGE CHUNK - Background image display area (50%) */}
-                  <div className="hidden sm:flex flex-1 items-center justify-center relative">
+                  {/* Shown on mobile too when there's a dominant-color wash — the wash lives in the
+                      outer area, which has no other display surface, so hiding this chunk on
+                      narrow viewports would make the applied media invisible there. */}
+                  <div className={`${layout?.backgroundDominantColor ? 'flex' : 'hidden sm:flex'} flex-1 items-center justify-center relative`}>
                     {/* Background image/video showcase only in this chunk */}
                     {hasVideoBackground ? (
                       <video

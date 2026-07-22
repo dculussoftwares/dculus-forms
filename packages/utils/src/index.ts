@@ -189,14 +189,15 @@ export function getImageUrl(s3Key: string, cdnEndpoint: string): string {
  * so callers can pass a possibly-empty/unset value without a separate guard.
  */
 export function hexToRgba(hex: string, alpha: number): string {
+  const safeAlpha = Number.isFinite(alpha) ? Math.min(1, Math.max(0, alpha)) : 0;
   const match = /^#([0-9A-Fa-f]{6})$/.exec(hex);
   if (!match) {
-    return `rgba(0, 0, 0, ${alpha})`;
+    return `rgba(0, 0, 0, ${safeAlpha})`;
   }
   const r = parseInt(match[1].slice(0, 2), 16);
   const g = parseInt(match[1].slice(2, 4), 16);
   const b = parseInt(match[1].slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  return `rgba(${r}, ${g}, ${b}, ${safeAlpha})`;
 }
 
 /**
@@ -205,6 +206,7 @@ export function hexToRgba(hex: string, alpha: number): string {
  * valid hex color, so callers can pass a possibly-empty/unset value without a separate guard.
  */
 export function mixWithWhite(hex: string, ratio: number): string {
+  const safeRatio = Number.isFinite(ratio) ? Math.min(1, Math.max(0, ratio)) : 0;
   const match = /^#([0-9A-Fa-f]{6})$/.exec(hex);
   if (!match) {
     return `rgb(245, 245, 245)`;
@@ -212,7 +214,7 @@ export function mixWithWhite(hex: string, ratio: number): string {
   const r = parseInt(match[1].slice(0, 2), 16);
   const g = parseInt(match[1].slice(2, 4), 16);
   const b = parseInt(match[1].slice(4, 6), 16);
-  const mix = (channel: number) => Math.round(channel + (255 - channel) * ratio);
+  const mix = (channel: number) => Math.round(channel + (255 - channel) * safeRatio);
   return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
 }
 
