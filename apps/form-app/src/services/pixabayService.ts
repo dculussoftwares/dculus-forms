@@ -1,5 +1,6 @@
 import { uploadFileHTTP } from './fileUploadService';
 import { getApiBaseUrl } from '../lib/config';
+import { computeDominantColorFromImageBlob, computeDominantColorFromVideoBlob } from '../utils/dominantColor';
 
 interface PixabayImage {
   id: number;
@@ -51,10 +52,14 @@ interface UploadResult {
   type: string;
 }
 
+// dominantColor is sampled once here (client already has the fetched blob in hand)
+// and persisted on FormLayout — never recomputed per render/visitor.
+type BackgroundUploadResult = UploadResult & { dominantColor: string };
+
 export async function downloadPixabayImage(
   imageUrl: string,
   formId: string
-): Promise<UploadResult> {
+): Promise<BackgroundUploadResult> {
   // Fetch the image
   const imageResponse = await fetch(imageUrl);
   if (!imageResponse.ok) {
@@ -67,10 +72,12 @@ export async function downloadPixabayImage(
   // Create a File object from the blob
   const file = new File([imageBlob], filename, { type: imageBlob.type });
 
-  // Use the existing upload service
-  const result = await uploadFileHTTP(file, 'FormBackground', formId);
+  const [uploadResult, dominantColor] = await Promise.all([
+    uploadFileHTTP(file, 'FormBackground', formId),
+    computeDominantColorFromImageBlob(imageBlob).catch(() => ''),
+  ]);
 
-  return result;
+  return { ...uploadResult, dominantColor };
 }
 
 interface PixabayVideoRendition {
@@ -138,7 +145,7 @@ function selectBestVideoRendition(videos: PixabayVideo['videos']): PixabayVideoR
 export async function downloadPixabayVideo(
   video: PixabayVideo,
   formId: string
-): Promise<UploadResult> {
+): Promise<BackgroundUploadResult> {
   const rendition = selectBestVideoRendition(video.videos);
   if (!rendition) {
     throw new Error('No downloadable video rendition found for this Pixabay video');
@@ -153,7 +160,12 @@ export async function downloadPixabayVideo(
   const filename = `pixabay-${Date.now()}.mp4`;
   const file = new File([videoBlob], filename, { type: videoBlob.type || 'video/mp4' });
 
-  return uploadFileHTTP(file, 'FormBackground', formId);
+  const [uploadResult, dominantColor] = await Promise.all([
+    uploadFileHTTP(file, 'FormBackground', formId),
+    computeDominantColorFromVideoBlob(videoBlob).catch(() => ''),
+  ]);
+
+  return { ...uploadResult, dominantColor };
 }
 
 export type { PixabayImage, PixabayResponse, PixabayVideo, PixabayVideoResponse };

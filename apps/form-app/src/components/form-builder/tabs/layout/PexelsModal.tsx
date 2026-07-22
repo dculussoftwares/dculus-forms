@@ -17,8 +17,8 @@ interface PexelsModalProps {
   isOpen: boolean;
   onClose: () => void;
   formId: string;
-  onImageApplied: (imageKey: string) => void;
-  onVideoApplied: (videoKey: string) => void;
+  onImageApplied: (imageKey: string, dominantColor: string) => void;
+  onVideoApplied: (videoKey: string, dominantColor: string) => void;
   onUploadSuccess: () => void;
 }
 
@@ -89,7 +89,7 @@ export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoAp
     try {
       const uploadResult = await downloadPexelsImage(photo.src.large2x, formId);
       toastSuccess(t('imageAppliedSuccess'));
-      onImageApplied(uploadResult.key);
+      onImageApplied(uploadResult.key, uploadResult.dominantColor);
       onUploadSuccess();
       setSelectedImage(null);
       onClose();
@@ -111,7 +111,7 @@ export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoAp
     try {
       const uploadResult = await downloadPexelsVideo(video, formId);
       toastSuccess(t('videoAppliedSuccess'));
-      onVideoApplied(uploadResult.key);
+      onVideoApplied(uploadResult.key, uploadResult.dominantColor);
       onUploadSuccess();
       setSelectedVideo(null);
       onClose();

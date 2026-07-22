@@ -1,5 +1,6 @@
 import { uploadFileHTTP, UploadError } from './fileUploadService';
 import { getApiBaseUrl } from '../lib/config';
+import { computeDominantColorFromImageBlob, computeDominantColorFromVideoBlob } from '../utils/dominantColor';
 
 export interface PexelsPhoto {
   id: number;
@@ -37,6 +38,10 @@ interface UploadResult {
   type: string;
 }
 
+// dominantColor is sampled once here (client already has the fetched blob in hand)
+// and persisted on FormLayout — never recomputed per render/visitor.
+type BackgroundUploadResult = UploadResult & { dominantColor: string };
+
 export async function searchPexelsImages(
   query: string = 'background',
   page: number = 1,
@@ -62,7 +67,7 @@ export async function searchPexelsImages(
 export async function downloadPexelsImage(
   imageUrl: string,
   formId: string
-): Promise<UploadResult> {
+): Promise<BackgroundUploadResult> {
   const imageResponse = await fetch(imageUrl);
   if (!imageResponse.ok) {
     throw new Error('Failed to fetch image from Pexels');
@@ -72,7 +77,12 @@ export async function downloadPexelsImage(
   const filename = `pexels-${Date.now()}.jpg`;
   const file = new File([imageBlob], filename, { type: imageBlob.type || 'image/jpeg' });
 
-  return uploadFileHTTP(file, 'FormBackground', formId);
+  const [uploadResult, dominantColor] = await Promise.all([
+    uploadFileHTTP(file, 'FormBackground', formId),
+    computeDominantColorFromImageBlob(imageBlob).catch(() => ''),
+  ]);
+
+  return { ...uploadResult, dominantColor };
 }
 
 export interface PexelsVideoFile {
@@ -143,7 +153,7 @@ const MAX_VIDEO_DOWNLOAD_BYTES = 45 * 1024 * 1024;
 export async function downloadPexelsVideo(
   video: PexelsVideo,
   formId: string
-): Promise<UploadResult> {
+): Promise<BackgroundUploadResult> {
   const videoFile = selectBestVideoFile(video.video_files);
   if (!videoFile) {
     throw new Error('No downloadable video file found for this Pexels video');
@@ -177,5 +187,10 @@ export async function downloadPexelsVideo(
   const filename = `pexels-${Date.now()}.mp4`;
   const file = new File([videoBlob], filename, { type: videoBlob.type || 'video/mp4' });
 
-  return uploadFileHTTP(file, 'FormBackground', formId);
+  const [uploadResult, dominantColor] = await Promise.all([
+    uploadFileHTTP(file, 'FormBackground', formId),
+    computeDominantColorFromVideoBlob(videoBlob).catch(() => ''),
+  ]);
+
+  return { ...uploadResult, dominantColor };
 }

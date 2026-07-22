@@ -17,8 +17,8 @@ interface PixabayModalProps {
   isOpen: boolean;
   onClose: () => void;
   formId: string;
-  onImageApplied: (imageKey: string) => void;
-  onVideoApplied: (videoKey: string) => void;
+  onImageApplied: (imageKey: string, dominantColor: string) => void;
+  onVideoApplied: (videoKey: string, dominantColor: string) => void;
   onUploadSuccess: () => void;
 }
 
@@ -89,7 +89,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
     try {
       const uploadResult = await downloadPixabayImage(image.fullHDURL ?? image.largeImageURL, formId);
       toastSuccess(t('imageAppliedSuccess'));
-      onImageApplied(uploadResult.key);
+      onImageApplied(uploadResult.key, uploadResult.dominantColor);
       onUploadSuccess();
       setSelectedImage(null);
       onClose();
@@ -111,7 +111,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
     try {
       const uploadResult = await downloadPixabayVideo(video, formId);
       toastSuccess(t('videoAppliedSuccess'));
-      onVideoApplied(uploadResult.key);
+      onVideoApplied(uploadResult.key, uploadResult.dominantColor);
       onUploadSuccess();
       setSelectedVideo(null);
       onClose();

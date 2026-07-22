@@ -74,13 +74,14 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
           )}
 
           {/* Minimal backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-          {!layout?.isCustomBackgroundColorEnabled && !hasVideoBackground && layout?.backgroundImageKey && cdnEndpoint && (
+          {!layout?.isCustomBackgroundColorEnabled && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
             <div
               className="absolute inset-0"
               style={{
-                backdropFilter: 'blur(50px)',
-                WebkitBackdropFilter: 'blur(50px)',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                backdropFilter: hasVideoBackground ? undefined : 'blur(50px)',
+                WebkitBackdropFilter: hasVideoBackground ? undefined : 'blur(50px)',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                transition: 'background-color 0.5s ease-in-out'
               }}
             ></div>
           )}

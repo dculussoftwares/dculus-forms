@@ -145,6 +145,7 @@ export interface FormLayout {
   customCTAButtonName?: string; // Custom call to action name
   backgroundImageKey: string; // Image key of layout background image
   backgroundVideoKey?: string; // Video key of layout background video (mutually exclusive with backgroundImageKey)
+  backgroundDominantColor?: string; // Hex color sampled from the applied background image/video, used for the outer-area wash
   pageMode: PageModeType; // Page navigation mode
   isCustomBackgroundColorEnabled?: boolean; // Toggle between custom color overlay vs blur background
 }

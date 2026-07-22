@@ -111,6 +111,7 @@ export const createForm = async (
       customBackGroundColor: '#ffffff',
       customCTAButtonName: 'Get Started',
       backgroundImageKey: '',
+      backgroundDominantColor: '',
       pageMode: PageModeType.MULTIPAGE,
       isCustomBackgroundColorEnabled: false
     },

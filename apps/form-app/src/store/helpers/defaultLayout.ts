@@ -14,6 +14,7 @@ export const DEFAULT_LAYOUT: FormLayout = {
   customCTAButtonName: 'Get Started',
   backgroundImageKey: '',
   backgroundVideoKey: '',
+  backgroundDominantColor: '',
   pageMode: PageModeType.MULTIPAGE,
   isCustomBackgroundColorEnabled: false,
 };
