@@ -126,20 +126,20 @@ export async function searchPixabayVideos(
   return response.json();
 }
 
-const MAX_VIDEO_DOWNLOAD_BYTES = 20 * 1024 * 1024; // keep in sync with backend MAX_VIDEO_FILE_SIZE
+const MAX_VIDEO_DOWNLOAD_BYTES = 45 * 1024 * 1024; // keep in sync with backend MAX_VIDEO_FILE_SIZE
 
-// Picks the smallest rendition that fits under the upload cap — Pixabay reports
+// Picks the highest-quality rendition that fits under the upload cap — Pixabay reports
 // an exact byte size per rendition, so we don't need to guess.
-function selectSmallestVideoRendition(videos: PixabayVideo['videos']): PixabayVideoRendition {
-  const renditions = [videos.tiny, videos.small, videos.medium, videos.large].filter(Boolean);
-  return renditions.find((r) => r.size <= MAX_VIDEO_DOWNLOAD_BYTES) || renditions[0];
+function selectBestVideoRendition(videos: PixabayVideo['videos']): PixabayVideoRendition {
+  const renditions = [videos.large, videos.medium, videos.small, videos.tiny].filter(Boolean);
+  return renditions.find((r) => r.size <= MAX_VIDEO_DOWNLOAD_BYTES) || renditions[renditions.length - 1];
 }
 
 export async function downloadPixabayVideo(
   video: PixabayVideo,
   formId: string
 ): Promise<UploadResult> {
-  const rendition = selectSmallestVideoRendition(video.videos);
+  const rendition = selectBestVideoRendition(video.videos);
   if (!rendition) {
     throw new Error('No downloadable video rendition found for this Pixabay video');
   }
