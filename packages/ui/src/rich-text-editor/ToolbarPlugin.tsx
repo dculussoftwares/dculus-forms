@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   $getSelection,
   $isRangeSelection,
+  $getRoot,
   FORMAT_ELEMENT_COMMAND,
   FORMAT_TEXT_COMMAND,
   SELECTION_CHANGE_COMMAND,
@@ -15,7 +16,11 @@ import {
   REMOVE_LIST_COMMAND,
 } from '@lexical/list';
 import { $isHeadingNode, $createHeadingNode } from '@lexical/rich-text';
-import { $setBlocksType, $patchStyleText } from '@lexical/selection';
+import {
+  $setBlocksType,
+  $patchStyleText,
+  $getSelectionStyleValueForProperty,
+} from '@lexical/selection';
 import { $findMatchingParent, mergeRegister } from '@lexical/utils';
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { 
@@ -107,6 +112,9 @@ export function ToolbarPlugin(): JSX.Element {
       setIsBold(selection.hasFormat('bold'));
       setIsItalic(selection.hasFormat('italic'));
       setIsUnderline(selection.hasFormat('underline'));
+      setFontSize(
+        $getSelectionStyleValueForProperty(selection, 'font-size', '16px')
+      );
     }
   }, [editor]);
 
@@ -168,12 +176,21 @@ export function ToolbarPlugin(): JSX.Element {
 
   const applyFontSize = (size: string) => {
     editor.update(() => {
-      const selection = $getSelection();
-      if ($isRangeSelection(selection)) {
-        $patchStyleText(selection, {
-          'font-size': size,
-        });
+      let selection = $getSelection();
+      if (!$isRangeSelection(selection)) {
+        return;
       }
+      // A collapsed selection (cursor placed but no text highlighted) only
+      // records a pending style for characters typed next - it doesn't touch
+      // any existing text. Since this toolbar is used to size short blocks of
+      // already-typed content, fall back to the whole document so the click
+      // visibly (and persistently) applies.
+      if (selection.isCollapsed()) {
+        selection = $getRoot().select();
+      }
+      $patchStyleText(selection, {
+        'font-size': size,
+      });
     });
     setFontSize(size);
   };
