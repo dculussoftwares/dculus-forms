@@ -1,6 +1,5 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { randomBytes } from 'crypto';
-import * as Y from 'yjs';
 import { CustomWorld } from '../support/world';
 import { expectDefined, expectDeepEqual, expectEqual } from '../utils/expect-helper';
 
@@ -138,14 +137,18 @@ Given('I configure a custom thank you message {string} on the published form',
     // document exists (see responses.ts) — and createForm always initializes one. So the
     // Prisma write above alone would be invisible to the resolver; patch the stored Y.Doc's
     // layout.thankYouContent to match, the same way a real builder edit would.
+    // Dynamic import (not a top-level `import * as Y from 'yjs'`) — yjs ships ESM-only,
+    // and a static import here produces a `require()` call under this project's CJS
+    // ts-node transpilation, which fails to load at all (TS1479).
     const collabDoc = await this.prisma.collaborativeDocument.findUnique({
       where: { documentName: form.id },
     });
     if (collabDoc) {
+      const Y = await import('yjs');
       const doc = new Y.Doc();
       Y.applyUpdate(doc, new Uint8Array(collabDoc.state));
       const formSchemaMap = doc.getMap('formSchema');
-      let layoutMap = formSchemaMap.get('layout') as Y.Map<any>;
+      let layoutMap: any = formSchemaMap.get('layout');
       if (!(layoutMap instanceof Y.Map)) {
         layoutMap = new Y.Map();
         formSchemaMap.set('layout', layoutMap);
