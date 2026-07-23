@@ -350,7 +350,7 @@ export const L5SplitLayout: React.FC<LayoutProps> = ({
             <div className="h-full relative z-10 flex items-center justify-center p-3 sm:p-8 overflow-y-auto">
               <div className="max-w-2xl w-full mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                 <ThankYouScreen
-                  content={thankYouMessage ?? layout?.thankYouContent ?? DEFAULT_THANK_YOU_CONTENT}
+                  content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}
                   mode={mode}
                   onSave={(content) => onLayoutChange?.({ thankYouContent: content })}
                   mentionFields={extractMentionFields(pages)}

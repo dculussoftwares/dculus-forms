@@ -260,8 +260,12 @@ async function saveThankYouEdit(display: Locator): Promise<void> {
     await saveButton.click();
 
     // Save exits edit mode synchronously — "Edit Mode" reappearing confirms the
-    // store update (and thus the Y.js sync) has been applied.
+    // *local* store update has been applied, not that it reached the Hocuspocus
+    // server yet. Give the WebSocket flush a moment to land before any caller
+    // proceeds to a page reload (which would otherwise race the persisted
+    // document and intermittently read back the pre-edit content).
     await expect(display.getByRole('button', { name: 'Edit Mode' })).toBeVisible({ timeout: 10_000 });
+    await display.page().waitForTimeout(800);
 }
 
 /**

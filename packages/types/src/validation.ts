@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js/max';
-import { FieldType } from './index.js';
+import { FieldType, DEFAULT_THANK_YOU_CONTENT } from './index.js';
 
 // Base validation schema for common field properties
 export const baseFieldValidationSchema = z.object({
@@ -697,7 +697,10 @@ export const formLayoutValidationSchema = z
     spacing: z.enum(['compact', 'normal', 'spacious']),
     code: z.string().regex(/^L[1-9]$/, 'Invalid layout code'),
     content: z.string().max(10000, 'Content is too long'),
-    thankYouContent: z.string().max(10000, 'Thank-you content is too long'),
+    thankYouContent: z
+      .string()
+      .max(10000, 'Thank-you content is too long')
+      .default(DEFAULT_THANK_YOU_CONTENT),
     customBackGroundColor: z
       .string()
       .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),

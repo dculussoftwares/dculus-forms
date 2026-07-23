@@ -3,7 +3,7 @@ import { useMutation } from '@apollo/client/react';
 import { Monitor, Smartphone } from 'lucide-react';
 import { useFormBuilderStore } from '@/store/useFormBuilderStore.ts';
 import { FormRenderer, toastSuccess, toastError } from '@dculus/ui';
-import type { FormSchema } from '@dculus/types';
+import { DEFAULT_THANK_YOU_CONTENT, type FormSchema } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { getCdnEndpoint } from '../../../lib/config';
 import { SUBMIT_RESPONSE } from '../../../graphql/mutations';
@@ -66,6 +66,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
         textColor: '#1f2937',
         spacing: 'normal' as const,
         content: '<h1>Form Preview</h1>',
+        thankYouContent: DEFAULT_THANK_YOU_CONTENT,
         customBackGroundColor: '',
         backgroundImageKey: '',
         pageMode: 'single_page' as const,

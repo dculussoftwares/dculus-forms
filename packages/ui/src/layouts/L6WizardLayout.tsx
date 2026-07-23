@@ -139,7 +139,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
             {showThankYou ? (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                 <ThankYouScreen
-                  content={thankYouMessage ?? layout?.thankYouContent ?? DEFAULT_THANK_YOU_CONTENT}
+                  content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}
                   mode={mode}
                   onSave={(content) => onLayoutChange?.({ thankYouContent: content })}
                   mentionFields={extractMentionFields(pages)}

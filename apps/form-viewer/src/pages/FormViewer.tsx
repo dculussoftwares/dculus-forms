@@ -389,6 +389,9 @@ const FormViewer: React.FC = () => {
     setSubmissionState('idle');
     setThankYouData(null);
     setHasStartedForm(false);
+    // Require a fresh opt-in on the next response rather than carrying over
+    // the previous one silently.
+    setSendResponseCopy(false);
   };
 
   // Render the form in fullscreen mode. After a successful submission, the
