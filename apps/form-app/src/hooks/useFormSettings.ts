@@ -7,10 +7,6 @@ import { getErrorDetails } from '../utils/graphqlErrors';
 import { useTranslation } from './useTranslation';
 
 interface FormSettingsData {
-  thankYou: {
-    enabled: boolean;
-    message: string;
-  };
   submissionLimits: SubmissionLimitsSettings;
   responseCopy: ResponseCopySettings;
   accessControl: AccessControlSettings;
@@ -31,10 +27,6 @@ export const useFormSettings = ({
   onError,
 }: UseFormSettingsProps) => {
   const [settings, setSettings] = useState<FormSettingsData>({
-    thankYou: {
-      enabled: false,
-      message: 'Thank you! Your response has been submitted.',
-    },
     submissionLimits: {},
     responseCopy: {
       enabled: false,
@@ -70,10 +62,6 @@ export const useFormSettings = ({
     if (initialSettings) {
       setSettings(prev => ({
         ...prev,
-        thankYou: {
-          enabled: initialSettings.thankYou?.enabled ?? false,
-          message: initialSettings.thankYou?.message ?? 'Thank you! Your response has been submitted.',
-        },
         submissionLimits: initialSettings.submissionLimits ?? {},
         responseCopy: {
           enabled: initialSettings.responseCopy?.enabled ?? false,
@@ -97,7 +85,7 @@ export const useFormSettings = ({
   }, [initialSettings]);
 
   // Update nested settings helper — restricted to object-valued sections
-  // (e.g. thankYou, responseCopy), since `collectRespondentEmail` is a plain
+  // (e.g. responseCopy), since `collectRespondentEmail` is a plain
   // boolean and can't be spread as `{ ...prev[section] }`.
   type ObjectSettingKey = {
     [K in keyof FormSettingsData]: FormSettingsData[K] extends object ? K : never;
@@ -161,21 +149,6 @@ export const useFormSettings = ({
       });
     } catch {
       // Error handled by onError callback
-    }
-  };
-
-  // Save thank you settings
-  const saveThankYouSettings = async () => {
-    try {
-      await saveSettings({
-        thankYou: {
-          enabled: settings.thankYou.enabled,
-          message: settings.thankYou.message,
-        }
-      });
-      toastSuccess('Thank You settings saved successfully');
-    } catch {
-      // Error already handled in the mutation onError callback
     }
   };
 
@@ -247,7 +220,6 @@ export const useFormSettings = ({
     isSaving,
     updateSetting,
     saveSettings,
-    saveThankYouSettings,
     updateSubmissionLimits,
     saveSubmissionLimits,
     saveResponseCopySettings,

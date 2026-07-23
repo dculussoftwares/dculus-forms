@@ -4,6 +4,11 @@
     "editableDescription": "தளவமைப்பு பாணியைத் தேர்வுசெய்க",
     "viewOnlyDescription": "பார்க்க மட்டும் பயன்முறை"
   },
+  "screenToggle": {
+    "intro": "அறிமுகம்",
+    "pages": "பக்கங்கள்",
+    "thankYou": "நன்றி"
+  },
   "customCTA": {
     "label": "தனிப்பயன் CTA பொத்தான்",
     "placeholder": "தொடங்குங்கள்",

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
-import { Palette, FileText, Eye, GitBranch, Settings, CheckCircle, Users, AlertTriangle } from 'lucide-react';
+import { Palette, FileText, Eye, GitBranch, Settings, Users, AlertTriangle } from 'lucide-react';
 import { Button, Tabs, TabsList, TabsTrigger, badgeVariants } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -10,7 +10,6 @@ export type BuilderTab =
   | 'page-builder'
   | 'preview'
   | 'conditions'
-  | 'finish'
   | 'settings';
 
 interface TabConfig {
@@ -22,7 +21,7 @@ interface TabConfig {
 
 // Journey rail (connected, ordered steps) vs. tools cluster (Preview/Settings — reachable
 // from any step, not part of the journey order). See epic #170.
-const RAIL_TAB_IDS: BuilderTab[] = ['layout', 'page-builder', 'conditions', 'finish'];
+const RAIL_TAB_IDS: BuilderTab[] = ['layout', 'page-builder', 'conditions'];
 const TOOL_TAB_IDS: BuilderTab[] = ['preview', 'settings'];
 
 const getTabsConfig = (t: (key: string) => string): TabConfig[] => [
@@ -52,12 +51,6 @@ const getTabsConfig = (t: (key: string) => string): TabConfig[] => [
     description: t('tabs.conditions.description'),
   },
   {
-    id: 'finish',
-    label: t('tabs.finish.label'),
-    icon: CheckCircle,
-    description: t('tabs.finish.description'),
-  },
-  {
     id: 'settings',
     label: t('tabs.settings.label'),
     icon: Settings,
@@ -75,8 +68,6 @@ interface TabNavigationProps {
   buildFieldCount?: number;
   /** Whether any condition rule has a circular reference — rendered as a warning badge on the Logic step. See #167. */
   logicHasWarning?: boolean;
-  /** Whether the Thank You message has been customized (vs. still default) — rendered on the Finish step. See #167. */
-  finishIsCustomized?: boolean;
 }
 
 export const TabNavigation: React.FC<TabNavigationProps> = ({
@@ -87,7 +78,6 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   position = 'bottom',
   buildFieldCount,
   logicHasWarning = false,
-  finishIsCustomized = false,
 }) => {
   const navigate = useNavigate();
   const { formId } = useParams<{ formId: string }>();
@@ -189,24 +179,6 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
                     >
                       <AlertTriangle className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
                       <span className="sr-only">{t('badges.logic.warning')}</span>
-                    </span>
-                  )}
-                  {tab.id === 'finish' && (
-                    <span
-                      className={cn(
-                        badgeVariants({ variant: finishIsCustomized ? 'accent' : 'outline' }),
-                        'px-1.5 py-0 text-[10px] leading-4',
-                        !finishIsCustomized &&
-                          'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800'
-                      )}
-                      title={
-                        finishIsCustomized
-                          ? t('badges.finish.customized')
-                          : t('badges.finish.default')
-                      }
-                      data-testid="tab-badge-finish-status"
-                    >
-                      {finishIsCustomized ? t('badges.finish.customized') : t('badges.finish.default')}
                     </span>
                   )}
                 </TabsTrigger>
@@ -429,10 +401,6 @@ export const TabKeyboardShortcuts: React.FC<{
           case '3':
             event.preventDefault();
             onTabChange('conditions');
-            break;
-          case '4':
-            event.preventDefault();
-            onTabChange('finish');
             break;
           case '5':
             event.preventDefault();

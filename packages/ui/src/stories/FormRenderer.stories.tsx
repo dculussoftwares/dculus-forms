@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { FormRenderer } from '../renderers/FormRenderer';
-import { createSamplePages, createSinglePage, createValidationTestPages, sampleLayouts, layoutCodes, formModes } from './mocks';
+import { createSamplePages, createSinglePage, createValidationTestPages, sampleLayouts, formModes } from './mocks';
 import { RendererMode } from '@dculus/utils';
-import { FormSchema, LayoutCode, PageModeType, ThemeType, SpacingType } from '@dculus/types';
+import { FormSchema, LayoutCode, PageModeType, ThemeType, SpacingType, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 
 const meta: Meta<typeof FormRenderer> = {
   title: 'Renderers/FormRenderer',
@@ -426,6 +426,7 @@ export const MinimalForm: Story = {
         spacing: SpacingType.NORMAL,
         code: 'L1',
         content: '<h1>No Fields</h1><p>This form has no fields configured yet.</p>',
+        thankYouContent: DEFAULT_THANK_YOU_CONTENT,
         customBackGroundColor: '',
         customCTAButtonName: 'Submit',
         backgroundImageKey: '',

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ResponseEditTrackingService } from '../responseEditTrackingService.js';
-import { FormSchema, ThemeType, SpacingType, PageModeType } from '@dculus/types';
+import { FormSchema, ThemeType, SpacingType, PageModeType, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import { responseRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
 
@@ -55,6 +55,7 @@ describe('ResponseEditTrackingService', () => {
       spacing: SpacingType.NORMAL,
       code: 'L1' as const,
       content: '',
+      thankYouContent: DEFAULT_THANK_YOU_CONTENT,
       customBackGroundColor: '#ffffff',
       backgroundImageKey: '',
       pageMode: PageModeType.MULTIPAGE,

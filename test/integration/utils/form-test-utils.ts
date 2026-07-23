@@ -41,10 +41,6 @@ export interface FormMetadata {
 }
 
 export interface FormSettings {
-  thankYou?: {
-    enabled: boolean;
-    message: string;
-  };
   submissionLimits?: {
     maxResponses?: {
       enabled: boolean;
@@ -74,7 +70,6 @@ export interface FormResponse {
   data: any;
   submittedAt: string;
   thankYouMessage: string;
-  showCustomThankYou: boolean;
 }
 
 export interface CreateFormInput {
@@ -229,10 +224,6 @@ export class FormTestUtils {
             lastUpdated
           }
           settings {
-            thankYou {
-              enabled
-              message
-            }
             submissionLimits {
               maxResponses {
                 enabled
@@ -308,10 +299,6 @@ export class FormTestUtils {
             lastUpdated
           }
           settings {
-            thankYou {
-              enabled
-              message
-            }
             submissionLimits {
               maxResponses {
                 enabled
@@ -406,10 +393,6 @@ export class FormTestUtils {
             lastUpdated
           }
           settings {
-            thankYou {
-              enabled
-              message
-            }
             submissionLimits {
               maxResponses {
                 enabled
@@ -473,10 +456,6 @@ export class FormTestUtils {
             lastUpdated
           }
           settings {
-            thankYou {
-              enabled
-              message
-            }
             submissionLimits {
               maxResponses {
                 enabled
@@ -579,10 +558,6 @@ export class FormTestUtils {
             lastUpdated
           }
           settings {
-            thankYou {
-              enabled
-              message
-            }
             submissionLimits {
               maxResponses {
                 enabled
@@ -701,7 +676,6 @@ export class FormTestUtils {
           data
           submittedAt
           thankYouMessage
-          showCustomThankYou
         }
       }
     `;

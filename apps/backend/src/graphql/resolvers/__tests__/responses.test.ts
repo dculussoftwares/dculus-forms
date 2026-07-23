@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { responsesResolvers, extendedResponsesResolvers } from '../responses.js';
 import { GraphQLError } from '#graphql-errors';
+import { DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import * as responseService from '../../../services/responseService.js';
 import * as formService from '../../../services/formService.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
@@ -402,8 +403,7 @@ describe('Responses Resolvers', () => {
       expect(responseService.submitResponse).toHaveBeenCalled();
       expect(result).toMatchObject({
         ...mockResponse,
-        thankYouMessage: 'Thank you! Your form has been submitted successfully.',
-        showCustomThankYou: false,
+        thankYouMessage: DEFAULT_THANK_YOU_CONTENT,
       });
     });
 
@@ -460,13 +460,14 @@ describe('Responses Resolvers', () => {
       );
     });
 
-    it('should show custom thank you message when enabled', async () => {
+    it('should substitute mentions in a custom thank you message', async () => {
       const formWithCustomMessage = {
         ...mockForm,
-        settings: {
-          thankYou: {
-            enabled: true,
-            message: 'Thank you, {{field1}}!',
+        formSchema: {
+          ...mockForm.formSchema,
+          layout: {
+            ...mockForm.formSchema.layout,
+            thankYouContent: 'Thank you, {{field1}}!',
           },
         },
       };
@@ -478,7 +479,6 @@ describe('Responses Resolvers', () => {
         mockContext
       );
 
-      expect(result.showCustomThankYou).toBe(true);
       expect(result.thankYouMessage).toContain('answer1');
     });
 

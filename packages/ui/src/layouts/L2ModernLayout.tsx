@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, mixWithWhite, RendererMode } from '@dculus/utils';
+import { DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
-import { LayoutProps } from '../types';
+import { extractMentionFields } from '../utils/mentionFields';
+import { ThankYouScreen } from './shared/ThankYouScreen';
+import { LayoutProps, LayoutScreen } from '../types';
 
 export const L2ModernLayout: React.FC<LayoutProps> = ({
   pages,
@@ -12,7 +15,11 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
   onLayoutChange,
   cdnEndpoint,
   mode = RendererMode.PREVIEW,
-  initialPageId
+  initialPageId,
+  screenOverride,
+  thankYouMessage,
+  onSubmitAnother,
+  responseCopyNotice,
 }) => {
   // L2 Modern layout styles
   const getLayoutStyles = () => ({
@@ -25,12 +32,19 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
     },
     submitButton: 'w-full h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-md flex items-center justify-center'
   });
-  const [showPages, setShowPages] = useState(() => Boolean(initialPageId));
+  const [screen, setScreen] = useState<LayoutScreen>(() => screenOverride ?? (initialPageId ? 'pages' : 'intro'));
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempContent, setTempContent] = useState(layout?.content || '<h1>Modern Design Survey</h1>');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editorKey, setEditorKey] = useState(0);
 
+  // Forces the screen forward (e.g. to 'thankYou') AND resets it back when the
+  // override is cleared (e.g. form-viewer's "Submit another response" or
+  // PreviewTab leaving its "Finish" step) — without the reset, the screen would
+  // stay stuck on whatever it was last forced to.
+  React.useEffect(() => {
+    setScreen(screenOverride ?? (initialPageId ? 'pages' : 'intro'));
+  }, [screenOverride, initialPageId]);
 
   // Handle content changes in temporary state
   const handleContentChange = (content: string) => {
@@ -94,7 +108,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
     <div className={`w-full h-full bg-white dark:bg-gray-900 flex flex-col ${className}`}>
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        {!showPages ? (
+        {screen === 'intro' ? (
           /* Intro Section - Full view with background image */
           <div
             className="h-full relative"
@@ -228,8 +242,8 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                         
                         {/* Custom CTA Button at bottom of white paper */}
                         <div className="flex justify-center">
-                          <button 
-                            onClick={() => setShowPages(true)}
+                          <button
+                            onClick={() => setScreen('pages')}
                             data-testid="viewer-cta-button"
                             className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-md max-w-sm w-full"
                           >
@@ -248,7 +262,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
               </div>
             </div>
           </div>
-        ) : (
+        ) : screen === 'pages' ? (
           /* Pages Section - Full height without center background */
           <div
             className="h-full relative"
@@ -286,7 +300,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
               <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
                 {/* Back button */}
                 <button
-                  onClick={() => setShowPages(false)}
+                  onClick={() => setScreen('intro')}
                   className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,12 +308,51 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                   </svg>
                   Back to Intro
                 </button>
-                
+
                 <PageRenderer
                   pages={pages}
                   layoutStyles={getLayoutStyles()}
                   mode={mode}
                   initialPageId={initialPageId}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Thank You Section */
+          <div className="h-full relative" style={outerBackgroundStyle}>
+            {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && !layout?.backgroundDominantColor && (
+              <video
+                key={videoUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover"
+                src={videoUrl}
+              />
+            )}
+            {!layout?.isCustomBackgroundColorEnabled && !layout?.backgroundDominantColor && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  backdropFilter: hasVideoBackground ? undefined : 'blur(250px)',
+                  WebkitBackdropFilter: hasVideoBackground ? undefined : 'blur(250px)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                  transition: 'background-color 0.5s ease-in-out'
+                }}
+              ></div>
+            )}
+            <div className="h-full relative z-10 flex items-center justify-center p-3 sm:p-8 overflow-y-auto">
+              <div className="max-w-2xl w-full mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                <ThankYouScreen
+                  content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}
+                  mode={mode}
+                  onSave={(content) => onLayoutChange?.({ thankYouContent: content })}
+                  mentionFields={extractMentionFields(pages)}
+                  onSubmitAnother={onSubmitAnother}
+                  responseCopyNotice={responseCopyNotice}
                 />
               </div>
             </div>

@@ -17,7 +17,7 @@ import { sendFormPublishedNotification } from '../emailService.js';
 import { checkFormAccess } from '../../graphql/resolvers/formSharing.js';
 import { copyFileForForm } from '../fileUploadService.js';
 import { generateShortUrl, generateId } from '@dculus/utils';
-import { ThemeType, SpacingType, LayoutCode, PageModeType } from '@dculus/types';
+import { ThemeType, SpacingType, LayoutCode, PageModeType, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 
 // Mock all dependencies
 vi.mock('../../repositories/index.js');
@@ -338,6 +338,7 @@ describe('Form Service', () => {
           spacing: SpacingType.COMPACT,
           code: 'L2' as LayoutCode,
           content: '',
+          thankYouContent: DEFAULT_THANK_YOU_CONTENT,
           customBackGroundColor: '#000000',
           customCTAButtonName: 'Send',
           backgroundImageKey: '',
@@ -362,7 +363,7 @@ describe('Form Service', () => {
     });
 
     it('should handle settings as string and parse JSON', async () => {
-      const settingsString = '{"thankYou":{"message":"Thanks!"}}';
+      const settingsString = '{"collectRespondentEmail":true}';
 
       await createForm({
         id: 'form-123',
@@ -376,7 +377,7 @@ describe('Form Service', () => {
 
       expect(formRepository.createForm).toHaveBeenCalledWith(
         expect.objectContaining({
-          settings: { thankYou: { message: 'Thanks!' } },
+          settings: { collectRespondentEmail: true },
         })
       );
     });

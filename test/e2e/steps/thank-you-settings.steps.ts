@@ -1,10 +1,16 @@
 /**
- * Thank You Page settings steps for E2E tests
- * Handles configuration and verification of custom thank you messages
+ * Thank You screen steps for E2E tests.
+ *
+ * Thank-you content moved from a Settings-page section (and, briefly, a builder
+ * "Finish" tab) onto `FormLayout.thankYouContent` — edited live inside the
+ * builder's Layout tab via the intro/pages/thankYou screen toggle. It's rendered
+ * by the shared `ThankYouScreen` component (packages/ui/src/layouts/shared),
+ * reused by every layout (L1-L9) and by the public form-viewer post-submission.
+ * See epic #170.
  */
 
 import { When, Then } from '@cucumber/cucumber';
-import { expect } from '@playwright/test';
+import { expect, type Locator } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 
 /**
@@ -129,6 +135,7 @@ When('I create a form via GraphQL for thank you page testing', async function (t
     const formId = response.data.createForm.id;
     this.newFormTitle = formTitle;
     this.formShortUrl = response.data.createForm.shortUrl;
+    this.currentFormId = formId;
 
     // Navigate to the form dashboard
     await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
@@ -139,101 +146,212 @@ When('I create a form via GraphQL for thank you page testing', async function (t
 });
 
 /**
- * Click on the thank you section in settings sidebar
+ * Navigate from the form dashboard into the collaborative builder
  */
-When('I click on the thank you section', async function (this: CustomWorld) {
+When('I navigate to the form builder', async function (this: CustomWorld) {
     if (!this.page) {
         throw new Error('Page is not initialized');
     }
 
-    const thankYouButton = this.page.getByTestId('settings-section-thank-you');
-    await expect(thankYouButton).toBeVisible({ timeout: 10_000 });
-    await thankYouButton.click();
+    const builderButton = this.page.getByTestId('quick-action-builder');
+    await expect(builderButton).toBeVisible({ timeout: 10_000 });
+    await builderButton.click();
 
-    // Wait for the section to load
-    await this.page.waitForTimeout(1000);
+    // Wait for the builder shell to load
+    const collaborativeBuilder = this.page.getByTestId('collaborative-form-builder');
+    await expect(collaborativeBuilder).toBeVisible({ timeout: 30_000 });
 });
 
 /**
- * Enable the custom thank you message
+ * Navigate from the builder back to the form dashboard
  */
-When('I enable the custom thank you message', async function (this: CustomWorld) {
+When('I navigate from the builder to the form dashboard', async function (this: CustomWorld) {
     if (!this.page) {
         throw new Error('Page is not initialized');
     }
 
-    const checkbox = this.page.getByTestId('thank-you-enabled-checkbox');
-    await expect(checkbox).toBeVisible({ timeout: 10_000 });
+    // Extract form ID from current URL (format: /dashboard/form/{formId}/builder/layout)
+    const currentUrl = this.page.url();
+    const formIdMatch = currentUrl.match(/\/dashboard\/form\/([^/]+)/);
 
-    // Check if already enabled
-    const isChecked = await checkbox.isChecked();
-    if (!isChecked) {
-        await checkbox.click();
+    if (!formIdMatch) {
+        throw new Error(`Could not extract form ID from URL: ${currentUrl}`);
     }
 
-    // Wait for the message editor to appear
-    const messageEditor = this.page.getByTestId('thank-you-message-editor');
-    await expect(messageEditor).toBeVisible({ timeout: 5_000 });
-});
+    const formId = formIdMatch[1];
 
-/**
- * Set the custom thank you message
- */
-When('I set the custom thank you message to {string}', async function (this: CustomWorld, message: string) {
-    if (!this.page) {
-        throw new Error('Page is not initialized');
-    }
+    await this.page.goto(`${this.baseUrl}/dashboard/form/${formId}`);
 
-    const messageEditor = this.page.getByTestId('thank-you-message-editor');
-    await expect(messageEditor).toBeVisible({ timeout: 5_000 });
+    const sidebar = this.page.getByTestId('app-sidebar');
+    await expect(sidebar).toBeVisible({ timeout: 30_000 });
 
-    // The RichTextEditor uses contenteditable, so we need to click and type
-    // Find the contenteditable element inside the editor
-    const contentEditable = messageEditor.locator('[contenteditable="true"]');
-    await expect(contentEditable).toBeVisible({ timeout: 5_000 });
-
-    // Clear existing content and type new message
-    await contentEditable.click();
-    await contentEditable.fill('');
-    await this.page.keyboard.type(message);
-
-    // Wait for the message to be set
-    await this.page.waitForTimeout(500);
-});
-
-/**
- * Save the thank you settings
- */
-When('I save the thank you settings', async function (this: CustomWorld) {
-    if (!this.page) {
-        throw new Error('Page is not initialized');
-    }
-
-    const saveButton = this.page.getByTestId('save-thank-you-settings-button');
-    await expect(saveButton).toBeVisible({ timeout: 10_000 });
-    await saveButton.click();
-
-    // Wait for save to complete
     await this.page.waitForTimeout(2000);
 });
 
 /**
- * Verify thank you settings are saved successfully
+ * Reload the current builder page in place (same URL/tab) — used to verify that
+ * layout edits (e.g. thankYouContent) persisted through Y.js/Hocuspocus rather
+ * than only existing in local/optimistic store state.
  */
-Then('the thank you settings should be saved successfully', async function (this: CustomWorld) {
+When('I reload the builder page', async function (this: CustomWorld) {
     if (!this.page) {
         throw new Error('Page is not initialized');
     }
 
-    // Wait for save to complete and verify checkbox is still checked
-    await this.page.waitForTimeout(1000);
+    await this.page.reload();
 
-    const checkbox = this.page.getByTestId('thank-you-enabled-checkbox');
-    const isChecked = await checkbox.isChecked();
+    const collaborativeBuilder = this.page.getByTestId('collaborative-form-builder');
+    await expect(collaborativeBuilder).toBeVisible({ timeout: 30_000 });
 
-    if (!isChecked) {
-        throw new Error('Thank you settings were not saved - checkbox is not checked');
+    // Give the Y.js provider a moment to reconnect and hydrate the store from
+    // the persisted document before interacting with the canvas again.
+    await this.page.waitForTimeout(1500);
+});
+
+/**
+ * Switch the Layout tab's canvas (screen preview toggle) to the thank-you screen.
+ * "I navigate to the form builder" only opens the builder shell, which defaults
+ * to the Page Builder tab — the screen toggle only exists on the Layout tab's
+ * canvas, so this step first makes sure that tab is selected (idempotent: a
+ * no-op click if it's already active).
+ */
+When('I switch the layout canvas to the thank you screen', async function (this: CustomWorld) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
     }
+
+    const layoutTab = this.page.getByTestId('tab-layout');
+    await expect(layoutTab).toBeVisible({ timeout: 10_000 });
+    await layoutTab.click();
+
+    const toggle = this.page.getByTestId('layout-screen-toggle-thankYou');
+    await expect(toggle).toBeVisible({ timeout: 10_000 });
+    await toggle.click();
+
+    const thankYouDisplay = this.page.getByTestId('thank-you-display');
+    await expect(thankYouDisplay).toBeVisible({ timeout: 10_000 });
+});
+
+/**
+ * Click into edit mode on the thank-you screen (BUILDER mode only). Scoped under
+ * `thank-you-display` since the intro screen's editor uses the same "Edit Mode"
+ * button text — only one of the two screens is ever mounted at a time, but
+ * scoping keeps the locator unambiguous regardless.
+ */
+async function enterThankYouEditMode(
+    world: CustomWorld
+): Promise<{ display: Locator; contentEditable: Locator }> {
+    if (!world.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const display = world.page.getByTestId('thank-you-display');
+    await expect(display).toBeVisible({ timeout: 10_000 });
+
+    const editModeButton = display.getByRole('button', { name: 'Edit Mode' });
+    await expect(editModeButton).toBeVisible({ timeout: 10_000 });
+    await editModeButton.click();
+
+    const contentEditable = display.getByTestId('thank-you-message').locator('[contenteditable="true"]');
+    await expect(contentEditable).toBeVisible({ timeout: 5_000 });
+
+    return { display, contentEditable };
+}
+
+/**
+ * Save the currently edited thank-you message and wait for the editor to drop
+ * back out of edit mode (the component's own save-completion signal).
+ */
+async function saveThankYouEdit(display: Locator): Promise<void> {
+    const saveButton = display.getByRole('button', { name: 'Save' });
+    await expect(saveButton).toBeVisible({ timeout: 5_000 });
+    await saveButton.click();
+
+    // Save exits edit mode synchronously — "Edit Mode" reappearing confirms the
+    // *local* store update has been applied, not that it reached the Hocuspocus
+    // server yet. Give the WebSocket flush a moment to land before any caller
+    // proceeds to a page reload (which would otherwise race the persisted
+    // document and intermittently read back the pre-edit content).
+    await expect(display.getByRole('button', { name: 'Edit Mode' })).toBeVisible({ timeout: 10_000 });
+    await display.page().waitForTimeout(800);
+}
+
+/**
+ * Replace the thank-you message content entirely with the given text and save.
+ */
+When('I edit the thank you message to {string}', async function (this: CustomWorld, message: string) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const { display, contentEditable } = await enterThankYouEditMode(this);
+
+    await contentEditable.click();
+    await contentEditable.fill('');
+    await this.page.keyboard.type(message, { delay: 20 });
+    await this.page.waitForTimeout(300);
+
+    await saveThankYouEdit(display);
+});
+
+/**
+ * Verify the thank-you screen (in the builder's Layout tab canvas) currently
+ * shows the given message — used both right after saving and after a reload.
+ */
+Then('the thank you screen should show the message {string}', async function (this: CustomWorld, expectedMessage: string) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const display = this.page.getByTestId('thank-you-display');
+    await expect(display).toBeVisible({ timeout: 10_000 });
+
+    // Not mid-edit — "Edit Mode" (not "Save"/"Cancel") should be showing.
+    await expect(display.getByRole('button', { name: 'Edit Mode' })).toBeVisible({ timeout: 10_000 });
+
+    const message = display.getByTestId('thank-you-message');
+    await expect(message).toContainText(expectedMessage, { timeout: 10_000 });
+});
+
+// "I open the preview tab" is already defined in conditional-logic.steps.ts —
+// reused as-is here (clicks `tab-preview`); do not redefine it in this file.
+
+/**
+ * Contextual Preview (#175): switch between the "Form" and "Finish" preview
+ * steps in the Preview tab's step toggle. The "Finish" step renders the real
+ * FormRenderer with screenOverride="thankYou" (no separate preview component).
+ */
+When('I switch the preview step to {string}', async function (this: CustomWorld, step: string) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const normalizedStep = step.trim().toLowerCase();
+    if (normalizedStep !== 'form' && normalizedStep !== 'finish') {
+        throw new Error(`Unsupported preview step: ${step}`);
+    }
+    const toggle = this.page.getByTestId(`preview-step-${normalizedStep}`);
+    await expect(toggle).toBeVisible({ timeout: 10_000 });
+    await toggle.click();
+});
+
+Then('I should see the thank you message {string} in the preview step', async function (this: CustomWorld, expectedMessage: string) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const message = this.page.getByTestId('thank-you-message');
+    await expect(message).toBeVisible({ timeout: 10_000 });
+    await expect(message).toContainText(expectedMessage);
+});
+
+Then('I should see the form in the preview step', async function (this: CustomWorld) {
+    if (!this.page) {
+        throw new Error('Page is not initialized');
+    }
+
+    const previewForm = this.page.locator('.preview-mode');
+    await expect(previewForm).toBeVisible({ timeout: 10_000 });
 });
 
 /**
@@ -275,61 +393,50 @@ When('I fill and submit the thank you test form', async function (this: CustomWo
 });
 
 /**
- * Verify the default thank you message is displayed
+ * Verify the default thank you message is displayed (DEFAULT_THANK_YOU_CONTENT
+ * from @dculus/types: '<h1>Thank you!</h1><p>Your response has been submitted.</p>')
  */
 Then('I should see the default thank you message', async function (this: CustomWorld) {
     if (!this.viewerPage) {
         throw new Error('Viewer page is not initialized');
     }
 
-    // Look for the thank you display element
     const thankYouDisplay = this.viewerPage.getByTestId('thank-you-display');
     await expect(thankYouDisplay).toBeVisible({ timeout: 15_000 });
 
-    // Verify the default "Success!" title is displayed
-    const defaultTitle = this.viewerPage.getByTestId('thank-you-default-title');
-    await expect(defaultTitle).toBeVisible({ timeout: 5_000 });
-    await expect(defaultTitle).toHaveText('Success!');
+    const message = this.viewerPage.getByTestId('thank-you-message');
+    await expect(message).toContainText('Thank you!');
+    await expect(message).toContainText('Your response has been submitted.');
 });
 
 /**
- * Verify the custom thank you message is displayed
+ * Verify a specific thank you message is displayed in the public form viewer
+ * after submission (replaces the old default-vs-custom testid split — both
+ * now render through the same `thank-you-message` element).
  */
-Then('I should see the custom thank you message', async function (this: CustomWorld) {
+Then('I should see the thank you message {string} in the form viewer', async function (this: CustomWorld, expectedMessage: string) {
     if (!this.viewerPage) {
         throw new Error('Viewer page is not initialized');
     }
 
-    // Look for the thank you display element
     const thankYouDisplay = this.viewerPage.getByTestId('thank-you-display');
     await expect(thankYouDisplay).toBeVisible({ timeout: 15_000 });
 
-    // Verify the custom message container is displayed (not the default title)
-    const customMessage = this.viewerPage.getByTestId('thank-you-custom-message');
-    await expect(customMessage).toBeVisible({ timeout: 5_000 });
-
-    // Verify the message contains our custom text
-    const messageText = await customMessage.textContent();
-    if (!messageText?.includes('Thank you for your feedback')) {
-        throw new Error(`Expected custom message but got: ${messageText}`);
-    }
+    const message = this.viewerPage.getByTestId('thank-you-message');
+    await expect(message).toContainText(expectedMessage);
 });
 
 /**
- * Add a field mention to the thank you message
- * This types @ to trigger the mention picker and selects the feedback field
+ * Add a field mention to the thank you message (in the builder's Layout tab
+ * thank-you screen editor) and save.
+ * This types @ to trigger the mention picker and selects the feedback field.
  */
 When('I add a field mention to the thank you message', async function (this: CustomWorld) {
     if (!this.page) {
         throw new Error('Page is not initialized');
     }
 
-    const messageEditor = this.page.getByTestId('thank-you-message-editor');
-    await expect(messageEditor).toBeVisible({ timeout: 5_000 });
-
-    // Find the contenteditable element inside the editor
-    const contentEditable = messageEditor.locator('[contenteditable="true"]');
-    await expect(contentEditable).toBeVisible({ timeout: 5_000 });
+    const { display, contentEditable } = await enterThankYouEditMode(this);
 
     // Click on the editor to focus it
     await contentEditable.click();
@@ -407,6 +514,8 @@ When('I add a field mention to the thank you message', async function (this: Cus
     await this.page.keyboard.type(' for your submission!', { delay: 30 });
 
     await this.page.waitForTimeout(500);
+
+    await saveThankYouEdit(display);
 });
 
 /**
@@ -473,5 +582,5 @@ Then('I should see the submitted value {string} in the thank you message', async
         throw new Error(`Expected to find "${expectedValue}" in thank you message, but got: "${displayText}"`);
     }
 
-    console.log(`✓ Field substitution verified: Found "${expectedValue}" in thank you message`);
+    console.log(`Field substitution verified: Found "${expectedValue}" in thank you message`);
 });

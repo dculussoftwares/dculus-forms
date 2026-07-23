@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, mixWithWhite, RendererMode } from '@dculus/utils';
+import { DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
+import { extractMentionFields } from '../utils/mentionFields';
+import { ThankYouScreen } from './shared/ThankYouScreen';
 import { LayoutProps } from '../types';
 
 export const L6WizardLayout: React.FC<LayoutProps> = ({
@@ -12,8 +15,15 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
   onLayoutChange,
   cdnEndpoint,
   mode = RendererMode.PREVIEW,
-  initialPageId
+  initialPageId,
+  screenOverride,
+  thankYouMessage,
+  onSubmitAnother,
+  responseCopyNotice,
 }) => {
+  // L6 has no intro/pages toggle — content and pages stack together in one
+  // continuous view. The thank-you screen is the only alternate state it needs.
+  const showThankYou = screenOverride === 'thankYou';
   // L6 Wizard layout styles
   const getLayoutStyles = () => ({
     field: {
@@ -126,7 +136,19 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
           {/* Central Content Area with vertical layout - scrollable */}
           <div className="h-full relative z-10 overflow-y-auto px-4 py-4 sm:px-[10%] sm:py-[5%]">
             <div className="w-full max-w-4xl mx-auto flex flex-col space-y-3 sm:space-y-6 min-h-full">
-
+            {showThankYou ? (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                <ThankYouScreen
+                  content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}
+                  mode={mode}
+                  onSave={(content) => onLayoutChange?.({ thankYouContent: content })}
+                  mentionFields={extractMentionFields(pages)}
+                  onSubmitAnother={onSubmitAnother}
+                  responseCopyNotice={responseCopyNotice}
+                />
+              </div>
+            ) : (
+              <>
               {/* Background Image/Video in 4:1 ratio */}
               <div className="w-full h-32 sm:h-48 relative rounded-lg overflow-hidden shadow-lg">
                 {hasVideoBackground ? (
@@ -228,6 +250,8 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
                   initialPageId={initialPageId}
                 />
               </div>
+              </>
+            )}
 
             </div>
           </div>

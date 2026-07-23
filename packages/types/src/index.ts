@@ -41,11 +41,6 @@
 import { sanitizeConditions, type ConditionalRule } from './conditions.js';
 
 // Form Settings types
-export interface ThankYouSettings {
-  enabled: boolean;
-  message: string;
-}
-
 export interface MaxResponsesSettings {
   enabled: boolean;
   limit: number;
@@ -85,7 +80,6 @@ export interface AccessControlSettings {
 }
 
 export interface FormSettings {
-  thankYou?: ThankYouSettings;
   submissionLimits?: SubmissionLimitsSettings;
   responseCopy?: ResponseCopySettings;
   accessControl?: AccessControlSettings;
@@ -141,6 +135,7 @@ export interface FormLayout {
   spacing: SpacingType;
   code: LayoutCode; // Layout code (L1-L9)
   content: string; // Rich text content for layout
+  thankYouContent: string; // Rich text content for the post-submission thank-you screen
   customBackGroundColor: string; // Custom background color overlay for background image layer
   customCTAButtonName?: string; // Custom call to action name
   backgroundImageKey: string; // Image key of layout background image
@@ -149,6 +144,10 @@ export interface FormLayout {
   pageMode: PageModeType; // Page navigation mode
   isCustomBackgroundColorEnabled?: boolean; // Toggle between custom color overlay vs blur background
 }
+
+// Literal default shown on the thank-you screen until a form owner edits it.
+export const DEFAULT_THANK_YOU_CONTENT =
+  '<h1>Thank you!</h1><p>Your response has been submitted.</p>';
 
 export enum ThemeType {
   LIGHT = 'light',

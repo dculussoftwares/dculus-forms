@@ -91,10 +91,6 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
       defaultPermission
       userPermission
       settings {
-        thankYou {
-          enabled
-          message
-        }
         submissionLimits {
           maxResponses {
             enabled

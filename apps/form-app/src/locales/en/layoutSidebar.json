@@ -4,6 +4,11 @@
     "editableDescription": "Choose a layout style",
     "viewOnlyDescription": "View-only mode"
   },
+  "screenToggle": {
+    "intro": "Intro",
+    "pages": "Pages",
+    "thankYou": "Thank You"
+  },
   "customCTA": {
     "label": "Custom CTA Button",
     "placeholder": "Get Started",

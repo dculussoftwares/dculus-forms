@@ -59,10 +59,6 @@ export const UPDATE_FORM : TypedDocumentNode<any, any> = gql`
       shortUrl
       responseCount
       settings {
-        thankYou {
-          enabled
-          message
-        }
         submissionLimits {
           maxResponses {
             enabled
@@ -232,7 +228,6 @@ export const SUBMIT_RESPONSE : TypedDocumentNode<any, any> = gql`
       data
       submittedAt
       thankYouMessage
-      showCustomThankYou
     }
   }
 `;

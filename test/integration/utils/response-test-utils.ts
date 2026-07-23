@@ -10,7 +10,6 @@ export interface FormResponse {
   data: ResponseData;
   submittedAt: string;
   thankYouMessage?: string;
-  showCustomThankYou?: boolean;
   metadata?: any;
 }
 
@@ -56,7 +55,6 @@ export class ResponseTestUtils {
           data
           submittedAt
           thankYouMessage
-          showCustomThankYou
           metadata
         }
       }

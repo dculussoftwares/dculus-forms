@@ -1,18 +1,27 @@
 import React from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
 import { getImageUrl, RendererMode } from '@dculus/utils';
+import { DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
+import { extractMentionFields } from '../utils/mentionFields';
+import { ThankYouScreen } from './shared/ThankYouScreen';
 import { LayoutProps } from '../types';
 
 export const L9PagesLayout: React.FC<LayoutProps> = ({
   pages,
   layout,
   className = '',
-  onLayoutChange: _onLayoutChange,
+  onLayoutChange,
   cdnEndpoint,
   mode = RendererMode.PREVIEW,
-  initialPageId
+  initialPageId,
+  screenOverride,
+  thankYouMessage,
+  onSubmitAnother,
+  responseCopyNotice,
 }) => {
+  // L9 has no intro screen — the thank-you screen is its only alternate state.
+  const showThankYou = screenOverride === 'thankYou';
   // L9 Pages layout styles - using modern page-focused styles
   const getLayoutStyles = () => ({
     field: {
@@ -88,14 +97,27 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
 
           {/* Pages content with white background container */}
           <div className="h-full relative z-10 p-3 sm:p-8 overflow-y-auto">
-            <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
-              <PageRenderer
-                pages={pages}
-                layoutStyles={getLayoutStyles()}
-                mode={mode}
-                initialPageId={initialPageId}
-              />
-            </div>
+            {showThankYou ? (
+              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                <ThankYouScreen
+                  content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}
+                  mode={mode}
+                  onSave={(content) => onLayoutChange?.({ thankYouContent: content })}
+                  mentionFields={extractMentionFields(pages)}
+                  onSubmitAnother={onSubmitAnother}
+                  responseCopyNotice={responseCopyNotice}
+                />
+              </div>
+            ) : (
+              <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
+                <PageRenderer
+                  pages={pages}
+                  layoutStyles={getLayoutStyles()}
+                  mode={mode}
+                  initialPageId={initialPageId}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
