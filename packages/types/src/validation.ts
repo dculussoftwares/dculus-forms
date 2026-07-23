@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js/max';
-import { FieldType, DEFAULT_THANK_YOU_CONTENT } from './index.js';
+import { FieldType } from './index.js';
 
 // Base validation schema for common field properties
 export const baseFieldValidationSchema = z.object({
@@ -697,10 +697,14 @@ export const formLayoutValidationSchema = z
     spacing: z.enum(['compact', 'normal', 'spacious']),
     code: z.string().regex(/^L[1-9]$/, 'Invalid layout code'),
     content: z.string().max(10000, 'Content is too long'),
-    thankYouContent: z
-      .string()
-      .max(10000, 'Thank-you content is too long')
-      .default(DEFAULT_THANK_YOU_CONTENT),
+    // No .default() here: this file has a circular import with index.ts
+    // (index.ts does `export * from './validation.js'`, and this file imports
+    // from index.ts) — eagerly reading an index.ts `const` value at this
+    // module's top level hits it while still in the TDZ mid-cycle and crashes
+    // (`Cannot access 'X' before initialization`) the moment anything imports
+    // @dculus/types, which is effectively everywhere. Validate emptiness at
+    // the call site instead, once this schema actually gets a caller.
+    thankYouContent: z.string().max(10000, 'Thank-you content is too long'),
     customBackGroundColor: z
       .string()
       .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format'),
