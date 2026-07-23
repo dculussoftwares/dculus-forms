@@ -210,11 +210,19 @@ When('I reload the builder page', async function (this: CustomWorld) {
 
 /**
  * Switch the Layout tab's canvas (screen preview toggle) to the thank-you screen.
+ * "I navigate to the form builder" only opens the builder shell, which defaults
+ * to the Page Builder tab — the screen toggle only exists on the Layout tab's
+ * canvas, so this step first makes sure that tab is selected (idempotent: a
+ * no-op click if it's already active).
  */
 When('I switch the layout canvas to the thank you screen', async function (this: CustomWorld) {
     if (!this.page) {
         throw new Error('Page is not initialized');
     }
+
+    const layoutTab = this.page.getByTestId('tab-layout');
+    await expect(layoutTab).toBeVisible({ timeout: 10_000 });
+    await layoutTab.click();
 
     const toggle = this.page.getByTestId('layout-screen-toggle-thankYou');
     await expect(toggle).toBeVisible({ timeout: 10_000 });
