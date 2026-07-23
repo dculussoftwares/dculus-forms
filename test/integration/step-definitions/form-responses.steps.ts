@@ -143,24 +143,27 @@ Given('I configure a custom thank you message {string} on the published form',
     const collabDoc = await this.prisma.collaborativeDocument.findUnique({
       where: { documentName: form.id },
     });
-    if (collabDoc) {
-      const Y = await import('yjs');
-      const doc = new Y.Doc();
-      Y.applyUpdate(doc, new Uint8Array(collabDoc.state));
-      const formSchemaMap = doc.getMap('formSchema');
-      let layoutMap: any = formSchemaMap.get('layout');
-      if (!(layoutMap instanceof Y.Map)) {
-        layoutMap = new Y.Map();
-        formSchemaMap.set('layout', layoutMap);
-      }
-      layoutMap.set('thankYouContent', messageTemplate);
-      const state = Buffer.from(Y.encodeStateAsUpdate(doc));
-      await this.prisma.collaborativeDocument.update({
-        where: { documentName: form.id },
-        data: { state },
-      });
-      doc.destroy();
+    // createForm always initializes a collaborative document, so a missing one here
+    // means the test isn't exercising the live-document path it's meant to validate —
+    // fail loudly instead of silently falling through to the (also-updated) DB column.
+    expectDefined(collabDoc, 'Collaborative document must exist for live thank-you content tests');
+
+    const Y = await import('yjs');
+    const doc = new Y.Doc();
+    Y.applyUpdate(doc, new Uint8Array(collabDoc.state));
+    const formSchemaMap = doc.getMap('formSchema');
+    let layoutMap: any = formSchemaMap.get('layout');
+    if (!(layoutMap instanceof Y.Map)) {
+      layoutMap = new Y.Map();
+      formSchemaMap.set('layout', layoutMap);
     }
+    layoutMap.set('thankYouContent', messageTemplate);
+    const state = Buffer.from(Y.encodeStateAsUpdate(doc));
+    await this.prisma.collaborativeDocument.update({
+      where: { documentName: form.id },
+      data: { state },
+    });
+    doc.destroy();
 
     this.setSharedTestData('createdForm', { ...form, formSchema: updatedSchema });
     this.setSharedTestData('thankYouTemplate', messageTemplate);
