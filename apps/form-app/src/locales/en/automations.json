@@ -95,6 +95,77 @@
   "builder": {
     "title": "Automation builder",
     "comingSoon": "The visual builder is coming soon. You'll be able to design trigger → rules → actions flows here.",
-    "backButton": "Back to automations"
+    "backButton": "Back to automations",
+    "readOnlyNotice": "You have view-only access to this automation. Editing and activation are disabled.",
+    "header": {
+      "saveButton": "Save",
+      "saveSuccessTitle": "Automation saved",
+      "saveSuccessMessage": "Your changes have been saved.",
+      "saveErrorTitle": "Couldn't save automation",
+      "activateButton": "Activate",
+      "pauseButton": "Pause",
+      "activateInvalidTitle": "Automation isn't ready to activate",
+      "activateInvalidMessage": "Fix the highlighted steps and try again.",
+      "unsavedIndicator": "Unsaved changes",
+      "unsavedChangesConfirm": "You have unsaved changes. Leave without saving?"
+    },
+    "nodes": {
+      "removeStep": "Remove step",
+      "trigger": {
+        "title": "Form submission",
+        "subtitle": "Start automation when {{form}} is Completed",
+        "thisForm": "this form"
+      },
+      "delay": {
+        "title": "Wait",
+        "subtitle": "Wait {{amount}} {{unit}}",
+        "units": {
+          "minute": "minute",
+          "minutes": "minutes",
+          "hour": "hour",
+          "hours": "hours",
+          "day": "day",
+          "days": "days"
+        }
+      },
+      "action": {
+        "subtitle": "Runs this action",
+        "setupRequired": "Setup required"
+      },
+      "end": {
+        "title": "End automation"
+      }
+    },
+    "addStep": {
+      "buttonLabel": "Add a step",
+      "rulesHeading": "Rules",
+      "actionsHeading": "Actions",
+      "timeDelay": "Time delay",
+      "condition": "Condition",
+      "comingSoon": "Coming soon"
+    },
+    "panel": {
+      "close": "Close panel",
+      "titles": {
+        "trigger": "Form submission",
+        "delay": "Time delay",
+        "action": "Configure action",
+        "end": "End automation"
+      },
+      "trigger": {
+        "description": "This automation starts every time someone completes this form."
+      },
+      "end": {
+        "description": "The automation finishes here — nothing runs after this step."
+      },
+      "action": {
+        "noConfigForm": "This action can't be configured yet."
+      },
+      "delay": {
+        "amountLabel": "Amount",
+        "unitLabel": "Unit",
+        "hint": "The next step runs after this delay has passed."
+      }
+    }
   }
 }

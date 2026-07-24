@@ -64,6 +64,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
   isSaving,
   onSave,
   onCancel,
+  hideEventsSection,
 }) => {
   const { t } = useTranslation('emailPluginConfig');
   const [message, setMessage] = useState(initialData?.config?.message || '');
@@ -352,33 +353,35 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{t('triggerEvents.title')}</CardTitle>
-          <CardDescription>{t('triggerEvents.description')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            { id: 'form.submitted', labelKey: 'triggerEvents.formSubmitted.label', descKey: 'triggerEvents.formSubmitted.description' },
-            { id: 'plugin.test', labelKey: 'triggerEvents.testEvent.label', descKey: 'triggerEvents.testEvent.description' },
-          ].map(({ id, labelKey, descKey }) => (
-            <div key={id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-background transition-colors">
-              <Checkbox
-                id={id}
-                checked={selectedEvents.includes(id)}
-                onCheckedChange={() => toggleEvent(id)}
-              />
-              <div className="flex-1">
-                <Label htmlFor={id} className="font-medium cursor-pointer">{t(labelKey)}</Label>
-                <p className="text-sm text-muted-foreground">{t(descKey)}</p>
+      {!hideEventsSection && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{t('triggerEvents.title')}</CardTitle>
+            <CardDescription>{t('triggerEvents.description')}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[
+              { id: 'form.submitted', labelKey: 'triggerEvents.formSubmitted.label', descKey: 'triggerEvents.formSubmitted.description' },
+              { id: 'plugin.test', labelKey: 'triggerEvents.testEvent.label', descKey: 'triggerEvents.testEvent.description' },
+            ].map(({ id, labelKey, descKey }) => (
+              <div key={id} className="flex items-start space-x-3 p-3 rounded-lg hover:bg-background transition-colors">
+                <Checkbox
+                  id={id}
+                  checked={selectedEvents.includes(id)}
+                  onCheckedChange={() => toggleEvent(id)}
+                />
+                <div className="flex-1">
+                  <Label htmlFor={id} className="font-medium cursor-pointer">{t(labelKey)}</Label>
+                  <p className="text-sm text-muted-foreground">{t(descKey)}</p>
+                </div>
               </div>
-            </div>
-          ))}
-          {selectedEvents.length === 0 && (
-            <p className="text-sm text-destructive mt-2">{t('triggerEvents.validation')}</p>
-          )}
-        </CardContent>
-      </Card>
+            ))}
+            {selectedEvents.length === 0 && (
+              <p className="text-sm text-destructive mt-2">{t('triggerEvents.validation')}</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex items-center justify-end gap-3 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>

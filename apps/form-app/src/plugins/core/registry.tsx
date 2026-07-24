@@ -15,6 +15,12 @@ export interface ConfigFormProps {
   isSaving: boolean;
   onSave: (data: any) => Promise<void>;
   onCancel: () => void;
+  /**
+   * Hides the "Trigger Events" card. Automation action nodes always execute as part of
+   * graph traversal — there's no separate event selection like a standalone FormPlugin
+   * has — so the automation builder's NodeConfigPanel passes this as true.
+   */
+  hideEventsSection?: boolean;
 }
 
 export interface ResponseCellProps {
