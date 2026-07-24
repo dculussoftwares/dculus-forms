@@ -63,6 +63,8 @@ export interface AutomationGraph {
 }
 
 export interface AutomationRunContext {
+  /** Set by the testAutomation mutation (#195); the engine fast-forwards delay nodes when true. */
+  test?: boolean;
   triggerData?: Record<string, any>;
   stepOutputs?: Record<string, any>;
   [key: string]: any;

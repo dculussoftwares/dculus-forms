@@ -122,3 +122,45 @@ export async function cancelRunsForAutomation(automationId: string, reason: stri
     Sentry.captureException(error);
   }
 }
+
+/**
+ * Cancels a single in-flight run and its outstanding pg-boss job(s). Used by the
+ * cancelAutomationRun mutation (#195). Idempotent: a run that's already terminal is
+ * returned unchanged rather than re-cancelled. Returns null if the run doesn't exist.
+ */
+export async function cancelSingleAutomationRun(runId: string) {
+  const run = await prisma.automationRun.findUnique({ where: { id: runId } });
+  if (!run) return null;
+  if (run.status !== 'RUNNING' && run.status !== 'WAITING') {
+    return run;
+  }
+
+  const boss = getBoss();
+  if (boss) {
+    try {
+      const jobs = await boss.findJobs(AUTOMATION_QUEUE, { data: { runId } });
+      const jobIds = jobs.map((job) => job.id);
+      if (jobIds.length > 0) {
+        await boss.cancel(AUTOMATION_QUEUE, jobIds);
+      }
+    } catch (error) {
+      logger.error(`[Automation Triggers] Failed to cancel pg-boss jobs for run ${runId}:`, error);
+      Sentry.captureException(error);
+    }
+  }
+
+  // Guard the write with the same status check rather than an unconditional update by
+  // id: the run may have reached a terminal state concurrently (e.g. the engine completed
+  // it) while the pg-boss cancel above was in flight, and this must not overwrite that
+  // outcome with a stale CANCELLED.
+  const { count } = await prisma.automationRun.updateMany({
+    where: { id: runId, status: { in: ['RUNNING', 'WAITING'] } },
+    data: { status: 'CANCELLED', completedAt: new Date() },
+  });
+  if (count === 0) {
+    logger.info(
+      `[Automation Triggers] Run ${runId} reached a terminal state concurrently — skipping cancellation write`
+    );
+  }
+  return prisma.automationRun.findUnique({ where: { id: runId } });
+}

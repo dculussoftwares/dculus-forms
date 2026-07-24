@@ -124,7 +124,7 @@ function mergeStepOutput(context: unknown, nodeId: string, output: any): Automat
 }
 
 async function handleDelayNode(
-  run: { id: string },
+  run: { id: string; context: unknown },
   node: Extract<AutomationNode, { type: 'delay' }>,
   graph: AutomationGraph
 ): Promise<void> {
@@ -132,6 +132,40 @@ async function handleDelayNode(
   const requestedMs = amount * (DELAY_UNIT_MS[unit] ?? DELAY_UNIT_MS.minutes);
   const delayMs = Math.min(requestedMs, MAX_DELAY_MS);
   const delayUntil = new Date(Date.now() + delayMs);
+
+  const context = (run.context as AutomationRunContext) ?? {};
+  const isTest = context.test === true;
+
+  const nextNodeId = findNextNodeId(graph, node.id);
+
+  if (isTest) {
+    // Test runs (testAutomation mutation, #195) fast-forward delay nodes instead of
+    // scheduling with startAfter, so the user sees end-to-end results immediately.
+    await prisma.automationStepRun.create({
+      data: {
+        id: generateId(),
+        runId: run.id,
+        nodeId: node.id,
+        nodeType: 'delay',
+        status: 'SKIPPED',
+        output: { fastForwarded: true, requestedDelayMs: requestedMs },
+        attempt: 1,
+        finishedAt: new Date(),
+      },
+    });
+
+    if (!nextNodeId) {
+      await completeRun(run.id);
+      return;
+    }
+
+    await prisma.automationRun.update({
+      where: { id: run.id },
+      data: { currentNodeId: nextNodeId },
+    });
+    await enqueueStep(run.id, nextNodeId, graph);
+    return;
+  }
 
   await prisma.automationStepRun.create({
     data: {
@@ -146,7 +180,6 @@ async function handleDelayNode(
     },
   });
 
-  const nextNodeId = findNextNodeId(graph, node.id);
   if (!nextNodeId) {
     await completeRun(run.id);
     return;
