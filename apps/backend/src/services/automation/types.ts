@@ -8,6 +8,8 @@ export interface ConditionRule {
   operator: string;
   value?: string;
   values?: string[];
+  dateRange?: { from?: string; to?: string };
+  numberRange?: { min?: number; max?: number };
 }
 
 export type ConditionCombinator = 'AND' | 'OR';
