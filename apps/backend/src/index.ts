@@ -37,6 +37,7 @@ import { createHocuspocusServer } from './services/hocuspocus.js';
 import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
+import { initializeAutomationEngine, shutdownAutomationEngine } from './services/automation/engine.js';
 import { startPeriodicCleanup, tempFilesMockStore } from './services/temporaryFileService.js';
 import { cleanupOldAnalytics } from './services/analyticsService.js';
 import { logger } from './lib/logger.js';
@@ -333,6 +334,11 @@ async function startServer() {
   initializeSubscriptionSystem();
   logger.info('✅ Subscription system initialized');
 
+  // Initialize automation engine (pg-boss) — degrades to disabled when DIRECT_URL is unset
+  logger.info('⚙️  Initializing automation engine...');
+  await initializeAutomationEngine();
+  logger.info('✅ Automation engine initialized');
+
   await server.start();
 
   // Dynamically import graphql-upload (ESM module)
@@ -480,6 +486,7 @@ const shutdown = async (signal: string) => {
   httpServer.close(async () => {
     try {
       await server.stop();
+      await shutdownAutomationEngine();
       await prisma.$disconnect();
       logger.info('Graceful shutdown complete');
       process.exit(0);
