@@ -172,6 +172,7 @@ model Form {
   aiChatConversations AIChatConversation[]
   pdfTemplates        PdfTemplate[]
   pdfGenerators       PdfGenerator[]
+  automations         Automation[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -574,6 +575,75 @@ model PluginBackfillJob {
   @@index([pluginId])
   @@index([formId])
   @@map("plugin_backfill_job")
+}
+
+// Automation System Models
+
+model Automation {
+  id             String   @id @default(cuid())
+  formId         String // Reference to Form
+  organizationId String
+  name           String
+  status         String   @default("DRAFT") // DRAFT | ACTIVE | PAUSED
+  triggerType    String // "form.submitted" | "response.edited" | "schedule"
+  triggerConfig  Json? // e.g. cron expression for schedule trigger
+  graph          Json // { nodes: [...], edges: [...] } - React Flow shape
+  version        Int      @default(1) // bumped on every graph save
+  createdBy      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  form Form              @relation(fields: [formId], references: [id], onDelete: Cascade)
+  runs AutomationRun[]
+
+  @@index([formId])
+  @@index([organizationId])
+  @@index([formId, status])
+  @@map("automation")
+}
+
+model AutomationRun {
+  id                String    @id @default(cuid())
+  automationId      String // Reference to Automation
+  responseId        String? // Reference to Response (nullable for schedule triggers; no FK — response may be deleted while run history remains)
+  automationVersion Int
+  graphSnapshot     Json // graph frozen at trigger time
+  status            String // RUNNING | WAITING | COMPLETED | FAILED | CANCELLED
+  currentNodeId     String?
+  context           Json // trigger payload + accumulated step outputs
+  startedAt         DateTime  @default(now())
+  completedAt       DateTime?
+
+  // Relations
+  automation Automation          @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  stepRuns   AutomationStepRun[]
+
+  @@index([automationId])
+  @@index([responseId])
+  @@index([status])
+  @@index([automationId, startedAt])
+  @@map("automation_run")
+}
+
+model AutomationStepRun {
+  id           String    @id @default(cuid())
+  runId        String // Reference to AutomationRun
+  nodeId       String // node id within graphSnapshot
+  nodeType     String // "trigger" | "delay" | "condition" | "action:<pluginType>" | "end"
+  status       String // SUCCESS | FAILED | SKIPPED
+  output       Json? // handler result / branch taken / delay until
+  errorMessage String?
+  attempt      Int       @default(1)
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+
+  // Relations
+  run AutomationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@index([runId, nodeId])
+  @@map("automation_step_run")
 }
 
 // Audit Log Model — records sensitive operations for security/compliance tracing
