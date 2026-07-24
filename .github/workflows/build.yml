@@ -470,6 +470,8 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       # Three independent tracks — backend provisioning, frontend build+serve, and
       # Playwright browser install — don't depend on each other, only on the E2E run
