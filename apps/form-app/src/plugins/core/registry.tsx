@@ -15,6 +15,20 @@ export interface ConfigFormProps {
   isSaving: boolean;
   onSave: (data: any) => Promise<void>;
   onCancel: () => void;
+  /**
+   * Hides the "Trigger Events" card. Automation action nodes always execute as part of
+   * graph traversal — there's no separate event selection like a standalone FormPlugin
+   * has — so the automation builder's NodeConfigPanel passes this as true.
+   */
+  hideEventsSection?: boolean;
+  /**
+   * True when the caller has already wrapped this form in a disabled context (e.g. a
+   * `<fieldset disabled>` for VIEWER permission in the automation builder's NodeConfigPanel).
+   * A native `disabled` fieldset does NOT cascade into contentEditable regions like the
+   * Lexical rich-text editor, so forms with one must explicitly forward this to its
+   * `editable` prop themselves.
+   */
+  readOnly?: boolean;
 }
 
 export interface ResponseCellProps {
