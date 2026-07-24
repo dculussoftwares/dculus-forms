@@ -395,9 +395,14 @@ export const responsesResolvers = {
       // Emit plugin event for form submission
       try {
         emitFormSubmitted(input.formId, form.organizationId, {
+          // input.data is user-submitted field values; spreading it first (and the
+          // control fields after) keeps a form field literally named "responseId"/
+          // "isPreview" from spoofing these — isPreview in particular now gates
+          // whether automations fire, so it must stay server-authoritative.
+          ...input.data,
           responseId: savedResponse.id,
           submittedAt: savedResponse.submittedAt.toISOString(),
-          ...input.data,
+          isPreview: Boolean(input.isPreview),
         });
       } catch (error) {
         // Log error but don't fail the response submission
