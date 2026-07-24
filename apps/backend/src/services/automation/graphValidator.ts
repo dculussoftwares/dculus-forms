@@ -104,7 +104,7 @@ const ActionDataSchema = z.object({
 // stricter per-type validation.
 const EmailActionConfigSchema = z
   .object({
-    recipientEmail: z.string().email().optional(),
+    recipientEmail: z.email().optional(),
     recipientFieldId: z.string().optional(),
     recipientFieldLabel: z.string().optional(),
     subject: z.string().min(1),
@@ -118,7 +118,7 @@ const EmailActionConfigSchema = z
   });
 
 const WebhookActionConfigSchema = z.object({
-  url: z.string().url(),
+  url: z.url(),
   secret: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional(),
 });
@@ -126,7 +126,7 @@ const WebhookActionConfigSchema = z.object({
 // Slack has no backend plugin handler yet (packages/plugins/src/manifests/slack.ts marks it
 // comingSoon); this schema documents the intended config shape ahead of that handler landing.
 const SlackActionConfigSchema = z.object({
-  webhookUrl: z.string().url(),
+  webhookUrl: z.url(),
   channel: z.string().optional(),
   message: z.string().min(1),
 });
