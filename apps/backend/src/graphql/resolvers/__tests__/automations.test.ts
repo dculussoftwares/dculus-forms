@@ -217,6 +217,17 @@ describe('Automations Resolvers', () => {
         automationsResolvers.Query.automation({}, { id: 'missing' }, mockContext)
       ).rejects.toThrow('Automation not found');
     });
+
+    it('automation: checks auth before looking up the automation in the DB', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockImplementation(() => {
+        throw new GraphQLError('Authentication required');
+      });
+
+      await expect(
+        automationsResolvers.Query.automation({}, { id: 'automation-123' }, mockContext)
+      ).rejects.toThrow('Authentication required');
+      expect(prisma.automation.findUnique).not.toHaveBeenCalled();
+    });
   });
 
   describe('Activation gate (setAutomationStatus)', () => {
@@ -316,7 +327,10 @@ describe('Automations Resolvers', () => {
     it('bumps version when graph is provided', async () => {
       grantAccess('EDITOR');
       vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      const newGraph = { ...mockGraph, nodes: [...mockGraph.nodes] };
+      const newGraph = {
+        ...mockGraph,
+        nodes: [...mockGraph.nodes, { id: 'delay-1', type: 'delay', data: { amount: 1, unit: 'minutes' } }],
+      };
       vi.mocked(prisma.automation.update).mockResolvedValue({
         ...mockAutomation,
         graph: newGraph,
@@ -357,6 +371,24 @@ describe('Automations Resolvers', () => {
       expect(prisma.automation.update).toHaveBeenCalledWith({
         where: { id: 'automation-123' },
         data: { updatedAt: expect.any(Date), name: 'Renamed' },
+      });
+    });
+
+    it('does not bump version when the resubmitted graph is unchanged', async () => {
+      grantAccess('EDITOR');
+      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
+      const sameGraph = JSON.parse(JSON.stringify(mockGraph));
+      vi.mocked(prisma.automation.update).mockResolvedValue(mockAutomation as any);
+
+      await automationsResolvers.Mutation.updateAutomation(
+        {},
+        { id: 'automation-123', graph: sameGraph },
+        mockContext
+      );
+
+      expect(prisma.automation.update).toHaveBeenCalledWith({
+        where: { id: 'automation-123' },
+        data: { updatedAt: expect.any(Date), graph: sameGraph },
       });
     });
 

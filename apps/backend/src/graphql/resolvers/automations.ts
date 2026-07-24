@@ -95,6 +95,7 @@ export const automationsResolvers = {
       { id }: { id: string },
       context: { auth: BetterAuthContext }
     ) => {
+      requireAuth(context.auth);
       const automation = await getAutomationOrThrow(id);
       await assertFormAccess(
         context,
@@ -110,6 +111,7 @@ export const automationsResolvers = {
       { automationId, limit, offset }: { automationId: string; limit?: number; offset?: number },
       context: { auth: BetterAuthContext }
     ) => {
+      requireAuth(context.auth);
       const automation = await getAutomationOrThrow(automationId);
       await assertFormAccess(
         context,
@@ -131,6 +133,7 @@ export const automationsResolvers = {
       { id }: { id: string },
       context: { auth: BetterAuthContext }
     ) => {
+      requireAuth(context.auth);
       const run = await prisma.automationRun.findUnique({
         where: { id },
         include: { automation: true },
@@ -198,6 +201,7 @@ export const automationsResolvers = {
       }: { id: string; name?: string; graph?: any; triggerConfig?: any },
       context: { auth: BetterAuthContext }
     ) => {
+      requireAuth(context.auth);
       const automation = await getAutomationOrThrow(id);
       await assertFormAccess(
         context,
@@ -211,7 +215,10 @@ export const automationsResolvers = {
       if (triggerConfig !== undefined) data.triggerConfig = triggerConfig;
       if (graph !== undefined) {
         data.graph = graph;
-        data.version = { increment: 1 };
+        const graphChanged = JSON.stringify(graph) !== JSON.stringify(automation.graph);
+        if (graphChanged) {
+          data.version = { increment: 1 };
+        }
       }
 
       return prisma.automation.update({ where: { id }, data });
@@ -222,6 +229,7 @@ export const automationsResolvers = {
       { id, status }: { id: string; status: string },
       context: { auth: BetterAuthContext }
     ) => {
+      requireAuth(context.auth);
       const automation = await getAutomationOrThrow(id);
       await assertFormAccess(
         context,
@@ -261,6 +269,7 @@ export const automationsResolvers = {
       { id }: { id: string },
       context: { auth: BetterAuthContext }
     ) => {
+      requireAuth(context.auth);
       const automation = await getAutomationOrThrow(id);
       await assertFormAccess(
         context,
@@ -280,6 +289,7 @@ export const automationsResolvers = {
       { id, responseId }: { id: string; responseId?: string },
       context: { auth: BetterAuthContext }
     ) => {
+      requireAuth(context.auth);
       const automation = await getAutomationOrThrow(id);
       await assertFormAccess(
         context,
@@ -336,6 +346,7 @@ export const automationsResolvers = {
       { runId }: { runId: string },
       context: { auth: BetterAuthContext }
     ) => {
+      requireAuth(context.auth);
       const run = await prisma.automationRun.findUnique({
         where: { id: runId },
         include: { automation: true },

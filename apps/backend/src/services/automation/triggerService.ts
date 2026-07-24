@@ -149,8 +149,18 @@ export async function cancelSingleAutomationRun(runId: string) {
     }
   }
 
-  return prisma.automationRun.update({
-    where: { id: runId },
+  // Guard the write with the same status check rather than an unconditional update by
+  // id: the run may have reached a terminal state concurrently (e.g. the engine completed
+  // it) while the pg-boss cancel above was in flight, and this must not overwrite that
+  // outcome with a stale CANCELLED.
+  const { count } = await prisma.automationRun.updateMany({
+    where: { id: runId, status: { in: ['RUNNING', 'WAITING'] } },
     data: { status: 'CANCELLED', completedAt: new Date() },
   });
+  if (count === 0) {
+    logger.info(
+      `[Automation Triggers] Run ${runId} reached a terminal state concurrently — skipping cancellation write`
+    );
+  }
+  return prisma.automationRun.findUnique({ where: { id: runId } });
 }

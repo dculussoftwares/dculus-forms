@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as Sentry from '@sentry/node';
 import { generateId } from '@dculus/utils';
-import { initializeAutomationTriggers, cancelRunsForAutomation } from '../triggerService.js';
+import {
+  initializeAutomationTriggers,
+  cancelRunsForAutomation,
+  cancelSingleAutomationRun,
+} from '../triggerService.js';
 import { enqueueFirstStep } from '../engine.js';
 import { getBoss, AUTOMATION_QUEUE } from '../boss.js';
 import { getEventEmitter } from '../../../plugins/core/events.js';
@@ -17,6 +21,7 @@ vi.mock('../../../lib/prisma.js', () => ({
     automationRun: {
       create: vi.fn(),
       findMany: vi.fn(),
+      findUnique: vi.fn(),
       updateMany: vi.fn(),
     },
   },
@@ -290,6 +295,80 @@ describe('triggerService', () => {
       expect(prisma.automationRun.updateMany).toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalled();
       expect(Sentry.captureException).toHaveBeenCalled();
+    });
+  });
+
+  describe('cancelSingleAutomationRun', () => {
+    it('returns null when the run does not exist', async () => {
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(null);
+
+      const result = await cancelSingleAutomationRun('missing-run');
+
+      expect(result).toBeNull();
+      expect(prisma.automationRun.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('returns an already-terminal run unchanged without touching pg-boss or the DB', async () => {
+      const terminalRun = { id: 'run-1', status: 'COMPLETED' };
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(terminalRun as any);
+
+      const result = await cancelSingleAutomationRun('run-1');
+
+      expect(result).toEqual(terminalRun);
+      expect(getBoss).not.toHaveBeenCalled();
+      expect(prisma.automationRun.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('cancels outstanding pg-boss jobs and marks a RUNNING run CANCELLED', async () => {
+      vi.mocked(prisma.automationRun.findUnique)
+        .mockResolvedValueOnce({ id: 'run-1', status: 'RUNNING' } as any)
+        .mockResolvedValueOnce({ id: 'run-1', status: 'CANCELLED' } as any);
+      const findJobs = vi.fn().mockResolvedValue([{ id: 'job-1' }]);
+      const cancel = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(getBoss).mockReturnValue({ findJobs, cancel } as any);
+      vi.mocked(prisma.automationRun.updateMany).mockResolvedValue({ count: 1 } as any);
+
+      const result = await cancelSingleAutomationRun('run-1');
+
+      expect(findJobs).toHaveBeenCalledWith(AUTOMATION_QUEUE, { data: { runId: 'run-1' } });
+      expect(cancel).toHaveBeenCalledWith(AUTOMATION_QUEUE, ['job-1']);
+      expect(prisma.automationRun.updateMany).toHaveBeenCalledWith({
+        where: { id: 'run-1', status: { in: ['RUNNING', 'WAITING'] } },
+        data: { status: 'CANCELLED', completedAt: expect.any(Date) },
+      });
+      expect(result).toEqual({ id: 'run-1', status: 'CANCELLED' });
+    });
+
+    it('does not corrupt a run that reaches a terminal state concurrently (TOCTOU-safe)', async () => {
+      // The initial read sees RUNNING, but by the time the guarded updateMany runs the
+      // engine has already completed it — updateMany's status-scoped where clause matches
+      // 0 rows, and the final state must be read back rather than assumed to be CANCELLED.
+      vi.mocked(prisma.automationRun.findUnique)
+        .mockResolvedValueOnce({ id: 'run-1', status: 'RUNNING' } as any)
+        .mockResolvedValueOnce({ id: 'run-1', status: 'COMPLETED' } as any);
+      vi.mocked(getBoss).mockReturnValue(null);
+      vi.mocked(prisma.automationRun.updateMany).mockResolvedValue({ count: 0 } as any);
+
+      const result = await cancelSingleAutomationRun('run-1');
+
+      expect(result).toEqual({ id: 'run-1', status: 'COMPLETED' });
+      expect(logger.info).toHaveBeenCalled();
+    });
+
+    it('still cancels when pg-boss is disabled (getBoss returns null)', async () => {
+      vi.mocked(prisma.automationRun.findUnique)
+        .mockResolvedValueOnce({ id: 'run-1', status: 'WAITING' } as any)
+        .mockResolvedValueOnce({ id: 'run-1', status: 'CANCELLED' } as any);
+      vi.mocked(getBoss).mockReturnValue(null);
+      vi.mocked(prisma.automationRun.updateMany).mockResolvedValue({ count: 1 } as any);
+
+      const result = await cancelSingleAutomationRun('run-1');
+
+      expect(prisma.automationRun.updateMany).toHaveBeenCalledWith({
+        where: { id: 'run-1', status: { in: ['RUNNING', 'WAITING'] } },
+        data: { status: 'CANCELLED', completedAt: expect.any(Date) },
+      });
+      expect(result).toEqual({ id: 'run-1', status: 'CANCELLED' });
     });
   });
 });
