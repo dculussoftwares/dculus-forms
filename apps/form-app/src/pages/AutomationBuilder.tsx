@@ -22,7 +22,6 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const formId = form.id;
 
   const loadGraph = useAutomationBuilderStore((s) => s.loadGraph);
-  const resetBuilder = useAutomationBuilderStore((s) => s.resetBuilder);
   const isDirty = useAutomationBuilderStore((s) => s.isDirty);
   const structuralErrors = useAutomationBuilderStore((s) => s.structuralErrors);
   const setValidationErrors = useAutomationBuilderStore((s) => s.setValidationErrors);
@@ -46,8 +45,6 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     });
   }, [automationId, automation.graph, form.title, canEdit, loadGraph]);
 
-  useEffect(() => () => resetBuilder(), [resetBuilder]);
-
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(automation.name);
   useEffect(() => {
@@ -66,7 +63,8 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
       return;
     }
     try {
-      await renameAutomation({ variables: { id: automationId, name: trimmed } });
+      const result = await renameAutomation({ variables: { id: automationId, name: trimmed } });
+      if (result.error) throw result.error;
       toastSuccess(t('toasts.renamedTitle'), t('toasts.renamedMessage', { values: { name: trimmed } }));
     } catch (error: any) {
       setNameDraft(automation.name);
@@ -77,7 +75,8 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const handleSave = async () => {
     try {
       const graph = getSerializableGraph();
-      await updateAutomation({ variables: { id: automationId, graph } });
+      const result = await updateAutomation({ variables: { id: automationId, graph } });
+      if (result.error) throw result.error;
       markSaved();
       clearValidationErrors();
       toastSuccess(t('builder.header.saveSuccessTitle'), t('builder.header.saveSuccessMessage'));
@@ -89,7 +88,11 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const handleActivateToggle = async () => {
     const nextStatus = automation.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
     try {
-      await setStatus({ variables: { id: automationId, status: nextStatus } });
+      const result = await setStatus({ variables: { id: automationId, status: nextStatus } });
+      // Apollo Client v4's mutate() resolves (doesn't reject) when the response contains
+      // GraphQL-level errors — only network/execution failures throw. AUTOMATION_INVALID_GRAPH
+      // is a GraphQL error, so it must be read off the resolved result, not caught.
+      if (result.error) throw result.error;
       clearValidationErrors();
       toastSuccess(
         nextStatus === 'ACTIVE' ? t('toasts.activatedTitle') : t('toasts.pausedTitle'),
