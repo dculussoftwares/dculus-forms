@@ -37,6 +37,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   isSaving,
   onSave,
   onCancel,
+  submitLabelOverride,
 }) => {
   const { t } = useTranslation('pluginGoogleSheets');
 
@@ -296,7 +297,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
           ) : (
             <>
               <Save className="mr-2 h-4 w-4" />
-              {mode === 'create' ? t('actions.create') : t('actions.update')}
+              {submitLabelOverride ?? (mode === 'create' ? t('actions.create') : t('actions.update'))}
             </>
           )}
         </Button>

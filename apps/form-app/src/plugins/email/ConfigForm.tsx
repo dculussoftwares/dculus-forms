@@ -66,6 +66,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
   onCancel,
   hideEventsSection,
   readOnly,
+  submitLabelOverride,
 }) => {
   const { t } = useTranslation('emailPluginConfig');
   const [message, setMessage] = useState(initialData?.config?.message || '');
@@ -393,7 +394,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
         <Button type="submit" disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isSaving && <Save className="mr-2 h-4 w-4" />}
-          {mode === 'create' ? t('actions.create') : t('actions.update')}
+          {submitLabelOverride ?? (mode === 'create' ? t('actions.create') : t('actions.update'))}
         </Button>
       </div>
     </form>
