@@ -1061,6 +1061,53 @@ export const typeDefs = gql`
     message: String!
   }
 
+  # Automation System Types
+  type Automation {
+    id: ID!
+    formId: ID!
+    organizationId: ID!
+    name: String!
+    status: String!
+    triggerType: String!
+    triggerConfig: JSON
+    graph: JSON!
+    version: Int!
+    createdBy: String!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type AutomationStepRun {
+    id: ID!
+    nodeId: String!
+    nodeType: String!
+    status: String!
+    output: JSON
+    errorMessage: String
+    attempt: Int!
+    startedAt: String!
+    finishedAt: String
+  }
+
+  type AutomationRun {
+    id: ID!
+    automationId: ID!
+    responseId: ID
+    automationVersion: Int!
+    status: String!
+    currentNodeId: String
+    context: JSON!
+    startedAt: String!
+    completedAt: String
+    stepRuns: [AutomationStepRun!]!
+  }
+
+  type AutomationValidationError {
+    nodeId: String
+    code: String!
+    message: String!
+  }
+
   type TrackFormViewResponse {
     success: Boolean!
   }
@@ -1257,6 +1304,12 @@ export const typeDefs = gql`
     formPlugin(id: ID!): FormPlugin
     pluginDeliveries(pluginId: ID!, limit: Int): [PluginDelivery!]!
     pluginBackfillStatus(pluginId: ID!): PluginBackfillJob
+
+    # Automation Queries
+    formAutomations(formId: ID!): [Automation!]!
+    automation(id: ID!): Automation
+    automationRuns(automationId: ID!, limit: Int, offset: Int): [AutomationRun!]!
+    automationRun(id: ID!): AutomationRun
 
     # PDF Template Queries
     pdfTemplates(formId: ID!): [PdfTemplate!]!
@@ -1479,6 +1532,14 @@ export const typeDefs = gql`
     testFormPlugin(id: ID!): PluginMutationResponse!
     startPluginBackfill(pluginId: ID!): PluginBackfillJob!
     cancelPluginBackfill(jobId: ID!): PluginBackfillJob!
+
+    # Automation Mutations
+    createAutomation(formId: ID!, name: String!, triggerType: String!): Automation!
+    updateAutomation(id: ID!, name: String, graph: JSON, triggerConfig: JSON): Automation!
+    setAutomationStatus(id: ID!, status: String!): Automation!
+    deleteAutomation(id: ID!): Boolean!
+    testAutomation(id: ID!, responseId: ID): AutomationRun!
+    cancelAutomationRun(runId: ID!): AutomationRun!
 
     # PDF Template Mutations
     createPdfTemplate(input: CreatePdfTemplateInput!): PdfTemplate!

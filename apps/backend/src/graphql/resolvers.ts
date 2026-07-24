@@ -11,6 +11,7 @@ import { fieldAnalyticsResolvers } from './resolvers/fieldAnalytics.js';
 import { invitationResolvers } from './resolvers/invitations.js';
 import { formSharingResolvers } from './resolvers/formSharing.js';
 import { pluginsResolvers } from './resolvers/plugins.js';
+import { automationsResolvers } from './resolvers/automations.js';
 import { pdfTemplatesResolvers } from './resolvers/pdfTemplates.js';
 import { pdfGeneratorsResolvers } from './resolvers/pdfGenerators.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
@@ -48,6 +49,7 @@ export const resolvers = {
     ...invitationResolvers.Query,
     ...formSharingResolvers.Query,
     ...pluginsResolvers.Query,
+    ...automationsResolvers.Query,
     ...pdfTemplatesResolvers.Query,
     ...pdfGeneratorsResolvers.Query,
     ...subscriptionResolvers.Query,
@@ -66,6 +68,7 @@ export const resolvers = {
     ...fieldAnalyticsResolvers.Mutation,
     ...formSharingResolvers.Mutation,
     ...pluginsResolvers.Mutation,
+    ...automationsResolvers.Mutation,
     ...pdfTemplatesResolvers.Mutation,
     ...pdfGeneratorsResolvers.Mutation,
     ...subscriptionResolvers.Mutation,
@@ -85,6 +88,15 @@ export const resolvers = {
   },
   FormPlugin: {
     ...pluginsResolvers.FormPlugin,
+  },
+  Automation: {
+    ...automationsResolvers.Automation,
+  },
+  AutomationRun: {
+    ...automationsResolvers.AutomationRun,
+  },
+  AutomationStepRun: {
+    ...automationsResolvers.AutomationStepRun,
   },
   PdfTemplate: {
     ...pdfTemplatesResolvers.PdfTemplate,

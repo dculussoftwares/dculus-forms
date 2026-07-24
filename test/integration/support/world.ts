@@ -223,6 +223,9 @@ export class CustomWorldConstructor extends World implements CustomWorld {
       await this.prisma.formViewAnalytics.deleteMany({});
       await this.prisma.formSubmissionAnalytics.deleteMany({});
       await this.prisma.response.deleteMany({});
+      await this.prisma.automationStepRun.deleteMany({});
+      await this.prisma.automationRun.deleteMany({});
+      await this.prisma.automation.deleteMany({});
       await this.prisma.formPlugin.deleteMany({});
       await this.prisma.formPermission.deleteMany({});
       await this.prisma.formFile.deleteMany({});

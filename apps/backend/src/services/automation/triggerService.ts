@@ -122,3 +122,35 @@ export async function cancelRunsForAutomation(automationId: string, reason: stri
     Sentry.captureException(error);
   }
 }
+
+/**
+ * Cancels a single in-flight run and its outstanding pg-boss job(s). Used by the
+ * cancelAutomationRun mutation (#195). Idempotent: a run that's already terminal is
+ * returned unchanged rather than re-cancelled. Returns null if the run doesn't exist.
+ */
+export async function cancelSingleAutomationRun(runId: string) {
+  const run = await prisma.automationRun.findUnique({ where: { id: runId } });
+  if (!run) return null;
+  if (run.status !== 'RUNNING' && run.status !== 'WAITING') {
+    return run;
+  }
+
+  const boss = getBoss();
+  if (boss) {
+    try {
+      const jobs = await boss.findJobs(AUTOMATION_QUEUE, { data: { runId } });
+      const jobIds = jobs.map((job) => job.id);
+      if (jobIds.length > 0) {
+        await boss.cancel(AUTOMATION_QUEUE, jobIds);
+      }
+    } catch (error) {
+      logger.error(`[Automation Triggers] Failed to cancel pg-boss jobs for run ${runId}:`, error);
+      Sentry.captureException(error);
+    }
+  }
+
+  return prisma.automationRun.update({
+    where: { id: runId },
+    data: { status: 'CANCELLED', completedAt: new Date() },
+  });
+}
