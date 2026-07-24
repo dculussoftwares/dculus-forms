@@ -465,104 +465,86 @@ jobs:
           name: backend-dist-${{ github.sha }}
           path: apps/backend/dist
 
-      - name: Run migrations
-        run: pnpm db:migrate:deploy
-
-      - name: Seed templates (no S3 uploads)
-        run: |
-          cd apps/backend
-          DATABASE_URL=${{ env.DATABASE_URL }} \
-          BETTER_AUTH_SECRET=${{ env.BETTER_AUTH_SECRET }} \
-          PUBLIC_S3_ENDPOINT=${{ env.PUBLIC_S3_ENDPOINT }} \
-          PUBLIC_S3_ACCESS_KEY=${{ env.PUBLIC_S3_ACCESS_KEY }} \
-          PUBLIC_S3_SECRET_KEY=${{ env.PUBLIC_S3_SECRET_KEY }} \
-          PUBLIC_S3_BUCKET_NAME=${{ env.PUBLIC_S3_BUCKET_NAME }} \
-          PRIVATE_S3_BUCKET_NAME=${{ env.PRIVATE_S3_BUCKET_NAME }} \
-          PUBLIC_S3_CDN_URL=${{ env.PUBLIC_S3_CDN_URL }} \
-          NODE_ENV=test \
-          npx tsx src/scripts/seed-templates-ci.ts || echo "Template seeding done (errors OK)"
-
-      - name: Create E2E test user
-        run: |
-          cd apps/backend
-          DATABASE_URL=${{ env.DATABASE_URL }} \
-          BETTER_AUTH_SECRET=${{ env.BETTER_AUTH_SECRET }} \
-          BETTER_AUTH_URL=${{ env.BETTER_AUTH_URL }} \
-          PUBLIC_S3_ENDPOINT=${{ env.PUBLIC_S3_ENDPOINT }} \
-          PUBLIC_S3_ACCESS_KEY=${{ env.PUBLIC_S3_ACCESS_KEY }} \
-          PUBLIC_S3_SECRET_KEY=${{ env.PUBLIC_S3_SECRET_KEY }} \
-          PUBLIC_S3_BUCKET_NAME=${{ env.PUBLIC_S3_BUCKET_NAME }} \
-          PRIVATE_S3_BUCKET_NAME=${{ env.PRIVATE_S3_BUCKET_NAME }} \
-          PUBLIC_S3_CDN_URL=${{ env.PUBLIC_S3_CDN_URL }} \
-          NODE_ENV=test \
-          E2E_EMAIL=${{ env.E2E_EMAIL }} \
-          E2E_PASSWORD=${{ env.E2E_PASSWORD }} \
-          npx tsx src/scripts/create-e2e-user.ts
-
-      - name: Start backend
-        run: |
-          node apps/backend/dist/apps/backend/src/index.js &
-          echo "BACKEND_PID=$!" >> $GITHUB_ENV
-        env:
-          PORT: 4000
-
-      - name: Wait for backend
-        run: |
-          for i in {1..30}; do
-            if curl -sf http://localhost:4000/health > /dev/null 2>&1; then
-              echo "✅ Backend ready"
-              exit 0
-            fi
-            echo "Waiting for backend (${i}/30)..."
-            sleep 2
-          done
-          echo "❌ Backend failed to start" && exit 1
-
-      - name: Build form-app & form-viewer (parallel)
-        run: |
-          set -e
-          (
-            VITE_API_URL=http://localhost:4000 \
-            VITE_GRAPHQL_URL=http://localhost:4000/graphql \
-            VITE_FORM_VIEWER_URL=http://localhost:5173 \
-            pnpm --filter form-app build
-          ) &
-          FORM_APP_PID=$!
-
-          (
-            VITE_API_URL=http://localhost:4000 \
-            VITE_GRAPHQL_URL=http://localhost:4000/graphql \
-            pnpm --filter form-viewer build
-          ) &
-          FORM_VIEWER_PID=$!
-
-          wait $FORM_APP_PID
-          wait $FORM_VIEWER_PID
-
-      - name: Serve form-app & form-viewer
-        run: |
-          pnpm --filter form-app preview --port 3000 --host &
-          pnpm --filter form-viewer preview --port 5173 --host &
-
-      - name: Wait for frontends
-        run: |
-          for i in {1..30}; do
-            FA=$(curl -sf http://localhost:3000 > /dev/null 2>&1 && echo ok || echo -)
-            FV=$(curl -sf http://localhost:5173 > /dev/null 2>&1 && echo ok || echo -)
-            [ "$FA" = "ok" ] && [ "$FV" = "ok" ] && echo "✅ Both frontends ready" && exit 0
-            echo "Waiting for frontends form-app=$FA viewer=$FV (${i}/30)..."
-            sleep 3
-          done
-          echo "❌ Frontends failed to start" && exit 1
-
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium --with-deps
+      # Three independent tracks — backend provisioning, frontend build+serve, and
+      # Playwright browser install — don't depend on each other, only on the E2E run
+      # below. Running them as backgrounded subshells in one step (rather than as
+      # separate sequential steps) overlaps their wall-clock time instead of summing it.
+      - name: Provision backend, build frontends, and install Playwright browsers (parallel)
+        run: |
+          set -e
+
+          (
+            set -e
+            pnpm db:migrate:deploy
+
+            cd apps/backend
+            npx tsx src/scripts/seed-templates-ci.ts || echo "Template seeding done (errors OK)"
+            npx tsx src/scripts/create-e2e-user.ts
+            cd ../..
+
+            PORT=4000 node apps/backend/dist/apps/backend/src/index.js &
+
+            for i in {1..30}; do
+              if curl -sf http://localhost:4000/health > /dev/null 2>&1; then
+                echo "✅ Backend ready"
+                exit 0
+              fi
+              echo "Waiting for backend (${i}/30)..."
+              sleep 2
+            done
+            echo "❌ Backend failed to start" && exit 1
+          ) &
+          BACKEND_TRACK=$!
+
+          (
+            set -e
+            (
+              VITE_API_URL=http://localhost:4000 \
+              VITE_GRAPHQL_URL=http://localhost:4000/graphql \
+              VITE_FORM_VIEWER_URL=http://localhost:5173 \
+              pnpm --filter form-app build
+            ) &
+            FORM_APP_PID=$!
+
+            (
+              VITE_API_URL=http://localhost:4000 \
+              VITE_GRAPHQL_URL=http://localhost:4000/graphql \
+              pnpm --filter form-viewer build
+            ) &
+            FORM_VIEWER_PID=$!
+
+            wait $FORM_APP_PID
+            wait $FORM_VIEWER_PID
+
+            pnpm --filter form-app preview --port 3000 --host &
+            pnpm --filter form-viewer preview --port 5173 --host &
+
+            for i in {1..30}; do
+              FA=$(curl -sf http://localhost:3000 > /dev/null 2>&1 && echo ok || echo -)
+              FV=$(curl -sf http://localhost:5173 > /dev/null 2>&1 && echo ok || echo -)
+              [ "$FA" = "ok" ] && [ "$FV" = "ok" ] && echo "✅ Both frontends ready" && exit 0
+              echo "Waiting for frontends form-app=$FA viewer=$FV (${i}/30)..."
+              sleep 3
+            done
+            echo "❌ Frontends failed to start" && exit 1
+          ) &
+          FRONTEND_TRACK=$!
+
+          (
+            set -e
+            pnpm exec playwright install chromium --with-deps
+          ) &
+          PLAYWRIGHT_TRACK=$!
+
+          wait $BACKEND_TRACK
+          wait $FRONTEND_TRACK
+          wait $PLAYWRIGHT_TRACK
 
       - name: Run E2E tests
         run: pnpm test:e2e
