@@ -108,6 +108,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
             mode={hasConfig ? 'edit' : 'create'}
             isSaving={false}
             hideEventsSection
+            readOnly={isReadOnly}
             onSave={async (result: { name: string; config: Record<string, any> }) => {
               updateNodeData(node.id, { name: result.name, config: result.config });
               close();

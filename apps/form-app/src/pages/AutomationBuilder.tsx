@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
-import { Button, Input, Badge, LoadingSpinner, EmptyState, toastSuccess, toastError } from '@dculus/ui';
+import { Button, Input, Badge, LoadingSpinner, EmptyState, Tooltip, TooltipContent, TooltipTrigger, toastSuccess, toastError } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_AUTOMATION, UPDATE_AUTOMATION, SET_AUTOMATION_STATUS } from '../graphql/automations';
@@ -29,6 +29,7 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const clearValidationErrors = useAutomationBuilderStore((s) => s.clearValidationErrors);
   const getSerializableGraph = useAutomationBuilderStore((s) => s.getSerializableGraph);
   const markSaved = useAutomationBuilderStore((s) => s.markSaved);
+  const discardDraft = useAutomationBuilderStore((s) => s.discardDraft);
 
   // Only (re)load the graph into the store when the automation actually changes — the cache
   // updates `automation` after every Save/Activate mutation (same id), and re-running loadGraph
@@ -119,7 +120,12 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   }, [isDirty]);
 
   const handleBack = () => {
-    if (isDirty && !window.confirm(t('builder.header.unsavedChangesConfirm'))) return;
+    if (isDirty) {
+      if (!window.confirm(t('builder.header.unsavedChangesConfirm'))) return;
+      // User explicitly chose to leave without saving — drop the session draft so it
+      // doesn't reappear if they come back to this automation later in the session.
+      discardDraft();
+    }
     navigate(`/dashboard/form/${formId}/automations`);
   };
 
@@ -181,14 +187,30 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
               {isSavingGraph && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
               {t('builder.header.saveButton')}
             </Button>
-            <Button size="sm" onClick={handleActivateToggle} disabled={isActivating}>
-              {isActivating ? (
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <Play className="h-3.5 w-3.5 mr-1.5" />
-              )}
-              {isActive ? t('builder.header.pauseButton') : t('builder.header.activateButton')}
-            </Button>
+            {/* Activate always acts on the last-Saved graph on the server — disable it while
+                dirty so it can never silently activate a version older than what's on screen. */}
+            {isDirty ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button size="sm" disabled>
+                      <Play className="h-3.5 w-3.5 mr-1.5" />
+                      {isActive ? t('builder.header.pauseButton') : t('builder.header.activateButton')}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{t('builder.header.activateDisabledUnsaved')}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button size="sm" onClick={handleActivateToggle} disabled={isActivating}>
+                {isActivating ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Play className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                {isActive ? t('builder.header.pauseButton') : t('builder.header.activateButton')}
+              </Button>
+            )}
           </div>
         )}
       </div>

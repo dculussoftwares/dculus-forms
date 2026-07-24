@@ -65,6 +65,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
   onSave,
   onCancel,
   hideEventsSection,
+  readOnly,
 }) => {
   const { t } = useTranslation('emailPluginConfig');
   const [message, setMessage] = useState(initialData?.config?.message || '');
@@ -283,6 +284,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
               onChange={setMessage}
               placeholder={t('emailMessage.placeholder')}
               className="w-full"
+              editable={!readOnly}
               mentionFields={mentionFields}
             />
             <p className="text-xs text-muted-foreground">
