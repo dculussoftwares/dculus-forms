@@ -109,6 +109,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
             isSaving={false}
             hideEventsSection
             readOnly={isReadOnly}
+            submitLabelOverride={t('builder.panel.action.saveButton')}
             onSave={async (result: { name: string; config: Record<string, any> }) => {
               updateNodeData(node.id, { name: result.name, config: result.config });
               close();

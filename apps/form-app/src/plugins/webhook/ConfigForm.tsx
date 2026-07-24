@@ -28,6 +28,7 @@ export const WebhookConfigForm: React.FC<ConfigFormProps> = ({
   onSave,
   onCancel,
   hideEventsSection,
+  submitLabelOverride,
 }) => {
   const { t } = useTranslation('webhookPluginConfig');
   const [customHeaders, setCustomHeaders] = useState<CustomHeader[]>(
@@ -244,7 +245,7 @@ export const WebhookConfigForm: React.FC<ConfigFormProps> = ({
         <Button type="submit" disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {!isSaving && <Save className="mr-2 h-4 w-4" />}
-          {mode === 'create' ? t('actions.create') : t('actions.update')}
+          {submitLabelOverride ?? (mode === 'create' ? t('actions.create') : t('actions.update'))}
         </Button>
       </div>
     </form>

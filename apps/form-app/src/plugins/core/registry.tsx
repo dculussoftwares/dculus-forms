@@ -29,6 +29,12 @@ export interface ConfigFormProps {
    * `editable` prop themselves.
    */
   readOnly?: boolean;
+  /**
+   * Overrides the submit button's default "Create Plugin"/"Update Plugin" text (which fits
+   * the Plugins page but not the automation builder's NodeConfigPanel, where nothing called
+   * a "plugin" is being created). Falls back to the per-plugin default when omitted.
+   */
+  submitLabelOverride?: string;
 }
 
 export interface ResponseCellProps {

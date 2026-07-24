@@ -160,7 +160,8 @@
         "description": "The automation finishes here — nothing runs after this step."
       },
       "action": {
-        "noConfigForm": "This action can't be configured yet."
+        "noConfigForm": "This action can't be configured yet.",
+        "saveButton": "Save action"
       },
       "delay": {
         "amountLabel": "Amount",
