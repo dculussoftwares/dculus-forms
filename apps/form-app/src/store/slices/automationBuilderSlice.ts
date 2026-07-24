@@ -51,7 +51,6 @@ export interface AutomationBuilderState {
   getSerializableGraph: () => SerializedGraph;
   /** Clears the session draft/selection for the current automation — called when the user explicitly discards unsaved changes. */
   discardDraft: () => void;
-  resetBuilder: () => void;
 }
 
 const EDGE_TYPE = 'addStep';
@@ -273,17 +272,4 @@ export const createAutomationBuilderSlice = (set: Set, get: Get): AutomationBuil
       persistSelectedNodeId(automationId, null);
     }
   },
-
-  resetBuilder: () =>
-    set({
-      automationId: null,
-      formTitle: '',
-      nodes: [],
-      edges: [],
-      selectedNodeId: null,
-      isDirty: false,
-      isReadOnly: false,
-      validationErrorsByNode: {},
-      structuralErrors: [],
-    }),
 });
