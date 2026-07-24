@@ -397,6 +397,7 @@ export const responsesResolvers = {
         emitFormSubmitted(input.formId, form.organizationId, {
           responseId: savedResponse.id,
           submittedAt: savedResponse.submittedAt.toISOString(),
+          isPreview: Boolean(input.isPreview),
           ...input.data,
         });
       } catch (error) {
