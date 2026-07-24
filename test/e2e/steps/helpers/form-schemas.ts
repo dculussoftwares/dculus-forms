@@ -285,6 +285,61 @@ export function createFilterTestFormSchema() {
 }
 
 /**
+ * Minimal single-page form used by the automations E2E happy path (#199):
+ * one text field and one email field, just enough for a webhook action's
+ * event payload to have something to substitute.
+ */
+export function createAutomationsHappyPathFormSchema() {
+  return {
+    layout: {
+      theme: "light",
+      textColor: "#000000",
+      spacing: "normal",
+      code: "L9",
+      content: "<h1>Automations E2E Test</h1>",
+      customBackGroundColor: "#ffffff",
+      backgroundImageKey: "",
+      pageMode: "single",
+      isCustomBackgroundColorEnabled: false
+    },
+    pages: [
+      {
+        id: "page-1",
+        title: "Contact Details",
+        fields: [
+          {
+            id: "automation-e2e-name",
+            type: "text_input_field",
+            label: "Name",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            placeholder: "Enter your name",
+            validation: {
+              required: false,
+              type: "text_field_validation"
+            }
+          },
+          {
+            id: "automation-e2e-email",
+            type: "email_field",
+            label: "Email",
+            defaultValue: "",
+            prefix: "",
+            hint: "",
+            placeholder: "Enter your email",
+            validation: {
+              required: false,
+              type: "fillable_form_field"
+            }
+          }
+        ]
+      }
+    ]
+  };
+}
+
+/**
  * Create comprehensive form schema for mass response testing
  * Contains 9 fields across 3 pages with variety for data generation
  */
