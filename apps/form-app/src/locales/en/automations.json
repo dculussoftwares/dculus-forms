@@ -45,6 +45,8 @@
     "version": "v{{version}}",
     "actions": {
       "open": "Open builder",
+      "runHistory": "Run history",
+      "test": "Test",
       "activate": "Activate",
       "pause": "Pause",
       "rename": "Rename",
@@ -108,7 +110,10 @@
       "activateInvalidMessage": "Fix the highlighted steps and try again.",
       "activateDisabledUnsaved": "Save your changes before activating",
       "unsavedIndicator": "Unsaved changes",
-      "unsavedChangesConfirm": "You have unsaved changes. Leave without saving?"
+      "unsavedChangesConfirm": "You have unsaved changes. Leave without saving?",
+      "runsButton": "Runs",
+      "testButton": "Test automation",
+      "testDisabledNoResponses": "This form has no responses yet — submit one to test this automation."
     },
     "nodes": {
       "removeStep": "Remove step",
@@ -168,6 +173,75 @@
         "unitLabel": "Unit",
         "hint": "The next step runs after this delay has passed."
       }
+    }
+  },
+  "runs": {
+    "title": "Run history",
+    "dynamicTitle": "{{name}} - Runs",
+    "breadcrumb": "Runs",
+    "backButton": "Back to automation",
+    "empty": {
+      "title": "No runs yet",
+      "description": "Runs appear here once this automation is triggered by a form submission or a test run."
+    },
+    "table": {
+      "status": "Status",
+      "trigger": "Trigger",
+      "version": "Version",
+      "started": "Started",
+      "duration": "Duration",
+      "actions": "Actions",
+      "inProgress": "In progress"
+    },
+    "duration": {
+      "milliseconds": "{{count}}ms",
+      "seconds": "{{count}}s",
+      "minutesSeconds": "{{minutes}}m {{seconds}}s"
+    },
+    "statuses": {
+      "RUNNING": "Running",
+      "WAITING": "Waiting",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled"
+    },
+    "testChip": "Test",
+    "viewButton": "View",
+    "responseLink": "View response",
+    "noResponse": "—",
+    "cancelButton": "Cancel run",
+    "cancelConfirm": {
+      "title": "Cancel this run?",
+      "description": "This stops the run at its current step. Steps that already completed aren't undone.",
+      "cancel": "Keep running",
+      "confirm": "Cancel run"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "detail": {
+      "title": "Run detail",
+      "description": "Step-by-step execution log for this run.",
+      "errorTitle": "Couldn't load run",
+      "noSteps": "No steps recorded yet.",
+      "stepStatuses": {
+        "SUCCESS": "Success",
+        "FAILED": "Failed",
+        "SKIPPED": "Skipped"
+      },
+      "attempt": "Attempt {{count}}",
+      "output": "Output",
+      "error": "Error",
+      "nodeId": "Node ID"
+    },
+    "toasts": {
+      "testTriggeredTitle": "Test run started",
+      "testTriggeredMessage": "Opening the run...",
+      "testErrorTitle": "Couldn't start test run",
+      "cancelledTitle": "Run cancelled",
+      "cancelledMessage": "The run has been cancelled.",
+      "cancelErrorTitle": "Couldn't cancel run"
     }
   }
 }

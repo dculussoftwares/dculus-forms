@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { CombinedGraphQLErrors } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
@@ -26,7 +26,7 @@ import { ResponsesTable } from '../components/Responses/ResponsesTable';
 import { ResponseDetailPanel } from '../components/Responses/ResponseDetailPanel';
 import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
-import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS } from '../graphql/queries';
+import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS, GET_RESPONSE_BY_ID } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { GET_PDF_GENERATORS } from '../graphql/pdfGenerators';
 import {
@@ -119,6 +119,29 @@ const Responses: React.FC = () => {
 
   const actualFormId = formId || id;
   const responsesState = useResponsesState({ formId: actualFormId });
+
+  // Deep-link support: open a specific response's detail panel via ?responseId=
+  // (used by the automation run history trigger link).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedResponseId = searchParams.get('responseId');
+  const { data: linkedResponseData, loading: linkedResponseLoading } = useQuery(GET_RESPONSE_BY_ID, {
+    variables: { id: linkedResponseId },
+    skip: !actualFormId || !linkedResponseId,
+  });
+  useEffect(() => {
+    if (!actualFormId || !linkedResponseId || linkedResponseLoading) return;
+    // Only open the panel when the response actually belongs to this form — guards against
+    // a stale/foreign responseId opening a response from an unrelated form's context.
+    const response = linkedResponseData?.response;
+    if (response && response.formId === actualFormId) {
+      responsesState.openDetailPanel(response);
+    }
+    // Clear the param once the lookup has settled either way (found, not found, or the
+    // response belongs to a different form) so it never gets retried on reload with no feedback.
+    const next = new URLSearchParams(searchParams);
+    next.delete('responseId');
+    setSearchParams(next, { replace: true });
+  }, [actualFormId, linkedResponseId, linkedResponseLoading, linkedResponseData]);
 
   const handleBulkDelete = async () => {
     if (!actualFormId) return;

@@ -26,8 +26,11 @@ import {
   DialogDescription,
   DialogFooter,
   Label,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@dculus/ui';
-import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow } from 'lucide-react';
+import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, FlaskConical } from 'lucide-react';
 import {
   UPDATE_AUTOMATION,
   SET_AUTOMATION_STATUS,
@@ -36,6 +39,7 @@ import {
 } from '../../graphql/automations';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
+import { useTestAutomation } from '../../hooks/useTestAutomation';
 import { triggerTypeI18nKey } from './triggerTypes';
 
 export interface Automation {
@@ -51,6 +55,7 @@ export interface Automation {
 
 interface AutomationCardProps {
   automation: Automation;
+  hasResponses: boolean;
 }
 
 const statusStyle = (status: Automation['status']) => {
@@ -64,7 +69,7 @@ const statusStyle = (status: Automation['status']) => {
   }
 };
 
-export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) => {
+export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasResponses }) => {
   const { t, locale } = useTranslation('automations');
   const { canEdit } = useFormPermissions();
   const navigate = useNavigate();
@@ -81,8 +86,15 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) =>
   const [updateAutomation] = useMutation(UPDATE_AUTOMATION);
   const [setAutomationStatus] = useMutation(SET_AUTOMATION_STATUS);
   const [deleteAutomation] = useMutation(DELETE_AUTOMATION);
+  const { runTest, isTesting } = useTestAutomation(automation.formId, automation.id);
 
   const openBuilder = () => navigate(`/dashboard/form/${automation.formId}/automations/${automation.id}`);
+  const openRuns = () => navigate(`/dashboard/form/${automation.formId}/automations/${automation.id}/runs`);
+
+  const handleTest = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    runTest();
+  };
 
   const handleToggleStatus = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -169,44 +181,78 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) =>
           </p>
         </div>
 
-        {canEdit && (
-          <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 flex items-center justify-center rounded-lg p-0">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={handleToggleStatus} disabled={isTogglingStatus}>
-                  {isTogglingStatus
-                    ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    : automation.status === 'ACTIVE'
-                      ? <PowerOff className="mr-2 h-4 w-4" />
-                      : <Power className="mr-2 h-4 w-4" />}
-                  {automation.status === 'ACTIVE' ? t('card.actions.pause') : t('card.actions.activate')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={(e) => { e.stopPropagation(); setRenameValue(automation.name); setShowRenameDialog(true); }}
-                >
-                  <PencilLine className="mr-2 h-4 w-4" />
-                  {t('card.actions.rename')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => { e.stopPropagation(); setShowDeleteDialog(true); }}
-                  disabled={isDeleting}
-                  className="text-destructive focus:text-destructive"
-                >
-                  {isDeleting
-                    ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    : <Trash2 className="mr-2 h-4 w-4" />}
-                  {t('card.actions.delete')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
+        <div className="shrink-0 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {canEdit && (
+            hasResponses ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-xs gap-1.5 text-muted-foreground"
+                onClick={handleTest}
+                disabled={isTesting}
+              >
+                {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
+                {t('card.actions.test')}
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1.5 text-muted-foreground" disabled>
+                      <FlaskConical className="h-3.5 w-3.5" />
+                      {t('card.actions.test')}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{t('builder.header.testDisabledNoResponses')}</TooltipContent>
+              </Tooltip>
+            )
+          )}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 flex items-center justify-center rounded-lg p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openRuns(); }}>
+                <History className="mr-2 h-4 w-4" />
+                {t('card.actions.runHistory')}
+              </DropdownMenuItem>
+              {canEdit && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleToggleStatus} disabled={isTogglingStatus}>
+                    {isTogglingStatus
+                      ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      : automation.status === 'ACTIVE'
+                        ? <PowerOff className="mr-2 h-4 w-4" />
+                        : <Power className="mr-2 h-4 w-4" />}
+                    {automation.status === 'ACTIVE' ? t('card.actions.pause') : t('card.actions.activate')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => { e.stopPropagation(); setRenameValue(automation.name); setShowRenameDialog(true); }}
+                  >
+                    <PencilLine className="mr-2 h-4 w-4" />
+                    {t('card.actions.rename')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => { e.stopPropagation(); setShowDeleteDialog(true); }}
+                    disabled={isDeleting}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    {isDeleting
+                      ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      : <Trash2 className="mr-2 h-4 w-4" />}
+                    {t('card.actions.delete')}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Rename dialog */}
