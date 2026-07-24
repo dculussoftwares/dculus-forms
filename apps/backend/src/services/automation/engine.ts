@@ -319,16 +319,124 @@ async function handleActionNode(
   }
 }
 
+/**
+ * Advances past a node whose SUCCESS AutomationStepRun is already on record, verifying (rather
+ * than assuming) that the successor was actually enqueued before redelivery is allowed to be a
+ * no-op. Reconstructs the successor decision from the persisted step output — never re-derives
+ * it (e.g. re-evaluating a condition or re-running a handler), since the recorded outcome is the
+ * one that already happened.
+ */
+async function reconcileSuccessor(
+  run: { id: string; status: string },
+  nextNodeId: string | null,
+  graph: AutomationGraph,
+  startAfter?: Date
+): Promise<void> {
+  if (!nextNodeId) {
+    if (run.status !== 'COMPLETED') {
+      await completeRun(run.id);
+    }
+    return;
+  }
+
+  // If the successor already has its own step run, it has executed (or progressed further) —
+  // the crash window has already closed safely and re-enqueuing now would risk a duplicate
+  // execution once pg-boss's singletonKey slot has freed up behind a completed job.
+  const successorStarted = await prisma.automationStepRun.findFirst({
+    where: { runId: run.id, nodeId: nextNodeId },
+  });
+  if (successorStarted) {
+    return;
+  }
+
+  logger.warn(
+    `[Automation Engine] Run ${run.id}: successor ${nextNodeId} was never recorded after its predecessor succeeded — re-enqueuing (singletonKey makes this a no-op if it is already pending)`
+  );
+  await enqueueStep(run.id, nextNodeId, graph, startAfter);
+}
+
+async function reconcileSuccessStep(
+  run: { id: string; status: string; context: unknown },
+  node: AutomationNode,
+  graph: AutomationGraph,
+  existingSuccess: { output: unknown }
+): Promise<void> {
+  switch (node.type) {
+    case 'delay': {
+      const output = (existingSuccess.output as { delayUntil?: string } | null) ?? {};
+      const startAfter = output.delayUntil ? new Date(output.delayUntil) : undefined;
+      await reconcileSuccessor(run, findNextNodeId(graph, node.id), graph, startAfter);
+      return;
+    }
+    case 'condition': {
+      const output = (existingSuccess.output as { result?: boolean } | null) ?? {};
+      const branch: 'true' | 'false' = output.result ? 'true' : 'false';
+      await reconcileSuccessor(run, findNextNodeId(graph, node.id, branch), graph);
+      return;
+    }
+    case 'action': {
+      // Close the equivalent gap between the SUCCESS step write and the stepOutputs merge: if
+      // the context update was lost to the same crash window, replay it from the persisted
+      // step output rather than the (unavailable) live handler result.
+      const context = (run.context as AutomationRunContext) ?? {};
+      if (!(node.id in (context.stepOutputs ?? {}))) {
+        await prisma.automationRun.update({
+          where: { id: run.id },
+          data: { context: mergeStepOutput(run.context, node.id, existingSuccess.output) },
+        });
+      }
+      await reconcileSuccessor(run, findNextNodeId(graph, node.id), graph);
+      return;
+    }
+    case 'end':
+      if (run.status !== 'COMPLETED') {
+        await completeRun(run.id);
+      }
+      return;
+    default:
+      // Trigger nodes never record a SUCCESS step run, so this is unreachable in practice.
+      return;
+  }
+}
+
+async function recordUnhandleableStepFailure(
+  runId: string,
+  nodeId: string,
+  nodeType: string,
+  message: string,
+  attempt: number
+): Promise<void> {
+  logger.error(`[Automation Engine] ${message}`);
+  Sentry.captureException(new Error(message));
+  // Single transaction: a crash between these two writes would otherwise leave the run
+  // non-terminal, causing redelivery to hit this same branch again and insert a duplicate
+  // FAILED step run for the same node.
+  await prisma.$transaction([
+    prisma.automationStepRun.create({
+      data: {
+        id: generateId(),
+        runId,
+        nodeId,
+        nodeType,
+        status: 'FAILED',
+        errorMessage: message,
+        attempt,
+        finishedAt: new Date(),
+      },
+    }),
+    prisma.automationRun.update({
+      where: { id: runId },
+      data: { status: 'FAILED', completedAt: new Date() },
+    }),
+  ]);
+}
+
 export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJobData>): Promise<void> {
   const { runId, nodeId } = job.data;
 
   const existingSuccess = await prisma.automationStepRun.findFirst({
     where: { runId, nodeId, status: 'SUCCESS' },
   });
-  if (existingSuccess) {
-    logger.info(`[Automation Engine] Step ${nodeId} for run ${runId} already succeeded — skipping redelivery`);
-    return;
-  }
 
   const run = await prisma.automationRun.findUnique({
     where: { id: runId },
@@ -347,12 +455,21 @@ export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJ
   const graph = run.graphSnapshot as unknown as AutomationGraph;
   const node = findNode(graph, nodeId);
   if (!node) {
-    logger.error(`[Automation Engine] Node ${nodeId} not found in run ${runId} graph snapshot`);
-    await prisma.automationRun.update({
-      where: { id: runId },
-      data: { status: 'FAILED', completedAt: new Date() },
-    });
+    await recordUnhandleableStepFailure(
+      runId,
+      nodeId,
+      'unknown',
+      `Node ${nodeId} not found in run ${runId} graph snapshot`,
+      job.retryCount + 1
+    );
     return;
+  }
+
+  if (existingSuccess) {
+    logger.info(
+      `[Automation Engine] Step ${nodeId} for run ${runId} already succeeded — verifying the successor was enqueued before skipping redelivery`
+    );
+    return reconcileSuccessStep(run, node, graph, existingSuccess);
   }
 
   switch (node.type) {
@@ -365,11 +482,13 @@ export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJ
     case 'end':
       return handleEndNode(run, node);
     default:
-      logger.error(`[Automation Engine] Unexpected node type for node ${nodeId} in run ${runId}`);
-      await prisma.automationRun.update({
-        where: { id: runId },
-        data: { status: 'FAILED', completedAt: new Date() },
-      });
+      return recordUnhandleableStepFailure(
+        runId,
+        nodeId,
+        node.type,
+        `Unexpected node type for node ${nodeId} in run ${runId}`,
+        job.retryCount + 1
+      );
   }
 }
 

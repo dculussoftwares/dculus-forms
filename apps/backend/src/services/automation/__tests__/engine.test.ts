@@ -24,6 +24,9 @@ vi.mock('../../../lib/prisma.js', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    // Array-form $transaction: operations are already-invoked PrismaPromises by the time
+    // $transaction receives them, so resolving them as-is mirrors the real API.
+    $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   },
 }));
 
@@ -97,13 +100,182 @@ describe('automation engine', () => {
     } as any);
   });
 
-  describe('idempotency', () => {
-    it('skips execution entirely when a SUCCESS step run already exists', async () => {
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue({ id: 'x', status: 'SUCCESS' } as any);
+  describe('redelivery reconciliation (existing SUCCESS step found)', () => {
+    it('re-enqueues a delay node successor that a crash left un-enqueued', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 'delay-1', type: 'delay', data: { amount: 1, unit: 'hours' } },
+          { id: 'action-1', type: 'action', data: { actionType: 'webhook', config: {} } },
+        ],
+        edges: [{ id: 'e1', source: 'delay-1', target: 'action-1' }],
+      };
+      const delayUntil = new Date('2026-01-01T02:00:00.000Z');
 
-      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'node-1' }));
+      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
+        if (where.status === 'SUCCESS') {
+          // The step already succeeded and recorded its decision...
+          return { output: { delayUntil: delayUntil.toISOString(), capped: false } } as any;
+        }
+        // ...but the crash happened before the successor was ever enqueued or run.
+        return null;
+      }) as any);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({ status: 'WAITING', graphSnapshot: graph }) as any
+      );
 
-      expect(prisma.automationRun.findUnique).not.toHaveBeenCalled();
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'delay-1' }));
+
+      expect(prisma.automationStepRun.create).not.toHaveBeenCalled();
+      expect(mockBoss.send).toHaveBeenCalledWith(
+        AUTOMATION_QUEUE,
+        { runId: 'run-1', nodeId: 'action-1' },
+        expect.objectContaining({ singletonKey: 'run-1:action-1', startAfter: delayUntil })
+      );
+    });
+
+    it('re-enqueues a condition node successor using the persisted branch decision, without re-evaluating the condition', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 'cond-1', type: 'condition', data: { rules: [], combinator: 'AND' } },
+          { id: 'true-1', type: 'end' },
+          { id: 'false-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 'cond-1', target: 'true-1', sourceHandle: 'true' },
+          { id: 'e2', source: 'cond-1', target: 'false-1', sourceHandle: 'false' },
+        ],
+      };
+
+      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
+        if (where.status === 'SUCCESS') {
+          return { output: { result: true, branch: 'true' } } as any;
+        }
+        return null;
+      }) as any);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({ status: 'RUNNING', graphSnapshot: graph }) as any
+      );
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'cond-1' }));
+
+      expect(evaluateCondition).not.toHaveBeenCalled();
+      expect(mockBoss.send).toHaveBeenCalledWith(
+        AUTOMATION_QUEUE,
+        { runId: 'run-1', nodeId: 'true-1' },
+        expect.objectContaining({ singletonKey: 'run-1:true-1' })
+      );
+    });
+
+    it('completes the run when the succeeded node had no successor and the run was never marked COMPLETED', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'delay-1', type: 'delay', data: { amount: 1, unit: 'minutes' } }],
+        edges: [],
+      };
+
+      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue({
+        output: { delayUntil: new Date().toISOString(), capped: false },
+      } as any);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({ status: 'WAITING', graphSnapshot: graph }) as any
+      );
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'delay-1' }));
+
+      expect(prisma.automationRun.update).toHaveBeenCalledWith({
+        where: { id: 'run-1' },
+        data: { status: 'COMPLETED', completedAt: expect.any(Date) },
+      });
+      expect(mockBoss.send).not.toHaveBeenCalled();
+    });
+
+    it('replays the stepOutputs merge for an action node when it was lost before the successor was enqueued', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 'action-1', type: 'action', data: { actionType: 'webhook', config: {} } },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [{ id: 'e1', source: 'action-1', target: 'end-1' }],
+      };
+
+      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
+        if (where.status === 'SUCCESS') {
+          return { output: { delivered: true } } as any;
+        }
+        return null;
+      }) as any);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({ status: 'RUNNING', graphSnapshot: graph, context: { triggerData: {} } }) as any
+      );
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }));
+
+      expect(getPluginHandler).not.toHaveBeenCalled();
+      expect(prisma.automationRun.update).toHaveBeenCalledWith({
+        where: { id: 'run-1' },
+        data: { context: { triggerData: {}, stepOutputs: { 'action-1': { delivered: true } } } },
+      });
+      expect(mockBoss.send).toHaveBeenCalledWith(
+        AUTOMATION_QUEUE,
+        { runId: 'run-1', nodeId: 'end-1' },
+        expect.objectContaining({ singletonKey: 'run-1:end-1' })
+      );
+    });
+
+    it('does nothing when the successor already has its own step run (already reconciled or genuinely done)', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 'delay-1', type: 'delay', data: { amount: 1, unit: 'minutes' } },
+          { id: 'action-1', type: 'action', data: { actionType: 'webhook', config: {} } },
+        ],
+        edges: [{ id: 'e1', source: 'delay-1', target: 'action-1' }],
+      };
+
+      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
+        if (where.status === 'SUCCESS') {
+          return { output: { delayUntil: new Date().toISOString(), capped: false } } as any;
+        }
+        // The successor already ran (or is itself further along).
+        return { id: 'already-ran' } as any;
+      }) as any);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({ status: 'WAITING', graphSnapshot: graph }) as any
+      );
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'delay-1' }));
+
+      expect(mockBoss.send).not.toHaveBeenCalled();
+      expect(prisma.automationRun.update).not.toHaveBeenCalled();
+    });
+
+    it('does not merge stepOutputs again for an action node whose context already recorded the output', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'webhook', config: {} } }],
+        edges: [],
+      };
+
+      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
+        if (where.status === 'SUCCESS') {
+          return { output: { delivered: true } } as any;
+        }
+        return null;
+      }) as any);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({
+          status: 'RUNNING',
+          graphSnapshot: graph,
+          context: { triggerData: {}, stepOutputs: { 'action-1': { delivered: true } } },
+        }) as any
+      );
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }));
+
+      // Only the completion update should fire — no redundant context merge, since stepOutputs
+      // already has this node's output on record.
+      expect(prisma.automationRun.update).toHaveBeenCalledTimes(1);
+      expect(prisma.automationRun.update).toHaveBeenCalledWith({
+        where: { id: 'run-1' },
+        data: { status: 'COMPLETED', completedAt: expect.any(Date) },
+      });
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
   });
@@ -129,6 +301,63 @@ describe('automation engine', () => {
 
       expect(prisma.automationRun.update).not.toHaveBeenCalled();
       expect(mockBoss.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('unhandleable node failures', () => {
+    it('records a FAILED step run and reports to Sentry when the node is missing from the graph snapshot', async () => {
+      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({ graphSnapshot: { nodes: [], edges: [] } }) as any
+      );
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'missing-node' }));
+
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('missing-node') })
+      );
+      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          runId: 'run-1',
+          nodeId: 'missing-node',
+          nodeType: 'unknown',
+          status: 'FAILED',
+        }),
+      });
+      expect(prisma.automationRun.update).toHaveBeenCalledWith({
+        where: { id: 'run-1' },
+        data: { status: 'FAILED', completedAt: expect.any(Date) },
+      });
+    });
+
+    it('records a FAILED step run and reports to Sentry for a node type the engine does not handle', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'trigger-1', type: 'trigger', data: { triggerType: 'form.submitted' } }],
+        edges: [],
+      };
+
+      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({ graphSnapshot: graph }) as any
+      );
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'trigger-1' }));
+
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('trigger-1') })
+      );
+      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          runId: 'run-1',
+          nodeId: 'trigger-1',
+          nodeType: 'trigger',
+          status: 'FAILED',
+        }),
+      });
+      expect(prisma.automationRun.update).toHaveBeenCalledWith({
+        where: { id: 'run-1' },
+        data: { status: 'FAILED', completedAt: expect.any(Date) },
+      });
     });
   });
 
