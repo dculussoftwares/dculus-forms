@@ -27,7 +27,6 @@ function generateId(length: number = 21): string {
 }
 
 const NAME_FIELD_ID = 'automation-name-field';
-const WEBHOOK_PORT = 9825;
 const WEBHOOK_PATH = '/automation-webhook';
 
 // Cucumber runs this suite with `parallel: 1` (test/integration/cucumber.js), so a single
@@ -35,7 +34,7 @@ const WEBHOOK_PATH = '/automation-webhook';
 let mockWebhookServer: MockWebhookServer | undefined;
 
 Before({ tags: '@automations' }, async function () {
-  mockWebhookServer = new MockWebhookServer({ port: WEBHOOK_PORT });
+  mockWebhookServer = new MockWebhookServer({ port: 9825 });
   await mockWebhookServer.start();
 });
 
@@ -118,6 +117,11 @@ Given('I create an ACTIVE single-action automation on that form that calls the m
     expectDefined(this.currentOrganization, 'Organization context is required');
     expectDefined(this.currentUser, 'Current user is required');
 
+    expectDefined(mockWebhookServer, 'Mock webhook server must be running');
+    // Read the port start() actually bound (it silently retries on port + 1 if the
+    // requested one is taken), so the automation always points at the live server.
+    const webhookUrl = `http://localhost:${mockWebhookServer!.getPort()}${WEBHOOK_PATH}`;
+
     const graph = {
       nodes: [
         { id: 'trigger-1', type: 'trigger', data: { triggerType: 'form.submitted' } },
@@ -126,7 +130,7 @@ Given('I create an ACTIVE single-action automation on that form that calls the m
           type: 'action',
           data: {
             actionType: 'webhook',
-            config: { url: `http://localhost:${WEBHOOK_PORT}${WEBHOOK_PATH}` },
+            config: { url: webhookUrl },
           },
         },
       ],

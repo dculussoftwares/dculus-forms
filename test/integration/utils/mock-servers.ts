@@ -134,6 +134,18 @@ export class MockWebhookServer {
   }
 
   /**
+   * The port actually bound by start() — may differ from the requested port,
+   * since start() silently retries on port + 1 when the requested one is in use.
+   */
+  getPort(): number {
+    const address = this.server?.address();
+    if (!address || typeof address === 'string') {
+      throw new Error('Mock webhook server is not listening — call start() first');
+    }
+    return address.port;
+  }
+
+  /**
    * Get all received webhook requests
    */
   getReceivedRequests(): ReceivedWebhookRequest[] {
