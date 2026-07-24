@@ -7,6 +7,16 @@ export interface ResponseFilter {
   numberRange?: { min?: number; max?: number };
 }
 
+/** Per-value comparison inputs for a single operator evaluation — the subset of
+ *  ResponseFilter that evaluateFilterOperator needs, independent of where fieldId
+ *  resolution comes from (DB response object vs. a flat automation responseData map). */
+export interface FilterOperatorInput {
+  value?: string;
+  values?: string[];
+  dateRange?: { from?: string; to?: string };
+  numberRange?: { min?: number; max?: number };
+}
+
 /**
  * Applies filters to response data based on various operators
  * @param responses - Array of response objects
@@ -133,7 +143,21 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
         response.responseData?.[filter.fieldId] ??
         response.data?.[filter.fieldId];
 
-      switch (filter.operator) {
+      return evaluateFilterOperator(filter.operator, fieldValue, filter);
+}
+
+/**
+ * Pure per-value comparison for a single filter operator against a single field value.
+ * Shared by the Responses filter (applyFilterToResponse, above) and the automation
+ * condition evaluator (services/automation/conditionEvaluator.ts) so the 22 operators'
+ * semantics can never drift between the two callers.
+ */
+export function evaluateFilterOperator(
+  operator: string,
+  fieldValue: unknown,
+  input: FilterOperatorInput
+): boolean {
+      switch (operator) {
         case 'IS_EMPTY':
           return isValueEmpty(fieldValue);
 
@@ -142,79 +166,79 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
 
         case 'EQUALS':
           // Handle both string equality and array exact match
-          if (Array.isArray(fieldValue) && filter.values && filter.values.length > 0) {
+          if (Array.isArray(fieldValue) && input.values && input.values.length > 0) {
             // Array exact match: same length and same values (order-independent)
-            if (fieldValue.length !== filter.values.length) return false;
+            if (fieldValue.length !== input.values.length) return false;
             const fieldValuesLower = fieldValue.map(v => String(v).toLowerCase()).sort();
-            const filterValuesLower = filter.values.map(v => String(v).toLowerCase()).sort();
+            const filterValuesLower = input.values.map(v => String(v).toLowerCase()).sort();
             return fieldValuesLower.every((val, idx) => val === filterValuesLower[idx]);
           }
           // No value to compare against — skip (matches DB path behaviour)
-          if (filter.value === undefined && (!filter.values || filter.values.length === 0)) return false;
+          if (input.value === undefined && (!input.values || input.values.length === 0)) return false;
           // String equality
-          return String(fieldValue).toLowerCase() === String(filter.value || '').toLowerCase();
+          return String(fieldValue).toLowerCase() === String(input.value || '').toLowerCase();
 
         case 'NOT_EQUALS':
           // Absent field values do not equal anything — treat as "not equal"
           if (isValueEmpty(fieldValue)) return true;
-          return String(fieldValue).toLowerCase() !== String(filter.value || '').toLowerCase();
+          return String(fieldValue).toLowerCase() !== String(input.value || '').toLowerCase();
 
         case 'CONTAINS':
           // Empty search value never matches (mirrors DB path which skips the filter)
-          if (!filter.value) return false;
+          if (!input.value) return false;
           // Array fields: exact element match (mirrors DB path LOWER(elem) = $n)
           if (Array.isArray(fieldValue)) {
-            return fieldValue.some(v => String(v).toLowerCase() === filter.value!.toLowerCase());
+            return fieldValue.some(v => String(v).toLowerCase() === input.value!.toLowerCase());
           }
-          return !!fieldValue && String(fieldValue).toLowerCase().includes(filter.value.toLowerCase());
+          return !!fieldValue && String(fieldValue).toLowerCase().includes(input.value.toLowerCase());
 
         case 'NOT_CONTAINS':
           // Empty search value — nothing is "contained", so everything passes
-          if (!filter.value) return true;
+          if (!input.value) return true;
           // Array fields: exact element match (mirrors DB path)
           if (Array.isArray(fieldValue)) {
-            return !fieldValue.some(v => String(v).toLowerCase() === filter.value!.toLowerCase());
+            return !fieldValue.some(v => String(v).toLowerCase() === input.value!.toLowerCase());
           }
-          return !fieldValue || !String(fieldValue).toLowerCase().includes(filter.value.toLowerCase());
+          return !fieldValue || !String(fieldValue).toLowerCase().includes(input.value.toLowerCase());
 
         case 'STARTS_WITH':
-          return fieldValue && String(fieldValue).toLowerCase().startsWith(String(filter.value || '').toLowerCase());
+          return !!fieldValue && String(fieldValue).toLowerCase().startsWith(String(input.value || '').toLowerCase());
 
         case 'ENDS_WITH':
-          return fieldValue && String(fieldValue).toLowerCase().endsWith(String(filter.value || '').toLowerCase());
+          return !!fieldValue && String(fieldValue).toLowerCase().endsWith(String(input.value || '').toLowerCase());
 
         case 'GREATER_THAN': {
-          const filterNum = parseFilterNumber(filter.value);
+          const filterNum = parseFilterNumber(input.value);
           if (filterNum === null) return false;
           const numValue = toNumber(fieldValue);
           return numValue !== null && numValue > filterNum;
         }
 
         case 'GREATER_THAN_OR_EQUAL': {
-          const filterNum = parseFilterNumber(filter.value);
+          const filterNum = parseFilterNumber(input.value);
           if (filterNum === null) return false;
           const numValue = toNumber(fieldValue);
           return numValue !== null && numValue >= filterNum;
         }
 
         case 'LESS_THAN': {
-          const filterNum = parseFilterNumber(filter.value);
+          const filterNum = parseFilterNumber(input.value);
           if (filterNum === null) return false;
           const numValue = toNumber(fieldValue);
           return numValue !== null && numValue < filterNum;
         }
 
         case 'LESS_THAN_OR_EQUAL': {
-          const filterNum = parseFilterNumber(filter.value);
+          const filterNum = parseFilterNumber(input.value);
           if (filterNum === null) return false;
           const numValue = toNumber(fieldValue);
           return numValue !== null && numValue <= filterNum;
         }
 
         case 'BETWEEN': {
-          if (!filter.numberRange) return false;
-          const min = filter.numberRange.min;
-          const max = filter.numberRange.max;
+          if (!input.numberRange) return false;
+          const min = input.numberRange.min;
+          const max = input.numberRange.max;
           // No bounds provided — nothing to filter (mirrors DB path which skips empty conditions)
           if (min === undefined && max === undefined) return false;
           const numValue3 = toNumber(fieldValue);
@@ -228,7 +252,7 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
         case 'DATE_EQUALS': {
           try {
             const fieldDate = parseDate(fieldValue);
-            const compareDate = parseDate(filter.value || '');
+            const compareDate = parseDate(input.value || '');
             if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) return false;
             return fieldDate.toDateString() === compareDate.toDateString();
           } catch {
@@ -239,7 +263,7 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
         case 'DATE_BEFORE': {
           try {
             const fieldDate = parseDate(fieldValue);
-            const compareDate = parseDate(filter.value || '');
+            const compareDate = parseDate(input.value || '');
             if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) return false;
             return fieldDate < compareDate;
           } catch {
@@ -250,7 +274,7 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
         case 'DATE_AFTER': {
           try {
             const fieldDate = parseDate(fieldValue);
-            const compareDate = parseDate(filter.value || '');
+            const compareDate = parseDate(input.value || '');
             if (isNaN(fieldDate.getTime()) || isNaN(compareDate.getTime())) return false;
             return fieldDate > compareDate;
           } catch {
@@ -259,13 +283,13 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
         }
 
         case 'DATE_BETWEEN': {
-          if (!filter.dateRange) return false;
+          if (!input.dateRange) return false;
           try {
             const fieldDate = parseDate(fieldValue);
             if (isNaN(fieldDate.getTime())) return false;
 
-            const fromDate = filter.dateRange.from ? parseDate(filter.dateRange.from) : null;
-            const toDate = filter.dateRange.to ? parseDate(filter.dateRange.to) : null;
+            const fromDate = input.dateRange.from ? parseDate(input.dateRange.from) : null;
+            const toDate = input.dateRange.to ? parseDate(input.dateRange.to) : null;
 
             if ((fromDate && isNaN(fromDate.getTime())) || (toDate && isNaN(toDate.getTime()))) {
               return false;
@@ -292,7 +316,7 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
           try {
             const fieldDate = parseDate(fieldValue);
             if (isNaN(fieldDate.getTime())) return false;
-            const days = parseInt(filter.value || '7', 10);
+            const days = parseInt(input.value || '7', 10);
             if (isNaN(days) || days < 0) return false;
             const now = new Date();
             const startDate = new Date(now);
@@ -307,12 +331,12 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
         case 'IN': {
           // For arrays (checkbox fields), check if any selected value matches
           if (Array.isArray(fieldValue)) {
-            return filter.values?.some(value =>
+            return input.values?.some(value =>
               fieldValue.some(v => String(v).toLowerCase() === String(value).toLowerCase())
             ) ?? false;
           }
           // For strings (select/radio fields)
-          return filter.values?.some(value =>
+          return input.values?.some(value =>
             String(fieldValue).toLowerCase() === String(value).toLowerCase()
           ) ?? false;
         }
@@ -320,23 +344,23 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
         case 'NOT_IN': {
           // For arrays (checkbox fields)
           if (Array.isArray(fieldValue)) {
-            return !(filter.values?.some(value =>
+            return !(input.values?.some(value =>
               fieldValue.some(v => String(v).toLowerCase() === String(value).toLowerCase())
             ) ?? false);
           }
           // For strings (select/radio fields)
-          return !(filter.values?.some(value =>
+          return !(input.values?.some(value =>
             String(fieldValue).toLowerCase() === String(value).toLowerCase()
           ) ?? false);
         }
 
         case 'CONTAINS_ALL': {
           // Check if array contains ALL of the specified values
-          if (!filter.values || filter.values.length === 0) return false;
+          if (!input.values || input.values.length === 0) return false;
           if (!Array.isArray(fieldValue)) return false;
 
           const fieldValuesLower = fieldValue.map(v => String(v).toLowerCase());
-          return filter.values.every(value =>
+          return input.values.every(value =>
             fieldValuesLower.includes(String(value).toLowerCase())
           );
         }

@@ -1,15 +1,24 @@
 import type { ConditionCombinator, ConditionRule } from './types.js';
+import { evaluateFilterOperator } from '../responseFilterService.js';
 
 /**
- * Placeholder pending #193 (condition evaluator + graph validator), which reuses the
- * 22 filter operators from responseFilterService.ts against this same rule shape. Kept
- * as a standalone module so engine.ts's condition-node branching can be wired and tested
- * now (via mocking this function) without depending on #193 landing first.
+ * Evaluates a condition node's rules against a flat responseData map, reusing the exact
+ * same 22-operator semantics as the Responses filter (services/responseFilterService.ts)
+ * via the shared evaluateFilterOperator function — so the two can never drift apart.
+ *
+ * An empty rules array evaluates to true regardless of combinator, mirroring
+ * applyResponseFilters' "no filters means nothing to exclude" behavior. graphValidator
+ * rejects empty rules on save/activate, so this is a defensive default, not a relied-upon path.
  */
 export function evaluateCondition(
-  _rules: ConditionRule[],
-  _combinator: ConditionCombinator,
-  _responseData: Record<string, any>
+  rules: ConditionRule[],
+  combinator: ConditionCombinator,
+  responseData: Record<string, any>
 ): boolean {
-  return false;
+  if (!rules || rules.length === 0) return true;
+
+  const evaluateRule = (rule: ConditionRule): boolean =>
+    evaluateFilterOperator(rule.operator, responseData?.[rule.fieldId], rule);
+
+  return combinator === 'OR' ? rules.some(evaluateRule) : rules.every(evaluateRule);
 }
