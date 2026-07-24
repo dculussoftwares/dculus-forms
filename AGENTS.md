@@ -76,3 +76,18 @@ A form-scoped PDF-template designer lets users drag form fields onto an uploaded
 
 - Infra-as-code lives in `infrastructure/` (Terraform). Use `gh` and `az` CLIs for **read/debug only** — create Azure resources via Terraform, not the CLI.
 - Deploy targets: backend → Azure Container Apps; frontend apps → Cloudflare Pages. Guides in `docs/deployment/`.
+
+## Key project facts
+
+- This is a monorepo using pnpm workspaces with 4 apps and 3 shared packages
+- Apps directory contains:
+  - `backend/` — Express.js with Apollo GraphQL  
+  - `form-app/` — React form builder application 
+  - `form-viewer/` — React form viewer application  
+  - `admin-app/` — React admin dashboard application
+- Shared packages directory contains:
+  - `@dculus/types` — shared TypeScript types and field classes
+  - `@dculus/ui` — shared UI components (shadcn/ui)
+  - `@dculus/utils` — shared utilities, constants 
+- Database is PostgreSQL (not MongoDB) using Prisma ORM
+- The repository uses the correct ESM Node.js module system with proper `.js` imports in backend code
