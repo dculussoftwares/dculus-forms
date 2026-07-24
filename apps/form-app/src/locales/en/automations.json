@@ -1,0 +1,100 @@
+{
+  "layout": {
+    "title": "Automations",
+    "dynamicTitle": "{{formTitle}} - Automations",
+    "breadcrumbs": {
+      "dashboard": "Dashboard",
+      "formDashboard": "Form Dashboard",
+      "automations": "Automations",
+      "builder": "Builder"
+    }
+  },
+  "errors": {
+    "formNotFound": {
+      "title": "Form Not Found",
+      "description": "The form you're looking for doesn't exist or you don't have permission to view its automations."
+    },
+    "automationNotFound": {
+      "title": "Automation Not Found",
+      "description": "This automation doesn't exist or has been deleted."
+    }
+  },
+  "header": {
+    "title": "Automations",
+    "description": "Build workflows that trigger on form events",
+    "createButton": "New automation"
+  },
+  "readOnlyNotice": "You have view-only access to this form's automations.",
+  "statuses": {
+    "DRAFT": "Draft",
+    "ACTIVE": "Active",
+    "PAUSED": "Paused"
+  },
+  "triggerTypes": {
+    "formSubmitted": "Form submission",
+    "responseEdited": "Response edited",
+    "schedule": "Scheduled"
+  },
+  "emptyState": {
+    "title": "No automations yet",
+    "description": "Create your first automation to trigger emails, webhooks, and more when this form is submitted.",
+    "createButton": "Create automation"
+  },
+  "card": {
+    "updatedAt": "Updated {{date}}",
+    "version": "v{{version}}",
+    "actions": {
+      "open": "Open builder",
+      "activate": "Activate",
+      "pause": "Pause",
+      "rename": "Rename",
+      "delete": "Delete"
+    }
+  },
+  "createDialog": {
+    "title": "New automation",
+    "description": "Give your automation a name and pick what starts it.",
+    "nameLabel": "Name",
+    "namePlaceholder": "e.g. Send welcome email",
+    "triggerLabel": "Trigger",
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating..."
+  },
+  "renameDialog": {
+    "title": "Rename automation",
+    "description": "Choose a new name for this automation.",
+    "nameLabel": "Name",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving..."
+  },
+  "deleteDialog": {
+    "title": "Delete automation?",
+    "description": "This permanently deletes \"{{name}}\" and cancels any in-flight runs. This can't be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting..."
+  },
+  "toasts": {
+    "createdTitle": "Automation created",
+    "createdMessage": "\"{{name}}\" has been created",
+    "createErrorTitle": "Couldn't create automation",
+    "renamedTitle": "Automation renamed",
+    "renamedMessage": "Renamed to \"{{name}}\"",
+    "renameErrorTitle": "Couldn't rename automation",
+    "activatedTitle": "Automation activated",
+    "activatedMessage": "\"{{name}}\" is now active",
+    "pausedTitle": "Automation paused",
+    "pausedMessage": "\"{{name}}\" has been paused",
+    "statusErrorTitle": "Couldn't update automation status",
+    "deletedTitle": "Automation deleted",
+    "deletedMessage": "\"{{name}}\" has been deleted",
+    "deleteErrorTitle": "Couldn't delete automation"
+  },
+  "builder": {
+    "title": "Automation builder",
+    "comingSoon": "The visual builder is coming soon. You'll be able to design trigger → rules → actions flows here.",
+    "backButton": "Back to automations"
+  }
+}
