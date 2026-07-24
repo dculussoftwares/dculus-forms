@@ -7,16 +7,18 @@ export const ACTIVE_RUN_STATUSES = ['RUNNING', 'WAITING'];
 export const isRunActive = (status: string | undefined | null) =>
   !!status && ACTIVE_RUN_STATUSES.includes(status);
 
-export function formatDuration(startedAt: string, endedAt?: string | null): string | null {
+type Translate = (key: string, options?: { values?: Record<string, string | number> }) => string;
+
+export function formatDuration(startedAt: string, endedAt: string | null | undefined, t: Translate): string | null {
   if (!endedAt) return null;
   const ms = new Date(endedAt).getTime() - new Date(startedAt).getTime();
   if (!Number.isFinite(ms) || ms < 0) return null;
-  if (ms < 1000) return `${ms}ms`;
+  if (ms < 1000) return t('runs.duration.milliseconds', { values: { count: ms } });
   const totalSeconds = ms / 1000;
-  if (totalSeconds < 60) return `${totalSeconds.toFixed(1)}s`;
+  if (totalSeconds < 60) return t('runs.duration.seconds', { values: { count: totalSeconds.toFixed(1) } });
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = Math.round(totalSeconds % 60);
-  return `${minutes}m ${seconds}s`;
+  return t('runs.duration.minutesSeconds', { values: { minutes, seconds } });
 }
 
 const RUN_STATUS_STYLE: Record<string, React.CSSProperties> = {

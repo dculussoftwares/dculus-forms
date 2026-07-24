@@ -188,7 +188,7 @@ export const AutomationRunDetail: React.FC<AutomationRunDetailProps> = ({
               <div className="space-y-3">
                 {run.stepRuns.map((step: any) => {
                   const StepIcon = getStepIcon(step.nodeType);
-                  const duration = formatDuration(step.startedAt, step.finishedAt);
+                  const duration = formatDuration(step.startedAt, step.finishedAt, t);
                   return (
                     <Collapsible key={step.id}>
                       <Card className="p-4">

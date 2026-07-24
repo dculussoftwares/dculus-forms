@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useQuery } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
 import {
   Badge,
@@ -10,15 +10,14 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toastSuccess,
-  toastError,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
-import { GET_AUTOMATION, GET_AUTOMATION_RUNS, TEST_AUTOMATION } from '../graphql/automations';
+import { GET_AUTOMATION, GET_AUTOMATION_RUNS } from '../graphql/automations';
 import { AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, FlaskConical, History, Loader2 } from 'lucide-react';
 import { FormPermissionProvider, type PermissionLevel } from '../contexts/FormPermissionContext';
 import { useFormPermissions } from '../hooks/useFormPermissions';
+import { useTestAutomation } from '../hooks/useTestAutomation';
 import { AutomationRunDetail } from '../components/automations/runs/AutomationRunDetail';
 import { formatDuration, isRunActive, runStatusStyle } from '../components/automations/runs/runFormatting';
 
@@ -88,20 +87,13 @@ const RunsContent: React.FC<{
     }
   };
 
-  const [testAutomation, { loading: isTesting }] = useMutation(TEST_AUTOMATION);
+  const { runTest, isTesting } = useTestAutomation(formId, automationId);
 
-  const handleTest = async () => {
-    try {
-      const result = await testAutomation({ variables: { id: automationId } });
-      if (result.error) throw result.error;
-      const newRun = result.data?.testAutomation;
-      toastSuccess(t('runs.toasts.testTriggeredTitle'), t('runs.toasts.testTriggeredMessage'));
+  const handleTest = () =>
+    runTest((runId) => {
       refetch();
-      if (newRun?.id) openRun(newRun.id);
-    } catch (error: any) {
-      toastError(t('runs.toasts.testErrorTitle'), error.message);
-    }
-  };
+      openRun(runId);
+    });
 
   const formatTimestamp = (timestamp: string) => new Date(timestamp).toLocaleString(locale);
 
@@ -173,7 +165,7 @@ const RunsContent: React.FC<{
 
           {runs.map((run: any, i: number) => {
             const isTest = !!run.context?.test;
-            const duration = formatDuration(run.startedAt, run.completedAt);
+            const duration = formatDuration(run.startedAt, run.completedAt, t);
             return (
               <div
                 key={run.id}

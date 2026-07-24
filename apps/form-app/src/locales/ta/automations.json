@@ -192,6 +192,11 @@
       "actions": "செயல்கள்",
       "inProgress": "நடைபெறுகிறது"
     },
+    "duration": {
+      "milliseconds": "{{count}} மிவி",
+      "seconds": "{{count}} வி",
+      "minutesSeconds": "{{minutes}} நி {{seconds}} வி"
+    },
     "statuses": {
       "RUNNING": "இயங்குகிறது",
       "WAITING": "காத்திருக்கிறது",

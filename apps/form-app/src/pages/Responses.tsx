@@ -124,18 +124,24 @@ const Responses: React.FC = () => {
   // (used by the automation run history trigger link).
   const [searchParams, setSearchParams] = useSearchParams();
   const linkedResponseId = searchParams.get('responseId');
-  const { data: linkedResponseData } = useQuery(GET_RESPONSE_BY_ID, {
+  const { data: linkedResponseData, loading: linkedResponseLoading } = useQuery(GET_RESPONSE_BY_ID, {
     variables: { id: linkedResponseId },
-    skip: !linkedResponseId,
+    skip: !actualFormId || !linkedResponseId,
   });
   useEffect(() => {
-    if (linkedResponseData?.response) {
-      responsesState.openDetailPanel(linkedResponseData.response);
-      const next = new URLSearchParams(searchParams);
-      next.delete('responseId');
-      setSearchParams(next, { replace: true });
+    if (!actualFormId || !linkedResponseId || linkedResponseLoading) return;
+    // Only open the panel when the response actually belongs to this form — guards against
+    // a stale/foreign responseId opening a response from an unrelated form's context.
+    const response = linkedResponseData?.response;
+    if (response && response.formId === actualFormId) {
+      responsesState.openDetailPanel(response);
     }
-  }, [linkedResponseData]);
+    // Clear the param once the lookup has settled either way (found, not found, or the
+    // response belongs to a different form) so it never gets retried on reload with no feedback.
+    const next = new URLSearchParams(searchParams);
+    next.delete('responseId');
+    setSearchParams(next, { replace: true });
+  }, [actualFormId, linkedResponseId, linkedResponseLoading, linkedResponseData]);
 
   const handleBulkDelete = async () => {
     if (!actualFormId) return;

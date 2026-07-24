@@ -36,10 +36,10 @@ import {
   SET_AUTOMATION_STATUS,
   DELETE_AUTOMATION,
   GET_FORM_AUTOMATIONS,
-  TEST_AUTOMATION,
 } from '../../graphql/automations';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
+import { useTestAutomation } from '../../hooks/useTestAutomation';
 import { triggerTypeI18nKey } from './triggerTypes';
 
 export interface Automation {
@@ -76,7 +76,6 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
 
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [renameValue, setRenameValue] = useState(automation.name);
@@ -87,25 +86,14 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
   const [updateAutomation] = useMutation(UPDATE_AUTOMATION);
   const [setAutomationStatus] = useMutation(SET_AUTOMATION_STATUS);
   const [deleteAutomation] = useMutation(DELETE_AUTOMATION);
-  const [testAutomation] = useMutation(TEST_AUTOMATION);
+  const { runTest, isTesting } = useTestAutomation(automation.formId, automation.id);
 
   const openBuilder = () => navigate(`/dashboard/form/${automation.formId}/automations/${automation.id}`);
   const openRuns = () => navigate(`/dashboard/form/${automation.formId}/automations/${automation.id}/runs`);
 
-  const handleTest = async (e: React.MouseEvent) => {
+  const handleTest = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsTesting(true);
-    try {
-      const result = await testAutomation({ variables: { id: automation.id } });
-      if (result.error) throw result.error;
-      const newRun = result.data?.testAutomation;
-      toastSuccess(t('runs.toasts.testTriggeredTitle'), t('runs.toasts.testTriggeredMessage'));
-      navigate(`/dashboard/form/${automation.formId}/automations/${automation.id}/runs${newRun?.id ? `?runId=${newRun.id}` : ''}`);
-    } catch (error: any) {
-      toastError(t('runs.toasts.testErrorTitle'), error.message);
-    } finally {
-      setIsTesting(false);
-    }
+    runTest();
   };
 
   const handleToggleStatus = async (e: React.MouseEvent) => {
