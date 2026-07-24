@@ -2,8 +2,8 @@
 
 One copy-paste prompt per ticket of Epic [#191](https://github.com/dculussoftwares/dculus-forms/issues/191) (Form Automations). Run them **in order** — each prompt assumes its dependency PRs are merged into `main`.
 
-**Execution order**: #202 → #192 ∥ #193 → #194 → #195 → #196 → #197 → #198 ∥ #199 → #200 → #201
-(∥ = can run in parallel.)
+**Execution order**: #202 → #192 ∥ #193 ∥ #206 → #194 → #195 → #196 → #197 → #198 ∥ #199 → #200 → #201
+(∥ = can run in parallel.) #206 is a non-blocking hardening follow-up to #192 — it can run any time after #192 merges, in parallel with #193 or later tickets, without gating any of them.
 
 Every prompt below already instructs the agent to: read the GitHub issue + epic, read `docs/automations-strategy.md`, work on a feature branch, and open a PR. After each PR merges, tick the matching checkbox in epic #191.
 
@@ -62,7 +62,41 @@ When done: branch feat/automations-engine, PR "Automations: pg-boss engine + nod
 body "Closes #192".
 ```
 
-## 3 · Issue #193 — Condition evaluator + graph validator
+## 3 · Issue #206 — Crash-safe successor enqueue (hardening follow-up to #192)
+
+```text
+Implement GitHub issue #206 of this repo (run: gh issue view 206 — follow it as the spec).
+Context first: read the epic body (gh issue view 191), docs/automations-strategy.md §6, and
+apps/backend/src/services/automation/engine.ts as merged in #192 (this ticket hardens that
+file — it does not re-architect it). Requires issue #192 merged. Non-blocking: can run any
+time after #192, in parallel with #193 or later tickets — nothing downstream depends on it.
+
+Task: close the atomicity gap between "AutomationStepRun recorded SUCCESS" and "successor job
+enqueued" in handleDelayNode, handleConditionNode, and the success path of handleActionNode.
+Today a crash in that window leaves a run permanently stuck (pg-boss redelivers the same job,
+the SUCCESS-step idempotency check short-circuits, and the successor is never enqueued — see
+the issue body for the exact failure trace). Pick one approach and justify the choice in the
+PR:
+1. Transactional enqueue — wrap the AutomationStepRun write and the pg-boss send/insert in one
+   transaction using pg-boss's Prisma-aware adapter (fromPrisma, exported from the pg-boss
+   package) so both commit or neither does.
+2. Reconciliation on redelivery — instead of unconditionally returning on an existing SUCCESS
+   step, verify the successor was actually enqueued and re-enqueue it if not.
+Also close the equivalent gap in handleActionNode between the SUCCESS step write and the
+run.context.stepOutputs merge. While in the file, bring the node-not-found and
+unknown-node-type failure branches in executeAutomationStep in line with every other failure
+path: write an AutomationStepRun row and call Sentry.captureException, not just logger.error.
+
+Verify: vitest reproducing the crash-then-redeliver scenario (existing SUCCESS step found,
+successor never enqueued) confirms the successor eventually gets enqueued instead of the run
+staying orphaned; existing services/automation/__tests__/{boss,engine}.test.ts suites still
+pass; pnpm type-check, pnpm lint, pnpm test:unit pass.
+
+When done: branch feat/automations-crash-safe-enqueue, PR "Automations: crash-safe successor
+enqueue", body "Closes #206".
+```
+
+## 4 · Issue #193 — Condition evaluator + graph validator
 
 ```text
 Implement GitHub issue #193 of this repo (run: gh issue view 193 — follow it as the spec).
@@ -88,7 +122,7 @@ When done: branch feat/automations-evaluator-validator, PR "Automations: conditi
 + graph validator", body "Closes #193".
 ```
 
-## 4 · Issue #194 — Trigger service (form.submitted tap-in)
+## 5 · Issue #194 — Trigger service (form.submitted tap-in)
 
 ```text
 Implement GitHub issue #194 of this repo (run: gh issue view 194 — follow it as the spec).
@@ -114,7 +148,7 @@ When done: branch feat/automations-trigger-service, PR "Automations: trigger ser
 body "Closes #194".
 ```
 
-## 5 · Issue #195 — GraphQL resolver
+## 6 · Issue #195 — GraphQL resolver
 
 ```text
 Implement GitHub issue #195 of this repo (run: gh issue view 195 — follow it as the spec).
@@ -138,7 +172,7 @@ When done: branch feat/automations-graphql, PR "Automations: GraphQL resolver",
 body "Closes #195".
 ```
 
-## 6 · Issue #196 — List page, routing, nav + i18n
+## 7 · Issue #196 — List page, routing, nav + i18n
 
 ```text
 Implement GitHub issue #196 of this repo (run: gh issue view 196 — follow it as the spec).
@@ -164,7 +198,7 @@ When done: branch feat/automations-list-page, PR "Automations: list page + routi
 body "Closes #196".
 ```
 
-## 7 · Issue #197 — React Flow builder canvas
+## 8 · Issue #197 — React Flow builder canvas
 
 ```text
 Implement GitHub issue #197 of this repo (run: gh issue view 197 — follow it as the spec).
@@ -192,7 +226,7 @@ When done: branch feat/automations-builder-canvas, PR "Automations: React Flow b
 canvas", body "Closes #197".
 ```
 
-## 8 · Issue #198 — Run history UI + test mode
+## 9 · Issue #198 — Run history UI + test mode
 
 ```text
 Implement GitHub issue #198 of this repo (run: gh issue view 198 — follow it as the spec).
@@ -214,7 +248,7 @@ When done: branch feat/automations-run-history, PR "Automations: run history + t
 body "Closes #198".
 ```
 
-## 9 · Issue #199 — E2E happy path
+## 10 · Issue #199 — E2E happy path
 
 ```text
 Implement GitHub issue #199 of this repo (run: gh issue view 199 — follow it as the spec).
@@ -240,7 +274,7 @@ When done: branch feat/automations-e2e, PR "Automations: E2E linear happy path",
 body "Closes #199".
 ```
 
-## 10 · Issue #200 — Condition node builder UI
+## 11 · Issue #200 — Condition node builder UI
 
 ```text
 Implement GitHub issue #200 of this repo (run: gh issue view 200 — follow it as the spec).
@@ -266,7 +300,7 @@ When done: branch feat/automations-condition-node, PR "Automations: condition no
 body "Closes #200".
 ```
 
-## 11 · Issue #201 — response.edited + scheduled triggers
+## 12 · Issue #201 — response.edited + scheduled triggers
 
 ```text
 Implement GitHub issue #201 of this repo (run: gh issue view 201 — follow it as the spec).
