@@ -251,6 +251,8 @@ import enPluginMicrosoftSheets from './en/pluginMicrosoftSheets.json';
 import taPluginMicrosoftSheets from './ta/pluginMicrosoftSheets.json';
 import enPluginDashboard from './en/pluginDashboard.json';
 import taPluginDashboard from './ta/pluginDashboard.json';
+import enAutomations from './en/automations.json';
+import taAutomations from './ta/automations.json';
 
 const enTranslations = {
   common: enCommon,
@@ -380,6 +382,7 @@ const enTranslations = {
   pluginGoogleSheets: enPluginGoogleSheets,
   pluginMicrosoftSheets: enPluginMicrosoftSheets,
   pluginDashboard: enPluginDashboard,
+  automations: enAutomations,
 } as const;
 
 const taTranslations = {
@@ -510,6 +513,7 @@ const taTranslations = {
   pluginGoogleSheets: taPluginGoogleSheets,
   pluginMicrosoftSheets: taPluginMicrosoftSheets,
   pluginDashboard: taPluginDashboard,
+  automations: taAutomations,
 } as const;
 
 export const translations = {

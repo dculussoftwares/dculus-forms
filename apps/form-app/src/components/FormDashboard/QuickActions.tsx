@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
-import { PencilLine, Database, LineChart, Settings, ArrowRight, Plug, FileText } from 'lucide-react';
+import { PencilLine, Database, LineChart, Settings, ArrowRight, Plug, FileText, Workflow } from 'lucide-react';
 import AIIcon from '../icons/AIIcon';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -117,6 +117,15 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId, isFormEmpty 
       iconColor: '#8b6a18',
       path: `/dashboard/form/${formId}/integrations`,
       testId: 'quick-action-integrations',
+    },
+    {
+      title: t('quickActions.items.automations.title'),
+      description: t('quickActions.items.automations.description'),
+      icon: Workflow,
+      iconBg: '#e8eaf6',    // indigo — distinct from plugins' yellow
+      iconColor: '#3949ab',
+      path: `/dashboard/form/${formId}/automations`,
+      testId: 'quick-action-automations',
     },
     {
       title: t('quickActions.items.pdfTemplates.title'),

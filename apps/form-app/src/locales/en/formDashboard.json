@@ -80,6 +80,10 @@
         "title": "Integrations",
         "description": "Connect with external services"
       },
+      "automations": {
+        "title": "Automations",
+        "description": "Trigger workflows on form events"
+      },
       "pdfTemplates": {
         "title": "PDF Templates",
         "description": "Design PDFs filled with responses"
