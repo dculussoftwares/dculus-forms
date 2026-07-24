@@ -87,7 +87,11 @@ export async function cancelRunsForAutomation(automationId: string, reason: stri
     if (boss) {
       for (const run of runs) {
         try {
-          const jobs = await boss.findJobs(AUTOMATION_QUEUE, { data: { runId: run.id }, queued: true });
+          // No `queued` filter: an in-flight (active) step's job should be marked
+          // cancelled too, not just ones that haven't started yet — pg-boss's
+          // cancel() is a no-op on jobs already in a terminal state, so including
+          // those here is harmless.
+          const jobs = await boss.findJobs(AUTOMATION_QUEUE, { data: { runId: run.id } });
           const jobIds = jobs.map((job) => job.id);
           if (jobIds.length > 0) {
             await boss.cancel(AUTOMATION_QUEUE, jobIds);
@@ -102,8 +106,11 @@ export async function cancelRunsForAutomation(automationId: string, reason: stri
       }
     }
 
+    // Scoped to the exact run ids captured above (not re-queried by status) so a run
+    // created for this automation after the findMany snapshot — e.g. a new submission
+    // arriving mid-cancellation — is never swept into this update.
     await prisma.automationRun.updateMany({
-      where: { automationId, status: { in: ['RUNNING', 'WAITING'] } },
+      where: { id: { in: runs.map((run) => run.id) } },
       data: { status: 'CANCELLED', completedAt: new Date() },
     });
 

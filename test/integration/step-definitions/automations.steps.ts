@@ -1,6 +1,7 @@
-import { Given, When, Then } from '@cucumber/cucumber';
+import { Given, When, Then, Before, After } from '@cucumber/cucumber';
 import { randomBytes } from 'crypto';
 import { CustomWorld } from '../support/world';
+import { MockWebhookServer } from '../utils/mock-servers';
 import { expectDefined, expectEqual } from '../utils/expect-helper';
 
 /**
@@ -26,6 +27,24 @@ function generateId(length: number = 21): string {
 }
 
 const NAME_FIELD_ID = 'automation-name-field';
+const WEBHOOK_PORT = 9825;
+const WEBHOOK_PATH = '/automation-webhook';
+
+// Cucumber runs this suite with `parallel: 1` (test/integration/cucumber.js), so a single
+// module-level instance — started/stopped per scenario via tagged hooks — is safe.
+let mockWebhookServer: MockWebhookServer | undefined;
+
+Before({ tags: '@automations' }, async function () {
+  mockWebhookServer = new MockWebhookServer({ port: WEBHOOK_PORT });
+  await mockWebhookServer.start();
+});
+
+After({ tags: '@automations' }, async function () {
+  if (mockWebhookServer) {
+    await mockWebhookServer.stop();
+    mockWebhookServer = undefined;
+  }
+});
 
 Given('I create a published form for automation testing titled {string}',
   async function (this: CustomWorld, title: string) {
@@ -70,7 +89,9 @@ Given('I create a published form for automation testing titled {string}',
         title,
         description: 'Form for automation trigger integration test',
         shortUrl: generateId(8),
-        formSchema: JSON.stringify(formSchema),
+        // formSchema is a Prisma Json column — pass the object directly (not
+        // JSON.stringify'd, which would double-encode it as a JSON string value).
+        formSchema,
         isPublished: true,
         organizationId: this.currentOrganization!.id,
         createdById: this.currentUser!.id,
@@ -90,8 +111,8 @@ Given('I create a published form for automation testing titled {string}',
   }
 );
 
-Given('I create an ACTIVE single-action automation on that form that emails {string} with subject {string}',
-  async function (this: CustomWorld, recipientEmail: string, subject: string) {
+Given('I create an ACTIVE single-action automation on that form that calls the mock webhook server',
+  async function (this: CustomWorld) {
     const form = this.getSharedTestData('automationTestForm');
     expectDefined(form, 'Automation test form must exist before creating an automation');
     expectDefined(this.currentOrganization, 'Organization context is required');
@@ -104,12 +125,8 @@ Given('I create an ACTIVE single-action automation on that form that emails {str
           id: 'action-1',
           type: 'action',
           data: {
-            actionType: 'email',
-            config: {
-              recipientEmail,
-              subject,
-              message: `A new response was submitted: {{${NAME_FIELD_ID}}}`,
-            },
+            actionType: 'webhook',
+            config: { url: `http://localhost:${WEBHOOK_PORT}${WEBHOOK_PATH}` },
           },
         },
       ],
@@ -121,7 +138,7 @@ Given('I create an ACTIVE single-action automation on that form that emails {str
         id: generateId(),
         formId: form.id,
         organizationId: this.currentOrganization!.id,
-        name: 'Send email on submission',
+        name: 'Call webhook on submission',
         status: 'ACTIVE',
         triggerType: 'form.submitted',
         graph,
@@ -165,6 +182,7 @@ When('I submit a response to that form with field {string} value {string}',
 );
 
 Then('an automation run for that automation should reach status {string} within {int} seconds',
+  { timeout: 25000 },
   async function (this: CustomWorld, expectedStatus: string, timeoutSeconds: number) {
     const automation = this.getSharedTestData('automation');
     expectDefined(automation, 'Automation must exist before polling for a run');
@@ -193,19 +211,23 @@ Then('an automation run for that automation should reach status {string} within 
   }
 );
 
-Then('the mock SMTP server should have received an email with subject {string}',
-  async function (this: CustomWorld, subject: string) {
-    const deadline = Date.now() + 5000;
+Then('the mock webhook server should have received a request for that form\'s submission',
+  async function (this: CustomWorld) {
+    const form = this.getSharedTestData('automationTestForm');
+    expectDefined(form, 'Automation test form must exist before checking webhook delivery');
+    expectDefined(mockWebhookServer, 'Mock webhook server must be running');
 
-    while (Date.now() < deadline) {
-      const found = this.mockSMTP.getCapturedEmails().some((email) => email.subject === subject);
-      if (found) {
-        console.log(`✅ Mock SMTP received email with subject "${subject}"`);
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 250));
+    const received = mockWebhookServer!
+      .getRequestsByUrl(WEBHOOK_PATH)
+      .some((req) => req.body?.formId === form.id);
+
+    if (!received) {
+      throw new Error(
+        `Mock webhook server never received a request for form ${form.id} at ${WEBHOOK_PATH}. ` +
+        `Received: ${JSON.stringify(mockWebhookServer!.getReceivedRequests())}`
+      );
     }
 
-    throw new Error(`Mock SMTP server never received an email with subject "${subject}"`);
+    console.log(`✅ Mock webhook server received the automation's request for form ${form.id}`);
   }
 );

@@ -243,13 +243,13 @@ describe('triggerService', () => {
 
       await cancelRunsForAutomation('automation-1', 'automation deleted');
 
-      expect(findJobs).toHaveBeenCalledWith(AUTOMATION_QUEUE, { data: { runId: 'run-1' }, queued: true });
-      expect(findJobs).toHaveBeenCalledWith(AUTOMATION_QUEUE, { data: { runId: 'run-2' }, queued: true });
+      expect(findJobs).toHaveBeenCalledWith(AUTOMATION_QUEUE, { data: { runId: 'run-1' } });
+      expect(findJobs).toHaveBeenCalledWith(AUTOMATION_QUEUE, { data: { runId: 'run-2' } });
       expect(cancel).toHaveBeenCalledWith(AUTOMATION_QUEUE, ['job-1']);
       expect(cancel).toHaveBeenCalledTimes(1);
 
       expect(prisma.automationRun.updateMany).toHaveBeenCalledWith({
-        where: { automationId: 'automation-1', status: { in: ['RUNNING', 'WAITING'] } },
+        where: { id: { in: ['run-1', 'run-2'] } },
         data: { status: 'CANCELLED', completedAt: expect.any(Date) },
       });
     });
@@ -261,7 +261,7 @@ describe('triggerService', () => {
       await cancelRunsForAutomation('automation-1', 'automation paused');
 
       expect(prisma.automationRun.updateMany).toHaveBeenCalledWith({
-        where: { automationId: 'automation-1', status: { in: ['RUNNING', 'WAITING'] } },
+        where: { id: { in: ['run-1'] } },
         data: { status: 'CANCELLED', completedAt: expect.any(Date) },
       });
     });
