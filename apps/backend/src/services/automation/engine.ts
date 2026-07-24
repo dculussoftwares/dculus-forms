@@ -408,22 +408,27 @@ async function recordUnhandleableStepFailure(
 ): Promise<void> {
   logger.error(`[Automation Engine] ${message}`);
   Sentry.captureException(new Error(message));
-  await prisma.automationStepRun.create({
-    data: {
-      id: generateId(),
-      runId,
-      nodeId,
-      nodeType,
-      status: 'FAILED',
-      errorMessage: message,
-      attempt,
-      finishedAt: new Date(),
-    },
-  });
-  await prisma.automationRun.update({
-    where: { id: runId },
-    data: { status: 'FAILED', completedAt: new Date() },
-  });
+  // Single transaction: a crash between these two writes would otherwise leave the run
+  // non-terminal, causing redelivery to hit this same branch again and insert a duplicate
+  // FAILED step run for the same node.
+  await prisma.$transaction([
+    prisma.automationStepRun.create({
+      data: {
+        id: generateId(),
+        runId,
+        nodeId,
+        nodeType,
+        status: 'FAILED',
+        errorMessage: message,
+        attempt,
+        finishedAt: new Date(),
+      },
+    }),
+    prisma.automationRun.update({
+      where: { id: runId },
+      data: { status: 'FAILED', completedAt: new Date() },
+    }),
+  ]);
 }
 
 export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJobData>): Promise<void> {

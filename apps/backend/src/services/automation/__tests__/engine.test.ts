@@ -24,6 +24,9 @@ vi.mock('../../../lib/prisma.js', () => ({
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    // Array-form $transaction: operations are already-invoked PrismaPromises by the time
+    // $transaction receives them, so resolving them as-is mirrors the real API.
+    $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   },
 }));
 
