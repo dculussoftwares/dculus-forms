@@ -15,8 +15,9 @@ import { useFormPermissions } from '../hooks/useFormPermissions';
 const AutomationsContent: React.FC<{
   formId: string;
   automations: Automation[];
+  hasResponses: boolean;
   onCreateClick: () => void;
-}> = ({ automations, onCreateClick }) => {
+}> = ({ automations, hasResponses, onCreateClick }) => {
   const { t } = useTranslation('automations');
   const { canEdit } = useFormPermissions();
 
@@ -65,7 +66,7 @@ const AutomationsContent: React.FC<{
               key={automation.id}
               style={{ borderTop: i > 0 ? '1px solid var(--tf-border-light)' : undefined }}
             >
-              <AutomationCard automation={automation} />
+              <AutomationCard automation={automation} hasResponses={hasResponses} />
             </div>
           ))}
         </div>
@@ -137,6 +138,7 @@ const Automations: React.FC = () => {
           <AutomationsContent
             formId={formId!}
             automations={automations}
+            hasResponses={(form.responseCount ?? 0) > 0}
             onCreateClick={() => setShowCreateDialog(true)}
           />
         )}

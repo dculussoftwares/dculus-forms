@@ -5,8 +5,8 @@ import { useTranslation } from '../hooks/useTranslation';
 import { Button, Input, Badge, LoadingSpinner, EmptyState, Tooltip, TooltipContent, TooltipTrigger, toastSuccess, toastError } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
-import { GET_AUTOMATION, UPDATE_AUTOMATION, SET_AUTOMATION_STATUS } from '../graphql/automations';
-import { AlertCircle, ArrowLeft, Pencil, Play, Loader2 } from 'lucide-react';
+import { GET_AUTOMATION, UPDATE_AUTOMATION, SET_AUTOMATION_STATUS, TEST_AUTOMATION } from '../graphql/automations';
+import { AlertCircle, ArrowLeft, FlaskConical, History, Pencil, Play, Loader2 } from 'lucide-react';
 import { AutomationCanvas } from '../components/automations/builder/AutomationCanvas';
 import { useAutomationBuilderStore } from '../store/useAutomationBuilderStore';
 import { FormPermissionProvider, type PermissionLevel } from '../contexts/FormPermissionContext';
@@ -54,6 +54,20 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const [updateAutomation, { loading: isSavingGraph }] = useMutation(UPDATE_AUTOMATION);
   const [renameAutomation, { loading: isRenaming }] = useMutation(UPDATE_AUTOMATION);
   const [setStatus, { loading: isActivating }] = useMutation(SET_AUTOMATION_STATUS);
+  const [testAutomation, { loading: isTesting }] = useMutation(TEST_AUTOMATION);
+  const hasResponses = (form.responseCount ?? 0) > 0;
+
+  const handleTest = async () => {
+    try {
+      const result = await testAutomation({ variables: { id: automationId } });
+      if (result.error) throw result.error;
+      const newRun = result.data?.testAutomation;
+      toastSuccess(t('runs.toasts.testTriggeredTitle'), t('runs.toasts.testTriggeredMessage'));
+      navigate(`/dashboard/form/${formId}/automations/${automationId}/runs${newRun?.id ? `?runId=${newRun.id}` : ''}`);
+    } catch (error: any) {
+      toastError(t('runs.toasts.testErrorTitle'), error.message);
+    }
+  };
 
   const handleCommitName = async () => {
     setIsEditingName(false);
@@ -181,6 +195,39 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
             <span className="text-xs shrink-0" style={{ color: 'var(--tf-light-muted)' }}>
               {t('builder.header.unsavedIndicator')}
             </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => navigate(`/dashboard/form/${formId}/automations/${automationId}/runs`)}
+          >
+            <History className="h-3.5 w-3.5" />
+            {t('builder.header.runsButton')}
+          </Button>
+
+          {canEdit && (
+            hasResponses ? (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleTest} disabled={isTesting}>
+                {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
+                {t('builder.header.testButton')}
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button variant="outline" size="sm" className="gap-1.5" disabled>
+                      <FlaskConical className="h-3.5 w-3.5" />
+                      {t('builder.header.testButton')}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{t('builder.header.testDisabledNoResponses')}</TooltipContent>
+              </Tooltip>
+            )
           )}
         </div>
 

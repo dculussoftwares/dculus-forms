@@ -30,6 +30,7 @@ const Integrations = lazy(() => import('./pages/Integrations'));
 const PluginConfiguration = lazy(() => import('./pages/PluginConfiguration'));
 const Automations = lazy(() => import('./pages/Automations'));
 const AutomationBuilder = lazy(() => import('./pages/AutomationBuilder'));
+const AutomationRuns = lazy(() => import('./pages/AutomationRuns'));
 const ResponsesAnalytics = lazy(() => import('./pages/ResponsesAnalytics'));
 const ResponsesIndividual = lazy(() => import('./pages/ResponsesIndividual'));
 const ResponseEdit = lazy(() => import('./pages/ResponseEdit'));
@@ -103,6 +104,9 @@ function App() {
           } />
           <Route path="/dashboard/form/:formId/automations/:automationId" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><AutomationBuilder /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/automations/:automationId/runs" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><AutomationRuns /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/pdf-templates" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplates /></Suspense></PageErrorBoundary></ProtectedRoute>
