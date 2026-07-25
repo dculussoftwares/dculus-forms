@@ -42,10 +42,12 @@ export const ConditionNode: React.FC<NodeProps<AutomationNode>> = ({ id, data, s
     >
       {/* Two named source handles — the branch labels ("Yes"/"No") render on the outgoing
           edges themselves (AddStepEdge), not here, to avoid duplicating the same text twice
-          right next to each other. */}
-      <div className="relative h-2" data-testid="condition-branch-handles">
-        <Handle type="source" position={Position.Bottom} id="true" style={{ left: '30%' }} className="!bg-[var(--tf-green)]" />
-        <Handle type="source" position={Position.Bottom} id="false" style={{ left: '70%' }} className="!bg-[var(--tf-error)]" />
+          right next to each other. Absolutely positioned across the card's full height (not
+          nested in the normal content flow) so `top: 30%/70%` places them relative to the
+          whole card, not just a small inline strip. */}
+      <div className="absolute inset-y-0 right-0 w-2" data-testid="condition-branch-handles">
+        <Handle type="source" position={Position.Right} id="true" style={{ top: '30%' }} className="!bg-[var(--tf-green)]" />
+        <Handle type="source" position={Position.Right} id="false" style={{ top: '70%' }} className="!bg-[var(--tf-error)]" />
       </div>
     </NodeCard>
   );

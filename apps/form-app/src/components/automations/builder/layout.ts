@@ -15,22 +15,27 @@ const DEFAULT_DIMENSIONS: Record<AutomationNodeType, { width: number; height: nu
   end: { width: 180, height: 56 },
 };
 
-const RANK_SEP = 72;
-const NODE_SEP = 48;
+const RANK_SEP = 96;
+const NODE_SEP = 56;
 
 /**
- * Runs dagre's TB (top-to-bottom) auto-layout over the given nodes/edges and returns
- * new node objects with recomputed `position`, plus the edges enriched with any bend
- * points dagre computed for them. Nodes are never user-draggable in this builder, so
- * this is the single source of truth for node position after every graph mutation
- * (insert/remove/load).
+ * Runs dagre's LR (left-to-right) auto-layout over the given nodes/edges and returns new
+ * node objects with recomputed `position`, plus the edges enriched with any bend points
+ * dagre computed for them. Nodes are never user-draggable in this builder, so this is the
+ * single source of truth for node position after every graph mutation (insert/remove/load).
+ *
+ * Rank progresses left-to-right (dagre's `rankdir: 'LR'`), matching the reference workflow
+ * builder's horizontal layout — same-rank nodes share an x, and vary in y. dagre's returned
+ * node.x/node.y always mean standard screen-space horizontal/vertical regardless of
+ * rankdir; only which axis represents "rank" changes. Every post-processing pass below is
+ * the horizontal-layout mirror of what a TB layout would need along the other axis.
  */
 export function layoutAutomationGraph(
   nodes: AutomationNode[],
   edges: AutomationEdge[]
 ): { nodes: AutomationNode[]; edges: AutomationEdge[] } {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'TB', nodesep: NODE_SEP, ranksep: RANK_SEP });
+  g.setGraph({ rankdir: 'LR', nodesep: NODE_SEP, ranksep: RANK_SEP });
   g.setDefaultEdgeLabel(() => ({}));
 
   for (const node of nodes) {
@@ -48,16 +53,16 @@ export function layoutAutomationGraph(
 
   dagre.layout(g);
 
-  // ConditionNode fixes "Yes" at the card's left handle (30%) and "No" at the right handle
+  // ConditionNode fixes "Yes" at the card's top handle (30%) and "No" at the bottom handle
   // (70%) — see ConditionNode.tsx — but dagre's crossing-minimization ordering pass has no
-  // notion of that convention; it's free to place the "false" branch's subtree to the left
-  // of the "true" branch's, purely to minimize crossings elsewhere in the graph. When it
-  // does, the Yes edge (leaving from the left handle) has to swing right past the No edge
-  // (leaving from the right handle) swinging left, crossing directly under the card. Detect
-  // that per condition node and mirror each branch's *exclusive* subtree (nodes reachable
-  // only from that branch, not also from the other one, e.g. shared merge points like a
-  // downstream End node are left untouched) around the condition's own x, swapping which
-  // side they render on to match the fixed handle positions.
+  // notion of that convention; it's free to place the "false" branch's subtree above the
+  // "true" branch's, purely to minimize crossings elsewhere in the graph. When it does, the
+  // Yes edge (leaving from the top handle) has to swing down past the No edge (leaving from
+  // the bottom handle) swinging up, crossing directly beside the card. Detect that per
+  // condition node and mirror each branch's *exclusive* subtree (nodes reachable only from
+  // that branch, not also from the other one — shared merge points like a downstream End
+  // node are left untouched) around the condition's own y, swapping which side they render
+  // on to match the fixed handle positions.
   const reachableFrom = (startId: string, excludeId: string): Set<string> => {
     const visited = new Set<string>();
     const stack = [startId];
@@ -74,16 +79,16 @@ export function layoutAutomationGraph(
 
   const conditionsByRank = nodes
     .filter((n) => n.type === 'condition')
-    .sort((a, b) => (g.node(a.id)?.y ?? 0) - (g.node(b.id)?.y ?? 0));
+    .sort((a, b) => (g.node(a.id)?.x ?? 0) - (g.node(b.id)?.x ?? 0));
   for (const condition of conditionsByRank) {
     const trueEdge = edges.find((e) => e.source === condition.id && e.sourceHandle === 'true');
     const falseEdge = edges.find((e) => e.source === condition.id && e.sourceHandle === 'false');
     if (!trueEdge || !falseEdge || !g.hasNode(trueEdge.target) || !g.hasNode(falseEdge.target)) continue;
 
-    const centerX = g.node(condition.id)?.x;
-    const trueX = g.node(trueEdge.target)?.x;
-    const falseX = g.node(falseEdge.target)?.x;
-    if (centerX === undefined || trueX === undefined || falseX === undefined || trueX <= falseX) continue;
+    const centerY = g.node(condition.id)?.y;
+    const trueY = g.node(trueEdge.target)?.y;
+    const falseY = g.node(falseEdge.target)?.y;
+    if (centerY === undefined || trueY === undefined || falseY === undefined || trueY <= falseY) continue;
 
     const reachTrue = reachableFrom(trueEdge.target, condition.id);
     const reachFalse = reachableFrom(falseEdge.target, condition.id);
@@ -91,21 +96,20 @@ export function layoutAutomationGraph(
     const onlyFalse = [...reachFalse].filter((id) => !reachTrue.has(id));
     for (const id of [...onlyTrue, ...onlyFalse]) {
       const pos = g.node(id);
-      if (pos) pos.x = 2 * centerX - pos.x;
+      if (pos) pos.y = 2 * centerY - pos.y;
     }
   }
 
-  // dagre's within-rank X-coordinate heuristic (Brandes-Köpf) doesn't always perfectly
-  // center a node under its single parent when that parent's *other* descendants pull the
+  // dagre's within-rank Y-coordinate heuristic (Brandes-Köpf) doesn't always perfectly
+  // center a node beside its single parent when that parent's *other* descendants pull the
   // alignment pass toward a different median — even though aligning them costs nothing,
   // since neither end has any other position constraint. The resulting few-pixel offset is
-  // too small for getSmoothStepPath's corner rounding to resolve into a clean diagonal, so
-  // it draws as a barely-visible S-shaped wiggle instead of a straight line. Force an exact
-  // x match for every hop that is unambiguously a straight pass-through — the source's only
-  // outgoing edge and the target's only incoming edge — leaving every real branch or merge
-  // point (anything with siblings) exactly as dagre positioned it. Processed in rank (y)
-  // order so a parent snapped from *its* own parent is already resolved before its children
-  // are considered.
+  // too small for the edge curve to resolve cleanly, so it draws as a barely-visible wiggle
+  // instead of a straight line. Force an exact y match for every hop that is unambiguously
+  // a straight pass-through — the source's only outgoing edge and the target's only
+  // incoming edge — leaving every real branch or merge point (anything with siblings)
+  // exactly as dagre positioned it. Processed in rank (x) order so a parent snapped from
+  // *its* own parent is already resolved before its children are considered.
   const outDegree = new Map<string, number>();
   const inDegree = new Map<string, number>();
   for (const edge of edges) {
@@ -120,13 +124,13 @@ export function layoutAutomationGraph(
       soleParentOf.set(edge.target, edge.source);
     }
   }
-  const byRank = [...nodes].sort((a, b) => (g.node(a.id)?.y ?? 0) - (g.node(b.id)?.y ?? 0));
+  const byRank = [...nodes].sort((a, b) => (g.node(a.id)?.x ?? 0) - (g.node(b.id)?.x ?? 0));
   for (const node of byRank) {
     const parentId = soleParentOf.get(node.id);
     if (!parentId) continue;
     const parentPos = g.node(parentId);
     const childPos = g.node(node.id);
-    if (parentPos && childPos) childPos.x = parentPos.x;
+    if (parentPos && childPos) childPos.y = parentPos.y;
   }
 
   const layoutedNodes = nodes.map((node) => {
@@ -148,23 +152,23 @@ export function layoutAutomationGraph(
   // attaches an interior "edge label" point to every edge it lays out (even a plain
   // adjacent-rank one), so `points.length` alone isn't a reliable signal.
   //
-  // Rank is derived from dagre's own computed y (nodes in the same rank always land on
-  // an identical y in TB layout) rather than reimplemented as a longest-path-from-root
+  // Rank is derived from dagre's own computed x (nodes in the same rank always land on
+  // an identical x in LR layout) rather than reimplemented as a longest-path-from-root
   // calculation: dagre's network-simplex ranker can push a node meaningfully further
-  // down than its shortest/longest incoming path alone would suggest, to minimize total
+  // along than its shortest/longest incoming path alone would suggest, to minimize total
   // edge length across the *whole* graph (e.g. a branch with one action, feeding into an
-  // End node that other, longer branches also feed into, gets pulled down to align with
-  // those siblings). A naive recomputation disagreed with dagre's real placement in
+  // End node that other, longer branches also feed into, gets pulled forward to align
+  // with those siblings). A naive recomputation disagreed with dagre's real placement in
   // exactly that case, so a genuinely multi-rank edge was misclassified as adjacent and
   // drawn as one straight segment cutting across the intervening nodes.
-  const rankIndexByY = new Map<number, number>(
-    [...new Set(nodes.map((n) => g.node(n.id)?.y).filter((y): y is number => y !== undefined))]
+  const rankIndexByX = new Map<number, number>(
+    [...new Set(nodes.map((n) => g.node(n.id)?.x).filter((x): x is number => x !== undefined))]
       .sort((a, b) => a - b)
-      .map((y, i) => [y, i])
+      .map((x, i) => [x, i])
   );
   const rankOf = (nodeId: string): number | undefined => {
-    const y = g.node(nodeId)?.y;
-    return y === undefined ? undefined : rankIndexByY.get(y);
+    const x = g.node(nodeId)?.x;
+    return x === undefined ? undefined : rankIndexByX.get(x);
   };
 
   const layoutedEdges = edges.map((edge) => {
@@ -180,28 +184,5 @@ export function layoutAutomationGraph(
     return { ...edge, data: { ...edge.data, bendPoints } };
   });
 
-  // Sibling branches that reconverge on the same node (e.g. two action nodes on
-  // different branches that both feed the shared End node) commonly share an identical
-  // source Y (same rank) and, by definition, an identical target point — so
-  // getSmoothStepPath's default midpoint-based bend computes the exact same Y for every
-  // one of them, and their paths become pixel-identical for the final approach into the
-  // node instead of reading as distinct converging lines. Tag each edge with its index
-  // among siblings sharing a target (ordered left-to-right by source X, for a stable,
-  // deterministic result) so AddStepEdge can stagger each one's bend depth.
-  const siblingsByTarget = new Map<string, AutomationEdge[]>();
-  for (const edge of layoutedEdges) {
-    const list = siblingsByTarget.get(edge.target) ?? [];
-    list.push(edge);
-    siblingsByTarget.set(edge.target, list);
-  }
-
-  const finalEdges = layoutedEdges.map((edge) => {
-    const siblings = siblingsByTarget.get(edge.target);
-    if (!siblings || siblings.length <= 1) return edge;
-    const ordered = [...siblings].sort((a, b) => (g.node(a.source)?.x ?? 0) - (g.node(b.source)?.x ?? 0));
-    const mergeIndex = ordered.findIndex((e) => e.id === edge.id);
-    return { ...edge, data: { ...edge.data, mergeIndex, mergeCount: siblings.length } };
-  });
-
-  return { nodes: layoutedNodes, edges: finalEdges };
+  return { nodes: layoutedNodes, edges: layoutedEdges };
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
-  getSmoothStepPath,
+  getBezierPath,
   Position,
   type EdgeProps,
 } from '@xyflow/react';
@@ -44,47 +44,34 @@ const CatalogItem: React.FC<CatalogItemProps> = ({ icon, iconBg, label, disabled
   </button>
 );
 
-const BORDER_RADIUS = 8;
-
 /**
- * Draws a path through `points` (source, any dagre-computed bend points, target) by
- * chaining getSmoothStepPath calls segment-by-segment — the same function and radius
- * every other (adjacent-rank, no-bend) edge uses, so a branch edge that skips a rank
- * (e.g. an empty condition branch wired straight past its sibling's node) still reads
- * as visually consistent with the rest of the graph instead of cutting a single
- * straight diagonal across the skipped rank. Interior points are treated as pass-through
- * stops (exiting "Bottom", entering "Top"), mirroring the dummy chain node dagre itself
- * inserts there.
+ * Draws a smooth curve through `points` (source, any dagre-computed bend points, target)
+ * by chaining getBezierPath calls segment-by-segment — matching the reference workflow
+ * builder's curved connector language — so a branch edge that skips a rank (e.g. an empty
+ * condition branch wired straight past its sibling's node) still reads as visually
+ * consistent with the rest of the graph instead of cutting a single straight diagonal
+ * across the skipped rank. Interior points are treated as pass-through stops (exiting
+ * "Right", entering "Left"), mirroring the dummy chain node dagre itself inserts there.
  */
-function buildSteppedPath(
+function buildCurvedPath(
   points: { x: number; y: number }[],
   sourcePosition: Position,
-  targetPosition: Position,
-  // Overrides the Y at which the *final* segment bends toward the target. Sibling edges
-  // that reconverge on the same node otherwise all compute the same default (source/
-  // target midpoint) bend Y whenever they also share a source Y (e.g. two branches'
-  // action nodes landing on the same rank before both feeding the shared End node),
-  // making their paths pixel-identical for the whole final approach — see mergeCenterY
-  // in AddStepEdge.
-  finalCenterY?: number
+  targetPosition: Position
 ): { path: string; labelX: number; labelY: number } {
   const segments: string[] = [];
   let labelX = points[0].x;
   let labelY = points[0].y;
   const midSegmentIndex = Math.floor((points.length - 2) / 2);
-  const lastSegmentIndex = points.length - 2;
 
   for (let i = 0; i < points.length - 1; i++) {
-    const isLast = i === lastSegmentIndex;
-    const [segPath, segLabelX, segLabelY] = getSmoothStepPath({
+    const isLast = i === points.length - 2;
+    const [segPath, segLabelX, segLabelY] = getBezierPath({
       sourceX: points[i].x,
       sourceY: points[i].y,
-      sourcePosition: i === 0 ? sourcePosition : Position.Bottom,
+      sourcePosition: i === 0 ? sourcePosition : Position.Right,
       targetX: points[i + 1].x,
       targetY: points[i + 1].y,
-      targetPosition: isLast ? targetPosition : Position.Top,
-      borderRadius: BORDER_RADIUS,
-      ...(isLast && finalCenterY !== undefined ? { centerY: finalCenterY } : {}),
+      targetPosition: isLast ? targetPosition : Position.Left,
     });
     segments.push(segPath);
     if (i === midSegmentIndex) {
@@ -115,16 +102,7 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
 
   const bendPoints = (data?.bendPoints as { x: number; y: number }[] | undefined) ?? [];
   const pathPoints = [{ x: sourceX, y: sourceY }, ...bendPoints, { x: targetX, y: targetY }];
-
-  const mergeIndex = data?.mergeIndex as number | undefined;
-  const mergeCount = data?.mergeCount as number | undefined;
-  const lastPoint = pathPoints[pathPoints.length - 2];
-  const mergeCenterY =
-    mergeIndex !== undefined && mergeCount !== undefined && mergeCount > 1
-      ? lastPoint.y + (targetY - lastPoint.y) * (0.5 + (mergeIndex - (mergeCount - 1) / 2) * 0.14)
-      : undefined;
-
-  const { path: edgePath, labelX, labelY } = buildSteppedPath(pathPoints, sourcePosition, targetPosition, mergeCenterY);
+  const { path: edgePath, labelX, labelY } = buildCurvedPath(pathPoints, sourcePosition, targetPosition);
 
   const branchLabel =
     sourceHandleId === 'true'
@@ -157,7 +135,7 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
           <div
             style={{
               position: 'absolute',
-              transform: `translate(-50%, 0) translate(${sourceX}px, ${sourceY + 10}px)`,
+              transform: `translate(0, -50%) translate(${sourceX + 10}px, ${sourceY}px)`,
               pointerEvents: 'none',
             }}
             className="nodrag nopan"

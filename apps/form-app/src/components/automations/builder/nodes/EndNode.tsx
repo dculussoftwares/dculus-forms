@@ -17,7 +17,7 @@ export const EndNode: React.FC<NodeProps<AutomationNode>> = ({ selected }) => {
       }}
       data-testid="automation-node-card"
     >
-      <Handle type="target" position={Position.Top} className="!bg-[var(--tf-light-muted)]" />
+      <Handle type="target" position={Position.Left} className="!bg-[var(--tf-light-muted)]" />
       <Flag className="h-3.5 w-3.5" style={{ color: 'var(--tf-muted)' }} />
       <span className="text-xs font-medium" style={{ color: 'var(--tf-muted)' }}>
         {t('builder.nodes.end.title')}
