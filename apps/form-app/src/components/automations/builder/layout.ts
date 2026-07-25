@@ -48,6 +48,53 @@ export function layoutAutomationGraph(
 
   dagre.layout(g);
 
+  // ConditionNode fixes "Yes" at the card's left handle (30%) and "No" at the right handle
+  // (70%) — see ConditionNode.tsx — but dagre's crossing-minimization ordering pass has no
+  // notion of that convention; it's free to place the "false" branch's subtree to the left
+  // of the "true" branch's, purely to minimize crossings elsewhere in the graph. When it
+  // does, the Yes edge (leaving from the left handle) has to swing right past the No edge
+  // (leaving from the right handle) swinging left, crossing directly under the card. Detect
+  // that per condition node and mirror each branch's *exclusive* subtree (nodes reachable
+  // only from that branch, not also from the other one, e.g. shared merge points like a
+  // downstream End node are left untouched) around the condition's own x, swapping which
+  // side they render on to match the fixed handle positions.
+  const reachableFrom = (startId: string, excludeId: string): Set<string> => {
+    const visited = new Set<string>();
+    const stack = [startId];
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      if (id === excludeId || visited.has(id)) continue;
+      visited.add(id);
+      for (const edge of edges) {
+        if (edge.source === id) stack.push(edge.target);
+      }
+    }
+    return visited;
+  };
+
+  const conditionsByRank = nodes
+    .filter((n) => n.type === 'condition')
+    .sort((a, b) => (g.node(a.id)?.y ?? 0) - (g.node(b.id)?.y ?? 0));
+  for (const condition of conditionsByRank) {
+    const trueEdge = edges.find((e) => e.source === condition.id && e.sourceHandle === 'true');
+    const falseEdge = edges.find((e) => e.source === condition.id && e.sourceHandle === 'false');
+    if (!trueEdge || !falseEdge || !g.hasNode(trueEdge.target) || !g.hasNode(falseEdge.target)) continue;
+
+    const centerX = g.node(condition.id)?.x;
+    const trueX = g.node(trueEdge.target)?.x;
+    const falseX = g.node(falseEdge.target)?.x;
+    if (centerX === undefined || trueX === undefined || falseX === undefined || trueX <= falseX) continue;
+
+    const reachTrue = reachableFrom(trueEdge.target, condition.id);
+    const reachFalse = reachableFrom(falseEdge.target, condition.id);
+    const onlyTrue = [...reachTrue].filter((id) => !reachFalse.has(id));
+    const onlyFalse = [...reachFalse].filter((id) => !reachTrue.has(id));
+    for (const id of [...onlyTrue, ...onlyFalse]) {
+      const pos = g.node(id);
+      if (pos) pos.x = 2 * centerX - pos.x;
+    }
+  }
+
   // dagre's within-rank X-coordinate heuristic (Brandes-Köpf) doesn't always perfectly
   // center a node under its single parent when that parent's *other* descendants pull the
   // alignment pass toward a different median — even though aligning them costs nothing,
