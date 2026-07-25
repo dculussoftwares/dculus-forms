@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -6,6 +6,8 @@ import {
   BackgroundVariant,
   Controls,
   MarkerType,
+  MiniMap,
+  useReactFlow,
   type NodeChange,
   type NodeMouseHandler,
 } from '@xyflow/react';
@@ -39,8 +41,10 @@ interface AutomationCanvasProps {
 const AutomationCanvasInner: React.FC<AutomationCanvasProps> = ({ form }) => {
   const nodes = useAutomationBuilderStore((s) => s.nodes);
   const edges = useAutomationBuilderStore((s) => s.edges);
+  const selectedNodeId = useAutomationBuilderStore((s) => s.selectedNodeId);
   const setSelectedNodeId = useAutomationBuilderStore((s) => s.setSelectedNodeId);
   const applyMeasuredLayout = useAutomationBuilderStore((s) => s.applyMeasuredLayout);
+  const { fitView } = useReactFlow();
 
   // dagre lays nodes out using DEFAULT_DIMENSIONS (layout.ts) before React Flow has ever
   // rendered them, since real widths depend on label text (condition summaries, i18n) and
@@ -63,6 +67,27 @@ const AutomationCanvasInner: React.FC<AutomationCanvasProps> = ({ form }) => {
     },
     [applyMeasuredLayout]
   );
+
+  // Automations can grow wide once a few branches/steps are added, easily pushing a
+  // freshly-inserted step outside the current viewport with no indication anything
+  // changed. insertStepOnEdge always selects the node it just created, so a node id that
+  // (a) wasn't present last render and (b) is the current selection can only mean "the
+  // user just added a step" — not an existing-node click (no new id) or a fresh
+  // automation load (multiple/all ids appear new at once, never exactly one on a graph
+  // that always has at least a trigger + End node). Panning only in that specific case
+  // avoids fighting the user's manual pan/zoom the rest of the time.
+  const previousNodeIdsRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const currentIds = new Set(nodes.map((n) => n.id));
+    const previousIds = previousNodeIdsRef.current;
+    previousNodeIdsRef.current = currentIds;
+    if (!previousIds) return; // first render — the `fitView` prop already handles this
+
+    const newlyAdded = [...currentIds].filter((id) => !previousIds.has(id));
+    if (newlyAdded.length === 1 && newlyAdded[0] === selectedNodeId) {
+      fitView({ nodes: [{ id: newlyAdded[0] }], duration: 400, padding: 0.5, maxZoom: 1 });
+    }
+  }, [nodes, selectedNodeId, fitView]);
 
   const onNodeClick = useCallback<NodeMouseHandler>(
     (_event, node) => {
@@ -108,6 +133,15 @@ const AutomationCanvasInner: React.FC<AutomationCanvasProps> = ({ form }) => {
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--tf-border-strong)" />
           <Controls showInteractive={false} position="bottom-left" />
+          <MiniMap
+            position="bottom-right"
+            pannable
+            zoomable
+            nodeColor="var(--tf-light-muted)"
+            nodeStrokeWidth={0}
+            maskColor="var(--tf-overlay)"
+            style={{ border: '1px solid var(--tf-border-medium)', borderRadius: 8 }}
+          />
         </ReactFlow>
       </div>
       <NodeConfigPanel form={form} />
