@@ -10,6 +10,7 @@ export type AutomationEdge = Edge;
 const DEFAULT_DIMENSIONS: Record<AutomationNodeType, { width: number; height: number }> = {
   trigger: { width: 300, height: 92 },
   delay: { width: 260, height: 76 },
+  condition: { width: 300, height: 116 },
   action: { width: 280, height: 92 },
   end: { width: 180, height: 56 },
 };

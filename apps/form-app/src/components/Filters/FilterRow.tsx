@@ -33,7 +33,7 @@ interface FilterRowProps {
   filterLogic: 'AND' | 'OR';
 }
 
-const getOperatorOptions = (
+export const getOperatorOptions = (
   fieldType: FieldType,
   t: (key: string) => string
 ) => {
@@ -114,7 +114,7 @@ const truncateLabel = (label: string, maxLength = 50): string => {
   return label.length > maxLength ? `${label.slice(0, maxLength)}...` : label;
 };
 
-const renderFilterInput = (
+export const renderFilterInput = (
   field: FillableFormField,
   filter: FilterState,
   onChange: (filter: Partial<FilterState>) => void,

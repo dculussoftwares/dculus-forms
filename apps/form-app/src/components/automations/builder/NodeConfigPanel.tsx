@@ -14,8 +14,9 @@ import { useTranslation } from '../../../hooks/useTranslation';
 import { useAutomationBuilderStore } from '../../../store/useAutomationBuilderStore';
 import { getFrontendPlugin } from '../../../plugins/core/registry';
 import '../../../plugins/index';
-import type { AutomationActionNodeData, AutomationDelayNodeData, DelayUnit } from './types';
+import type { AutomationActionNodeData, AutomationConditionNodeData, AutomationDelayNodeData, DelayUnit } from './types';
 import { getActionManifest } from './actionCatalog';
+import { ConditionRulesEditor } from './ConditionRulesEditor';
 
 interface NodeConfigPanelProps {
   form?: any;
@@ -66,6 +67,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   const nodes = useAutomationBuilderStore((s) => s.nodes);
   const updateNodeData = useAutomationBuilderStore((s) => s.updateNodeData);
   const isReadOnly = useAutomationBuilderStore((s) => s.isReadOnly);
+  const formFields = useAutomationBuilderStore((s) => s.formFields);
 
   const node = nodes.find((n) => n.id === selectedNodeId);
   if (!node) return null;
@@ -75,6 +77,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   const titleForType: Record<string, string> = {
     trigger: t('builder.panel.titles.trigger'),
     delay: t('builder.panel.titles.delay'),
+    condition: t('builder.panel.titles.condition'),
     action: t('builder.panel.titles.action'),
     end: t('builder.panel.titles.end'),
   };
@@ -87,6 +90,15 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
     body = <p className="text-sm text-muted-foreground">{t('builder.panel.end.description')}</p>;
   } else if (node.type === 'delay') {
     body = <DelayEditor nodeId={node.id} data={node.data as AutomationDelayNodeData} disabled={isReadOnly} />;
+  } else if (node.type === 'condition') {
+    body = (
+      <ConditionRulesEditor
+        nodeId={node.id}
+        data={node.data as AutomationConditionNodeData}
+        fields={formFields}
+        disabled={isReadOnly}
+      />
+    );
   } else if (node.type === 'action') {
     const actionData = node.data as AutomationActionNodeData;
     const manifest = getActionManifest(actionData.actionType);
