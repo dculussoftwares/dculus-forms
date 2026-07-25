@@ -17,38 +17,89 @@ const DEFAULT_DIMENSIONS: Record<AutomationNodeType, { width: number; height: nu
 
 const RANK_SEP = 96;
 const NODE_SEP = 56;
+const SPACER_SIZE = 1;
+const SPACER_PREFIX = '__spacer_';
 
 /**
  * Runs dagre's LR (left-to-right) auto-layout over the given nodes/edges and returns new
  * node objects with recomputed `position`, plus the edges enriched with any bend points
- * dagre computed for them. Nodes are never user-draggable in this builder, so this is the
- * single source of truth for node position after every graph mutation (insert/remove/load).
+ * needed to route a rank-skipping edge (e.g. an empty condition branch, wired straight to
+ * a node several ranks down past its sibling branch's own steps) around whatever it would
+ * otherwise cut straight through. Nodes are never user-draggable in this builder, so this
+ * is the single source of truth for node position after every graph mutation
+ * (insert/remove/load).
  *
- * Rank progresses left-to-right (dagre's `rankdir: 'LR'`), matching the reference workflow
- * builder's horizontal layout — same-rank nodes share an x, and vary in y. dagre's returned
- * node.x/node.y always mean standard screen-space horizontal/vertical regardless of
- * rankdir; only which axis represents "rank" changes. Every post-processing pass below is
- * the horizontal-layout mirror of what a TB layout would need along the other axis.
+ * A rank-skipping edge is never routed by computing a "safe" detour after the fact —
+ * hand-rolled clearance math only knows how to dodge *node boxes*, not the curves of
+ * *other edges* passing through the same rank, and a bezier's control-point bulge can
+ * still sweep back through a rank it was meant to clear. Instead, every edge that would
+ * skip a rank gets small invisible "spacer" nodes inserted into the graph at each skipped
+ * rank *before* dagre lays anything out, splitting it into a chain of plain, adjacent-rank
+ * hops — exactly what a strict tree would look like. dagre's own crossing-minimization and
+ * node separation then keeps every spacer clear of whatever else shares its rank, the same
+ * way it already keeps real nodes apart, so there is no bespoke routing logic left that can
+ * disagree with what actually got drawn.
+ *
+ * Rank progresses left-to-right (dagre's `rankdir: 'LR'`) — same-rank nodes share an x, and
+ * vary in y. dagre's returned node.x/node.y always mean standard screen-space
+ * horizontal/vertical regardless of rankdir; only which axis represents "rank" changes.
  */
 export function layoutAutomationGraph(
   nodes: AutomationNode[],
   edges: AutomationEdge[]
 ): { nodes: AutomationNode[]; edges: AutomationEdge[] } {
+  const validEdges = edges.filter((e) => nodes.some((n) => n.id === e.source) && nodes.some((n) => n.id === e.target));
+
+  // Preliminary layout, purely to learn each node's rank — how many spacer hops a given
+  // edge needs — before building the real, spacer-expanded graph dagre actually lays out.
+  const prelim = new dagre.graphlib.Graph();
+  prelim.setGraph({ rankdir: 'LR', nodesep: NODE_SEP, ranksep: RANK_SEP });
+  prelim.setDefaultEdgeLabel(() => ({}));
+  for (const node of nodes) {
+    const fallback = DEFAULT_DIMENSIONS[node.type as AutomationNodeType] ?? DEFAULT_DIMENSIONS.action;
+    prelim.setNode(node.id, { width: node.measured?.width ?? fallback.width, height: node.measured?.height ?? fallback.height });
+  }
+  for (const edge of validEdges) prelim.setEdge(edge.source, edge.target);
+  dagre.layout(prelim);
+
+  const prelimRankIndexByX = new Map<number, number>(
+    [...new Set(nodes.map((n) => prelim.node(n.id)?.x).filter((x): x is number => x !== undefined))]
+      .sort((a, b) => a - b)
+      .map((x, i) => [x, i])
+  );
+  const prelimRankOf = (nodeId: string): number => prelimRankIndexByX.get(prelim.node(nodeId)?.x ?? 0) ?? 0;
+
+  // Build the real graph, splitting any edge that spans more than one rank into a chain of
+  // single-rank hops through spacer nodes. `routeNodeIds` records the full node-id path
+  // (source, ...spacers, target) per original edge so the final positions can be read back
+  // into bend points afterward.
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: 'LR', nodesep: NODE_SEP, ranksep: RANK_SEP });
   g.setDefaultEdgeLabel(() => ({}));
-
   for (const node of nodes) {
     const fallback = DEFAULT_DIMENSIONS[node.type as AutomationNodeType] ?? DEFAULT_DIMENSIONS.action;
-    const width = node.measured?.width ?? fallback.width;
-    const height = node.measured?.height ?? fallback.height;
-    g.setNode(node.id, { width, height });
+    g.setNode(node.id, { width: node.measured?.width ?? fallback.width, height: node.measured?.height ?? fallback.height });
   }
 
-  for (const edge of edges) {
-    if (g.hasNode(edge.source) && g.hasNode(edge.target)) {
-      g.setEdge(edge.source, edge.target);
+  const routeNodeIds = new Map<string, string[]>();
+  const expandedHops: { source: string; target: string }[] = [];
+  let spacerCount = 0;
+  for (const edge of validEdges) {
+    const gap = prelimRankOf(edge.target) - prelimRankOf(edge.source);
+    const route = [edge.source];
+    let prev = edge.source;
+    for (let i = 1; i < gap; i++) {
+      const spacerId = `${SPACER_PREFIX}${spacerCount++}`;
+      g.setNode(spacerId, { width: SPACER_SIZE, height: SPACER_SIZE });
+      g.setEdge(prev, spacerId);
+      expandedHops.push({ source: prev, target: spacerId });
+      route.push(spacerId);
+      prev = spacerId;
     }
+    g.setEdge(prev, edge.target);
+    expandedHops.push({ source: prev, target: edge.target });
+    route.push(edge.target);
+    routeNodeIds.set(edge.id, route);
   }
 
   dagre.layout(g);
@@ -59,10 +110,11 @@ export function layoutAutomationGraph(
   // "true" branch's, purely to minimize crossings elsewhere in the graph. When it does, the
   // Yes edge (leaving from the top handle) has to swing down past the No edge (leaving from
   // the bottom handle) swinging up, crossing directly beside the card. Detect that per
-  // condition node and mirror each branch's *exclusive* subtree (nodes reachable only from
-  // that branch, not also from the other one — shared merge points like a downstream End
-  // node are left untouched) around the condition's own y, swapping which side they render
-  // on to match the fixed handle positions.
+  // condition node and mirror each branch's *exclusive* subtree — including any spacer
+  // nodes now standing in for its rank-skipping hops, so they stay consistent with whatever
+  // real node they lead to — around the condition's own y, swapping which side they render
+  // on to match the fixed handle positions. Shared merge points (and the spacers leading to
+  // them) reachable from *both* branches are left untouched.
   const reachableFrom = (startId: string, excludeId: string): Set<string> => {
     const visited = new Set<string>();
     const stack = [startId];
@@ -70,8 +122,8 @@ export function layoutAutomationGraph(
       const id = stack.pop()!;
       if (id === excludeId || visited.has(id)) continue;
       visited.add(id);
-      for (const edge of edges) {
-        if (edge.source === id) stack.push(edge.target);
+      for (const hop of expandedHops) {
+        if (hop.source === id) stack.push(hop.target);
       }
     }
     return visited;
@@ -81,17 +133,24 @@ export function layoutAutomationGraph(
     .filter((n) => n.type === 'condition')
     .sort((a, b) => (g.node(a.id)?.x ?? 0) - (g.node(b.id)?.x ?? 0));
   for (const condition of conditionsByRank) {
-    const trueEdge = edges.find((e) => e.source === condition.id && e.sourceHandle === 'true');
-    const falseEdge = edges.find((e) => e.source === condition.id && e.sourceHandle === 'false');
-    if (!trueEdge || !falseEdge || !g.hasNode(trueEdge.target) || !g.hasNode(falseEdge.target)) continue;
+    const trueEdge = validEdges.find((e) => e.source === condition.id && e.sourceHandle === 'true');
+    const falseEdge = validEdges.find((e) => e.source === condition.id && e.sourceHandle === 'false');
+    if (!trueEdge || !falseEdge) continue;
 
+    const trueNextId = routeNodeIds.get(trueEdge.id)?.[1];
+    const falseNextId = routeNodeIds.get(falseEdge.id)?.[1];
     const centerY = g.node(condition.id)?.y;
-    const trueY = g.node(trueEdge.target)?.y;
-    const falseY = g.node(falseEdge.target)?.y;
+    const trueY = trueNextId ? g.node(trueNextId)?.y : undefined;
+    const falseY = falseNextId ? g.node(falseNextId)?.y : undefined;
     if (centerY === undefined || trueY === undefined || falseY === undefined || trueY <= falseY) continue;
 
-    const reachTrue = reachableFrom(trueEdge.target, condition.id);
-    const reachFalse = reachableFrom(falseEdge.target, condition.id);
+    // Start each side's reachability walk at its *first hop* (a spacer, if the edge skips
+    // any ranks, otherwise the real target directly) rather than at trueEdge/falseEdge's
+    // real target — starting at the target would skip every spacer standing in for that
+    // same edge's own rank-skipping hops, since they sit *before* the target in the route,
+    // not reachable by walking forward from it.
+    const reachTrue = reachableFrom(trueNextId!, condition.id);
+    const reachFalse = reachableFrom(falseNextId!, condition.id);
     const onlyTrue = [...reachTrue].filter((id) => !reachFalse.has(id));
     const onlyFalse = [...reachFalse].filter((id) => !reachTrue.has(id));
     for (const id of [...onlyTrue, ...onlyFalse]) {
@@ -105,31 +164,32 @@ export function layoutAutomationGraph(
   // alignment pass toward a different median — even though aligning them costs nothing,
   // since neither end has any other position constraint. The resulting few-pixel offset is
   // too small for the edge curve to resolve cleanly, so it draws as a barely-visible wiggle
-  // instead of a straight line. Force an exact y match for every hop that is unambiguously
-  // a straight pass-through — the source's only outgoing edge and the target's only
-  // incoming edge — leaving every real branch or merge point (anything with siblings)
-  // exactly as dagre positioned it. Processed in rank (x) order so a parent snapped from
-  // *its* own parent is already resolved before its children are considered.
+  // instead of a straight line. Force an exact y match for every hop — real or spacer —
+  // that is unambiguously a straight pass-through (its only predecessor's only successor),
+  // leaving every real branch or merge point (anything with siblings) exactly as dagre
+  // positioned it. Processed in rank (x) order so a parent snapped from *its* own parent is
+  // already resolved before its children are considered.
   const outDegree = new Map<string, number>();
   const inDegree = new Map<string, number>();
-  for (const edge of edges) {
-    if (!g.hasNode(edge.source) || !g.hasNode(edge.target)) continue;
-    outDegree.set(edge.source, (outDegree.get(edge.source) ?? 0) + 1);
-    inDegree.set(edge.target, (inDegree.get(edge.target) ?? 0) + 1);
+  const allExpandedIds = new Set<string>();
+  for (const hop of expandedHops) {
+    outDegree.set(hop.source, (outDegree.get(hop.source) ?? 0) + 1);
+    inDegree.set(hop.target, (inDegree.get(hop.target) ?? 0) + 1);
+    allExpandedIds.add(hop.source);
+    allExpandedIds.add(hop.target);
   }
   const soleParentOf = new Map<string, string>();
-  for (const edge of edges) {
-    if (!g.hasNode(edge.source) || !g.hasNode(edge.target)) continue;
-    if (outDegree.get(edge.source) === 1 && inDegree.get(edge.target) === 1) {
-      soleParentOf.set(edge.target, edge.source);
+  for (const hop of expandedHops) {
+    if (outDegree.get(hop.source) === 1 && inDegree.get(hop.target) === 1) {
+      soleParentOf.set(hop.target, hop.source);
     }
   }
-  const byRank = [...nodes].sort((a, b) => (g.node(a.id)?.x ?? 0) - (g.node(b.id)?.x ?? 0));
-  for (const node of byRank) {
-    const parentId = soleParentOf.get(node.id);
+  const byRank = [...allExpandedIds].sort((a, b) => (g.node(a)?.x ?? 0) - (g.node(b)?.x ?? 0));
+  for (const id of byRank) {
+    const parentId = soleParentOf.get(id);
     if (!parentId) continue;
     const parentPos = g.node(parentId);
-    const childPos = g.node(node.id);
+    const childPos = g.node(id);
     if (parentPos && childPos) childPos.y = parentPos.y;
   }
 
@@ -145,93 +205,16 @@ export function layoutAutomationGraph(
     };
   });
 
-  // Rank is derived from dagre's own computed x (nodes in the same rank always land on
-  // an identical x in LR layout) rather than reimplemented as a longest-path-from-root
-  // calculation: dagre's network-simplex ranker can push a node meaningfully further
-  // along than its shortest/longest incoming path alone would suggest, to minimize total
-  // edge length across the *whole* graph (e.g. a branch with one action, feeding into an
-  // End node that other, longer branches also feed into, gets pulled forward to align
-  // with those siblings). A naive recomputation disagreed with dagre's real placement in
-  // exactly that case, so a genuinely multi-rank edge was misclassified as adjacent and
-  // drawn as one straight segment cutting across the intervening nodes.
-  const rankIndexByX = new Map<number, number>(
-    [...new Set(nodes.map((n) => g.node(n.id)?.x).filter((x): x is number => x !== undefined))]
-      .sort((a, b) => a - b)
-      .map((x, i) => [x, i])
-  );
-  const rankOf = (nodeId: string): number | undefined => {
-    const x = g.node(nodeId)?.x;
-    return x === undefined ? undefined : rankIndexByX.get(x);
-  };
-  const rankXs = [...rankIndexByX.entries()].sort((a, b) => a[1] - b[1]).map(([x]) => x);
-  const nodesByRank = new Map<number, AutomationNode[]>();
-  for (const node of nodes) {
-    const rank = rankOf(node.id);
-    if (rank === undefined) continue;
-    const list = nodesByRank.get(rank) ?? [];
-    list.push(node);
-    nodesByRank.set(rank, list);
-  }
-
-  // An edge that skips a rank — e.g. a condition branch with a single action, wired
-  // straight to a node that also has other, longer incoming paths — needs bend points so
-  // it routes around whatever occupies the skipped rank(s) instead of cutting a straight
-  // line across it. These are computed here, from nodes' *final* positions (after the
-  // true/false mirror and sole-parent snap above), rather than read from dagre's own
-  // `edge.points` — dagre computes those once during `dagre.layout()`, before either of
-  // those two passes runs, so they'd still reference whatever position a node had *before*
-  // it was mirrored/snapped. E.g. if a condition's true branch went straight to a shared
-  // End node while its false branch had its own action, the action node could get mirrored
-  // to the opposite side of the condition, but the true edge's stale bend point wouldn't
-  // move with it — leaving the true edge routed straight through the action node's new
-  // position, rendered invisible behind its (opaque) card.
-  //
-  // Route above everything in a skipped rank for a "true"/Yes edge (top handle) and below
-  // for "false"/No (bottom handle), matching ConditionNode's fixed handle sides; a plain
-  // (non-condition) edge picks whichever side the source already leans toward.
-  const CLEARANCE = 24;
   const layoutedEdges = edges.map((edge) => {
-    // An edge that needed bend points in an earlier layout pass (e.g. the sibling branch
-    // it was routing around has since been deleted) but doesn't anymore must have that
-    // stale `data.bendPoints` cleared here — every early return below hands back
-    // `withoutStaleBend`, not the raw `edge`, so a rank change that makes bending
-    // unnecessary actually removes the old bend route instead of leaving edges rendered
-    // via a route computed for a graph shape that no longer exists.
-    const withoutStaleBend: AutomationEdge =
-      edge.data?.bendPoints !== undefined ? { ...edge, data: { ...edge.data, bendPoints: undefined } } : edge;
-
-    if (!g.hasNode(edge.source) || !g.hasNode(edge.target)) return withoutStaleBend;
-    const sourceRank = rankOf(edge.source);
-    const targetRank = rankOf(edge.target);
-    if (sourceRank === undefined || targetRank === undefined || targetRank - sourceRank <= 1) return withoutStaleBend;
-
-    const sourcePos = g.node(edge.source);
-    const targetPos = g.node(edge.target);
-    if (!sourcePos || !targetPos) return withoutStaleBend;
-
-    const routeAbove =
-      edge.sourceHandle === 'true' ? true : edge.sourceHandle === 'false' ? false : sourcePos.y <= targetPos.y;
-
-    const bendPoints: { x: number; y: number }[] = [];
-    for (let rank = sourceRank + 1; rank < targetRank; rank++) {
-      const x = rankXs[rank];
-      if (x === undefined) continue;
-      const occupants = (nodesByRank.get(rank) ?? []).filter((n) => n.id !== edge.source && n.id !== edge.target);
-      if (occupants.length === 0) {
-        const t = (rank - sourceRank) / (targetRank - sourceRank);
-        bendPoints.push({ x, y: sourcePos.y + (targetPos.y - sourcePos.y) * t });
-        continue;
-      }
-      const occupantBounds = occupants.map((n) => {
-        const pos = g.node(n.id);
-        return pos ? { top: pos.y - pos.height / 2, bottom: pos.y + pos.height / 2 } : { top: 0, bottom: 0 };
-      });
-      const y = routeAbove
-        ? Math.min(...occupantBounds.map((b) => b.top)) - CLEARANCE
-        : Math.max(...occupantBounds.map((b) => b.bottom)) + CLEARANCE;
-      bendPoints.push({ x, y });
+    const route = routeNodeIds.get(edge.id);
+    const hasStaleBend = edge.data?.bendPoints !== undefined;
+    if (!route || route.length <= 2) {
+      return hasStaleBend ? { ...edge, data: { ...edge.data, bendPoints: undefined } } : edge;
     }
-    if (bendPoints.length === 0) return withoutStaleBend;
+    const bendPoints = route.slice(1, -1).map((id) => {
+      const pos = g.node(id);
+      return { x: pos?.x ?? 0, y: pos?.y ?? 0 };
+    });
     return { ...edge, data: { ...edge.data, bendPoints } };
   });
 
