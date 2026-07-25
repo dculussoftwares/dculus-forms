@@ -145,13 +145,6 @@ export function layoutAutomationGraph(
     };
   });
 
-  // An edge that skips a rank — e.g. a condition branch with a single action, wired
-  // straight to a node that also has other, longer incoming paths — gets dummy chain
-  // nodes from dagre, exposed as extra interior points on the edge label. Only treat an
-  // edge as needing those bend points when it genuinely spans more than one rank: dagre
-  // attaches an interior "edge label" point to every edge it lays out (even a plain
-  // adjacent-rank one), so `points.length` alone isn't a reliable signal.
-  //
   // Rank is derived from dagre's own computed x (nodes in the same rank always land on
   // an identical x in LR layout) rather than reimplemented as a longest-path-from-root
   // calculation: dagre's network-simplex ranker can push a node meaningfully further
@@ -170,17 +163,75 @@ export function layoutAutomationGraph(
     const x = g.node(nodeId)?.x;
     return x === undefined ? undefined : rankIndexByX.get(x);
   };
+  const rankXs = [...rankIndexByX.entries()].sort((a, b) => a[1] - b[1]).map(([x]) => x);
+  const nodesByRank = new Map<number, AutomationNode[]>();
+  for (const node of nodes) {
+    const rank = rankOf(node.id);
+    if (rank === undefined) continue;
+    const list = nodesByRank.get(rank) ?? [];
+    list.push(node);
+    nodesByRank.set(rank, list);
+  }
 
+  // An edge that skips a rank — e.g. a condition branch with a single action, wired
+  // straight to a node that also has other, longer incoming paths — needs bend points so
+  // it routes around whatever occupies the skipped rank(s) instead of cutting a straight
+  // line across it. These are computed here, from nodes' *final* positions (after the
+  // true/false mirror and sole-parent snap above), rather than read from dagre's own
+  // `edge.points` — dagre computes those once during `dagre.layout()`, before either of
+  // those two passes runs, so they'd still reference whatever position a node had *before*
+  // it was mirrored/snapped. E.g. if a condition's true branch went straight to a shared
+  // End node while its false branch had its own action, the action node could get mirrored
+  // to the opposite side of the condition, but the true edge's stale bend point wouldn't
+  // move with it — leaving the true edge routed straight through the action node's new
+  // position, rendered invisible behind its (opaque) card.
+  //
+  // Route above everything in a skipped rank for a "true"/Yes edge (top handle) and below
+  // for "false"/No (bottom handle), matching ConditionNode's fixed handle sides; a plain
+  // (non-condition) edge picks whichever side the source already leans toward.
+  const CLEARANCE = 24;
   const layoutedEdges = edges.map((edge) => {
-    if (!g.hasNode(edge.source) || !g.hasNode(edge.target)) return edge;
+    // An edge that needed bend points in an earlier layout pass (e.g. the sibling branch
+    // it was routing around has since been deleted) but doesn't anymore must have that
+    // stale `data.bendPoints` cleared here — every early return below hands back
+    // `withoutStaleBend`, not the raw `edge`, so a rank change that makes bending
+    // unnecessary actually removes the old bend route instead of leaving edges rendered
+    // via a route computed for a graph shape that no longer exists.
+    const withoutStaleBend: AutomationEdge =
+      edge.data?.bendPoints !== undefined ? { ...edge, data: { ...edge.data, bendPoints: undefined } } : edge;
+
+    if (!g.hasNode(edge.source) || !g.hasNode(edge.target)) return withoutStaleBend;
     const sourceRank = rankOf(edge.source);
     const targetRank = rankOf(edge.target);
-    const rankGap = sourceRank !== undefined && targetRank !== undefined ? targetRank - sourceRank : 1;
-    if (rankGap <= 1) return edge;
+    if (sourceRank === undefined || targetRank === undefined || targetRank - sourceRank <= 1) return withoutStaleBend;
 
-    const dagreEdge = g.edge(edge.source, edge.target);
-    const bendPoints = dagreEdge?.points?.slice(1, -1);
-    if (!bendPoints || bendPoints.length === 0) return edge;
+    const sourcePos = g.node(edge.source);
+    const targetPos = g.node(edge.target);
+    if (!sourcePos || !targetPos) return withoutStaleBend;
+
+    const routeAbove =
+      edge.sourceHandle === 'true' ? true : edge.sourceHandle === 'false' ? false : sourcePos.y <= targetPos.y;
+
+    const bendPoints: { x: number; y: number }[] = [];
+    for (let rank = sourceRank + 1; rank < targetRank; rank++) {
+      const x = rankXs[rank];
+      if (x === undefined) continue;
+      const occupants = (nodesByRank.get(rank) ?? []).filter((n) => n.id !== edge.source && n.id !== edge.target);
+      if (occupants.length === 0) {
+        const t = (rank - sourceRank) / (targetRank - sourceRank);
+        bendPoints.push({ x, y: sourcePos.y + (targetPos.y - sourcePos.y) * t });
+        continue;
+      }
+      const occupantBounds = occupants.map((n) => {
+        const pos = g.node(n.id);
+        return pos ? { top: pos.y - pos.height / 2, bottom: pos.y + pos.height / 2 } : { top: 0, bottom: 0 };
+      });
+      const y = routeAbove
+        ? Math.min(...occupantBounds.map((b) => b.top)) - CLEARANCE
+        : Math.max(...occupantBounds.map((b) => b.bottom)) + CLEARANCE;
+      bendPoints.push({ x, y });
+    }
+    if (bendPoints.length === 0) return withoutStaleBend;
     return { ...edge, data: { ...edge.data, bendPoints } };
   });
 
