@@ -138,6 +138,15 @@
         "subtitle": "Runs this action",
         "setupRequired": "Setup required"
       },
+      "condition": {
+        "title": "Condition",
+        "summaryPrimary": "If {{field}} {{operator}} {{value}}",
+        "summaryMore": "— {{combinator}} {{count}} more",
+        "noRulesConfigured": "No rules configured yet",
+        "unknownField": "Unknown field",
+        "trueLabel": "Yes",
+        "falseLabel": "No"
+      },
       "end": {
         "title": "End automation"
       }
@@ -155,6 +164,7 @@
       "titles": {
         "trigger": "Form submission",
         "delay": "Time delay",
+        "condition": "Condition",
         "action": "Configure action",
         "end": "End automation"
       },
@@ -172,6 +182,14 @@
         "amountLabel": "Amount",
         "unitLabel": "Unit",
         "hint": "The next step runs after this delay has passed."
+      },
+      "condition": {
+        "rulesLabel": "Rules",
+        "and": "AND",
+        "or": "OR",
+        "addRule": "Add rule",
+        "removeRule": "Remove rule",
+        "noRulesHint": "Add at least one rule. Responses matching it follow the Yes branch; everything else follows No."
       }
     }
   },

@@ -12,6 +12,7 @@
  */
 
 import { generateId } from '@dculus/utils';
+import type { FillableFormField } from '@dculus/types';
 import type { AutomationEdge, AutomationNode } from '../../components/automations/builder/layout';
 import { layoutAutomationGraph } from '../../components/automations/builder/layout';
 import type { AutomationNodeData, AutomationNodeType, ValidationErrorEntry } from '../../components/automations/builder/types';
@@ -27,6 +28,9 @@ import {
 export interface AutomationBuilderState {
   automationId: string | null;
   formTitle: string;
+  /** Fillable fields from the form schema — powers the condition rule editor's field picker
+   * and the ConditionNode summary card. Loaded once alongside the graph (#200). */
+  formFields: FillableFormField[];
   nodes: AutomationNode[];
   edges: AutomationEdge[];
   selectedNodeId: string | null;
@@ -38,6 +42,7 @@ export interface AutomationBuilderState {
   loadGraph: (params: {
     automationId: string;
     formTitle: string;
+    formFields?: FillableFormField[];
     graph: { nodes: any[]; edges: any[] };
     isReadOnly: boolean;
   }) => void;
@@ -73,12 +78,34 @@ const serializeGraph = (nodes: AutomationNode[], edges: AutomationEdge[]): Seria
   })),
 });
 
-type Get = () => AutomationBuilderState;
-type Set = (partial: Partial<AutomationBuilderState> | ((state: AutomationBuilderState) => Partial<AutomationBuilderState>)) => void;
+/**
+ * Walks forward from `startId` collecting every node reachable via outgoing edges, stopping
+ * at (and excluding) `endNodeId` — the graph's shared terminal node — and at nodes already
+ * visited. Used by removeNode's condition branch-keep convention: everything strictly
+ * downstream of a discarded branch's first node belongs exclusively to that branch (this
+ * builder only ever inserts linear extensions per branch, never merges branches back
+ * together before End), so it's safe to delete the whole subtree in one pass.
+ */
+function collectDownstreamNodeIds(
+  startId: string,
+  edges: AutomationEdge[],
+  endNodeId: string | undefined,
+  visited: Set<string>
+): void {
+  if (startId === endNodeId || visited.has(startId)) return;
+  visited.add(startId);
+  for (const edge of edges) {
+    if (edge.source === startId) collectDownstreamNodeIds(edge.target, edges, endNodeId, visited);
+  }
+}
 
-export const createAutomationBuilderSlice = (set: Set, get: Get): AutomationBuilderState => ({
+type Get = () => AutomationBuilderState;
+type SetState = (partial: Partial<AutomationBuilderState> | ((state: AutomationBuilderState) => Partial<AutomationBuilderState>)) => void;
+
+export const createAutomationBuilderSlice = (set: SetState, get: Get): AutomationBuilderState => ({
   automationId: null,
   formTitle: '',
+  formFields: [],
   nodes: [],
   edges: [],
   selectedNodeId: null,
@@ -87,7 +114,7 @@ export const createAutomationBuilderSlice = (set: Set, get: Get): AutomationBuil
   validationErrorsByNode: {},
   structuralErrors: [],
 
-  loadGraph: ({ automationId, formTitle, graph, isReadOnly }) => {
+  loadGraph: ({ automationId, formTitle, formFields, graph, isReadOnly }) => {
     // A session draft (see draftStorage.ts) means there are unsaved edits that survived a
     // same-tab reload — e.g. the full-page OAuth redirect from a Google/Microsoft Sheets
     // "Connect" click. Prefer it over the server's last-Saved graph when present.
@@ -116,6 +143,7 @@ export const createAutomationBuilderSlice = (set: Set, get: Get): AutomationBuil
     set({
       automationId,
       formTitle,
+      formFields: formFields ?? [],
       nodes: layoutedNodes,
       edges,
       selectedNodeId,
@@ -156,15 +184,45 @@ export const createAutomationBuilderSlice = (set: Set, get: Get): AutomationBuil
       sourceHandle: edge.sourceHandle,
       type: EDGE_TYPE,
     };
-    const edgeOut: AutomationEdge = {
-      id: generateId(),
-      source: newNodeId,
-      target: edge.target,
-      type: EDGE_TYPE,
-    };
+
+    let nextEdges: AutomationEdge[];
+    if (type === 'condition') {
+      // Inserting a condition on an edge attaches the previous successor (the edge's old
+      // target) to the `true` branch; the `false` branch is created empty, wired straight to
+      // the graph's single End node (#200) — there's always exactly one, created by
+      // buildDefaultGraph on the backend and never user-deletable (see EndNode.tsx). Fail
+      // loudly rather than silently wiring the false branch to the old successor too — that
+      // would make the branch inert without any visible error.
+      const endNode = nodes.find((n) => n.type === 'end');
+      if (!endNode) {
+        throw new Error('insertStepOnEdge(condition): graph has no End node to wire the false branch to');
+      }
+      const trueEdge: AutomationEdge = {
+        id: generateId(),
+        source: newNodeId,
+        target: edge.target,
+        sourceHandle: 'true',
+        type: EDGE_TYPE,
+      };
+      const falseEdge: AutomationEdge = {
+        id: generateId(),
+        source: newNodeId,
+        target: endNode.id,
+        sourceHandle: 'false',
+        type: EDGE_TYPE,
+      };
+      nextEdges = [...remainingEdges, edgeIn, trueEdge, falseEdge];
+    } else {
+      const edgeOut: AutomationEdge = {
+        id: generateId(),
+        source: newNodeId,
+        target: edge.target,
+        type: EDGE_TYPE,
+      };
+      nextEdges = [...remainingEdges, edgeIn, edgeOut];
+    }
 
     const nextNodes = [...nodes, newNode];
-    const nextEdges = [...remainingEdges, edgeIn, edgeOut];
     const layoutedNodes = layoutAutomationGraph(nextNodes, nextEdges);
 
     if (automationId) {
@@ -200,23 +258,65 @@ export const createAutomationBuilderSlice = (set: Set, get: Get): AutomationBuil
 
   removeNode: (nodeId) => {
     const { nodes, edges, selectedNodeId, automationId } = get();
-    const incoming = edges.find((e) => e.target === nodeId);
-    const outgoing = edges.find((e) => e.source === nodeId);
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
 
-    const remainingEdges = edges.filter((e) => e.source !== nodeId && e.target !== nodeId);
-    if (incoming && outgoing) {
-      remainingEdges.push({
-        id: generateId(),
-        source: incoming.source,
-        target: outgoing.target,
-        sourceHandle: incoming.sourceHandle,
-        type: EDGE_TYPE,
-      });
+    let remainingNodes: AutomationNode[];
+    let remainingEdges: AutomationEdge[];
+    const deletedNodeIds = new Set<string>([nodeId]);
+
+    if (node.type === 'condition') {
+      // Branch-keep convention (#200): deleting a condition node always keeps the `true`
+      // branch's continuation (falling back to `false` if a `true` edge was never wired)
+      // and discards the other branch's entire subtree, rather than prompting the user —
+      // matches the issue's documented "keep true branch by convention" option. Tested in
+      // automationBuilderSlice.test.ts.
+      const incoming = edges.find((e) => e.target === nodeId);
+      const trueEdge = edges.find((e) => e.source === nodeId && e.sourceHandle === 'true');
+      const falseEdge = edges.find((e) => e.source === nodeId && e.sourceHandle === 'false');
+      const keptEdge = trueEdge ?? falseEdge;
+      const discardedEdge = keptEdge === trueEdge ? falseEdge : undefined;
+
+      const endNodeId = nodes.find((n) => n.type === 'end')?.id;
+      if (discardedEdge) {
+        collectDownstreamNodeIds(discardedEdge.target, edges, endNodeId, deletedNodeIds);
+      }
+
+      const survivingEdges = edges.filter(
+        (e) => e.source !== nodeId && e.target !== nodeId && !deletedNodeIds.has(e.source) && !deletedNodeIds.has(e.target)
+      );
+      if (incoming && keptEdge) {
+        survivingEdges.push({
+          id: generateId(),
+          source: incoming.source,
+          target: keptEdge.target,
+          sourceHandle: incoming.sourceHandle,
+          type: EDGE_TYPE,
+        });
+      }
+
+      remainingEdges = survivingEdges;
+      remainingNodes = nodes.filter((n) => !deletedNodeIds.has(n.id));
+    } else {
+      const incoming = edges.find((e) => e.target === nodeId);
+      const outgoing = edges.find((e) => e.source === nodeId);
+
+      remainingEdges = edges.filter((e) => e.source !== nodeId && e.target !== nodeId);
+      if (incoming && outgoing) {
+        remainingEdges.push({
+          id: generateId(),
+          source: incoming.source,
+          target: outgoing.target,
+          sourceHandle: incoming.sourceHandle,
+          type: EDGE_TYPE,
+        });
+      }
+
+      remainingNodes = nodes.filter((n) => n.id !== nodeId);
     }
 
-    const remainingNodes = nodes.filter((n) => n.id !== nodeId);
     const layoutedNodes = layoutAutomationGraph(remainingNodes, remainingEdges);
-    const nextSelectedNodeId = selectedNodeId === nodeId ? null : selectedNodeId;
+    const nextSelectedNodeId = deletedNodeIds.has(selectedNodeId ?? '') ? null : selectedNodeId;
 
     if (automationId) {
       persistDraftGraph(automationId, serializeGraph(layoutedNodes, remainingEdges));
@@ -225,7 +325,7 @@ export const createAutomationBuilderSlice = (set: Set, get: Get): AutomationBuil
 
     set((state) => {
       const restErrors = Object.fromEntries(
-        Object.entries(state.validationErrorsByNode).filter(([id]) => id !== nodeId)
+        Object.entries(state.validationErrorsByNode).filter(([id]) => !deletedNodeIds.has(id))
       );
       return {
         nodes: layoutedNodes,

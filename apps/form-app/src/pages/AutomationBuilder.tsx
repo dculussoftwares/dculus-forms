@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
+import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dculus/types';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, Input, Badge, LoadingSpinner, EmptyState, Tooltip, TooltipContent, TooltipTrigger, toastSuccess, toastError } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
@@ -31,6 +32,20 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const markSaved = useAutomationBuilderStore((s) => s.markSaved);
   const discardDraft = useAutomationBuilderStore((s) => s.discardDraft);
 
+  // Fillable fields for the condition rule editor's field picker (#200) — same extraction
+  // pattern Responses.tsx uses for its filter panel.
+  const formFields = useMemo(() => {
+    if (!form.formSchema) return [];
+    const formSchema: FormSchema = deserializeFormSchema(form.formSchema);
+    const fields: FillableFormField[] = [];
+    formSchema.pages.forEach((page) => {
+      page.fields.forEach((field) => {
+        if (field instanceof FillableFormField && !field.deleted) fields.push(field);
+      });
+    });
+    return fields;
+  }, [form.formSchema]);
+
   // Only (re)load the graph into the store when the automation actually changes — the cache
   // updates `automation` after every Save/Activate mutation (same id), and re-running loadGraph
   // then would stomp on in-progress local edits with what we just persisted.
@@ -41,10 +56,11 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     loadGraph({
       automationId,
       formTitle: form.title,
+      formFields,
       graph: automation.graph,
       isReadOnly: !canEdit,
     });
-  }, [automationId, automation.graph, form.title, canEdit, loadGraph]);
+  }, [automationId, automation.graph, form.title, formFields, canEdit, loadGraph]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(automation.name);

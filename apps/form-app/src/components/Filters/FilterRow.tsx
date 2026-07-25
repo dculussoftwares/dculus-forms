@@ -33,9 +33,13 @@ interface FilterRowProps {
   filterLogic: 'AND' | 'OR';
 }
 
-const getOperatorOptions = (
+/** Matches useTranslation's translate signature — wider than a bare `(key) => string` so
+ * callers (e.g. renderFilterInput's "{{count}} selected" label) can pass interpolation values. */
+type TranslateFn = (key: string, options?: { values?: Record<string, string | number> }) => string;
+
+export const getOperatorOptions = (
   fieldType: FieldType,
-  t: (key: string) => string
+  t: TranslateFn
 ) => {
   const baseOptions = [
     { value: 'IS_EMPTY', label: t('operators.isEmpty') },
@@ -114,11 +118,11 @@ const truncateLabel = (label: string, maxLength = 50): string => {
   return label.length > maxLength ? `${label.slice(0, maxLength)}...` : label;
 };
 
-const renderFilterInput = (
+export const renderFilterInput = (
   field: FillableFormField,
   filter: FilterState,
   onChange: (filter: Partial<FilterState>) => void,
-  t: (key: string) => string
+  t: TranslateFn
 ) => {
   if (
     !filter.operator ||
@@ -187,7 +191,7 @@ const renderFilterInput = (
               onChange={(e) => handleNumberRangeChange('min', e.target.value)}
               className="h-9 w-24"
             />
-            <span className="text-muted-foreground">and</span>
+            <span className="text-muted-foreground">{t('conjunctions.and')}</span>
             <Input
               type="number"
               placeholder={t('placeholders.max')}
@@ -241,10 +245,10 @@ const renderFilterInput = (
                   date ? formatCalendarDate(date) : ''
                 )
               }
-              placeholder="From"
+              placeholder={t('placeholders.from')}
               className="h-9 w-36"
             />
-            <span className="text-muted-foreground">and</span>
+            <span className="text-muted-foreground">{t('conjunctions.and')}</span>
             <DatePicker
               date={
                 filter.dateRange?.to ? parseCalendarDate(filter.dateRange.to) : undefined
@@ -255,7 +259,7 @@ const renderFilterInput = (
                   date ? formatCalendarDate(date) : ''
                 )
               }
-              placeholder="To"
+              placeholder={t('placeholders.to')}
               className="h-9 w-36"
             />
           </div>
@@ -267,7 +271,7 @@ const renderFilterInput = (
           onDateChange={(date) =>
             handleValueChange(date ? formatCalendarDate(date) : '')
           }
-          placeholder="Select date"
+          placeholder={t('placeholders.selectDate')}
           className="h-9 min-w-[200px]"
         />
       );
@@ -296,7 +300,7 @@ const renderFilterInput = (
             }}
           >
             <SelectTrigger className="h-9 min-w-[200px]">
-              <SelectValue placeholder="Select an option..." />
+              <SelectValue placeholder={t('placeholders.selectOption')} />
             </SelectTrigger>
             <SelectContent>
               {options.map((option, index) => (
@@ -318,8 +322,8 @@ const renderFilterInput = (
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground">
                     {filter.values?.length
-                      ? `${filter.values.length} selected`
-                      : 'Select options...'}
+                      ? t('placeholders.selectedCount', { values: { count: filter.values.length } })
+                      : t('placeholders.selectOptions')}
                   </span>
                 </div>
               </SelectValue>

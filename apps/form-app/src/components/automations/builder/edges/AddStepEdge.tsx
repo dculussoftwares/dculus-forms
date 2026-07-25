@@ -51,6 +51,7 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
   targetY,
   sourcePosition,
   targetPosition,
+  sourceHandleId,
   markerEnd,
 }) => {
   const { t } = useTranslation('automations');
@@ -68,8 +69,21 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
     borderRadius: 8,
   });
 
+  const branchLabel =
+    sourceHandleId === 'true'
+      ? t('builder.nodes.condition.trueLabel')
+      : sourceHandleId === 'false'
+        ? t('builder.nodes.condition.falseLabel')
+        : null;
+  const branchColor = sourceHandleId === 'true' ? 'var(--tf-green)' : 'var(--tf-error)';
+
   const handleAddDelay = () => {
     insertStepOnEdge(id, 'delay', { amount: 1, unit: 'hours' });
+    setOpen(false);
+  };
+
+  const handleAddCondition = () => {
+    insertStepOnEdge(id, 'condition', { rules: [], combinator: 'AND' });
     setOpen(false);
   };
 
@@ -81,6 +95,26 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
   return (
     <>
       <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: 'var(--tf-border-strong)', strokeWidth: 1.5 }} />
+      {branchLabel && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, 0) translate(${sourceX}px, ${sourceY + 10}px)`,
+              pointerEvents: 'none',
+            }}
+            className="nodrag nopan"
+          >
+            <span
+              className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white"
+              style={{ color: branchColor, border: `1px solid ${branchColor}` }}
+              data-testid={`automation-branch-label-${sourceHandleId}`}
+            >
+              {branchLabel}
+            </span>
+          </div>
+        </EdgeLabelRenderer>
+      )}
       {!isReadOnly && (
         <EdgeLabelRenderer>
           <div
@@ -115,12 +149,10 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
                   onClick={handleAddDelay}
                 />
                 <CatalogItem
-                  icon={<GitBranch className="h-3.5 w-3.5" style={{ color: 'var(--tf-muted)' }} />}
-                  iconBg="var(--tf-faint)"
+                  icon={<GitBranch className="h-3.5 w-3.5" style={{ color: '#5e35b1' }} />}
+                  iconBg="#ede7f6"
                   label={t('builder.addStep.condition')}
-                  disabled
-                  comingSoonLabel={t('builder.addStep.comingSoon')}
-                  onClick={() => {}}
+                  onClick={handleAddCondition}
                 />
 
                 <div className="my-2 border-t" style={{ borderColor: 'var(--tf-border-light)' }} />
