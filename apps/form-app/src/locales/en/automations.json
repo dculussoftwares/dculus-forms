@@ -120,7 +120,24 @@
       "trigger": {
         "title": "Form submission",
         "subtitle": "Start automation when {{form}} is Completed",
-        "thisForm": "this form"
+        "subtitleResponseEdited": "Start automation when a response to {{form}} is edited",
+        "thisForm": "this form",
+        "cron": {
+          "notConfigured": "Set up a schedule",
+          "daily": "Every day at {{time}}",
+          "weekly": "Every {{day}} at {{time}}",
+          "monthly": "Day {{day}} of every month at {{time}}",
+          "custom": "Custom schedule: {{cron}}",
+          "weekdays": {
+            "sunday": "Sunday",
+            "monday": "Monday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday",
+            "thursday": "Thursday",
+            "friday": "Friday",
+            "saturday": "Saturday"
+          }
+        }
       },
       "delay": {
         "title": "Wait",
@@ -169,7 +186,31 @@
         "end": "End automation"
       },
       "trigger": {
-        "description": "This automation starts every time someone completes this form."
+        "description": "This automation starts every time someone completes this form.",
+        "descriptionResponseEdited": "This automation starts every time a response to this form is edited.",
+        "descriptionSchedule": "This automation starts on the schedule below — it doesn't have a triggering response, so steps can't reference response fields."
+      },
+      "schedule": {
+        "presetLabel": "Repeats",
+        "presets": {
+          "daily": "Daily",
+          "weekly": "Weekly",
+          "monthly": "Monthly",
+          "custom": "Custom"
+        },
+        "timeLabel": "Time",
+        "weekdayLabel": "Day of week",
+        "dayOfMonthLabel": "Day of month",
+        "customCronLabel": "Cron expression",
+        "timezoneLabel": "Timezone",
+        "invalidCron": "Enter a valid 5-field cron expression, e.g. \"0 9 * * *\".",
+        "invalidTimezone": "Enter a valid IANA timezone, e.g. \"America/Chicago\".",
+        "hint": "Times are evaluated in the timezone above (defaults to UTC if left blank).",
+        "saveButton": "Save schedule",
+        "saving": "Saving...",
+        "saveSuccessTitle": "Schedule saved",
+        "saveSuccessMessage": "This automation's schedule has been updated.",
+        "saveErrorTitle": "Couldn't save schedule"
       },
       "end": {
         "description": "The automation finishes here — nothing runs after this step."

@@ -38,7 +38,7 @@ import { appConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
 import { initializeAutomationEngine, shutdownAutomationEngine } from './services/automation/engine.js';
-import { initializeAutomationTriggers } from './services/automation/triggerService.js';
+import { initializeAutomationTriggers, initializeAutomationScheduleTrigger } from './services/automation/triggerService.js';
 import { startPeriodicCleanup, tempFilesMockStore } from './services/temporaryFileService.js';
 import { cleanupOldAnalytics } from './services/analyticsService.js';
 import { logger } from './lib/logger.js';
@@ -345,6 +345,12 @@ async function startServer() {
   logger.info('⚙️  Initializing automation engine...');
   await initializeAutomationEngine();
   logger.info('✅ Automation engine initialized');
+
+  // Registers the cron worker for `schedule`-triggerType automations (#201). Depends on
+  // the automation-cron queue created by initializeAutomationEngine()'s startAutomationBoss().
+  logger.info('⏰ Initializing automation schedule trigger...');
+  await initializeAutomationScheduleTrigger();
+  logger.info('✅ Automation schedule trigger initialized');
 
   await server.start();
 

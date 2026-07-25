@@ -17,6 +17,8 @@ import '../../../plugins/index';
 import type { AutomationActionNodeData, AutomationConditionNodeData, AutomationDelayNodeData, DelayUnit } from './types';
 import { getActionManifest } from './actionCatalog';
 import { ConditionRulesEditor } from './ConditionRulesEditor';
+import { ScheduleTriggerEditor } from './ScheduleTriggerEditor';
+import { triggerTypeI18nKey } from '../triggerTypes';
 
 interface NodeConfigPanelProps {
   form?: any;
@@ -68,6 +70,8 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   const updateNodeData = useAutomationBuilderStore((s) => s.updateNodeData);
   const isReadOnly = useAutomationBuilderStore((s) => s.isReadOnly);
   const formFields = useAutomationBuilderStore((s) => s.formFields);
+  const triggerType = useAutomationBuilderStore((s) => s.triggerType);
+  const automationId = useAutomationBuilderStore((s) => s.automationId);
 
   const node = nodes.find((n) => n.id === selectedNodeId);
   if (!node) return null;
@@ -75,7 +79,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   const close = () => setSelectedNodeId(null);
 
   const titleForType: Record<string, string> = {
-    trigger: t('builder.panel.titles.trigger'),
+    trigger: t(`triggerTypes.${triggerTypeI18nKey(triggerType)}`, { defaultValue: t('builder.panel.titles.trigger') }),
     delay: t('builder.panel.titles.delay'),
     condition: t('builder.panel.titles.condition'),
     action: t('builder.panel.titles.action'),
@@ -85,7 +89,18 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   let body: React.ReactNode = null;
 
   if (node.type === 'trigger') {
-    body = <p className="text-sm text-muted-foreground">{t('builder.panel.trigger.description')}</p>;
+    if (triggerType === 'schedule' && automationId) {
+      body = (
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">{t('builder.panel.trigger.descriptionSchedule')}</p>
+          <ScheduleTriggerEditor automationId={automationId} disabled={isReadOnly} />
+        </div>
+      );
+    } else if (triggerType === 'response.edited') {
+      body = <p className="text-sm text-muted-foreground">{t('builder.panel.trigger.descriptionResponseEdited')}</p>;
+    } else {
+      body = <p className="text-sm text-muted-foreground">{t('builder.panel.trigger.description')}</p>;
+    }
   } else if (node.type === 'end') {
     body = <p className="text-sm text-muted-foreground">{t('builder.panel.end.description')}</p>;
   } else if (node.type === 'delay') {

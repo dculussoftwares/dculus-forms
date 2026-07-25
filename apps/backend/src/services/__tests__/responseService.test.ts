@@ -14,6 +14,7 @@ import { logger } from '../../lib/logger.js';
 import { applyResponseFilters } from '../responseFilterService.js';
 import { ResponseEditTrackingService } from '../responseEditTrackingService.js';
 import { prisma } from '../../lib/prisma.js';
+import { emitResponseEdited } from '../../plugins/core/events.js';
 
 // Mock dependencies
 vi.mock('../../repositories/index.js');
@@ -44,6 +45,12 @@ vi.mock('../responseEditTrackingService.js', () => ({
 }));
 vi.mock('../tagService.js', () => ({
   batchLoadTagsForResponses: vi.fn().mockResolvedValue({}),
+}));
+vi.mock('../../plugins/core/events.js', () => ({
+  emitResponseEdited: vi.fn(),
+}));
+vi.mock('../pdfGenerationJobService.js', () => ({
+  regeneratePdfsForResponse: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('Response Service', () => {
@@ -414,6 +421,164 @@ describe('Response Service', () => {
         expect.anything() // tx client passed for atomic commit
       );
       expect(result.data.field1).toBe('new-value');
+    });
+
+    it('emits response.edited (#201) when recordEdit detects real field changes', async () => {
+      const updatedData = { field1: 'new-value' };
+      const updatedResponse = { ...mockResponse, formId: 'form-123', data: updatedData };
+      const formSchema = { pages: [] } as any;
+
+      vi.mocked(ResponseEditTrackingService.getResponseWithFormSchema).mockResolvedValue({
+        response: {
+          id: 'response-123',
+          formId: 'form-123',
+          data: { field1: 'old-value' },
+          metadata: {},
+          respondentUserId: null,
+          respondentEmail: null,
+          submittedAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+          deletedAt: null,
+          form: { id: 'form-123', formSchema: {} },
+        },
+        formSchema,
+      });
+      vi.mocked(ResponseEditTrackingService.recordEdit).mockResolvedValue({
+        id: 'edit-1',
+        totalChanges: 1,
+      });
+      mockTxClient.response.update.mockResolvedValue(updatedResponse as any);
+
+      const editContext = {
+        userId: 'user-1',
+        organizationId: 'org-123',
+        editReason: 'Fix typo',
+      };
+
+      await updateResponse('response-123', updatedData, editContext);
+
+      expect(emitResponseEdited).toHaveBeenCalledWith('form-123', 'org-123', {
+        field1: 'new-value',
+        responseId: 'response-123',
+        editType: 'MANUAL',
+        sourceRunId: undefined,
+      });
+    });
+
+    it('does not emit response.edited when recordEdit detects no changes', async () => {
+      const updatedData = { field1: 'same-value' };
+      const updatedResponse = { ...mockResponse, formId: 'form-123', data: updatedData };
+      const formSchema = { pages: [] } as any;
+
+      vi.mocked(ResponseEditTrackingService.getResponseWithFormSchema).mockResolvedValue({
+        response: {
+          id: 'response-123',
+          formId: 'form-123',
+          data: { field1: 'same-value' },
+          metadata: {},
+          respondentUserId: null,
+          respondentEmail: null,
+          submittedAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+          deletedAt: null,
+          form: { id: 'form-123', formSchema: {} },
+        },
+        formSchema,
+      });
+      vi.mocked(ResponseEditTrackingService.recordEdit).mockResolvedValue(null);
+      mockTxClient.response.update.mockResolvedValue(updatedResponse as any);
+
+      await updateResponse('response-123', updatedData, { userId: 'user-1', organizationId: 'org-123' });
+
+      expect(emitResponseEdited).not.toHaveBeenCalled();
+    });
+
+    it('propagates sourceRunId and a custom editType onto the emitted event (loop-guard plumbing, #201)', async () => {
+      const updatedData = { field1: 'new-value' };
+      const updatedResponse = { ...mockResponse, formId: 'form-123', data: updatedData };
+      const formSchema = { pages: [] } as any;
+
+      vi.mocked(ResponseEditTrackingService.getResponseWithFormSchema).mockResolvedValue({
+        response: {
+          id: 'response-123',
+          formId: 'form-123',
+          data: { field1: 'old-value' },
+          metadata: {},
+          respondentUserId: null,
+          respondentEmail: null,
+          submittedAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+          deletedAt: null,
+          form: { id: 'form-123', formSchema: {} },
+        },
+        formSchema,
+      });
+      vi.mocked(ResponseEditTrackingService.recordEdit).mockResolvedValue({
+        id: 'edit-1',
+        totalChanges: 1,
+      });
+      mockTxClient.response.update.mockResolvedValue(updatedResponse as any);
+
+      await updateResponse('response-123', updatedData, {
+        userId: 'system',
+        organizationId: 'org-123',
+        editType: 'SYSTEM',
+        sourceRunId: 'run-1',
+      });
+
+      expect(ResponseEditTrackingService.recordEdit).toHaveBeenCalledWith(
+        'response-123',
+        { field1: 'old-value' },
+        updatedData,
+        formSchema,
+        expect.objectContaining({ editType: 'SYSTEM' }),
+        expect.anything()
+      );
+      expect(emitResponseEdited).toHaveBeenCalledWith(
+        'form-123',
+        'org-123',
+        expect.objectContaining({ editType: 'SYSTEM', sourceRunId: 'run-1' })
+      );
+    });
+
+    it('does not fail the update when emitting response.edited throws', async () => {
+      const updatedData = { field1: 'new-value' };
+      const updatedResponse = { ...mockResponse, formId: 'form-123', data: updatedData };
+      const formSchema = { pages: [] } as any;
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+      vi.mocked(ResponseEditTrackingService.getResponseWithFormSchema).mockResolvedValue({
+        response: {
+          id: 'response-123',
+          formId: 'form-123',
+          data: { field1: 'old-value' },
+          metadata: {},
+          respondentUserId: null,
+          respondentEmail: null,
+          submittedAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+          deletedAt: null,
+          form: { id: 'form-123', formSchema: {} },
+        },
+        formSchema,
+      });
+      vi.mocked(ResponseEditTrackingService.recordEdit).mockResolvedValue({
+        id: 'edit-1',
+        totalChanges: 1,
+      });
+      mockTxClient.response.update.mockResolvedValue(updatedResponse as any);
+      vi.mocked(emitResponseEdited).mockImplementation(() => {
+        throw new Error('emitter exploded');
+      });
+
+      const result = await updateResponse('response-123', updatedData, {
+        userId: 'user-1',
+        organizationId: 'org-123',
+      });
+
+      expect(result.data.field1).toBe('new-value');
+      expect(loggerError).toHaveBeenCalledWith('Error emitting response.edited event:', expect.any(Error));
+      loggerError.mockRestore();
     });
 
     it('should handle update without editContext (legacy mode)', async () => {

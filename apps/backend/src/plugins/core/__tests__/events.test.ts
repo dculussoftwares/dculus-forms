@@ -3,6 +3,7 @@ import {
   initializePluginEvents,
   emitFormSubmitted,
   emitPluginTest,
+  emitResponseEdited,
   getEventEmitter,
 } from '../events.js';
 import { executePluginsForForm } from '../executor.js';
@@ -207,6 +208,55 @@ describe('events', () => {
       // Now it should be called
       expect(executionStarted).toBe(true);
       expect(executePluginsForForm).toHaveBeenCalled();
+    });
+  });
+
+  describe('emitResponseEdited', () => {
+    beforeEach(() => {
+      initializePluginEvents();
+      vi.mocked(executePluginsForForm).mockResolvedValue({
+        total: 1,
+        succeeded: 1,
+        failed: 0,
+      });
+    });
+
+    it('emits response.edited event with correct data', async () => {
+      const editData = { responseId: 'resp-1', field1: 'value1', editType: 'MANUAL' };
+
+      emitResponseEdited('form-123', 'org-456', editData);
+
+      await vi.waitFor(() => {
+        expect(executePluginsForForm).toHaveBeenCalled();
+      });
+
+      expect(executePluginsForForm).toHaveBeenCalledWith('form-123', {
+        type: 'response.edited',
+        formId: 'form-123',
+        organizationId: 'org-456',
+        data: editData,
+        timestamp: expect.any(Date),
+      });
+    });
+
+    it('is distinguishable from form.submitted and plugin.test events', async () => {
+      emitFormSubmitted('form-123', 'org-456', {});
+      emitResponseEdited('form-123', 'org-456', {});
+      emitPluginTest('form-123', 'org-456');
+
+      await vi.waitFor(() => {
+        expect(executePluginsForForm).toHaveBeenCalledTimes(3);
+      });
+
+      expect(vi.mocked(executePluginsForForm).mock.calls[1][1].type).toBe('response.edited');
+    });
+
+    it('does not throw when executePluginsForForm fails', async () => {
+      vi.mocked(executePluginsForForm).mockRejectedValue(new Error('Execution failed'));
+
+      expect(() => {
+        emitResponseEdited('form-123', 'org-456', {});
+      }).not.toThrow();
     });
   });
 

@@ -6,6 +6,7 @@ import {
   startAutomationBoss,
   stopAutomationBoss,
   AUTOMATION_QUEUE,
+  AUTOMATION_CRON_QUEUE,
   __resetBossForTests,
 } from '../boss.js';
 import { logger } from '../../../lib/logger.js';
@@ -107,6 +108,14 @@ describe('automation boss', () => {
       expect(result).not.toBeNull();
       expect(result!.start).toHaveBeenCalledTimes(1);
       expect(result!.createQueue).toHaveBeenCalledWith(AUTOMATION_QUEUE);
+    });
+
+    it('also creates the automation-cron queue', async () => {
+      process.env.DIRECT_URL = 'postgres://direct/db';
+
+      const result = await startAutomationBoss();
+
+      expect(result!.createQueue).toHaveBeenCalledWith(AUTOMATION_CRON_QUEUE);
     });
   });
 

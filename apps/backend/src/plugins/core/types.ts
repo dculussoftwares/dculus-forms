@@ -8,7 +8,7 @@ export interface PluginConfig {
 }
 
 export interface PluginEvent {
-  type: 'form.submitted' | 'plugin.test';
+  type: 'form.submitted' | 'plugin.test' | 'response.edited';
   formId: string;
   organizationId: string;
   data: Record<string, any>;

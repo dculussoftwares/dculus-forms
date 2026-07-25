@@ -5,9 +5,12 @@ import {
   initializeAutomationTriggers,
   cancelRunsForAutomation,
   cancelSingleAutomationRun,
+  scheduleAutomationCron,
+  unscheduleAutomationCron,
+  initializeAutomationScheduleTrigger,
 } from '../triggerService.js';
 import { enqueueFirstStep } from '../engine.js';
-import { getBoss, AUTOMATION_QUEUE } from '../boss.js';
+import { getBoss, AUTOMATION_QUEUE, AUTOMATION_CRON_QUEUE } from '../boss.js';
 import { getEventEmitter } from '../../../plugins/core/events.js';
 import { prisma } from '../../../lib/prisma.js';
 import { logger } from '../../../lib/logger.js';
@@ -17,6 +20,7 @@ vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
     automation: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
     },
     automationRun: {
       create: vi.fn(),
@@ -45,6 +49,7 @@ vi.mock('../engine.js', () => ({
 
 vi.mock('../boss.js', () => ({
   AUTOMATION_QUEUE: 'automation-step',
+  AUTOMATION_CRON_QUEUE: 'automation-cron',
   getBoss: vi.fn(),
 }));
 
@@ -167,12 +172,57 @@ describe('triggerService', () => {
       });
     });
 
-    it('ignores non form.submitted events', async () => {
+    it('ignores non form.submitted/response.edited events', async () => {
       initializeAutomationTriggers();
 
       await emitAndFlush(makeEvent({ type: 'plugin.test' }));
 
       expect(prisma.automation.findMany).not.toHaveBeenCalled();
+    });
+
+    it('creates a run for a matching response.edited automation', async () => {
+      initializeAutomationTriggers();
+      const automation = makeAutomation({ triggerType: 'response.edited' });
+      vi.mocked(prisma.automation.findMany).mockResolvedValue([automation] as any);
+
+      await emitAndFlush(
+        makeEvent({ type: 'response.edited', data: { responseId: 'resp-1', editType: 'MANUAL' } })
+      );
+
+      expect(prisma.automation.findMany).toHaveBeenCalledWith({
+        where: { formId: 'form-1', status: 'ACTIVE', triggerType: 'response.edited' },
+      });
+      expect(prisma.automationRun.create).toHaveBeenCalled();
+      expect(enqueueFirstStep).toHaveBeenCalledWith({ id: 'generated-run-id' });
+    });
+
+    it('loop guard: suppresses run creation for a response.edited event carrying sourceRunId', async () => {
+      initializeAutomationTriggers();
+      vi.mocked(prisma.automation.findMany).mockResolvedValue([
+        makeAutomation({ triggerType: 'response.edited' }),
+      ] as any);
+
+      await emitAndFlush(
+        makeEvent({
+          type: 'response.edited',
+          data: { responseId: 'resp-1', sourceRunId: 'run-that-caused-this-edit' },
+        })
+      );
+
+      expect(prisma.automation.findMany).not.toHaveBeenCalled();
+      expect(prisma.automationRun.create).not.toHaveBeenCalled();
+    });
+
+    it('does not suppress form.submitted events that happen to carry a sourceRunId-shaped field', async () => {
+      // sourceRunId only matters for response.edited — a form.submitted event is never
+      // itself caused by an automation action, so the loop guard must not touch it.
+      initializeAutomationTriggers();
+      vi.mocked(prisma.automation.findMany).mockResolvedValue([makeAutomation()] as any);
+
+      await emitAndFlush(makeEvent({ data: { responseId: 'resp-1', sourceRunId: 'run-1' } }));
+
+      expect(prisma.automation.findMany).toHaveBeenCalled();
+      expect(prisma.automationRun.create).toHaveBeenCalled();
     });
 
     it('ignores preview submissions', async () => {
@@ -369,6 +419,141 @@ describe('triggerService', () => {
         data: { status: 'CANCELLED', completedAt: expect.any(Date) },
       });
       expect(result).toEqual({ id: 'run-1', status: 'CANCELLED' });
+    });
+  });
+
+  describe('scheduleAutomationCron', () => {
+    it('schedules on the shared cron queue keyed by automationId', async () => {
+      const schedule = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(getBoss).mockReturnValue({ schedule } as any);
+
+      await scheduleAutomationCron('automation-1', '0 9 * * *', 'America/Chicago');
+
+      expect(schedule).toHaveBeenCalledWith(
+        AUTOMATION_CRON_QUEUE,
+        '0 9 * * *',
+        { automationId: 'automation-1' },
+        { key: 'automation-1', tz: 'America/Chicago' }
+      );
+    });
+
+    it('omits tz when no timezone is given (pg-boss defaults to UTC)', async () => {
+      const schedule = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(getBoss).mockReturnValue({ schedule } as any);
+
+      await scheduleAutomationCron('automation-1', '0 9 * * *');
+
+      expect(schedule).toHaveBeenCalledWith(
+        AUTOMATION_CRON_QUEUE,
+        '0 9 * * *',
+        { automationId: 'automation-1' },
+        { key: 'automation-1' }
+      );
+    });
+
+    it('is a no-op when the engine is disabled', async () => {
+      vi.mocked(getBoss).mockReturnValue(null);
+
+      await expect(scheduleAutomationCron('automation-1', '0 9 * * *')).resolves.toBeUndefined();
+      expect(logger.warn).toHaveBeenCalled();
+    });
+  });
+
+  describe('unscheduleAutomationCron', () => {
+    it('unschedules by automationId key on the shared cron queue', async () => {
+      const unschedule = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(getBoss).mockReturnValue({ unschedule } as any);
+
+      await unscheduleAutomationCron('automation-1');
+
+      expect(unschedule).toHaveBeenCalledWith(AUTOMATION_CRON_QUEUE, 'automation-1');
+    });
+
+    it('is a no-op when the engine is disabled', async () => {
+      vi.mocked(getBoss).mockReturnValue(null);
+
+      await expect(unscheduleAutomationCron('automation-1')).resolves.toBeUndefined();
+    });
+  });
+
+  describe('initializeAutomationScheduleTrigger / scheduled tick handling', () => {
+    async function fireTick(automationId: string) {
+      const work = vi.fn();
+      vi.mocked(getBoss).mockReturnValue({ work } as any);
+
+      await initializeAutomationScheduleTrigger();
+
+      expect(work).toHaveBeenCalledWith(AUTOMATION_CRON_QUEUE, expect.any(Function));
+      const handler = work.mock.calls[0][1];
+      await handler([{ data: { automationId } }]);
+    }
+
+    it('registers a worker on the cron queue', async () => {
+      const work = vi.fn();
+      vi.mocked(getBoss).mockReturnValue({ work } as any);
+
+      await initializeAutomationScheduleTrigger();
+
+      expect(work).toHaveBeenCalledWith(AUTOMATION_CRON_QUEUE, expect.any(Function));
+    });
+
+    it('is a no-op when the engine is disabled', async () => {
+      vi.mocked(getBoss).mockReturnValue(null);
+
+      await expect(initializeAutomationScheduleTrigger()).resolves.toBeUndefined();
+    });
+
+    it('creates a run with responseId null and enqueues the first step for an ACTIVE schedule automation', async () => {
+      const automation = makeAutomation({ triggerType: 'schedule', status: 'ACTIVE' });
+      vi.mocked(prisma.automation.findUnique).mockResolvedValue(automation as any);
+
+      await fireTick('automation-1');
+
+      expect(prisma.automationRun.create).toHaveBeenCalledWith({
+        data: {
+          id: 'generated-run-id',
+          automationId: automation.id,
+          responseId: null,
+          automationVersion: automation.version,
+          graphSnapshot: automation.graph,
+          status: 'RUNNING',
+          context: expect.objectContaining({
+            triggerData: {},
+            formId: 'form-1',
+            organizationId: 'org-1',
+            trigger: { scheduledAt: expect.any(String) },
+          }),
+        },
+      });
+      expect(enqueueFirstStep).toHaveBeenCalledWith({ id: 'generated-run-id' });
+    });
+
+    it('skips a tick when the automation was paused/deleted concurrently', async () => {
+      vi.mocked(prisma.automation.findUnique).mockResolvedValue(
+        makeAutomation({ triggerType: 'schedule', status: 'PAUSED' }) as any
+      );
+
+      await fireTick('automation-1');
+
+      expect(prisma.automationRun.create).not.toHaveBeenCalled();
+      expect(enqueueFirstStep).not.toHaveBeenCalled();
+    });
+
+    it('skips a tick when the automation no longer exists', async () => {
+      vi.mocked(prisma.automation.findUnique).mockResolvedValue(null);
+
+      await fireTick('missing-automation');
+
+      expect(prisma.automationRun.create).not.toHaveBeenCalled();
+    });
+
+    it('never throws when the run lookup/creation fails', async () => {
+      vi.mocked(prisma.automation.findUnique).mockRejectedValue(new Error('db down'));
+
+      await fireTick('automation-1');
+
+      expect(logger.error).toHaveBeenCalled();
+      expect(Sentry.captureException).toHaveBeenCalled();
     });
   });
 });

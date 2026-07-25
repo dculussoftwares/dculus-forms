@@ -493,6 +493,7 @@ export const responsesResolvers = {
           (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0],
         userAgent: context.req?.headers?.['user-agent'],
         editReason: input.editReason,
+        organizationId: form.organizationId,
       };
 
       // 4. Update response data with edit tracking

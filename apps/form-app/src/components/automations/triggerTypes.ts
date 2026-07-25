@@ -9,7 +9,7 @@ export const TRIGGER_TYPE_I18N_KEYS: Record<string, string> = {
   schedule: 'schedule',
 };
 
-export const SUPPORTED_TRIGGER_TYPES = ['form.submitted'] as const;
+export const SUPPORTED_TRIGGER_TYPES = ['form.submitted', 'response.edited', 'schedule'] as const;
 
 export const triggerTypeI18nKey = (triggerType: string): string =>
   TRIGGER_TYPE_I18N_KEYS[triggerType] ?? triggerType;

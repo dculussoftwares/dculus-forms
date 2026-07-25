@@ -427,4 +427,141 @@ describe('validateAutomationGraph', () => {
     expect(result.valid).toBe(false);
     expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.MISSING_TRIGGER);
   });
+
+  describe('RESPONSE_DEPENDENT_ON_SCHEDULE (#201)', () => {
+    function validateSchedule(graph: unknown) {
+      return validateAutomationGraph(graph, { pluginTypes: PLUGIN_TYPES, triggerType: 'schedule' });
+    }
+
+    it('rejects any condition node on a scheduled automation (rules always reference response fields)', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          {
+            id: 'c1',
+            type: 'condition',
+            data: { rules: [{ fieldId: 'age', operator: 'GREATER_THAN', value: '18' }], combinator: 'AND' },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'c1' },
+          { id: 'e2', source: 'c1', target: 'end-1', sourceHandle: 'true' },
+          { id: 'e3', source: 'c1', target: 'end-1', sourceHandle: 'false' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({ nodeId: 'c1', code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE })
+      );
+    });
+
+    it('rejects an email action using recipientFieldId on a scheduled automation', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: { actionType: 'email', config: { recipientFieldId: 'email-field', subject: 'Hi', message: 'Hello' } },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'a1' },
+          { id: 'e2', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE);
+    });
+
+    it('rejects an email action using sendToSubmitter on a scheduled automation', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: { actionType: 'email', config: { sendToSubmitter: true, subject: 'Hi', message: 'Hello' } },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'a1' },
+          { id: 'e2', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE);
+    });
+
+    it('rejects any action config containing a {{field}} mention placeholder on a scheduled automation', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'webhook',
+              config: { url: 'https://example.com/hook', headers: { 'X-Name': '{{full-name}}' } },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'a1' },
+          { id: 'e2', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE);
+    });
+
+    it('accepts a scheduled automation with only static action configs (no response dependency)', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: { recipientEmail: 'ops@example.com', subject: 'Daily digest', message: 'Good morning' },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'a1' },
+          { id: 'e2', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.valid).toBe(true);
+    });
+
+    it('does not reject response-dependent nodes for non-schedule triggerTypes', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'form.submitted' } },
+          {
+            id: 'c1',
+            type: 'condition',
+            data: { rules: [{ fieldId: 'age', operator: 'GREATER_THAN', value: '18' }], combinator: 'AND' },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'c1' },
+          { id: 'e2', source: 'c1', target: 'end-1', sourceHandle: 'true' },
+          { id: 'e3', source: 'c1', target: 'end-1', sourceHandle: 'false' },
+        ],
+      };
+      const result = validate(graph);
+      expect(result.valid).toBe(true);
+    });
+  });
 });

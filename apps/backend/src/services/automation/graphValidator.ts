@@ -15,6 +15,12 @@ export interface GraphValidationResult {
 export interface ValidateAutomationGraphOptions {
   /** Registered plugin/action types, e.g. getAvailablePluginTypes() from plugins/core/registry.ts. */
   pluginTypes: string[];
+  /**
+   * The automation's triggerType (#201). When 'schedule', condition nodes and action configs
+   * that reference response data are rejected — a cron-triggered run has no response
+   * (responseId: null, empty triggerData), so those nodes could never behave correctly.
+   */
+  triggerType?: string;
 }
 
 /** Stable error codes surfaced to the builder UI (#197) for node-level badges. */
@@ -33,6 +39,7 @@ export const GRAPH_ERROR_CODES = {
   DELAY_LIMIT_EXCEEDED: 'DELAY_LIMIT_EXCEEDED',
   UNKNOWN_ACTION_TYPE: 'UNKNOWN_ACTION_TYPE',
   INVALID_ACTION_CONFIG: 'INVALID_ACTION_CONFIG',
+  RESPONSE_DEPENDENT_ON_SCHEDULE: 'RESPONSE_DEPENDENT_ON_SCHEDULE',
 } as const;
 
 // Mirrors the 22-operator FilterOperator enum in graphql/schema.ts / responseFilterService.ts.
@@ -136,6 +143,31 @@ const ACTION_CONFIG_SCHEMAS: Record<string, z.ZodTypeAny> = {
   webhook: WebhookActionConfigSchema,
   slack: SlackActionConfigSchema,
 };
+
+// Matches the same {{field-id}} placeholder syntax substituteMentions() resolves against
+// response data (packages/utils/src/mentionSubstitution.ts) — any config string containing
+// one is response-dependent regardless of action type.
+const MENTION_PLACEHOLDER_REGEX = /\{\{[^}]{1,500}\}\}/;
+
+/**
+ * Detects whether an action node's config references response data — either via a
+ * `{{field-id}}` mention placeholder anywhere in its (possibly nested) values, or via the
+ * email action's response-sourced recipient fields (recipientFieldId / sendToSubmitter),
+ * which have no placeholder syntax of their own.
+ */
+function configReferencesResponseData(config: Record<string, any>): boolean {
+  if (config.recipientFieldId) return true;
+  if (config.sendToSubmitter) return true;
+
+  const scan = (value: any): boolean => {
+    if (typeof value === 'string') return MENTION_PLACEHOLDER_REGEX.test(value);
+    if (Array.isArray(value)) return value.some(scan);
+    if (value && typeof value === 'object') return Object.values(value).some(scan);
+    return false;
+  };
+
+  return scan(config);
+}
 
 function detectCycle(nodeIds: string[], adjacency: Map<string, string[]>): string[] {
   const UNVISITED = 0;
@@ -316,6 +348,17 @@ export function validateAutomationGraph(
         code: GRAPH_ERROR_CODES.INVALID_CONDITION_CONFIG,
         message: `Condition node ${node.id} must have non-empty rules with valid operators and an AND|OR combinator: ${result.error.message}`,
       });
+      continue;
+    }
+
+    // Condition rules always evaluate a response field (ConditionDataSchema requires >=1 rule
+    // with a fieldId) — a schedule trigger has no response, so any condition node is invalid.
+    if (options.triggerType === 'schedule') {
+      errors.push({
+        nodeId: node.id,
+        code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE,
+        message: `Condition node ${node.id} evaluates response fields, which are unavailable for a scheduled (cron) trigger`,
+      });
     }
   }
 
@@ -350,6 +393,14 @@ export function validateAutomationGraph(
           message: `Action node ${node.id} (${actionType}) has an invalid config: ${configResult.error.message}`,
         });
       }
+    }
+
+    if (options.triggerType === 'schedule' && configReferencesResponseData(config)) {
+      errors.push({
+        nodeId: node.id,
+        code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE,
+        message: `Action node ${node.id} references response data (a {{field}} mention, recipientFieldId, or sendToSubmitter), which is unavailable for a scheduled (cron) trigger`,
+      });
     }
   }
 

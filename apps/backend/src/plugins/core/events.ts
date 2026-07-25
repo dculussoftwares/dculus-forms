@@ -39,6 +39,27 @@ export const emitFormSubmitted = (
   } satisfies PluginEvent);
 };
 
+/**
+ * Emitted when a response edit is saved (responseService.updateResponse, #201). Payload
+ * mirrors emitFormSubmitted's shape (responseId, updated field data) plus editType.
+ * Existing plugins never match this event unless a plugin instance explicitly declares
+ * 'response.edited' in its `events` array (see executePluginsForForm's `has` filter) —
+ * additive and safe for the existing Plugins feature.
+ */
+export const emitResponseEdited = (
+  formId: string,
+  organizationId: string,
+  data: Record<string, any>
+): void => {
+  pluginEventEmitter.emit('plugin:event', {
+    type: 'response.edited',
+    formId,
+    organizationId,
+    data,
+    timestamp: new Date(),
+  } satisfies PluginEvent);
+};
+
 export const emitPluginTest = (
   formId: string,
   organizationId: string,

@@ -31,6 +31,14 @@ export interface AutomationBuilderState {
   /** Fillable fields from the form schema — powers the condition rule editor's field picker
    * and the ConditionNode summary card. Loaded once alongside the graph (#200). */
   formFields: FillableFormField[];
+  /** The automation's triggerType — read-only mirror of Automation.triggerType (#201), not
+   * part of the graph nodes/edges. Never changes after creation, so it's loaded once here
+   * for the TriggerNode/config panel rather than re-fetched from `automation` every render. */
+  triggerType: string;
+  /** Mirror of Automation.triggerConfig (#201) — e.g. { cron, timezone } for schedule
+   * automations. Saved immediately via its own updateAutomation call (like rename), not
+   * through the graph save/dirty flow, so it's kept separate from nodes/edges here. */
+  triggerConfig: Record<string, any> | null;
   nodes: AutomationNode[];
   edges: AutomationEdge[];
   selectedNodeId: string | null;
@@ -43,6 +51,8 @@ export interface AutomationBuilderState {
     automationId: string;
     formTitle: string;
     formFields?: FillableFormField[];
+    triggerType: string;
+    triggerConfig?: Record<string, any> | null;
     graph: { nodes: any[]; edges: any[] };
     isReadOnly: boolean;
   }) => void;
@@ -56,6 +66,8 @@ export interface AutomationBuilderState {
   getSerializableGraph: () => SerializedGraph;
   /** Clears the session draft/selection for the current automation — called when the user explicitly discards unsaved changes. */
   discardDraft: () => void;
+  /** Updates the local triggerConfig mirror after a successful updateAutomation save (#201). */
+  setTriggerConfig: (triggerConfig: Record<string, any> | null) => void;
 }
 
 const EDGE_TYPE = 'addStep';
@@ -106,6 +118,8 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   automationId: null,
   formTitle: '',
   formFields: [],
+  triggerType: 'form.submitted',
+  triggerConfig: null,
   nodes: [],
   edges: [],
   selectedNodeId: null,
@@ -114,7 +128,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   validationErrorsByNode: {},
   structuralErrors: [],
 
-  loadGraph: ({ automationId, formTitle, formFields, graph, isReadOnly }) => {
+  loadGraph: ({ automationId, formTitle, formFields, triggerType, triggerConfig, graph, isReadOnly }) => {
     // A session draft (see draftStorage.ts) means there are unsaved edits that survived a
     // same-tab reload — e.g. the full-page OAuth redirect from a Google/Microsoft Sheets
     // "Connect" click. Prefer it over the server's last-Saved graph when present.
@@ -144,6 +158,8 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       automationId,
       formTitle,
       formFields: formFields ?? [],
+      triggerType,
+      triggerConfig: triggerConfig ?? null,
       nodes: layoutedNodes,
       edges,
       selectedNodeId,
@@ -372,4 +388,6 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       persistSelectedNodeId(automationId, null);
     }
   },
+
+  setTriggerConfig: (triggerConfig) => set({ triggerConfig }),
 });
