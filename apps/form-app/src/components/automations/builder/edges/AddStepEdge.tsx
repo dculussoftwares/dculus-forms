@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
-  getSmoothStepPath,
+  getBezierPath,
+  Position,
   type EdgeProps,
 } from '@xyflow/react';
 import { Popover, PopoverContent, PopoverTrigger, Badge } from '@dculus/ui';
@@ -43,6 +44,45 @@ const CatalogItem: React.FC<CatalogItemProps> = ({ icon, iconBg, label, disabled
   </button>
 );
 
+/**
+ * Draws a smooth curve through `points` (source, any dagre-computed bend points, target)
+ * by chaining getBezierPath calls segment-by-segment — matching the reference workflow
+ * builder's curved connector language — so a branch edge that skips a rank (e.g. an empty
+ * condition branch wired straight past its sibling's node) still reads as visually
+ * consistent with the rest of the graph instead of cutting a single straight diagonal
+ * across the skipped rank. Interior points are treated as pass-through stops (exiting
+ * "Right", entering "Left"), mirroring the dummy chain node dagre itself inserts there.
+ */
+function buildCurvedPath(
+  points: { x: number; y: number }[],
+  sourcePosition: Position,
+  targetPosition: Position
+): { path: string; labelX: number; labelY: number } {
+  const segments: string[] = [];
+  let labelX = points[0].x;
+  let labelY = points[0].y;
+  const midSegmentIndex = Math.floor((points.length - 2) / 2);
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const isLast = i === points.length - 2;
+    const [segPath, segLabelX, segLabelY] = getBezierPath({
+      sourceX: points[i].x,
+      sourceY: points[i].y,
+      sourcePosition: i === 0 ? sourcePosition : Position.Right,
+      targetX: points[i + 1].x,
+      targetY: points[i + 1].y,
+      targetPosition: isLast ? targetPosition : Position.Left,
+    });
+    segments.push(segPath);
+    if (i === midSegmentIndex) {
+      labelX = segLabelX;
+      labelY = segLabelY;
+    }
+  }
+
+  return { path: segments.join(' '), labelX, labelY };
+}
+
 export const AddStepEdge: React.FC<EdgeProps> = ({
   id,
   sourceX,
@@ -53,21 +93,16 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
   targetPosition,
   sourceHandleId,
   markerEnd,
+  data,
 }) => {
   const { t } = useTranslation('automations');
   const [open, setOpen] = useState(false);
   const isReadOnly = useAutomationBuilderStore((s) => s.isReadOnly);
   const insertStepOnEdge = useAutomationBuilderStore((s) => s.insertStepOnEdge);
 
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-    borderRadius: 8,
-  });
+  const bendPoints = (data?.bendPoints as { x: number; y: number }[] | undefined) ?? [];
+  const pathPoints = [{ x: sourceX, y: sourceY }, ...bendPoints, { x: targetX, y: targetY }];
+  const { path: edgePath, labelX, labelY } = buildCurvedPath(pathPoints, sourcePosition, targetPosition);
 
   const branchLabel =
     sourceHandleId === 'true'
@@ -94,13 +129,13 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: 'var(--tf-border-strong)', strokeWidth: 1.5 }} />
+      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: 'var(--tf-light-muted)', strokeWidth: 1.5 }} />
       {branchLabel && (
         <EdgeLabelRenderer>
           <div
             style={{
               position: 'absolute',
-              transform: `translate(-50%, 0) translate(${sourceX}px, ${sourceY + 10}px)`,
+              transform: `translate(0, -50%) translate(${sourceX + 10}px, ${sourceY}px)`,
               pointerEvents: 'none',
             }}
             className="nodrag nopan"
@@ -130,10 +165,10 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
                 <button
                   type="button"
                   aria-label={t('builder.addStep.buttonLabel')}
-                  className="h-6 w-6 rounded-full flex items-center justify-center bg-white hover:bg-[rgba(87,84,91,0.06)] transition-colors"
-                  style={{ border: '1.5px solid var(--tf-border-strong)' }}
+                  className="h-6 w-6 rounded-full flex items-center justify-center transition-colors bg-[var(--tf-dark)] hover:bg-[var(--tf-darkest)]"
+                  style={{ boxShadow: 'var(--shadow-sm)' }}
                 >
-                  <Plus className="h-3.5 w-3.5" style={{ color: 'var(--tf-muted)' }} />
+                  <Plus className="h-3.5 w-3.5" style={{ color: 'white' }} />
                 </button>
               </PopoverTrigger>
               <PopoverContent align="center" className="w-64 p-2">

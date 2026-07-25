@@ -57,6 +57,16 @@ export interface AutomationBuilderState {
     isReadOnly: boolean;
   }) => void;
   setSelectedNodeId: (id: string | null) => void;
+  /** Re-runs dagre layout using each node's actual rendered size (reported by React
+   * Flow's `onNodesChange` as 'dimensions' change events — see AutomationCanvas.tsx) in
+   * place of the type-based `DEFAULT_DIMENSIONS` fallback that layout otherwise assumes
+   * before first paint. Node label text length varies per node (condition rule
+   * summaries, i18n — form-app ships English and Tamil) so the fallback is frequently
+   * wrong; without this correction, edges terminate at a dagre-assumed center that
+   * doesn't match where the node's handle actually renders, producing a visible kink
+   * right before the node. No-ops if neither positions nor edge bend routes would
+   * meaningfully change, so it's safe to call on every dimensions event. */
+  applyMeasuredLayout: (measuredNodes: { id: string; width?: number; height?: number }[]) => void;
   insertStepOnEdge: (edgeId: string, type: AutomationNodeType, data: AutomationNodeData) => string | null;
   updateNodeData: (nodeId: string, data: Partial<AutomationNodeData>) => void;
   removeNode: (nodeId: string) => void;
@@ -149,7 +159,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
         }) as AutomationNode
     );
     const edges: AutomationEdge[] = sourceEdges.map(toAutomationEdge);
-    const layoutedNodes = layoutAutomationGraph(nodes, edges);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = layoutAutomationGraph(nodes, edges);
 
     const restoredSelection = readSelectedNodeId(automationId);
     const selectedNodeId = restoredSelection && nodes.some((n) => n.id === restoredSelection) ? restoredSelection : null;
@@ -161,7 +171,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       triggerType,
       triggerConfig: triggerConfig ?? null,
       nodes: layoutedNodes,
-      edges,
+      edges: layoutedEdges,
       selectedNodeId,
       isDirty: Boolean(draft),
       isReadOnly,
@@ -174,6 +184,36 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
     const { automationId } = get();
     if (automationId) persistSelectedNodeId(automationId, id);
     set({ selectedNodeId: id });
+  },
+
+  applyMeasuredLayout: (measuredNodes) => {
+    const { nodes, edges } = get();
+    const measuredById = new Map(measuredNodes.map((n) => [n.id, n]));
+
+    const nodesWithMeasured = nodes.map((node) => {
+      const measured = measuredById.get(node.id);
+      return measured?.width && measured?.height
+        ? { ...node, measured: { width: measured.width, height: measured.height } }
+        : node;
+    });
+
+    const { nodes: layoutedNodes, edges: layoutedEdges } = layoutAutomationGraph(nodesWithMeasured, edges);
+
+    const positionsChanged = layoutedNodes.some((node, i) => {
+      const prev = nodes[i];
+      return Math.abs(node.position.x - prev.position.x) > 0.5 || Math.abs(node.position.y - prev.position.y) > 0.5;
+    });
+    // A rank-skipping edge's curve is derived from spacer-node positions (see layout.ts),
+    // which aren't part of `layoutedNodes` — a dimension change can shift a spacer enough
+    // to change a route without moving any *real* node past the position-change threshold
+    // above, so bend routes need their own comparison rather than piggybacking on it.
+    const bendRoutesChanged = layoutedEdges.some((edge, i) => {
+      const prev = edges[i];
+      return JSON.stringify(edge.data?.bendPoints) !== JSON.stringify(prev?.data?.bendPoints);
+    });
+    if (!positionsChanged && !bendRoutesChanged) return;
+
+    set({ nodes: layoutedNodes, edges: layoutedEdges });
   },
 
   insertStepOnEdge: (edgeId, type, data) => {
@@ -239,16 +279,16 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
     }
 
     const nextNodes = [...nodes, newNode];
-    const layoutedNodes = layoutAutomationGraph(nextNodes, nextEdges);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = layoutAutomationGraph(nextNodes, nextEdges);
 
     if (automationId) {
-      persistDraftGraph(automationId, serializeGraph(layoutedNodes, nextEdges));
+      persistDraftGraph(automationId, serializeGraph(layoutedNodes, layoutedEdges));
       persistSelectedNodeId(automationId, newNodeId);
     }
 
     set({
       nodes: layoutedNodes,
-      edges: nextEdges,
+      edges: layoutedEdges,
       selectedNodeId: newNodeId,
       isDirty: true,
     });
@@ -331,11 +371,11 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       remainingNodes = nodes.filter((n) => n.id !== nodeId);
     }
 
-    const layoutedNodes = layoutAutomationGraph(remainingNodes, remainingEdges);
+    const { nodes: layoutedNodes, edges: layoutedEdges } = layoutAutomationGraph(remainingNodes, remainingEdges);
     const nextSelectedNodeId = deletedNodeIds.has(selectedNodeId ?? '') ? null : selectedNodeId;
 
     if (automationId) {
-      persistDraftGraph(automationId, serializeGraph(layoutedNodes, remainingEdges));
+      persistDraftGraph(automationId, serializeGraph(layoutedNodes, layoutedEdges));
       persistSelectedNodeId(automationId, nextSelectedNodeId);
     }
 
@@ -345,7 +385,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       );
       return {
         nodes: layoutedNodes,
-        edges: remainingEdges,
+        edges: layoutedEdges,
         selectedNodeId: nextSelectedNodeId,
         isDirty: true,
         validationErrorsByNode: restErrors,

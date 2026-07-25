@@ -23,8 +23,9 @@ interface NodeCardProps {
 
 /**
  * Shared Typeform-style card shell for every automation node. Handles the
- * selected/error outline states and the top/bottom connection handles — the
- * individual node components (TriggerNode, DelayNode, ...) only supply content.
+ * selected/error outline states and the left/right connection handles (the canvas lays
+ * out left-to-right) — the individual node components (TriggerNode, DelayNode, ...) only
+ * supply content.
  */
 export const NodeCard: React.FC<NodeCardProps> = ({
   selected,
@@ -63,7 +64,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       }}
       data-testid="automation-node-card"
     >
-      {showTargetHandle && <Handle type="target" position={Position.Top} className="!bg-[var(--tf-light-muted)]" />}
+      {showTargetHandle && <Handle type="target" position={Position.Left} className="!bg-[var(--tf-light-muted)]" />}
 
       {onDelete && (
         <button
@@ -112,7 +113,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
         </Badge>
       )}
 
-      {showSourceHandle && <Handle type="source" position={Position.Bottom} className="!bg-[var(--tf-light-muted)]" />}
+      {showSourceHandle && <Handle type="source" position={Position.Right} className="!bg-[var(--tf-light-muted)]" />}
     </div>
   );
 
