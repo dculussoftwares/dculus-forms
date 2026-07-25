@@ -251,6 +251,24 @@ export const automationsResolvers = {
         data.triggerConfig = triggerConfig;
       }
       if (graph !== undefined) {
+        // An ACTIVE automation is already live — saving a new graph here must be held to the
+        // same bar as activation, or a schedule automation's response-dependent-node ban (and
+        // any other activation-time rule) could be bypassed by editing an already-active
+        // automation instead of pausing/reactivating it.
+        if (automation.status === 'ACTIVE') {
+          const result = validateAutomationGraph(graph, {
+            pluginTypes: getAvailablePluginTypes(),
+            triggerType: automation.triggerType,
+          });
+          if (!result.valid) {
+            throw createGraphQLError(
+              'Automation graph is invalid and cannot be saved while this automation is active',
+              GRAPHQL_ERROR_CODES.AUTOMATION_INVALID_GRAPH,
+              { extensions: { validationErrors: result.errors } }
+            );
+          }
+        }
+
         data.graph = graph;
         const graphChanged = JSON.stringify(graph) !== JSON.stringify(automation.graph);
         if (graphChanged) {

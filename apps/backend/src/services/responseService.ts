@@ -497,15 +497,22 @@ export const updateResponse = async (
         // emitFormSubmitted's fire-and-forget pattern; must never fail the edit itself.
         // Only fired when recordEdit detected real field changes (editHistory is non-null),
         // so a no-op save never spuriously triggers response.edited automations.
-        try {
-          emitResponseEdited(updatedResponse.updated.formId, editContext.organizationId ?? '', {
-            ...(data as Record<string, any>),
-            responseId,
-            editType: editContext.editType || 'MANUAL',
-            sourceRunId: editContext.sourceRunId,
-          });
-        } catch (error) {
-          logger.error('Error emitting response.edited event:', error);
+        if (!editContext.organizationId) {
+          logger.error(
+            'Skipping response.edited emission: editContext.organizationId was not provided',
+            { responseId }
+          );
+        } else {
+          try {
+            emitResponseEdited(updatedResponse.updated.formId, editContext.organizationId, {
+              ...(data as Record<string, any>),
+              responseId,
+              editType: editContext.editType || 'MANUAL',
+              sourceRunId: editContext.sourceRunId,
+            });
+          } catch (error) {
+            logger.error('Error emitting response.edited event:', error);
+          }
         }
       }
 

@@ -523,6 +523,76 @@ describe('Automations Resolvers', () => {
     });
   });
 
+  describe('updateAutomation validates the graph when the automation is already ACTIVE', () => {
+    it('rejects saving an invalid graph to an ACTIVE automation before writing to the DB', async () => {
+      grantAccess('EDITOR');
+      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
+        ...mockAutomation,
+        status: 'ACTIVE',
+      } as any);
+      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
+      const validationErrors = [
+        { nodeId: 'action-1', code: 'UNKNOWN_ACTION_TYPE', message: 'unregistered action type' },
+      ];
+      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({
+        valid: false,
+        errors: validationErrors,
+      });
+
+      await expect(
+        automationsResolvers.Mutation.updateAutomation(
+          {},
+          { id: 'automation-123', graph: mockGraph },
+          mockContext
+        )
+      ).rejects.toThrow(GraphQLError);
+
+      expect(graphValidator.validateAutomationGraph).toHaveBeenCalledWith(
+        mockGraph,
+        expect.objectContaining({ triggerType: 'form.submitted' })
+      );
+      expect(prisma.automation.update).not.toHaveBeenCalled();
+    });
+
+    it('allows saving a valid graph to an ACTIVE automation', async () => {
+      grantAccess('EDITOR');
+      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
+        ...mockAutomation,
+        status: 'ACTIVE',
+      } as any);
+      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
+      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
+      vi.mocked(prisma.automation.update).mockResolvedValue({
+        ...mockAutomation,
+        status: 'ACTIVE',
+        graph: mockGraph,
+      } as any);
+
+      await automationsResolvers.Mutation.updateAutomation(
+        {},
+        { id: 'automation-123', graph: mockGraph },
+        mockContext
+      );
+
+      expect(prisma.automation.update).toHaveBeenCalled();
+    });
+
+    it('does not validate the graph when the automation is DRAFT', async () => {
+      grantAccess('EDITOR');
+      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
+      vi.mocked(prisma.automation.update).mockResolvedValue(mockAutomation as any);
+
+      await automationsResolvers.Mutation.updateAutomation(
+        {},
+        { id: 'automation-123', graph: mockGraph },
+        mockContext
+      );
+
+      expect(graphValidator.validateAutomationGraph).not.toHaveBeenCalled();
+      expect(prisma.automation.update).toHaveBeenCalled();
+    });
+  });
+
   describe('updateAutomation triggerConfig (schedule automations)', () => {
     const scheduleAutomation = {
       ...mockAutomation,

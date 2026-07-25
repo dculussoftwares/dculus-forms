@@ -175,7 +175,7 @@ export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ au
             id="schedule-custom-cron"
             value={customCron}
             onChange={(e) => setCustomCron(e.target.value)}
-            placeholder="0 9 * * *"
+            placeholder={t('builder.panel.schedule.customCronPlaceholder')}
           />
           {!cronValid && customCron.trim().length > 0 && (
             <p className="text-xs" style={{ color: 'var(--tf-error)' }}>
@@ -191,7 +191,7 @@ export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ au
           id="schedule-timezone"
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          placeholder="America/Chicago"
+          placeholder={t('builder.panel.schedule.timezonePlaceholder')}
         />
         {!timezoneValid && (
           <p className="text-xs" style={{ color: 'var(--tf-error)' }}>

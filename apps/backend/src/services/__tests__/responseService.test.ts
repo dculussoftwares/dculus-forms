@@ -465,6 +465,43 @@ describe('Response Service', () => {
       });
     });
 
+    it('skips emission and logs an error when organizationId is missing (never emits with an empty string)', async () => {
+      const updatedData = { field1: 'new-value' };
+      const updatedResponse = { ...mockResponse, formId: 'form-123', data: updatedData };
+      const formSchema = { pages: [] } as any;
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+      vi.mocked(ResponseEditTrackingService.getResponseWithFormSchema).mockResolvedValue({
+        response: {
+          id: 'response-123',
+          formId: 'form-123',
+          data: { field1: 'old-value' },
+          metadata: {},
+          respondentUserId: null,
+          respondentEmail: null,
+          submittedAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+          deletedAt: null,
+          form: { id: 'form-123', formSchema: {} },
+        },
+        formSchema,
+      });
+      vi.mocked(ResponseEditTrackingService.recordEdit).mockResolvedValue({
+        id: 'edit-1',
+        totalChanges: 1,
+      });
+      mockTxClient.response.update.mockResolvedValue(updatedResponse as any);
+
+      await updateResponse('response-123', updatedData, { userId: 'user-1' });
+
+      expect(emitResponseEdited).not.toHaveBeenCalled();
+      expect(loggerError).toHaveBeenCalledWith(
+        'Skipping response.edited emission: editContext.organizationId was not provided',
+        expect.objectContaining({ responseId: 'response-123' })
+      );
+      loggerError.mockRestore();
+    });
+
     it('does not emit response.edited when recordEdit detects no changes', async () => {
       const updatedData = { field1: 'same-value' };
       const updatedResponse = { ...mockResponse, formId: 'form-123', data: updatedData };
