@@ -13,7 +13,7 @@ creating a form from a template.
 ## Running
 - `pnpm test:e2e`
 - Optional env vars:
-  - `E2E_BASE_URL` (default: http://localhost:5173)
+  - `E2E_FORM_APP_URL` (default: http://localhost:5173)
   - `E2E_EMAIL` and `E2E_PASSWORD` (required)
   - `E2E_HEADLESS=false` to see the browser locally
 

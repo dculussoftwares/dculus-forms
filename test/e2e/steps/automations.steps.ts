@@ -69,14 +69,20 @@ When('I save the automation graph', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   const saveButton = this.page.getByRole('button', { name: 'Save', exact: true });
   await saveButton.click();
+  // toBeDisabled() alone can't distinguish "already clean" from "save in flight" —
+  // the success toast is the actual signal that updateAutomation resolved.
+  await expect(this.page.getByText('Automation saved', { exact: true })).toBeVisible({ timeout: 10_000 });
   await expect(saveButton).toBeDisabled({ timeout: 10_000 });
 });
 
 When('I try to activate the automation', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: 'Activate', exact: true }).click();
-  // Give the setStatus mutation time to round-trip and reject before asserting on it.
-  await this.page.waitForTimeout(1_500);
+  // Wait for the setStatus mutation's rejection toast rather than a fixed sleep —
+  // this is the actual signal that the AUTOMATION_INVALID_GRAPH rejection landed.
+  await expect(
+    this.page.getByText("Automation isn't ready to activate", { exact: true })
+  ).toBeVisible({ timeout: 10_000 });
 });
 
 Then('the automation should still be in Draft status', async function (this: CustomWorld) {
@@ -151,7 +157,14 @@ Then("the run's webhook action step should show SUCCESS", async function (this: 
 
   const dialog = this.page.getByRole('dialog');
   await expect(dialog).toBeVisible({ timeout: 15_000 });
-  await expect(dialog.getByText('Webhook', { exact: true })).toBeVisible({ timeout: 10_000 });
-  await expect(dialog.getByText('Success', { exact: true }).first()).toBeVisible({ timeout: 10_000 });
-  await expect(dialog.getByText('Failed', { exact: true })).toHaveCount(0);
+
+  // Scope the status assertion to the webhook step's own row — the run also has an
+  // "end" step, so an unscoped `dialog.getByText('Success')` could pass on that step
+  // instead of the webhook one. The step label (h4) and its status badge (span) are
+  // rendered as siblings under the same immediate wrapper div in AutomationRunDetail.
+  const webhookHeading = dialog.getByRole('heading', { level: 4, name: 'Webhook', exact: true });
+  await expect(webhookHeading).toBeVisible({ timeout: 10_000 });
+  const webhookRow = webhookHeading.locator('xpath=..');
+  await expect(webhookRow.getByText('Success', { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(webhookRow.getByText('Failed', { exact: true })).toHaveCount(0);
 });
