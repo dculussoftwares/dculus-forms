@@ -105,13 +105,14 @@ export const CREATE_AUTOMATION: TypedDocumentNode<any, any> = gql`
 `;
 
 export const UPDATE_AUTOMATION: TypedDocumentNode<any, any> = gql`
-  mutation UpdateAutomation($id: ID!, $name: String, $graph: JSON) {
-    updateAutomation(id: $id, name: $name, graph: $graph) {
+  mutation UpdateAutomation($id: ID!, $name: String, $graph: JSON, $triggerConfig: JSON) {
+    updateAutomation(id: $id, name: $name, graph: $graph, triggerConfig: $triggerConfig) {
       id
       formId
       name
       status
       triggerType
+      triggerConfig
       graph
       version
       createdAt

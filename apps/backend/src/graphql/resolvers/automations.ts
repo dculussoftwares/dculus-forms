@@ -7,7 +7,13 @@ import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { getAvailablePluginTypes } from '../../plugins/core/registry.js';
 import { validateAutomationGraph } from '../../services/automation/graphValidator.js';
 import { enqueueFirstStep } from '../../services/automation/engine.js';
-import { cancelRunsForAutomation, cancelSingleAutomationRun } from '../../services/automation/triggerService.js';
+import {
+  cancelRunsForAutomation,
+  cancelSingleAutomationRun,
+  scheduleAutomationCron,
+  unscheduleAutomationCron,
+} from '../../services/automation/triggerService.js';
+import { isValidCronExpression, isValidTimezone } from '../../services/automation/cronValidator.js';
 import type { AutomationGraph, AutomationRunContext } from '../../services/automation/types.js';
 
 /**
@@ -47,6 +53,32 @@ async function assertFormAccess(
   }
 
   return accessCheck;
+}
+
+/**
+ * Validates `triggerConfig` for a `schedule`-triggerType automation on save/activate (#201) —
+ * cron is required, must parse as a standard 5-field expression, and an optional timezone must
+ * be a real IANA identifier.
+ */
+function assertValidScheduleTriggerConfig(triggerConfig: any): asserts triggerConfig is { cron: string; timezone?: string } {
+  if (!triggerConfig || typeof triggerConfig !== 'object') {
+    throw createGraphQLError(
+      'Scheduled automations require a triggerConfig with a cron expression',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+  if (!isValidCronExpression(triggerConfig.cron)) {
+    throw createGraphQLError(
+      `Invalid cron expression: ${triggerConfig.cron}`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+  if (triggerConfig.timezone !== undefined && !isValidTimezone(triggerConfig.timezone)) {
+    throw createGraphQLError(
+      `Invalid timezone: ${triggerConfig.timezone}`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
 }
 
 async function getAutomationOrThrow(id: string) {
@@ -212,8 +244,31 @@ export const automationsResolvers = {
 
       const data: Record<string, any> = { updatedAt: new Date() };
       if (name !== undefined) data.name = name;
-      if (triggerConfig !== undefined) data.triggerConfig = triggerConfig;
+      if (triggerConfig !== undefined) {
+        if (automation.triggerType === 'schedule') {
+          assertValidScheduleTriggerConfig(triggerConfig);
+        }
+        data.triggerConfig = triggerConfig;
+      }
       if (graph !== undefined) {
+        // An ACTIVE automation is already live — saving a new graph here must be held to the
+        // same bar as activation, or a schedule automation's response-dependent-node ban (and
+        // any other activation-time rule) could be bypassed by editing an already-active
+        // automation instead of pausing/reactivating it.
+        if (automation.status === 'ACTIVE') {
+          const result = validateAutomationGraph(graph, {
+            pluginTypes: getAvailablePluginTypes(),
+            triggerType: automation.triggerType,
+          });
+          if (!result.valid) {
+            throw createGraphQLError(
+              'Automation graph is invalid and cannot be saved while this automation is active',
+              GRAPHQL_ERROR_CODES.AUTOMATION_INVALID_GRAPH,
+              { extensions: { validationErrors: result.errors } }
+            );
+          }
+        }
+
         data.graph = graph;
         const graphChanged = JSON.stringify(graph) !== JSON.stringify(automation.graph);
         if (graphChanged) {
@@ -221,7 +276,15 @@ export const automationsResolvers = {
         }
       }
 
-      return prisma.automation.update({ where: { id }, data });
+      const updated = await prisma.automation.update({ where: { id }, data });
+
+      // Re-schedule immediately so an ACTIVE scheduled automation picks up a new cron/timezone
+      // without requiring pause+reactivate — boss.schedule upserts by (queue, key).
+      if (automation.triggerType === 'schedule' && triggerConfig !== undefined && updated.status === 'ACTIVE') {
+        await scheduleAutomationCron(updated.id, triggerConfig.cron, triggerConfig.timezone);
+      }
+
+      return updated;
     },
 
     setAutomationStatus: async (
@@ -248,6 +311,7 @@ export const automationsResolvers = {
       if (status === 'ACTIVE') {
         const result = validateAutomationGraph(automation.graph, {
           pluginTypes: getAvailablePluginTypes(),
+          triggerType: automation.triggerType,
         });
         if (!result.valid) {
           throw createGraphQLError(
@@ -256,12 +320,28 @@ export const automationsResolvers = {
             { extensions: { validationErrors: result.errors } }
           );
         }
+        if (automation.triggerType === 'schedule') {
+          assertValidScheduleTriggerConfig(automation.triggerConfig);
+        }
       }
 
-      return prisma.automation.update({
+      const updated = await prisma.automation.update({
         where: { id },
         data: { status, updatedAt: new Date() },
       });
+
+      // Schedule/unschedule lifecycle (#201) — boss.schedule upserts, boss.unschedule is a
+      // no-op if nothing is scheduled, so this is safe regardless of prior state.
+      if (automation.triggerType === 'schedule') {
+        if (status === 'ACTIVE') {
+          const { cron, timezone } = automation.triggerConfig as { cron: string; timezone?: string };
+          await scheduleAutomationCron(automation.id, cron, timezone);
+        } else {
+          await unscheduleAutomationCron(automation.id);
+        }
+      }
+
+      return updated;
     },
 
     deleteAutomation: async (
@@ -278,6 +358,9 @@ export const automationsResolvers = {
         'Access denied: You need EDITOR access to delete this automation'
       );
 
+      if (automation.triggerType === 'schedule') {
+        await unscheduleAutomationCron(id);
+      }
       await cancelRunsForAutomation(id, 'automation deleted');
       await prisma.automation.delete({ where: { id } });
 

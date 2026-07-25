@@ -6,8 +6,10 @@ import { logger } from '../../lib/logger.js';
 import { getEventEmitter } from '../../plugins/core/events.js';
 import type { PluginEvent } from '../../plugins/core/types.js';
 import { enqueueFirstStep } from './engine.js';
-import { AUTOMATION_QUEUE, getBoss } from './boss.js';
+import { AUTOMATION_QUEUE, AUTOMATION_CRON_QUEUE, getBoss } from './boss.js';
 import type { AutomationRunContext } from './types.js';
+
+type ScheduledJobData = { automationId: string };
 
 /**
  * Additional listener on the shared plugin EventEmitter (apps/backend/src/plugins/core/events.ts).
@@ -31,11 +33,17 @@ export function initializeAutomationTriggers(): void {
 }
 
 async function handlePluginEvent(event: PluginEvent): Promise<void> {
-  if (event.type !== 'form.submitted') return;
+  if (event.type !== 'form.submitted' && event.type !== 'response.edited') return;
   if (event.data?.isPreview) return;
 
+  // Loop guard (#201): an edit performed by an automation action (none exist today, but
+  // future actions that edit a response must set this) carries the run that caused it.
+  // Suppress creating new runs from that edit so an automation can never re-trigger itself
+  // via its own writes.
+  if (event.type === 'response.edited' && event.data?.sourceRunId) return;
+
   const automations = await prisma.automation.findMany({
-    where: { formId: event.formId, status: 'ACTIVE', triggerType: 'form.submitted' },
+    where: { formId: event.formId, status: 'ACTIVE', triggerType: event.type },
   });
 
   for (const automation of automations) {
@@ -163,4 +171,96 @@ export async function cancelSingleAutomationRun(runId: string) {
     );
   }
   return prisma.automationRun.findUnique({ where: { id: runId } });
+}
+
+/**
+ * Registers/updates the pg-boss cron schedule for a `schedule`-triggerType automation (#201).
+ * Uses a single shared queue (AUTOMATION_CRON_QUEUE) with `key: automationId` to distinguish
+ * automations rather than a per-automation queue name — `boss.schedule` upserts by
+ * (queue, key), which is idempotent across multi-instance deploys and requires no per-automation
+ * queue/worker registration. No-op (with a warning) when the engine is disabled.
+ */
+export async function scheduleAutomationCron(
+  automationId: string,
+  cron: string,
+  timezone?: string
+): Promise<void> {
+  const boss = getBoss();
+  if (!boss) {
+    logger.warn(`[Automation Triggers] Cannot schedule cron for automation ${automationId} — engine disabled`);
+    return;
+  }
+
+  const options: { key: string; tz?: string } = { key: automationId };
+  if (timezone) options.tz = timezone;
+
+  await boss.schedule(AUTOMATION_CRON_QUEUE, cron, { automationId } satisfies ScheduledJobData, options);
+  logger.info(`[Automation Triggers] Scheduled cron for automation ${automationId}: ${cron}`);
+}
+
+/** Removes the pg-boss cron schedule for an automation (pause/delete, #201). Idempotent. */
+export async function unscheduleAutomationCron(automationId: string): Promise<void> {
+  const boss = getBoss();
+  if (!boss) return;
+
+  await boss.unschedule(AUTOMATION_CRON_QUEUE, automationId);
+  logger.info(`[Automation Triggers] Unscheduled cron for automation ${automationId}`);
+}
+
+/**
+ * Handles a single scheduled tick: re-checks the automation is still ACTIVE (a schedule can
+ * fire in the narrow window between a pause/delete and its unschedule call landing) and, if so,
+ * creates a run with responseId: null and no trigger response data — graphValidator (#201)
+ * rejects response-dependent actions/conditions on schedule automations at activate time, so
+ * every reachable action here is expected to tolerate an empty triggerData.
+ */
+async function handleScheduledTick(automationId: string): Promise<void> {
+  try {
+    const automation = await prisma.automation.findUnique({ where: { id: automationId } });
+    if (!automation || automation.status !== 'ACTIVE' || automation.triggerType !== 'schedule') {
+      logger.info(
+        `[Automation Triggers] Skipping scheduled tick for ${automationId} — automation is not an ACTIVE schedule automation`
+      );
+      return;
+    }
+
+    const scheduledAt = new Date();
+    const context: AutomationRunContext = {
+      triggerData: {},
+      formId: automation.formId,
+      organizationId: automation.organizationId,
+      trigger: { scheduledAt: scheduledAt.toISOString() },
+    };
+
+    const run = await prisma.automationRun.create({
+      data: {
+        id: generateId(),
+        automationId: automation.id,
+        responseId: null,
+        automationVersion: automation.version,
+        graphSnapshot: automation.graph as Prisma.InputJsonValue,
+        status: 'RUNNING',
+        context: context as Prisma.InputJsonValue,
+      },
+    });
+
+    await enqueueFirstStep(run);
+  } catch (error) {
+    logger.error(`[Automation Triggers] Failed to handle scheduled tick for automation ${automationId}:`, error);
+    Sentry.captureException(error);
+  }
+}
+
+/** Registers the pg-boss worker that fires scheduled automation runs. No-op if disabled. */
+export async function initializeAutomationScheduleTrigger(): Promise<void> {
+  const boss = getBoss();
+  if (!boss) return;
+
+  await boss.work(AUTOMATION_CRON_QUEUE, async (jobs: Array<{ data: ScheduledJobData }>) => {
+    for (const job of jobs) {
+      await handleScheduledTick(job.data.automationId);
+    }
+  });
+
+  logger.info(`[Automation Triggers] Schedule trigger worker registered on queue: ${AUTOMATION_CRON_QUEUE}`);
 }

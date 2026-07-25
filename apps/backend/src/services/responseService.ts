@@ -8,6 +8,7 @@ import { batchLoadTagsForResponses } from './tagService.js';
 import { responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
+import { emitResponseEdited } from '../plugins/core/events.js';
 import type { Prisma } from '#prisma-client';
 
 
@@ -430,6 +431,15 @@ export const updateResponse = async (
     ipAddress?: string;
     userAgent?: string;
     editReason?: string;
+    /** Required to emit response.edited (#201) — the resolver already has form.organizationId. */
+    organizationId?: string;
+    editType?: 'MANUAL' | 'SYSTEM' | 'BULK';
+    /**
+     * Set by automation action handlers (none exist yet) when an action edits a response —
+     * propagated onto the emitted response.edited event so the automation trigger service
+     * can suppress creating a new run from an edit its own engine caused (loop guard, #201).
+     */
+    sourceRunId?: string;
   }
 ): Promise<FormResponse> => {
   logger.info('updateResponse called with:', { responseId, hasEditContext: !!editContext, editContext });
@@ -465,7 +475,7 @@ export const updateResponse = async (
             userId: editContext.userId,
             ipAddress: editContext.ipAddress,
             userAgent: editContext.userAgent,
-            editType: 'MANUAL',
+            editType: editContext.editType || 'MANUAL',
             editReason: editContext.editReason
           },
           tx
@@ -482,6 +492,28 @@ export const updateResponse = async (
         import('./pdfGenerationJobService.js')
           .then(({ regeneratePdfsForResponse }) => regeneratePdfsForResponse(responseId))
           .catch((error) => logger.error('Error regenerating PDFs after response edit:', error));
+
+        // Emit plugin event for the automation trigger service (#201) — mirrors
+        // emitFormSubmitted's fire-and-forget pattern; must never fail the edit itself.
+        // Only fired when recordEdit detected real field changes (editHistory is non-null),
+        // so a no-op save never spuriously triggers response.edited automations.
+        if (!editContext.organizationId) {
+          logger.error(
+            'Skipping response.edited emission: editContext.organizationId was not provided',
+            { responseId }
+          );
+        } else {
+          try {
+            emitResponseEdited(updatedResponse.updated.formId, editContext.organizationId, {
+              ...(data as Record<string, any>),
+              responseId,
+              editType: editContext.editType || 'MANUAL',
+              sourceRunId: editContext.sourceRunId,
+            });
+          } catch (error) {
+            logger.error('Error emitting response.edited event:', error);
+          }
+        }
       }
 
       return {

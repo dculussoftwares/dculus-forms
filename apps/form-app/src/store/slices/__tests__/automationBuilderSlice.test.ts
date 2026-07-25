@@ -32,6 +32,7 @@ const loadTestGraph = (
     automationId,
     formTitle: 'Test form',
     formFields: [],
+    triggerType: 'form.submitted',
     graph: { nodes, edges },
     isReadOnly: false,
   });

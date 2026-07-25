@@ -112,49 +112,59 @@ Given('I create a published form for automation testing titled {string}',
 
 Given('I create an ACTIVE single-action automation on that form that calls the mock webhook server',
   async function (this: CustomWorld) {
-    const form = this.getSharedTestData('automationTestForm');
-    expectDefined(form, 'Automation test form must exist before creating an automation');
-    expectDefined(this.currentOrganization, 'Organization context is required');
-    expectDefined(this.currentUser, 'Current user is required');
-
-    expectDefined(mockWebhookServer, 'Mock webhook server must be running');
-    // Read the port start() actually bound (it silently retries on port + 1 if the
-    // requested one is taken), so the automation always points at the live server.
-    const webhookUrl = `http://localhost:${mockWebhookServer!.getPort()}${WEBHOOK_PATH}`;
-
-    const graph = {
-      nodes: [
-        { id: 'trigger-1', type: 'trigger', data: { triggerType: 'form.submitted' } },
-        {
-          id: 'action-1',
-          type: 'action',
-          data: {
-            actionType: 'webhook',
-            config: { url: webhookUrl },
-          },
-        },
-      ],
-      edges: [{ id: 'e1', source: 'trigger-1', target: 'action-1' }],
-    };
-
-    const automation = await this.prisma.automation.create({
-      data: {
-        id: generateId(),
-        formId: form.id,
-        organizationId: this.currentOrganization!.id,
-        name: 'Call webhook on submission',
-        status: 'ACTIVE',
-        triggerType: 'form.submitted',
-        graph,
-        version: 1,
-        createdBy: this.currentUser!.id,
-      },
-    });
-
-    this.setSharedTestData('automation', { id: automation.id });
-    console.log(`✅ Created ACTIVE automation: ${automation.id}`);
+    await createSingleActionAutomation(this, 'form.submitted');
   }
 );
+
+Given('I create an ACTIVE single-action automation on that form with trigger {string} that calls the mock webhook server',
+  async function (this: CustomWorld, triggerType: string) {
+    await createSingleActionAutomation(this, triggerType);
+  }
+);
+
+async function createSingleActionAutomation(world: CustomWorld, triggerType: string): Promise<void> {
+  const form = world.getSharedTestData('automationTestForm');
+  expectDefined(form, 'Automation test form must exist before creating an automation');
+  expectDefined(world.currentOrganization, 'Organization context is required');
+  expectDefined(world.currentUser, 'Current user is required');
+
+  expectDefined(mockWebhookServer, 'Mock webhook server must be running');
+  // Read the port start() actually bound (it silently retries on port + 1 if the
+  // requested one is taken), so the automation always points at the live server.
+  const webhookUrl = `http://localhost:${mockWebhookServer!.getPort()}${WEBHOOK_PATH}`;
+
+  const graph = {
+    nodes: [
+      { id: 'trigger-1', type: 'trigger', data: { triggerType } },
+      {
+        id: 'action-1',
+        type: 'action',
+        data: {
+          actionType: 'webhook',
+          config: { url: webhookUrl },
+        },
+      },
+    ],
+    edges: [{ id: 'e1', source: 'trigger-1', target: 'action-1' }],
+  };
+
+  const automation = await world.prisma.automation.create({
+    data: {
+      id: generateId(),
+      formId: form.id,
+      organizationId: world.currentOrganization!.id,
+      name: `Call webhook on ${triggerType}`,
+      status: 'ACTIVE',
+      triggerType,
+      graph,
+      version: 1,
+      createdBy: world.currentUser!.id,
+    },
+  });
+
+  world.setSharedTestData('automation', { id: automation.id });
+  console.log(`✅ Created ACTIVE automation (${triggerType}): ${automation.id}`);
+}
 
 When('I submit a response to that form with field {string} value {string}',
   async function (this: CustomWorld, fieldLabel: string, value: string) {
@@ -181,7 +191,38 @@ When('I submit a response to that form with field {string} value {string}',
       throw new Error(`Failed to submit response: ${response.data.errors[0].message}`);
     }
 
-    console.log(`📤 Submitted response ${response.data.data.submitResponse.id} to form ${form.id}`);
+    const responseId = response.data.data.submitResponse.id;
+    this.setSharedTestData('automationTestResponse', { id: responseId });
+    console.log(`📤 Submitted response ${responseId} to form ${form.id}`);
+  }
+);
+
+When('I edit that response\'s field {string} to value {string}',
+  async function (this: CustomWorld, fieldLabel: string, value: string) {
+    expectDefined(this.authToken, 'Auth token is required to edit a response');
+    const submittedResponse = this.getSharedTestData('automationTestResponse');
+    expectDefined(submittedResponse, 'A response must be submitted before it can be edited');
+    expectEqual(fieldLabel, 'Name', 'This step only knows the "Name" field of the automation test form');
+
+    const mutation = `
+      mutation UpdateResponse($input: UpdateResponseInput!) {
+        updateResponse(input: $input) {
+          id
+        }
+      }
+    `;
+
+    const response = await this.authUtils.graphqlRequest(
+      mutation,
+      { input: { responseId: submittedResponse.id, data: { [NAME_FIELD_ID]: value } } },
+      this.authToken
+    );
+
+    if (response.data.errors) {
+      throw new Error(`Failed to edit response: ${response.data.errors[0].message}`);
+    }
+
+    console.log(`✏️  Edited response ${submittedResponse.id}`);
   }
 );
 

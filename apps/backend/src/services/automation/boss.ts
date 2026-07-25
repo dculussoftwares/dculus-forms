@@ -4,6 +4,13 @@ import { logger } from '../../lib/logger.js';
 // Queue on which every automation node execution job is enqueued: { runId, nodeId }.
 export const AUTOMATION_QUEUE = 'automation-step';
 
+// Single shared queue for all `schedule` (cron) triggered automations (#201). Each automation
+// gets its own pg-boss schedule on this queue distinguished by `key: automationId` (pg-boss's
+// per-schedule unique identifier within a queue) rather than a dynamically-named queue per
+// automation — `boss.schedule`/`unschedule` upsert/remove by (queue name, key), which is
+// idempotent across multi-instance deploys and avoids registering a new worker per automation.
+export const AUTOMATION_CRON_QUEUE = 'automation-cron';
+
 let bossInstance: PgBoss | null = null;
 
 /**
@@ -48,7 +55,8 @@ export async function startAutomationBoss(): Promise<PgBoss | null> {
 
   await boss.start();
   await boss.createQueue(AUTOMATION_QUEUE);
-  logger.info(`[Automation Engine] pg-boss started (queue: ${AUTOMATION_QUEUE})`);
+  await boss.createQueue(AUTOMATION_CRON_QUEUE);
+  logger.info(`[Automation Engine] pg-boss started (queues: ${AUTOMATION_QUEUE}, ${AUTOMATION_CRON_QUEUE})`);
   return boss;
 }
 
