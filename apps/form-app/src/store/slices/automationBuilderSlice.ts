@@ -190,8 +190,13 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       // Inserting a condition on an edge attaches the previous successor (the edge's old
       // target) to the `true` branch; the `false` branch is created empty, wired straight to
       // the graph's single End node (#200) — there's always exactly one, created by
-      // buildDefaultGraph on the backend and never user-deletable (see EndNode.tsx).
+      // buildDefaultGraph on the backend and never user-deletable (see EndNode.tsx). Fail
+      // loudly rather than silently wiring the false branch to the old successor too — that
+      // would make the branch inert without any visible error.
       const endNode = nodes.find((n) => n.type === 'end');
+      if (!endNode) {
+        throw new Error('insertStepOnEdge(condition): graph has no End node to wire the false branch to');
+      }
       const trueEdge: AutomationEdge = {
         id: generateId(),
         source: newNodeId,
@@ -202,7 +207,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       const falseEdge: AutomationEdge = {
         id: generateId(),
         source: newNodeId,
-        target: endNode?.id ?? edge.target,
+        target: endNode.id,
         sourceHandle: 'false',
         type: EDGE_TYPE,
       };

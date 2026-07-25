@@ -25,6 +25,9 @@
     "excludesSingle": "அடங்காது (ஒற்றை)",
     "containsAll": "அனைத்தையும் கொண்டுள்ளது"
   },
+  "conjunctions": {
+    "and": "மற்றும்"
+  },
   "placeholders": {
     "enterValue": "மதிப்பை உள்ளிடவும்",
     "min": "குறைந்தபட்சம்",
@@ -32,6 +35,12 @@
     "enterNumber": "எண்ணை உள்ளிடவும்",
     "enterDays": "நாட்கள்",
     "selectField": "ஒரு புலத்தைத் தேர்ந்தெடுக்கவும்",
-    "selectCondition": "அடங்கும்"
+    "selectCondition": "அடங்கும்",
+    "from": "தொடக்கம்",
+    "to": "வரை",
+    "selectDate": "தேதியைத் தேர்ந்தெடுக்கவும்",
+    "selectOption": "ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்...",
+    "selectOptions": "விருப்பங்களைத் தேர்ந்தெடுக்கவும்...",
+    "selectedCount": "{{count}} தேர்ந்தெடுக்கப்பட்டது"
   }
 }

@@ -106,6 +106,24 @@ describe('automationBuilderSlice — insertStepOnEdge(condition)', () => {
     expect(findEdge(newNodeId!, 'true')?.target).toBe('end');
     expect(findEdge(newNodeId!, 'false')?.target).toBe('end');
   });
+
+  test('throws rather than silently wiring the false branch to the old successor when the graph has no End node', () => {
+    // Malformed on purpose — the real app always has exactly one End node (buildDefaultGraph,
+    // and EndNode is never user-deletable), but a corrupted session draft could theoretically
+    // violate that. insertStepOnEdge must fail loudly instead of producing an inert branch.
+    loadTestGraph(
+      'automation-no-end',
+      [
+        { id: 'trigger', type: 'trigger', data: { triggerType: 'form.submitted' } },
+        { id: 'action', type: 'action', data: { actionType: 'email', config: {} } },
+      ],
+      [{ id: 'e1', source: 'trigger', target: 'action' }]
+    );
+
+    expect(() =>
+      useAutomationBuilderStore.getState().insertStepOnEdge('e1', 'condition', { rules: [], combinator: 'AND' })
+    ).toThrow(/no End node/);
+  });
 });
 
 describe('automationBuilderSlice — removeNode(condition) branch-keep convention', () => {

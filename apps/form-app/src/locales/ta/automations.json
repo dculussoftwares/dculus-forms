@@ -140,10 +140,10 @@
       },
       "condition": {
         "title": "நிபந்தனை",
-        "ifPrefix": "என்றால்",
+        "summaryPrimary": "{{field}} {{operator}} {{value}} எனில்",
+        "summaryMore": "— மேலும் {{count}} ({{combinator}})",
         "noRulesConfigured": "இன்னும் விதிகள் அமைக்கப்படவில்லை",
         "unknownField": "தெரியாத புலம்",
-        "moreRulesSuffix": "மேலும்",
         "trueLabel": "ஆம்",
         "falseLabel": "இல்லை"
       },

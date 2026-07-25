@@ -140,10 +140,10 @@
       },
       "condition": {
         "title": "Condition",
-        "ifPrefix": "If",
+        "summaryPrimary": "If {{field}} {{operator}} {{value}}",
+        "summaryMore": "— {{combinator}} {{count}} more",
         "noRulesConfigured": "No rules configured yet",
         "unknownField": "Unknown field",
-        "moreRulesSuffix": "more",
         "trueLabel": "Yes",
         "falseLabel": "No"
       },

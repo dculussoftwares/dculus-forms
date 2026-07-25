@@ -25,6 +25,9 @@
     "excludesSingle": "Excludes (single)",
     "containsAll": "Contains all"
   },
+  "conjunctions": {
+    "and": "and"
+  },
   "placeholders": {
     "enterValue": "Enter value",
     "min": "Min",
@@ -32,6 +35,12 @@
     "enterNumber": "Enter number",
     "enterDays": "Days",
     "selectField": "Select a field",
-    "selectCondition": "includes"
+    "selectCondition": "includes",
+    "from": "From",
+    "to": "To",
+    "selectDate": "Select date",
+    "selectOption": "Select an option...",
+    "selectOptions": "Select options...",
+    "selectedCount": "{{count}} selected"
   }
 }
