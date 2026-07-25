@@ -165,10 +165,8 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
                 <button
                   type="button"
                   aria-label={t('builder.addStep.buttonLabel')}
-                  className="h-6 w-6 rounded-full flex items-center justify-center transition-colors"
-                  style={{ backgroundColor: 'var(--tf-dark)', boxShadow: 'var(--shadow-sm)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--tf-darkest)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--tf-dark)')}
+                  className="h-6 w-6 rounded-full flex items-center justify-center transition-colors bg-[var(--tf-dark)] hover:bg-[var(--tf-darkest)]"
+                  style={{ boxShadow: 'var(--shadow-sm)' }}
                 >
                   <Plus className="h-3.5 w-3.5" style={{ color: 'white' }} />
                 </button>

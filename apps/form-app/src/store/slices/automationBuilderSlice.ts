@@ -57,14 +57,15 @@ export interface AutomationBuilderState {
     isReadOnly: boolean;
   }) => void;
   setSelectedNodeId: (id: string | null) => void;
-  /** Re-runs dagre layout using each node's actual rendered size (from React Flow's
-   * `useNodesInitialized`/`getNodes()`) in place of the type-based `DEFAULT_DIMENSIONS`
-   * fallback that layout otherwise assumes before first paint. Node label text length
-   * varies per node (condition rule summaries, i18n — form-app ships English and Tamil)
-   * so the fallback is frequently wrong; without this correction, edges terminate at a
-   * dagre-assumed center that doesn't match where the node's handle actually renders,
-   * producing a visible kink right before the node. No-ops if positions wouldn't
-   * meaningfully change, so it's safe to call on every render once nodes are measured. */
+  /** Re-runs dagre layout using each node's actual rendered size (reported by React
+   * Flow's `onNodesChange` as 'dimensions' change events — see AutomationCanvas.tsx) in
+   * place of the type-based `DEFAULT_DIMENSIONS` fallback that layout otherwise assumes
+   * before first paint. Node label text length varies per node (condition rule
+   * summaries, i18n — form-app ships English and Tamil) so the fallback is frequently
+   * wrong; without this correction, edges terminate at a dagre-assumed center that
+   * doesn't match where the node's handle actually renders, producing a visible kink
+   * right before the node. No-ops if neither positions nor edge bend routes would
+   * meaningfully change, so it's safe to call on every dimensions event. */
   applyMeasuredLayout: (measuredNodes: { id: string; width?: number; height?: number }[]) => void;
   insertStepOnEdge: (edgeId: string, type: AutomationNodeType, data: AutomationNodeData) => string | null;
   updateNodeData: (nodeId: string, data: Partial<AutomationNodeData>) => void;
@@ -202,7 +203,15 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       const prev = nodes[i];
       return Math.abs(node.position.x - prev.position.x) > 0.5 || Math.abs(node.position.y - prev.position.y) > 0.5;
     });
-    if (!positionsChanged) return;
+    // A rank-skipping edge's curve is derived from spacer-node positions (see layout.ts),
+    // which aren't part of `layoutedNodes` — a dimension change can shift a spacer enough
+    // to change a route without moving any *real* node past the position-change threshold
+    // above, so bend routes need their own comparison rather than piggybacking on it.
+    const bendRoutesChanged = layoutedEdges.some((edge, i) => {
+      const prev = edges[i];
+      return JSON.stringify(edge.data?.bendPoints) !== JSON.stringify(prev?.data?.bendPoints);
+    });
+    if (!positionsChanged && !bendRoutesChanged) return;
 
     set({ nodes: layoutedNodes, edges: layoutedEdges });
   },
