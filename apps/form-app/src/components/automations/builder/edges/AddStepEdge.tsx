@@ -3,6 +3,7 @@ import {
   BaseEdge,
   EdgeLabelRenderer,
   getSmoothStepPath,
+  Position,
   type EdgeProps,
 } from '@xyflow/react';
 import { Popover, PopoverContent, PopoverTrigger, Badge } from '@dculus/ui';
@@ -43,6 +44,58 @@ const CatalogItem: React.FC<CatalogItemProps> = ({ icon, iconBg, label, disabled
   </button>
 );
 
+const BORDER_RADIUS = 8;
+
+/**
+ * Draws a path through `points` (source, any dagre-computed bend points, target) by
+ * chaining getSmoothStepPath calls segment-by-segment — the same function and radius
+ * every other (adjacent-rank, no-bend) edge uses, so a branch edge that skips a rank
+ * (e.g. an empty condition branch wired straight past its sibling's node) still reads
+ * as visually consistent with the rest of the graph instead of cutting a single
+ * straight diagonal across the skipped rank. Interior points are treated as pass-through
+ * stops (exiting "Bottom", entering "Top"), mirroring the dummy chain node dagre itself
+ * inserts there.
+ */
+function buildSteppedPath(
+  points: { x: number; y: number }[],
+  sourcePosition: Position,
+  targetPosition: Position,
+  // Overrides the Y at which the *final* segment bends toward the target. Sibling edges
+  // that reconverge on the same node otherwise all compute the same default (source/
+  // target midpoint) bend Y whenever they also share a source Y (e.g. two branches'
+  // action nodes landing on the same rank before both feeding the shared End node),
+  // making their paths pixel-identical for the whole final approach — see mergeCenterY
+  // in AddStepEdge.
+  finalCenterY?: number
+): { path: string; labelX: number; labelY: number } {
+  const segments: string[] = [];
+  let labelX = points[0].x;
+  let labelY = points[0].y;
+  const midSegmentIndex = Math.floor((points.length - 2) / 2);
+  const lastSegmentIndex = points.length - 2;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const isLast = i === lastSegmentIndex;
+    const [segPath, segLabelX, segLabelY] = getSmoothStepPath({
+      sourceX: points[i].x,
+      sourceY: points[i].y,
+      sourcePosition: i === 0 ? sourcePosition : Position.Bottom,
+      targetX: points[i + 1].x,
+      targetY: points[i + 1].y,
+      targetPosition: isLast ? targetPosition : Position.Top,
+      borderRadius: BORDER_RADIUS,
+      ...(isLast && finalCenterY !== undefined ? { centerY: finalCenterY } : {}),
+    });
+    segments.push(segPath);
+    if (i === midSegmentIndex) {
+      labelX = segLabelX;
+      labelY = segLabelY;
+    }
+  }
+
+  return { path: segments.join(' '), labelX, labelY };
+}
+
 export const AddStepEdge: React.FC<EdgeProps> = ({
   id,
   sourceX,
@@ -53,21 +106,25 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
   targetPosition,
   sourceHandleId,
   markerEnd,
+  data,
 }) => {
   const { t } = useTranslation('automations');
   const [open, setOpen] = useState(false);
   const isReadOnly = useAutomationBuilderStore((s) => s.isReadOnly);
   const insertStepOnEdge = useAutomationBuilderStore((s) => s.insertStepOnEdge);
 
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-    borderRadius: 8,
-  });
+  const bendPoints = (data?.bendPoints as { x: number; y: number }[] | undefined) ?? [];
+  const pathPoints = [{ x: sourceX, y: sourceY }, ...bendPoints, { x: targetX, y: targetY }];
+
+  const mergeIndex = data?.mergeIndex as number | undefined;
+  const mergeCount = data?.mergeCount as number | undefined;
+  const lastPoint = pathPoints[pathPoints.length - 2];
+  const mergeCenterY =
+    mergeIndex !== undefined && mergeCount !== undefined && mergeCount > 1
+      ? lastPoint.y + (targetY - lastPoint.y) * (0.5 + (mergeIndex - (mergeCount - 1) / 2) * 0.14)
+      : undefined;
+
+  const { path: edgePath, labelX, labelY } = buildSteppedPath(pathPoints, sourcePosition, targetPosition, mergeCenterY);
 
   const branchLabel =
     sourceHandleId === 'true'
@@ -94,7 +151,7 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
 
   return (
     <>
-      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: 'var(--tf-border-strong)', strokeWidth: 1.5 }} />
+      <BaseEdge id={id} path={edgePath} markerEnd={markerEnd} style={{ stroke: 'var(--tf-light-muted)', strokeWidth: 1.5 }} />
       {branchLabel && (
         <EdgeLabelRenderer>
           <div
@@ -130,10 +187,12 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
                 <button
                   type="button"
                   aria-label={t('builder.addStep.buttonLabel')}
-                  className="h-6 w-6 rounded-full flex items-center justify-center bg-white hover:bg-[rgba(87,84,91,0.06)] transition-colors"
-                  style={{ border: '1.5px solid var(--tf-border-strong)' }}
+                  className="h-6 w-6 rounded-full flex items-center justify-center transition-colors"
+                  style={{ backgroundColor: 'var(--tf-dark)', boxShadow: 'var(--shadow-sm)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--tf-darkest)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--tf-dark)')}
                 >
-                  <Plus className="h-3.5 w-3.5" style={{ color: 'var(--tf-muted)' }} />
+                  <Plus className="h-3.5 w-3.5" style={{ color: 'white' }} />
                 </button>
               </PopoverTrigger>
               <PopoverContent align="center" className="w-64 p-2">
