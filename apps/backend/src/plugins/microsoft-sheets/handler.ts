@@ -60,12 +60,7 @@ const refreshMicrosoftTokenIfNeeded = async (
       displayName: token.displayName,
     };
 
-    await context.prisma.formPlugin.update({
-      where: { id: pluginId },
-      data: {
-        config: { ...config, microsoftToken: newToken } as any,
-      },
-    });
+    await context.updatePluginConfig({ ...config, microsoftToken: newToken });
 
     context.logger.info('Microsoft Sheets: token refreshed successfully', { pluginId });
     return newToken;
@@ -350,16 +345,11 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       const created = await createWorkbook(workbookTitle, worksheetName, accessToken);
       await writeHeaderRow(created.workbookId, worksheetName, buildHeaders(), accessToken);
 
-      await context.prisma.formPlugin.update({
-        where: { id: plugin.id },
-        data: {
-          config: {
-            ...config,
-            microsoftToken: freshToken,
-            workbookId: created.workbookId,
-            workbookUrl: created.workbookUrl,
-          } as any,
-        },
+      await context.updatePluginConfig({
+        ...config,
+        microsoftToken: freshToken,
+        workbookId: created.workbookId,
+        workbookUrl: created.workbookUrl,
       });
 
       context.logger.info('Microsoft Sheets: workbook created and header row written', {

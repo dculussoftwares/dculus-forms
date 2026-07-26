@@ -1,5 +1,6 @@
 import type { PgBoss, JobWithMetadata } from 'pg-boss';
 import * as Sentry from '@sentry/node';
+import { Prisma } from '#prisma-client';
 import { generateId, substituteMentions } from '@dculus/utils';
 import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
@@ -121,6 +122,68 @@ function mergeStepOutput(context: unknown, nodeId: string, output: any): Automat
     ...ctx,
     stepOutputs: { ...(ctx.stepOutputs ?? {}), [nodeId]: output ?? null },
   };
+}
+
+/**
+ * Replaces one node's `data.config` inside a `{ nodes: [...], edges: [...] }` JSON column,
+ * leaving every other node untouched, in a single atomic UPDATE. Postgres serializes
+ * concurrent UPDATEs to the same row (the second waits for the first to commit, then
+ * re-reads its result), so two action-node executions racing to persist config on the same
+ * row — e.g. two form submissions triggering the same automation moments apart — can't lose
+ * one's write to the other's the way a JS-level read-modify-write would.
+ */
+async function jsonSetNodeConfig(
+  table: 'automation' | 'automation_run',
+  column: 'graph' | 'graphSnapshot',
+  rowId: string,
+  nodeId: string,
+  config: PluginConfig
+): Promise<void> {
+  const tableIdent = Prisma.raw(`"${table}"`);
+  const columnIdent = Prisma.raw(`"${column}"`);
+  const configJson = JSON.stringify(config);
+
+  await prisma.$executeRaw(Prisma.sql`
+    UPDATE ${tableIdent}
+    SET ${columnIdent} = jsonb_set(
+      ${columnIdent},
+      '{nodes}',
+      (
+        SELECT COALESCE(jsonb_agg(
+          CASE WHEN elem->>'id' = ${nodeId}
+            THEN jsonb_set(elem, '{data,config}', ${configJson}::jsonb, true)
+            ELSE elem
+          END
+        ), '[]'::jsonb)
+        FROM jsonb_array_elements(${columnIdent}->'nodes') AS elem
+      )
+    )
+    WHERE id = ${rowId}
+  `);
+}
+
+/**
+ * Persists an action-node handler's updated config (auto-created spreadsheet/workbook ID,
+ * refreshed OAuth token, etc.) for the Automations system — see `PluginContext.updatePluginConfig`
+ * for why handlers can't just write to a `FormPlugin` row here.
+ *
+ * Writes to two places:
+ *  - `AutomationRun.graphSnapshot` for THIS run, so a retry after a transient failure (e.g.
+ *    the workbook was created but the network dropped before this write) sees the
+ *    already-created workbook/spreadsheet instead of creating a duplicate.
+ *  - `Automation.graph`, the live graph, so the NEXT run — which snapshots fresh from this
+ *    column — reuses the same workbook/spreadsheet and refreshed token too.
+ */
+async function updateAutomationNodeConfig(
+  automationId: string,
+  runId: string,
+  nodeId: string,
+  config: PluginConfig
+): Promise<void> {
+  await Promise.all([
+    jsonSetNodeConfig('automation', 'graph', automationId, nodeId, config),
+    jsonSetNodeConfig('automation_run', 'graphSnapshot', runId, nodeId, config),
+  ]);
 }
 
 async function handleDelayNode(
@@ -247,7 +310,7 @@ async function handleActionNode(
     id: string;
     context: unknown;
     startedAt: Date;
-    automation: { status: string; formId: string; organizationId: string; triggerType: string };
+    automation: { id: string; status: string; formId: string; organizationId: string; triggerType: string };
   },
   node: Extract<AutomationNode, { type: 'action' }>,
   graph: AutomationGraph,
@@ -294,7 +357,9 @@ async function handleActionNode(
     const result = await handler(
       { id: `${run.id}:${node.id}`, config: substitutedConfig },
       event,
-      createPluginContext()
+      createPluginContext((newConfig) =>
+        updateAutomationNodeConfig(run.automation.id, run.id, node.id, newConfig)
+      )
     );
 
     await prisma.automationStepRun.create({

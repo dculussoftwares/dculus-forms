@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl } from '../../lib/config';
+import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
 import type { ConfigFormProps } from '../core/registry';
 
 interface MicrosoftToken {
@@ -57,6 +58,22 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
     initialData?.config?.workbookUrl
   );
 
+  // NodeConfigPanel (the automation builder's host for this form) passes a brand-new
+  // `initialData` object literal on every render, not just when the selected node changes —
+  // so the sync effect below re-fires far more often than its name suggests. On the mount
+  // that follows an OAuth redirect, both effects run in the same commit: this one first,
+  // then the sync effect second, since effects run in declaration order. Left unguarded, the
+  // sync effect immediately resets `microsoftToken` to `initialData.config?.microsoftToken`
+  // (still undefined — the token isn't persisted to the node until "Save action" is clicked),
+  // silently discarding the token this effect just parsed. The ref is never reset back to
+  // false: React StrictMode's dev-only double-invoke of effects on mount runs this same pair
+  // a second time, and by then `window.location.hash` has already been stripped (so the
+  // parse branch below is a no-op on that second pass) — a self-resetting guard would leave
+  // that second sync-effect invocation unguarded and wipe the token anyway. Latching it for
+  // the component's whole lifetime is safe because a real "switch to a different node"
+  // always unmounts and remounts this form (see NodeConfigPanel's close()-on-Save/Cancel).
+  const justConnectedRef = useRef(false);
+
   // On mount: check if we just returned from Microsoft OAuth redirect
   useEffect(() => {
     const hash = window.location.hash;
@@ -67,6 +84,7 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
         const token: MicrosoftToken = JSON.parse(atob(padded));
         setMicrosoftToken(token);
+        justConnectedRef.current = true;
         window.history.replaceState(
           null,
           '',
@@ -92,12 +110,18 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   useEffect(() => {
     if (initialData) {
       setPluginName(initialData.name ?? 'Microsoft Excel');
-      setMicrosoftToken(initialData.config?.microsoftToken);
       setWorksheetName(initialData.config?.worksheetName ?? 'Sheet1');
+      if (!justConnectedRef.current) {
+        setMicrosoftToken(initialData.config?.microsoftToken);
+      }
     }
   }, [initialData]);
 
   const handleConnectMicrosoft = () => {
+    // Mark this navigation as intentional first so the automation builder's beforeunload
+    // guard (which would otherwise treat this like an accidental tab close) lets it through
+    // unprompted.
+    markIntentionalNavigation();
     const returnTo = window.location.pathname + window.location.search;
     window.location.href = `${getApiBaseUrl()}/api/integrations/microsoft/auth?return_to=${encodeURIComponent(returnTo)}`;
   };

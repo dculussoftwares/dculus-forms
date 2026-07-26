@@ -27,6 +27,14 @@ vi.mock('../../../lib/prisma.js', () => ({
     // Array-form $transaction: operations are already-invoked PrismaPromises by the time
     // $transaction receives them, so resolving them as-is mirrors the real API.
     $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
+    $executeRaw: vi.fn().mockResolvedValue(1),
+  },
+}));
+
+vi.mock('#prisma-client', () => ({
+  Prisma: {
+    sql: (strings: TemplateStringsArray, ...values: any[]) => ({ strings, values }),
+    raw: (value: string) => ({ raw: value }),
   },
 }));
 
@@ -72,6 +80,7 @@ function makeRun(overrides: Record<string, any> = {}) {
     context: {},
     startedAt: new Date('2026-01-01T00:00:00.000Z'),
     automation: {
+      id: 'automation-1',
       status: 'ACTIVE',
       formId: 'form-1',
       organizationId: 'org-1',
@@ -641,6 +650,57 @@ describe('automation engine', () => {
       await expect(
         executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT))
       ).rejects.toThrow('No handler registered for action type: unregistered-type');
+    });
+
+    it('wires createPluginContext with a persistence strategy that jsonb_sets the node config into both the live Automation.graph and this run\'s graphSnapshot (#222 regression: handlers previously wrote to a nonexistent FormPlugin row for automation-triggered actions)', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'google-sheets', config: { type: 'google-sheets' } } }],
+        edges: [],
+      };
+
+      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
+      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+        makeRun({ graphSnapshot: graph }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({ success: true });
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      // createPluginContext is mocked wholesale for the rest of this suite (see the
+      // module-level vi.mock above) — override it just for this test so the real closure
+      // built by handleActionNode is captured and can be invoked directly, the way the
+      // google-sheets/microsoft-sheets handlers call context.updatePluginConfig(...).
+      let capturedPersist: ((config: any) => Promise<void>) | undefined;
+      vi.mocked(createPluginContext).mockImplementation((persist: any) => {
+        capturedPersist = persist;
+        return { prisma: {} as any, logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() }, updatePluginConfig: persist } as any;
+      });
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(capturedPersist).toBeInstanceOf(Function);
+
+      const newConfig = { type: 'google-sheets', spreadsheetId: 'sheet-123', spreadsheetUrl: 'https://sheets.google.com/sheet-123' };
+      await capturedPersist!(newConfig);
+
+      expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
+
+      const [graphCall, snapshotCall] = vi.mocked(prisma.$executeRaw).mock.calls.map(
+        (call) => call[0] as unknown as { strings: TemplateStringsArray; values: any[] }
+      );
+
+      // Update against the live Automation row — keyed by automationId, not runId — so the
+      // NEXT run's fresh graphSnapshot picks up the same spreadsheet instead of recreating one.
+      expect(graphCall.strings.join('')).toContain('UPDATE');
+      expect(graphCall.values).toContain('action-1');
+      expect(graphCall.values).toContain('automation-1');
+      expect(graphCall.values).toContain(JSON.stringify(newConfig));
+
+      // Update against this run's graphSnapshot — keyed by runId — so a retry of THIS run
+      // doesn't recreate the spreadsheet after a transient failure post-creation.
+      expect(snapshotCall.values).toContain('action-1');
+      expect(snapshotCall.values).toContain('run-1');
+      expect(snapshotCall.values).toContain(JSON.stringify(newConfig));
     });
   });
 

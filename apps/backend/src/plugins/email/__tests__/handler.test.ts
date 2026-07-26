@@ -46,6 +46,7 @@ describe('Email Handler', () => {
       getOrganization: vi.fn(),
       getUserById: vi.fn(),
       sendEmail: vi.fn(),
+      updatePluginConfig: vi.fn(),
       prisma: { pdfTemplate: { findUnique: vi.fn() } } as any,
     };
 

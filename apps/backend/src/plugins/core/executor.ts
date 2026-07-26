@@ -9,7 +9,12 @@ export const executePlugin = async (
   pluginId: string,
   event: PluginEvent
 ): Promise<{ success: boolean; error?: string }> => {
-  const context = createPluginContext();
+  // The legacy Plugins system backs every plugin with a real FormPlugin row, so a handler's
+  // context.updatePluginConfig(...) call (e.g. persisting a refreshed OAuth token) just
+  // writes straight back to that row.
+  const context = createPluginContext(async (config) => {
+    await prisma.formPlugin.update({ where: { id: pluginId }, data: { config: config as any } });
+  });
 
   try {
     const plugin = await prisma.formPlugin.findUnique({ where: { id: pluginId } });
