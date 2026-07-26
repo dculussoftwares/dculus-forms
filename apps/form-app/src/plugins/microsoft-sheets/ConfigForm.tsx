@@ -56,9 +56,12 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   const [microsoftToken, setMicrosoftToken] = useState<MicrosoftToken | undefined>(
     initialData?.config?.microsoftToken
   );
-  const [workbookUrl] = useState<string | undefined>(
-    initialData?.config?.workbookUrl
-  );
+  // Not local state: read directly from `initialData` (fresh per selected node) rather than
+  // capturing once at mount — same reasoning as google-sheets/ConfigForm.tsx's
+  // spreadsheetId/spreadsheetUrl. `handleSave` below already read `workbookId`/`workbookUrl`
+  // fresh from `initialData`, so this was display-only staleness (the "Open in..." link could
+  // point at a sibling node's workbook after switching without saving), not a persisted leak.
+  const workbookUrl = initialData?.config?.workbookUrl;
 
   // NodeConfigPanel (the automation builder's host for this form) passes a brand-new
   // `initialData` object literal on every render, not just when the selected node changes —
@@ -96,11 +99,13 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         // Restore whatever the user had typed into "Plugin Name"/"Worksheet Name" before
         // Connect navigated the tab away — those edits lived only in local React state and
         // were never saved, so the full-page redirect would otherwise silently revert them.
+        // Checked by key presence, not truthiness: clearing either field to '' before Connect
+        // is a valid edit that a truthiness check would fail to restore.
         const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string }>(
           'microsoft-sheets'
         );
-        if (pending?.pluginName) setPluginName(pending.pluginName);
-        if (pending?.worksheetName) setWorksheetName(pending.worksheetName);
+        if (pending && 'pluginName' in pending) setPluginName(pending.pluginName ?? '');
+        if (pending && 'worksheetName' in pending) setWorksheetName(pending.worksheetName ?? '');
         justConnectedRef.current = true;
         window.history.replaceState(
           null,
@@ -119,8 +124,8 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
       const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string }>(
         'microsoft-sheets'
       );
-      if (pending?.pluginName) setPluginName(pending.pluginName);
-      if (pending?.worksheetName) setWorksheetName(pending.worksheetName);
+      if (pending && 'pluginName' in pending) setPluginName(pending.pluginName ?? '');
+      if (pending && 'worksheetName' in pending) setWorksheetName(pending.worksheetName ?? '');
       if (pending) justConnectedRef.current = true;
       window.history.replaceState(
         null,

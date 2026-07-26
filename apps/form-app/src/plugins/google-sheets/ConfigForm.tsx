@@ -100,8 +100,10 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         // Restore whatever the user had typed into "Plugin Name" before Connect navigated the
         // tab away — that edit lived only in local React state and was never saved, so the
         // full-page redirect would otherwise silently revert it back to the last-saved name.
+        // Checked by key presence, not truthiness: clearing the name to '' before Connect is
+        // a valid edit that a truthiness check would fail to restore.
         const pending = consumePendingConfigFields<{ pluginName?: string }>('google-sheets');
-        if (pending?.pluginName) setPluginName(pending.pluginName);
+        if (pending && 'pluginName' in pending) setPluginName(pending.pluginName ?? '');
         justConnectedRef.current = true;
         // Clean hash from URL without triggering a navigation
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -114,8 +116,8 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
       console.warn('[GSheets Config] OAuth error from redirect:', error);
       setConnectionError(t('connection.authFailed'));
       const pending = consumePendingConfigFields<{ pluginName?: string }>('google-sheets');
-      if (pending?.pluginName) {
-        setPluginName(pending.pluginName);
+      if (pending && 'pluginName' in pending) {
+        setPluginName(pending.pluginName ?? '');
         justConnectedRef.current = true;
       }
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
