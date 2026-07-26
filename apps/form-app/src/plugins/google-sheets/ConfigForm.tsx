@@ -22,6 +22,7 @@ import {
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl } from '../../lib/config';
 import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
+import { stashPendingConfigFields, consumePendingConfigFields } from '../../lib/pendingConfigFields';
 import type { ConfigFormProps } from '../core/registry';
 
 interface GoogleToken {
@@ -34,6 +35,7 @@ interface GoogleToken {
 export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   form,
   initialData,
+  instanceKey,
   mode,
   isSaving,
   onSave,
@@ -50,28 +52,39 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   const [googleToken, setGoogleToken] = useState<GoogleToken | undefined>(
     initialData?.config?.googleToken
   );
-  const [spreadsheetId] = useState<string | undefined>(
-    initialData?.config?.spreadsheetId
-  );
-  const [spreadsheetUrl] = useState<string | undefined>(
-    initialData?.config?.spreadsheetUrl
-  );
+  // Not local state: read directly from `initialData` (fresh per selected node) rather than
+  // capturing once at mount. NodeConfigPanel reuses the same ConfigForm instance across
+  // different action nodes of the same type without remounting it — local state captured
+  // once would keep whichever node's spreadsheetId was set on first mount and silently
+  // persist it onto a completely different node's config on the next Save, making two
+  // unrelated action nodes (e.g. a condition's "Yes" and "No" branches) end up pointing at
+  // the same spreadsheet.
+  const spreadsheetId = initialData?.config?.spreadsheetId;
+  const spreadsheetUrl = initialData?.config?.spreadsheetUrl;
 
   // NodeConfigPanel (the automation builder's host for this form) passes a brand-new
   // `initialData` object literal on every render, not just when the selected node changes —
   // so the sync effect below re-fires far more often than its name suggests. On the mount
   // that follows an OAuth redirect, both effects run in the same commit: this one first,
   // then the sync effect second, since effects run in declaration order. Left unguarded, the
-  // sync effect immediately resets `googleToken` to `initialData.config?.googleToken` (still
-  // undefined — the token isn't persisted to the node until "Save action" is clicked),
-  // silently discarding the token this effect just parsed. The ref is never reset back to
-  // false: React StrictMode's dev-only double-invoke of effects on mount runs this same pair
-  // a second time, and by then `window.location.hash` has already been stripped (so the
-  // parse branch below is a no-op on that second pass) — a self-resetting guard would leave
-  // that second sync-effect invocation unguarded and wipe the token anyway. Latching it for
-  // the component's whole lifetime is safe because a real "switch to a different node"
-  // always unmounts and remounts this form (see NodeConfigPanel's close()-on-Save/Cancel).
+  // sync effect immediately resets `googleToken`/`pluginName` back to `initialData`'s (still
+  // last-*Saved*) values — the token isn't persisted to the node until "Save action" is
+  // clicked, and neither is any in-progress "Plugin Name" edit — silently discarding both
+  // this effect just restored (the token freshly parsed, the name from the pending-fields
+  // stash). The ref is never self-resetting: React StrictMode's dev-only double-invoke of
+  // effects on mount runs this same pair a second time, and by then `window.location.hash` has
+  // already been stripped (so the parse branch below is a no-op on that second pass) — a
+  // self-resetting guard would leave that second sync-effect invocation unguarded and wipe
+  // everything anyway.
+  //
+  // NodeConfigPanel does NOT remount this form when the user switches to a different node of
+  // the same plugin type without saving/canceling first — it renders the same ConfigForm
+  // component instance with new props, since there's no `key`. So the latch must be reset
+  // explicitly on a genuine node switch (tracked via `instanceKey`, NodeConfigPanel's
+  // node.id), or a token/name meant for the node open during OAuth would silently leak onto
+  // whatever different node the user clicks next.
   const justConnectedRef = useRef(false);
+  const prevInstanceKeyRef = useRef(instanceKey);
 
   // On mount: check if we just returned from Google OAuth redirect
   useEffect(() => {
@@ -84,6 +97,11 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         const token: GoogleToken = JSON.parse(atob(padded));
         console.log('[GSheets Config] ✅ token from redirect for:', token.email);
         setGoogleToken(token);
+        // Restore whatever the user had typed into "Plugin Name" before Connect navigated the
+        // tab away — that edit lived only in local React state and was never saved, so the
+        // full-page redirect would otherwise silently revert it back to the last-saved name.
+        const pending = consumePendingConfigFields<{ pluginName?: string }>('google-sheets');
+        if (pending?.pluginName) setPluginName(pending.pluginName);
         justConnectedRef.current = true;
         // Clean hash from URL without triggering a navigation
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -95,20 +113,30 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
       const error = new URLSearchParams(hash.slice(1)).get('google_oauth_error') ?? '';
       console.warn('[GSheets Config] OAuth error from redirect:', error);
       setConnectionError(t('connection.authFailed'));
+      const pending = consumePendingConfigFields<{ pluginName?: string }>('google-sheets');
+      if (pending?.pluginName) {
+        setPluginName(pending.pluginName);
+        justConnectedRef.current = true;
+      }
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
   }, []);
 
   useEffect(() => {
-    if (initialData) {
-      setPluginName(initialData.name ?? 'Google Sheets');
-      if (!justConnectedRef.current) {
-        setGoogleToken(initialData.config?.googleToken);
-      }
+    if (prevInstanceKeyRef.current !== instanceKey) {
+      prevInstanceKeyRef.current = instanceKey;
+      justConnectedRef.current = false;
     }
-  }, [initialData]);
+    if (initialData && !justConnectedRef.current) {
+      setPluginName(initialData.name ?? 'Google Sheets');
+      setGoogleToken(initialData.config?.googleToken);
+    }
+  }, [initialData, instanceKey]);
 
   const handleConnectGoogle = () => {
+    // Stash whatever's currently typed into "Plugin Name" — it's only local React state until
+    // Save is clicked, and the redirect below fully reloads the page, discarding it otherwise.
+    stashPendingConfigFields('google-sheets', { pluginName });
     // Redirect the current tab — avoids all popup/COOP/BroadcastChannel issues. Mark this
     // navigation as intentional first so the automation builder's beforeunload guard (which
     // would otherwise treat this like an accidental tab close) lets it through unprompted.

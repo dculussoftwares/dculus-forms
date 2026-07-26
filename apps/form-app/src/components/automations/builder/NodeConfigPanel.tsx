@@ -132,6 +132,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
               config: actionData.config ?? {},
               events: ['form.submitted'],
             }}
+            instanceKey={node.id}
             mode={hasConfig ? 'edit' : 'create'}
             isSaving={false}
             hideEventsSection

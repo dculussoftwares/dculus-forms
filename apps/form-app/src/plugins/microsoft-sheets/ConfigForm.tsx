@@ -22,6 +22,7 @@ import {
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl } from '../../lib/config';
 import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
+import { stashPendingConfigFields, consumePendingConfigFields } from '../../lib/pendingConfigFields';
 import type { ConfigFormProps } from '../core/registry';
 
 interface MicrosoftToken {
@@ -35,6 +36,7 @@ interface MicrosoftToken {
 export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   form,
   initialData,
+  instanceKey,
   mode,
   isSaving,
   onSave,
@@ -63,16 +65,23 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   // so the sync effect below re-fires far more often than its name suggests. On the mount
   // that follows an OAuth redirect, both effects run in the same commit: this one first,
   // then the sync effect second, since effects run in declaration order. Left unguarded, the
-  // sync effect immediately resets `microsoftToken` to `initialData.config?.microsoftToken`
-  // (still undefined — the token isn't persisted to the node until "Save action" is clicked),
-  // silently discarding the token this effect just parsed. The ref is never reset back to
-  // false: React StrictMode's dev-only double-invoke of effects on mount runs this same pair
-  // a second time, and by then `window.location.hash` has already been stripped (so the
-  // parse branch below is a no-op on that second pass) — a self-resetting guard would leave
-  // that second sync-effect invocation unguarded and wipe the token anyway. Latching it for
-  // the component's whole lifetime is safe because a real "switch to a different node"
-  // always unmounts and remounts this form (see NodeConfigPanel's close()-on-Save/Cancel).
+  // sync effect immediately resets `microsoftToken`/`pluginName`/`worksheetName` back to
+  // `initialData`'s (still last-*Saved*) values — none of the three are persisted to the node
+  // until "Save action" is clicked — silently discarding what this effect just restored (the
+  // token freshly parsed, the name/worksheet from the pending-fields stash). The ref is never
+  // self-resetting: React StrictMode's dev-only double-invoke of effects on mount runs this
+  // same pair a second time, and by then `window.location.hash` has already been stripped (so
+  // the parse branch below is a no-op on that second pass) — a self-resetting guard would
+  // leave that second sync-effect invocation unguarded and wipe everything anyway.
+  //
+  // NodeConfigPanel does NOT remount this form when the user switches to a different node of
+  // the same plugin type without saving/canceling first — it renders the same ConfigForm
+  // component instance with new props, since there's no `key`. So the latch must be reset
+  // explicitly on a genuine node switch (tracked via `instanceKey`, NodeConfigPanel's
+  // node.id), or a token/name meant for the node open during OAuth would silently leak onto
+  // whatever different node the user clicks next.
   const justConnectedRef = useRef(false);
+  const prevInstanceKeyRef = useRef(instanceKey);
 
   // On mount: check if we just returned from Microsoft OAuth redirect
   useEffect(() => {
@@ -84,6 +93,14 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
         const token: MicrosoftToken = JSON.parse(atob(padded));
         setMicrosoftToken(token);
+        // Restore whatever the user had typed into "Plugin Name"/"Worksheet Name" before
+        // Connect navigated the tab away — those edits lived only in local React state and
+        // were never saved, so the full-page redirect would otherwise silently revert them.
+        const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string }>(
+          'microsoft-sheets'
+        );
+        if (pending?.pluginName) setPluginName(pending.pluginName);
+        if (pending?.worksheetName) setWorksheetName(pending.worksheetName);
         justConnectedRef.current = true;
         window.history.replaceState(
           null,
@@ -99,6 +116,12 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         new URLSearchParams(hash.slice(1)).get('microsoft_oauth_error') ?? '';
       console.warn('[MicrosoftSheets Config] OAuth error from redirect:', error);
       setConnectionError(t('connection.authFailed'));
+      const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string }>(
+        'microsoft-sheets'
+      );
+      if (pending?.pluginName) setPluginName(pending.pluginName);
+      if (pending?.worksheetName) setWorksheetName(pending.worksheetName);
+      if (pending) justConnectedRef.current = true;
       window.history.replaceState(
         null,
         '',
@@ -108,16 +131,22 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   }, []);
 
   useEffect(() => {
-    if (initialData) {
+    if (prevInstanceKeyRef.current !== instanceKey) {
+      prevInstanceKeyRef.current = instanceKey;
+      justConnectedRef.current = false;
+    }
+    if (initialData && !justConnectedRef.current) {
       setPluginName(initialData.name ?? 'Microsoft Excel');
       setWorksheetName(initialData.config?.worksheetName ?? 'Sheet1');
-      if (!justConnectedRef.current) {
-        setMicrosoftToken(initialData.config?.microsoftToken);
-      }
+      setMicrosoftToken(initialData.config?.microsoftToken);
     }
-  }, [initialData]);
+  }, [initialData, instanceKey]);
 
   const handleConnectMicrosoft = () => {
+    // Stash whatever's currently typed into "Plugin Name"/"Worksheet Name" — they're only
+    // local React state until Save is clicked, and the redirect below fully reloads the page,
+    // discarding them otherwise.
+    stashPendingConfigFields('microsoft-sheets', { pluginName, worksheetName });
     // Mark this navigation as intentional first so the automation builder's beforeunload
     // guard (which would otherwise treat this like an accidental tab close) lets it through
     // unprompted.
