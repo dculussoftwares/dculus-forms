@@ -334,8 +334,17 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
 
     const initWorkbook = async (): Promise<{ workbookId: string; workbookUrl: string }> => {
       const formTitle = form?.title?.trim() || 'Form Responses';
-      // Append short plugin ID suffix to prevent collisions when two forms share the same title
-      const workbookTitle = `${formTitle} — Responses (${plugin.id.slice(0, 8)})`;
+      // Append a distinguishing suffix so two Microsoft Excel actions on the same form (e.g. a
+      // condition's "Yes" and "No" branches) don't create identically-titled files that are
+      // hard to tell apart in OneDrive. Automation action nodes use a composite
+      // `${runId}:${nodeId}` plugin id (see services/automation/engine.ts) — prefer the
+      // trailing node-id segment, which stays stable across re-runs, over the whole composite
+      // (which would otherwise change every run, since it used to take the first 8 chars of
+      // the *whole* id — effectively the run id, not the node id). Legacy standalone plugins
+      // use a plain FormPlugin id with no colon, so this is a no-op there.
+      const idParts = plugin.id.split(':');
+      const idSuffix = (idParts[idParts.length - 1] || plugin.id).slice(0, 8);
+      const workbookTitle = `${formTitle} — Responses (${idSuffix})`;
 
       context.logger.info('Microsoft Sheets: creating new workbook', {
         pluginId: plugin.id,

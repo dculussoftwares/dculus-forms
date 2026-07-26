@@ -125,25 +125,40 @@ function mergeStepOutput(context: unknown, nodeId: string, output: any): Automat
 }
 
 /**
- * Replaces one node's `data.config` inside a `{ nodes: [...], edges: [...] }` JSON column,
- * leaving every other node untouched, in a single atomic UPDATE. Postgres serializes
- * concurrent UPDATEs to the same row (the second waits for the first to commit, then
- * re-reads its result), so two action-node executions racing to persist config on the same
- * row — e.g. two form submissions triggering the same automation moments apart — can't lose
- * one's write to the other's the way a JS-level read-modify-write would.
+ * Builds (without executing) an atomic UPDATE that replaces one node's `data.config` inside a
+ * `{ nodes: [...], edges: [...] }` JSON column, leaving every other node untouched. Returns
+ * the unresolved `$executeRaw` PrismaPromise so callers can batch it into `$transaction`.
+ *
+ * Because each single statement's `SET column = jsonb_set(column, ...)` re-reads the row's
+ * latest *committed* value at execution time — not a value cached in application memory —
+ * two concurrent writes targeting DIFFERENT nodes in the same graph correctly compose:
+ * Postgres serializes the two UPDATEs (the second waits for the first to commit, then
+ * evaluates against its result), so neither writer's change is lost to the other.
+ *
+ * This does NOT protect two concurrent *runs* writing to the SAME node from each other. Each
+ * run computes its own full replacement `data.config` from whatever it read when its own
+ * execution started; if two runs of the same automation both reach the "auto-create
+ * spreadsheet/workbook" branch for the same action node before either has persisted an
+ * id, each creates its own resource and whichever write lands last wins — the other run's
+ * newly created spreadsheet/workbook is silently orphaned (created, but never referenced
+ * again). Accepted as a narrow edge case for now: it can only surface on an action's very
+ * first-ever execution, and no response data is lost (every run's row still lands in *some*
+ * spreadsheet). Closing it fully would mean serializing the auto-create branch itself — e.g.
+ * a per-node advisory lock or `SELECT ... FOR UPDATE` before that branch runs — not just this
+ * config write.
  */
-async function jsonSetNodeConfig(
+function jsonSetNodeConfigQuery(
   table: 'automation' | 'automation_run',
   column: 'graph' | 'graphSnapshot',
   rowId: string,
   nodeId: string,
   config: PluginConfig
-): Promise<void> {
+) {
   const tableIdent = Prisma.raw(`"${table}"`);
   const columnIdent = Prisma.raw(`"${column}"`);
   const configJson = JSON.stringify(config);
 
-  await prisma.$executeRaw(Prisma.sql`
+  return prisma.$executeRaw(Prisma.sql`
     UPDATE ${tableIdent}
     SET ${columnIdent} = jsonb_set(
       ${columnIdent},
@@ -167,7 +182,8 @@ async function jsonSetNodeConfig(
  * refreshed OAuth token, etc.) for the Automations system — see `PluginContext.updatePluginConfig`
  * for why handlers can't just write to a `FormPlugin` row here.
  *
- * Writes to two places:
+ * Writes to two places, both inside one Prisma `$transaction` so they can't diverge if one
+ * write fails after the other succeeds:
  *  - `AutomationRun.graphSnapshot` for THIS run, so a retry after a transient failure (e.g.
  *    the workbook was created but the network dropped before this write) sees the
  *    already-created workbook/spreadsheet instead of creating a duplicate.
@@ -180,9 +196,9 @@ async function updateAutomationNodeConfig(
   nodeId: string,
   config: PluginConfig
 ): Promise<void> {
-  await Promise.all([
-    jsonSetNodeConfig('automation', 'graph', automationId, nodeId, config),
-    jsonSetNodeConfig('automation_run', 'graphSnapshot', runId, nodeId, config),
+  await prisma.$transaction([
+    jsonSetNodeConfigQuery('automation', 'graph', automationId, nodeId, config),
+    jsonSetNodeConfigQuery('automation_run', 'graphSnapshot', runId, nodeId, config),
   ]);
 }
 

@@ -684,6 +684,11 @@ describe('automation engine', () => {
       await capturedPersist!(newConfig);
 
       expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
+      // Both writes must go through a single $transaction, not Promise.all — otherwise one
+      // write succeeding while the other fails would leave Automation.graph and this run's
+      // graphSnapshot permanently diverged.
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(prisma.$transaction).mock.calls[0][0]).toHaveLength(2);
 
       const [graphCall, snapshotCall] = vi.mocked(prisma.$executeRaw).mock.calls.map(
         (call) => call[0] as unknown as { strings: TemplateStringsArray; values: any[] }

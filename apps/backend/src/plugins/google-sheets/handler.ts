@@ -286,7 +286,16 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
 
     const initSpreadsheet = async (): Promise<{ spreadsheetId: string; spreadsheetUrl: string }> => {
       const formTitle = form?.title?.trim() || 'Form Responses';
-      const sheetTitle = `${formTitle} — Responses`;
+      // Append a distinguishing suffix so two Google Sheets actions on the same form (e.g. a
+      // condition's "Yes" and "No" branches) don't create identically-titled files that are
+      // hard to tell apart in Drive. Automation action nodes use a composite
+      // `${runId}:${nodeId}` plugin id (see services/automation/engine.ts) — prefer the
+      // trailing node-id segment, which stays stable across re-runs, over the whole composite
+      // (which would otherwise change every run). Legacy standalone plugins use a plain
+      // FormPlugin id with no colon, so this is a no-op there.
+      const idParts = plugin.id.split(':');
+      const idSuffix = (idParts[idParts.length - 1] || plugin.id).slice(0, 8);
+      const sheetTitle = `${formTitle} — Responses (${idSuffix})`;
 
       context.logger.info('Google Sheets: creating new spreadsheet', {
         pluginId: plugin.id,

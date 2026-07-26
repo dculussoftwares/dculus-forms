@@ -35,6 +35,19 @@ export interface ConfigFormProps {
    * a "plugin" is being created). Falls back to the per-plugin default when omitted.
    */
   submitLabelOverride?: string;
+  /**
+   * Identifies which underlying node/plugin this form instance is configuring — the
+   * automation builder's NodeConfigPanel passes `node.id` here. NodeConfigPanel renders the
+   * same ConfigForm component type (no `key`) for every action node of a given plugin type,
+   * so switching the selected node updates props on the SAME mounted instance rather than
+   * remounting it. Forms that latch local state across renders (e.g. to survive an OAuth
+   * redirect — see google-sheets/microsoft-sheets ConfigForm) need this to detect "the
+   * selected node actually changed" and reset that latch, or a value meant for one node can
+   * leak onto whatever different node the user switches to next. Omitted by callers that
+   * don't have this "reused instance, switchable target" scenario (e.g. the standalone
+   * Plugins page, where each ConfigForm mount is dedicated to one plugin).
+   */
+  instanceKey?: string;
 }
 
 export interface ResponseCellProps {
