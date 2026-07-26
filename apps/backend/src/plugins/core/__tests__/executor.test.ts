@@ -11,6 +11,7 @@ vi.mock('../../../lib/prisma.js', () => ({
     formPlugin: {
       findUnique: vi.fn(),
       findMany: vi.fn(),
+      update: vi.fn(),
     },
     pluginDelivery: {
       create: vi.fn(),
@@ -106,6 +107,40 @@ describe('executor', () => {
         },
       });
       expect(result).toEqual({ success: true });
+    });
+
+    it('wires createPluginContext with a persistence strategy that writes back to the FormPlugin row', async () => {
+      const mockPlugin = {
+        id: 'plugin-1',
+        name: 'Google Sheets',
+        type: 'google-sheets',
+        enabled: true,
+        config: { type: 'google-sheets' },
+      };
+      const mockHandler: PluginHandler = vi.fn().mockResolvedValue({ success: true });
+
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockPlugin as any);
+      vi.mocked(getPluginHandler).mockReturnValue(mockHandler);
+      vi.mocked(prisma.pluginDelivery.create).mockResolvedValue({} as any);
+      vi.mocked(prisma.formPlugin.update).mockResolvedValue({} as any);
+
+      await executePlugin('plugin-1', mockEvent);
+
+      // executor.ts passes createPluginContext a closure, not a pre-built context — capture
+      // it and invoke it the way google-sheets/microsoft-sheets handlers do, to verify it
+      // actually persists to the FormPlugin row this plugin is backed by (#222 regression:
+      // handlers previously wrote to context.prisma.formPlugin.update directly, which this
+      // replaces).
+      const persist = vi.mocked(createPluginContext).mock.calls[0][0];
+      expect(persist).toBeInstanceOf(Function);
+
+      const newConfig = { type: 'google-sheets', spreadsheetId: 'sheet-123' };
+      await persist!(newConfig as any);
+
+      expect(prisma.formPlugin.update).toHaveBeenCalledWith({
+        where: { id: 'plugin-1' },
+        data: { config: newConfig },
+      });
     });
 
     it('returns error when plugin is not found', async () => {

@@ -485,4 +485,33 @@ describe('context', () => {
       ).rejects.toThrow('Email send failed');
     });
   });
+
+  describe('updatePluginConfig', () => {
+    it('defaults to a stub that throws when no persistence strategy is supplied', async () => {
+      const context = createPluginContext();
+
+      await expect(
+        context.updatePluginConfig({ type: 'google-sheets' })
+      ).rejects.toThrow(/updatePluginConfig was not configured/);
+    });
+
+    it('delegates to the persistence strategy passed into createPluginContext', async () => {
+      const persist = vi.fn().mockResolvedValue(undefined);
+      const context = createPluginContext(persist);
+
+      const config = { type: 'google-sheets', spreadsheetId: 'sheet-1' };
+      await context.updatePluginConfig(config);
+
+      expect(persist).toHaveBeenCalledWith(config);
+    });
+
+    it('propagates errors from the persistence strategy', async () => {
+      const persist = vi.fn().mockRejectedValue(new Error('no record found'));
+      const context = createPluginContext(persist);
+
+      await expect(
+        context.updatePluginConfig({ type: 'microsoft-sheets' })
+      ).rejects.toThrow('no record found');
+    });
+  });
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl } from '../../lib/config';
+import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
 import type { ConfigFormProps } from '../core/registry';
 
 interface GoogleToken {
@@ -56,6 +57,22 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
     initialData?.config?.spreadsheetUrl
   );
 
+  // NodeConfigPanel (the automation builder's host for this form) passes a brand-new
+  // `initialData` object literal on every render, not just when the selected node changes —
+  // so the sync effect below re-fires far more often than its name suggests. On the mount
+  // that follows an OAuth redirect, both effects run in the same commit: this one first,
+  // then the sync effect second, since effects run in declaration order. Left unguarded, the
+  // sync effect immediately resets `googleToken` to `initialData.config?.googleToken` (still
+  // undefined — the token isn't persisted to the node until "Save action" is clicked),
+  // silently discarding the token this effect just parsed. The ref is never reset back to
+  // false: React StrictMode's dev-only double-invoke of effects on mount runs this same pair
+  // a second time, and by then `window.location.hash` has already been stripped (so the
+  // parse branch below is a no-op on that second pass) — a self-resetting guard would leave
+  // that second sync-effect invocation unguarded and wipe the token anyway. Latching it for
+  // the component's whole lifetime is safe because a real "switch to a different node"
+  // always unmounts and remounts this form (see NodeConfigPanel's close()-on-Save/Cancel).
+  const justConnectedRef = useRef(false);
+
   // On mount: check if we just returned from Google OAuth redirect
   useEffect(() => {
     const hash = window.location.hash;
@@ -67,6 +84,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         const token: GoogleToken = JSON.parse(atob(padded));
         console.log('[GSheets Config] ✅ token from redirect for:', token.email);
         setGoogleToken(token);
+        justConnectedRef.current = true;
         // Clean hash from URL without triggering a navigation
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       } catch (e) {
@@ -84,12 +102,17 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   useEffect(() => {
     if (initialData) {
       setPluginName(initialData.name ?? 'Google Sheets');
-      setGoogleToken(initialData.config?.googleToken);
+      if (!justConnectedRef.current) {
+        setGoogleToken(initialData.config?.googleToken);
+      }
     }
   }, [initialData]);
 
   const handleConnectGoogle = () => {
-    // Redirect the current tab — avoids all popup/COOP/BroadcastChannel issues
+    // Redirect the current tab — avoids all popup/COOP/BroadcastChannel issues. Mark this
+    // navigation as intentional first so the automation builder's beforeunload guard (which
+    // would otherwise treat this like an accidental tab close) lets it through unprompted.
+    markIntentionalNavigation();
     const returnTo = window.location.pathname + window.location.search;
     window.location.href = `${getApiBaseUrl()}/api/integrations/google/auth?return_to=${encodeURIComponent(returnTo)}`;
   };

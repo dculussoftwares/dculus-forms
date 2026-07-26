@@ -63,12 +63,7 @@ const refreshTokenIfNeeded = async (
     };
 
     // Persist the refreshed token back to the plugin config
-    await context.prisma.formPlugin.update({
-      where: { id: pluginId },
-      data: {
-        config: { ...config, googleToken: newToken } as any,
-      },
-    });
+    await context.updatePluginConfig({ ...config, googleToken: newToken });
 
     context.logger.info('Google Sheets: token refreshed successfully', { pluginId });
     return newToken;
@@ -301,11 +296,11 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       const created = await createSpreadsheet(sheetTitle, accessToken);
       await writeHeaderRow(created.spreadsheetId, buildHeaders(), accessToken);
 
-      await context.prisma.formPlugin.update({
-        where: { id: plugin.id },
-        data: {
-          config: { ...config, googleToken: freshToken, spreadsheetId: created.spreadsheetId, spreadsheetUrl: created.spreadsheetUrl } as any,
-        },
+      await context.updatePluginConfig({
+        ...config,
+        googleToken: freshToken,
+        spreadsheetId: created.spreadsheetId,
+        spreadsheetUrl: created.spreadsheetUrl,
       });
 
       context.logger.info('Google Sheets: spreadsheet created and header row written', {

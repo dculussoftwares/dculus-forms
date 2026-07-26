@@ -14,6 +14,7 @@ import { FormPermissionProvider, type PermissionLevel } from '../contexts/FormPe
 import { useFormPermissions } from '../hooks/useFormPermissions';
 import { useTestAutomation } from '../hooks/useTestAutomation';
 import { extractValidationErrors } from '../components/automations/builder/validation';
+import { isIntentionalNavigationPending } from '../lib/intentionalNavigation';
 
 const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ form, automation }) => {
   const { t } = useTranslation('automations');
@@ -132,10 +133,15 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     }
   };
 
-  // Warn on tab close/refresh while there are unsaved graph changes.
+  // Warn on tab close/refresh while there are unsaved graph changes. Skipped when the
+  // navigation is one the app itself intentionally triggered and already knows is safe —
+  // e.g. the Google/Microsoft Sheets "Connect" buttons redirect this same tab to the OAuth
+  // provider, and the graph draft is already persisted to sessionStorage before that redirect
+  // fires (see draftStorage.ts) — without this check the browser's native "leave site?"
+  // prompt intercepts that redirect before the user ever reaches the sign-in page.
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (!isDirty) return;
+      if (!isDirty || isIntentionalNavigationPending()) return;
       e.preventDefault();
       e.returnValue = '';
     };

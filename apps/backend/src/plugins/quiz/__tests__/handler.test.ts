@@ -40,6 +40,7 @@ describe('Quiz Grading Handler', () => {
       getOrganization: vi.fn(),
       getUserById: vi.fn(),
       sendEmail: vi.fn(),
+      updatePluginConfig: vi.fn(),
       prisma: mockPrisma,
     };
 

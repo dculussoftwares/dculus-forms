@@ -32,6 +32,7 @@ describe('Webhook Handler', () => {
       getOrganization: vi.fn(),
       getUserById: vi.fn(),
       sendEmail: vi.fn(),
+      updatePluginConfig: vi.fn(),
       prisma: {} as any,
     };
 
