@@ -8,35 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-```bash
-# Development
-pnpm dev                    # Start all services concurrently
-pnpm backend:dev            # Backend only (:4000)
-pnpm form-app:dev           # Form builder only (:3000)
-pnpm form-viewer:dev        # Form viewer only (:5173)
-pnpm admin-app:dev          # Admin dashboard only (:3002)
-
-# Database (Prisma)
-pnpm db:generate            # Regenerate Prisma client after schema changes
-pnpm db:push                # Push schema changes to PostgreSQL (dev)
-pnpm db:studio              # Open Prisma Studio
-pnpm db:seed                # Seed sample data
-pnpm admin:setup            # Create/update admin user from env vars
-
-# Validation
-pnpm build                  # Build all packages
-pnpm type-check             # TypeScript strict check
-pnpm lint                   # ESLint
-
-# Testing
-pnpm test:unit              # Backend unit tests (vitest)
-pnpm test:unit:watch        # Watch mode
-pnpm test:unit:coverage     # Coverage report
-pnpm test:integration       # Cucumber BDD API tests (local)
-pnpm test:integration:production  # Against production
-pnpm test:e2e               # Playwright + Cucumber E2E
-pnpm test:e2e -- --tags "@tagname"  # Run specific tagged scenarios
-```
+See `package.json` scripts for the full list (`dev`, `backend:dev`, `db:generate`, `build`, `test:unit`, `test:integration`, `test:e2e`, etc.). Notable non-obvious usage: `pnpm test:e2e -- --tags "@tagname"` runs specific tagged Cucumber scenarios.
 
 **Test credentials** (E2E): set via environment variables — do not hardcode in this file.  
 **Admin credentials**: set via `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars and `pnpm admin:setup` — do not hardcode in this file.
@@ -44,24 +16,6 @@ pnpm test:e2e -- --tags "@tagname"  # Run specific tagged scenarios
 ---
 
 ## Architecture
-
-### Monorepo Layout
-
-```
-apps/
-  backend/          Express.js + Apollo GraphQL + Hocuspocus (:4000)
-  form-app/         Form builder React app (:3000)
-  form-viewer/      Public form submission React app (:5173)
-  admin-app/        Admin dashboard React app (:3002)
-packages/
-  types/            @dculus/types — field classes, FormSchema, serialization, GraphQL error codes
-  ui/               @dculus/ui — all shadcn/ui components + custom components
-  utils/            @dculus/utils — generateId, cn, formatters, slugify, constants
-  plugins/          shared plugin types
-test/
-  integration/      Cucumber BDD API tests
-  e2e/              Playwright + Cucumber E2E tests
-```
 
 ### Backend Architecture
 
