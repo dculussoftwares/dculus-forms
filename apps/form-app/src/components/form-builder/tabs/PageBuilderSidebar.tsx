@@ -120,7 +120,7 @@ export const RightSidebar: React.FC<{
       <div className="flex" style={{ borderBottom: '1px solid var(--tf-border)' }}>
         {([
           { id: 'properties' as const, icon: Settings, label: t('tabs.field') },
-          { id: 'json' as const, icon: Code, label: 'JSON' },
+          { id: 'json' as const, icon: Code, label: t('tabs.json') },
         ] as const).map(({ id, icon: Icon, label }) => (
           <Button
             key={id}

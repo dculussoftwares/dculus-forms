@@ -273,6 +273,10 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     if (state.pages.length > 0 && !state.selectedPageId) {
       setSelectedPage(state.pages[0].id);
     }
+    // pages/selectedPageId/selection.kind aren't read in the body above (it reads
+    // getState() instead) — they're kept as deps purely to force this callback to
+    // recompute (and its effect to re-run) whenever any of them change. Don't
+    // remove them as "unused".
   }, [pages, selectedPageId, selection.kind, setSelectedPage]);
 
   useEffect(() => {

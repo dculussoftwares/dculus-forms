@@ -44,10 +44,12 @@ Then(
     // The Content tab's journey rail (#228) auto-selects the first page once it loads
     // and reflects that in the URL as a trailing `screen=page:<id>` param — appended
     // with `&` if the redirect target already has a `?`, otherwise with `?`. Allow
-    // that (or nothing, for redirects that already land on `?screen=intro`) after the
-    // expected redirect target rather than requiring an exact match.
+    // specifically that (not arbitrary trailing params) after the expected redirect
+    // target rather than requiring an exact match.
     const separator = expectedSuffix.includes('?') ? '&' : '\\?';
-    const pattern = new RegExp(`^${escapeRegExp(expectedUrl)}(${separator}.*)?$`);
+    const pattern = new RegExp(
+      `^${escapeRegExp(expectedUrl)}(${separator}screen=page(:|%3A)[^&]+)?$`
+    );
     await expect(this.page).toHaveURL(pattern, { timeout: 10_000 });
   }
 );

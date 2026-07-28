@@ -53,7 +53,7 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
      */
     setSelectedPage: (pageId: string | null) => {
       const nextSelection: Selection = pageId ? { kind: 'page', pageId } : { kind: 'page' };
-      set({ selectedPageId: pageId, selectedFieldId: null, selection: nextSelection });
+      set({ selection: nextSelection, ...deriveLegacySelection(nextSelection) });
     },
 
     /**
@@ -67,10 +67,10 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
     setSelectedField: (fieldId: string | null) => {
       if (fieldId === null) {
         const { selectedPageId } = get() as any;
-        set({
-          selectedFieldId: null,
-          selection: selectedPageId ? { kind: 'page', pageId: selectedPageId } : { kind: 'page' },
-        });
+        const nextSelection: Selection = selectedPageId
+          ? { kind: 'page', pageId: selectedPageId }
+          : { kind: 'page' };
+        set({ selection: nextSelection, ...deriveLegacySelection(nextSelection) });
         return;
       }
 
@@ -83,12 +83,9 @@ export const createSelectionSlice: SliceCreator<SelectionSlice> = (set, get) => 
         }
       }
       const pageId = ownerPageId ?? selectedPageId ?? undefined;
+      const nextSelection: Selection = { kind: 'field', fieldId, pageId };
 
-      set({
-        selectedFieldId: fieldId,
-        selectedPageId: pageId ?? null,
-        selection: { kind: 'field', fieldId, pageId },
-      });
+      set({ selection: nextSelection, ...deriveLegacySelection(nextSelection) });
     },
 
     /**

@@ -91,10 +91,14 @@ When('I add a new page in the builder', async function (this: CustomWorld) {
   await expect(addPageButton).toBeVisible({ timeout: 10_000 });
   await addPageButton.click();
 
-  // Wait until a new page group appears in the journey rail (at least 2 pages)
+  // Wait until a new page group appears in the journey rail (at least 2 pages).
+  // A prefix-based CSS selector would also match nested testids that share the
+  // "rail-page-" prefix (rail-page-title-, rail-page-header-,
+  // rail-page-drag-handle-, ...) — match the group container's exact testid
+  // shape instead.
   const pagesList = this.page.getByTestId('pages-list');
   await expectPoll(async () => {
-    const count = await pagesList.locator('[data-testid^="rail-page-"]').count();
+    const count = await pagesList.getByTestId(/^rail-page-\d+$/).count();
     return count >= 2;
   }, { message: 'Expected at least 2 pages after adding', timeout: 15_000, interval: 500 });
 });

@@ -25,7 +25,8 @@
     "connecting": "Connecting..."
   },
   "tabs": {
-    "field": "Properties"
+    "field": "Properties",
+    "json": "JSON"
   },
   "emptyState": {
     "title": "Select a field to edit settings"

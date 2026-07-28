@@ -7,6 +7,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   defaultDropAnimationSideEffects,
@@ -17,6 +18,7 @@ import {
   type DragEndEvent,
   type CollisionDetection,
 } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useBuilderSelectionUrlSync } from '../../../hooks/useBuilderSelectionUrlSync';
 import { getCdnEndpoint } from '../../../lib/config';
@@ -166,12 +168,18 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     }, 80);
   };
 
-  // Configure sensors - require slight movement before drag starts
+  // Configure sensors - require slight movement before drag starts. KeyboardSensor
+  // gives the rail's sortable pages/chips a keyboard-accessible reorder path
+  // (Space to pick up, arrow keys to move, Space/Enter to drop) — same pattern as
+  // the outer DndContext in CollaborativeFormBuilder.
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
       },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
