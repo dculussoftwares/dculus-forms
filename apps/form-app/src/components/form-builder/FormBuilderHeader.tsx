@@ -8,6 +8,7 @@ import {
     Button,
     Dialog,
     DialogContent,
+    DialogTitle,
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -410,7 +411,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             className="flex items-center px-4 h-11 shrink-0"
                             style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
                         >
-                            <span className="text-sm font-semibold">{t('menu.formSettings')}</span>
+                            <DialogTitle className="text-sm font-semibold leading-none tracking-normal">{t('menu.formSettings')}</DialogTitle>
                         </div>
                         <div className="flex-1 overflow-y-auto">
                             <SettingsTab formId={_formId} />

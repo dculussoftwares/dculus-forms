@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent } from '@dculus/ui';
+import { Dialog, DialogContent, DialogTitle } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 import { PreviewTab } from './tabs';
 
@@ -25,7 +25,7 @@ export const PreviewOverlay: React.FC<PreviewOverlayProps> = ({ formId, isOpen, 
           className="flex items-center px-4 h-11 shrink-0"
           style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
         >
-          <span className="text-sm font-semibold">{t('buttons.preview')}</span>
+          <DialogTitle className="text-sm font-semibold leading-none tracking-normal">{t('buttons.preview')}</DialogTitle>
         </div>
         <div className="flex-1 overflow-hidden">
           <PreviewTab formId={formId} />

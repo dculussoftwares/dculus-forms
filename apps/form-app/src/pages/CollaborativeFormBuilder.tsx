@@ -159,10 +159,14 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       });
     }
     const query = params.toString();
+    // Preserve `location.state` (e.g. CreateFormWizard's `pendingBackgroundKey`, set on
+    // its initial navigate to /builder/page-builder) through the redirect — otherwise the
+    // background-image effect below never sees it.
     navigate(`/dashboard/form/${formId}/builder/${targetTab}${query ? `?${query}` : ''}`, {
       replace: true,
+      state: location.state,
     });
-  }, [formId, tab, navigate, location.search]);
+  }, [formId, tab, navigate, location.search, location.state]);
 
   // Open the Preview / Settings overlays from a `?preview=1` / `?settings=1` deep link
   // (old `/builder/preview` and `/builder/settings` redirect here). See ticket #227.
@@ -306,12 +310,19 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
         e.preventDefault();
-        setIsPreviewOpen((prev) => !prev);
+        // Route the close path through handleClosePreview so `?preview=1` is stripped —
+        // otherwise it lingers in location.search and the deep-link effect force-reopens
+        // the overlay on the next tab switch (which preserves location.search).
+        if (isPreviewOpen) {
+          handleClosePreview();
+        } else {
+          setIsPreviewOpen(true);
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isPreviewOpen, handleClosePreview]);
 
   // Auto-open the AI drawer when navigated here with an aiMessage query param
   // (e.g. from "Fix with AI" in FieldAnalyticsViewer).
