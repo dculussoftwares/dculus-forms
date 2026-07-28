@@ -1251,10 +1251,13 @@ When(
   'I select the page {string} in the builder',
   async function (this: CustomWorld, pageTitle: string) {
     if (!this.page) throw new Error('Page is not initialized');
-    const slug = pageTitle.replace(/\s+/g, '-').toLowerCase();
-    const pageCard = this.page.getByTestId(`select-page-${slug}`);
-    await expect(pageCard).toBeVisible({ timeout: 10_000 });
-    await pageCard.click();
+    // Pages moved from the right-sidebar Pages tab to the journey rail (#228) — find
+    // the rail's page group by its title text rather than a title-derived testid.
+    const pageGroup = this.page
+      .locator('[data-testid^="rail-page-"]')
+      .filter({ has: this.page.getByText(pageTitle, { exact: true }) });
+    await expect(pageGroup).toBeVisible({ timeout: 10_000 });
+    await pageGroup.getByText(pageTitle, { exact: true }).click();
   }
 );
 

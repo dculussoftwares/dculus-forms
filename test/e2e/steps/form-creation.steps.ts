@@ -91,10 +91,10 @@ When('I add a new page in the builder', async function (this: CustomWorld) {
   await expect(addPageButton).toBeVisible({ timeout: 10_000 });
   await addPageButton.click();
 
-  // Wait until a new page item appears (at least 2 pages)
+  // Wait until a new page group appears in the journey rail (at least 2 pages)
   const pagesList = this.page.getByTestId('pages-list');
   await expectPoll(async () => {
-    const count = await pagesList.locator('[data-testid^="page-item-"]').count();
+    const count = await pagesList.locator('[data-testid^="rail-page-"]').count();
     return count >= 2;
   }, { message: 'Expected at least 2 pages after adding', timeout: 15_000, interval: 500 });
 });

@@ -104,6 +104,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     isCollaborationFailed,
     pages,
     selectedPageId,
+    selection,
     conditions,
 
     initializeCollaboration,
@@ -259,10 +260,20 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   }, [formId, updateForm]);
 
   const autoSelectFirstPage = useCallback(() => {
-    if (pages.length > 0 && !selectedPageId) {
-      setSelectedPage(pages[0].id);
+    // Read live store state rather than this closure's captured pages/selectedPageId/
+    // selection — PageBuilderTab's useBuilderSelectionUrlSync effect can restore an
+    // intro/thankYou selection from the URL in the same effect flush (mount happens
+    // right as `isLoading` flips false), and since that runs via a plain Zustand
+    // `set()` outside React's render cycle, this effect's own closure wouldn't see it
+    // in time — reading getState() here avoids clobbering that fresh selection.
+    const state = useFormBuilderStore.getState();
+    // Don't hijack an intro/thank-you rail selection back to a page — those kinds
+    // intentionally carry no selectedPageId (see selectionSlice's setSelection).
+    if (state.selection.kind === 'intro' || state.selection.kind === 'thankYou') return;
+    if (state.pages.length > 0 && !state.selectedPageId) {
+      setSelectedPage(state.pages[0].id);
     }
-  }, [pages, selectedPageId, setSelectedPage]);
+  }, [pages, selectedPageId, selection.kind, setSelectedPage]);
 
   useEffect(() => {
     redirectLegacyTab();

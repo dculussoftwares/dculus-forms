@@ -1,0 +1,23 @@
+{
+  "addContent": "＋ Add content",
+  "untitledPage": "Untitled Page",
+  "emptyPage": "No fields yet",
+  "intro": {
+    "sectionTitle": "Intro",
+    "cardLabel": "Welcome screen"
+  },
+  "pages": {
+    "sectionTitle": "Pages",
+    "addPage": "Add page",
+    "noPages": "No pages yet",
+    "createFirstPage": "Create your first page"
+  },
+  "thankYou": {
+    "sectionTitle": "Thank you",
+    "cardLabel": "Thank you screen"
+  },
+  "actions": {
+    "duplicatePage": "Duplicate page",
+    "deletePage": "Delete page"
+  }
+}

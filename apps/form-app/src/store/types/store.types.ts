@@ -135,16 +135,32 @@ export interface ConditionsSlice {
 }
 
 /**
+ * Selection
+ *
+ * Generalized builder selection — one of the four "screens" the journey rail
+ * exposes. `pageId`/`fieldId` are only meaningful for the 'page'/'field' kinds.
+ */
+export interface Selection {
+  kind: 'intro' | 'page' | 'field' | 'thankYou';
+  pageId?: string;
+  fieldId?: string;
+}
+
+/**
  * Selection Slice
  *
- * Manages current page and field selection state
+ * Manages current builder selection state. `selectedPageId`/`selectedFieldId` are
+ * kept as compatible derived state for existing consumers (FormArea, RightSidebar,
+ * FieldSettingsV2, drag handlers) — they are always in sync with `selection`.
  */
 export interface SelectionSlice {
   // State
+  selection: Selection;
   selectedPageId: string | null;
   selectedFieldId: string | null;
 
   // Actions
+  setSelection: (selection: Selection) => void;
   setSelectedPage: (pageId: string | null) => void;
   setSelectedField: (fieldId: string | null) => void;
 
