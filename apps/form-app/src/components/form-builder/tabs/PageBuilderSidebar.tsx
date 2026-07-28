@@ -157,7 +157,7 @@ export const RightSidebar: React.FC<{
                 <Settings className="w-4.5 h-4.5 text-[#655d67]" />
               </div>
               <p className="text-sm font-medium text-[#4c414e] dark:text-gray-300">{t('emptyState.title')}</p>
-              <p className="text-xs text-[#655d67] dark:text-gray-500 mt-1">Click a field to edit its settings</p>
+              <p className="text-xs text-[#655d67] dark:text-gray-500 mt-1">{t('emptyState.description')}</p>
             </div>
           ) : (
             /* JSON Tab Content */

@@ -29,7 +29,8 @@
     "json": "JSON"
   },
   "emptyState": {
-    "title": "Select a field to edit settings"
+    "title": "Select a field to edit settings",
+    "description": "Click a field to edit its settings"
   },
   "deleteField": {
     "button": "Delete Field"
