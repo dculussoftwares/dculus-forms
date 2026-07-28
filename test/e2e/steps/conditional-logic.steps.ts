@@ -710,9 +710,18 @@ Then(
 // Builder Conditions tab
 // ─────────────────────────────────────────────────────────────────────────────
 
+async function closePreviewOverlayIfOpen(page: import('@playwright/test').Page): Promise<void> {
+  const previewOverlay = page.getByTestId('preview-overlay');
+  if (await previewOverlay.isVisible().catch(() => false)) {
+    await page.keyboard.press('Escape');
+    await expect(previewOverlay).toBeHidden({ timeout: 5_000 });
+  }
+}
+
 When('I open the conditions tab', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByTestId('tab-conditions').click();
+  await closePreviewOverlayIfOpen(this.page);
+  await this.page.getByTestId('tab-logic').click();
   await expect(this.page.getByTestId('conditions-title')).toBeVisible({ timeout: 15_000 });
 });
 
@@ -1224,13 +1233,17 @@ When(
 
 When('I open the preview tab', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByTestId('tab-preview').click();
+  // Preview is a full-screen overlay (not a tab) as of ticket #227 — opened via the
+  // header ▶ Preview button, layered on top of whichever tab is currently active.
+  await this.page.getByTestId('header-preview-button').click();
+  await expect(this.page.getByTestId('preview-overlay')).toBeVisible({ timeout: 10_000 });
   await this.page.waitForTimeout(1000);
 });
 
 When('I open the page builder tab', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByTestId('tab-page-builder').click();
+  await closePreviewOverlayIfOpen(this.page);
+  await this.page.getByTestId('tab-content').click();
   await this.page.waitForTimeout(500);
 });
 

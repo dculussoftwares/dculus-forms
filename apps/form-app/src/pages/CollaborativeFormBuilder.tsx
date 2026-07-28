@@ -3,11 +3,12 @@ import { useParams, useNavigate, useLocation, useSearchParams } from 'react-rout
 import { useQuery, useMutation } from '@apollo/client/react';
 import { z } from 'zod';
 import { useAuthContext } from '../contexts/AuthContext';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, Workflow, X } from 'lucide-react';
 import {
   FormPermissionProvider,
   PermissionLevel,
 } from '../contexts/FormPermissionContext';
+import { Button, EmptyState } from '@dculus/ui';
 import { useTranslation } from '../hooks/useTranslation';
 import {
   DndContext,
@@ -30,13 +31,11 @@ import { ErrorState } from '../components/form-builder/ErrorState';
 import {
   TabNavigation,
   TabKeyboardShortcuts,
-  LayoutTab,
   PageBuilderTab,
-  PreviewTab,
-  SettingsTab,
   type BuilderTab,
 } from '../components/form-builder/tabs';
 import { ConditionsTab } from '../components/form-builder/conditions/ConditionsTab';
+import { PreviewOverlay } from '../components/form-builder/PreviewOverlay';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { useCollisionDetection } from '../hooks/useCollisionDetection';
 import { useFieldCreation } from '../hooks/useFieldCreation';
@@ -49,14 +48,17 @@ interface CollaborativeFormBuilderProps {
   className?: string;
 }
 
-const VALID_TABS: readonly BuilderTab[] = [
-  'layout',
-  'page-builder',
-  'preview',
-  'conditions',
-  'settings',
-] as const;
-const DEFAULT_TAB: BuilderTab = 'page-builder';
+const VALID_TABS: readonly BuilderTab[] = ['content', 'logic', 'automations'] as const;
+const DEFAULT_TAB: BuilderTab = 'content';
+
+// Old 5-tab URLs → new 3-tab shell. See epic #226 / ticket #227.
+const OLD_TAB_REDIRECTS: Record<string, { tab: BuilderTab; params?: Record<string, string> }> = {
+  layout: { tab: 'content', params: { screen: 'intro' } },
+  'page-builder': { tab: 'content' },
+  conditions: { tab: 'logic' },
+  preview: { tab: 'content', params: { preview: '1' } },
+  settings: { tab: 'content', params: { settings: '1' } },
+};
 
 const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   className,
@@ -64,12 +66,14 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const { formId, tab } = useParams<{ formId: string; tab?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const pendingBgApplied = useRef(false);
   const { t } = useTranslation('collaborativeFormBuilder');
   const { user } = useAuthContext();
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const aiMessageParam = searchParams.get('aiMessage');
   const [aiInitialMessage, setAIInitialMessage] = useState<string | undefined>(
@@ -140,13 +144,57 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     })
   );
 
-  const redirectToDefaultTab = useCallback(() => {
-    if (formId && !tab) {
-      navigate(`/dashboard/form/${formId}/builder/${DEFAULT_TAB}${location.search}`, {
-        replace: true,
+  // Redirect the 5 old builder URLs (+ no-tab) to the new 3-tab shell, preserving any
+  // other query params already on the URL. See epic #226 / ticket #227.
+  const redirectLegacyTab = useCallback(() => {
+    if (!formId) return;
+    if (tab && VALID_TABS.includes(tab as BuilderTab)) return;
+
+    const redirect = tab ? OLD_TAB_REDIRECTS[tab] : undefined;
+    const targetTab = redirect?.tab ?? DEFAULT_TAB;
+    const params = new URLSearchParams(location.search);
+    if (redirect?.params) {
+      Object.entries(redirect.params).forEach(([key, value]) => {
+        if (!params.has(key)) params.set(key, value);
       });
     }
-  }, [formId, tab, navigate, location.search]);
+    const query = params.toString();
+    // Preserve `location.state` (e.g. CreateFormWizard's `pendingBackgroundKey`, set on
+    // its initial navigate to /builder/page-builder) through the redirect — otherwise the
+    // background-image effect below never sees it.
+    navigate(`/dashboard/form/${formId}/builder/${targetTab}${query ? `?${query}` : ''}`, {
+      replace: true,
+      state: location.state,
+    });
+  }, [formId, tab, navigate, location.search, location.state]);
+
+  // Open the Preview / Settings overlays from a `?preview=1` / `?settings=1` deep link
+  // (old `/builder/preview` and `/builder/settings` redirect here). See ticket #227.
+  useEffect(() => {
+    if (searchParams.get('preview') === '1') setIsPreviewOpen(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('settings') === '1') setIsSettingsOpen(true);
+  }, [searchParams]);
+
+  const handleClosePreview = useCallback(() => {
+    setIsPreviewOpen(false);
+    if (searchParams.has('preview')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('preview');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const handleCloseSettings = useCallback(() => {
+    setIsSettingsOpen(false);
+    if (searchParams.has('settings')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('settings');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleKeyboardTabChange = useCallback(
     (newTab: BuilderTab) => {
@@ -217,8 +265,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   }, [pages, selectedPageId, setSelectedPage]);
 
   useEffect(() => {
-    redirectToDefaultTab();
-  }, [redirectToDefaultTab]);
+    redirectLegacyTab();
+  }, [redirectLegacyTab]);
 
   useEffect(() => {
     if (!formId) return;
@@ -260,10 +308,21 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
         e.preventDefault();
         setIsAIDrawerOpen((prev) => !prev);
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
+        e.preventDefault();
+        // Route the close path through handleClosePreview so `?preview=1` is stripped —
+        // otherwise it lingers in location.search and the deep-link effect force-reopens
+        // the overlay on the next tab switch (which preserves location.search).
+        if (isPreviewOpen) {
+          handleClosePreview();
+        } else {
+          setIsPreviewOpen(true);
+        }
+      }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isPreviewOpen, handleClosePreview]);
 
   // Auto-open the AI drawer when navigated here with an aiMessage query param
   // (e.g. from "Fix with AI" in FieldAnalyticsViewer).
@@ -323,23 +382,36 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
   const renderTabContent = useCallback(() => {
     switch (activeTab) {
-      case 'layout':
-        return <LayoutTab onLayoutChange={updateLayout} />;
-      case 'page-builder':
+      case 'content':
         return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
-      case 'preview':
-        return <PreviewTab formId={formId || ''} />;
-      case 'conditions':
+      case 'logic':
         return <ConditionsTab onDescribeWithAI={(description) => {
           setAIInitialMessage(`Create a condition rule from this request: ${description}. Use upsertConditionRule only. This must remain a pending suggestion for the user to review.`);
           setIsAIDrawerOpen(true);
         }} />;
-      case 'settings':
-        return <SettingsTab formId={formId} />;
+      case 'automations':
+        // Real embed lands in ticket #233 — for now, link out to the existing automations page.
+        return (
+          <div className="flex items-center justify-center h-full p-8">
+            <EmptyState
+              icon={<Workflow className="w-6 h-6 text-muted-foreground" />}
+              title={t('automationsPlaceholder.title')}
+              description={t('automationsPlaceholder.description')}
+              action={
+                <Button
+                  onClick={() => navigate(`/dashboard/form/${formId}/automations`)}
+                  data-testid="automations-placeholder-cta"
+                >
+                  {t('automationsPlaceholder.cta')}
+                </Button>
+              }
+            />
+          </div>
+        );
       default:
         return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
     }
-  }, [activeTab, formId, updateLayout, isAIDrawerOpen, setIsAIDrawerOpen]);
+  }, [activeTab, formId, isAIDrawerOpen, setIsAIDrawerOpen, navigate, t]);
 
   if (!formId) {
     return (
@@ -494,17 +566,18 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               onPublish={handlePublish}
               onUnpublish={handleUnpublish}
               updateLoading={updateLoading}
+              onOpenPreview={() => setIsPreviewOpen(true)}
+              isSettingsOpen={isSettingsOpen}
+              onSettingsOpenChange={(open) => (open ? setIsSettingsOpen(true) : handleCloseSettings())}
               centerContent={
                 <TabNavigation
                   activeTab={activeTab}
-                  isConnected={isConnected}
-                  collaboratorCount={0}
-                  position="inline"
                   buildFieldCount={totalFieldCount}
                   logicHasWarning={logicHasWarning}
                 />
               }
             />
+            <PreviewOverlay formId={formId} isOpen={isPreviewOpen} onClose={handleClosePreview} />
 
             {/* P3-17: Collaboration failure banner — shown after MAX_RECONNECT_ATTEMPTS are exhausted */}
             {isCollaborationFailed && !isBannerDismissed && (
@@ -545,7 +618,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
             </div>
           </div>
 
-          {activeTab === 'page-builder' && (
+          {activeTab === 'content' && (
             <DragOverlay>{renderDragOverlay}</DragOverlay>
           )}
 

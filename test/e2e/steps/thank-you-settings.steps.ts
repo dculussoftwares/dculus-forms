@@ -214,6 +214,10 @@ When('I reload the builder page', async function (this: CustomWorld) {
  * to the Page Builder tab — the screen toggle only exists on the Layout tab's
  * canvas, so this step first makes sure that tab is selected (idempotent: a
  * no-op click if it's already active).
+ *
+ * BROKEN as of ticket #227: the Layout tab (and `tab-layout`) no longer exist in
+ * the new 3-tab shell (Content/Logic/Automations). All scenarios calling this step
+ * are tagged @skip-ci until the journey rail's Thank You card (ticket #228) lands.
  */
 When('I switch the layout canvas to the thank you screen', async function (this: CustomWorld) {
     if (!this.page) {

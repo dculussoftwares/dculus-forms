@@ -6,6 +6,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     Button,
+    Dialog,
+    DialogContent,
+    DialogTitle,
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -24,6 +27,8 @@ import {
     ExternalLink,
     Inbox,
     MoreVertical,
+    Play,
+    Settings,
     Share2,
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -33,6 +38,7 @@ import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';
 import { PermissionBadge } from './PermissionBadge';
+import { SettingsTab } from './tabs';
 import { DUPLICATE_FORM, UPDATE_FORM } from '../../graphql/mutations';
 import { getFormViewerUrl } from '../../lib/config';
 
@@ -50,8 +56,13 @@ interface FormBuilderHeaderProps {
     onPublish?: () => void;
     onUnpublish?: () => void;
     updateLoading?: boolean;
-    /** Centered tab navigation — pass <TabNavigation position="inline" /> */
+    /** Centered tab navigation — pass <TabNavigation /> */
     centerContent?: React.ReactNode;
+    /** ▶ Preview button — opens the full-screen PreviewOverlay (also Cmd/Ctrl+P, ?preview=1). */
+    onOpenPreview?: () => void;
+    /** ⚙ Settings gear — full-screen dialog hosting SettingsTab unchanged. Hidden for VIEWER. */
+    isSettingsOpen?: boolean;
+    onSettingsOpenChange?: (open: boolean) => void;
 }
 
 export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
@@ -69,6 +80,9 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     onUnpublish,
     updateLoading = false,
     centerContent,
+    onOpenPreview,
+    isSettingsOpen = false,
+    onSettingsOpenChange,
 }) => {
     const { t } = useTranslation('formBuilderHeader');
     const [formTitle, setFormTitle] = useState(initialFormTitle || t('defaultTitle'));
@@ -285,6 +299,21 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                         </Button>
                     )}
 
+                    {/* Preview */}
+                    {onOpenPreview && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onOpenPreview}
+                            className="h-8 px-3 text-xs"
+                            title={t('tooltips.previewFormTooltip')}
+                            data-testid="header-preview-button"
+                        >
+                            <Play className="w-3.5 h-3.5 mr-1.5" />
+                            {t('buttons.preview')}
+                        </Button>
+                    )}
+
                     {/* Share */}
                     {permissions.canShareForm() && (
                         <Button
@@ -295,6 +324,19 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             title={t('buttons.share')}
                         >
                             <Share2 className="w-4 h-4" />
+                        </Button>
+                    )}
+
+                    {/* Settings gear — hidden for VIEWER (SettingsTab would just show access-denied) */}
+                    {onSettingsOpenChange && permissions.canEdit && (
+                        <Button
+                            variant="ghost"
+                            onClick={() => onSettingsOpenChange(true)}
+                            className="h-8 w-8 flex items-center justify-center rounded-lg p-0"
+                            title={t('menu.formSettings')}
+                            data-testid="header-settings-gear"
+                        >
+                            <Settings className="w-4 h-4" />
                         </Button>
                     )}
 
@@ -357,6 +399,26 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Settings overlay — full-screen Dialog hosting SettingsTab unchanged. Deep link: ?settings=1 */}
+            {onSettingsOpenChange && (
+                <Dialog open={isSettingsOpen} onOpenChange={onSettingsOpenChange}>
+                    <DialogContent
+                        className="max-w-none w-screen h-screen inset-0 top-0 left-0 translate-x-0 translate-y-0 rounded-none border-0 p-0 gap-0 flex flex-col"
+                        data-testid="settings-overlay"
+                    >
+                        <div
+                            className="flex items-center px-4 h-11 shrink-0"
+                            style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
+                        >
+                            <DialogTitle className="text-sm font-semibold leading-none tracking-normal">{t('menu.formSettings')}</DialogTitle>
+                        </div>
+                        <div className="flex-1 overflow-y-auto">
+                            <SettingsTab formId={_formId} />
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
         </>
     );
 };

@@ -1,32 +1,16 @@
 {
   "tabs": {
-    "design": {
-      "label": "Design",
-      "description": "Design and customize form layout"
+    "content": {
+      "label": "Content",
+      "description": "Build and design what respondents see"
     },
-    "pageBuilder": {
-      "label": "Builder",
-      "description": "Build form pages with drag & drop"
-    },
-    "preview": {
-      "label": "Preview",
-      "description": "Preview form before publishing"
-    },
-    "conditions": {
-      "label": "Conditions",
+    "logic": {
+      "label": "Logic",
       "description": "Show or hide fields and pages based on answers"
     },
-    "settings": {
-      "label": "Settings",
-      "description": "Configure form settings and options"
-    }
-  },
-  "collaboration": {
-    "live": "Live",
-    "connecting": "Connecting...",
-    "collaborators": {
-      "single": "{{count}} collaborator",
-      "multiple": "{{count}} collaborators"
+    "automations": {
+      "label": "Automations",
+      "description": "Automate what happens after a form is submitted"
     }
   },
   "aria": {

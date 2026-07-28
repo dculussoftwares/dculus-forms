@@ -371,7 +371,7 @@ When(
   'In session {string} I open the page builder tab',
   async function (this: CustomWorld, session: string) {
     const page = getSessionPage(this, session);
-    await page.getByTestId('tab-page-builder').click();
+    await page.getByTestId('tab-content').click();
     await page.waitForTimeout(1000);
   }
 );
