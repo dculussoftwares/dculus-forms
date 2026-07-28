@@ -2,59 +2,32 @@ import React, { useState, useCallback, useRef } from 'react';
 import { ScrollArea, Button } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks';
-import { useFormPermissions } from '../../../hooks/useFormPermissions';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { DraggablePageItem } from '../DraggablePageItem';
 import FieldSettingsV2 from '../FieldSettingsV2';
 import { JSONPreview } from '../JSONPreview';
 
-import {
-  GripHorizontal,
-  StickyNote,
-  Settings,
-  Code,
-  Plus,
-} from 'lucide-react';
+import { GripHorizontal, Settings, Code } from 'lucide-react';
 
 // =============================================================================
 // RightSidebar
 // =============================================================================
 
 /**
- * RightSidebar - Shows field settings, pages, and JSON preview with resizable width
+ * RightSidebar - Shows field settings and JSON preview with resizable width.
+ * Pages now live in the journey rail (see components/form-builder/rail) — this
+ * sidebar is purely contextual: field properties when a field is selected,
+ * otherwise an empty state, plus a JSON debug view.
  */
 export const RightSidebar: React.FC<{
   width: number;
   onWidthChange: (width: number) => void;
 }> = ({ width, onWidthChange }) => {
   const { t } = useTranslation('pageBuilderTab');
-  const [activeTab, setActiveTab] = useState<'pages' | 'properties' | 'json'>(
-    'pages'
-  );
+  const [activeTab, setActiveTab] = useState<'properties' | 'json'>('properties');
   const [isResizing, setIsResizing] = useState(false);
   const prevSelectedFieldIdRef = useRef<string | null>(null);
 
-  const {
-    selectedFieldId,
-    updateField,
-    removeField,
-    isConnected,
-    pages,
-    selectedPageId,
-    layout,
-    isShuffleEnabled,
-    setSelectedPage,
-    setSelectedField,
-    addEmptyPage,
-    removePage,
-    duplicatePage,
-    updatePageTitle,
-  } = useFormBuilderStore();
-
-  const permissions = useFormPermissions();
+  const { selectedFieldId, updateField, removeField, isConnected, pages, layout, isShuffleEnabled, setSelectedField } =
+    useFormBuilderStore();
 
   const selectedField = useFormBuilderStore((state) => {
     if (!selectedFieldId) return null;
@@ -94,12 +67,6 @@ export const RightSidebar: React.FC<{
         removeField(pageWithField.id, selectedFieldId);
         setSelectedField(null);
       }
-    }
-  };
-
-  const handleAddPage = () => {
-    if (permissions.canAddPages()) {
-      addEmptyPage();
     }
   };
 
@@ -152,9 +119,8 @@ export const RightSidebar: React.FC<{
       {/* Typeform-style underline tab row */}
       <div className="flex" style={{ borderBottom: '1px solid var(--tf-border)' }}>
         {([
-          { id: 'pages' as const, icon: StickyNote, label: t('sidebar.pages.title') },
           { id: 'properties' as const, icon: Settings, label: t('tabs.field') },
-          { id: 'json' as const, icon: Code, label: 'JSON' },
+          { id: 'json' as const, icon: Code, label: t('tabs.json') },
         ] as const).map(({ id, icon: Icon, label }) => (
           <Button
             key={id}
@@ -183,72 +149,15 @@ export const RightSidebar: React.FC<{
         </div>
       ) : (
         <ScrollArea className="flex-1">
-          {activeTab === 'pages' ? (
-            /* Pages Tab Content */
-            <div className="p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-[#655d67]">
-                  {t('sidebar.pages.pageCount', {
-                    values: { count: pages.length },
-                  })}
-                </span>
-                {permissions.canAddPages() && (
-                  <Button
-                    variant="ghost"
-                    onClick={handleAddPage}
-                    data-testid="add-page-button"
-                    className="h-7 w-7 p-0 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={t('menu.addPage')}
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-
-              <SortableContext
-                items={pages.map((p) => p.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2" data-testid="pages-list">
-                  {pages.map((page, index) => (
-                    <DraggablePageItem
-                      key={page.id}
-                      page={page}
-                      index={index}
-                      isSelected={selectedPageId === page.id}
-                      isConnected={isConnected}
-                      onSelect={() => setSelectedPage(page.id)}
-                      onRemove={() => removePage(page.id)}
-                      onDuplicate={() => duplicatePage(page.id)}
-                      onUpdateTitle={(title) => updatePageTitle(page.id, title)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-
-              {pages.length === 0 && (
-                <div className="text-center py-8">
-                  <p className="text-sm text-[#655d67]">{t('sidebar.pages.noPages')}</p>
-                  {permissions.canAddPages() && (
-                    <Button
-                      variant="ghost"
-                      onClick={handleAddPage}
-                      className="mt-2 text-xs font-medium h-auto p-0 text-[#3c323e] underline-offset-2 hover:underline"
-                    >
-                      Create your first page
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : activeTab === 'properties' ? (
-            /* Properties Tab Content */
+          {activeTab === 'properties' ? (
+            /* Properties Tab Content — empty state (intro/thankYou selections land
+               here too until the contextual right panel ticket, #229) */
             <div className="flex flex-col items-center justify-center h-64 p-8 text-center">
               <div className="w-10 h-10 rounded-xl bg-[var(--tf-icon-gray)] flex items-center justify-center mb-3">
                 <Settings className="w-4.5 h-4.5 text-[#655d67]" />
               </div>
               <p className="text-sm font-medium text-[#4c414e] dark:text-gray-300">{t('emptyState.title')}</p>
-              <p className="text-xs text-[#655d67] dark:text-gray-500 mt-1">Click a field to edit its settings</p>
+              <p className="text-xs text-[#655d67] dark:text-gray-500 mt-1">{t('emptyState.description')}</p>
             </div>
           ) : (
             /* JSON Tab Content */

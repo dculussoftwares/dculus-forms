@@ -41,9 +41,22 @@ Then(
     if (!this.page) throw new Error('Page is not initialized');
     if (!this.currentFormId) throw new Error('No current form id');
     const expectedUrl = `${this.baseUrl}/dashboard/form/${this.currentFormId}/builder/${expectedSuffix}`;
-    await expect(this.page).toHaveURL(expectedUrl, { timeout: 10_000 });
+    // The Content tab's journey rail (#228) auto-selects the first page once it loads
+    // and reflects that in the URL as a trailing `screen=page:<id>` param — appended
+    // with `&` if the redirect target already has a `?`, otherwise with `?`. Allow
+    // specifically that (not arbitrary trailing params) after the expected redirect
+    // target rather than requiring an exact match.
+    const separator = expectedSuffix.includes('?') ? '&' : '\\?';
+    const pattern = new RegExp(
+      `^${escapeRegExp(expectedUrl)}(${separator}screen=page(:|%3A)[^&]+)?$`
+    );
+    await expect(this.page).toHaveURL(pattern, { timeout: 10_000 });
   }
 );
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 When('I click the header Preview button', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');

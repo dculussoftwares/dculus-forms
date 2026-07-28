@@ -51,6 +51,7 @@ export const useFormBuilderStore = create<FormBuilderState>()(
           layout: DEFAULT_LAYOUT,
           isShuffleEnabled: false,
           conditions: [],
+          selection: { kind: 'page' },
           selectedPageId: null,
           selectedFieldId: null,
         });

@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { FormField } from '@dculus/types';
+import React, { useMemo, useState, useEffect } from 'react';
+import { FormField, FormSchema, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import { FormRenderer } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   defaultDropAnimationSideEffects,
@@ -16,12 +18,17 @@ import {
   type DragEndEvent,
   type CollisionDetection,
 } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
+import { useBuilderSelectionUrlSync } from '../../../hooks/useBuilderSelectionUrlSync';
+import { getCdnEndpoint } from '../../../lib/config';
+import { RendererMode } from '@dculus/utils';
 import {
   FieldTypesPanel,
   FieldTypeDisplay,
   type FieldTypeConfig,
 } from '../FieldTypesPanel';
+import { JourneyRail } from '../rail/JourneyRail';
 import { FieldCard } from './PageBuilderFieldCard';
 import { FormArea } from './PageBuilderFormArea';
 import { RightSidebar } from './PageBuilderSidebar';
@@ -58,6 +65,10 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
   onAskAI,
   isAIOpen = false,
 }) => {
+  // Two-way ?screen=…&field=… <-> selection sync for the journey rail. Mounted here
+  // since PageBuilderTab is the Content workspace (rail + canvas + sidebar).
+  useBuilderSelectionUrlSync();
+
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
   // Track the currently dragged field type (from sidebar)
@@ -91,7 +102,34 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     moveFieldBetweenPages,
     pages,
     setSelectedField,
+    selection,
+    layout,
+    formId,
+    updateLayout,
   } = useFormBuilderStore();
+
+  const cdnEndpoint = getCdnEndpoint();
+
+  // Same formSchema shape LayoutTab builds for its FormRenderer preview — kept in
+  // sync here so intro/thankYou rail selections render the exact same screens.
+  const formSchema: FormSchema = useMemo(
+    () => ({
+      pages: pages || [],
+      layout: layout || {
+        code: 'L1',
+        theme: 'light' as const,
+        textColor: '#1f2937',
+        spacing: 'normal' as const,
+        content: '<h1>Form Preview</h1>',
+        thankYouContent: DEFAULT_THANK_YOU_CONTENT,
+        customBackGroundColor: '',
+        backgroundImageKey: '',
+        pageMode: 'multipage' as const,
+      },
+      isShuffleEnabled: false,
+    }),
+    [pages, layout]
+  );
 
   const { createFieldData } = useFieldCreation();
 
@@ -130,12 +168,18 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     }, 80);
   };
 
-  // Configure sensors - require slight movement before drag starts
+  // Configure sensors - require slight movement before drag starts. KeyboardSensor
+  // gives the rail's sortable pages/chips a keyboard-accessible reorder path
+  // (Space to pick up, arrow keys to move, Space/Enter to drop) — same pattern as
+  // the outer DndContext in CollaborativeFormBuilder.
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 5,
       },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
@@ -359,16 +403,31 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
       onDragEnd={handleDragEnd}
     >
       <div className="flex h-full" data-testid="new-page-builder-tab">
-        {/* Left: Field Types */}
+        {/* Journey rail: the respondent's journey — Intro / Pages / Thank You */}
+        <JourneyRail />
+
+        {/* Left: Field Types — temporary, removed by the Field Library ticket (#230) */}
         <LeftSidebar />
 
-        {/* Center: Form Area with Ask AI button scoped inside */}
+        {/* Center: Canvas with Ask AI button scoped inside */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          <FormArea
-            recentlyDroppedFieldId={recentlyDroppedFieldId}
-            isDelayingExpansion={isDelayingExpansion}
-            isAnyDragActive={isAnyDragActive}
-          />
+          {selection.kind === 'intro' || selection.kind === 'thankYou' ? (
+            <FormRenderer
+              formSchema={formSchema}
+              className="h-full"
+              cdnEndpoint={cdnEndpoint}
+              mode={RendererMode.BUILDER}
+              formId={formId || ''}
+              onLayoutChange={updateLayout}
+              screenOverride={selection.kind === 'intro' ? 'intro' : 'thankYou'}
+            />
+          ) : (
+            <FormArea
+              recentlyDroppedFieldId={recentlyDroppedFieldId}
+              isDelayingExpansion={isDelayingExpansion}
+              isAnyDragActive={isAnyDragActive}
+            />
+          )}
           {/* Ask AI button — positioned within this column only, won't overlap sidebars */}
           {onAskAI && (
             <div className="absolute bottom-6 right-6 z-20 pointer-events-none">

@@ -649,10 +649,12 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         }
       });
 
-      // Update selected page after the transaction completes
-      const { selectedFieldId, setSelectedPage } = get() as any;
+      // If the moved field is the one currently selected, follow it to its new page
+      // context instead of dropping back to a plain page-level selection (which is
+      // what the generic setSelectedPage would do).
+      const { selectedFieldId, setSelection } = get() as any;
       if (selectedFieldId === fieldId) {
-        setSelectedPage(targetPageId);
+        setSelection({ kind: 'field', fieldId, pageId: targetPageId });
       }
     },
 

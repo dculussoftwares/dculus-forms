@@ -209,15 +209,21 @@ interface DraggableFieldTypeProps {
   fieldType: FieldTypeConfig;
   categories: ReturnType<typeof getCategoriesConfig>;
   onAdd?: () => void;
+  /** Distinguishes draggable/testid namespaces when more than one FieldTypesPanel is
+   * mounted at once (e.g. the rail's "Add content" popover alongside the temporary
+   * left field-types column) — dnd-kit requires unique draggable ids. */
+  idPrefix?: string;
 }
 
 const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
   fieldType,
   categories,
   onAdd,
+  idPrefix = '',
 }) => {
+  const draggableId = `field-type-${idPrefix}${fieldType.type}`;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `field-type-${fieldType.type}`,
+    id: draggableId,
     data: {
       type: 'field-type',
       fieldType,
@@ -236,7 +242,7 @@ const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
           top: auto !important;
           will-change: auto !important;
         }
-        
+
         [data-draggable-id*="field-type-"] * {
           transform: none !important;
           transition: none !important;
@@ -245,8 +251,8 @@ const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
 
       <div
         ref={setNodeRef}
-        data-draggable-id={`field-type-${fieldType.type}`}
-        data-testid={`field-type-${fieldType.label.replace(/\s+/g, '-').toLowerCase()}`}
+        data-draggable-id={draggableId}
+        data-testid={`field-type-${idPrefix}${fieldType.label.replace(/\s+/g, '-').toLowerCase()}`}
         {...listeners}
         {...attributes}
         onClick={onAdd}
@@ -267,12 +273,16 @@ const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
 
 interface FieldTypesPanelProps {
   className?: string;
+  /** See DraggableFieldType's idPrefix — pass a unique prefix when mounting more
+   * than one FieldTypesPanel at the same time. */
+  idPrefix?: string;
 }
 
 export { FieldTypeDisplay };
 
 export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
   className = '',
+  idPrefix = '',
 }) => {
   const permissions = useFormPermissions();
   const { t } = useTranslation('fieldTypesPanel');
@@ -330,6 +340,7 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
                     key={fieldType.type}
                     fieldType={fieldType}
                     categories={CATEGORIES}
+                    idPrefix={idPrefix}
                     onAdd={selectedPageId ? () => addField(selectedPageId, fieldType.type as FieldType, createFieldData(fieldType)) : undefined}
                   />
                 ))}
