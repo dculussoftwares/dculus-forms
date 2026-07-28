@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 See `package.json` scripts for the full list (`dev`, `backend:dev`, `db:generate`, `build`, `test:unit`, `test:integration`, `test:e2e`, etc.). Notable non-obvious usage: `pnpm test:e2e -- --tags "@tagname"` runs specific tagged Cucumber scenarios.
 
 **Test credentials** (E2E): set via environment variables — do not hardcode in this file.  
-The shared dev/E2E login (email **and** password) is the `E2E_EMAIL` / `E2E_PASSWORD` **fallback values baked into the `test:e2e` script in `package.json`** — read them from there. Use that account for manual sign-in at `http://localhost:3000` when verifying changes in the browser; do not register new accounts and do not commit any other credentials.  
+The shared dev/E2E login (email **and** password) is the `E2E_EMAIL` / `E2E_PASSWORD` **fallback values baked into the `test:e2e` script in `package.json`** — read them from there. This is a deliberately public, disposable test account for local/E2E environments only: it must never hold real data, and its password must never be reused anywhere. Use it for manual sign-in at `http://localhost:3000` when verifying changes in the browser; do not register new accounts and do not commit any other credentials.  
 **Admin credentials**: set via `ADMIN_EMAIL` / `ADMIN_PASSWORD` env vars and `pnpm admin:setup` — do not hardcode in this file.
 
 ---

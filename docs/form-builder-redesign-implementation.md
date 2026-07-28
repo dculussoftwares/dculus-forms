@@ -8,7 +8,7 @@
 
 ## 1. Route map
 
-```
+```text
 NEW (canonical)                                  OLD → redirect
 /dashboard/form/:id/builder/content              /builder/page-builder → /builder/content
   ?screen=intro | thankyou | page:<pageId>       /builder/layout       → /builder/content?screen=intro
@@ -29,7 +29,7 @@ lives in search params so deep links, browser back, and E2E tests can target exa
 | **Journey rail** | `DraggablePageItem`, `PageBuilderSidebar` pages tab, dnd-kit `SortableContext` | New `JourneyRail` component: INTRO / PAGES / THANK YOU sections; expandable page cards listing field chips (icon + label + ⚡ logic badge); `+ Add content` button |
 | Field Library (mega-panel + pin-to-dock) | `FieldTypesPanel` (grouped categories, draggable items), `AddFieldPopover` | New `FieldLibrary` shell with two render modes: 3-col grid mega-panel (search + recently-used + keyboard nav) and docked compact column (visually ≈ today's panel); pin state in `localStorage`; drag-to-canvas AND click-to-append in both modes |
 | Canvas — page mode | `PageBuilderFormArea`, `PageBuilderFieldCard`, `DropIndicator`, drag/drop handlers from `PageBuilderTab` | Extract DnD orchestration into a hook shared by rail + canvas |
-| Canvas — intro / thank-you mode | `FormRenderer` (`mode=BUILDER`, `screenOverride='intro'|'thankYou'`) — already shipped, used by today's `LayoutTab` | Wire selection → `screenOverride`; keep inline rich-text editing |
+| Canvas — intro / thank-you mode | `FormRenderer` (`mode=BUILDER`, `screenOverride='intro' / 'thankYou'`) — already shipped, used by today's `LayoutTab` | Wire selection → `screenOverride`; keep inline rich-text editing |
 | Canvas toolbar | `PreviewTab` device toggle, new Design + Preview buttons | Small new component |
 | Right panel — field | `FieldSettingsV2` (auto-switch on selection already implemented) | Add "Logic on this field" summary row (uses `conditions` from store) |
 | Right panel — intro | `LayoutThumbnails` (L1–L9), CTA input, background controls from `LayoutSidebar` | New `IntroSettingsPanel` composing them; per-screen framing |

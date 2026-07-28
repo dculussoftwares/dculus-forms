@@ -1,4 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dculus Forms — Builder Redesign Prototype</title>
+</head>
+<body>
 <style>
 :root{
   --bg:#f7f5f8; --paper:#ffffff; --ink:#2e2733; --muted:#756c7c;
@@ -280,7 +287,7 @@ button:focus-visible,.railcard:focus-visible,.chip:focus-visible{outline:2px sol
   <div class="frame-scroll"><div class="frame">
     <div class="chrome">
       <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-      <span class="urlbar">app.dculus.com/dashboard/form/f_84h2/builder/content?screen=intro</span>
+      <span class="urlbar" id="urlbar">app.dculus.com/dashboard/form/f_84h2/builder/content?screen=intro</span>
     </div>
     <div class="app" id="app">
 
@@ -295,7 +302,7 @@ button:focus-visible,.railcard:focus-visible,.chip:focus-visible{outline:2px sol
         <div class="appbar-right">
           <button class="btn">Share</button>
           <button class="btn primary">Publish</button>
-          <button class="btn icon" title="Form settings — opens settings overlay">⚙</button>
+          <button class="btn icon" title="Form settings — opens settings overlay" onclick="openSettings()">⚙</button>
         </div>
       </div>
 
@@ -323,8 +330,8 @@ button:focus-visible,.railcard:focus-visible,.chip:focus-visible{outline:2px sol
             <div class="pagegroup" id="rail-p2">
               <button class="pagehead" onclick="select('p2')"><span class="rc-ico">≡</span> Page 2 · Your request</button>
               <div class="chips">
-                <button class="chip"><span class="n">4</span> ▾ Request type</button>
-                <button class="chip"><span class="n">5</span> ¶ Details</button>
+                <button class="chip" onclick="select('p2')"><span class="n">4</span> ▾ Request type</button>
+                <button class="chip" onclick="select('p2')"><span class="n">5</span> ¶ Details</button>
               </div>
             </div>
 
@@ -371,8 +378,10 @@ button:focus-visible,.railcard:focus-visible,.chip:focus-visible{outline:2px sol
             <div class="libgrid">
               <button class="tile"><span class="ti">📎</span> File upload</button>
             </div>
-            <div class="libnote">Drag onto the canvas, or click to append to the selected page.
-            All 11 types visible in one shot — pin 📌 to keep it docked like the classic panel.</div>
+            <div class="libnote">In the real builder, tiles drag onto the canvas or click to append
+            to the selected page (interactions land in ticket #230 — not wired in this static
+            prototype). All 11 types visible in one shot — pin 📌 to keep it docked like the
+            classic panel.</div>
           </div>
 
           <div class="canvas">
@@ -605,6 +614,34 @@ button:focus-visible,.railcard:focus-visible,.chip:focus-visible{outline:2px sol
         <div class="aiinput"><input placeholder="One assistant — content, logic &amp; automations…"><button class="btn primary">➤</button></div>
       </div>
 
+      <!-- Settings overlay (deep link: ?settings=1) -->
+      <div class="overlay" id="settings">
+        <div class="ovbar">
+          <span class="t">⚙ Form settings</span>
+          <button class="btn" onclick="closeSettings()">✕ Close (Esc)</button>
+        </div>
+        <div class="ovstage">
+          <div style="max-width:560px;width:100%;display:flex;flex-direction:column;gap:12px">
+            <div class="rulecard">
+              <div class="rt">General</div>
+              <div class="rd">Title, description, short URL — existing SettingsTab, hosted unchanged in this overlay</div>
+            </div>
+            <div class="rulecard">
+              <div class="rt">Submission limits</div>
+              <div class="rd">Max responses, time window</div>
+            </div>
+            <div class="rulecard">
+              <div class="rt">Access control &amp; response copy</div>
+              <div class="rd">Who can submit · email a copy to respondents</div>
+            </div>
+            <div class="rulecard" style="opacity:.7">
+              <div class="rt">Developer</div>
+              <div class="rd">JSON schema view (dev-only) — moved here from the old right-panel JSON tab</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Preview overlay -->
       <div class="overlay" id="preview">
         <div class="ovbar">
@@ -661,6 +698,8 @@ function setTab(t){
   });
   closeDrawers();
   updateAiCtx(t);
+  curTab = t;
+  setUrl(t);
 }
 function select(s){
   sel = s;
@@ -694,6 +733,7 @@ function select(s){
     document.getElementById('pagetitleinput').value = (s==='p2') ? 'Your request' : 'About you';
   }
   updateAiCtx('content');
+  setUrl('content');
 }
 function updateAiCtx(tab){
   var where = { content:'Content', logic:'Logic', automations:'Automations' }[tab] || 'Content';
@@ -718,8 +758,25 @@ function closeDrawers(){
   document.getElementById('drawer-design').classList.remove('open');
   document.getElementById('designbtn').classList.remove('active');
 }
-function openPreview(){ document.getElementById('preview').classList.add('open'); }
-function closePreview(){ document.getElementById('preview').classList.remove('open'); }
+function openPreview(){ document.getElementById('preview').classList.add('open'); setUrl('content', '?preview=1'); }
+function closePreview(){ document.getElementById('preview').classList.remove('open'); setUrl(curTab); }
+function openSettings(){ document.getElementById('settings').classList.add('open'); setUrl('content', '?settings=1'); }
+function closeSettings(){ document.getElementById('settings').classList.remove('open'); setUrl(curTab); }
+
+/* fake URL bar — demonstrates the deep-link contract (?screen/?field/?preview/?settings) */
+var curTab = 'content';
+function setUrl(tab, extra){
+  var q = extra || '';
+  if (tab === 'content' && !extra){
+    q = (sel==='intro') ? '?screen=intro'
+      : (sel==='ty') ? '?screen=thankyou'
+      : (sel==='p2') ? '?screen=page:pg_2'
+      : (sel.charAt(0)==='f') ? '?screen=page:pg_1&field=' + sel
+      : '?screen=page:pg_1';
+  }
+  document.getElementById('urlbar').textContent =
+    'app.dculus.com/dashboard/form/f_84h2/builder/' + tab + q;
+}
 
 /* field library: popover ↔ pinned dock */
 var libPinned = false;
@@ -747,9 +804,11 @@ function filterLib(q){
 }
 document.addEventListener('keydown', function(e){
   if (e.key==='Escape'){
-    closePreview(); closeDrawers();
+    closePreview(); closeSettings(); closeDrawers();
     if (!libPinned) document.getElementById('fieldlib').classList.remove('pop');
   }
 });
 select('intro');
 </script>
+</body>
+</html>

@@ -35,7 +35,7 @@ Content, one **journey rail** on the left that lists everything the respondent w
 
 ### 1.3 Target information architecture
 
-```
+```text
 CURRENT                                    PROPOSED
 ───────────────────────────────            ───────────────────────────────
 Design | Build | Logic | Preview | Settings    Content | Logic | Automations
@@ -60,12 +60,12 @@ being top-level destinations.
 
 ## 2. The Content workspace — detailed design
 
-The Content tab is a persistent **3-pane layout**: journey rail (left, 264px) · canvas (center,
+The Content tab is a persistent **3-pane layout**: journey rail (left, ~236px — canonical width, matches the prototype) · canvas (center,
 fluid) · contextual panel (right, 320px resizable — reuses today's resize handle).
 
 ### 2.1 Mode A — a Page is selected (default landing state)
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────────────────────────┐
 │ ← Customer Feedback ✎        Content · Logic · Automations        Share  Publish  ⚙ │
 ├───────────────┬──────────────────────────────────────────────────┬───────────────────┤
@@ -124,7 +124,7 @@ fluid) · contextual panel (right, 320px resizable — reuses today's resize han
 
 Clicking the **Welcome** card flips all three panes together:
 
-```
+```text
 ┌───────────────┬──────────────────────────────────────────────────┬───────────────────┐
 │ + Add content │  🎨 Design   💻/📱   ▶ Preview                   │  WELCOME SCREEN   │
 │               │                                                  │  ───────────────  │
@@ -193,7 +193,7 @@ surface. Three entry points, three behaviors — no single "the AI" the user can
 
 The redesign makes AI **one ambient layer over the whole builder**:
 
-```
+```text
             ┌────────────────────────────────────────────┐
             │        ✨ Ask AI anything…             ➤   │   ← one pill, every tab
             └────────────────────────────────────────────┘

@@ -7,6 +7,10 @@ One copy-paste prompt per ticket of Epic [#226](https://github.com/dculussoftwar
 
 Every prompt already instructs the agent to: read the GitHub issue + epic, read the design docs (`docs/form-builder-redesign.md`, `docs/form-builder-redesign-implementation.md`) and open the prototype (`docs/prototypes/form-builder-redesign-prototype.html`), work on a feature branch, and open a PR. After each PR merges, tick the matching checkbox in epic #226. Recommended model: **Sonnet** (`/model sonnet`) — the design decisions are locked in the epic; tickets are execution-scoped.
 
+**Shared requirements for every ticket** (in addition to what each prompt says):
+- Before every commit: review `git status` and the staged `git diff`; stage only intended files and **stop immediately** if any `.env` file, key, token, password, or other credential appears — this repo is public.
+- `pnpm test:unit` only runs the **backend** suite. Frontend tickets must also run the form-app suite: `pnpm --filter form-app test`. Treat every "Verify:" line below as including both.
+
 **Worktree note** — if the session runs in a git worktree (default under `.claude/worktrees/`), run `./scripts/setup-worktree.sh` before anything else (see the "Git Worktrees" section of `CLAUDE.md`). It copies `.env` files + local Claude settings, installs deps, builds the `@dculus/*` packages, and generates the Prisma client. The dev/E2E login for manual browser verification is the `E2E_EMAIL`/`E2E_PASSWORD` fallback pair in `package.json`'s `test:e2e` script.
 
 ---
@@ -37,7 +41,7 @@ Task: collapse the 5 builder tabs into Content | Logic | Automations:
 Mandatory: @dculus/ui components only, --tf-* tokens, no new CSS vars/hex colors; all new
 strings via useTranslation in BOTH en and ta; keep data-testid="tab-<id>".
 
-Verify: pnpm type-check, pnpm lint, pnpm test:unit pass; all five old URLs redirect; preview
+Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm --filter form-app test pass; all five old URLs redirect; preview
 and settings overlays open via button, shortcut, and URL; E2E per the issue's policy.
 
 When done: branch feat/builder-shell-3-tabs, commit (no .env/secrets), push, open a PR titled
@@ -74,7 +78,7 @@ Task:
 Mandatory: @dculus/ui only, --tf-* tokens; i18n namespace journeyRail in BOTH en and ta;
 VIEWER = fully read-only rail; verify collab with two browser windows.
 
-Verify: pnpm type-check, pnpm lint, pnpm test:unit; rail selection drives canvas + URL and
+Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm --filter form-app test; rail selection drives canvas + URL and
 survives reload/back; all rail DnD paths work; E2E per the issue.
 
 When done: branch feat/builder-journey-rail, push, PR titled
@@ -104,7 +108,7 @@ Task: make the right panel contextual on selection.kind:
 Mandatory: @dculus/ui only; i18n namespaces introSettings + endingSettings in BOTH en and ta;
 VIEWER read-only; do NOT delete LayoutTab/LayoutSidebar files yet (#231 does).
 
-Verify: pnpm type-check, pnpm lint, pnpm test:unit; parity checklist from the issue (every
+Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm --filter form-app test; parity checklist from the issue (every
 old Design-tab intro control reachable and functional, incl. Pexels/Pixabay + video); collab
 sync verified in a second window; E2E per the issue.
 
@@ -136,7 +140,7 @@ getFieldTypesConfig + the existing drag sources from FieldTypesPanel.tsx (dnd pa
 Mandatory: @dculus/ui only; i18n namespace fieldLibrary in BOTH en and ta; VIEWER: no add
 entry point, "/" inert.
 
-Verify: pnpm type-check, pnpm lint, pnpm test:unit; drag from both modes hits every existing
+Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm --filter form-app test; drag from both modes hits every existing
 drop path (insert slots, append, cross-page); pin survives reload; E2E drag scenarios
 migrated per the issue.
 
@@ -165,7 +169,7 @@ Task:
 Mandatory: @dculus/ui only; i18n namespace designDrawer in BOTH en and ta; run the issue's
 parity checklist — no old Design-tab capability may be lost.
 
-Verify: pnpm type-check, pnpm lint, pnpm test:unit; drawer changes sync live to canvas and a
+Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm --filter form-app test; drawer changes sync live to canvas and a
 second collab window; E2E: replace Design-tab scenarios per the skip-tag policy.
 
 When done: branch feat/builder-design-drawer, push, PR titled
@@ -193,7 +197,7 @@ Task:
 
 Mandatory: @dculus/ui only; i18n namespace askAI in BOTH en and ta; pill hidden for VIEWER.
 
-Verify: pnpm type-check, pnpm lint, pnpm test:unit; context line correct for intro/page/
+Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm --filter form-app test; context line correct for intro/page/
 field/thank-you selections and reaches the request payload; condition drafting still lands
 as pending suggestions in Logic.
 
@@ -219,7 +223,7 @@ Task:
   navigate/Link that targets them (grep '/automations' across apps/form-app/src).
 - Zero automation-feature changes — routing and chrome only.
 
-Verify: pnpm type-check, pnpm lint, pnpm test:unit; full flow list→create→configure→runs
+Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm --filter form-app test; full flow list→create→configure→runs
 works inside the tab; all old URLs redirect; E2E automations scenarios migrated per policy.
 
 When done: branch feat/builder-automations-embed, push, PR titled
@@ -243,7 +247,7 @@ Task (six workstreams, per the issue):
 6. E2E consolidation: every @skip-ci introduced by this epic re-enabled or replaced
    (grep -rn "@skip-ci" test/); add the end-to-end journey scenario from the issue.
 
-Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm test:e2e all green; zero epic-
+Verify: pnpm type-check, pnpm lint, pnpm test:unit, pnpm --filter form-app test, pnpm test:e2e all green; zero epic-
 introduced @skip-ci remaining.
 
 When done: branch feat/builder-redesign-polish, push, PR titled

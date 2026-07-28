@@ -64,12 +64,24 @@ for rel in .env test/.env .claude/settings.local.json; do
     continue
   fi
 
+  # Never write through a symlink or onto a non-regular destination — with
+  # --force that could leak .env/settings content outside the worktree.
+  if [ -L "$dest" ] || { [ -e "$dest" ] && [ ! -f "$dest" ]; }; then
+    echo "  skip $rel: destination is not a regular file — refusing to write"
+    continue
+  fi
+  destdir="$(dirname "$dest")"
+  if [ -L "$destdir" ]; then
+    echo "  skip $rel: parent directory is a symlink — refusing to write"
+    continue
+  fi
+
   if [ -f "$dest" ] && [ "$FORCE" != "true" ]; then
     echo "  skip $rel: already exists (use --force to overwrite)"
     continue
   fi
 
-  mkdir -p "$(dirname "$dest")"
+  mkdir -p "$destdir"
   cp "$src" "$dest"
   echo "  copied $rel"
 done
