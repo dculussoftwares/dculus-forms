@@ -1,0 +1,755 @@
+<title>Dculus Forms — Builder Redesign Prototype</title>
+<style>
+:root{
+  --bg:#f7f5f8; --paper:#ffffff; --ink:#2e2733; --muted:#756c7c;
+  --border:#e5e0e8; --border-soft:#efecf2;
+  --accent:#6b4fd8; --accent-ink:#ffffff; --accent-soft:#f0ecfb;
+  --warn:#b45309; --warn-bg:#fdf0d9;
+  --canvas:#fbfafc; --shadow:0 1px 2px rgba(46,39,51,.06),0 8px 24px rgba(46,39,51,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#141118; --paper:#1e1a23; --ink:#ece8f0; --muted:#a49aad;
+    --border:#372f3e; --border-soft:#2a2430;
+    --accent:#a08cf0; --accent-ink:#1b1030; --accent-soft:#2c2445;
+    --warn:#e8a44a; --warn-bg:#3a2c14;
+    --canvas:#181420; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141118; --paper:#1e1a23; --ink:#ece8f0; --muted:#a49aad;
+  --border:#372f3e; --border-soft:#2a2430;
+  --accent:#a08cf0; --accent-ink:#1b1030; --accent-soft:#2c2445;
+  --warn:#e8a44a; --warn-bg:#3a2c14;
+  --canvas:#181420; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+}
+:root[data-theme="light"]{
+  --bg:#f7f5f8; --paper:#ffffff; --ink:#2e2733; --muted:#756c7c;
+  --border:#e5e0e8; --border-soft:#efecf2;
+  --accent:#6b4fd8; --accent-ink:#ffffff; --accent-soft:#f0ecfb;
+  --warn:#b45309; --warn-bg:#fdf0d9;
+  --canvas:#fbfafc; --shadow:0 1px 2px rgba(46,39,51,.06),0 8px 24px rgba(46,39,51,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;}
+.wrap{max-width:1180px;margin:0 auto;padding:40px 24px 72px}
+.pitch h1{font-family:Charter,Georgia,"Times New Roman",serif;font-weight:600;
+  font-size:clamp(26px,3.4vw,36px);line-height:1.15;margin:0 0 10px;text-wrap:balance}
+.pitch p{max-width:62ch;color:var(--muted);margin:0 0 6px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+  font-weight:700;margin-bottom:10px}
+.hints{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 26px}
+.hint{font-size:12px;padding:4px 10px;border:1px solid var(--border);border-radius:999px;
+  background:var(--paper);color:var(--muted)}
+.hint b{color:var(--ink);font-weight:600}
+
+/* ── browser frame ── */
+.frame-scroll{overflow-x:auto;border-radius:14px;box-shadow:var(--shadow)}
+.frame{min-width:980px;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--paper)}
+.chrome{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);background:var(--bg)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--border)}
+.urlbar{flex:1;max-width:420px;margin:0 auto;font-size:11px;color:var(--muted);background:var(--paper);
+  border:1px solid var(--border);border-radius:7px;padding:3px 12px;text-align:center;white-space:nowrap;overflow:hidden}
+
+/* ── app bar ── */
+.app{position:relative;background:var(--paper)}
+.appbar{display:flex;align-items:center;gap:12px;padding:0 16px;height:52px;border-bottom:1px solid var(--border)}
+.backlink{color:var(--muted);font-size:13px;white-space:nowrap}
+.formtitle{font-weight:600;font-size:13px;white-space:nowrap}
+.tabs{display:flex;gap:2px;margin:0 auto;height:100%}
+.tab{position:relative;display:flex;align-items:center;gap:6px;padding:0 14px;font-size:13px;font-weight:500;
+  color:var(--muted);cursor:pointer;background:none;border:none;font-family:inherit;height:100%}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:600}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;
+  border-radius:2px 2px 0 0;background:var(--ink)}
+.tab .cnt{font-size:10px;border:1px solid var(--border);border-radius:999px;padding:0 6px;line-height:15px;color:var(--muted)}
+.tab .warn{font-size:10px;background:var(--warn-bg);color:var(--warn);border-radius:999px;padding:0 6px;line-height:16px}
+.appbar-right{display:flex;align-items:center;gap:8px}
+.btn{font:inherit;font-size:12.5px;font-weight:500;border:1px solid var(--border);background:var(--paper);
+  color:var(--ink);border-radius:8px;padding:5px 12px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.btn.icon{padding:5px 8px;color:var(--muted)}
+button:focus-visible,.railcard:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ── 3-pane body ── */
+.body{display:flex;height:560px}
+.view{display:none;width:100%}
+.view.active{display:flex}
+
+/* rail */
+.rail{width:236px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg);
+  padding:12px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.addcontent{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px;
+  font:inherit;font-size:13px;font-weight:600;border-radius:9px;border:none;cursor:pointer;
+  background:var(--ink);color:var(--paper);margin-bottom:10px}
+.railsec{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin:10px 2px 4px;display:flex;justify-content:space-between;align-items:center}
+.railsec button{border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+.railcard{border:1px solid var(--border);border-radius:10px;background:var(--paper);padding:9px 10px;
+  cursor:pointer;font-size:12.5px;display:flex;align-items:center;gap:8px;text-align:left;width:100%;font-family:inherit;color:var(--ink)}
+.railcard:hover{border-color:var(--muted)}
+.railcard.sel{border-color:var(--accent);background:var(--accent-soft)}
+.rc-ico{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:11px;background:var(--border-soft);flex-shrink:0}
+.railcard.sel .rc-ico{background:var(--accent);color:var(--accent-ink)}
+.pagegroup{border:1px solid var(--border);border-radius:10px;background:var(--paper);overflow:hidden}
+.pagegroup.sel{border-color:var(--accent)}
+.pagehead{display:flex;align-items:center;gap:8px;padding:9px 10px;font-size:12.5px;font-weight:600;cursor:pointer;
+  background:none;border:none;width:100%;text-align:left;font-family:inherit;color:var(--ink)}
+.pagegroup.sel .pagehead{background:var(--accent-soft)}
+.chips{padding:4px 6px 8px;display:flex;flex-direction:column;gap:3px}
+.chip{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);padding:5px 7px;border-radius:7px;
+  cursor:pointer;background:none;border:none;width:100%;text-align:left;font-family:inherit}
+.chip:hover{background:var(--border-soft);color:var(--ink)}
+.chip.sel{background:var(--accent-soft);color:var(--ink);font-weight:600}
+.chip .n{font-size:10px;font-weight:700;color:var(--accent);width:14px;text-align:center;flex-shrink:0}
+.chip .zap{margin-left:auto;font-size:10px;color:var(--warn)}
+
+/* canvas */
+.canvas{flex:1;display:flex;flex-direction:column;background:var(--canvas);position:relative;min-width:0}
+.toolbar{display:flex;align-items:center;gap:8px;padding:10px 14px}
+.toolbar .spacer{flex:1}
+.tool{font:inherit;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;
+  border:1px solid var(--border);background:var(--paper);color:var(--ink);border-radius:8px;padding:5px 11px;cursor:pointer}
+.tool:hover{border-color:var(--muted)}
+.tool.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.devtoggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.devtoggle button{font:inherit;font-size:12px;border:none;background:var(--paper);color:var(--muted);padding:5px 10px;cursor:pointer}
+.devtoggle button.on{background:var(--border-soft);color:var(--ink)}
+.stage{flex:1;overflow-y:auto;padding:8px 26px 70px}
+.screen{display:none;max-width:640px;margin:0 auto}
+.screen.active{display:block}
+/* intro / thankyou screens */
+.hero{background:var(--paper);border:1px solid var(--border);border-radius:14px;padding:64px 48px;text-align:center;box-shadow:var(--shadow)}
+.hero h2{font-size:26px;margin:0 0 10px;font-weight:700;text-wrap:balance}
+.hero p{color:var(--muted);margin:0 auto 26px;max-width:44ch}
+.hero .cta{background:var(--ink);color:var(--paper);border:none;font:inherit;font-weight:600;
+  padding:10px 26px;border-radius:9px;cursor:default}
+.hero .meta{font-size:12px;color:var(--muted);margin-top:12px}
+.editable{outline:1.5px dashed transparent;border-radius:6px;transition:outline-color .15s}
+.hero:hover .editable{outline-color:var(--accent)}
+.edit-note{font-size:11px;color:var(--accent);text-align:center;margin-top:10px}
+/* page fields */
+.pagelabel{font-size:12px;font-weight:600;color:var(--muted);margin:4px 2px 10px}
+.fieldcard{background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:14px 16px;
+  margin-bottom:10px;cursor:pointer;display:flex;gap:12px;align-items:flex-start}
+.fieldcard:hover{border-color:var(--muted)}
+.fieldcard.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.fq{font-size:11px;font-weight:700;color:var(--accent);padding-top:2px;width:16px;flex-shrink:0}
+.fbody{flex:1;min-width:0}
+.flabel{font-weight:600;font-size:13.5px}
+.finput{margin-top:8px;height:32px;border:1px solid var(--border);border-radius:7px;background:var(--canvas)}
+.fgrip{color:var(--border);font-size:14px;cursor:grab}
+.addfield{width:100%;border:1.5px dashed var(--border);background:none;color:var(--muted);font:inherit;
+  font-size:12.5px;border-radius:10px;padding:10px;cursor:pointer}
+.addfield:hover{border-color:var(--accent);color:var(--accent)}
+/* AI pill */
+.aipill{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:9px;
+  background:var(--paper);border:1px solid var(--accent);border-radius:999px;padding:9px 18px;font-size:13px;
+  color:var(--muted);cursor:pointer;box-shadow:var(--shadow);white-space:nowrap;font-family:inherit}
+.aipill b{color:var(--accent)}
+
+/* right panel */
+.panel{width:280px;flex-shrink:0;border-left:1px solid var(--border);background:var(--paper);overflow-y:auto;position:relative}
+.pane{display:none;padding:16px}
+.pane.active{display:block}
+.pane h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+.field-group{margin-bottom:16px}
+.field-group label{display:block;font-size:12px;font-weight:600;margin-bottom:6px}
+.field-group .help{font-size:11px;color:var(--muted);margin-top:5px}
+.tinput{width:100%;font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);
+  border-radius:8px;background:var(--paper);color:var(--ink)}
+.thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.thumb{aspect-ratio:4/3;border:1.5px solid var(--border);border-radius:7px;cursor:pointer;background:var(--canvas);
+  position:relative;overflow:hidden}
+.thumb::after{content:attr(data-l);position:absolute;bottom:2px;right:5px;font-size:9px;color:var(--muted)}
+.thumb .bar{position:absolute;background:var(--border)}
+.thumb.on{border-color:var(--accent);background:var(--accent-soft)}
+.rowbtns{display:flex;gap:6px;flex-wrap:wrap}
+.minibtn{font:inherit;font-size:11.5px;border:1px solid var(--border);background:var(--paper);color:var(--ink);
+  border-radius:7px;padding:4px 10px;cursor:pointer}
+.togglerow{display:flex;align-items:center;justify-content:space-between;font-size:12.5px;padding:7px 0}
+.sw{width:30px;height:17px;border-radius:999px;background:var(--border);position:relative;flex-shrink:0}
+.sw.on{background:var(--accent)}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s}
+.sw.on::after{left:15px}
+.logiclink{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:9px;
+  padding:9px 11px;font-size:12px;cursor:pointer;background:var(--bg);width:100%;font-family:inherit;color:var(--ink)}
+.logiclink:hover{border-color:var(--accent)}
+.logiclink .zap{color:var(--warn)}
+.divider{height:1px;background:var(--border-soft);margin:14px 0}
+
+/* ── field library: mega-panel + pinned dock ── */
+.fieldlib{display:none;background:var(--paper);z-index:35}
+.fieldlib.pop{display:block;position:absolute;left:248px;top:60px;width:560px;max-height:440px;overflow-y:auto;
+  border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:14px}
+.fieldlib.docked{display:block;position:static;width:196px;flex-shrink:0;border-right:1px solid var(--border);
+  overflow-y:auto;padding:12px 10px;border-radius:0;box-shadow:none}
+.libhead{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.libhead h3{margin:0;font-size:13px;font-weight:700;flex:1}
+.libsearch{width:100%;font:inherit;font-size:12.5px;border:1px solid var(--border);border-radius:8px;
+  padding:6px 10px;background:var(--bg);color:var(--ink);margin-bottom:10px}
+.libsec{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:10px 2px 6px}
+.libgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.fieldlib.docked .libgrid{grid-template-columns:1fr}
+.tile{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:9px;
+  padding:8px 10px;font-size:12.5px;cursor:grab;background:var(--paper);font-family:inherit;color:var(--ink);text-align:left}
+.tile:hover{border-color:var(--accent);background:var(--accent-soft)}
+.tile .ti{width:24px;height:24px;border-radius:6px;background:var(--border-soft);display:flex;
+  align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.tile.recent{border-style:dashed}
+.pinbtn{border:1px solid var(--border);background:var(--paper);border-radius:7px;font-size:12px;
+  cursor:pointer;padding:4px 8px;color:var(--muted)}
+.pinbtn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.libnote{font-size:11px;color:var(--muted);margin-top:10px}
+
+/* drawers & overlays inside app */
+.drawer{position:absolute;top:0;right:0;bottom:0;width:300px;background:var(--paper);border-left:1px solid var(--border);
+  box-shadow:-12px 0 32px rgba(0,0,0,.10);transform:translateX(105%);transition:transform .22s ease;z-index:30;
+  overflow-y:auto;padding:16px}
+.drawer.open{transform:translateX(0)}
+.drawer .dhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.drawer .dhead h3{margin:0;font-size:13px;font-weight:700}
+.xbtn{border:none;background:none;font-size:15px;color:var(--muted);cursor:pointer;padding:2px 6px}
+.overlay{position:absolute;inset:0;background:var(--canvas);z-index:40;display:none;flex-direction:column}
+.overlay.open{display:flex}
+.ovbar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--paper)}
+.ovbar .t{font-size:13px;font-weight:600;margin-right:auto}
+.ovstage{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+/* AI drawer chat */
+.chat{display:flex;flex-direction:column;gap:10px;font-size:12.5px}
+.msg{border-radius:11px;padding:9px 12px;max-width:92%}
+.msg.user{align-self:flex-end;background:var(--ink);color:var(--paper)}
+.msg.ai{align-self:flex-start;background:var(--bg);border:1px solid var(--border)}
+.msg .act{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--accent);margin-top:6px;font-weight:600}
+.aiinput{display:flex;gap:8px;margin-top:14px}
+.aiinput input{flex:1;font:inherit;font-size:12.5px;border:1px solid var(--border);border-radius:8px;padding:7px 10px;
+  background:var(--paper);color:var(--ink)}
+.aictx{font-size:11px;color:var(--muted);background:var(--bg);border:1px solid var(--border-soft);
+  border-radius:8px;padding:7px 10px;margin-bottom:12px}
+.aictx b{color:var(--accent)}
+
+/* logic + automations views */
+.listview{flex:1;overflow-y:auto;padding:26px;background:var(--canvas);position:relative}
+.listinner{max-width:700px;margin:0 auto}
+.lhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.lhead h2{font-size:16px;margin:0}
+.rulecard{background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.rulecard .rt{font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px}
+.rulecard .rd{font-size:12.5px;color:var(--muted);margin-top:4px}
+.pill{font-size:10.5px;border-radius:999px;padding:1px 8px;font-weight:600}
+.pill.ok{background:var(--accent-soft);color:var(--accent)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.autocard{display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--border);
+  border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.autoico{width:34px;height:34px;border-radius:9px;background:var(--accent-soft);display:flex;align-items:center;
+  justify-content:center;font-size:15px;flex-shrink:0}
+.autocard .at{font-weight:600;font-size:13px}
+.autocard .ad{font-size:12px;color:var(--muted)}
+.autocard .pill{margin-left:auto}
+
+/* notes */
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:30px}
+.note{background:var(--paper);border:1px solid var(--border);border-radius:12px;padding:18px}
+.note h4{margin:0 0 6px;font-size:13.5px}
+.note p{margin:0;font-size:12.5px;color:var(--muted)}
+.note .k{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:8px}
+@media (prefers-reduced-motion: reduce){ .drawer,.sw::after{transition:none} }
+</style>
+
+<div class="wrap">
+  <div class="pitch">
+    <div class="eyebrow">Design proposal · Dculus Forms</div>
+    <h1>One Content workspace, three panes, one AI</h1>
+    <p>Five builder tabs collapse into <b>Content · Logic · Automations</b>. The left rail is the
+    respondent's journey — Intro, Pages, Thank You — and selecting any step morphs the canvas and
+    the right panel together. Design becomes a drawer, Preview an overlay, and one AI assistant
+    follows you across every tab.</p>
+    <div class="hints">
+      <span class="hint">Click <b>Welcome</b>, a <b>field chip</b>, or <b>Thank you</b> in the rail</span>
+      <span class="hint">Open <b>＋ Add content</b> — then <b>📌 Pin</b> it to dock the classic field column</span>
+      <span class="hint">Try <b>🎨 Design</b> and <b>▶ Preview</b> in the toolbar</span>
+      <span class="hint">Open <b>✨ Ask AI</b> — same assistant on all three tabs</span>
+    </div>
+  </div>
+
+  <div class="frame-scroll"><div class="frame">
+    <div class="chrome">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      <span class="urlbar">app.dculus.com/dashboard/form/f_84h2/builder/content?screen=intro</span>
+    </div>
+    <div class="app" id="app">
+
+      <div class="appbar">
+        <span class="backlink">←</span>
+        <span class="formtitle">Customer Feedback ✎</span>
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" id="tab-content" aria-selected="true" onclick="setTab('content')">Content <span class="cnt">7</span></button>
+          <button class="tab" role="tab" id="tab-logic" aria-selected="false" onclick="setTab('logic')">Logic <span class="warn">⚠ 1</span></button>
+          <button class="tab" role="tab" id="tab-automations" aria-selected="false" onclick="setTab('automations')">Automations <span class="cnt">2</span></button>
+        </div>
+        <div class="appbar-right">
+          <button class="btn">Share</button>
+          <button class="btn primary">Publish</button>
+          <button class="btn icon" title="Form settings — opens settings overlay">⚙</button>
+        </div>
+      </div>
+
+      <div class="body">
+
+        <!-- ═══ CONTENT VIEW ═══ -->
+        <div class="view active" id="view-content">
+          <div class="rail">
+            <button class="addcontent" onclick="toggleLib()">＋ Add content</button>
+
+            <div class="railsec">Intro</div>
+            <button class="railcard" id="rail-intro" onclick="select('intro')">
+              <span class="rc-ico">▛</span> Welcome screen
+            </button>
+
+            <div class="railsec">Pages <button title="Add page">＋</button></div>
+            <div class="pagegroup" id="rail-p1">
+              <button class="pagehead" onclick="select('p1')"><span class="rc-ico">≡</span> Page 1 · About you</button>
+              <div class="chips">
+                <button class="chip" id="rail-f1" onclick="select('f1')"><span class="n">1</span> ✏️ Full name</button>
+                <button class="chip" id="rail-f2" onclick="select('f2')"><span class="n">2</span> ✉️ Work email <span class="zap" title="2 logic rules">⚡</span></button>
+                <button class="chip" id="rail-f3" onclick="select('f3')"><span class="n">3</span> ☎️ Phone number</button>
+              </div>
+            </div>
+            <div class="pagegroup" id="rail-p2">
+              <button class="pagehead" onclick="select('p2')"><span class="rc-ico">≡</span> Page 2 · Your request</button>
+              <div class="chips">
+                <button class="chip"><span class="n">4</span> ▾ Request type</button>
+                <button class="chip"><span class="n">5</span> ¶ Details</button>
+              </div>
+            </div>
+
+            <div class="railsec">Thank you</div>
+            <button class="railcard" id="rail-ty" onclick="select('ty')">
+              <span class="rc-ico">▟</span> Thanks! We'll be in touch.
+            </button>
+          </div>
+
+          <!-- Field Library: popover by default, 📌 docks it as the old always-visible column -->
+          <div class="fieldlib" id="fieldlib">
+            <div class="libhead">
+              <h3>Add content</h3>
+              <button class="pinbtn" id="pinbtn" onclick="togglePin()" title="Pin as a docked column">📌 Pin</button>
+              <button class="xbtn" id="libclose" onclick="toggleLib()">✕</button>
+            </div>
+            <input class="libsearch" placeholder="Search field types…  ( / )" oninput="filterLib(this.value)">
+            <div class="libsec">Recently used</div>
+            <div class="libgrid">
+              <button class="tile recent"><span class="ti">✏️</span> Short text</button>
+              <button class="tile recent"><span class="ti">✉️</span> Email</button>
+              <button class="tile recent"><span class="ti">▾</span> Dropdown</button>
+            </div>
+            <div class="libsec">Input</div>
+            <div class="libgrid">
+              <button class="tile"><span class="ti">✏️</span> Short text</button>
+              <button class="tile"><span class="ti">¶</span> Long text</button>
+              <button class="tile"><span class="ti">✉️</span> Email</button>
+              <button class="tile"><span class="ti">#</span> Number</button>
+              <button class="tile"><span class="ti">📅</span> Date</button>
+              <button class="tile"><span class="ti">☎️</span> Phone</button>
+            </div>
+            <div class="libsec">Choice</div>
+            <div class="libgrid">
+              <button class="tile"><span class="ti">▾</span> Dropdown</button>
+              <button class="tile"><span class="ti">◉</span> Radio</button>
+              <button class="tile"><span class="ti">☑</span> Checkbox</button>
+            </div>
+            <div class="libsec">Content</div>
+            <div class="libgrid">
+              <button class="tile"><span class="ti">𝐀</span> Rich text</button>
+            </div>
+            <div class="libsec">Advanced</div>
+            <div class="libgrid">
+              <button class="tile"><span class="ti">📎</span> File upload</button>
+            </div>
+            <div class="libnote">Drag onto the canvas, or click to append to the selected page.
+            All 11 types visible in one shot — pin 📌 to keep it docked like the classic panel.</div>
+          </div>
+
+          <div class="canvas">
+            <div class="toolbar">
+              <button class="tool" id="designbtn" onclick="toggleDrawer('design')">🎨 Design</button>
+              <span class="spacer"></span>
+              <div class="devtoggle">
+                <button class="on">Desktop</button><button>Mobile</button>
+              </div>
+              <button class="tool" onclick="openPreview()">▶ Preview</button>
+            </div>
+            <div class="stage">
+
+              <div class="screen" id="scr-intro">
+                <div class="hero">
+                  <h2 class="editable" contenteditable="false">Customer Feedback</h2>
+                  <p class="editable">We'd love to hear what you think. It only takes two minutes
+                  and directly shapes what we build next.</p>
+                  <button class="cta">Start</button>
+                  <div class="meta">⏱ Takes 2 minutes</div>
+                </div>
+                <div class="edit-note">Rendered by FormRenderer (builder mode, screenOverride = "intro") — title &amp; description edit inline</div>
+              </div>
+
+              <div class="screen" id="scr-page">
+                <div class="pagelabel" id="pagelabel">Page 1 · About you</div>
+                <div id="pagefields">
+                  <div class="fieldcard" id="fc-f1" onclick="select('f1')">
+                    <span class="fq">1</span>
+                    <div class="fbody"><div class="flabel">What is your full name?</div><div class="finput"></div></div>
+                    <span class="fgrip">⠿</span>
+                  </div>
+                  <div class="fieldcard" id="fc-f2" onclick="select('f2')">
+                    <span class="fq">2</span>
+                    <div class="fbody"><div class="flabel">What is your work email? *</div><div class="finput"></div></div>
+                    <span class="fgrip">⠿</span>
+                  </div>
+                  <div class="fieldcard" id="fc-f3" onclick="select('f3')">
+                    <span class="fq">3</span>
+                    <div class="fbody"><div class="flabel">What is your phone number?</div><div class="finput"></div></div>
+                    <span class="fgrip">⠿</span>
+                  </div>
+                </div>
+                <button class="addfield">＋ Add field — or drag from “Add content”</button>
+              </div>
+
+              <div class="screen" id="scr-ty">
+                <div class="hero">
+                  <h2 class="editable">Thanks! We'll be in touch. 🎉</h2>
+                  <p class="editable">Your feedback landed safely. Our team reads every single
+                  response — expect a reply within two working days.</p>
+                  <div class="meta">Ending settings on the right — redirect &amp; share coming soon</div>
+                </div>
+                <div class="edit-note">screenOverride = "thankYou" — rich text edits inline</div>
+              </div>
+
+            </div>
+            <button class="aipill" onclick="toggleDrawer('ai')"><b>✨</b> Ask AI anything… <b>➤</b></button>
+          </div>
+
+          <div class="panel">
+            <div class="pane" id="pane-intro">
+              <h3>Welcome screen</h3>
+              <div class="field-group">
+                <label>Layout</label>
+                <div class="thumbs">
+                  <div class="thumb on" data-l="L1"><div class="bar" style="left:12%;top:20%;width:76%;height:8%"></div><div class="bar" style="left:24%;top:38%;width:52%;height:6%"></div></div>
+                  <div class="thumb" data-l="L2"><div class="bar" style="left:8%;top:12%;width:38%;height:76%"></div></div>
+                  <div class="thumb" data-l="L3"><div class="bar" style="left:54%;top:12%;width:38%;height:76%"></div></div>
+                  <div class="thumb" data-l="L4"><div class="bar" style="left:12%;top:52%;width:76%;height:8%"></div></div>
+                  <div class="thumb" data-l="L5"><div class="bar" style="left:12%;top:14%;width:76%;height:36%"></div></div>
+                  <div class="thumb" data-l="L6"><div class="bar" style="left:30%;top:30%;width:40%;height:26%"></div></div>
+                </div>
+                <div class="help">L1–L9 form layouts (existing LayoutThumbnails)</div>
+              </div>
+              <div class="field-group">
+                <label>Button text</label>
+                <input class="tinput" value="Start" maxlength="24">
+                <div class="help">5/24 — today's hidden “custom CTA” setting, now in context</div>
+              </div>
+              <div class="divider"></div>
+              <div class="field-group">
+                <label>Background</label>
+                <div class="rowbtns">
+                  <button class="minibtn">🎨 Color</button>
+                  <button class="minibtn">⬆ Upload</button>
+                  <button class="minibtn">Pexels</button>
+                  <button class="minibtn">Pixabay</button>
+                </div>
+              </div>
+              <div class="togglerow">Show time to complete <span class="sw on"></span></div>
+            </div>
+
+            <div class="pane" id="pane-page">
+              <h3>Page settings</h3>
+              <div class="field-group">
+                <label>Page title</label>
+                <input class="tinput" id="pagetitleinput" value="About you">
+              </div>
+              <div class="togglerow">Shuffle fields on this page <span class="sw"></span></div>
+              <div class="divider"></div>
+              <div class="rowbtns">
+                <button class="minibtn">Duplicate page</button>
+                <button class="minibtn">Delete page</button>
+              </div>
+            </div>
+
+            <div class="pane" id="pane-field">
+              <h3 id="fieldpanetitle">Field · Work email</h3>
+              <div class="field-group">
+                <label>Label</label>
+                <input class="tinput" id="fieldlabelinput" value="What is your work email?">
+              </div>
+              <div class="togglerow">Required <span class="sw on"></span></div>
+              <div class="field-group">
+                <label>Placeholder</label>
+                <input class="tinput" value="you@company.com">
+              </div>
+              <div class="divider"></div>
+              <button class="logiclink" onclick="setTab('logic')">
+                <span class="zap">⚡</span> 2 logic rules use this field <span style="margin-left:auto">→</span>
+              </button>
+              <div class="help" style="font-size:11px;color:var(--muted);margin-top:6px">Existing FieldSettingsV2, plus this logic summary row</div>
+            </div>
+
+            <div class="pane" id="pane-ty">
+              <h3>Ending</h3>
+              <div class="field-group">
+                <label>Message</label>
+                <div class="tinput" style="height:64px;font-size:12px;color:var(--muted)">Thanks! We'll be in touch. 🎉 — rich text editor</div>
+              </div>
+              <div class="togglerow">Show “Create your own form” <span class="sw on"></span></div>
+              <div class="togglerow">Redirect after submit <span class="sw"></span></div>
+              <div class="togglerow">Social share buttons <span class="sw"></span></div>
+              <div class="help" style="font-size:11px;color:var(--muted)">Built as an Endings list — conditional multiple endings can land here later</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ LOGIC VIEW ═══ -->
+        <div class="view" id="view-logic">
+          <div class="listview">
+            <div class="listinner">
+              <div class="lhead"><h2>Logic rules</h2><button class="btn">＋ New rule</button></div>
+              <div class="rulecard">
+                <div class="rt">Skip phone number for personal emails <span class="pill ok">Enabled</span></div>
+                <div class="rd">When <b>Work email</b> ends with gmail.com → hide <b>Phone number</b></div>
+              </div>
+              <div class="rulecard">
+                <div class="rt">Route enterprise requests <span class="pill warn">⚠ Circular reference</span></div>
+                <div class="rd">When <b>Request type</b> is “Enterprise” → jump to <b>Page 2</b></div>
+              </div>
+              <div class="rulecard">
+                <div class="rt">Require details for bug reports <span class="pill ok">Enabled</span></div>
+                <div class="rd">When <b>Request type</b> is “Bug” → make <b>Details</b> required</div>
+              </div>
+            </div>
+            <button class="aipill" onclick="toggleDrawer('ai')"><b>✨</b> Ask AI anything… <b>➤</b></button>
+          </div>
+        </div>
+
+        <!-- ═══ AUTOMATIONS VIEW ═══ -->
+        <div class="view" id="view-automations">
+          <div class="listview">
+            <div class="listinner">
+              <div class="lhead"><h2>Automations</h2><button class="btn">＋ New automation</button></div>
+              <div class="autocard">
+                <span class="autoico">📊</span>
+                <div><div class="at">Sync to Google Sheets</div><div class="ad">On submit → append row to “Feedback 2026”</div></div>
+                <span class="pill ok">Active</span>
+              </div>
+              <div class="autocard">
+                <span class="autoico">✉️</span>
+                <div><div class="at">Low-score alert</div><div class="ad">On submit, if rating &lt; 3 → email natheesh@…</div></div>
+                <span class="pill ok">Active</span>
+              </div>
+              <div class="autocard" style="opacity:.65">
+                <span class="autoico">🪝</span>
+                <div><div class="at">CRM webhook</div><div class="ad">On submit → POST to hooks.crm.example</div></div>
+                <span class="pill warn">Paused</span>
+              </div>
+            </div>
+            <button class="aipill" onclick="toggleDrawer('ai')"><b>✨</b> Ask AI anything… <b>➤</b></button>
+          </div>
+        </div>
+
+      </div><!-- /body -->
+
+      <!-- Design drawer -->
+      <div class="drawer" id="drawer-design">
+        <div class="dhead"><h3>🎨 Design — whole form</h3><button class="xbtn" onclick="toggleDrawer('design')">✕</button></div>
+        <div class="field-group">
+          <label>Layout family</label>
+          <div class="thumbs">
+            <div class="thumb on" data-l="L1"></div><div class="thumb" data-l="L2"></div><div class="thumb" data-l="L3"></div>
+            <div class="thumb" data-l="L4"></div><div class="thumb" data-l="L5"></div><div class="thumb" data-l="L6"></div>
+            <div class="thumb" data-l="L7"></div><div class="thumb" data-l="L8"></div><div class="thumb" data-l="L9"></div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Theme</label>
+          <div class="rowbtns"><button class="minibtn">Light</button><button class="minibtn">Dark</button><button class="minibtn">Auto</button></div>
+        </div>
+        <div class="field-group">
+          <label>Spacing</label>
+          <div class="rowbtns"><button class="minibtn">Compact</button><button class="minibtn">Normal</button><button class="minibtn">Relaxed</button></div>
+        </div>
+        <div class="field-group">
+          <label>Global background</label>
+          <div class="rowbtns"><button class="minibtn">🎨 Color</button><button class="minibtn">⬆ Upload</button><button class="minibtn">Pexels</button><button class="minibtn">Pixabay</button></div>
+          <div class="help">Reuses today's LayoutSidebar controls — you restyle while watching real content re-render</div>
+        </div>
+      </div>
+
+      <!-- AI drawer -->
+      <div class="drawer" id="drawer-ai">
+        <div class="dhead"><h3>✨ Ask AI</h3><button class="xbtn" onclick="toggleDrawer('ai')">✕</button></div>
+        <div class="aictx" id="aictx">Context: <b>Content</b> · Welcome screen selected</div>
+        <div class="chat">
+          <div class="msg user">Add a 1–5 rating question after the email field, and email me whenever someone rates below 3.</div>
+          <div class="msg ai">Done — two changes across the builder:
+            <div class="act">✚ Added “How satisfied are you?” to Page 1</div>
+            <div class="act">⚙ Drafted automation “Low-score alert” for review</div>
+          </div>
+          <div class="msg user">Hide the phone field unless they choose “Enterprise”.</div>
+          <div class="msg ai">Drafted a logic rule — it's waiting as a <b>pending suggestion</b> in the Logic tab.
+            <div class="act">⚡ Pending: show Phone when Request type = Enterprise</div>
+          </div>
+        </div>
+        <div class="aiinput"><input placeholder="One assistant — content, logic &amp; automations…"><button class="btn primary">➤</button></div>
+      </div>
+
+      <!-- Preview overlay -->
+      <div class="overlay" id="preview">
+        <div class="ovbar">
+          <span class="t">Preview</span>
+          <div class="devtoggle"><button class="on">Desktop</button><button>Mobile</button></div>
+          <button class="btn" onclick="closePreview()">✕ Close (Esc)</button>
+        </div>
+        <div class="ovstage">
+          <div class="hero" style="max-width:560px;width:100%">
+            <h2>Customer Feedback</h2>
+            <p>We'd love to hear what you think. It only takes two minutes and directly shapes what we build next.</p>
+            <button class="cta">Start</button>
+            <div class="meta">⏱ Takes 2 minutes · full test-submit flow, no navigation, selection preserved</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /app -->
+  </div></div>
+
+  <section class="notes">
+    <div class="note"><span class="k">Mode A · Pages</span>
+      <h4>Fields edit where they live</h4>
+      <p>Select a page or field chip: the canvas shows the page's field cards and the right panel
+      becomes field settings with a logic-summary row. “＋ Add content” opens a mega-panel showing
+      all 11 field types at once — searchable, draggable — and 📌 pins into a docked column for
+      anyone who wants the classic always-visible palette.</p></div>
+    <div class="note"><span class="k">Mode B · Intro</span>
+      <h4>Screens are first-class</h4>
+      <p>Clicking Welcome flips all three panes: real intro render in the canvas, and layout
+      thumbnails, button text, and background controls in the right panel — settings that today
+      hide inside the separate Design tab.</p></div>
+    <div class="note"><span class="k">Mode C · Thank you</span>
+      <h4>Endings get a home</h4>
+      <p>The Thank You card renders the ending inline and its panel finally gives redirect,
+      share, and branding toggles a natural place — built as a list so conditional multiple
+      endings can land without another redesign.</p></div>
+    <div class="note"><span class="k">Everywhere</span>
+      <h4>One unified AI</h4>
+      <p>The same ✨ pill sits on Content, Logic, and Automations. It knows your active tab and
+      selection, and one conversation can add fields, draft pending logic rules, and scaffold
+      automations together.</p></div>
+  </section>
+</div>
+
+<script>
+var sel = 'intro';
+var FIELDS = { f1:'Full name', f2:'Work email', f3:'Phone number' };
+
+function setTab(t){
+  ['content','logic','automations'].forEach(function(k){
+    document.getElementById('view-'+k).classList.toggle('active', k===t);
+    document.getElementById('tab-'+k).setAttribute('aria-selected', k===t ? 'true' : 'false');
+  });
+  closeDrawers();
+  updateAiCtx(t);
+}
+function select(s){
+  sel = s;
+  // rail highlight
+  document.getElementById('rail-intro').classList.toggle('sel', s==='intro');
+  document.getElementById('rail-ty').classList.toggle('sel', s==='ty');
+  document.getElementById('rail-p1').classList.toggle('sel', s==='p1' || s.charAt(0)==='f');
+  document.getElementById('rail-p2').classList.toggle('sel', s==='p2');
+  ['f1','f2','f3'].forEach(function(f){
+    document.getElementById('rail-'+f).classList.toggle('sel', s===f);
+    var fc = document.getElementById('fc-'+f);
+    if (fc) fc.classList.toggle('sel', s===f);
+  });
+  // canvas screen
+  var scr = (s==='intro') ? 'intro' : (s==='ty') ? 'ty' : 'page';
+  ['intro','page','ty'].forEach(function(k){
+    document.getElementById('scr-'+k).classList.toggle('active', k===scr);
+  });
+  document.getElementById('pagelabel').textContent = (s==='p2') ? 'Page 2 · Your request' : 'Page 1 · About you';
+  document.getElementById('pagefields').style.display = (s==='p2') ? 'none' : '';
+  // right pane
+  var pane = (s==='intro') ? 'intro' : (s==='ty') ? 'ty' : (s.charAt(0)==='f') ? 'field' : 'page';
+  ['intro','page','field','ty'].forEach(function(k){
+    document.getElementById('pane-'+k).classList.toggle('active', k===pane);
+  });
+  if (pane==='field'){
+    document.getElementById('fieldpanetitle').textContent = 'Field · ' + FIELDS[s];
+    document.getElementById('fieldlabelinput').value = 'What is your ' + FIELDS[s].toLowerCase() + '?';
+  }
+  if (pane==='page'){
+    document.getElementById('pagetitleinput').value = (s==='p2') ? 'Your request' : 'About you';
+  }
+  updateAiCtx('content');
+}
+function updateAiCtx(tab){
+  var where = { content:'Content', logic:'Logic', automations:'Automations' }[tab] || 'Content';
+  var what = '';
+  if (tab==='content'){
+    what = (sel==='intro') ? ' · Welcome screen selected'
+         : (sel==='ty') ? ' · Ending selected'
+         : (sel.charAt(0)==='f') ? ' · Field “'+FIELDS[sel]+'” selected'
+         : ' · ' + ((sel==='p2') ? 'Page 2' : 'Page 1') + ' selected';
+  }
+  document.getElementById('aictx').innerHTML = 'Context: <b>'+where+'</b>'+what;
+}
+function toggleDrawer(which){
+  var d = document.getElementById('drawer-'+which);
+  var other = document.getElementById('drawer-'+(which==='ai'?'design':'ai'));
+  other.classList.remove('open');
+  d.classList.toggle('open');
+  document.getElementById('designbtn').classList.toggle('active', document.getElementById('drawer-design').classList.contains('open'));
+}
+function closeDrawers(){
+  document.getElementById('drawer-ai').classList.remove('open');
+  document.getElementById('drawer-design').classList.remove('open');
+  document.getElementById('designbtn').classList.remove('active');
+}
+function openPreview(){ document.getElementById('preview').classList.add('open'); }
+function closePreview(){ document.getElementById('preview').classList.remove('open'); }
+
+/* field library: popover ↔ pinned dock */
+var libPinned = false;
+function toggleLib(){
+  var lib = document.getElementById('fieldlib');
+  if (libPinned) { togglePin(); return; }               // unpin via the rail button too
+  lib.classList.toggle('pop');
+}
+function togglePin(){
+  var lib = document.getElementById('fieldlib');
+  libPinned = !libPinned;
+  lib.classList.toggle('docked', libPinned);
+  lib.classList.remove('pop');
+  if (libPinned) lib.classList.add('docked');
+  document.getElementById('pinbtn').classList.toggle('on', libPinned);
+  document.getElementById('pinbtn').textContent = libPinned ? '📌 Unpin' : '📌 Pin';
+  document.getElementById('libclose').style.display = libPinned ? 'none' : '';
+}
+function filterLib(q){
+  q = q.trim().toLowerCase();
+  var tiles = document.querySelectorAll('#fieldlib .tile');
+  for (var i=0;i<tiles.length;i++){
+    tiles[i].style.display = tiles[i].textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
+  }
+}
+document.addEventListener('keydown', function(e){
+  if (e.key==='Escape'){
+    closePreview(); closeDrawers();
+    if (!libPinned) document.getElementById('fieldlib').classList.remove('pop');
+  }
+});
+select('intro');
+</script>
