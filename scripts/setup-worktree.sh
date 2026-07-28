@@ -52,6 +52,41 @@ for app in backend form-app form-viewer admin-app; do
 done
 echo
 
+echo "==> Copying other gitignored local files from the main checkout"
+# root .env / test .env (test tooling), .claude/settings.local.json (approved
+# tool permissions — without it, agent sessions in the worktree re-prompt for
+# everything the main checkout already allows).
+for rel in .env test/.env .claude/settings.local.json; do
+  src="$MAIN_ROOT/$rel"
+  dest="$WORKTREE_ROOT/$rel"
+
+  if [ ! -f "$src" ]; then
+    continue
+  fi
+
+  # Never write through a symlink or onto a non-regular destination — with
+  # --force that could leak .env/settings content outside the worktree.
+  if [ -L "$dest" ] || { [ -e "$dest" ] && [ ! -f "$dest" ]; }; then
+    echo "  skip $rel: destination is not a regular file — refusing to write"
+    continue
+  fi
+  destdir="$(dirname "$dest")"
+  if [ -L "$destdir" ]; then
+    echo "  skip $rel: parent directory is a symlink — refusing to write"
+    continue
+  fi
+
+  if [ -f "$dest" ] && [ "$FORCE" != "true" ]; then
+    echo "  skip $rel: already exists (use --force to overwrite)"
+    continue
+  fi
+
+  mkdir -p "$destdir"
+  cp "$src" "$dest"
+  echo "  copied $rel"
+done
+echo
+
 if [ ! -d "$WORKTREE_ROOT/node_modules" ]; then
   echo "==> Installing dependencies (node_modules missing)"
   pnpm install

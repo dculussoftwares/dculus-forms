@@ -188,3 +188,6 @@ dculus-chargebee-webhook-passwords.txt
 /pdf-template/
 /ui-design-refernce/
 /screenshot/
+
+# Claude Code local (per-machine) settings — never commit
+.claude/settings.local.json
