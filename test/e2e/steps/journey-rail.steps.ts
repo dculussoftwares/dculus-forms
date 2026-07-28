@@ -9,14 +9,13 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 import { dragOnto } from './helpers/common';
 
-// `[data-testid^="rail-page-"]` alone also matches the nested title/drag-handle
-// elements (rail-page-title-<n>, rail-page-drag-handle-<n> both share the prefix)
-// — exclude them so this resolves to exactly the page group container.
+// A prefix-based CSS selector (`[data-testid^="rail-page-"]`) also matches every
+// nested testid that happens to share the prefix (rail-page-title-<n>,
+// rail-page-header-<n>, rail-page-drag-handle-<n>, ...) — match the group
+// container's exact testid shape instead so this can't collide with new ones.
 const railPageGroupByTitle = (page: Page, title: string): Locator =>
   page
-    .locator(
-      '[data-testid^="rail-page-"]:not([data-testid^="rail-page-title-"]):not([data-testid^="rail-page-drag-handle-"])'
-    )
+    .getByTestId(/^rail-page-\d+$/)
     .filter({ has: page.getByText(title, { exact: true }) });
 
 When('I click the rail Intro card', async function (this: CustomWorld) {
@@ -33,7 +32,9 @@ When('I click the rail page {string}', async function (this: CustomWorld, pageTi
   if (!this.page) throw new Error('Page is not initialized');
   const group = railPageGroupByTitle(this.page, pageTitle);
   await expect(group).toBeVisible({ timeout: 10_000 });
-  await group.getByText(pageTitle, { exact: true }).click();
+  // Click the header row, not the title text itself — the title has its own
+  // click handler (rename, for editors) that stops propagation.
+  await group.locator('[data-testid^="rail-page-header-"]').click();
 });
 
 When('I click the rail field chip {string}', async function (this: CustomWorld, fieldLabel: string) {
@@ -108,7 +109,9 @@ Then(
   async function (this: CustomWorld, expectedCsv: string) {
     if (!this.page) throw new Error('Page is not initialized');
     const expected = expectedCsv.split(',').map((s) => s.trim());
-    const titles = this.page.locator('[data-testid^="rail-page-title-"]');
+    // Precise testid match: "rail-page-title-" is also a prefix of
+    // rail-page-title-input-<n> (the rename input, rendered only while editing).
+    const titles = this.page.getByTestId(/^rail-page-title-\d+$/);
     await expect(titles).toHaveCount(expected.length, { timeout: 10_000 });
     await expect(titles).toHaveText(expected, { timeout: 10_000 });
   }

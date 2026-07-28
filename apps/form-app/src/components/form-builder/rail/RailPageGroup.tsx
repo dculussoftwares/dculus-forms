@@ -132,9 +132,27 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
           : 'border-[var(--tf-border-medium)] hover:border-[var(--tf-border-strong)]'
       )}
     >
+      {/*
+        The whole row selects the page on click — matching DraggablePageItem's
+        Card-is-the-select-target convention. Only the title text itself carves
+        out a narrower rename-click zone (via stopPropagation): a <button> wrapping
+        just the title would have the title filling its entire clickable area,
+        leaving editors no way to click-to-select without also stopping propagation
+        for rename.
+      */}
       <div
+        role="button"
+        tabIndex={0}
+        data-testid={`rail-page-header-${index}`}
+        onClick={() => setSelection({ kind: 'page', pageId: page.id })}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setSelection({ kind: 'page', pageId: page.id });
+          }
+        }}
         className={cn(
-          'flex items-center gap-1.5 rounded-t-xl px-2 py-1.5',
+          'flex items-center gap-1.5 rounded-t-xl px-2 py-1.5 cursor-pointer',
           isSelected && 'bg-[var(--tf-faint)]'
         )}
       >
@@ -152,11 +170,7 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
           <ChevronDown className="h-3.5 w-3.5 shrink-0 text-[var(--tf-light-muted)]" />
         )}
 
-        <button
-          type="button"
-          onClick={() => setSelection({ kind: 'page', pageId: page.id })}
-          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-        >
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
           {isEditingTitle ? (
             <Input
               ref={inputRef}
@@ -194,7 +208,7 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
               {page.title || t('untitledPage')}
             </span>
           )}
-        </button>
+        </div>
 
         {!permissions.isReadOnly && (
           <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 hover:opacity-100">

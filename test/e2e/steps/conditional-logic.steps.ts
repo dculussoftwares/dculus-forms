@@ -1252,12 +1252,17 @@ When(
   async function (this: CustomWorld, pageTitle: string) {
     if (!this.page) throw new Error('Page is not initialized');
     // Pages moved from the right-sidebar Pages tab to the journey rail (#228) — find
-    // the rail's page group by its title text rather than a title-derived testid.
+    // the rail's page group by its title text. A prefix-based CSS selector would
+    // also match nested testids that happen to share the "rail-page-" prefix
+    // (rail-page-title-<n>, rail-page-header-<n>, ...) — match the group
+    // container's exact testid shape instead.
     const pageGroup = this.page
-      .locator('[data-testid^="rail-page-"]')
+      .getByTestId(/^rail-page-\d+$/)
       .filter({ has: this.page.getByText(pageTitle, { exact: true }) });
     await expect(pageGroup).toBeVisible({ timeout: 10_000 });
-    await pageGroup.getByText(pageTitle, { exact: true }).click();
+    // Click the header row, not the title text itself — the title has its own
+    // click handler (rename, for editors) that stops propagation.
+    await pageGroup.locator('[data-testid^="rail-page-header-"]').click();
   }
 );
 
