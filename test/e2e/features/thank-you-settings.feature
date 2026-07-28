@@ -23,7 +23,11 @@ Feature: Thank You screen (Layout tab)
     And I fill and submit the thank you test form
     Then I should see the default thank you message
 
-  @thank-you-custom
+  # @skip-ci: the Layout tab (and its intro/pages/thankYou screen toggle) is gone from
+  # the new 3-tab shell (Content/Logic/Automations, ticket #227). Editing the thank-you
+  # screen moves to the journey rail's Thank You card (ticket #228) — restore this
+  # scenario against `rail-thankyou` once that lands.
+  @thank-you-custom @skip-ci
   Scenario: Form shows a custom thank you message configured from the Layout tab
     When I create a form via GraphQL for thank you page testing
     Then I should be on the new form dashboard
@@ -41,7 +45,8 @@ Feature: Thank You screen (Layout tab)
     And I fill and submit the thank you test form
     Then I should see the thank you message "Thank you for your feedback!" in the form viewer
 
-  @thank-you-persistence
+  # @skip-ci: same as @thank-you-custom above — depends on the removed Layout tab.
+  @thank-you-persistence @skip-ci
   Scenario: Thank you message edits persist across a reload
     When I create a form via GraphQL for thank you page testing
     Then I should be on the new form dashboard
@@ -53,7 +58,8 @@ Feature: Thank You screen (Layout tab)
     And I switch the layout canvas to the thank you screen
     Then the thank you screen should show the message "Persisted thank you copy"
 
-  @thank-you-preview
+  # @skip-ci: same as @thank-you-custom above — depends on the removed Layout tab.
+  @thank-you-preview @skip-ci
   Scenario: Preview tab shows the Thank You screen without submitting (#175)
     When I create a form via GraphQL for thank you page testing
     Then I should be on the new form dashboard
