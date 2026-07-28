@@ -27,7 +27,8 @@
     "noSavePermission": "மாற்றங்களைச் சேமிக்க உங்களுக்கு அனுமதி இல்லை",
     "viewLiveFormTooltip": "வெளியிடப்பட்ட படிவத்தைக் காண்க",
     "publishFormTooltip": "இந்தப் படிவத்தை நேரடியாக்கி பதிலளிப்பவர்களுக்குக் கிடைக்கச் செய்யவும்",
-    "unpublishFormTooltip": "இந்தப் படிவத்தை ஆஃப்லைனில் எடுக்கவும்"
+    "unpublishFormTooltip": "இந்தப் படிவத்தை ஆஃப்லைனில் எடுக்கவும்",
+    "previewFormTooltip": "இந்தப் படிவத்தை முழுத்திரையில் முன்னோட்டமிடுங்கள்"
   },
   "toasts": {
     "duplicateSuccess": {

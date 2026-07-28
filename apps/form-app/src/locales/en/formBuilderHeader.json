@@ -27,7 +27,8 @@
     "noSavePermission": "You don't have permission to save changes",
     "viewLiveFormTooltip": "View the published form",
     "publishFormTooltip": "Make this form live and available to respondents",
-    "unpublishFormTooltip": "Take this form offline"
+    "unpublishFormTooltip": "Take this form offline",
+    "previewFormTooltip": "Preview this form full-screen"
   },
   "toasts": {
     "duplicateSuccess": {
