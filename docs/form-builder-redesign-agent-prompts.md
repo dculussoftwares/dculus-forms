@@ -7,6 +7,8 @@ One copy-paste prompt per ticket of Epic [#226](https://github.com/dculussoftwar
 
 Every prompt already instructs the agent to: read the GitHub issue + epic, read the design docs (`docs/form-builder-redesign.md`, `docs/form-builder-redesign-implementation.md`) and open the prototype (`docs/prototypes/form-builder-redesign-prototype.html`), work on a feature branch, and open a PR. After each PR merges, tick the matching checkbox in epic #226. Recommended model: **Sonnet** (`/model sonnet`) — the design decisions are locked in the epic; tickets are execution-scoped.
 
+**Worktree note** — if the session runs in a git worktree (default under `.claude/worktrees/`), run `./scripts/setup-worktree.sh` before anything else (see the "Git Worktrees" section of `CLAUDE.md`). It copies `.env` files + local Claude settings, installs deps, builds the `@dculus/*` packages, and generates the Prisma client. The dev/E2E login for manual browser verification is the `E2E_EMAIL`/`E2E_PASSWORD` fallback pair in `package.json`'s `test:e2e` script.
+
 ---
 
 ## 1 · Issue #227 — Shell: 3 tabs, redirects, Preview overlay, Settings gear
