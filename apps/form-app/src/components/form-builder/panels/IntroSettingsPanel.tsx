@@ -115,6 +115,7 @@ export const IntroSettingsPanel: React.FC<IntroSettingsPanelProps> = ({
               onChange={(e) => canEditLayout && onLayoutUpdate({ customCTAButtonName: e.target.value })}
               placeholder={t('customCTA.placeholder')}
               disabled={!canEditLayout}
+              data-testid="intro-cta-button-input"
             />
             <p className="text-xs text-muted-foreground dark:text-gray-400">
               {t('customCTA.helpText')}
