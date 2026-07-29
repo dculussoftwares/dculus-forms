@@ -134,6 +134,18 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       : actualPermission;
   const canEdit = userPermission === 'OWNER' || userPermission === 'EDITOR';
 
+  // Single permission-checked path for opening the AI drawer — AI edits require edit
+  // permission, so every entry point (pill, Cmd+K, ConditionsTab's describe-with-AI,
+  // the ?aiMessage= deep link) routes through one of these two instead of calling
+  // setIsAIDrawerOpen directly. See #232.
+  const openAIDrawer = useCallback(() => {
+    if (canEdit) setIsAIDrawerOpen(true);
+  }, [canEdit]);
+
+  const toggleAIDrawer = useCallback(() => {
+    setIsAIDrawerOpen((prev) => (prev ? false : canEdit));
+  }, [canEdit]);
+
   const {
     isConnected,
     isLoading,
@@ -382,8 +394,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        // AI edits require edit permission — same gate as the Ask-AI pill. See #232.
-        if (canEdit) setIsAIDrawerOpen((prev) => !prev);
+        toggleAIDrawer();
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
         e.preventDefault();
@@ -399,16 +410,23 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isPreviewOpen, handleClosePreview, canEdit]);
+  }, [isPreviewOpen, handleClosePreview, toggleAIDrawer]);
 
   // Auto-open the AI drawer when navigated here with an aiMessage query param
-  // (e.g. from "Fix with AI" in FieldAnalyticsViewer).
-  // Empty deps array is intentional: we only want this to fire once on mount.
+  // (e.g. from "Fix with AI" in FieldAnalyticsViewer). Gated by canEdit via
+  // openAIDrawer — a VIEWER following the link must not get the drawer (and its
+  // request flow) opened. Waits for `formLoading` to settle (rather than firing
+  // once on mount) since `canEdit` isn't resolved until `formData` loads; the ref
+  // guard still ensures it only fires once, so editors get the same one-shot
+  // behavior as before.
+  const aiMessageHandledRef = useRef(false);
   useEffect(() => {
+    if (aiMessageHandledRef.current || formLoading) return;
+    aiMessageHandledRef.current = true;
     if (aiMessageParam) {
-      setIsAIDrawerOpen(true);
+      openAIDrawer();
     }
-  }, []);
+  }, [formLoading, aiMessageParam, openAIDrawer]);
 
   const renderDragOverlay = useMemo(() => {
     if (!activeId || !draggedItem) return null;
@@ -464,7 +482,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       case 'logic':
         return <ConditionsTab onDescribeWithAI={(description) => {
           setAIInitialMessage(`Create a condition rule from this request: ${description}. Use upsertConditionRule only. This must remain a pending suggestion for the user to review.`);
-          setIsAIDrawerOpen(true);
+          openAIDrawer();
         }} />;
       case 'automations':
         // List → canvas builder → runs, all in-tab. See epic #226, ticket #233.
@@ -483,7 +501,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       default:
         return <PageBuilderTab onOpenPreview={() => setIsPreviewOpen(true)} />;
     }
-  }, [activeTab, automationId, isAutomationRunsView, isAIDrawerOpen, setIsAIDrawerOpen]);
+  }, [activeTab, automationId, isAutomationRunsView, openAIDrawer]);
 
   if (!formId) {
     return (
@@ -666,10 +684,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                 {/* Unified Ask-AI pill — all three tabs, hidden for VIEWER (AI edits
                     require edit permission). See epic #226 / ticket #232. */}
                 {canEdit && (
-                  <AskAIPill
-                    isOpen={isAIDrawerOpen}
-                    onClick={() => setIsAIDrawerOpen((prev) => !prev)}
-                  />
+                  <AskAIPill isOpen={isAIDrawerOpen} onClick={toggleAIDrawer} />
                 )}
               </div>
               <AIEditDrawer
