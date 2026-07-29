@@ -20,6 +20,7 @@ import {
 } from '@dculus/ui';
 import {
     ArrowLeft,
+    Code,
     Copy,
     Edit3,
     Eye,
@@ -32,12 +33,15 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';
 import { PermissionBadge } from './PermissionBadge';
 import { SettingsTab } from './tabs';
+import { CoachMark } from './coachmarks/CoachMark';
+import { JSONPreview } from './JSONPreview';
+import { useFormBuilderStore } from '../../store/useFormBuilderStore';
 import { DUPLICATE_FORM, UPDATE_FORM } from '../../graphql/mutations';
 import { getFormViewerUrl } from '../../lib/config';
 
@@ -86,8 +90,17 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     const [showShareModal, setShowShareModal] = useState(false);
     const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
     const [duplicateProgress, setDuplicateProgress] = useState(0);
+    const [isJsonDebugOpen, setIsJsonDebugOpen] = useState(false);
     const permissions = useFormPermissions();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    // Dev-only JSON debug view (#234) — replaces the JSON tab that used to live
+    // in the right panel. Hidden in production builds unless `?debug=1` is set,
+    // mirroring the `?settings=1` deep-link convention used by the Settings dialog below.
+    const isJsonDebugEnabled = import.meta.env.DEV || searchParams.get('debug') === '1';
+    const jsonDebugPages = useFormBuilderStore((state) => state.pages);
+    const jsonDebugLayout = useFormBuilderStore((state) => state.layout);
+    const jsonDebugIsShuffleEnabled = useFormBuilderStore((state) => state.isShuffleEnabled);
     const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
     const [updateFormMutation] = useMutation(UPDATE_FORM);
 
@@ -181,7 +194,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             variant="ghost"
                             onClick={onNavigateBack}
                             className="h-8 w-8 flex items-center justify-center rounded-lg transition-colors shrink-0 p-0"
-                            title="Back"
+                            title={t('tooltips.back')}
                         >
                             <ArrowLeft className="w-4 h-4" />
                         </Button>
@@ -207,7 +220,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 onClick={() => permissions.canEdit && setIsEditingTitle(true)}
                                 className="group flex items-center gap-1.5 text-sm font-medium w-full min-w-0 transition-colors h-auto p-0"
                                 disabled={!permissions.canEdit}
-                                title={!permissions.canEdit ? t('tooltips.noEditPermission') : 'Click to rename'}
+                                title={!permissions.canEdit ? t('tooltips.noEditPermission') : t('tooltips.clickToRename')}
                             >
                                 <span className="truncate min-w-0">{formTitle}</span>
                                 {permissions.canEdit && (
@@ -310,15 +323,17 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
 
                     {/* Settings gear — hidden for VIEWER (SettingsTab would just show access-denied) */}
                     {onSettingsOpenChange && permissions.canEdit && (
-                        <Button
-                            variant="ghost"
-                            onClick={() => onSettingsOpenChange(true)}
-                            className="h-8 w-8 flex items-center justify-center rounded-lg p-0"
-                            title={t('menu.formSettings')}
-                            data-testid="header-settings-gear"
-                        >
-                            <Settings className="w-4 h-4" />
-                        </Button>
+                        <CoachMark id="gear" side="bottom" align="end">
+                            <Button
+                                variant="ghost"
+                                onClick={() => onSettingsOpenChange(true)}
+                                className="h-8 w-8 flex items-center justify-center rounded-lg p-0"
+                                title={t('menu.formSettings')}
+                                data-testid="header-settings-gear"
+                            >
+                                <Settings className="w-4 h-4" />
+                            </Button>
+                        </CoachMark>
                     )}
 
                     {/* More */}
@@ -327,6 +342,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             <Button
                                 variant="ghost"
                                 className="h-8 w-8 flex items-center justify-center rounded-lg p-0"
+                                data-testid="header-more-menu-trigger"
                             >
                                 <MoreVertical className="w-4 h-4" />
                             </Button>
@@ -336,6 +352,12 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                                 <Copy className="w-4 h-4 mr-2" />
                                 {t('menu.duplicateForm')}
                             </DropdownMenuItem>
+                            {isJsonDebugEnabled && (
+                                <DropdownMenuItem onClick={() => setIsJsonDebugOpen(true)} data-testid="header-json-debug-menu-item">
+                                    <Code className="w-4 h-4 mr-2" />
+                                    {t('menu.jsonDebug')}
+                                </DropdownMenuItem>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -397,6 +419,20 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                         <div className="flex-1 overflow-y-auto">
                             <SettingsTab formId={_formId} />
                         </div>
+                    </DialogContent>
+                </Dialog>
+            )}
+
+            {/* JSON debug view — dev-only, re-homed from the right panel's JSON tab (#234) */}
+            {isJsonDebugEnabled && (
+                <Dialog open={isJsonDebugOpen} onOpenChange={setIsJsonDebugOpen}>
+                    <DialogContent className="max-w-2xl h-[70vh] flex flex-col p-0 gap-0" data-testid="json-debug-dialog">
+                        <DialogTitle className="sr-only">{t('menu.jsonDebug')}</DialogTitle>
+                        <JSONPreview
+                            pages={jsonDebugPages}
+                            layout={jsonDebugLayout}
+                            isShuffleEnabled={jsonDebugIsShuffleEnabled}
+                        />
                     </DialogContent>
                 </Dialog>
             )}

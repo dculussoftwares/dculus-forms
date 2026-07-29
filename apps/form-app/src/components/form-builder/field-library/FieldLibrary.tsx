@@ -7,6 +7,7 @@ import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
+import { isTypingTarget } from '../../../utils/isTypingTarget';
 import {
   DraggableFieldType,
   getCategoriesConfig,
@@ -36,13 +37,6 @@ const groupByCategory = (
     },
     {} as Partial<Record<FieldTypeConfig['category'], FieldTypeConfig[]>>
   );
-
-const isTypingTarget = (target: EventTarget | null): boolean => {
-  const el = target as HTMLElement | null;
-  if (!el) return false;
-  const tag = el.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
-};
 
 interface FieldLibraryProps {
   /** "trigger": rail button + mega-panel popover (default mode).

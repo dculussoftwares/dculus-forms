@@ -4,6 +4,7 @@ import { FileText, GitBranch, Workflow, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, badgeVariants } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
+import { isTypingTarget } from '../../../utils/isTypingTarget';
 
 export type BuilderTab = 'content' | 'logic' | 'automations';
 
@@ -131,12 +132,17 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
   );
 };
 
-// Keyboard shortcuts component
+// Keyboard shortcuts component. Cmd/Ctrl+1|2|3 switch tabs (here); Cmd/Ctrl+K
+// toggles the AI drawer and Cmd/Ctrl+P the preview overlay (CollaborativeFormBuilder);
+// "/" opens the Field Library (FieldLibrary). All four no-op while the event
+// target is a text-entry surface (isTypingTarget) so they never hijack normal
+// typing in inputs, textareas, or the rich text editor.
 export const TabKeyboardShortcuts: React.FC<{
   onTabChange: (tab: BuilderTab) => void;
 }> = ({ onTabChange }) => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return;
       if (event.metaKey || event.ctrlKey) {
         switch (event.key) {
           case '1':

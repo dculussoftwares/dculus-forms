@@ -4,5 +4,20 @@
     "finish": "முடிவு",
     "formTooltip": "படிவத்தை முன்னோட்டமிடுங்கள்",
     "finishTooltip": "நன்றி பக்கத்தை முன்னோட்டமிடுங்கள்"
+  },
+  "viewportToggle": {
+    "desktop": "டெஸ்க்டாப்",
+    "desktopTooltip": "டெஸ்க்டாப் முன்னோட்டம்",
+    "mobile": "மொபைல்",
+    "mobileTooltip": "மொபைல் முன்னோட்டம்",
+    "mobileFrameCaption": "390 × 780 · iPhone 14"
+  },
+  "toasts": {
+    "submissionFailed": "சமர்ப்பிப்பு தோல்வியடைந்தது",
+    "genericError": "பிழை ஏற்பட்டது",
+    "previewSubmitted": {
+      "title": "முன்னோட்டம் சமர்ப்பிக்கப்பட்டது",
+      "description": "பதில் Preview குறிச்சொல்லுடன் சேமிக்கப்பட்டது"
+    }
   }
 }

@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
+import { useNavigate, useParams } from 'react-router';
+import { Zap } from 'lucide-react';
 import { FormField } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import { useTranslation } from '../../../hooks/useTranslation';
+import { getRulesForField } from '../../../utils/getRulesForField';
 import { getFieldTypeConfig, getCategoryColor } from '../tabs/PageBuilderFieldCard';
 
 interface RailFieldChipProps {
@@ -27,10 +31,19 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
   number,
   isSelected,
 }) => {
+  const { t } = useTranslation('journeyRail');
+  const navigate = useNavigate();
+  const { formId } = useParams<{ formId: string }>();
   const permissions = useFormPermissions();
   const canReorder = permissions.canReorderFields();
   const setSelection = useFormBuilderStore((state) => state.setSelection);
+  const conditions = useFormBuilderStore((state) => state.conditions);
   const { icon: Icon, category } = getFieldTypeConfig(field.type);
+
+  const ruleCount = useMemo(
+    () => getRulesForField(conditions, field.id).length,
+    [conditions, field.id]
+  );
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `rail-existing-field-${field.id}`,
@@ -44,10 +57,20 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
   });
 
   return (
-    <button
+    <div
       ref={setNodeRef}
-      {...(canReorder ? { ...attributes, ...listeners } : {})}
-      type="button"
+      {...(canReorder
+        ? { ...attributes, ...listeners }
+        : {
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setSelection({ kind: 'field', fieldId: field.id, pageId });
+              }
+            },
+          })}
+      role="button"
+      tabIndex={0}
       data-testid={`rail-field-${field.id}`}
       aria-pressed={isSelected}
       onClick={() => setSelection({ kind: 'field', fieldId: field.id, pageId })}
@@ -74,7 +97,23 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
       <span className="min-w-0 flex-1 truncate">
         {('label' in field && typeof field.label === 'string' && field.label) || field.type}
       </span>
-    </button>
+      {ruleCount > 0 && (
+        <button
+          type="button"
+          data-testid={`rail-field-logic-badge-${field.id}`}
+          title={t(ruleCount === 1 ? 'logicBadge.single' : 'logicBadge.multiple', {
+            values: { count: ruleCount },
+          })}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (formId) navigate(`/dashboard/form/${formId}/builder/logic?ruleField=${field.id}`);
+          }}
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+        >
+          <Zap className="h-3 w-3" />
+        </button>
+      )}
+    </div>
   );
 };
 

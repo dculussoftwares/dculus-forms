@@ -44,6 +44,10 @@ Given('I open two collaborative builder sessions on the conditions tab', async f
     baseURL: this.baseUrl,
     viewport: { width: 1280, height: 720 },
   });
+  // Suppress first-run coach marks (#234) — same seeding as the main context in hooks.ts.
+  await this.contextB.addInitScript(() => {
+    localStorage.setItem('dculus.coachmarks.dismissed', JSON.stringify(['rail', 'design', 'gear']));
+  });
   this.pageB = await this.contextB.newPage();
   attachDiagnostics(this, this.pageB, 'pageB');
   

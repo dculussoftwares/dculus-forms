@@ -3,6 +3,7 @@ import { Palette, Monitor, Smartphone, Play } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../hooks/useTranslation';
+import { CoachMark } from './coachmarks/CoachMark';
 
 export type CanvasDevice = 'desktop' | 'mobile';
 
@@ -35,16 +36,18 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
       data-testid="canvas-toolbar"
     >
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onOpenDesign}
-        className="h-8 px-3 text-xs"
-        data-testid="canvas-toolbar-design-button"
-      >
-        <Palette className="w-3.5 h-3.5 mr-1.5" />
-        {t('buttons.design')}
-      </Button>
+      <CoachMark id="design" side="bottom" align="start">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onOpenDesign}
+          className="h-8 px-3 text-xs"
+          data-testid="canvas-toolbar-design-button"
+        >
+          <Palette className="w-3.5 h-3.5 mr-1.5" />
+          {t('buttons.design')}
+        </Button>
+      </CoachMark>
 
       <span className="flex-1" />
 

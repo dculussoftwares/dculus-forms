@@ -4,5 +4,20 @@
     "finish": "Finish",
     "formTooltip": "Preview the form",
     "finishTooltip": "Preview the Thank You screen"
+  },
+  "viewportToggle": {
+    "desktop": "Desktop",
+    "desktopTooltip": "Desktop preview",
+    "mobile": "Mobile",
+    "mobileTooltip": "Mobile preview",
+    "mobileFrameCaption": "390 × 780 · iPhone 14"
+  },
+  "toasts": {
+    "submissionFailed": "Submission failed",
+    "genericError": "An error occurred",
+    "previewSubmitted": {
+      "title": "Preview submitted",
+      "description": "Response saved with a Preview tag"
+    }
   }
 }

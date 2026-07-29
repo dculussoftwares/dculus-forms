@@ -7,7 +7,7 @@
 import { When, Then } from '@cucumber/cucumber';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { CustomWorld } from '../support/world';
-import { dragOnto } from './helpers/common';
+import { dragOnto, selectFirstMentionOption } from './helpers/common';
 
 // A prefix-based CSS selector (`[data-testid^="rail-page-"]`) also matches every
 // nested testid that happens to share the prefix (rail-page-title-<n>,
@@ -229,6 +229,34 @@ When('I save the ending message', async function (this: CustomWorld) {
   await expect(this.page.getByTestId('ending-message-save')).toHaveCount(0, { timeout: 10_000 });
   // Give the Y.js/Hocuspocus flush a moment to land before a caller reloads —
   // same guard thank-you-settings.steps.ts uses after its own save.
+  await this.page.waitForTimeout(800);
+});
+
+/**
+ * Add a field mention to the Ending panel's message (@-mention picker, same
+ * RichTextEditor/mentionFields plumbing as the canvas's inline editor used to
+ * have) and save. Replaces thank-you-settings.steps.ts's old
+ * "I add a field mention to the thank you message" step, which drove the
+ * removed Layout tab's inline editor.
+ */
+When('I add a field mention to the ending message', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const editable = await endingContentEditable(this);
+
+  await editable.click({ clickCount: 3 });
+  await this.page.keyboard.press('Backspace');
+  await this.page.waitForTimeout(200);
+
+  await this.page.keyboard.type('Thank you ', { delay: 50 });
+  await this.page.keyboard.type('@', { delay: 50 });
+  await selectFirstMentionOption(this.page);
+  await this.page.keyboard.type(' for your submission!', { delay: 30 });
+  await this.page.waitForTimeout(500);
+
+  const saveButton = this.page.getByTestId('ending-message-save');
+  await expect(saveButton).toBeVisible({ timeout: 5_000 });
+  await saveButton.click();
+  await expect(this.page.getByTestId('ending-message-save')).toHaveCount(0, { timeout: 10_000 });
   await this.page.waitForTimeout(800);
 });
 

@@ -19,9 +19,12 @@
   "menu": {
     "formSettings": "படிவ அமைப்புகள்",
     "design": "வடிவமைப்பு",
-    "duplicateForm": "நகல் படிவம்"
+    "duplicateForm": "நகல் படிவம்",
+    "jsonDebug": "JSON பிழைத்திருத்தம்"
   },
   "tooltips": {
+    "back": "பின் செல்",
+    "clickToRename": "பெயர் மாற்ற கிளிக் செய்யவும்",
     "noEditPermission": "படிவத்தின் தலைப்பைத் திருத்த உங்களுக்கு அனுமதி இல்லை",
     "noSharePermission": "பகிர்வை நிர்வகிக்க இந்தப் படிவத்தை அணுக வேண்டும்",
     "noSavePermission": "மாற்றங்களைச் சேமிக்க உங்களுக்கு அனுமதி இல்லை",

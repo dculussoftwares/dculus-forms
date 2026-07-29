@@ -7,6 +7,7 @@ import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useConditionCycles } from '../../../hooks/useConditionCycles';
+import { getRulesForField } from '../../../utils/getRulesForField';
 import { ConditionRuleCard } from './ConditionRuleCard';
 import { ConditionRuleEditor } from './ConditionRuleEditor';
 import { fieldDisplayLabel } from './conditionFieldConfig';
@@ -49,11 +50,7 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
   );
   const filteredConditions = useMemo(() => {
     if (!filterFieldId) return conditions;
-    return conditions.filter(
-      (rule) =>
-        rule.terms.some((term) => term.fieldId === filterFieldId) ||
-        rule.actions.some((action) => 'fieldIds' in action && action.fieldIds.includes(filterFieldId))
-    );
+    return getRulesForField(conditions, filterFieldId);
   }, [conditions, filterFieldId]);
 
   const clearFieldFilter = () => {

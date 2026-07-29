@@ -2,7 +2,7 @@
  * Common helper functions for E2E tests
  */
 
-import type { Locator } from 'playwright';
+import type { Locator, Page } from 'playwright';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../../support/world';
 
@@ -219,4 +219,33 @@ export async function signInViaUi(world: CustomWorld, options?: { skipGoto?: boo
   await world.page.fill('input[name="email"]', email);
   await world.page.fill('input[name="password"]', password);
   await world.page.click('button[type="submit"]');
+}
+
+/**
+ * Select the first option from a Lexical @-mention picker that just opened
+ * (after typing "@" into a mention-enabled RichTextEditor). Tries several
+ * selectors since the Lexical mention plugin's floating menu markup isn't
+ * pinned to one role/class; falls back to Enter if no option is found via
+ * locator (e.g. it's already highlighted and keyboard-selectable).
+ */
+export async function selectFirstMentionOption(page: Page): Promise<void> {
+  await page.waitForTimeout(1000);
+
+  const candidates = [
+    page.locator('[role="listbox"] [role="option"]').first(),
+    page.locator('[role="menu"] [role="menuitem"]').first(),
+    page.locator('[role="option"]').first(),
+    page.locator('.mention-menu-item, .mention-option, [data-mention-option]').first(),
+  ];
+
+  for (const candidate of candidates) {
+    if (await candidate.isVisible({ timeout: 500 }).catch(() => false)) {
+      await candidate.click();
+      return;
+    }
+  }
+
+  // No mention picker found via locator — try keyboard selection as a last resort.
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(300);
 }

@@ -1,26 +1,27 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { FormLayout } from '@dculus/types';
-import { ScrollArea, Button } from '@dculus/ui';
+import { ScrollArea } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks';
 import FieldSettingsV2 from '../FieldSettingsV2';
-import { JSONPreview } from '../JSONPreview';
 import { IntroSettingsPanel } from '../panels/IntroSettingsPanel';
 import { EndingSettingsPanel } from '../panels/EndingSettingsPanel';
 import { PageSettingsPanel } from '../panels/PageSettingsPanel';
 import { FieldLogicSummaryRow } from '../panels/FieldLogicSummaryRow';
 
-import { GripHorizontal, Settings, Code } from 'lucide-react';
+import { GripHorizontal, Settings } from 'lucide-react';
 
 // =============================================================================
 // RightSidebar
 // =============================================================================
 
 /**
- * RightSidebar - Contextual settings panel driven by `selection.kind`, plus a
- * JSON debug view. intro/thankYou/page/field each get their own pane (see
+ * RightSidebar - Contextual settings panel driven by `selection.kind`.
+ * intro/thankYou/page/field each get their own pane (see
  * components/form-builder/panels/) — this component just routes between them.
+ * The JSON debug view that used to live here as a second tab moved to the
+ * header's dev-only ⋮ menu entry (#234) — see FormBuilderHeader.tsx.
  */
 export const RightSidebar: React.FC<{
   width: number;
@@ -28,9 +29,7 @@ export const RightSidebar: React.FC<{
 }> = ({ width, onWidthChange }) => {
   const { t } = useTranslation('pageBuilderTab');
   const permissions = useFormPermissions();
-  const [activeTab, setActiveTab] = useState<'properties' | 'json'>('properties');
   const [isResizing, setIsResizing] = useState(false);
-  const prevSelectionKeyRef = useRef<string | null>(null);
 
   const {
     selection,
@@ -41,7 +40,6 @@ export const RightSidebar: React.FC<{
     pages,
     layout,
     formId,
-    isShuffleEnabled,
     setSelectedField,
     updateLayout,
   } = useFormBuilderStore();
@@ -57,17 +55,6 @@ export const RightSidebar: React.FC<{
 
   const selectedPage =
     selection.kind === 'page' ? pages.find((page) => page.id === selection.pageId) || null : null;
-
-  // Auto-switch to properties whenever the selection itself changes (new field,
-  // new page, or a different pane like intro/thankYou) — but not on incidental
-  // re-renders that don't actually change what's selected.
-  const selectionKey = `${selection.kind}:${selection.pageId ?? ''}:${selection.fieldId ?? ''}`;
-  React.useEffect(() => {
-    if (selectionKey !== prevSelectionKeyRef.current) {
-      setActiveTab('properties');
-    }
-    prevSelectionKeyRef.current = selectionKey;
-  }, [selectionKey]);
 
   const handleUpdate = (updates: Record<string, unknown>) => {
     if (selectedFieldId) {
@@ -200,42 +187,7 @@ export const RightSidebar: React.FC<{
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      {/* Typeform-style underline tab row */}
-      <div className="flex" style={{ borderBottom: '1px solid var(--tf-border)' }}>
-        {([
-          { id: 'properties' as const, icon: Settings, label: t('tabs.field') },
-          { id: 'json' as const, icon: Code, label: t('tabs.json') },
-        ] as const).map(({ id, icon: Icon, label }) => (
-          <Button
-            key={id}
-            variant="ghost"
-            onClick={() => setActiveTab(id)}
-            className="relative flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium transition-colors h-auto rounded-none"
-            style={{ color: activeTab === id ? 'var(--tf-dark)' : 'var(--tf-muted)' }}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
-            {activeTab === id && (
-              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full" style={{ backgroundColor: 'var(--tf-dark)' }} />
-            )}
-          </Button>
-        ))}
-      </div>
-
-      {activeTab === 'properties' ? (
-        renderPropertiesPane()
-      ) : (
-        <ScrollArea className="flex-1">
-          <div className="h-full">
-            <JSONPreview
-              pages={pages}
-              layout={layout}
-              isShuffleEnabled={isShuffleEnabled}
-            />
-          </div>
-        </ScrollArea>
-      )}
+      {renderPropertiesPane()}
     </div>
   );
 };

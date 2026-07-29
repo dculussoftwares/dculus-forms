@@ -63,8 +63,8 @@ Feature: Journey rail — Intro / Pages / Thank You selection (Content tab)
   # Contextual right panels (ticket #229): selecting Intro/Thank You/a page in
   # the rail now drives a real settings panel, not just the canvas — replacing
   # the old Design tab's LayoutSidebar for CTA text and background editing
-  # (see thank-you-settings.feature's @skip-ci scenarios for the Layout tab
-  # equivalents these retire).
+  # (see thank-you-settings.feature for the Ending panel's remaining coverage:
+  # custom message → public viewer, the preview overlay, and mention substitution).
 
   @journey-rail-intro-cta
   Scenario: Editing the Intro panel's button text updates the CTA text in the canvas

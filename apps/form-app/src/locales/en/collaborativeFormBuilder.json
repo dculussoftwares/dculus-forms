@@ -13,6 +13,26 @@
   },
   "collaboration": {
     "syncLostBanner": "Real-time sync lost. Please reload to reconnect.",
-    "syncLostReload": "Reload"
+    "syncLostReload": "Reload",
+    "dismissBanner": "Dismiss"
+  },
+  "mobileNotice": {
+    "title": "Best on a larger screen",
+    "description": "The form builder uses drag-and-drop and works best on a desktop or tablet.",
+    "goToDashboard": "Go to Dashboard"
+  },
+  "dragAnnouncements": {
+    "unnamedField": "Field",
+    "pickedUpField": "Picked up {{fieldLabel}}. Use arrow keys to move.",
+    "pickedUpPage": "Picked up page {{pageTitle}}. Use arrow keys to reorder.",
+    "pickedUpItem": "Item picked up. Use arrow keys to move.",
+    "overField": "Over {{fieldLabel}}",
+    "overPage": "Over page",
+    "droppedUnchanged": "Item dropped. Position unchanged.",
+    "fieldDropped": "{{fieldLabel}} dropped successfully.",
+    "pageMoved": "Page {{pageTitle}} moved successfully.",
+    "itemDropped": "Item dropped successfully.",
+    "fieldMoveCancelled": "{{fieldLabel}} move cancelled.",
+    "moveCancelled": "Movement cancelled."
   }
 }
