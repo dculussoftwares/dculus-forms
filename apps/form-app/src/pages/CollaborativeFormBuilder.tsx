@@ -3,12 +3,11 @@ import { useParams, useNavigate, useLocation, useSearchParams } from 'react-rout
 import { useQuery, useMutation } from '@apollo/client/react';
 import { z } from 'zod';
 import { useAuthContext } from '../contexts/AuthContext';
-import { AlertTriangle, Workflow, X } from 'lucide-react';
+import { AlertTriangle, X } from 'lucide-react';
 import {
   FormPermissionProvider,
   PermissionLevel,
 } from '../contexts/FormPermissionContext';
-import { Button, EmptyState } from '@dculus/ui';
 import { useTranslation } from '../hooks/useTranslation';
 import {
   DndContext,
@@ -36,6 +35,10 @@ import {
 } from '../components/form-builder/tabs';
 import { ConditionsTab } from '../components/form-builder/conditions/ConditionsTab';
 import { PreviewOverlay } from '../components/form-builder/PreviewOverlay';
+import { TooltipProvider } from '@dculus/ui';
+import Automations from './Automations';
+import AutomationBuilder from './AutomationBuilder';
+import AutomationRuns from './AutomationRuns';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { useCollisionDetection } from '../hooks/useCollisionDetection';
 import { useFieldCreation } from '../hooks/useFieldCreation';
@@ -63,7 +66,11 @@ const OLD_TAB_REDIRECTS: Record<string, { tab: BuilderTab; params?: Record<strin
 const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   className,
 }) => {
-  const { formId, tab } = useParams<{ formId: string; tab?: string }>();
+  const { formId, tab, automationId } = useParams<{
+    formId: string;
+    tab?: string;
+    automationId?: string;
+  }>();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -81,10 +88,21 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   );
 
   const activeTab: BuilderTab = useMemo(() => {
+    // /builder/automations/:automationId(/runs) routes carry no `:tab` segment of their
+    // own (the "automations" path segment is literal there) — an automationId means
+    // we're on one of those canonical nested routes. See ticket #233.
+    if (automationId) return 'automations';
     return tab && VALID_TABS.includes(tab as BuilderTab)
       ? (tab as BuilderTab)
       : DEFAULT_TAB;
-  }, [tab]);
+  }, [tab, automationId]);
+
+  // Distinguishes /builder/automations/:automationId (canvas builder) from
+  // /builder/automations/:automationId/runs — both match the same `automationId` param.
+  const isAutomationRunsView = useMemo(
+    () => !!automationId && location.pathname.endsWith('/runs'),
+    [automationId, location.pathname]
+  );
 
   const {
     data: formData,
@@ -149,6 +167,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   // other query params already on the URL. See epic #226 / ticket #227.
   const redirectLegacyTab = useCallback(() => {
     if (!formId) return;
+    if (automationId) return; // canonical nested automations route (#233) — nothing to redirect
     if (tab && VALID_TABS.includes(tab as BuilderTab)) return;
 
     const redirect = tab ? OLD_TAB_REDIRECTS[tab] : undefined;
@@ -167,7 +186,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       replace: true,
       state: location.state,
     });
-  }, [formId, tab, navigate, location.search, location.state]);
+  }, [formId, tab, automationId, navigate, location.search, location.state]);
 
   // Open the Preview / Settings overlays from a `?preview=1` / `?settings=1` deep link
   // (old `/builder/preview` and `/builder/settings` redirect here). See ticket #227.
@@ -411,23 +430,18 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           setIsAIDrawerOpen(true);
         }} />;
       case 'automations':
-        // Real embed lands in ticket #233 — for now, link out to the existing automations page.
+        // List → canvas builder → runs, all in-tab. See epic #226, ticket #233.
+        // These views' Tooltips (Test button, etc.) relied on the TooltipProvider that
+        // MainLayout's SidebarProvider used to supply ambiently on the old standalone
+        // routes — re-provide it here now that they're embedded without MainLayout.
         return (
-          <div className="flex items-center justify-center h-full p-8">
-            <EmptyState
-              icon={<Workflow className="w-6 h-6 text-muted-foreground" />}
-              title={t('automationsPlaceholder.title')}
-              description={t('automationsPlaceholder.description')}
-              action={
-                <Button
-                  onClick={() => navigate(`/dashboard/form/${formId}/automations`)}
-                  data-testid="automations-placeholder-cta"
-                >
-                  {t('automationsPlaceholder.cta')}
-                </Button>
-              }
-            />
-          </div>
+          <TooltipProvider>
+            {automationId ? (
+              isAutomationRunsView ? <AutomationRuns /> : <AutomationBuilder />
+            ) : (
+              <Automations />
+            )}
+          </TooltipProvider>
         );
       default:
         return (
@@ -438,7 +452,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           />
         );
     }
-  }, [activeTab, formId, isAIDrawerOpen, setIsAIDrawerOpen, navigate, t]);
+  }, [activeTab, automationId, isAutomationRunsView, isAIDrawerOpen, setIsAIDrawerOpen]);
 
   if (!formId) {
     return (

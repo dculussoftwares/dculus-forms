@@ -22,7 +22,7 @@ export function useTestAutomation(formId: string, automationId: string) {
       if (onStarted && newRun?.id) {
         onStarted(newRun.id);
       } else {
-        navigate(`/dashboard/form/${formId}/automations/${automationId}/runs${newRun?.id ? `?runId=${newRun.id}` : ''}`);
+        navigate(`/dashboard/form/${formId}/builder/automations/${automationId}/runs${newRun?.id ? `?runId=${newRun.id}` : ''}`);
       }
     } catch (error: any) {
       toastError(t('runs.toasts.testErrorTitle'), error.message);

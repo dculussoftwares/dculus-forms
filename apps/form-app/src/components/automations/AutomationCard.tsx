@@ -88,8 +88,8 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
   const [deleteAutomation] = useMutation(DELETE_AUTOMATION);
   const { runTest, isTesting } = useTestAutomation(automation.formId, automation.id);
 
-  const openBuilder = () => navigate(`/dashboard/form/${automation.formId}/automations/${automation.id}`);
-  const openRuns = () => navigate(`/dashboard/form/${automation.formId}/automations/${automation.id}/runs`);
+  const openBuilder = () => navigate(`/dashboard/form/${automation.formId}/builder/automations/${automation.id}`);
+  const openRuns = () => navigate(`/dashboard/form/${automation.formId}/builder/automations/${automation.id}/runs`);
 
   const handleTest = (e: React.MouseEvent) => {
     e.stopPropagation();

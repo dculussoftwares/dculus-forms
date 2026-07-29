@@ -14,10 +14,5 @@
   "collaboration": {
     "syncLostBanner": "Real-time sync lost. Please reload to reconnect.",
     "syncLostReload": "Reload"
-  },
-  "automationsPlaceholder": {
-    "title": "Automations live on their own page — for now",
-    "description": "Set up webhooks, emails, and quiz grading that run after a response is submitted.",
-    "cta": "Open Automations"
   }
 }

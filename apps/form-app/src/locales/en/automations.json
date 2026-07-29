@@ -1,14 +1,4 @@
 {
-  "layout": {
-    "title": "Automations",
-    "dynamicTitle": "{{formTitle}} - Automations",
-    "breadcrumbs": {
-      "dashboard": "Dashboard",
-      "formDashboard": "Form Dashboard",
-      "automations": "Automations",
-      "builder": "Builder"
-    }
-  },
   "errors": {
     "formNotFound": {
       "title": "Form Not Found",
@@ -95,7 +85,6 @@
     "deleteErrorTitle": "Couldn't delete automation"
   },
   "builder": {
-    "title": "Automation builder",
     "comingSoon": "The visual builder is coming soon. You'll be able to design trigger → rules → actions flows here.",
     "backButton": "Back to automations",
     "readOnlyNotice": "You have view-only access to this automation. Editing and activation are disabled.",
@@ -238,8 +227,6 @@
   },
   "runs": {
     "title": "Run history",
-    "dynamicTitle": "{{name}} - Runs",
-    "breadcrumb": "Runs",
     "backButton": "Back to automation",
     "empty": {
       "title": "No runs yet",
