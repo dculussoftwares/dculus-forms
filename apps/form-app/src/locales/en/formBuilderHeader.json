@@ -19,9 +19,12 @@
   "menu": {
     "formSettings": "Form Settings",
     "design": "Design",
-    "duplicateForm": "Duplicate Form"
+    "duplicateForm": "Duplicate Form",
+    "jsonDebug": "JSON debug"
   },
   "tooltips": {
+    "back": "Back",
+    "clickToRename": "Click to rename",
     "noEditPermission": "You don't have permission to edit the form title",
     "noSharePermission": "You need access to this form to manage sharing",
     "noSavePermission": "You don't have permission to save changes",

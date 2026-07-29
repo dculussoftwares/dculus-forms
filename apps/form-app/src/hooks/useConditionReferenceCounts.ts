@@ -10,6 +10,11 @@ export interface ConditionReferenceCounts {
  * Reverse-index selector — for each field/page, how many distinct rules
  * reference it (as a term trigger or an action target). Powers the Build tab's
  * "N rules apply here" chips that link through to Logic. See issue #168.
+ *
+ * The per-field detection semantics here match `ruleReferencesField` in
+ * `utils/getRulesForField.ts` (term trigger OR fieldIds action target) — this
+ * hook just batches that check into a single-pass reverse index instead of
+ * re-scanning `conditions` once per field.
  */
 export const useConditionReferenceCounts = (
   conditions: ConditionalRule[]

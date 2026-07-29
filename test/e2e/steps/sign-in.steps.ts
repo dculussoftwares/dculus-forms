@@ -116,14 +116,24 @@ When('I click the JSON tab in the sidebar', async function (this: CustomWorld) {
     throw new Error('Page is not initialized');
   }
 
-  // Find and click the JSON tab button in the PagesSidebar
-  // The button has the text "JSON" and Code icon
-  const jsonTabButton = this.page.locator('button:has-text("JSON")').first();
-  await expect(jsonTabButton).toBeVisible({ timeout: 10_000 });
-  await jsonTabButton.click();
+  // The JSON tab moved from the right panel into a dev-only header ⋮ menu
+  // entry opening a Dialog (#234). It's hidden in production builds unless
+  // `?debug=1` is set — append it if the current URL doesn't already have it
+  // (CI serves form-app as a production `vite preview` build, so DEV-mode
+  // auto-visibility doesn't apply there; local `pnpm dev` already has it via DEV).
+  const currentUrl = new URL(this.page.url());
+  if (currentUrl.searchParams.get('debug') !== '1') {
+    currentUrl.searchParams.set('debug', '1');
+    await this.page.goto(currentUrl.toString());
+    await expect(this.page.getByTestId('collaborative-form-builder')).toBeVisible({ timeout: 30_000 });
+  }
 
-  // Wait for the tab to switch
-  await this.page.waitForTimeout(500);
+  await this.page.getByTestId('header-more-menu-trigger').click();
+  const jsonDebugMenuItem = this.page.getByTestId('header-json-debug-menu-item');
+  await expect(jsonDebugMenuItem).toBeVisible({ timeout: 10_000 });
+  await jsonDebugMenuItem.click();
+
+  await expect(this.page.getByTestId('json-debug-dialog')).toBeVisible({ timeout: 10_000 });
 });
 
 Then('I should see the JSON schema preview', async function (this: CustomWorld) {

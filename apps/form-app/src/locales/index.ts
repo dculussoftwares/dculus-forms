@@ -56,6 +56,8 @@ import enDraggablePageItem from './en/draggablePageItem.json';
 import taDraggablePageItem from './ta/draggablePageItem.json';
 import enJourneyRail from './en/journeyRail.json';
 import taJourneyRail from './ta/journeyRail.json';
+import enCoachMarks from './en/coachMarks.json';
+import taCoachMarks from './ta/coachMarks.json';
 import enFieldLibrary from './en/fieldLibrary.json';
 import taFieldLibrary from './ta/fieldLibrary.json';
 import enPagesSidebar from './en/pagesSidebar.json';
@@ -294,6 +296,7 @@ const enTranslations = {
   fieldTypesPanel: enFieldTypesPanel,
   draggablePageItem: enDraggablePageItem,
   journeyRail: enJourneyRail,
+  coachMarks: enCoachMarks,
   fieldLibrary: enFieldLibrary,
   pagesSidebar: enPagesSidebar,
   formBuilderHeader: enFormBuilderHeader,
@@ -430,6 +433,7 @@ const taTranslations = {
   fieldTypesPanel: taFieldTypesPanel,
   draggablePageItem: taDraggablePageItem,
   journeyRail: taJourneyRail,
+  coachMarks: taCoachMarks,
   fieldLibrary: taFieldLibrary,
   pagesSidebar: taPagesSidebar,
   formBuilderHeader: taFormBuilderHeader,

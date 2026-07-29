@@ -55,19 +55,19 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
           variables: { input: { formId, data, isPreview: true } },
         });
         if (result.error) {
-          toastError('Submission failed', result.error.message);
+          toastError(t('toasts.submissionFailed'), result.error.message);
           return;
         }
-        toastSuccess('Preview submitted', 'Response saved with a Preview tag');
+        toastSuccess(t('toasts.previewSubmitted.title'), t('toasts.previewSubmitted.description'));
         setSubmitCount((c) => c + 1);
       } catch (err: unknown) {
         toastError(
-          'Submission failed',
-          err instanceof Error ? err.message : 'An error occurred'
+          t('toasts.submissionFailed'),
+          err instanceof Error ? err.message : t('toasts.genericError')
         );
       }
     },
-    [formId, submitResponse]
+    [formId, submitResponse, t]
   );
 
   const content = (
@@ -128,7 +128,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
         >
           <button
             onClick={() => setPreviewMode('desktop')}
-            title="Desktop preview"
+            title={t('viewportToggle.desktopTooltip')}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
             style={{
               background: previewMode === 'desktop' ? 'var(--tf-faint)' : 'transparent',
@@ -137,11 +137,11 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
             }}
           >
             <Monitor className="h-3.5 w-3.5" />
-            Desktop
+            {t('viewportToggle.desktop')}
           </button>
           <button
             onClick={() => setPreviewMode('mobile')}
-            title="Mobile preview"
+            title={t('viewportToggle.mobileTooltip')}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
             style={{
               background: previewMode === 'mobile' ? 'var(--tf-faint)' : 'transparent',
@@ -149,7 +149,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
             }}
           >
             <Smartphone className="h-3.5 w-3.5" />
-            Mobile
+            {t('viewportToggle.mobile')}
           </button>
         </div>
       </div>
@@ -189,7 +189,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
             </div>
           </div>
 
-          <p className="mt-4 text-xs text-muted-foreground">390 × 780 · iPhone 14</p>
+          <p className="mt-4 text-xs text-muted-foreground">{t('viewportToggle.mobileFrameCaption')}</p>
         </div>
       )}
     </div>

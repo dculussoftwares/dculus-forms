@@ -18,5 +18,9 @@
   "actions": {
     "duplicatePage": "பக்கத்தை நகலெடு",
     "deletePage": "பக்கத்தை நீக்கு"
+  },
+  "logicBadge": {
+    "single": "{{count}} லாஜிக் விதி",
+    "multiple": "{{count}} லாஜிக் விதிகள்"
   }
 }

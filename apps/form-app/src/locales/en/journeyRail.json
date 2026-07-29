@@ -18,5 +18,9 @@
   "actions": {
     "duplicatePage": "Duplicate page",
     "deletePage": "Delete page"
+  },
+  "logicBadge": {
+    "single": "{{count}} logic rule",
+    "multiple": "{{count}} logic rules"
   }
 }

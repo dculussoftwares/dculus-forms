@@ -46,6 +46,7 @@ import { useConditionCycles } from '../hooks/useConditionCycles';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { UPDATE_FORM } from '../graphql/mutations';
 import AIEditDrawer from '../components/form-builder/AIEditDrawer';
+import { isTypingTarget } from '../utils/isTypingTarget';
 import { AskAIPill } from '../components/form-builder/AskAIPill';
 import { getFieldLabel } from '../components/form-builder/utils';
 import type { AskAIBuilderContext } from '../lib/askAIContext';
@@ -392,6 +393,18 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Layered Esc: preview overlay (Radix Dialog) takes priority over the AI
+      // drawer — never close both on the same keystroke. The Design drawer and
+      // Field Library popover are Radix Sheet/Popover instances, which already
+      // dismiss the topmost layer on Escape on their own via Radix's shared
+      // dismissable-layer stack, so they need no handling here.
+      if (e.key === 'Escape' && !isPreviewOpen && isAIDrawerOpen) {
+        setIsAIDrawerOpen(false);
+        return;
+      }
+
+      if (isTypingTarget(e.target)) return;
+
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         toggleAIDrawer();
@@ -410,7 +423,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isPreviewOpen, handleClosePreview, toggleAIDrawer]);
+  }, [isPreviewOpen, isAIDrawerOpen, handleClosePreview, toggleAIDrawer]);
 
   // Auto-open the AI drawer when navigated here with an aiMessage query param
   // (e.g. from "Fix with AI" in FieldAnalyticsViewer). Gated by canEdit via
@@ -557,24 +570,25 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               const item = active.data.current;
               if (item?.type === 'field' && item?.field) {
                 const fieldLabel =
-                  'label' in item.field ? item.field.label : 'Field';
-                return `Picked up ${fieldLabel}. Use arrow keys to move.`;
+                  'label' in item.field ? item.field.label : t('dragAnnouncements.unnamedField');
+                return t('dragAnnouncements.pickedUpField', { values: { fieldLabel } });
               }
               if (item?.type === 'page-item' && item?.page) {
-                return `Picked up page ${item.page.title}. Use arrow keys to reorder.`;
+                const pageTitle = item.page.title || t('dragAnnouncements.unnamedPage');
+                return t('dragAnnouncements.pickedUpPage', { values: { pageTitle } });
               }
-              return 'Item picked up. Use arrow keys to move.';
+              return t('dragAnnouncements.pickedUpItem');
             },
             onDragOver({ over }) {
               if (over) {
                 const overData = over.data.current;
                 if (overData?.type === 'field' && overData?.field) {
                   const overLabel =
-                    'label' in overData.field ? overData.field.label : 'field';
-                  return `Over ${overLabel}`;
+                    'label' in overData.field ? overData.field.label : t('dragAnnouncements.unnamedField');
+                  return t('dragAnnouncements.overField', { values: { fieldLabel: overLabel } });
                 }
                 if (overData?.type === 'page') {
-                  return `Over page`;
+                  return t('dragAnnouncements.overPage');
                 }
               }
               return undefined;
@@ -582,26 +596,27 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
             onDragEnd({ active, over }) {
               const item = active.data.current;
               if (!over) {
-                return 'Item dropped. Position unchanged.';
+                return t('dragAnnouncements.droppedUnchanged');
               }
               if (item?.type === 'field' && item?.field) {
                 const fieldLabel =
-                  'label' in item.field ? item.field.label : 'Field';
-                return `${fieldLabel} dropped successfully.`;
+                  'label' in item.field ? item.field.label : t('dragAnnouncements.unnamedField');
+                return t('dragAnnouncements.fieldDropped', { values: { fieldLabel } });
               }
               if (item?.type === 'page-item' && item?.page) {
-                return `Page ${item.page.title} moved successfully.`;
+                const pageTitle = item.page.title || t('dragAnnouncements.unnamedPage');
+                return t('dragAnnouncements.pageMoved', { values: { pageTitle } });
               }
-              return 'Item dropped successfully.';
+              return t('dragAnnouncements.itemDropped');
             },
             onDragCancel({ active }) {
               const item = active.data.current;
               if (item?.type === 'field' && item?.field) {
                 const fieldLabel =
-                  'label' in item.field ? item.field.label : 'Field';
-                return `${fieldLabel} move cancelled.`;
+                  'label' in item.field ? item.field.label : t('dragAnnouncements.unnamedField');
+                return t('dragAnnouncements.fieldMoveCancelled', { values: { fieldLabel } });
               }
-              return 'Movement cancelled.';
+              return t('dragAnnouncements.moveCancelled');
             },
           },
         }}
@@ -618,15 +633,15 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                   d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-primary mb-2">Best on a larger screen</h2>
+            <h2 className="text-lg font-semibold text-primary mb-2">{t('mobileNotice.title')}</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-              The form builder uses drag-and-drop and works best on a desktop or tablet.
+              {t('mobileNotice.description')}
             </p>
             <button
               onClick={() => navigate('/dashboard')}
               className="h-9 px-4 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
-              Go to Dashboard
+              {t('mobileNotice.goToDashboard')}
             </button>
           </div>
           <div className="flex flex-col h-screen">
@@ -670,7 +685,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                 <button
                   onClick={() => setIsBannerDismissed(true)}
                   className="ml-2 text-orange-600 hover:text-orange-800"
-                  aria-label="Dismiss"
+                  aria-label={t('collaboration.dismissBanner')}
                 >
                   <X className="h-4 w-4" />
                 </button>

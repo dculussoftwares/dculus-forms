@@ -26,6 +26,17 @@ Before(async function (this: CustomWorld) {
     storageState: hasStoredAuthState() ? STORAGE_STATE_PATH : undefined,
     viewport: { width: 1280, height: 720 },
   });
+
+  // Pre-dismiss the builder's first-run coach marks (rail/Design/gear, #234) so
+  // they never pop up mid-scenario and steal focus/clicks from the real UI
+  // under test. Coach marks are localStorage-flagged one-time callouts —
+  // seeding the "already dismissed" state before any page script runs is the
+  // most reliable way to suppress them, consistent with how the rest of the
+  // builder already persists one-time UI state to localStorage.
+  await this.context.addInitScript(() => {
+    localStorage.setItem('dculus.coachmarks.dismissed', JSON.stringify(['rail', 'design', 'gear']));
+  });
+
   this.page = await this.context.newPage();
 
   this.consoleLogs = [];

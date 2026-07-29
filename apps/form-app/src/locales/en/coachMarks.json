@@ -1,0 +1,15 @@
+{
+  "rail": {
+    "title": "Your form, start to finish",
+    "description": "Intro, pages, and Thank You all live in this rail now — click any card to edit it."
+  },
+  "design": {
+    "title": "Design moved here",
+    "description": "Theme, colors, and background now live in this Design drawer instead of a separate tab."
+  },
+  "gear": {
+    "title": "Settings moved here",
+    "description": "Form settings now open from this gear icon instead of a tab."
+  },
+  "gotIt": "Got it"
+}
