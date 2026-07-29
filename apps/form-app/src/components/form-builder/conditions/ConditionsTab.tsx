@@ -36,8 +36,13 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
 
   const circularRuleIds = useConditionCycles(conditions, pages);
 
-  // Deep-link filter from the field logic-summary row: /builder/logic?field=<id>
-  const filterFieldId = searchParams.get('field');
+  // Deep-link filter from the field logic-summary row: /builder/logic?ruleField=<id>.
+  // Deliberately NOT `field` — the Content tab's own selection URL sync
+  // (useBuilderSelectionUrlSync) already writes `?screen=page:<id>&field=<fieldId>`,
+  // and TabNavigation preserves location.search across tab switches. Reusing
+  // `field` here would silently filter the rule list for anyone who merely had a
+  // field selected in Content and then clicked the Logic tab.
+  const filterFieldId = searchParams.get('ruleField');
   const filterField = useMemo(
     () => (filterFieldId ? pages.flatMap((page) => page.fields).find((f) => f.id === filterFieldId) : undefined),
     [pages, filterFieldId]
@@ -53,7 +58,7 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
 
   const clearFieldFilter = () => {
     const next = new URLSearchParams(searchParams);
-    next.delete('field');
+    next.delete('ruleField');
     setSearchParams(next, { replace: true });
   };
 

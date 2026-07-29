@@ -51,17 +51,27 @@ export const EndingSettingsPanel: React.FC<EndingSettingsPanelProps> = ({
   // edit once the user has actually interacted with the editor surface —
   // otherwise simply selecting Ending would show a phantom Save/Cancel pair.
   const userInteractedRef = useRef(false);
+  // The last `content` value this panel has already accounted for — either by
+  // syncing from it, or by saving it (set proactively in handleSave, before the
+  // store echoes it back). Deliberately NOT compared against `tempContent`:
+  // the editor's own round-trip re-serialization makes tempContent differ from
+  // content on essentially every mount, so gating the sync effect on that
+  // comparison free-runs into an infinite remount loop instead of settling.
+  const lastAccountedContentRef = useRef(content);
 
   const mentionFields = useMemo(() => buildMentionFields(pages), [pages]);
 
   // Pick up collaborator edits (or the initial load) as long as this panel has
-  // no pending local edit of its own — same guard ThankYouScreen uses.
+  // no pending local edit of its own — same guard ThankYouScreen uses. Skip when
+  // `content` is a value we've already accounted for (e.g. our own save echoing
+  // back): nothing to sync, and remounting the editor here would drop its
+  // focus/cursor for no visible change.
   useEffect(() => {
-    if (!hasUnsavedChanges) {
-      setTempContent(content);
-      setEditorKey((prev) => prev + 1);
-      userInteractedRef.current = false;
-    }
+    if (hasUnsavedChanges || content === lastAccountedContentRef.current) return;
+    lastAccountedContentRef.current = content;
+    setTempContent(content);
+    setEditorKey((prev) => prev + 1);
+    userInteractedRef.current = false;
   }, [content, hasUnsavedChanges]);
 
   const handleChange = (next: string) => {
@@ -72,11 +82,13 @@ export const EndingSettingsPanel: React.FC<EndingSettingsPanelProps> = ({
   };
 
   const handleSave = () => {
+    lastAccountedContentRef.current = tempContent;
     onLayoutUpdate({ thankYouContent: tempContent });
     setHasUnsavedChanges(false);
   };
 
   const handleCancel = () => {
+    lastAccountedContentRef.current = content;
     setTempContent(content);
     setHasUnsavedChanges(false);
     setEditorKey((prev) => prev + 1);

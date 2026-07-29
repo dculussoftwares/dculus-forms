@@ -200,11 +200,11 @@ Feature: Conditional Logic (show/hide fields and pages)
     Then I should see the field logic-summary row with count "1"
     When I click the field logic-summary row
     Then the builder URL should contain "builder/logic"
-    And the builder URL should contain "field=cond-bonus"
+    And the builder URL should contain "ruleField=cond-bonus"
     And I should see the condition field filter chip for "Bonus Field"
     When I dismiss the condition field filter chip
     Then I should not see the condition field filter chip
-    And the builder URL should not contain "field="
+    And the builder URL should not contain "ruleField="
 
   @builder-ux
   Scenario: Preview opens to the page last selected in Build (#175)

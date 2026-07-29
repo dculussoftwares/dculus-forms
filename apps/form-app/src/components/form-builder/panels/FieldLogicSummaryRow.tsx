@@ -12,7 +12,9 @@ interface FieldLogicSummaryRowProps {
 /**
  * "N logic rules use this field →" row shown beneath FieldSettingsV2. Deep
  * links into the Logic tab pre-filtered to this field (ConditionsTab reads
- * `?field=`). Hidden entirely when the field has no referencing rules.
+ * `?ruleField=` — deliberately distinct from the Content tab's own `field`
+ * selection param, which TabNavigation preserves across tab switches).
+ * Hidden entirely when the field has no referencing rules.
  */
 export const FieldLogicSummaryRow: React.FC<FieldLogicSummaryRowProps> = ({ fieldId }) => {
   const { t } = useTranslation('pageBuilderTab');
@@ -28,7 +30,7 @@ export const FieldLogicSummaryRow: React.FC<FieldLogicSummaryRowProps> = ({ fiel
     <div className="border-t border-[var(--tf-border-medium)] dark:border-gray-700 p-4">
       <button
         type="button"
-        onClick={() => formId && navigate(`/dashboard/form/${formId}/builder/logic?field=${fieldId}`)}
+        onClick={() => formId && navigate(`/dashboard/form/${formId}/builder/logic?ruleField=${fieldId}`)}
         data-testid="field-logic-summary"
         className="flex w-full items-center gap-2 rounded-lg border border-[var(--tf-border-medium)] dark:border-gray-700 px-3 py-2 text-xs font-medium text-foreground dark:text-gray-300 hover:border-[var(--tf-border-strong)] hover:bg-[var(--tf-faint)] transition-colors"
       >

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Search } from 'lucide-react';
 import { FormLayout, LayoutCode } from '@dculus/types';
 import {
@@ -48,6 +48,19 @@ export const IntroSettingsPanel: React.FC<IntroSettingsPanelProps> = ({
   const [isPixabayModalOpen, setIsPixabayModalOpen] = useState(false);
   const [isPexelsModalOpen, setIsPexelsModalOpen] = useState(false);
   const { t } = useTranslation('introSettings');
+
+  // Resync the gallery's highlighted key when the applied background changes —
+  // from a collaborator, or from this panel's own Apply/Pexels/Pixabay actions —
+  // but only when there's no pending local gallery pick still awaiting Apply
+  // (i.e. selectedImageKey already matches one of the applied keys, or is unset).
+  useEffect(() => {
+    setSelectedImageKey((current) => {
+      if (!current || current === layout.backgroundImageKey || current === layout.backgroundVideoKey) {
+        return layout.backgroundImageKey || layout.backgroundVideoKey || null;
+      }
+      return current;
+    });
+  }, [layout.backgroundImageKey, layout.backgroundVideoKey]);
 
   const currentLayoutCode = layout?.code || 'L1';
 
