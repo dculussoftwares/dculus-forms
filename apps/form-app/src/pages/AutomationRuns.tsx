@@ -137,7 +137,7 @@ const RunsContent: React.FC<{
 
       {loading && runs.length === 0 ? (
         <div className="flex justify-center items-center py-16">
-          <LoadingSpinner />
+          <LoadingSpinner fullScreen={false} />
         </div>
       ) : runs.length === 0 ? (
         <EmptyState
@@ -273,7 +273,7 @@ const AutomationRuns: React.FC = () => {
   if (formLoading || automationLoading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <LoadingSpinner />
+        <LoadingSpinner fullScreen={false} />
       </div>
     );
   }

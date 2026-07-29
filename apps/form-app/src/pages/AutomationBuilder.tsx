@@ -327,7 +327,7 @@ const AutomationBuilder: React.FC = () => {
   if (formLoading || automationLoading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <LoadingSpinner />
+        <LoadingSpinner fullScreen={false} />
       </div>
     );
   }

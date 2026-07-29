@@ -93,7 +93,7 @@ const Automations: React.FC = () => {
   if (formLoading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <LoadingSpinner />
+        <LoadingSpinner fullScreen={false} />
       </div>
     );
   }
@@ -120,7 +120,7 @@ const Automations: React.FC = () => {
       <FormPermissionProvider userPermission={userPermission}>
         {automationsLoading ? (
           <div className="flex justify-center items-center py-16">
-            <LoadingSpinner />
+            <LoadingSpinner fullScreen={false} />
           </div>
         ) : (
           <AutomationsContent
