@@ -30,7 +30,6 @@ import { JourneyRail } from '../rail/JourneyRail';
 import { FieldCard } from './PageBuilderFieldCard';
 import { FormArea } from './PageBuilderFormArea';
 import { RightSidebar } from './PageBuilderSidebar';
-import { AIFloatingButton } from '../AIFloatingButton.js';
 import { CanvasToolbar, type CanvasDevice } from '../CanvasToolbar';
 import { DesignDrawer } from '../design/DesignDrawer';
 import { MOBILE_CANVAS_CSS } from '../shared/mobileCanvasStyles';
@@ -40,8 +39,6 @@ import { MOBILE_CANVAS_CSS } from '../shared/mobileCanvasStyles';
 // =============================================================================
 
 interface PageBuilderTabProps {
-  onAskAI?: () => void;
-  isAIOpen?: boolean;
   /** Opens the full-screen PreviewOverlay — lifted from CollaborativeFormBuilder
    * so the ▶ Preview button can live in the canvas toolbar instead of the header. */
   onOpenPreview?: () => void;
@@ -51,8 +48,6 @@ interface PageBuilderTabProps {
  * PageBuilderTab - Reimplemented page builder with stable drag-and-drop
  */
 export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
-  onAskAI,
-  isAIOpen = false,
   onOpenPreview,
 }) => {
   // Two-way ?screen=…&field=… <-> selection sync for the journey rail. Mounted here
@@ -413,7 +408,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
             the rail's "+ Add content" mega-panel popover instead. */}
         <FieldLibrary mode="docked" />
 
-        {/* Center: Canvas with toolbar + Ask AI button scoped inside */}
+        {/* Center: Canvas with toolbar */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
           <CanvasToolbar
             onOpenDesign={() => setIsDesignDrawerOpen(true)}
@@ -455,15 +450,6 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
               )}
             </div>
           </div>
-
-          {/* Ask AI button — positioned within this column only, won't overlap sidebars */}
-          {onAskAI && (
-            <div className="absolute bottom-6 right-6 z-20 pointer-events-none">
-              <div className="pointer-events-auto">
-                <AIFloatingButton isOpen={isAIOpen} onClick={onAskAI} />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right: Field Settings with Resizable Width */}

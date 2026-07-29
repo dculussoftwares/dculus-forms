@@ -31,7 +31,9 @@ import {
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAIChat } from '../../hooks/useAIChat';
 import { useAIChips } from '../../hooks/useAIChips';
+import { useFormBuilderStore } from '../../store/useFormBuilderStore';
 import type { FormEditAgentUIMessage, FormEditToolPart } from '../../lib/aiAgentTypes';
+import { resolveAskAIContextDetail, type AskAIBuilderContext } from '../../lib/askAIContext';
 import MutationToolPart from './tool-parts/MutationToolPart';
 import ListFieldsToolPart from './tool-parts/ListFieldsToolPart';
 import GetFieldToolPart from './tool-parts/GetFieldToolPart';
@@ -46,6 +48,8 @@ interface AIEditDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   initialMessage?: string;
+  /** Active tab + rail selection, seeded by CollaborativeFormBuilder. See ticket #232. */
+  builderContext: AskAIBuilderContext;
 }
 
 const CHIP_ICONS: Record<string, React.ComponentType<any>> = {
@@ -269,12 +273,46 @@ function StatusIndicator({ text }: { text?: string }) {
 }
 
 
+/**
+ * Small "Context: Content · Field "X" selected" line rendered at the top of the
+ * drawer, seeded from the builder's active tab + rail selection. Only Content-tab
+ * selections render a detail suffix (matches the prototype's `updateAiCtx`) — Logic
+ * and Automations show just the tab name, since rail selection is Content-only
+ * state. See docs/form-builder-redesign.md §2.7.
+ */
+function ContextLine({ builderContext }: { builderContext: AskAIBuilderContext }) {
+  const { t } = useTranslation('askAI');
+  const pages = useFormBuilderStore((state) => state.pages);
+  const tabLabel = t(`tabs.${builderContext.activeTab}`);
+  const detail = resolveAskAIContextDetail(builderContext, pages);
+
+  let detailText = '';
+  if (detail.kind === 'intro') detailText = t('contextLine.introSelected');
+  else if (detail.kind === 'thankYou') detailText = t('contextLine.thankYouSelected');
+  else if (detail.kind === 'field') {
+    detailText = t('contextLine.fieldSelected', { values: { field: detail.fieldLabel } });
+  } else if (detail.kind === 'page') {
+    detailText = t('contextLine.pageSelected', { values: { page: detail.pageTitle } });
+  }
+
+  return (
+    <div
+      className="border-b border-border bg-muted/20 px-3 py-1.5 text-xs text-muted-foreground"
+      data-testid="ai-context-line"
+    >
+      {t('contextLine.prefix')} <span className="font-semibold text-foreground">{tabLabel}</span>
+      {detailText}
+    </div>
+  );
+}
+
 const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
   formId,
   organizationId,
   isOpen,
   onClose,
   initialMessage,
+  builderContext,
 }) => {
   const { t } = useTranslation('aiEditDrawer');
   const [input, setInput] = useState('');
@@ -298,7 +336,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
     sendMessage,
     lastMutatingMessageId,
     undoMessage,
-  } = useAIChat({ formId, organizationId });
+  } = useAIChat({ formId, organizationId, builderContext });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -420,6 +458,8 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
           <X className="h-4 w-4" />
         </button>
       </div>
+
+      <ContextLine builderContext={builderContext} />
 
       {/* Messages */}
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
