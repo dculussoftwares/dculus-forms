@@ -1,0 +1,18 @@
+{
+  "pill": {
+    "label": "Ask AI anything…",
+    "ariaLabel": "Open AI assistant"
+  },
+  "tabs": {
+    "content": "Content",
+    "logic": "Logic",
+    "automations": "Automations"
+  },
+  "contextLine": {
+    "prefix": "Context:",
+    "introSelected": " · Welcome screen selected",
+    "thankYouSelected": " · Ending selected",
+    "pageSelected": " · {{page}} selected",
+    "fieldSelected": " · Field \"{{field}}\" selected"
+  }
+}

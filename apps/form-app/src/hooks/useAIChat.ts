@@ -15,6 +15,7 @@ import {
 import { applyAIOp } from '../lib/applyAIOp';
 import { useYjsUndoManager } from './useYjsUndoManager';
 import { MUTATION_TOOL_NAMES, PROPOSAL_TOOL_NAMES, type FormEditAgentUIMessage } from '../lib/aiAgentTypes';
+import type { AskAIBuilderContext } from '../lib/askAIContext';
 
 const API_URL = import.meta.env.VITE_API_URL as string;
 
@@ -42,9 +43,14 @@ export function buildOpLabel(op: Record<string, unknown>): string {
 export function useAIChat({
   formId,
   organizationId,
+  builderContext,
 }: {
   formId: string;
   organizationId: string;
+  /** Active tab + rail selection, threaded into the outgoing request payload the same
+   * way `currentPageId` is below — an additive field the backend contract doesn't
+   * need to change to accept. See ticket #232. */
+  builderContext?: AskAIBuilderContext;
 }) {
   const store = useFormBuilderStore();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -53,6 +59,7 @@ export function useAIChat({
   const undoDepthBeforeRef = useRef<number>(0);
   const messageUndoDepths = useRef(new Map<string, number>());
   const currentPageIdRef = useRef<string | undefined>(undefined);
+  const builderContextRef = useRef<AskAIBuilderContext | undefined>(undefined);
 
   // ── Conversation management (Apollo) ─────────────────────────────────────
   const { data: conversationsData, loading: conversationsLoading, refetch: refetchConversations } = useQuery(
@@ -85,6 +92,10 @@ export function useAIChat({
   // ── useChat — streaming + message state ───────────────────────────────────
   // Keep a ref so the transport closure always reads the latest page ID at send-time
   currentPageIdRef.current = (store as any).selectedPageId ?? (store.pages as any[])[0]?.id;
+  // Same pattern for builder context — updates live while the drawer is open, without
+  // recreating the transport (and therefore the useChat instance) on every selection
+  // change.
+  builderContextRef.current = builderContext;
 
   const transport = useMemo(
     () => new DefaultChatTransport({
@@ -96,6 +107,7 @@ export function useAIChat({
           conversationId: activeConversationId,
           organizationId,
           currentPageId: currentPageIdRef.current,
+          builderContext: builderContextRef.current,
         },
       }),
     }),

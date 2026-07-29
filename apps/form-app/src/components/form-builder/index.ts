@@ -14,5 +14,5 @@ export { FieldTypesPanel } from './FieldTypesPanel.js';
 
 export { EmptyDropZone } from './EmptyDropZone.js';
 export { CompactFieldCard } from './CompactFieldCard.js';
-export { AIFloatingButton } from './AIFloatingButton.js';
+export { AskAIPill } from './AskAIPill.js';
 export { GradientSparkles } from './GradientSparkles.js';
