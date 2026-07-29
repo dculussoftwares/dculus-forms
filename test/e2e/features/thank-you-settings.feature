@@ -1,11 +1,13 @@
 @thank-you
 Feature: Thank You screen (Layout tab)
 
-  Thank-you content lives on the form's layout (`FormLayout.thankYouContent`) and is
-  edited live inside the builder's Layout tab via the intro/pages/thankYou screen
-  toggle — there is no separate Finish tab or Settings section anymore (see epic
-  #170). The message is always shown after submission (no enabled/disabled toggle),
-  with a literal default until a form owner edits it.
+  Thank-you content lives on the form's layout (`FormLayout.thankYouContent`). It used
+  to be edited live inside the builder's Layout tab via the intro/pages/thankYou screen
+  toggle (see epic #170) — as of ticket #229 that editing surface is the journey rail's
+  Thank You card + Ending panel instead (see the journey-rail-ending-edit and
+  journey-rail-ending-cancel scenarios in journey-rail.feature). The message is always
+  shown after submission (no enabled/disabled toggle), with a literal default until a
+  form owner edits it.
 
   Background:
     Given I sign in with valid credentials
@@ -24,9 +26,13 @@ Feature: Thank You screen (Layout tab)
     Then I should see the default thank you message
 
   # @skip-ci: the Layout tab (and its intro/pages/thankYou screen toggle) is gone from
-  # the new 3-tab shell (Content/Logic/Automations, ticket #227). Editing the thank-you
-  # screen moves to the journey rail's Thank You card (ticket #228) — restore this
-  # scenario against `rail-thankyou` once that lands.
+  # the new 3-tab shell (Content/Logic/Automations, ticket #227). The editing
+  # mechanism this drove is replaced by journey-rail.feature's
+  # @journey-rail-ending-edit (rail's Thank You card + Ending panel, ticket
+  # #229) — that scenario covers edit → Save → persistence-through-reload.
+  # This scenario's additional publish → public-viewer leg isn't re-covered
+  # (custom-content viewer rendering is unchanged; only the editing UI moved),
+  # so it stays skipped rather than being deleted.
   @thank-you-custom @skip-ci
   Scenario: Form shows a custom thank you message configured from the Layout tab
     When I create a form via GraphQL for thank you page testing
@@ -46,6 +52,8 @@ Feature: Thank You screen (Layout tab)
     Then I should see the thank you message "Thank you for your feedback!" in the form viewer
 
   # @skip-ci: same as @thank-you-custom above — depends on the removed Layout tab.
+  # journey-rail.feature's @journey-rail-ending-edit covers this exact
+  # persist-across-reload assertion via the Ending panel.
   @thank-you-persistence @skip-ci
   Scenario: Thank you message edits persist across a reload
     When I create a form via GraphQL for thank you page testing
@@ -59,6 +67,9 @@ Feature: Thank You screen (Layout tab)
     Then the thank you screen should show the message "Persisted thank you copy"
 
   # @skip-ci: same as @thank-you-custom above — depends on the removed Layout tab.
+  # Not replaced: the Ending panel doesn't yet have preview-tab coverage for
+  # unsaved edits — out of scope for ticket #229 (its Ending panel is
+  # message-editing only, no preview integration).
   @thank-you-preview @skip-ci
   Scenario: Preview tab shows the Thank You screen without submitting (#175)
     When I create a form via GraphQL for thank you page testing
@@ -73,6 +84,11 @@ Feature: Thank You screen (Layout tab)
     When I switch the preview step to "Form"
     Then I should see the form in the preview step
 
+  # @skip-ci: same as @thank-you-custom above — depends on the removed Layout tab.
+  # Not replaced: the Ending panel's editor does support @-mention field
+  # substitution (same mentionFields plumbing), but re-driving this mention
+  # picker + full publish/submit round trip through it is out of scope for
+  # ticket #229's minimum E2E coverage.
   @thank-you-substitution @skip-ci
   Scenario: Form shows field value substitution in the thank you message
     When I create a form via GraphQL for thank you page testing

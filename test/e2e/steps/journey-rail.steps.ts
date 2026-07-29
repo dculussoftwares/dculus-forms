@@ -143,3 +143,137 @@ Then('I should not see any rail page drag handles', async function (this: Custom
   if (!this.page) throw new Error('Page is not initialized');
   await expect(this.page.locator('[data-testid^="rail-page-drag-handle-"]')).toHaveCount(0);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Contextual right panels (ticket #229) — Intro / Ending / Page settings that
+// the journey rail now drives, replacing the old Design tab's LayoutSidebar
+// for CTA text and background editing.
+// ─────────────────────────────────────────────────────────────────────────────
+
+Then('the intro settings panel should be visible', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('intro-settings-panel')).toBeVisible({ timeout: 10_000 });
+});
+
+Then(
+  'the CTA button in the canvas should show {string}',
+  async function (this: CustomWorld, expectedText: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await expect(this.page.getByTestId('viewer-cta-button')).toHaveText(expectedText, {
+      timeout: 10_000,
+    });
+  }
+);
+
+When('I set the intro button text to {string}', async function (this: CustomWorld, text: string) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const input = this.page.getByTestId('intro-cta-button-input');
+  await expect(input).toBeVisible({ timeout: 10_000 });
+  await input.fill(text);
+  // Give the store update a moment to propagate to the canvas render before
+  // the next step reads it back.
+  await this.page.waitForTimeout(300);
+});
+
+Then('the intro button text input should be disabled', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('intro-cta-button-input')).toBeDisabled({ timeout: 10_000 });
+});
+
+Then('the ending settings panel should be visible', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('ending-settings-panel')).toBeVisible({ timeout: 10_000 });
+});
+
+Then('I should see the ending message save button', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('ending-message-save')).toBeVisible({ timeout: 10_000 });
+});
+
+Then('I should not see the ending message save button', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('ending-message-save')).toHaveCount(0, { timeout: 10_000 });
+});
+
+/**
+ * The Ending panel's rich-text editor has no dedicated testid of its own (only
+ * the panel container does) — scope the contenteditable lookup to
+ * `ending-settings-panel`, mirroring how thank-you-settings.steps.ts scopes
+ * the canvas's own inline editor under `thank-you-message`.
+ */
+async function endingContentEditable(world: CustomWorld) {
+  if (!world.page) throw new Error('Page is not initialized');
+  const panel = world.page.getByTestId('ending-settings-panel');
+  await expect(panel).toBeVisible({ timeout: 10_000 });
+  const editable = panel.locator('[contenteditable="true"]');
+  await expect(editable).toBeVisible({ timeout: 10_000 });
+  return editable;
+}
+
+When('I edit the ending message to {string}', async function (this: CustomWorld, message: string) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const editable = await endingContentEditable(this);
+
+  await editable.click({ clickCount: 3 });
+  await this.page.keyboard.press('Backspace');
+  await this.page.waitForTimeout(150);
+  await this.page.keyboard.type(message, { delay: 20 });
+  await this.page.waitForTimeout(300);
+});
+
+When('I save the ending message', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const saveButton = this.page.getByTestId('ending-message-save');
+  await expect(saveButton).toBeVisible({ timeout: 5_000 });
+  await saveButton.click();
+  await expect(this.page.getByTestId('ending-message-save')).toHaveCount(0, { timeout: 10_000 });
+  // Give the Y.js/Hocuspocus flush a moment to land before a caller reloads —
+  // same guard thank-you-settings.steps.ts uses after its own save.
+  await this.page.waitForTimeout(800);
+});
+
+When('I cancel the ending message edit', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const cancelButton = this.page.getByTestId('ending-message-cancel');
+  await expect(cancelButton).toBeVisible({ timeout: 5_000 });
+  await cancelButton.click();
+  await expect(this.page.getByTestId('ending-message-save')).toHaveCount(0, { timeout: 10_000 });
+});
+
+Then('the page settings panel should be visible', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('page-settings-panel')).toBeVisible({ timeout: 10_000 });
+});
+
+Then(
+  'the page settings title input should have value {string}',
+  async function (this: CustomWorld, expectedValue: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await expect(this.page.getByTestId('page-settings-title-input')).toHaveValue(expectedValue, {
+      timeout: 10_000,
+    });
+  }
+);
+
+When('I set the page settings title to {string}', async function (this: CustomWorld, title: string) {
+  if (!this.page) throw new Error('Page is not initialized');
+  const input = this.page.getByTestId('page-settings-title-input');
+  await expect(input).toBeVisible({ timeout: 10_000 });
+  await input.fill(title);
+  await this.page.waitForTimeout(300);
+});
+
+Then('the page settings title input should be disabled', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('page-settings-title-input')).toBeDisabled({ timeout: 10_000 });
+});
+
+Then('I should not see the page settings duplicate button', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('page-settings-duplicate')).toHaveCount(0, { timeout: 10_000 });
+});
+
+Then('I should not see the page settings delete button', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('page-settings-delete')).toHaveCount(0, { timeout: 10_000 });
+});

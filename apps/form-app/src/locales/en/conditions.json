@@ -83,5 +83,12 @@
   "toast": {
     "ruleSaved": "Condition saved",
     "ruleDeleted": "Condition deleted"
+  },
+  "fieldFilter": {
+    "label": "Field: {{field}}",
+    "unknownField": "Unknown field",
+    "clear": "Clear field filter",
+    "emptyTitle": "No rules for this field",
+    "emptyDescription": "No condition rule currently references this field as a trigger or an action target."
   }
 }

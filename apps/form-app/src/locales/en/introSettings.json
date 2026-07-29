@@ -1,0 +1,45 @@
+{
+  "header": {
+    "title": "Welcome screen",
+    "editableDescription": "Layout, button text, and background for the intro screen",
+    "viewOnlyDescription": "View-only mode"
+  },
+  "customCTA": {
+    "label": "Button text",
+    "placeholder": "Get Started",
+    "helpText": "Button text to start filling the form (e.g., \"Get Started\", \"Begin Survey\")"
+  },
+  "backgroundColor": {
+    "label": "Background Color",
+    "toggleLabel": "Use custom background color",
+    "colorLabel": "Background Color",
+    "placeholder": "#000000",
+    "helpTextEnabled": "Custom color will be used for the background layer",
+    "helpTextDisabled": "Default gradient will be used for the background"
+  },
+  "backgroundImages": {
+    "label": "Background",
+    "tabs": {
+      "custom": "Custom Images",
+      "pexels": "Pexels",
+      "pixabay": "Pixabay"
+    },
+    "customTab": {
+      "applyButton": "Apply Background Image",
+      "helpText": "Upload and manage your own background images",
+      "viewOnlyTitle": "View-only mode",
+      "viewOnlyDescription": "Background image upload disabled"
+    },
+    "pexelsTab": {
+      "browseButton": "Browse Photos & Videos from Pexels",
+      "helpTextEnabled": "Search and select from high-quality Pexels photos and videos",
+      "helpTextDisabled": "View-only mode - browsing disabled"
+    },
+    "pixabayTab": {
+      "browseButton": "Browse Photos & Videos from Pixabay",
+      "helpTextEnabled": "Search and select from thousands of free background photos and videos",
+      "helpTextDisabled": "View-only mode - browsing disabled"
+    },
+    "clearButton": "Clear Background"
+  }
+}

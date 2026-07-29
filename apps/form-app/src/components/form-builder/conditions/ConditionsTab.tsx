@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { GitBranch, Plus, Sparkles } from 'lucide-react';
-import { Button, Input, toastSuccess } from '@dculus/ui';
+import React, { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
+import { GitBranch, Plus, Sparkles, X } from 'lucide-react';
+import { Badge, Button, Input, toastSuccess } from '@dculus/ui';
 import { ConditionalRule } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
@@ -8,6 +9,7 @@ import { useTranslation } from '../../../hooks/useTranslation';
 import { useConditionCycles } from '../../../hooks/useConditionCycles';
 import { ConditionRuleCard } from './ConditionRuleCard';
 import { ConditionRuleEditor } from './ConditionRuleEditor';
+import { fieldDisplayLabel } from './conditionFieldConfig';
 
 export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) => void }> = ({ onDescribeWithAI }) => {
   const { t } = useTranslation('conditions');
@@ -26,12 +28,39 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<ConditionalRule | null>(null);
   const [description, setDescription] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Same gate as field/page editing — viewers see rules read-only
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
 
   const circularRuleIds = useConditionCycles(conditions, pages);
+
+  // Deep-link filter from the field logic-summary row: /builder/logic?ruleField=<id>.
+  // Deliberately NOT `field` — the Content tab's own selection URL sync
+  // (useBuilderSelectionUrlSync) already writes `?screen=page:<id>&field=<fieldId>`,
+  // and TabNavigation preserves location.search across tab switches. Reusing
+  // `field` here would silently filter the rule list for anyone who merely had a
+  // field selected in Content and then clicked the Logic tab.
+  const filterFieldId = searchParams.get('ruleField');
+  const filterField = useMemo(
+    () => (filterFieldId ? pages.flatMap((page) => page.fields).find((f) => f.id === filterFieldId) : undefined),
+    [pages, filterFieldId]
+  );
+  const filteredConditions = useMemo(() => {
+    if (!filterFieldId) return conditions;
+    return conditions.filter(
+      (rule) =>
+        rule.terms.some((term) => term.fieldId === filterFieldId) ||
+        rule.actions.some((action) => 'fieldIds' in action && action.fieldIds.includes(filterFieldId))
+    );
+  }, [conditions, filterFieldId]);
+
+  const clearFieldFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('ruleField');
+    setSearchParams(next, { replace: true });
+  };
 
   const openCreate = () => {
     setEditingRule(null);
@@ -87,6 +116,27 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
           )}
         </div>
 
+        {filterFieldId && (
+          <Badge
+            variant="outline"
+            data-testid="condition-field-filter-chip"
+            className="w-fit gap-1.5 px-2.5 py-1 text-xs font-medium"
+          >
+            {t('fieldFilter.label', {
+              values: { field: filterField ? fieldDisplayLabel(filterField) : t('fieldFilter.unknownField') },
+            })}
+            <button
+              type="button"
+              onClick={clearFieldFilter}
+              data-testid="condition-field-filter-clear"
+              aria-label={t('fieldFilter.clear')}
+              className="ml-0.5 rounded-full hover:bg-accent"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        )}
+
         {canEdit && (
           <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-4 dark:border-violet-900 dark:bg-violet-950/20">
             <div className="mb-2 flex items-center gap-2 text-sm font-medium text-violet-950 dark:text-violet-100">
@@ -139,9 +189,22 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
               {t('empty.description')}
             </p>
           </div>
+        ) : filteredConditions.length === 0 ? (
+          <div
+            className="border border-dashed rounded-xl py-16 text-center space-y-2"
+            data-testid="conditions-filter-empty-state"
+          >
+            <GitBranch className="h-8 w-8 mx-auto text-muted-foreground" />
+            <h3 className="font-medium text-gray-900 dark:text-white">
+              {t('fieldFilter.emptyTitle')}
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {t('fieldFilter.emptyDescription')}
+            </p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {conditions.map((rule) => (
+            {filteredConditions.map((rule) => (
               <ConditionRuleCard
                 key={rule.id}
                 rule={rule}

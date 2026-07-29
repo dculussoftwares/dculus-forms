@@ -184,6 +184,28 @@ Feature: Conditional Logic (show/hide fields and pages)
     When I click the rule-count chip for field "cond-bonus"
     Then I should see a condition rule card for "Show bonus field?"
 
+  # Field settings panel's own logic-summary row (issue #229) — distinct from
+  # the rule-count chip above (which lives on the field card itself): this one
+  # is the "N logic rules use this field →" row rendered under FieldSettingsV2
+  # when a field is selected via the journey rail, hidden when the field has
+  # no referencing rules.
+  @builder-ux
+  Scenario: Field logic-summary row links to Logic with a field filter (#229)
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic rules
+    And I open the collaborative builder
+    When I click the rail field chip "Details Text"
+    Then I should not see the field logic-summary row
+    When I click the rail field chip "Bonus Field"
+    Then I should see the field logic-summary row with count "1"
+    When I click the field logic-summary row
+    Then the builder URL should contain "builder/logic"
+    And the builder URL should contain "ruleField=cond-bonus"
+    And I should see the condition field filter chip for "Bonus Field"
+    When I dismiss the condition field filter chip
+    Then I should not see the condition field filter chip
+    And the builder URL should not contain "ruleField="
+
   @builder-ux
   Scenario: Preview opens to the page last selected in Build (#175)
     Given I sign in with valid credentials
