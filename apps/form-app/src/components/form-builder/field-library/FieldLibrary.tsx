@@ -142,6 +142,7 @@ export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
             variant="ghost"
             data-testid="field-library-unpin-button"
             title={t('unpin')}
+            aria-label={t('unpin')}
             onClick={() => setPinned(false)}
             className="h-7 w-7 rounded-md p-0 text-[var(--tf-muted)] hover:text-[var(--tf-dark)]"
           >
