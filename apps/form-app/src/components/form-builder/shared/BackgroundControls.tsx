@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { Image, Search } from 'lucide-react';
 import { FormLayout } from '@dculus/types';
 import {
@@ -46,6 +46,10 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
   onLayoutUpdate,
   t,
 }) => {
+  // BackgroundControls can be mounted twice at once (DesignDrawer over the still-
+  // mounted IntroSettingsPanel behind it) — a static id would collide and break
+  // the label/input association for whichever instance rendered second.
+  const customBackgroundColorId = useId();
   const [selectedImageKey, setSelectedImageKey] = useState<string | null>(
     layout.backgroundImageKey || null
   );
@@ -107,7 +111,7 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
 
         <div className="flex items-center space-x-2">
           <Checkbox
-            id="bgctl-isCustomBackgroundColorEnabled"
+            id={customBackgroundColorId}
             checked={layout.isCustomBackgroundColorEnabled || false}
             onCheckedChange={(checked) =>
               canEditLayout && onLayoutUpdate({ isCustomBackgroundColorEnabled: !!checked })
@@ -115,7 +119,7 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
             disabled={!canEditLayout}
           />
           <Label
-            htmlFor="bgctl-isCustomBackgroundColorEnabled"
+            htmlFor={customBackgroundColorId}
             className="text-sm text-foreground dark:text-gray-300 font-normal cursor-pointer"
           >
             {t('backgroundColor.toggleLabel')}

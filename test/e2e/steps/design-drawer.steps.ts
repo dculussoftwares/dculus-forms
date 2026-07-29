@@ -39,10 +39,13 @@ When(
     if (!this.page) throw new Error('Page is not initialized');
     // LayoutThumbnails is shared with IntroSettingsPanel behind the drawer — both
     // render the same `layout-thumbnail-<code>` testid, so scope to the drawer.
-    await this.page.getByTestId('design-drawer').getByTestId(`layout-thumbnail-${layoutCode}`).click();
-    // Give the store update a moment to propagate to the canvas render before
-    // the next step reads it back.
-    await this.page.waitForTimeout(300);
+    const thumbnail = this.page
+      .getByTestId('design-drawer')
+      .getByTestId(`layout-thumbnail-${layoutCode}`);
+    await thumbnail.click();
+    // Wait for the click's effect (aria-pressed flip) rather than a flat sleep,
+    // so the next step doesn't read the canvas before the store update lands.
+    await expect(thumbnail).toHaveAttribute('aria-pressed', 'true', { timeout: 10_000 });
   }
 );
 

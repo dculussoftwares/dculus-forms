@@ -58,6 +58,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
           onClick={() => onDeviceChange('desktop')}
           title={t('deviceToggle.desktopTooltip')}
           data-testid="canvas-toolbar-device-desktop"
+          aria-pressed={device === 'desktop'}
           className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors',
           )}
@@ -74,6 +75,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
           onClick={() => onDeviceChange('mobile')}
           title={t('deviceToggle.mobileTooltip')}
           data-testid="canvas-toolbar-device-mobile"
+          aria-pressed={device === 'mobile'}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
           style={{
             background: device === 'mobile' ? 'var(--tf-faint)' : 'transparent',
