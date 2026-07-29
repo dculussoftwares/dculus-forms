@@ -1,18 +1,37 @@
 {
   "header": {
-    "title": "Layout Templates",
-    "editableDescription": "Choose a layout style",
+    "title": "Design",
+    "editableDescription": "Global look and feel for the whole form",
     "viewOnlyDescription": "View-only mode"
   },
-  "screenToggle": {
-    "intro": "Intro",
-    "pages": "Pages",
-    "thankYou": "Thank You"
+  "layoutFamily": {
+    "label": "Layout family"
   },
-  "customCTA": {
-    "label": "Custom CTA Button",
-    "placeholder": "Get Started",
-    "helpText": "Button text to start filling the form (e.g., \"Get Started\", \"Begin Survey\")"
+  "theme": {
+    "label": "Theme",
+    "options": {
+      "light": "Light",
+      "dark": "Dark",
+      "auto": "Auto"
+    }
+  },
+  "spacing": {
+    "label": "Spacing",
+    "options": {
+      "compact": "Compact",
+      "normal": "Normal",
+      "spacious": "Spacious"
+    }
+  },
+  "pageMode": {
+    "label": "Page mode",
+    "currentValue": "Current: {{value}}",
+    "values": {
+      "multipage": "Multi-page"
+    }
+  },
+  "globalBackground": {
+    "label": "Global background"
   },
   "backgroundColor": {
     "label": "Background Color",
@@ -46,15 +65,5 @@
       "helpTextDisabled": "View-only mode - browsing disabled"
     },
     "clearButton": "Clear Background"
-  },
-  "comingSoon": {
-    "title": "More Options Soon",
-    "description": "Advanced customization features coming soon.",
-    "features": [
-      "Color themes",
-      "Typography", 
-      "Custom CSS",
-      "Animations"
-    ]
   }
 }

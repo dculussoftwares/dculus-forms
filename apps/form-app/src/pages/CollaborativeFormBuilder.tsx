@@ -398,7 +398,13 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const renderTabContent = useCallback(() => {
     switch (activeTab) {
       case 'content':
-        return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
+        return (
+          <PageBuilderTab
+            onAskAI={() => setIsAIDrawerOpen((prev) => !prev)}
+            isAIOpen={isAIDrawerOpen}
+            onOpenPreview={() => setIsPreviewOpen(true)}
+          />
+        );
       case 'logic':
         return <ConditionsTab onDescribeWithAI={(description) => {
           setAIInitialMessage(`Create a condition rule from this request: ${description}. Use upsertConditionRule only. This must remain a pending suggestion for the user to review.`);
@@ -424,7 +430,13 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           </div>
         );
       default:
-        return <PageBuilderTab onAskAI={() => setIsAIDrawerOpen((prev) => !prev)} isAIOpen={isAIDrawerOpen} />;
+        return (
+          <PageBuilderTab
+            onAskAI={() => setIsAIDrawerOpen((prev) => !prev)}
+            isAIOpen={isAIDrawerOpen}
+            onOpenPreview={() => setIsPreviewOpen(true)}
+          />
+        );
     }
   }, [activeTab, formId, isAIDrawerOpen, setIsAIDrawerOpen, navigate, t]);
 
@@ -581,7 +593,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               onPublish={handlePublish}
               onUnpublish={handleUnpublish}
               updateLoading={updateLoading}
-              onOpenPreview={() => setIsPreviewOpen(true)}
               isSettingsOpen={isSettingsOpen}
               onSettingsOpenChange={(open) => (open ? setIsSettingsOpen(true) : handleCloseSettings())}
               centerContent={

@@ -1,18 +1,37 @@
 {
   "header": {
-    "title": "தளவமைப்பு வார்ப்புருக்கள்",
-    "editableDescription": "தளவமைப்பு பாணியைத் தேர்வுசெய்க",
+    "title": "வடிவமைப்பு",
+    "editableDescription": "முழுப் படிவத்திற்கான பொதுவான தோற்றம்",
     "viewOnlyDescription": "பார்க்க மட்டும் பயன்முறை"
   },
-  "screenToggle": {
-    "intro": "அறிமுகம்",
-    "pages": "பக்கங்கள்",
-    "thankYou": "நன்றி"
+  "layoutFamily": {
+    "label": "தளவமைப்பு வகை"
   },
-  "customCTA": {
-    "label": "தனிப்பயன் CTA பொத்தான்",
-    "placeholder": "தொடங்குங்கள்",
-    "helpText": "படிவத்தை நிரப்புவதற்கான பட்டன் உரை (எ.கா., \"தொடங்கு\", \"கணிப்பைத் தொடங்கு\")"
+  "theme": {
+    "label": "தீம்",
+    "options": {
+      "light": "ஒளி",
+      "dark": "இருண்ட",
+      "auto": "ஆட்டோ"
+    }
+  },
+  "spacing": {
+    "label": "இடைவெளி",
+    "options": {
+      "compact": "கச்சிதமான",
+      "normal": "சாதாரண",
+      "spacious": "விசாலமான"
+    }
+  },
+  "pageMode": {
+    "label": "பக்க பயன்முறை",
+    "currentValue": "தற்போதைய: {{value}}",
+    "values": {
+      "multipage": "பல பக்கம்"
+    }
+  },
+  "globalBackground": {
+    "label": "பொதுவான பின்னணி"
   },
   "backgroundColor": {
     "label": "பின்னணி நிறம்",
@@ -46,15 +65,5 @@
       "helpTextDisabled": "பார்க்க மட்டும் பயன்முறை - உலாவல் முடக்கப்பட்டுள்ளது"
     },
     "clearButton": "தெளிவான பின்னணி"
-  },
-  "comingSoon": {
-    "title": "மேலும் விருப்பங்கள் விரைவில்",
-    "description": "மேம்பட்ட தனிப்பயனாக்குதல் அம்சங்கள் விரைவில்.",
-    "features": [
-      "வண்ண தீம்கள்",
-      "அச்சுக்கலை",
-      "தனிப்பயன் CSS",
-      "அனிமேஷன்கள்"
-    ]
   }
 }

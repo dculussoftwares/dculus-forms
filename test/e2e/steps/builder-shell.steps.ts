@@ -58,9 +58,11 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-When('I click the header Preview button', async function (this: CustomWorld) {
+// The ▶ Preview trigger moved from the header into the Content tab's canvas
+// toolbar as of ticket #231 (see docs/form-builder-redesign.md §2.4).
+When('I click the canvas toolbar Preview button', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByTestId('header-preview-button').click();
+  await this.page.getByTestId('canvas-toolbar-preview-button').click();
 });
 
 Then('the preview overlay should be open', async function (this: CustomWorld) {

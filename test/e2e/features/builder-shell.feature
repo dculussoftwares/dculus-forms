@@ -2,10 +2,11 @@
 Feature: Builder shell — 3-tab navigation, redirects, Preview/Settings overlays
 
   The builder collapses from 5 tabs to 3 (Content · Logic · Automations). Preview and
-  Settings are no longer tabs — they move into a full-screen overlay (▶ header button,
-  Cmd/Ctrl+P, ?preview=1) and a header ⚙ gear dialog (?settings=1) respectively, hosting
-  the existing PreviewTab/SettingsTab unchanged. The 5 old tab URLs redirect to the new
-  shell. See epic #226, ticket #227.
+  Settings are no longer tabs — they move into a full-screen overlay (▶ Preview button
+  in the Content tab's canvas toolbar as of ticket #231, plus Cmd/Ctrl+P, ?preview=1)
+  and a header ⚙ gear dialog (?settings=1) respectively, hosting the existing
+  PreviewTab/SettingsTab unchanged. The 5 old tab URLs redirect to the new shell.
+  See epic #226, tickets #227 and #231.
 
   Background:
     Given I sign in with valid credentials
@@ -36,8 +37,8 @@ Feature: Builder shell — 3-tab navigation, redirects, Preview/Settings overlay
       | settings     | content?settings=1    |
 
   @builder-shell-preview
-  Scenario: Preview overlay opens via the header button and closes with Esc
-    When I click the header Preview button
+  Scenario: Preview overlay opens via the canvas toolbar button and closes with Esc
+    When I click the canvas toolbar Preview button
     Then the preview overlay should be open
     When I press Escape
     Then the preview overlay should be closed

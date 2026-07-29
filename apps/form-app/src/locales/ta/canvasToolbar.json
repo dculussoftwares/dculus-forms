@@ -1,0 +1,13 @@
+{
+  "buttons": {
+    "design": "வடிவமைப்பு",
+    "preview": "முன்னோட்டம்"
+  },
+  "deviceToggle": {
+    "ariaLabel": "கேன்வாஸ் சாதன முன்னோட்டம்",
+    "desktop": "டெஸ்க்டாப்",
+    "desktopTooltip": "டெஸ்க்டாப் கேன்வாஸ்",
+    "mobile": "மொபைல்",
+    "mobileTooltip": "மொபைல் கேன்வாஸ்"
+  }
+}
