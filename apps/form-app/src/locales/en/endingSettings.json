@@ -1,0 +1,14 @@
+{
+  "header": {
+    "title": "Ending",
+    "editableDescription": "What respondents see after they submit",
+    "viewOnlyDescription": "View-only mode"
+  },
+  "message": {
+    "label": "Message",
+    "placeholder": "Enter your thank-you message...",
+    "helpText": "Rich text — use @ to mention a field and insert its answer",
+    "save": "Save",
+    "cancel": "Cancel"
+  }
+}

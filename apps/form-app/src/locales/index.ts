@@ -255,6 +255,10 @@ import enPluginDashboard from './en/pluginDashboard.json';
 import taPluginDashboard from './ta/pluginDashboard.json';
 import enAutomations from './en/automations.json';
 import taAutomations from './ta/automations.json';
+import enIntroSettings from './en/introSettings.json';
+import taIntroSettings from './ta/introSettings.json';
+import enEndingSettings from './en/endingSettings.json';
+import taEndingSettings from './ta/endingSettings.json';
 
 const enTranslations = {
   common: enCommon,
@@ -307,6 +311,8 @@ const enTranslations = {
   emptyStates: enEmptyStates,
   confirmationDialog: enConfirmationDialog,
   pageBuilderTab: enPageBuilderTab,
+  introSettings: enIntroSettings,
+  endingSettings: enEndingSettings,
   previewTab: enPreviewTab,
 
   fieldSettingsHeader: enFieldSettingsHeader,
@@ -439,6 +445,8 @@ const taTranslations = {
   emptyStates: taEmptyStates,
   confirmationDialog: taConfirmationDialog,
   pageBuilderTab: taPageBuilderTab,
+  introSettings: taIntroSettings,
+  endingSettings: taEndingSettings,
   previewTab: taPreviewTab,
 
   fieldSettingsHeader: taFieldSettingsHeader,
