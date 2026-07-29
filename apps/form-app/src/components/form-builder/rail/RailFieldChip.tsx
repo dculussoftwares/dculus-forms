@@ -104,9 +104,18 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
           title={t(ruleCount === 1 ? 'logicBadge.single' : 'logicBadge.multiple', {
             values: { count: ruleCount },
           })}
+          aria-label={t(ruleCount === 1 ? 'logicBadge.single' : 'logicBadge.multiple', {
+            values: { count: ruleCount },
+          })}
           onClick={(e) => {
             e.stopPropagation();
             if (formId) navigate(`/dashboard/form/${formId}/builder/logic?ruleField=${field.id}`);
+          }}
+          onKeyDown={(e) => {
+            // Stop Enter/Space from bubbling to the row's own onKeyDown (field
+            // selection) or dnd-kit's keyboard-drag listener — this badge is a
+            // separate, non-draggable control nested in the draggable row.
+            e.stopPropagation();
           }}
           className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/30"
         >

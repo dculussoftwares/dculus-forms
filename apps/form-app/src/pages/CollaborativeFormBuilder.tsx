@@ -574,7 +574,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                 return t('dragAnnouncements.pickedUpField', { values: { fieldLabel } });
               }
               if (item?.type === 'page-item' && item?.page) {
-                return t('dragAnnouncements.pickedUpPage', { values: { pageTitle: item.page.title } });
+                const pageTitle = item.page.title || t('dragAnnouncements.unnamedPage');
+                return t('dragAnnouncements.pickedUpPage', { values: { pageTitle } });
               }
               return t('dragAnnouncements.pickedUpItem');
             },
@@ -603,7 +604,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                 return t('dragAnnouncements.fieldDropped', { values: { fieldLabel } });
               }
               if (item?.type === 'page-item' && item?.page) {
-                return t('dragAnnouncements.pageMoved', { values: { pageTitle: item.page.title } });
+                const pageTitle = item.page.title || t('dragAnnouncements.unnamedPage');
+                return t('dragAnnouncements.pageMoved', { values: { pageTitle } });
               }
               return t('dragAnnouncements.itemDropped');
             },

@@ -33,7 +33,15 @@ export const CoachMark: React.FC<CoachMarkProps> = ({ id, side = 'right', align 
   const isOpen = activeId === id;
 
   return (
-    <Popover open={isOpen}>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        // Radix requests a close on Escape, an outside click, or interacting
+        // with the wrapped trigger itself — treat all of those as dismissal,
+        // same as the explicit "Got it" button.
+        if (!open) dismiss(id);
+      }}
+    >
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
         side={side}

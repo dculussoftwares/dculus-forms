@@ -23,6 +23,7 @@
   },
   "dragAnnouncements": {
     "unnamedField": "Field",
+    "unnamedPage": "Untitled Page",
     "pickedUpField": "Picked up {{fieldLabel}}. Use arrow keys to move.",
     "pickedUpPage": "Picked up page {{pageTitle}}. Use arrow keys to reorder.",
     "pickedUpItem": "Item picked up. Use arrow keys to move.",
