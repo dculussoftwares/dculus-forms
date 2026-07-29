@@ -247,6 +247,8 @@ import enCreateFormWizard from './en/createFormWizard.json';
 import taCreateFormWizard from './ta/createFormWizard.json';
 import enAIEditDrawer from './en/aiEditDrawer.json';
 import taAIEditDrawer from './ta/aiEditDrawer.json';
+import enAskAI from './en/askAI.json';
+import taAskAI from './ta/askAI.json';
 import enAiTaggerPluginConfig from './en/aiTaggerPluginConfig.json';
 import taAiTaggerPluginConfig from './ta/aiTaggerPluginConfig.json';
 import enPluginGoogleSheets from './en/pluginGoogleSheets.json';
@@ -390,6 +392,7 @@ const enTranslations = {
   aiFormBar: enAIFormBar,
   createFormWizard: enCreateFormWizard,
   aiEditDrawer: enAIEditDrawer,
+  askAI: enAskAI,
   aiTaggerPluginConfig: enAiTaggerPluginConfig,
   pluginGoogleSheets: enPluginGoogleSheets,
   pluginMicrosoftSheets: enPluginMicrosoftSheets,
@@ -525,6 +528,7 @@ const taTranslations = {
   aiFormBar: taAIFormBar,
   createFormWizard: taCreateFormWizard,
   aiEditDrawer: taAIEditDrawer,
+  askAI: taAskAI,
   aiTaggerPluginConfig: taAiTaggerPluginConfig,
   pluginGoogleSheets: taPluginGoogleSheets,
   pluginMicrosoftSheets: taPluginMicrosoftSheets,

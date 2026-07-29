@@ -46,6 +46,9 @@ import { useConditionCycles } from '../hooks/useConditionCycles';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { UPDATE_FORM } from '../graphql/mutations';
 import AIEditDrawer from '../components/form-builder/AIEditDrawer';
+import { AskAIPill } from '../components/form-builder/AskAIPill';
+import { getFieldLabel } from '../components/form-builder/utils';
+import type { AskAIBuilderContext } from '../lib/askAIContext';
 
 interface CollaborativeFormBuilderProps {
   className?: string;
@@ -116,6 +119,21 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
   const [updateForm, { loading: updateLoading }] = useMutation(UPDATE_FORM);
 
+  // Get user permission from form data, default to VIEWER if not available. Computed
+  // here (rather than after the loading/error early-returns below, where it used to
+  // live) so the Cmd+K handler further down — which needs `canEdit` to gate AI access
+  // the same way the pill is gated — can read it too.
+  const mockPermissionParam = searchParams.get('mockPermission');
+  const mockPermissionSchema = z.enum(['VIEWER']);
+  const parsedMockPermission = mockPermissionSchema.safeParse(mockPermissionParam).data;
+
+  const actualPermission = (formData?.form?.userPermission as PermissionLevel) || 'VIEWER';
+  const userPermission =
+    parsedMockPermission === 'VIEWER' && actualPermission !== 'NO_ACCESS'
+      ? 'VIEWER'
+      : actualPermission;
+  const canEdit = userPermission === 'OWNER' || userPermission === 'EDITOR';
+
   const {
     isConnected,
     isLoading,
@@ -138,7 +156,31 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     moveFieldBetweenPages,
 
     updateLayout,
+    getSelectedField,
   } = useFormBuilderStore();
+
+  // Seeds the AI drawer's context line + outgoing request payload with the active tab
+  // and current rail selection (intro/page/field/thank-you). `pages` is a dep (not just
+  // `getSelectedField`, whose identity is stable) so a live field-label rename while
+  // that field is selected is reflected too. See ticket #232.
+  const builderContext: AskAIBuilderContext = useMemo(() => {
+    if (selection.kind === 'field') {
+      const field = getSelectedField();
+      return {
+        activeTab,
+        selection: {
+          kind: 'field',
+          pageId: selection.pageId,
+          fieldId: selection.fieldId,
+          fieldLabel: field ? getFieldLabel(field) : undefined,
+        },
+      };
+    }
+    return {
+      activeTab,
+      selection: { kind: selection.kind, pageId: selection.pageId },
+    };
+  }, [activeTab, selection, pages, getSelectedField]);
 
   // Builder rail health badges — Build field count, Logic circular-ref warning. See #167.
   const totalFieldCount = useMemo(
@@ -340,7 +382,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setIsAIDrawerOpen((prev) => !prev);
+        // AI edits require edit permission — same gate as the Ask-AI pill. See #232.
+        if (canEdit) setIsAIDrawerOpen((prev) => !prev);
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
         e.preventDefault();
@@ -356,7 +399,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isPreviewOpen, handleClosePreview]);
+  }, [isPreviewOpen, handleClosePreview, canEdit]);
 
   // Auto-open the AI drawer when navigated here with an aiMessage query param
   // (e.g. from "Fix with AI" in FieldAnalyticsViewer).
@@ -417,13 +460,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   const renderTabContent = useCallback(() => {
     switch (activeTab) {
       case 'content':
-        return (
-          <PageBuilderTab
-            onAskAI={() => setIsAIDrawerOpen((prev) => !prev)}
-            isAIOpen={isAIDrawerOpen}
-            onOpenPreview={() => setIsPreviewOpen(true)}
-          />
-        );
+        return <PageBuilderTab onOpenPreview={() => setIsPreviewOpen(true)} />;
       case 'logic':
         return <ConditionsTab onDescribeWithAI={(description) => {
           setAIInitialMessage(`Create a condition rule from this request: ${description}. Use upsertConditionRule only. This must remain a pending suggestion for the user to review.`);
@@ -444,13 +481,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
           </TooltipProvider>
         );
       default:
-        return (
-          <PageBuilderTab
-            onAskAI={() => setIsAIDrawerOpen((prev) => !prev)}
-            isAIOpen={isAIDrawerOpen}
-            onOpenPreview={() => setIsPreviewOpen(true)}
-          />
-        );
+        return <PageBuilderTab onOpenPreview={() => setIsPreviewOpen(true)} />;
     }
   }, [activeTab, automationId, isAutomationRunsView, isAIDrawerOpen, setIsAIDrawerOpen]);
 
@@ -484,18 +515,6 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
     return <LoadingState title={statusTitle} description={statusDescription} />;
   }
-
-  // Get user permission from form data, default to VIEWER if not available
-  const mockPermissionParam = searchParams.get('mockPermission');
-  const mockPermissionSchema = z.enum(['VIEWER']);
-  const parsedMockPermission = mockPermissionSchema.safeParse(mockPermissionParam).data;
-
-  const actualPermission = (formData?.form?.userPermission as PermissionLevel) || 'VIEWER';
-  const userPermission =
-    parsedMockPermission === 'VIEWER' && actualPermission !== 'NO_ACCESS'
-      ? 'VIEWER'
-      : actualPermission;
-  const canEdit = userPermission === 'OWNER' || userPermission === 'EDITOR';
 
   return (
     <FormPermissionProvider userPermission={userPermission}>
@@ -644,6 +663,14 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               <div className="flex-1 overflow-hidden relative">
                 {renderTabContent()}
                 <TabKeyboardShortcuts onTabChange={handleKeyboardTabChange} />
+                {/* Unified Ask-AI pill — all three tabs, hidden for VIEWER (AI edits
+                    require edit permission). See epic #226 / ticket #232. */}
+                {canEdit && (
+                  <AskAIPill
+                    isOpen={isAIDrawerOpen}
+                    onClick={() => setIsAIDrawerOpen((prev) => !prev)}
+                  />
+                )}
               </div>
               <AIEditDrawer
                 formId={formId!}
@@ -654,6 +681,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
                   setAIInitialMessage(undefined);
                 }}
                 initialMessage={aiInitialMessage}
+                builderContext={builderContext}
               />
             </div>
           </div>
