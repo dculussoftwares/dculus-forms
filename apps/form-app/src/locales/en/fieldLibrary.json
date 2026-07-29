@@ -1,0 +1,12 @@
+{
+  "trigger": "＋ Add content",
+  "title": "Add content",
+  "pin": "📌 Pin",
+  "unpin": "📌 Unpin",
+  "dockedTitle": "Field types",
+  "search": {
+    "placeholder": "Search field types…  ( / )",
+    "empty": "No field types match \"{{query}}\""
+  },
+  "recentlyUsed": "Recently used"
+}

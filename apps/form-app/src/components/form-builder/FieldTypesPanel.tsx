@@ -29,7 +29,7 @@ export interface FieldTypeConfig {
   category: 'input' | 'choice' | 'content' | 'advanced';
 }
 
-const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
+export const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
   // Input Fields
   {
     type: FieldType.TEXT_INPUT_FIELD,
@@ -116,7 +116,7 @@ const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
   },
 ];
 
-const getCategoriesConfig = (t: (key: string) => string) => ({
+export const getCategoriesConfig = (t: (key: string) => string) => ({
   input: {
     label: t('categories.input'),
     color: 'bg-[#f8cdd8] text-[#3c323e] border-[rgba(248,205,216,0.6)]',
@@ -205,7 +205,7 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
   );
 };
 
-interface DraggableFieldTypeProps {
+export interface DraggableFieldTypeProps {
   fieldType: FieldTypeConfig;
   categories: ReturnType<typeof getCategoriesConfig>;
   onAdd?: () => void;
@@ -215,7 +215,7 @@ interface DraggableFieldTypeProps {
   idPrefix?: string;
 }
 
-const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
+export const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
   fieldType,
   categories,
   onAdd,
