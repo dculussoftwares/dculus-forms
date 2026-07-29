@@ -67,10 +67,10 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({
 
   return (
     <div className={`flex items-stretch h-full ${className}`}>
-      {/* Same Tabs/TabsTrigger look used everywhere else in the app (LayoutSidebar,
-          PluginDashboardModal, etc.) — only the short connector segments between
-          triggers are new, so the active/hover states never have to fight a custom
-          background for visual precedence. */}
+      {/* Same Tabs/TabsTrigger look used everywhere else in the app (PluginDashboardModal,
+          etc.) — only the short connector segments between triggers are new, so the
+          active/hover states never have to fight a custom background for visual
+          precedence. */}
       <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as BuilderTab)}>
         <TabsList className="h-full items-center border-b-0 bg-transparent gap-0 p-0">
           {TABS.map((tab, index) => (

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { FormField, FormSchema, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import { FormField, FormLayout, FormSchema, LayoutCode, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import { FormRenderer } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
@@ -22,7 +22,7 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useBuilderSelectionUrlSync } from '../../../hooks/useBuilderSelectionUrlSync';
 import { getCdnEndpoint } from '../../../lib/config';
-import { RendererMode } from '@dculus/utils';
+import { RendererMode, cn } from '@dculus/utils';
 import {
   FieldTypesPanel,
   FieldTypeDisplay,
@@ -33,6 +33,9 @@ import { FieldCard } from './PageBuilderFieldCard';
 import { FormArea } from './PageBuilderFormArea';
 import { RightSidebar } from './PageBuilderSidebar';
 import { AIFloatingButton } from '../AIFloatingButton.js';
+import { CanvasToolbar, type CanvasDevice } from '../CanvasToolbar';
+import { DesignDrawer } from '../design/DesignDrawer';
+import { MOBILE_CANVAS_CSS } from '../shared/mobileCanvasStyles';
 
 // =============================================================================
 // Sub-Components
@@ -56,6 +59,9 @@ const LeftSidebar: React.FC = () => {
 interface PageBuilderTabProps {
   onAskAI?: () => void;
   isAIOpen?: boolean;
+  /** Opens the full-screen PreviewOverlay — lifted from CollaborativeFormBuilder
+   * so the ▶ Preview button can live in the canvas toolbar instead of the header. */
+  onOpenPreview?: () => void;
 }
 
 /**
@@ -64,6 +70,7 @@ interface PageBuilderTabProps {
 export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
   onAskAI,
   isAIOpen = false,
+  onOpenPreview,
 }) => {
   // Two-way ?screen=…&field=… <-> selection sync for the journey rail. Mounted here
   // since PageBuilderTab is the Content workspace (rail + canvas + sidebar).
@@ -71,6 +78,11 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
 
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
+  const canEditLayout = permissions.canEditLayout();
+
+  // Canvas toolbar state: 🎨 Design drawer open/closed, desktop/mobile device frame.
+  const [isDesignDrawerOpen, setIsDesignDrawerOpen] = useState(false);
+  const [device, setDevice] = useState<CanvasDevice>('desktop');
   // Track the currently dragged field type (from sidebar)
   const [activeFieldType, setActiveFieldType] =
     useState<FieldTypeConfig | null>(null);
@@ -110,7 +122,13 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
 
   const cdnEndpoint = getCdnEndpoint();
 
-  // Same formSchema shape LayoutTab builds for its FormRenderer preview — kept in
+  const handleLayoutUpdate = (updates: Partial<FormLayout>) => {
+    if (canEditLayout) updateLayout(updates);
+  };
+
+  const handleLayoutSelect = (code: LayoutCode) => handleLayoutUpdate({ code });
+
+  // Same formSchema shape PreviewTab builds for its FormRenderer preview — kept in
   // sync here so intro/thankYou rail selections render the exact same screens.
   const formSchema: FormSchema = useMemo(
     () => ({
@@ -409,25 +427,49 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
         {/* Left: Field Types — temporary, removed by the Field Library ticket (#230) */}
         <LeftSidebar />
 
-        {/* Center: Canvas with Ask AI button scoped inside */}
+        {/* Center: Canvas with toolbar + Ask AI button scoped inside */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          {selection.kind === 'intro' || selection.kind === 'thankYou' ? (
-            <FormRenderer
-              formSchema={formSchema}
-              className="h-full"
-              cdnEndpoint={cdnEndpoint}
-              mode={RendererMode.BUILDER}
-              formId={formId || ''}
-              onLayoutChange={updateLayout}
-              screenOverride={selection.kind === 'intro' ? 'intro' : 'thankYou'}
-            />
-          ) : (
-            <FormArea
-              recentlyDroppedFieldId={recentlyDroppedFieldId}
-              isDelayingExpansion={isDelayingExpansion}
-              isAnyDragActive={isAnyDragActive}
-            />
-          )}
+          <CanvasToolbar
+            onOpenDesign={() => setIsDesignDrawerOpen(true)}
+            device={device}
+            onDeviceChange={setDevice}
+            onOpenPreview={() => onOpenPreview?.()}
+          />
+
+          <div
+            className={cn(
+              'flex-1 overflow-hidden min-h-0',
+              device === 'mobile' && 'flex justify-center overflow-y-auto py-6 bg-[var(--tf-faint)]'
+            )}
+          >
+            {device === 'mobile' && <style dangerouslySetInnerHTML={{ __html: MOBILE_CANVAS_CSS }} />}
+            <div
+              className={cn(
+                'h-full',
+                device === 'mobile' &&
+                  'mobile-preview w-[390px] shrink-0 overflow-y-auto rounded-[32px] border-[10px] border-[#1c1c1e] shadow-2xl bg-white'
+              )}
+            >
+              {selection.kind === 'intro' || selection.kind === 'thankYou' ? (
+                <FormRenderer
+                  formSchema={formSchema}
+                  className="h-full"
+                  cdnEndpoint={cdnEndpoint}
+                  mode={RendererMode.BUILDER}
+                  formId={formId || ''}
+                  onLayoutChange={updateLayout}
+                  screenOverride={selection.kind === 'intro' ? 'intro' : 'thankYou'}
+                />
+              ) : (
+                <FormArea
+                  recentlyDroppedFieldId={recentlyDroppedFieldId}
+                  isDelayingExpansion={isDelayingExpansion}
+                  isAnyDragActive={isAnyDragActive}
+                />
+              )}
+            </div>
+          </div>
+
           {/* Ask AI button — positioned within this column only, won't overlap sidebars */}
           {onAskAI && (
             <div className="absolute bottom-6 right-6 z-20 pointer-events-none">
@@ -441,6 +483,16 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
         {/* Right: Field Settings with Resizable Width */}
         <RightSidebar width={sidebarWidth} onWidthChange={setSidebarWidth} />
       </div>
+
+      <DesignDrawer
+        isOpen={isDesignDrawerOpen}
+        onClose={() => setIsDesignDrawerOpen(false)}
+        layout={layout}
+        formId={formId || ''}
+        canEditLayout={canEditLayout}
+        onLayoutSelect={handleLayoutSelect}
+        onLayoutUpdate={handleLayoutUpdate}
+      />
 
       {/* Drag Overlay - follows cursor during drag */}
       <DragOverlay dropAnimation={dropAnimation}>

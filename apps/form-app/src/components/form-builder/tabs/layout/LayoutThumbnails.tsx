@@ -213,6 +213,8 @@ export const LayoutThumbnails: React.FC<LayoutThumbnailsProps> = ({
             variant={currentLayoutCode === template.code ? "default" : "outline"}
             onClick={() => onLayoutSelect(template.code)}
             disabled={disabled}
+            aria-pressed={currentLayoutCode === template.code}
+            data-testid={`layout-thumbnail-${template.code}`}
             className={cn(
               "text-left p-2 h-auto justify-start flex-col items-start gap-0",
               currentLayoutCode === template.code && "ring-2 ring-purple-200 dark:ring-purple-800"

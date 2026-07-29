@@ -50,8 +50,6 @@ import enPdfGenerators from './en/pdfGenerators.json';
 import taPdfGenerators from './ta/pdfGenerators.json';
 import enTabNavigation from './en/tabNavigation.json';
 import taTabNavigation from './ta/tabNavigation.json';
-import enLayoutSidebar from './en/layoutSidebar.json';
-import taLayoutSidebar from './ta/layoutSidebar.json';
 import enFieldTypesPanel from './en/fieldTypesPanel.json';
 import taFieldTypesPanel from './ta/fieldTypesPanel.json';
 import enDraggablePageItem from './en/draggablePageItem.json';
@@ -100,14 +98,16 @@ import enPageBuilderTab from './en/pageBuilderTab.json';
 import taPageBuilderTab from './ta/pageBuilderTab.json';
 import enPreviewTab from './en/previewTab.json';
 import taPreviewTab from './ta/previewTab.json';
+import enDesignDrawer from './en/designDrawer.json';
+import taDesignDrawer from './ta/designDrawer.json';
+import enCanvasToolbar from './en/canvasToolbar.json';
+import taCanvasToolbar from './ta/canvasToolbar.json';
 
 
 import enFieldSettingsHeader from './en/fieldSettingsHeader.json';
 import taFieldSettingsHeader from './ta/fieldSettingsHeader.json';
 import enFieldSettingsConstants from './en/fieldSettingsConstants.json';
 import taFieldSettingsConstants from './ta/fieldSettingsConstants.json';
-import enCollaborationStatus from './en/collaborationStatus.json';
-import taCollaborationStatus from './ta/collaborationStatus.json';
 import enBackgroundImage from './en/backgroundImage.json';
 import taBackgroundImage from './ta/backgroundImage.json';
 import enLayoutOptions from './en/layoutOptions.json';
@@ -287,7 +287,6 @@ const enTranslations = {
   pdfTemplates: enPdfTemplates,
   pdfGenerators: enPdfGenerators,
   tabNavigation: enTabNavigation,
-  layoutSidebar: enLayoutSidebar,
   fieldTypesPanel: enFieldTypesPanel,
   draggablePageItem: enDraggablePageItem,
   journeyRail: enJourneyRail,
@@ -314,10 +313,11 @@ const enTranslations = {
   introSettings: enIntroSettings,
   endingSettings: enEndingSettings,
   previewTab: enPreviewTab,
+  designDrawer: enDesignDrawer,
+  canvasToolbar: enCanvasToolbar,
 
   fieldSettingsHeader: enFieldSettingsHeader,
   fieldSettingsConstants: enFieldSettingsConstants,
-  collaborationStatus: enCollaborationStatus,
   backgroundImage: enBackgroundImage,
   layoutOptions: enLayoutOptions,
   layoutThumbnails: enLayoutThumbnails,
@@ -421,7 +421,6 @@ const taTranslations = {
   pdfTemplates: taPdfTemplates,
   pdfGenerators: taPdfGenerators,
   tabNavigation: taTabNavigation,
-  layoutSidebar: taLayoutSidebar,
   fieldTypesPanel: taFieldTypesPanel,
   draggablePageItem: taDraggablePageItem,
   journeyRail: taJourneyRail,
@@ -448,10 +447,11 @@ const taTranslations = {
   introSettings: taIntroSettings,
   endingSettings: taEndingSettings,
   previewTab: taPreviewTab,
+  designDrawer: taDesignDrawer,
+  canvasToolbar: taCanvasToolbar,
 
   fieldSettingsHeader: taFieldSettingsHeader,
   fieldSettingsConstants: taFieldSettingsConstants,
-  collaborationStatus: taCollaborationStatus,
   backgroundImage: taBackgroundImage,
   layoutOptions: taLayoutOptions,
   layoutThumbnails: taLayoutThumbnails,

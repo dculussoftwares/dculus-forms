@@ -27,7 +27,6 @@ import {
     ExternalLink,
     Inbox,
     MoreVertical,
-    Play,
     Settings,
     Share2,
 } from 'lucide-react';
@@ -58,8 +57,6 @@ interface FormBuilderHeaderProps {
     updateLoading?: boolean;
     /** Centered tab navigation — pass <TabNavigation /> */
     centerContent?: React.ReactNode;
-    /** ▶ Preview button — opens the full-screen PreviewOverlay (also Cmd/Ctrl+P, ?preview=1). */
-    onOpenPreview?: () => void;
     /** ⚙ Settings gear — full-screen dialog hosting SettingsTab unchanged. Hidden for VIEWER. */
     isSettingsOpen?: boolean;
     onSettingsOpenChange?: (open: boolean) => void;
@@ -80,7 +77,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     onUnpublish,
     updateLoading = false,
     centerContent,
-    onOpenPreview,
     isSettingsOpen = false,
     onSettingsOpenChange,
 }) => {
@@ -296,21 +292,6 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                             title={t('tooltips.viewLiveFormTooltip')}
                         >
                             <ExternalLink className="w-4 h-4" />
-                        </Button>
-                    )}
-
-                    {/* Preview */}
-                    {onOpenPreview && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={onOpenPreview}
-                            className="h-8 px-3 text-xs"
-                            title={t('tooltips.previewFormTooltip')}
-                            data-testid="header-preview-button"
-                        >
-                            <Play className="w-3.5 h-3.5 mr-1.5" />
-                            {t('buttons.preview')}
                         </Button>
                     )}
 

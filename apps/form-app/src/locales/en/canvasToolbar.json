@@ -1,0 +1,13 @@
+{
+  "buttons": {
+    "design": "Design",
+    "preview": "Preview"
+  },
+  "deviceToggle": {
+    "ariaLabel": "Canvas device preview",
+    "desktop": "Desktop",
+    "desktopTooltip": "Desktop canvas",
+    "mobile": "Mobile",
+    "mobileTooltip": "Mobile canvas"
+  }
+}

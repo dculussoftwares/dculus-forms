@@ -1233,9 +1233,11 @@ When(
 
 When('I open the preview tab', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  // Preview is a full-screen overlay (not a tab) as of ticket #227 — opened via the
-  // header ▶ Preview button, layered on top of whichever tab is currently active.
-  await this.page.getByTestId('header-preview-button').click();
+  // Preview is a full-screen overlay (not a tab) as of ticket #227 — as of ticket #231
+  // its trigger button lives in the Content tab's canvas toolbar, not the header, so
+  // this step uses the Cmd/Ctrl+P shortcut instead (works layered on top of whichever
+  // tab is currently active, matching this step's callers on both Content and Logic).
+  await this.page.keyboard.press('Control+p');
   await expect(this.page.getByTestId('preview-overlay')).toBeVisible({ timeout: 10_000 });
   await this.page.waitForTimeout(1000);
 });
