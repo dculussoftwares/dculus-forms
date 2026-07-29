@@ -23,11 +23,9 @@ import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useBuilderSelectionUrlSync } from '../../../hooks/useBuilderSelectionUrlSync';
 import { getCdnEndpoint } from '../../../lib/config';
 import { RendererMode, cn } from '@dculus/utils';
-import {
-  FieldTypesPanel,
-  FieldTypeDisplay,
-  type FieldTypeConfig,
-} from '../FieldTypesPanel';
+import { FieldTypeDisplay, type FieldTypeConfig } from '../FieldTypesPanel';
+import { FieldLibrary } from '../field-library/FieldLibrary';
+import { recordRecentFieldType } from '../field-library/fieldLibraryStorage';
 import { JourneyRail } from '../rail/JourneyRail';
 import { FieldCard } from './PageBuilderFieldCard';
 import { FormArea } from './PageBuilderFormArea';
@@ -36,21 +34,6 @@ import { AIFloatingButton } from '../AIFloatingButton.js';
 import { CanvasToolbar, type CanvasDevice } from '../CanvasToolbar';
 import { DesignDrawer } from '../design/DesignDrawer';
 import { MOBILE_CANVAS_CSS } from '../shared/mobileCanvasStyles';
-
-// =============================================================================
-// Sub-Components
-// =============================================================================
-
-/**
- * LeftSidebar - Shows available field types using shared FieldTypesPanel
- */
-const LeftSidebar: React.FC = () => {
-  return (
-    <div className="w-72 bg-white dark:bg-card" style={{ borderRight: '1px solid var(--tf-border)' }}>
-      <FieldTypesPanel />
-    </div>
-  );
-};
 
 // =============================================================================
 // Main Component
@@ -362,6 +345,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
             fieldData,
             insertIndex
           );
+          recordRecentFieldType(fieldTypeConfig.type);
 
           highlightNewField(targetPageId, previousFieldIds, insertIndex);
         }
@@ -382,6 +366,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
           const previousFieldIds = getPageFieldIdSet(targetPageId);
           const fieldData = createFieldData(fieldTypeConfig);
           addField(targetPageId, fieldTypeConfig.type, fieldData);
+          recordRecentFieldType(fieldTypeConfig.type);
 
           const fallbackIndex = previousFieldIds.size;
           highlightNewField(targetPageId, previousFieldIds, fallbackIndex);
@@ -424,8 +409,9 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
         {/* Journey rail: the respondent's journey — Intro / Pages / Thank You */}
         <JourneyRail />
 
-        {/* Left: Field Types — temporary, removed by the Field Library ticket (#230) */}
-        <LeftSidebar />
+        {/* Docked Field Library — only rendered while pinned; unpinned it lives in
+            the rail's "+ Add content" mega-panel popover instead. */}
+        <FieldLibrary mode="docked" />
 
         {/* Center: Canvas with toolbar + Ask AI button scoped inside */}
         <div className="flex-1 flex flex-col overflow-hidden relative">

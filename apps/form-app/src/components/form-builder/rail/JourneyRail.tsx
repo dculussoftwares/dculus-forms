@@ -1,15 +1,15 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Button, Popover, PopoverContent, PopoverTrigger, ScrollArea } from '@dculus/ui';
+import { Button, ScrollArea } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { Plus, PanelLeft, PartyPopper } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
-import { FieldTypesPanel } from '../FieldTypesPanel';
+import { FieldLibrary } from '../field-library/FieldLibrary';
 import { RailPageGroup } from './RailPageGroup';
 
 /**
@@ -21,7 +21,6 @@ import { RailPageGroup } from './RailPageGroup';
 export const JourneyRail: React.FC = () => {
   const { t } = useTranslation('journeyRail');
   const permissions = useFormPermissions();
-  const [isAddContentOpen, setIsAddContentOpen] = useState(false);
 
   const pages = useFormBuilderStore((state) => state.pages);
   const isConnected = useFormBuilderStore((state) => state.isConnected);
@@ -52,26 +51,7 @@ export const JourneyRail: React.FC = () => {
       style={{ borderRight: '1px solid var(--tf-border)' }}
     >
       <div className="p-3 pb-1">
-        {permissions.canAddFields() && (
-          <Popover open={isAddContentOpen} onOpenChange={setIsAddContentOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                data-testid="rail-add-content-button"
-                className="h-9 w-full justify-center gap-1.5 text-sm font-semibold"
-              >
-                <Plus className="h-4 w-4" />
-                {t('addContent')}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              className="max-h-[480px] w-80 overflow-y-auto p-0"
-              align="start"
-              side="right"
-            >
-              <FieldTypesPanel idPrefix="rail-" />
-            </PopoverContent>
-          </Popover>
-        )}
+        <FieldLibrary mode="trigger" />
       </div>
 
       <ScrollArea className="flex-1">
