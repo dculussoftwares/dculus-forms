@@ -11,7 +11,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@dculus/ui';
-import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_AUTOMATION, GET_AUTOMATION_RUNS } from '../graphql/automations';
 import { AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, FlaskConical, History, Loader2 } from 'lucide-react';
@@ -105,7 +104,7 @@ const RunsContent: React.FC<{
             variant="ghost"
             size="sm"
             className="gap-1.5 text-muted-foreground -ml-2 mb-1"
-            onClick={() => navigate(`/dashboard/form/${formId}/automations/${automationId}`)}
+            onClick={() => navigate(`/dashboard/form/${formId}/builder/automations/${automationId}`)}
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             {t('runs.backButton')}
@@ -271,41 +270,31 @@ const AutomationRuns: React.FC = () => {
   const form = formData?.form;
   const automation = automationData?.automation;
 
-  const breadcrumbs = [
-    { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
-    { label: form ? form.title : t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
-    { label: t('layout.breadcrumbs.automations'), href: `/dashboard/form/${formId}/automations` },
-    { label: automation ? automation.name : t('layout.breadcrumbs.builder'), href: `/dashboard/form/${formId}/automations/${automationId}` },
-    { label: t('runs.breadcrumb') },
-  ];
-
   if (formLoading || automationLoading) {
     return (
-      <MainLayout title={t('runs.title')} breadcrumbs={breadcrumbs}>
-        <div className="flex justify-center items-center min-h-96">
-          <LoadingSpinner />
-        </div>
-      </MainLayout>
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   if (formError || automationError || !form || !automation) {
     return (
-      <MainLayout title={t('runs.title')} breadcrumbs={breadcrumbs}>
+      <div className="h-full overflow-y-auto p-8">
         <EmptyState
           variant="error"
           icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.automationNotFound.title')}
           description={t('errors.automationNotFound.description')}
         />
-      </MainLayout>
+      </div>
     );
   }
 
   const userPermission = (form.userPermission as PermissionLevel) || 'VIEWER';
 
   return (
-    <MainLayout title={t('runs.dynamicTitle', { values: { name: automation.name } })} breadcrumbs={breadcrumbs}>
+    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-950 px-4 py-8">
       <FormPermissionProvider userPermission={userPermission}>
         <RunsContent
           formId={formId!}
@@ -314,7 +303,7 @@ const AutomationRuns: React.FC = () => {
           hasResponses={(form.responseCount ?? 0) > 0}
         />
       </FormPermissionProvider>
-    </MainLayout>
+    </div>
   );
 };
 

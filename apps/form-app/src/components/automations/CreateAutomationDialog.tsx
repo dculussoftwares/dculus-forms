@@ -57,7 +57,7 @@ export const CreateAutomationDialog: React.FC<CreateAutomationDialogProps> = ({
       });
       toastSuccess(t('toasts.createdTitle'), t('toasts.createdMessage', { values: { name: trimmed } }));
       resetAndClose();
-      navigate(`/dashboard/form/${formId}/automations/${data.createAutomation.id}`);
+      navigate(`/dashboard/form/${formId}/builder/automations/${data.createAutomation.id}`);
     } catch (error: any) {
       toastError(t('toasts.createErrorTitle'), error.message);
     }

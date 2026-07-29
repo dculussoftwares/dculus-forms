@@ -28,9 +28,7 @@ const FormAnalytics = lazy(() => import('./pages/FormAnalytics'));
 const FormSettings = lazy(() => import('./pages/FormSettings'));
 const Integrations = lazy(() => import('./pages/Integrations'));
 const PluginConfiguration = lazy(() => import('./pages/PluginConfiguration'));
-const Automations = lazy(() => import('./pages/Automations'));
-const AutomationBuilder = lazy(() => import('./pages/AutomationBuilder'));
-const AutomationRuns = lazy(() => import('./pages/AutomationRuns'));
+const AutomationRedirect = lazy(() => import('./pages/AutomationRedirect'));
 const ResponsesAnalytics = lazy(() => import('./pages/ResponsesAnalytics'));
 const ResponsesIndividual = lazy(() => import('./pages/ResponsesIndividual'));
 const ResponseEdit = lazy(() => import('./pages/ResponseEdit'));
@@ -84,6 +82,14 @@ function App() {
           <Route path="/dashboard/form/:formId/builder/:tab?" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><CollaborativeFormBuilder /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
+          {/* Automations tab (#233): nested canvas builder / runs views, still rendered by
+              CollaborativeFormBuilder — see its automationId-based routing. */}
+          <Route path="/dashboard/form/:formId/builder/automations/:automationId" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><CollaborativeFormBuilder /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
+          <Route path="/dashboard/form/:formId/builder/automations/:automationId/runs" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><CollaborativeFormBuilder /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
           <Route path="/dashboard/form/:formId/analytics" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><FormAnalytics /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
@@ -99,14 +105,15 @@ function App() {
           <Route path="/dashboard/form/:formId/integrations/:pluginId/edit" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PluginConfiguration /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
+          {/* Old standalone automations routes redirect into the builder shell (#233). */}
           <Route path="/dashboard/form/:formId/automations" element={
-            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Automations /></Suspense></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><AutomationRedirect kind="list" /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/automations/:automationId" element={
-            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><AutomationBuilder /></Suspense></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><AutomationRedirect kind="builder" /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/automations/:automationId/runs" element={
-            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><AutomationRuns /></Suspense></PageErrorBoundary></ProtectedRoute>
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><AutomationRedirect kind="runs" /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/pdf-templates" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplates /></Suspense></PageErrorBoundary></ProtectedRoute>

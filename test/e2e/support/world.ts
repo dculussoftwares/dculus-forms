@@ -13,6 +13,8 @@ export class CustomWorld {
   formShortUrl?: string;
   /** Set by createFormViaGraphQL — the form the current scenario is exercising */
   currentFormId?: string;
+  /** Set once an automation is created — used to build old-URL redirect targets (#233) */
+  currentAutomationId?: string;
   viewerPage?: Page;
   contextB?: BrowserContext;
   pageB?: Page;

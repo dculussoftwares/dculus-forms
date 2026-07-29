@@ -3,7 +3,6 @@ import { useParams } from 'react-router';
 import { useQuery } from '@apollo/client/react';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, LoadingSpinner, EmptyState } from '@dculus/ui';
-import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_FORM_AUTOMATIONS } from '../graphql/automations';
 import { AlertCircle, Plus, Workflow } from 'lucide-react';
@@ -91,32 +90,24 @@ const Automations: React.FC = () => {
     fetchPolicy: 'cache-and-network',
   });
 
-  const breadcrumbs = (form?: { title: string }) => [
-    { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
-    { label: form ? form.title : t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
-    { label: t('layout.breadcrumbs.automations') },
-  ];
-
   if (formLoading) {
     return (
-      <MainLayout title={t('layout.title')} breadcrumbs={breadcrumbs()}>
-        <div className="flex justify-center items-center min-h-96">
-          <LoadingSpinner />
-        </div>
-      </MainLayout>
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   if (formError || !formData?.form) {
     return (
-      <MainLayout title={t('layout.title')} breadcrumbs={breadcrumbs()}>
+      <div className="h-full overflow-y-auto p-8">
         <EmptyState
           variant="error"
           icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.formNotFound.title')}
           description={t('errors.formNotFound.description')}
         />
-      </MainLayout>
+      </div>
     );
   }
 
@@ -125,10 +116,7 @@ const Automations: React.FC = () => {
   const automations: Automation[] = automationsData?.formAutomations || [];
 
   return (
-    <MainLayout
-      title={t('layout.dynamicTitle', { values: { formTitle: form.title } })}
-      breadcrumbs={breadcrumbs(form)}
-    >
+    <div className="h-full overflow-y-auto bg-gray-50 dark:bg-gray-950 px-4 py-8">
       <FormPermissionProvider userPermission={userPermission}>
         {automationsLoading ? (
           <div className="flex justify-center items-center py-16">
@@ -144,7 +132,7 @@ const Automations: React.FC = () => {
         )}
         <CreateAutomationDialog formId={formId!} open={showCreateDialog} onOpenChange={setShowCreateDialog} />
       </FormPermissionProvider>
-    </MainLayout>
+    </div>
   );
 };
 

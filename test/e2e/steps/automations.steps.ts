@@ -29,7 +29,7 @@ Given('I create a form via GraphQL for the automations happy path', async functi
 When('I open the automations tab', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByTestId('quick-action-automations').click();
-  await expect(this.page).toHaveURL(/\/automations$/, { timeout: 15_000 });
+  await expect(this.page).toHaveURL(/\/builder\/automations$/, { timeout: 15_000 });
 });
 
 When('I create an automation named {string}', async function (this: CustomWorld, name: string) {
@@ -37,7 +37,61 @@ When('I create an automation named {string}', async function (this: CustomWorld,
   await this.page.getByTestId('create-automation-empty-button').click();
   await this.page.locator('#automation-name-input').fill(name);
   await this.page.getByRole('button', { name: 'Create', exact: true }).click();
-  await expect(this.page).toHaveURL(/\/automations\/[^/]+$/, { timeout: 20_000 });
+  await expect(this.page).toHaveURL(/\/builder\/automations\/[^/]+$/, { timeout: 20_000 });
+  this.currentAutomationId = new URL(this.page.url()).pathname.split('/').pop();
+});
+
+// Old standalone /dashboard/form/:formId/automations/* routes redirect into the builder
+// shell at /dashboard/form/:formId/builder/automations/* (#233).
+When('I navigate directly to the old automations list URL', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  if (!this.currentFormId) throw new Error('No current form id');
+  await this.page.goto(`${this.baseUrl}/dashboard/form/${this.currentFormId}/automations`);
+  await expect(this.page.getByTestId('collaborative-form-builder')).toBeVisible({ timeout: 45_000 });
+});
+
+When('I navigate directly to the old automation builder URL', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  if (!this.currentFormId) throw new Error('No current form id');
+  if (!this.currentAutomationId) throw new Error('No current automation id');
+  await this.page.goto(
+    `${this.baseUrl}/dashboard/form/${this.currentFormId}/automations/${this.currentAutomationId}`
+  );
+  await expect(this.page.getByTestId('collaborative-form-builder')).toBeVisible({ timeout: 45_000 });
+});
+
+When('I navigate directly to the old automation runs URL', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  if (!this.currentFormId) throw new Error('No current form id');
+  if (!this.currentAutomationId) throw new Error('No current automation id');
+  await this.page.goto(
+    `${this.baseUrl}/dashboard/form/${this.currentFormId}/automations/${this.currentAutomationId}/runs`
+  );
+  await expect(this.page.getByTestId('collaborative-form-builder')).toBeVisible({ timeout: 45_000 });
+});
+
+Then('the URL should redirect to the automations list in the builder', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page).toHaveURL(
+    `${this.baseUrl}/dashboard/form/${this.currentFormId}/builder/automations`,
+    { timeout: 15_000 }
+  );
+});
+
+Then('the URL should redirect to the automation builder tab', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page).toHaveURL(
+    `${this.baseUrl}/dashboard/form/${this.currentFormId}/builder/automations/${this.currentAutomationId}`,
+    { timeout: 15_000 }
+  );
+});
+
+Then('the URL should redirect to the automation runs tab', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page).toHaveURL(
+    `${this.baseUrl}/dashboard/form/${this.currentFormId}/builder/automations/${this.currentAutomationId}/runs`,
+    { timeout: 15_000 }
+  );
 });
 
 Then('I should be in the automation builder', async function (this: CustomWorld) {

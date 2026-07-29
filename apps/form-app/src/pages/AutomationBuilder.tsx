@@ -4,7 +4,6 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dculus/types';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, Input, Badge, LoadingSpinner, EmptyState, Tooltip, TooltipContent, TooltipTrigger, toastSuccess, toastError } from '@dculus/ui';
-import { MainLayout } from '../components/MainLayout';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_AUTOMATION, UPDATE_AUTOMATION, SET_AUTOMATION_STATUS } from '../graphql/automations';
 import { AlertCircle, ArrowLeft, FlaskConical, History, Pencil, Play, Loader2 } from 'lucide-react';
@@ -156,13 +155,13 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
       // doesn't reappear if they come back to this automation later in the session.
       discardDraft();
     }
-    navigate(`/dashboard/form/${formId}/automations`);
+    navigate(`/dashboard/form/${formId}/builder/automations`);
   };
 
   const isActive = automation.status === 'ACTIVE';
 
   return (
-    <div className="flex flex-col h-[calc(100vh-180px)] min-h-[520px]">
+    <div className="flex flex-col h-full min-h-[520px]">
       <div className="flex items-center gap-3 px-1 pb-3 shrink-0">
         <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground shrink-0" onClick={handleBack}>
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -216,7 +215,7 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
             variant="outline"
             size="sm"
             className="gap-1.5"
-            onClick={() => navigate(`/dashboard/form/${formId}/automations/${automationId}/runs`)}
+            onClick={() => navigate(`/dashboard/form/${formId}/builder/automations/${automationId}/runs`)}
           >
             <History className="h-3.5 w-3.5" />
             {t('builder.header.runsButton')}
@@ -325,44 +324,35 @@ const AutomationBuilder: React.FC = () => {
   const form = formData?.form;
   const automation = automationData?.automation;
 
-  const breadcrumbs = [
-    { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
-    { label: form ? form.title : t('layout.breadcrumbs.formDashboard'), href: `/dashboard/form/${formId}` },
-    { label: t('layout.breadcrumbs.automations'), href: `/dashboard/form/${formId}/automations` },
-    { label: automation ? automation.name : t('layout.breadcrumbs.builder') },
-  ];
-
   if (formLoading || automationLoading) {
     return (
-      <MainLayout title={t('builder.title')} breadcrumbs={breadcrumbs}>
-        <div className="flex justify-center items-center min-h-96">
-          <LoadingSpinner />
-        </div>
-      </MainLayout>
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner />
+      </div>
     );
   }
 
   if (automationError || !automation || !form) {
     return (
-      <MainLayout title={t('builder.title')} breadcrumbs={breadcrumbs}>
+      <div className="h-full overflow-y-auto p-8">
         <EmptyState
           variant="error"
           icon={<AlertCircle className="h-6 w-6 text-destructive" />}
           title={t('errors.automationNotFound.title')}
           description={t('errors.automationNotFound.description')}
         />
-      </MainLayout>
+      </div>
     );
   }
 
   const userPermission = (form.userPermission as PermissionLevel) || 'VIEWER';
 
   return (
-    <MainLayout title={automation.name} breadcrumbs={breadcrumbs}>
+    <div className="h-full p-4">
       <FormPermissionProvider userPermission={userPermission}>
         <AutomationBuilderContent form={form} automation={automation} />
       </FormPermissionProvider>
-    </MainLayout>
+    </div>
   );
 };
 

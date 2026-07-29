@@ -124,7 +124,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ formId, isFormEmpty 
       icon: Workflow,
       iconBg: '#e8eaf6',    // indigo — distinct from plugins' yellow
       iconColor: '#3949ab',
-      path: `/dashboard/form/${formId}/automations`,
+      path: `/dashboard/form/${formId}/builder/automations`,
       testId: 'quick-action-automations',
     },
     {
