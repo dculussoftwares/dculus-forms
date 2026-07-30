@@ -182,6 +182,15 @@ export const FieldCard: React.FC<{
     }
   }, [isAIHighlighted]);
 
+  // Scroll the field into view when it becomes selected (e.g. clicked from the
+  // rail's page/field list) — without this, selecting a field below the fold
+  // (or above it) only shows the selection ring once the user manually scrolls.
+  React.useEffect(() => {
+    if (isSelected && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [isSelected]);
+
   return (
     <div
       ref={cardRef}
