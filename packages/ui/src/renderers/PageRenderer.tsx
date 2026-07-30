@@ -282,7 +282,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
       )}
 
       {/* Page title */}
-      {showPageNavigation && currentPage?.title && (
+      {showPageNavigation && currentPage?.showPageName !== false && currentPage?.title && (
         <div className="mb-4 sm:mb-8">
           <h3
             className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight"

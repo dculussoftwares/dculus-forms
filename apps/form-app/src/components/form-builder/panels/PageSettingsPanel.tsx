@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, Trash2 } from 'lucide-react';
 import { FormPage } from '@dculus/types';
-import { Button, Input, Label, ScrollArea } from '@dculus/ui';
+import { Button, Input, Label, ScrollArea, Switch } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -24,6 +24,7 @@ export const PageSettingsPanel: React.FC<PageSettingsPanelProps> = ({ page, isCo
   const permissions = useFormPermissions();
 
   const updatePageTitle = useFormBuilderStore((state) => state.updatePageTitle);
+  const updatePageShowName = useFormBuilderStore((state) => state.updatePageShowName);
   const duplicatePage = useFormBuilderStore((state) => state.duplicatePage);
   const removePage = useFormBuilderStore((state) => state.removePage);
 
@@ -50,6 +51,22 @@ export const PageSettingsPanel: React.FC<PageSettingsPanelProps> = ({ page, isCo
               placeholder={t('pagePane.titlePlaceholder')}
               disabled={!canEditTitle}
               data-testid="page-settings-title-input"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-2 mt-4">
+            <Label
+              htmlFor="page-settings-show-name"
+              className="text-sm font-medium text-foreground dark:text-gray-300 cursor-pointer"
+            >
+              {t('pagePane.showPageNameLabel')}
+            </Label>
+            <Switch
+              id="page-settings-show-name"
+              checked={page.showPageName !== false}
+              disabled={!canEditTitle}
+              onCheckedChange={(checked) => updatePageShowName(page.id, checked)}
+              data-testid="page-settings-show-name-toggle"
             />
           </div>
         </div>

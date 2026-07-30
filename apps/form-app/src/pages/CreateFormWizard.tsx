@@ -52,6 +52,7 @@ interface AIField {
   placeholder: string | null;
   required: boolean;
   options: Array<{ value: string; label: string }> | null;
+  section: string;
 }
 
 interface SelectedImage {
@@ -121,20 +122,29 @@ function buildFormSchema(
 
   if (pageMode === 'single') {
     return {
-      pages: [{ id: `page-${Date.now()}`, title: 'Page 1', fields: fieldJsons, order: 1 }],
+      pages: [{ id: `page-${Date.now()}`, title: 'Page 1', fields: fieldJsons, order: 1, showPageName: true }],
       layout, isShuffleEnabled: false,
     };
   }
 
-  const PER_PAGE = 4;
+  // Group consecutive fields sharing the same AI-assigned section name onto one page,
+  // using that section name as the page title.
   const pages: any[] = [];
-  for (let i = 0; i < fieldJsons.length; i += PER_PAGE) {
+  let start = 0;
+  while (start < fields.length) {
+    const section = fields[start].section?.trim() || `Page ${pages.length + 1}`;
+    let end = start + 1;
+    while (end < fields.length && (fields[end].section?.trim() || '') === section) {
+      end++;
+    }
     pages.push({
-      id: `page-${Date.now()}-${i}`,
-      title: `Page ${pages.length + 1}`,
-      fields: fieldJsons.slice(i, i + PER_PAGE),
+      id: `page-${Date.now()}-${pages.length}`,
+      title: section,
+      fields: fieldJsons.slice(start, end),
       order: pages.length + 1,
+      showPageName: true,
     });
+    start = end;
   }
   return { pages, layout, isShuffleEnabled: false };
 }

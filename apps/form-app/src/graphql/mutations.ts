@@ -210,6 +210,7 @@ export const GENERATE_FORM_WITH_AI : TypedDocumentNode<any, any> = gql`
           value
           label
         }
+        section
       }
       layout {
         content

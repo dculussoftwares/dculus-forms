@@ -41,6 +41,7 @@
     "title": "பக்க அமைப்புகள்",
     "titleLabel": "பக்கத் தலைப்பு",
     "titlePlaceholder": "தலைப்பிடப்படாத பக்கம்",
+    "showPageNameLabel": "பதிலளிப்பவர்களுக்கு பக்கத் தலைப்பைக் காட்டு",
     "duplicateButton": "பக்கத்தை நகலெடு",
     "deleteButton": "பக்கத்தை நீக்கு"
   },

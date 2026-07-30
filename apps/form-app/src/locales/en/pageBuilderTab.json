@@ -41,6 +41,7 @@
     "title": "Page settings",
     "titleLabel": "Page title",
     "titlePlaceholder": "Untitled Page",
+    "showPageNameLabel": "Show page name to respondents",
     "duplicateButton": "Duplicate page",
     "deleteButton": "Delete page"
   },

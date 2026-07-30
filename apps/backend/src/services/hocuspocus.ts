@@ -416,6 +416,7 @@ export const getFormSchemaFromHocuspocus = async (
               id: pageMap.get('id'),
               title: pageMap.get('title'),
               order: pageMap.get('order'),
+              showPageName: pageMap.get('showPageName') ?? true,
               fields: [] as any[],
             };
 
@@ -634,6 +635,7 @@ export const initializeHocuspocusDocument = async (
         pageMap.set('id', page.id);
         pageMap.set('title', page.title);
         pageMap.set('order', page.order);
+        pageMap.set('showPageName', page.showPageName ?? true);
 
         const fieldsArray = new Y.Array();
         if (page.fields && page.fields.length > 0) {
@@ -762,6 +764,7 @@ export const initializeHocuspocusDocument = async (
       defaultPageMap.set('id', `page-${Date.now()}`);
       defaultPageMap.set('title', 'Page 1');
       defaultPageMap.set('order', 0);
+      defaultPageMap.set('showPageName', true);
       defaultPageMap.set('fields', new Y.Array());
       pagesArray.push([defaultPageMap]);
     }
