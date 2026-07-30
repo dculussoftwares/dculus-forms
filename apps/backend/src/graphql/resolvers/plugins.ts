@@ -1,11 +1,10 @@
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { prisma } from '../../lib/prisma.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { emitPluginTest } from '../../plugins/core/events.js';
 import { startBackfill, cancelBackfill, getLatestBackfillJob } from '../../plugins/core/backfill.js';
-import { generateId } from '@dculus/utils';
+import * as pluginService from '../../services/pluginService.js';
 
 /**
  * GraphQL Resolvers for Plugin System
@@ -35,10 +34,7 @@ export const pluginsResolvers = {
       }
 
       // Fetch all plugins for this form
-      const plugins = await prisma.formPlugin.findMany({
-        where: { formId },
-        orderBy: { createdAt: 'desc' },
-      });
+      const plugins = await pluginService.listPluginsByForm(formId);
 
       return plugins;
     },
@@ -54,10 +50,7 @@ export const pluginsResolvers = {
       requireAuth(context.auth);
 
       // Fetch plugin and check access
-      const plugin = await prisma.formPlugin.findUnique({
-        where: { id },
-        include: { form: true },
-      });
+      const plugin = await pluginService.getPluginByIdWithForm(id);
 
       if (!plugin) {
         throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
@@ -87,9 +80,7 @@ export const pluginsResolvers = {
       requireAuth(context.auth);
 
       // Fetch plugin and check access
-      const plugin = await prisma.formPlugin.findUnique({
-        where: { id: pluginId },
-      });
+      const plugin = await pluginService.getPluginById(pluginId);
 
       if (!plugin) {
         throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
@@ -106,11 +97,7 @@ export const pluginsResolvers = {
       }
 
       // Fetch delivery history
-      const deliveries = await prisma.pluginDelivery.findMany({
-        where: { pluginId },
-        orderBy: { deliveredAt: 'desc' },
-        take: limit,
-      });
+      const deliveries = await pluginService.listPluginDeliveries(pluginId, limit);
 
       return deliveries;
     },
@@ -125,7 +112,7 @@ export const pluginsResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      const plugin = await prisma.formPlugin.findUnique({ where: { id: pluginId } });
+      const plugin = await pluginService.getPluginById(pluginId);
       if (!plugin) {
         throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
@@ -185,17 +172,7 @@ export const pluginsResolvers = {
       }
 
       // Create plugin
-      const plugin = await prisma.formPlugin.create({
-        data: {
-          id: generateId(),
-          formId: input.formId,
-          type: input.type,
-          name: input.name,
-          config: input.config,
-          events: input.events,
-          enabled: input.enabled ?? true,
-        },
-      });
+      const plugin = await pluginService.createPlugin(input);
 
       return plugin;
     },
@@ -222,9 +199,7 @@ export const pluginsResolvers = {
       requireAuth(context.auth);
 
       // Fetch plugin
-      const plugin = await prisma.formPlugin.findUnique({
-        where: { id },
-      });
+      const plugin = await pluginService.getPluginById(id);
 
       if (!plugin) {
         throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
@@ -252,13 +227,7 @@ export const pluginsResolvers = {
       }
 
       // Update plugin
-      const updatedPlugin = await prisma.formPlugin.update({
-        where: { id },
-        data: {
-          ...input,
-          updatedAt: new Date(),
-        },
-      });
+      const updatedPlugin = await pluginService.updatePlugin(id, input);
 
       return updatedPlugin;
     },
@@ -274,9 +243,7 @@ export const pluginsResolvers = {
       requireAuth(context.auth);
 
       // Fetch plugin
-      const plugin = await prisma.formPlugin.findUnique({
-        where: { id },
-      });
+      const plugin = await pluginService.getPluginById(id);
 
       if (!plugin) {
         throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
@@ -293,9 +260,7 @@ export const pluginsResolvers = {
       }
 
       // Delete plugin (deliveries will cascade delete)
-      await prisma.formPlugin.delete({
-        where: { id },
-      });
+      await pluginService.deletePlugin(id);
 
       return { success: true, message: 'Plugin deleted successfully' };
     },
@@ -311,10 +276,7 @@ export const pluginsResolvers = {
       requireAuth(context.auth);
 
       // Fetch plugin
-      const plugin = await prisma.formPlugin.findUnique({
-        where: { id },
-        include: { form: true },
-      });
+      const plugin = await pluginService.getPluginByIdWithForm(id);
 
       if (!plugin) {
         throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
@@ -353,7 +315,7 @@ export const pluginsResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      const plugin = await prisma.formPlugin.findUnique({ where: { id: pluginId } });
+      const plugin = await pluginService.getPluginById(pluginId);
       if (!plugin) {
         throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
@@ -380,12 +342,12 @@ export const pluginsResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      const job = await prisma.pluginBackfillJob.findUnique({ where: { id: jobId } });
+      const job = await pluginService.getBackfillJobById(jobId);
       if (!job) {
         throw createGraphQLError('Backfill job not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
-      const plugin = await prisma.formPlugin.findUnique({ where: { id: job.pluginId } });
+      const plugin = await pluginService.getPluginById(job.pluginId);
       if (!plugin) {
         throw createGraphQLError('Plugin not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }

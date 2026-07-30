@@ -8,3 +8,4 @@ export * from './collaborativeDocumentRepository.js';
 export * from './formViewAnalyticsRepository.js';
 export * from './formSubmissionAnalyticsRepository.js';
 export * from './aiUsageRepository.js';
+export * from './pluginRepository.js';

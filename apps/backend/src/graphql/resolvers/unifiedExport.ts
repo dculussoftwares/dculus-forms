@@ -10,7 +10,7 @@ import { deserializeFormSchema } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from '../../services/responseFilterService.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { logger } from '../../lib/logger.js';
-import { prisma } from '../../lib/prisma.js';
+import * as pluginService from '../../services/pluginService.js';
 
 
 export const unifiedExportResolvers = {
@@ -104,10 +104,7 @@ export const unifiedExportResolvers = {
         // per-plugin settings (e.g. the quiz plugin's configurable columnName).
         // Key by 'type:id' so multiple instances of the same plugin type each
         // get their own config entry, matching the metadata key written by the handler.
-        const formPlugins = await prisma.formPlugin.findMany({
-          where: { formId, enabled: true },
-          select: { id: true, type: true, config: true },
-        });
+        const formPlugins = await pluginService.listEnabledPluginConfigsByForm(formId);
         const pluginConfigs: Record<string, Record<string, any>> = {};
         for (const fp of formPlugins) {
           if (fp.config && typeof fp.config === 'object') {
