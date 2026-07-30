@@ -2,13 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { analyticsResolvers } from '../analytics.js';
 import { GraphQLError } from '#graphql-errors';
 import { analyticsService } from '../../../services/analyticsService.js';
-import { prisma } from '../../../lib/prisma.js';
+import * as formService from '../../../services/formService.js';
+import * as responseService from '../../../services/responseService.js';
 import * as events from '../../../subscriptions/events.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingModule from '../formSharing.js';
 
 // Mock all dependencies
 vi.mock('../../../services/analyticsService.js');
+vi.mock('../../../services/formService.js');
+vi.mock('../../../services/responseService.js');
 vi.mock('../../../subscriptions/events.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../middleware/better-auth-middleware.js', async (importOriginal) => {
@@ -19,16 +22,6 @@ vi.mock('../../../middleware/better-auth-middleware.js', async (importOriginal) 
     requireOrganizationMembership: vi.fn(),
   };
 });
-vi.mock('../../../lib/prisma.js', () => ({
-  prisma: {
-    form: {
-      findUnique: vi.fn(),
-    },
-    response: {
-      findUnique: vi.fn(),
-    },
-  },
-}));
 vi.mock('../../../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -94,7 +87,7 @@ describe('Analytics Resolvers', () => {
     };
 
     it('should track form view successfully with published form', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
       vi.mocked(events.emitFormViewed).mockReturnValue(undefined);
 
@@ -104,10 +97,7 @@ describe('Analytics Resolvers', () => {
         mockContext
       );
 
-      expect(prisma.form.findUnique).toHaveBeenCalledWith({
-        where: { id: 'form-123' },
-        select: { id: true, isPublished: true, organizationId: true },
-      });
+      expect(formService.getFormById).toHaveBeenCalledWith('form-123');
 
       expect(analyticsService.trackFormView).toHaveBeenCalledWith(
         {
@@ -140,7 +130,7 @@ describe('Analytics Resolvers', () => {
         },
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
 
       await analyticsResolvers.Mutation.trackFormView(
@@ -156,7 +146,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should throw error when form not found', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(null);
+      vi.mocked(formService.getFormById).mockResolvedValue(null);
 
       await expect(
         analyticsResolvers.Mutation.trackFormView(
@@ -175,7 +165,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should throw error when form is not published', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockUnpublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockUnpublishedForm as any);
 
       await expect(
         analyticsResolvers.Mutation.trackFormView(
@@ -194,7 +184,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should return success: false on analytics service error', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockRejectedValue(
         new Error('Analytics service error')
       );
@@ -209,7 +199,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should handle subscription event emission errors gracefully', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
       vi.mocked(events.emitFormViewed).mockImplementation(() => {
         throw new Error('Event emission error');
@@ -232,7 +222,7 @@ describe('Analytics Resolvers', () => {
         userAgent: 'Mozilla/5.0',
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
 
       const result = await analyticsResolvers.Mutation.trackFormView(
@@ -264,7 +254,7 @@ describe('Analytics Resolvers', () => {
     };
 
     it('should update form start time successfully', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.updateFormStartTime).mockResolvedValue(undefined);
 
       const result = await analyticsResolvers.Mutation.updateFormStartTime(
@@ -272,10 +262,7 @@ describe('Analytics Resolvers', () => {
         { input: updateFormStartTimeInput }
       );
 
-      expect(prisma.form.findUnique).toHaveBeenCalledWith({
-        where: { id: 'form-123' },
-        select: { id: true, isPublished: true },
-      });
+      expect(formService.getFormById).toHaveBeenCalledWith('form-123');
 
       expect(analyticsService.updateFormStartTime).toHaveBeenCalledWith({
         formId: 'form-123',
@@ -287,7 +274,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should return success: false when form not found', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(null);
+      vi.mocked(formService.getFormById).mockResolvedValue(null);
 
       const result = await analyticsResolvers.Mutation.updateFormStartTime(
         {},
@@ -298,7 +285,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should return success: false when form is not published', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockUnpublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockUnpublishedForm as any);
 
       const result = await analyticsResolvers.Mutation.updateFormStartTime(
         {},
@@ -309,7 +296,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should return success: false on service error without throwing', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.updateFormStartTime).mockRejectedValue(
         new Error('Service error')
       );
@@ -335,8 +322,8 @@ describe('Analytics Resolvers', () => {
     };
 
     it('should track form submission successfully', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
-      vi.mocked(prisma.response.findUnique).mockResolvedValue(mockResponse as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(analyticsService.trackFormSubmission).mockResolvedValue(undefined);
 
       const result = await analyticsResolvers.Mutation.trackFormSubmission(
@@ -345,15 +332,9 @@ describe('Analytics Resolvers', () => {
         mockContext
       );
 
-      expect(prisma.form.findUnique).toHaveBeenCalledWith({
-        where: { id: 'form-123' },
-        select: { id: true, isPublished: true },
-      });
+      expect(formService.getFormById).toHaveBeenCalledWith('form-123');
 
-      expect(prisma.response.findUnique).toHaveBeenCalledWith({
-        where: { id: 'response-123' },
-        select: { id: true, formId: true },
-      });
+      expect(responseService.getResponseById).toHaveBeenCalledWith('response-123');
 
       expect(analyticsService.trackFormSubmission).toHaveBeenCalledWith(
         {
@@ -372,7 +353,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should throw error when form not found', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(null);
+      vi.mocked(formService.getFormById).mockResolvedValue(null);
 
       await expect(
         analyticsResolvers.Mutation.trackFormSubmission(
@@ -391,7 +372,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should throw error when form is not published', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockUnpublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockUnpublishedForm as any);
 
       await expect(
         analyticsResolvers.Mutation.trackFormSubmission(
@@ -410,8 +391,8 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should throw error when response not found', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
-      vi.mocked(prisma.response.findUnique).mockResolvedValue(null);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(responseService.getResponseById).mockResolvedValue(null);
 
       await expect(
         analyticsResolvers.Mutation.trackFormSubmission(
@@ -430,8 +411,8 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should throw error when response does not belong to form', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
-      vi.mocked(prisma.response.findUnique).mockResolvedValue({
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(responseService.getResponseById).mockResolvedValue({
         id: 'response-123',
         formId: 'different-form-456',
       } as any);
@@ -453,8 +434,8 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should return success: false on analytics service error', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
-      vi.mocked(prisma.response.findUnique).mockResolvedValue(mockResponse as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(analyticsService.trackFormSubmission).mockRejectedValue(
         new Error('Analytics service error')
       );
@@ -476,8 +457,8 @@ describe('Analytics Resolvers', () => {
         userAgent: 'Mozilla/5.0',
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
-      vi.mocked(prisma.response.findUnique).mockResolvedValue(mockResponse as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(analyticsService.trackFormSubmission).mockResolvedValue(undefined);
 
       const result = await analyticsResolvers.Mutation.trackFormSubmission(
@@ -509,8 +490,8 @@ describe('Analytics Resolvers', () => {
         },
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
-      vi.mocked(prisma.response.findUnique).mockResolvedValue(mockResponse as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(analyticsService.trackFormSubmission).mockResolvedValue(undefined);
 
       await analyticsResolvers.Mutation.trackFormSubmission(
@@ -905,7 +886,7 @@ describe('Analytics Resolvers', () => {
         },
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
 
       await analyticsResolvers.Mutation.trackFormView(
@@ -934,7 +915,7 @@ describe('Analytics Resolvers', () => {
         auth: mockContext.auth,
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
 
       await analyticsResolvers.Mutation.trackFormView(
@@ -963,7 +944,7 @@ describe('Analytics Resolvers', () => {
         auth: mockContext.auth,
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
 
       await analyticsResolvers.Mutation.trackFormView(
@@ -994,7 +975,7 @@ describe('Analytics Resolvers', () => {
         auth: mockContext.auth,
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
 
       await analyticsResolvers.Mutation.trackFormView(
@@ -1021,7 +1002,7 @@ describe('Analytics Resolvers', () => {
         auth: mockContext.auth,
       };
 
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
 
       await analyticsResolvers.Mutation.trackFormView(
@@ -1045,7 +1026,7 @@ describe('Analytics Resolvers', () => {
 
   describe('Error handling and resilience', () => {
     it('should not disrupt form viewing on analytics tracking failures', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
       vi.mocked(analyticsService.trackFormView).mockRejectedValue(
         new Error('Database connection lost')
       );
@@ -1067,8 +1048,8 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should not disrupt form submission on analytics tracking failures', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(mockPublishedForm as any);
-      vi.mocked(prisma.response.findUnique).mockResolvedValue(mockResponse as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
       vi.mocked(analyticsService.trackFormSubmission).mockRejectedValue(
         new Error('Database connection lost')
       );
@@ -1091,7 +1072,7 @@ describe('Analytics Resolvers', () => {
     });
 
     it('should rethrow GraphQL errors from validation', async () => {
-      vi.mocked(prisma.form.findUnique).mockResolvedValue(null);
+      vi.mocked(formService.getFormById).mockResolvedValue(null);
 
       // These should throw, not return success: false
       await expect(

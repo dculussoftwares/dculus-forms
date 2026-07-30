@@ -14,33 +14,9 @@ import * as editTrackingService from '../../../services/responseEditTrackingServ
 import * as tagService from '../../../services/tagService.js';
 import * as responseCopyService from '../../../services/responseCopyService.js';
 
-// Shared tx client for $transaction tests
-const mockTxClient = {
-  response: {
-    count: vi.fn(),
-    create: vi.fn(),
-  },
-};
-
 // Mock all dependencies
 vi.mock('../../../services/responseService.js');
 vi.mock('../../../services/formService.js');
-vi.mock('../../../repositories/responseRepository.js', () => ({
-  responseRepository: {
-    count: vi.fn(),
-  },
-}));
-vi.mock('../../../lib/prisma.js', () => ({
-  prisma: {
-    form: {
-      findMany: vi.fn(),
-    },
-    $transaction: vi.fn((callback: (tx: typeof mockTxClient) => Promise<any>) =>
-      callback(mockTxClient)
-    ),
-  },
-  isLocalDatabase: vi.fn(() => true),
-}));
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../services/analyticsService.js');
@@ -137,9 +113,8 @@ describe('Responses Resolvers', () => {
 
   describe('Query: responses', () => {
     it('should return responses for accessible forms only', async () => {
-      const { prisma } = await import('../../../lib/prisma.js');
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
-      vi.mocked(prisma.form.findMany as any).mockResolvedValue([{ id: 'form-123' }]);
+      vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123']);
       vi.mocked(responseService.getAllResponses).mockResolvedValue([mockResponse] as any);
 
       const result = await responsesResolvers.Query.responses(
@@ -158,10 +133,9 @@ describe('Responses Resolvers', () => {
     });
 
     it('should exclude responses from forms the user cannot access', async () => {
-      const { prisma } = await import('../../../lib/prisma.js');
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       // User has access to form-123 but NOT form-456
-      vi.mocked(prisma.form.findMany as any).mockResolvedValue([{ id: 'form-123' }]);
+      vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123']);
       const hiddenResponse = { ...mockResponse, id: 'response-456', formId: 'form-456' };
       vi.mocked(responseService.getAllResponses).mockResolvedValue([mockResponse, hiddenResponse] as any);
 
@@ -522,7 +496,9 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      mockTxClient.response.count.mockResolvedValue(10);
+      vi.mocked(responseService.submitResponseWithMaxLimitCheck).mockRejectedValue(
+        new Error('Form has reached its maximum response limit')
+      );
 
       await expect(
         responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
@@ -539,13 +515,12 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      mockTxClient.response.count.mockResolvedValue(5);
-      mockTxClient.response.create.mockResolvedValue({
+      vi.mocked(responseService.submitResponseWithMaxLimitCheck).mockResolvedValue({
         id: 'generated-response-id',
         formId: 'form-123',
         data: {},
         submittedAt: new Date(),
-      });
+      } as any);
 
       const result = await responsesResolvers.Mutation.submitResponse(
         {},
@@ -554,6 +529,10 @@ describe('Responses Resolvers', () => {
       );
 
       expect(result).toBeDefined();
+      expect(responseService.submitResponseWithMaxLimitCheck).toHaveBeenCalledWith(
+        expect.objectContaining({ formId: 'form-123' }),
+        10
+      );
     });
 
     it('should enforce time window start date', async () => {

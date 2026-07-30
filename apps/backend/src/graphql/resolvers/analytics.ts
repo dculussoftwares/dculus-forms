@@ -2,7 +2,8 @@ import { createGraphQLError, GraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
-import { prisma } from '../../lib/prisma.js';
+import { getFormById } from '../../services/formService.js';
+import { getResponseById } from '../../services/responseService.js';
 import { emitFormViewed } from '../../subscriptions/events.js';
 import { logger } from '../../lib/logger.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
@@ -45,10 +46,7 @@ export const analyticsResolvers = {
           (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0];
 
         // Verify form exists and is published
-        const form = await prisma.form.findUnique({
-          where: { id: input.formId },
-          select: { id: true, isPublished: true, organizationId: true }
-        });
+        const form = await getFormById(input.formId);
 
         if (!form) {
           throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
@@ -109,10 +107,7 @@ export const analyticsResolvers = {
         }
 
         // Verify form exists and is published
-        const form = await prisma.form.findUnique({
-          where: { id: input.formId },
-          select: { id: true, isPublished: true }
-        });
+        const form = await getFormById(input.formId);
 
         if (!form) {
           throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
@@ -150,10 +145,7 @@ export const analyticsResolvers = {
           (context.req?.headers?.['x-forwarded-for'] as string)?.split(',')[0];
 
         // Verify form exists and is published
-        const form = await prisma.form.findUnique({
-          where: { id: input.formId },
-          select: { id: true, isPublished: true }
-        });
+        const form = await getFormById(input.formId);
 
         if (!form) {
           throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
@@ -164,10 +156,7 @@ export const analyticsResolvers = {
         }
 
         // Verify response exists
-        const response = await prisma.response.findUnique({
-          where: { id: input.responseId },
-          select: { id: true, formId: true }
-        });
+        const response = await getResponseById(input.responseId);
 
         if (!response) {
           throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);

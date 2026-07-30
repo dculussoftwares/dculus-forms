@@ -45,6 +45,10 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     args?: Prisma.SelectSubset<T, Prisma.ResponseDeleteManyArgs>
   ) => prisma.response.deleteMany(args);
 
+  const updateMany = <T extends Prisma.ResponseUpdateManyArgs>(
+    args: Prisma.SelectSubset<T, Prisma.ResponseUpdateManyArgs>
+  ) => prisma.response.updateMany(args);
+
   const createEditHistory = <T extends Prisma.ResponseEditHistoryCreateArgs>(
     args: Prisma.SelectSubset<T, Prisma.ResponseEditHistoryCreateArgs>
   ) => prisma.responseEditHistory.create(args);
@@ -70,6 +74,102 @@ export const createResponseRepository = (context?: RepositoryContext) => {
       orderBy: { submittedAt: 'desc' },
     });
 
+  /**
+   * Per-field count of non-deleted responses holding a non-empty value for
+   * each of the given field ids. One indexed scan via LATERAL jsonb_each.
+   */
+  const countPerFieldRaw = (
+    formId: string,
+    fieldIds: string[]
+  ): Promise<Array<{ field_id: string; count: bigint }>> =>
+    prisma.$queryRaw<Array<{ field_id: string; count: bigint }>>`
+      SELECT key AS field_id, COUNT(*)::bigint AS count
+      FROM "response", LATERAL jsonb_each("data") AS entry(key, value)
+      WHERE "formId" = ${formId}
+        AND "deletedAt" IS NULL
+        AND key = ANY(${fieldIds})
+        AND value IS NOT NULL
+        AND value <> 'null'::jsonb
+        AND value <> '""'::jsonb
+      GROUP BY key
+    `;
+
+  /**
+   * Count of distinct non-deleted responses holding a non-empty value for
+   * ANY of the given field ids.
+   */
+  const countReferencingAnyFieldRaw = (
+    formId: string,
+    fieldIds: string[]
+  ): Promise<Array<{ count: bigint }>> =>
+    prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(*)::bigint AS count
+      FROM "response" r
+      WHERE r."formId" = ${formId}
+        AND r."deletedAt" IS NULL
+        AND EXISTS (
+          SELECT 1 FROM jsonb_each(r."data") AS entry(key, value)
+          WHERE key = ANY(${fieldIds})
+            AND value IS NOT NULL
+            AND value <> 'null'::jsonb
+            AND value <> '""'::jsonb
+        )
+    `;
+
+  /**
+   * Count of responses matching a caller-built raw WHERE clause (dynamic
+   * filter conditions constructed by responseQueryBuilder). `whereClause`
+   * must start with `WHERE "formId" = $1` — params[0] is always the formId.
+   */
+  const countFilteredRaw = async (
+    whereClause: string,
+    params: unknown[]
+  ): Promise<number> => {
+    const result = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
+      `SELECT COUNT(*) as count FROM "response" ${whereClause}`,
+      ...params
+    );
+    return Number(result[0].count);
+  };
+
+  /**
+   * Page of responses matching a caller-built raw WHERE/ORDER BY clause.
+   * `limit`/`offset` are appended as the final positional params.
+   */
+  const findFilteredRaw = (
+    whereClause: string,
+    orderClause: string,
+    params: unknown[],
+    limit: number,
+    offset: number
+  ): Promise<
+    Array<{
+      id: string;
+      formId: string;
+      data: Prisma.JsonValue;
+      metadata: Prisma.JsonValue;
+      respondentEmail: string | null;
+      submittedAt: Date;
+    }>
+  > => {
+    const paginationStart = params.length + 1;
+    const selectQuery = `
+      SELECT id, "formId", data, metadata, "respondentEmail", "submittedAt"
+      FROM "response"
+      ${whereClause}
+      ${orderClause}
+      LIMIT $${paginationStart} OFFSET $${paginationStart + 1}
+    `;
+    return prisma.$queryRawUnsafe(selectQuery, ...params, limit, offset);
+  };
+
+  /** Soft-deletes (sets deletedAt) a batch of non-deleted responses for a form. */
+  const softDeleteMany = (formId: string, ids: string[]) =>
+    prisma.response.updateMany({
+      where: { id: { in: ids }, formId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+
   return {
     findMany,
     findUnique,
@@ -78,12 +178,18 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     create,
     createMany,
     update,
+    updateMany,
     delete: remove,
     deleteMany,
     createEditHistory,
     findEditHistory,
     createFieldChange,
     listByForm,
+    countPerFieldRaw,
+    countReferencingAnyFieldRaw,
+    countFilteredRaw,
+    findFilteredRaw,
+    softDeleteMany,
   };
 };
 

@@ -5,12 +5,12 @@ import {
   getResponseById,
   getResponsesByFormId,
   submitResponse,
+  submitResponseWithMaxLimitCheck,
   updateResponse,
 } from '../../services/responseService.js';
 import { Prisma } from '#prisma-client';
-import { prisma } from '../../lib/prisma.js';
 import { ResponseFilter } from '../../services/responseFilterService.js';
-import { getFormById } from '../../services/formService.js';
+import { getFormById, getAccessibleFormIds } from '../../services/formService.js';
 import {
   BetterAuthContext,
   requireAuth,
@@ -74,19 +74,7 @@ export const responsesResolvers = {
 
       // 🔒 SECURITY: Scope to forms the user can actually access (VIEWER or above).
       // Org membership alone is not sufficient — a NO_ACCESS permission must be respected.
-      const accessibleForms = await prisma.form.findMany({
-        where: {
-          organizationId,
-          OR: [
-            { createdById: userId },
-            { permissions: { some: { userId, permission: { not: PermissionLevel.NO_ACCESS } } } },
-            { sharingScope: 'ALL_ORG_MEMBERS', defaultPermission: { not: PermissionLevel.NO_ACCESS } },
-          ],
-        },
-        select: { id: true },
-      });
-
-      const accessibleFormIds = accessibleForms.map((f) => f.id);
+      const accessibleFormIds = await getAccessibleFormIds(organizationId, userId);
       const allResponses = await getAllResponses(organizationId);
       return allResponses.filter((r) => accessibleFormIds.includes(r.formId));
     },
@@ -255,43 +243,20 @@ export const responsesResolvers = {
         const limits = form.settings.submissionLimits;
 
         // Check maximum responses limit — atomic check-then-insert via a
-        // Serializable transaction so two concurrent requests cannot both pass
-        // the count check and both insert, exceeding the limit by one.
+        // Serializable transaction (responseService.submitResponseWithMaxLimitCheck)
+        // so two concurrent requests cannot both pass the count check and both
+        // insert, exceeding the limit by one.
         if (limits.maxResponses?.enabled) {
-          const maxAllowed = limits.maxResponses.limit;
-
-          const inserted = await prisma.$transaction(
-            async (tx) => {
-              const currentCount = await tx.response.count({
-                where: { formId: input.formId },
-              });
-
-              if (currentCount >= maxAllowed) {
-                throw createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
-              }
-
-              // Insert atomically within the same transaction
-              return tx.response.create({
-                data: {
-                  id: responseId,
-                  formId: input.formId,
-                  data: (input.data || {}) as Prisma.InputJsonValue,
-                  respondentUserId,
-                  respondentEmail,
-                },
-              });
+          response = await submitResponseWithMaxLimitCheck(
+            {
+              id: responseId,
+              formId: input.formId,
+              data: (input.data || {}) as Prisma.InputJsonValue,
+              respondentUserId,
+              respondentEmail,
             },
-            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+            limits.maxResponses.limit
           );
-
-          response = {
-            id: inserted.id,
-            formId: inserted.formId,
-            data: (inserted.data as Prisma.JsonObject) || {},
-            metadata: inserted.metadata as import('@dculus/types').FormResponse['metadata'],
-            respondentEmail: inserted.respondentEmail ?? undefined,
-            submittedAt: inserted.submittedAt,
-          };
         }
 
         // Check time window limits

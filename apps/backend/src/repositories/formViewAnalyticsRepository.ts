@@ -17,6 +17,10 @@ export const createFormViewAnalyticsRepository = (
   const count = (args?: Prisma.FormViewAnalyticsCountArgs) =>
     prisma.formViewAnalytics.count(args);
 
+  const deleteMany = <T extends Prisma.FormViewAnalyticsDeleteManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.FormViewAnalyticsDeleteManyArgs>
+  ) => prisma.formViewAnalytics.deleteMany(args);
+
   // Prisma's groupBy overloads require a non-optional `orderBy` in the intersection type,
   // which the declared GroupByArgs type does not satisfy — `as any` is the standard workaround.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,9 +111,36 @@ export const createFormViewAnalyticsRepository = (
     }));
   };
 
+  // P3-04: Date instead of string, same rationale as DailyViewRow above.
+  type OrgDailyViewRow = { date: Date; views: bigint };
+
+  /**
+   * Daily view counts across every form in an organization, for the given
+   * period. Joins `form` to scope by organizationId (form_view_analytics has
+   * no organizationId column of its own).
+   */
+  const getOrgDailyViewCounts = (
+    organizationId: string,
+    periodStart: Date,
+    periodEnd: Date
+  ): Promise<OrgDailyViewRow[]> =>
+    prisma.$queryRaw<OrgDailyViewRow[]>`
+      SELECT
+        DATE_TRUNC('day', fva."viewedAt") AS date,
+        COUNT(*) AS views
+      FROM "form_view_analytics" fva
+      JOIN "form" f ON f.id = fva."formId"
+      WHERE f."organizationId" = ${organizationId}
+        AND fva."viewedAt" >= ${periodStart}
+        AND fva."viewedAt" <= ${periodEnd}
+      GROUP BY DATE_TRUNC('day', fva."viewedAt")
+      ORDER BY date ASC
+    `;
+
   return {
     create,
     updateMany,
+    deleteMany,
     count,
     groupBy,
     findMany,
@@ -117,6 +148,7 @@ export const createFormViewAnalyticsRepository = (
     updateSessionMetrics,
     countDistinctSessions,
     getDailyViewStats,
+    getOrgDailyViewCounts,
   };
 };
 
