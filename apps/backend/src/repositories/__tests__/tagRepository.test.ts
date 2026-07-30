@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { Prisma } from '#prisma-client';
 import { createTagRepository } from '../tagRepository.js';
 
 const prismaMock = vi.hoisted(() => ({
@@ -37,14 +38,28 @@ describe('tagRepository', () => {
     const repo = createTagRepository();
     const args = { where: { id: 'tag-1' } };
 
-    await repo.findMany(args as any);
-    await repo.findFirst(args as any);
-    await repo.upsert({ where: { id: 'tag-1' }, create: {}, update: {} } as any);
-    await repo.delete({ where: { id: 'tag-1' } } as any);
-    await repo.findManyAssignments({ where: { responseId: 'r-1' } } as any);
-    await repo.upsertAssignment({ where: { responseId_tagId: { responseId: 'r-1', tagId: 't-1' } }, create: {}, update: {} } as any);
-    await repo.deleteAssignment({ where: { responseId_tagId: { responseId: 'r-1', tagId: 't-1' } } } as any);
-    await repo.createMany({ data: [{ responseId: 'r-1', tagId: 't-1' }] } as any);
+    await repo.findMany(args satisfies Prisma.ResponseTagFindManyArgs);
+    await repo.findFirst(args satisfies Prisma.ResponseTagFindFirstArgs);
+    await repo.upsert({
+      where: { id: 'tag-1' },
+      create: { formId: 'form-1', name: 'tag' },
+      update: {},
+    } satisfies Prisma.ResponseTagUpsertArgs);
+    await repo.delete({ where: { id: 'tag-1' } } satisfies Prisma.ResponseTagDeleteArgs);
+    await repo.findManyAssignments({
+      where: { responseId: 'r-1' },
+    } satisfies Prisma.ResponseTagAssignmentFindManyArgs);
+    await repo.upsertAssignment({
+      where: { responseId_tagId: { responseId: 'r-1', tagId: 't-1' } },
+      create: { responseId: 'r-1', tagId: 't-1' },
+      update: {},
+    } satisfies Prisma.ResponseTagAssignmentUpsertArgs);
+    await repo.deleteAssignment({
+      where: { responseId_tagId: { responseId: 'r-1', tagId: 't-1' } },
+    } satisfies Prisma.ResponseTagAssignmentDeleteArgs);
+    await repo.createMany({
+      data: [{ responseId: 'r-1', tagId: 't-1' }],
+    } satisfies Prisma.ResponseTagAssignmentCreateManyArgs);
 
     expect(prismaMock.responseTag.findMany).toHaveBeenCalledWith(args);
     expect(prismaMock.responseTag.findFirst).toHaveBeenCalledWith(args);
