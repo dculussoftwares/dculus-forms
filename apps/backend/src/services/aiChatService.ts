@@ -1,6 +1,6 @@
 import { generateText } from 'ai';
 import type { UIMessage } from 'ai';
-import { prisma } from '../lib/prisma.js';
+import { aiChatRepository } from '../repositories/aiChatRepository.js';
 import { getFastModel } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 
@@ -47,8 +47,8 @@ export async function createConversation(
   organizationId: string,
   userId: string
 ) {
-  return prisma.aIChatConversation.create({
-    data: { formId, organizationId, userId, title: 'New conversation' },
+  return aiChatRepository.createConversation({
+    formId, organizationId, userId, title: 'New conversation',
   });
 }
 
@@ -57,11 +57,9 @@ export async function listConversations(
   organizationId: string,
   userId: string
 ) {
-  const conversations = await prisma.aIChatConversation.findMany({
-    where: { formId, organizationId, userId },
-    orderBy: { updatedAt: 'desc' },
-    include: { _count: { select: { messages: true } } },
-  });
+  const conversations = await aiChatRepository.listConversationsByForm(
+    formId, organizationId, userId
+  );
 
   return conversations.map((c) => ({
     ...c,
@@ -71,38 +69,27 @@ export async function listConversations(
 }
 
 export async function getConversation(id: string, userId: string) {
-  const conv = await prisma.aIChatConversation.findFirst({
-    where: { id, userId },
-    include: {
-      messages: { orderBy: { createdAt: 'asc' } },
-      _count: { select: { messages: true } },
-    },
-  });
+  const conv = await aiChatRepository.findConversationById(id, userId);
   if (!conv) return null;
   return { ...conv, messageCount: conv._count.messages };
 }
 
 export async function deleteConversation(id: string, userId: string) {
-  const conv = await prisma.aIChatConversation.findFirst({ where: { id, userId } });
+  const conv = await aiChatRepository.findConversationByUser(id, userId);
   if (!conv) return false;
-  await prisma.aIChatConversation.delete({ where: { id } });
+  await aiChatRepository.deleteConversation(id);
   return true;
 }
 
 export async function renameConversation(id: string, userId: string, title: string) {
-  const conv = await prisma.aIChatConversation.findFirst({ where: { id, userId } });
+  const conv = await aiChatRepository.findConversationByUser(id, userId);
   if (!conv) return null;
   const safeTitle = title.trim().slice(0, 100) || 'Untitled conversation';
-  return prisma.aIChatConversation.update({ where: { id }, data: { title: safeTitle } });
+  return aiChatRepository.updateConversation(id, { title: safeTitle });
 }
 
 export async function loadConversationMessages(conversationId: string): Promise<UIMessage[]> {
-  const messages = await prisma.aIChatMessage.findMany({
-    where: { conversationId },
-    orderBy: { createdAt: 'desc' },
-    take: MAX_HISTORY_MESSAGES,
-    select: { data: true },
-  });
+  const messages = await aiChatRepository.listRecentMessages(conversationId, MAX_HISTORY_MESSAGES);
   return messages.reverse().map((m) => m.data as unknown as UIMessage);
 }
 
@@ -222,21 +209,16 @@ export async function saveConversationMessages(
     const isLast = i === messages.length - 1;
     const textPart = (msg.parts as any[])?.find((p: any) => p.type === 'text');
     const textContent = textPart?.text ?? (msg as any).content ?? '';
-    await prisma.aIChatMessage.create({
-      data: {
-        conversationId,
-        role: msg.role,
-        content: textContent,
-        data: msg as any,
-        tokensUsed: isLast && msg.role === 'assistant' ? tokensUsed : 0,
-        createdAt: new Date(base + i),
-      },
+    await aiChatRepository.createConversationMessage({
+      conversationId,
+      role: msg.role,
+      content: textContent,
+      data: msg as any,
+      tokensUsed: isLast && msg.role === 'assistant' ? tokensUsed : 0,
+      createdAt: new Date(base + i),
     });
   }
-  await prisma.aIChatConversation.update({
-    where: { id: conversationId },
-    data: { updatedAt: new Date() },
-  });
+  await aiChatRepository.touchConversation(conversationId);
 }
 
 // Fire-and-forget: generates a short title from the first user message
@@ -248,7 +230,7 @@ export function autoGenerateTitle(conversationId: string, firstMessage: string):
     .then(async ({ text }) => {
       try {
         const title = text.trim().slice(0, 60);
-        await prisma.aIChatConversation.update({ where: { id: conversationId }, data: { title } });
+        await aiChatRepository.updateConversation(conversationId, { title });
       } catch (err) {
         logger.warn({ err, conversationId }, 'Failed to save auto-generated title');
       }

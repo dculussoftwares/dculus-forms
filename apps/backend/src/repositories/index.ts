@@ -1,6 +1,9 @@
 export * from './baseRepository.js';
 export * from './formRepository.js';
+export * from './formFileRepository.js';
 export * from './subscriptionRepository.js';
+export * from './organizationRepository.js';
+export * from './memberRepository.js';
 export * from './responseRepository.js';
 export * from './formTemplateRepository.js';
 export * from './formMetadataRepository.js';
@@ -8,3 +11,7 @@ export * from './collaborativeDocumentRepository.js';
 export * from './formViewAnalyticsRepository.js';
 export * from './formSubmissionAnalyticsRepository.js';
 export * from './automationRepository.js';
+export * from './aiUsageRepository.js';
+export * from './aiChatRepository.js';
+export * from './pluginRepository.js';
+export * from './invitationRepository.js';

@@ -1,27 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { invitationResolvers } from '../invitations.js';
 import { GraphQLError } from '#graphql-errors';
-import { prisma } from '../../../lib/prisma.js';
+import { getInvitationById } from '../../../services/invitationService.js';
 import * as dateHelpers from '../../../utils/dateHelpers.js';
 
 // Mock all dependencies
-vi.mock('../../../lib/prisma.js', () => ({
-  prisma: {
-    invitation: {
-      findUnique: vi.fn(),
-      findMany: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    member: {
-      findFirst: vi.fn(),
-      create: vi.fn(),
-    },
-    organization: {
-      findUnique: vi.fn(),
-    },
-  },
+vi.mock('../../../services/invitationService.js', () => ({
+  getInvitationById: vi.fn(),
 }));
 
 vi.mock('../../../lib/logger.js', () => ({
@@ -112,7 +97,7 @@ describe('Invitation Resolvers', () => {
 
     describe('Invitation Not Found', () => {
       it('should throw error when invitation does not exist', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(null);
+        vi.mocked(getInvitationById).mockResolvedValue(null);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'nonexistent-id' })
@@ -123,32 +108,14 @@ describe('Invitation Resolvers', () => {
         ).rejects.toThrow('Invitation not found or has expired');
       });
 
-      it('should call prisma with correct parameters', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(null);
+      it('should call the invitation service with correct parameters', async () => {
+        vi.mocked(getInvitationById).mockResolvedValue(null);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'test-id-8x' })
         ).rejects.toThrow();
 
-        expect(prisma.invitation.findUnique).toHaveBeenCalledWith({
-          where: { id: 'test-id-8x' },
-          include: {
-            organization: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            inviter: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        });
+        expect(getInvitationById).toHaveBeenCalledWith('test-id-8x');
       });
     });
 
@@ -158,7 +125,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           status: 'accepted',
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(acceptedInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(acceptedInvitation as any);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
@@ -174,7 +141,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           status: 'cancelled',
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(cancelledInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(cancelledInvitation as any);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
@@ -190,7 +157,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           status: 'rejected',
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(rejectedInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(rejectedInvitation as any);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
@@ -206,7 +173,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           status: 'accepted',
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(acceptedInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(acceptedInvitation as any);
         vi.mocked(dateHelpers.isDateExpired).mockReturnValue(true);
 
         // Should throw "no longer valid" error, not "expired" error
@@ -218,7 +185,7 @@ describe('Invitation Resolvers', () => {
 
     describe('Invitation Expiry Validation', () => {
       it('should throw error when invitation is expired', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(mockInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(mockInvitation as any);
         vi.mocked(dateHelpers.isDateExpired).mockReturnValue(true);
 
         await expect(
@@ -231,7 +198,7 @@ describe('Invitation Resolvers', () => {
       });
 
       it('should call isDateExpired with correct date string', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(mockInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(mockInvitation as any);
         vi.mocked(dateHelpers.isDateExpired).mockReturnValue(true);
 
         await expect(
@@ -249,7 +216,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           expiresAt: futureDate,
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(validInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(validInvitation as any);
         vi.mocked(dateHelpers.isDateExpired).mockReturnValue(false);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
@@ -264,7 +231,7 @@ describe('Invitation Resolvers', () => {
 
     describe('Successful Invitation Retrieval', () => {
       it('should return invitation with all public fields', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(mockInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(mockInvitation as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -296,7 +263,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           organization: null,
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(invitationWithoutOrg as any);
+        vi.mocked(getInvitationById).mockResolvedValue(invitationWithoutOrg as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -311,7 +278,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           inviter: null,
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(invitationWithoutInviter as any);
+        vi.mocked(getInvitationById).mockResolvedValue(invitationWithoutInviter as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -322,7 +289,7 @@ describe('Invitation Resolvers', () => {
       });
 
       it('should convert dates to ISO strings', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(mockInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(mockInvitation as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -340,7 +307,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           role: 'owner',
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(ownerInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(ownerInvitation as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -356,7 +323,7 @@ describe('Invitation Resolvers', () => {
           internalNote: 'This should not be exposed',
           secretToken: 'secret-123',
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(invitationWithExtraFields as any);
+        vi.mocked(getInvitationById).mockResolvedValue(invitationWithExtraFields as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -374,7 +341,7 @@ describe('Invitation Resolvers', () => {
     describe('Error Handling', () => {
       it('should re-throw GraphQLError instances', async () => {
         const customError = new GraphQLError('Custom error message');
-        vi.mocked(prisma.invitation.findUnique).mockRejectedValue(customError);
+        vi.mocked(getInvitationById).mockRejectedValue(customError);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
@@ -387,7 +354,7 @@ describe('Invitation Resolvers', () => {
 
       it('should convert non-GraphQLError to GraphQLError', async () => {
         const databaseError = new Error('Database connection failed');
-        vi.mocked(prisma.invitation.findUnique).mockRejectedValue(databaseError);
+        vi.mocked(getInvitationById).mockRejectedValue(databaseError);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
@@ -400,7 +367,7 @@ describe('Invitation Resolvers', () => {
 
       it('should handle prisma errors gracefully', async () => {
         const prismaError = new Error('P2021: Table does not exist');
-        vi.mocked(prisma.invitation.findUnique).mockRejectedValue(prismaError);
+        vi.mocked(getInvitationById).mockRejectedValue(prismaError);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
@@ -409,7 +376,7 @@ describe('Invitation Resolvers', () => {
 
       it('should handle null pointer exceptions', async () => {
         const nullError = new TypeError("Cannot read property 'toISOString' of null");
-        vi.mocked(prisma.invitation.findUnique).mockRejectedValue(nullError);
+        vi.mocked(getInvitationById).mockRejectedValue(nullError);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' })
@@ -431,7 +398,7 @@ describe('Invitation Resolvers', () => {
           organization: null,
           inviter: null,
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(minimalInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(minimalInvitation as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -448,7 +415,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           email: 'test+filter@example.co.uk',
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(specialEmailInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(specialEmailInvitation as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -466,7 +433,7 @@ describe('Invitation Resolvers', () => {
             name: 'Test & Co. (2024)',
           },
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(specialOrgInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(specialOrgInvitation as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -478,15 +445,13 @@ describe('Invitation Resolvers', () => {
 
       it('should handle invitation with very long IDs', async () => {
         const longId = 'a'.repeat(100);
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(null);
+        vi.mocked(getInvitationById).mockResolvedValue(null);
 
         await expect(
           invitationResolvers.Query.getInvitationPublic({}, { id: longId })
         ).rejects.toThrow('Invitation not found or has expired');
 
-        expect(prisma.invitation.findUnique).toHaveBeenCalledWith(
-          expect.objectContaining({ where: { id: longId } })
-        );
+        expect(getInvitationById).toHaveBeenCalledWith(longId);
       });
 
       it('should handle invitation exactly at expiry time', async () => {
@@ -495,7 +460,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           expiresAt: now,
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(expiringInvitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(expiringInvitation as any);
 
         // Mock isDateExpired to return false (not yet expired)
         vi.mocked(dateHelpers.isDateExpired).mockReturnValue(false);
@@ -520,7 +485,7 @@ describe('Invitation Resolvers', () => {
             ...mockInvitation,
             status,
           };
-          vi.mocked(prisma.invitation.findUnique).mockResolvedValue(invitation as any);
+          vi.mocked(getInvitationById).mockResolvedValue(invitation as any);
 
           if (status === 'pending') {
             const result = await invitationResolvers.Query.getInvitationPublic(
@@ -545,7 +510,7 @@ describe('Invitation Resolvers', () => {
             ...mockInvitation,
             role,
           };
-          vi.mocked(prisma.invitation.findUnique).mockResolvedValue(invitation as any);
+          vi.mocked(getInvitationById).mockResolvedValue(invitation as any);
 
           const result = await invitationResolvers.Query.getInvitationPublic(
             {},
@@ -565,7 +530,7 @@ describe('Invitation Resolvers', () => {
           createdAt: specificDate,
           expiresAt: new Date('2024-12-31T23:59:59.999Z'),
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(invitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(invitation as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -582,7 +547,7 @@ describe('Invitation Resolvers', () => {
           ...mockInvitation,
           expiresAt: utcDate,
         };
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(invitation as any);
+        vi.mocked(getInvitationById).mockResolvedValue(invitation as any);
 
         const result = await invitationResolvers.Query.getInvitationPublic(
           {},
@@ -594,63 +559,14 @@ describe('Invitation Resolvers', () => {
       });
     });
 
-    describe('Database Query Optimization', () => {
-      it('should use efficient includes for related data', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(mockInvitation as any);
+    describe('Service Delegation', () => {
+      it('should look up the invitation via invitationService by ID', async () => {
+        vi.mocked(getInvitationById).mockResolvedValue(mockInvitation as any);
 
         await invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' });
 
-        expect(prisma.invitation.findUnique).toHaveBeenCalledWith({
-          where: { id: 'invitation-123' },
-          include: {
-            organization: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-            inviter: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        });
-      });
-
-      it('should only select necessary organization fields', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(mockInvitation as any);
-
-        await invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' });
-
-        const call = vi.mocked(prisma.invitation.findUnique).mock.calls[0][0];
-        const orgSelect = (call?.include?.organization as any)?.select;
-
-        expect(orgSelect).toBeDefined();
-        expect(orgSelect).toEqual({
-          id: true,
-          name: true,
-          slug: true,
-        });
-      });
-
-      it('should only select necessary inviter fields', async () => {
-        vi.mocked(prisma.invitation.findUnique).mockResolvedValue(mockInvitation as any);
-
-        await invitationResolvers.Query.getInvitationPublic({}, { id: 'invitation-123' });
-
-        const call = vi.mocked(prisma.invitation.findUnique).mock.calls[0][0];
-        const inviterSelect = (call?.include?.inviter as any)?.select;
-
-        expect(inviterSelect).toBeDefined();
-        expect(inviterSelect).toEqual({
-          id: true,
-          name: true,
-          email: true,
-        });
+        expect(getInvitationById).toHaveBeenCalledWith('invitation-123');
+        expect(getInvitationById).toHaveBeenCalledTimes(1);
       });
     });
   });

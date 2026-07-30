@@ -12,7 +12,7 @@ import {
 import { createForm } from '../../services/formService.js';
 import { randomUUID } from 'crypto';
 import { copyFileForForm } from '../../services/fileUploadService.js';
-import { prisma } from '../../lib/prisma.js';
+import { createFormFile } from '../../services/formFileService.js';
 import { requireSystemLevelRole, requireAuthentication, type AuthContext } from '../../utils/auth.js';
 import { requireOrganizationMembership, BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { logger } from '../../lib/logger.js';
@@ -239,17 +239,15 @@ export const templatesResolvers = {
         // Now that the form row exists, persist FormFile records for any copied assets
         if (copiedImageAsset) {
           try {
-            await prisma.formFile.create({
-              data: {
-                id: randomUUID(),
-                key: copiedImageAsset.key,
-                type: 'FormBackground',
-                formId: newFormId,
-                originalName: copiedImageAsset.originalName,
-                url: copiedImageAsset.url,
-                size: copiedImageAsset.size,
-                mimeType: copiedImageAsset.mimeType,
-              }
+            await createFormFile({
+              id: randomUUID(),
+              key: copiedImageAsset.key,
+              type: 'FormBackground',
+              formId: newFormId,
+              originalName: copiedImageAsset.originalName,
+              url: copiedImageAsset.url,
+              size: copiedImageAsset.size,
+              mimeType: copiedImageAsset.mimeType,
             });
           } catch (error) {
             logger.error('Error creating FormFile record for copied background image:', error);
@@ -257,17 +255,15 @@ export const templatesResolvers = {
         }
         if (copiedVideoAsset) {
           try {
-            await prisma.formFile.create({
-              data: {
-                id: randomUUID(),
-                key: copiedVideoAsset.key,
-                type: 'FormBackground',
-                formId: newFormId,
-                originalName: copiedVideoAsset.originalName,
-                url: copiedVideoAsset.url,
-                size: copiedVideoAsset.size,
-                mimeType: copiedVideoAsset.mimeType,
-              }
+            await createFormFile({
+              id: randomUUID(),
+              key: copiedVideoAsset.key,
+              type: 'FormBackground',
+              formId: newFormId,
+              originalName: copiedVideoAsset.originalName,
+              url: copiedVideoAsset.url,
+              size: copiedVideoAsset.size,
+              mimeType: copiedVideoAsset.mimeType,
             });
           } catch (error) {
             logger.error('Error creating FormFile record for copied background video:', error);

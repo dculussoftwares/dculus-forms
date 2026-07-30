@@ -1,5 +1,6 @@
 import type { Prisma } from '#prisma-client';
 import { resolvePrisma, type RepositoryContext } from './baseRepository.js';
+import { createFormFileRepository } from './formFileRepository.js';
 
 const defaultFormInclude = {
   organization: { select: { id: true, name: true, slug: true, logo: true } },
@@ -13,6 +14,9 @@ const defaultFormInclude = {
  */
 export const createFormRepository = (context?: RepositoryContext) => {
   const prisma = resolvePrisma(context);
+  // Share the same (possibly transaction-scoped) Prisma client so FormFile
+  // writes made through this repository stay atomic with the caller's transaction.
+  const formFileRepo = createFormFileRepository(context);
 
   /** --- Generic delegate passthroughs (keep API flexibility) --- */
   const findMany = <T extends Prisma.FormFindManyArgs>(
@@ -120,13 +124,12 @@ export const createFormRepository = (context?: RepositoryContext) => {
 
   /**
    * Attach form-level assets (e.g. background images) in a single call.
+   * `FormFile` is the single source of truth here — this delegates to
+   * `formFileRepository` rather than duplicating the write.
    */
   const createFormAsset = async (
     data: Prisma.FormFileCreateArgs['data']
-  ) =>
-    prisma.formFile.create({
-      data,
-    });
+  ) => formFileRepo.createFormFile(data);
 
   return {
     // Generic operations (used when custom queries are needed)
