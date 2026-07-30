@@ -82,6 +82,38 @@ export const createFormRepository = (context?: RepositoryContext) => {
     });
 
   /**
+   * Forms within an organization that a user can actually see: forms they
+   * created, forms with an explicit non-NO_ACCESS permission grant, or forms
+   * shared org-wide (ALL_ORG_MEMBERS) with a non-NO_ACCESS default permission.
+   * Mirrors the inline query in resolvers/responses.ts exactly (no `deletedAt`
+   * filter — matches existing behavior, do not add one here as a "fix").
+   * Only returns `id` — callers needing more should pass richer usage through
+   * a dedicated helper rather than widening this one.
+   */
+  const listAccessibleByOrganization = async (
+    organizationId: string,
+    userId: string
+  ): Promise<{ id: string }[]> =>
+    prisma.form.findMany({
+      where: {
+        organizationId,
+        OR: [
+          { createdById: userId },
+          {
+            permissions: {
+              some: { userId, permission: { not: 'NO_ACCESS' } },
+            },
+          },
+          {
+            sharingScope: 'ALL_ORG_MEMBERS',
+            defaultPermission: { not: 'NO_ACCESS' },
+          },
+        ],
+      },
+      select: { id: true },
+    });
+
+  /**
    * Create a form record with the default relation include baked in.
    * Use `create` above when a custom projection is required.
    */
@@ -144,6 +176,7 @@ export const createFormRepository = (context?: RepositoryContext) => {
     listByOrganization,
     findById,
     findByShortUrl,
+    listAccessibleByOrganization,
     createForm,
     updateForm,
     deleteForm,

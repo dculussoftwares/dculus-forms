@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   getAllForms,
   getFormById,
+  getAccessibleFormIds,
   getFormByShortUrl,
   createForm,
   updateForm,
@@ -175,6 +176,28 @@ describe('Form Service', () => {
       const result = await getFormById('form-123');
 
       expect(result?.description).toBeUndefined();
+    });
+  });
+
+  describe('getAccessibleFormIds', () => {
+    it('should return ids of accessible forms for a user in an organization', async () => {
+      vi.mocked(formRepository.listAccessibleByOrganization).mockResolvedValue([
+        { id: 'form-1' },
+        { id: 'form-2' },
+      ] as any);
+
+      const result = await getAccessibleFormIds('org-123', 'user-123');
+
+      expect(formRepository.listAccessibleByOrganization).toHaveBeenCalledWith('org-123', 'user-123');
+      expect(result).toEqual(['form-1', 'form-2']);
+    });
+
+    it('should return an empty array when no forms are accessible', async () => {
+      vi.mocked(formRepository.listAccessibleByOrganization).mockResolvedValue([]);
+
+      const result = await getAccessibleFormIds('org-123', 'user-123');
+
+      expect(result).toEqual([]);
     });
   });
 

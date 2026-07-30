@@ -5,20 +5,13 @@ import { FieldType } from '@dculus/types';
 import * as fieldAnalyticsService from '../../../services/fieldAnalytics/index.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
 import * as formSharingModule from '../formSharing.js';
-import { prisma } from '../../../lib/prisma.js';
+import * as formServiceModule from '../../../services/formService.js';
 
 // Mock all dependencies
 vi.mock('../../../services/fieldAnalytics/index.js');
 vi.mock('../../../services/hocuspocus.js');
 vi.mock('../formSharing.js');
-vi.mock('../../../lib/prisma.js', () => ({
-  prisma: {
-    form: {
-      findFirst: vi.fn(),
-      findUnique: vi.fn(),
-    },
-  },
-}));
+vi.mock('../../../services/formService.js');
 vi.mock('../../../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -552,7 +545,7 @@ describe('Field Analytics Resolvers', () => {
     it('should throw error when fallback schema is null', async () => {
       vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
-      vi.mocked(prisma.form.findUnique as any).mockResolvedValue({ formSchema: null });
+      vi.mocked(formServiceModule.getFormById).mockResolvedValue({ formSchema: null } as any);
 
       await expect(
         fieldAnalyticsResolvers.Query.fieldAnalytics(
@@ -566,7 +559,7 @@ describe('Field Analytics Resolvers', () => {
     it('should throw error when field not found in fallback schema', async () => {
       vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
-      vi.mocked(prisma.form.findUnique as any).mockResolvedValue({ formSchema: mockFormWithSchema.formSchema });
+      vi.mocked(formServiceModule.getFormById).mockResolvedValue({ formSchema: mockFormWithSchema.formSchema } as any);
 
       await expect(
         fieldAnalyticsResolvers.Query.fieldAnalytics(
