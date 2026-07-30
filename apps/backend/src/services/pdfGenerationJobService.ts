@@ -3,8 +3,8 @@ import { deserializeFormSchema } from '@dculus/types';
 import { generateId } from '@dculus/utils';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
+import { pdfGeneratorRepository, formRepository, responseRepository } from '../repositories/index.js';
 import {
   hydrateTemplate,
   getPdfFonts,
@@ -38,15 +38,12 @@ export const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 async function loadGeneratorContext(generatorId: string) {
-  const generator = await prisma.pdfGenerator.findUnique({
-    where: { id: generatorId },
-    include: { template: true },
-  });
+  const generator = await pdfGeneratorRepository.findByIdWithTemplate(generatorId);
   if (!generator) {
     throw createGraphQLError('PDF generator not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }
 
-  const form = await prisma.form.findUnique({
+  const form = await formRepository.findUnique({
     where: { id: generator.formId },
     select: { formSchema: true },
   });
@@ -91,8 +88,7 @@ async function generateAndPersistResult(params: {
   const substitutionValues = buildSubstitutionValues(deserializedSchema, responseData);
   const filename = buildGeneratorFilename(filenameFieldId, substitutionValues, templateName, responseId);
 
-  await prisma.pdfGenerationResult.upsert({
-    where: { generatorId_responseId: { generatorId, responseId } },
+  await pdfGeneratorRepository.upsertResult(generatorId, responseId, {
     create: { id: generateId(), generatorId, responseId, status: 'success', fileKey, filename },
     update: { status: 'success', fileKey, filename, errorMessage: null, generatedAt: new Date() },
   });
@@ -102,8 +98,7 @@ async function generateAndPersistResult(params: {
 
 async function recordFailure(generatorId: string, responseId: string, error: unknown): Promise<void> {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-  await prisma.pdfGenerationResult.upsert({
-    where: { generatorId_responseId: { generatorId, responseId } },
+  await pdfGeneratorRepository.upsertResult(generatorId, responseId, {
     create: { id: generateId(), generatorId, responseId, status: 'failed', errorMessage },
     update: { status: 'failed', errorMessage, generatedAt: new Date() },
   });
@@ -113,7 +108,7 @@ export const startPdfGenerationRun = async (
   generatorId: string,
   trigger: 'manual' | 'auto' = 'manual'
 ) => {
-  const generator = await prisma.pdfGenerator.findUnique({ where: { id: generatorId } });
+  const generator = await pdfGeneratorRepository.findById(generatorId);
   if (!generator) {
     throw createGraphQLError('PDF generator not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }
@@ -124,9 +119,7 @@ export const startPdfGenerationRun = async (
     );
   }
 
-  const activeRun = await prisma.pdfGenerationRun.findFirst({
-    where: { generatorId, status: { in: ['running', 'cancelling'] } },
-  });
+  const activeRun = await pdfGeneratorRepository.findActiveRun(generatorId);
   if (activeRun) {
     throw createGraphQLError(
       'A run is already in progress for this PDF generator',
@@ -134,7 +127,7 @@ export const startPdfGenerationRun = async (
     );
   }
 
-  const totalResponseCount = await prisma.response.count({
+  const totalResponseCount = await responseRepository.count({
     where: { formId: generator.formId, deletedAt: null },
   });
   if (totalResponseCount > MAX_RESPONSES_PER_RUN) {
@@ -150,14 +143,12 @@ export const startPdfGenerationRun = async (
     generator.filterLogic as 'AND' | 'OR'
   );
 
-  const run = await prisma.pdfGenerationRun.create({
-    data: {
-      id: generateId(),
-      generatorId,
-      trigger,
-      status: 'running',
-      totalCount: matchingResponses.length,
-    },
+  const run = await pdfGeneratorRepository.createRun({
+    id: generateId(),
+    generatorId,
+    trigger,
+    status: 'running',
+    totalCount: matchingResponses.length,
   });
 
   void runPdfGenerationLoop(run.id, generatorId, matchingResponses);
@@ -180,16 +171,16 @@ export const runPdfGenerationLoop = async (
     let failed = 0;
 
     for (let i = 0; i < responses.length; i += BATCH_SIZE) {
-      const run = await prisma.pdfGenerationRun.findUnique({ where: { id: runId } });
+      const run = await pdfGeneratorRepository.findRunById(runId);
       // The run row can vanish mid-loop (e.g. its generator was deleted,
       // cascading the delete) — nothing to update in that case, and
       // attempting one would throw "record not found" from inside a
       // fire-and-forget void call, surfacing as an unhandled rejection.
       if (!run) return;
       if (run.status === 'cancelling') {
-        await prisma.pdfGenerationRun.update({
-          where: { id: runId },
-          data: { status: 'cancelled', completedAt: new Date() },
+        await pdfGeneratorRepository.updateRunStatus(runId, {
+          status: 'cancelled',
+          completedAt: new Date(),
         });
         return;
       }
@@ -219,18 +210,19 @@ export const runPdfGenerationLoop = async (
         // Updated after every response (not just every batch) so a slow batch
         // never lets updatedAt go stale enough to trip stalled-run detection
         // while the loop is still healthy — see getLatestPdfGenerationRun.
-        await prisma.pdfGenerationRun.update({
-          where: { id: runId },
-          data: { processedCount: processed, succeededCount: succeeded, failedCount: failed },
+        await pdfGeneratorRepository.updateRunStatus(runId, {
+          processedCount: processed,
+          succeededCount: succeeded,
+          failedCount: failed,
         });
       }
 
       await wait(BATCH_DELAY_MS);
     }
 
-    await prisma.pdfGenerationRun.update({
-      where: { id: runId },
-      data: { status: 'completed', completedAt: new Date() },
+    await pdfGeneratorRepository.updateRunStatus(runId, {
+      status: 'completed',
+      completedAt: new Date(),
     });
   } catch (error: any) {
     logger.error(`[PDF Generator] Run ${runId} failed`, error);
@@ -238,13 +230,10 @@ export const runPdfGenerationLoop = async (
     // run row is already gone (e.g. its generator was deleted concurrently),
     // this update would itself throw and escape as an unhandled rejection.
     try {
-      await prisma.pdfGenerationRun.update({
-        where: { id: runId },
-        data: {
-          status: 'failed',
-          errorMessage: error.message || 'Unknown error',
-          completedAt: new Date(),
-        },
+      await pdfGeneratorRepository.updateRunStatus(runId, {
+        status: 'failed',
+        errorMessage: error.message || 'Unknown error',
+        completedAt: new Date(),
       });
     } catch (updateError) {
       logger.error(`[PDF Generator] Could not mark run ${runId} as failed:`, updateError);
@@ -253,7 +242,7 @@ export const runPdfGenerationLoop = async (
 };
 
 export const getPdfGenerationRun = async (runId: string) => {
-  return prisma.pdfGenerationRun.findUnique({ where: { id: runId } });
+  return pdfGeneratorRepository.findRunById(runId);
 };
 
 export const cancelPdfGenerationRun = async (runId: string) => {
@@ -265,14 +254,11 @@ export const cancelPdfGenerationRun = async (runId: string) => {
     return run;
   }
 
-  return prisma.pdfGenerationRun.update({ where: { id: runId }, data: { status: 'cancelling' } });
+  return pdfGeneratorRepository.updateRunStatus(runId, { status: 'cancelling' });
 };
 
 export const getLatestPdfGenerationRun = async (generatorId: string) => {
-  const run = await prisma.pdfGenerationRun.findFirst({
-    where: { generatorId },
-    orderBy: { startedAt: 'desc' },
-  });
+  const run = await pdfGeneratorRepository.findLatestRun(generatorId);
   if (!run) return null;
 
   // Also cover 'cancelling': if the process restarts between
@@ -283,14 +269,11 @@ export const getLatestPdfGenerationRun = async (generatorId: string) => {
   if (run.status === 'running' || run.status === 'cancelling') {
     const staleMs = Date.now() - run.updatedAt.getTime();
     if (staleMs > STALLED_THRESHOLD_MS) {
-      return prisma.pdfGenerationRun.update({
-        where: { id: run.id },
-        data: {
-          status: 'failed',
-          errorMessage:
-            'Run appears stalled, possibly due to a server restart. Click Run again to retry.',
-          completedAt: new Date(),
-        },
+      return pdfGeneratorRepository.updateRunStatus(run.id, {
+        status: 'failed',
+        errorMessage:
+          'Run appears stalled, possibly due to a server restart. Click Run again to retry.',
+        completedAt: new Date(),
       });
     }
   }
@@ -312,7 +295,7 @@ export const generateSinglePdfForGenerator = async (
 ): Promise<{ fileKey: string; filename: string }> => {
   const { generator, deserializedSchema } = await loadGeneratorContext(generatorId);
 
-  const response = await prisma.response.findUnique({ where: { id: responseId } });
+  const response = await responseRepository.findUnique({ where: { id: responseId } });
   if (!response || response.deletedAt || response.formId !== generator.formId) {
     throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }
@@ -340,9 +323,7 @@ export const generateSinglePdfForGenerator = async (
  * runs outside any request/response cycle.
  */
 export const regeneratePdfsForResponse = async (responseId: string): Promise<void> => {
-  const results = await prisma.pdfGenerationResult.findMany({
-    where: { responseId, status: 'success' },
-  });
+  const results = await pdfGeneratorRepository.listSuccessfulResultsByResponse(responseId);
 
   for (const result of results) {
     try {
