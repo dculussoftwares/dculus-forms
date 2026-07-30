@@ -41,6 +41,10 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     args: Prisma.SelectSubset<T, Prisma.ResponseDeleteArgs>
   ) => prisma.response.delete(args);
 
+  const deleteMany = <T extends Prisma.ResponseDeleteManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.ResponseDeleteManyArgs>
+  ) => prisma.response.deleteMany(args);
+
   const createEditHistory = <T extends Prisma.ResponseEditHistoryCreateArgs>(
     args: Prisma.SelectSubset<T, Prisma.ResponseEditHistoryCreateArgs>
   ) => prisma.responseEditHistory.create(args);
@@ -75,6 +79,7 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     createMany,
     update,
     delete: remove,
+    deleteMany,
     createEditHistory,
     findEditHistory,
     createFieldChange,
