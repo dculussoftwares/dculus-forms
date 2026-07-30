@@ -1,6 +1,6 @@
 import { createGraphQLError, GraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { prisma } from '../../lib/prisma.js';
+import { listFormFiles } from '../../services/formFileService.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { logger } from '../../lib/logger.js';
@@ -34,18 +34,8 @@ export const formFileResolvers = {
           throw createGraphQLError(`Invalid file type filter: ${type}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
 
-        const where: any = { formId };
-        if (type) {
-          where.type = type;
-        }
-
         // Fetch form files
-        const formFiles = await prisma.formFile.findMany({
-          where,
-          orderBy: {
-            createdAt: 'desc'
-          }
-        });
+        const formFiles = await listFormFiles(formId, type);
 
         return formFiles;
       } catch (error) {
