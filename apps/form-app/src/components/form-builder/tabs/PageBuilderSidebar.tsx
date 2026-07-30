@@ -157,7 +157,7 @@ export const RightSidebar: React.FC<{
     }
 
     return (
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="flex flex-col items-center justify-center h-64 p-8 text-center">
           <div className="w-10 h-10 rounded-xl bg-[var(--tf-icon-gray)] flex items-center justify-center mb-3">
             <Settings className="w-4.5 h-4.5 text-[#655d67]" />
@@ -171,7 +171,7 @@ export const RightSidebar: React.FC<{
 
   return (
     <div
-      className="bg-white dark:bg-card flex flex-col relative"
+      className="bg-white dark:bg-card flex h-full min-h-0 flex-col relative"
       style={{ borderLeft: '1px solid var(--tf-border)', width: `${width}px` }}
     >
       {/* Resize handle */}

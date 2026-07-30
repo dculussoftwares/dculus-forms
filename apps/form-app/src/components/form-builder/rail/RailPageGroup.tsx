@@ -125,7 +125,7 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
       data-testid={`rail-page-${index}`}
       aria-selected={isSelected}
       className={cn(
-        'group rounded-xl border bg-white dark:bg-card transition-all',
+        'group min-w-0 overflow-hidden rounded-xl border bg-white dark:bg-card transition-all',
         isDragging && 'opacity-50 z-10',
         isSelected
           ? 'border-[var(--tf-border-strong)] shadow-sm'
@@ -152,7 +152,7 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
           }
         }}
         className={cn(
-          'flex items-center gap-1.5 rounded-t-xl px-2 py-1.5 cursor-pointer',
+          'flex min-w-0 items-center gap-1.5 rounded-t-xl px-2 py-1.5 cursor-pointer',
           isSelected && 'bg-[var(--tf-faint)]'
         )}
       >
@@ -246,7 +246,7 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
         )}
       </div>
 
-      <div className="flex flex-col gap-0 px-1 pb-1.5">
+      <div className="flex min-w-0 flex-col gap-0 px-1 pb-1.5">
         <RailFieldInsertZone pageId={page.id} insertIndex={0} />
         {page.fields.map((field, fieldIndex) => (
           <React.Fragment key={field.id}>

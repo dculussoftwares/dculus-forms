@@ -56,8 +56,8 @@ export const JourneyRail: React.FC = () => {
           <FieldLibrary mode="trigger" />
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="flex flex-col gap-1 px-3 pb-4">
+        <ScrollArea className="min-h-0 flex-1 overflow-x-hidden">
+          <div className="flex w-0 min-w-full flex-col gap-1 overflow-x-hidden pl-3 pr-4 pb-4">
             {/* INTRO */}
             <div className="mb-1 mt-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--tf-muted)]">
               {t('intro.sectionTitle')}
@@ -102,7 +102,7 @@ export const JourneyRail: React.FC = () => {
               items={pages.map((p) => p.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="flex flex-col gap-1.5" data-testid="pages-list">
+              <div className="flex min-w-0 flex-col gap-1.5" data-testid="pages-list">
                 {pages.map((page, index) => (
                   <RailPageGroup
                     key={page.id}

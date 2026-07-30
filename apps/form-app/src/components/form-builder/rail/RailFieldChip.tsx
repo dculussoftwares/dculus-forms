@@ -75,7 +75,7 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
       aria-pressed={isSelected}
       onClick={() => setSelection({ kind: 'field', fieldId: field.id, pageId })}
       className={cn(
-        'group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors',
+        'group flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors',
         canReorder && 'cursor-grab active:cursor-grabbing',
         isDragging && 'opacity-40',
         isSelected

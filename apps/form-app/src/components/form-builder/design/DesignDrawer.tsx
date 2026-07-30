@@ -62,7 +62,7 @@ export const DesignDrawer: React.FC<DesignDrawerProps> = ({
           </p>
         </SheetHeader>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="p-4 space-y-6">
             {/* Layout family */}
             <div className="pb-6 border-b border-[var(--tf-border-medium)] dark:border-gray-700">

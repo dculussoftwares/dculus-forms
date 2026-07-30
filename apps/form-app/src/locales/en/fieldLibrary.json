@@ -1,8 +1,8 @@
 {
-  "trigger": "＋ Add content",
+  "trigger": "Add content",
   "title": "Add content",
-  "pin": "📌 Pin",
-  "unpin": "📌 Unpin",
+  "pin": "Pin",
+  "unpin": "Unpin",
   "dockedTitle": "Field types",
   "search": {
     "placeholder": "Search field types…  ( / )",

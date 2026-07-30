@@ -96,7 +96,7 @@ export const EndingSettingsPanel: React.FC<EndingSettingsPanelProps> = ({
   };
 
   return (
-    <ScrollArea className="flex-1" data-testid="ending-settings-panel">
+    <ScrollArea className="min-h-0 flex-1" data-testid="ending-settings-panel">
       <div className="p-4">
         <h3 className="text-sm font-semibold text-primary dark:text-white mb-1">
           {t('header.title')}

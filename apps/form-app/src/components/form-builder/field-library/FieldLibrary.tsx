@@ -143,7 +143,7 @@ export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
             <PinOff className="h-3.5 w-3.5" />
           </Button>
         </div>
-        <ScrollArea className="flex-1">
+        <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-5 p-3">
             {CATEGORY_ORDER.map((category) => {
               const fields = grouped[category];

@@ -152,7 +152,7 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
   return (
     <Card
       className={cn(
-        'p-3',
+        'h-full p-3',
         isOverlay
           ? 'border-[rgba(81,76,84,0.20)] bg-white shadow-md transition-none'
           : cn(
@@ -196,7 +196,7 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
           >
             {fieldType.label}
           </div>
-          <div className="text-xs text-[#655d67] dark:text-gray-400 mt-0.5 leading-tight">
+          <div className="text-xs text-[#655d67] dark:text-gray-400 mt-0.5 leading-tight line-clamp-2">
             {fieldType.description}
           </div>
         </div>
@@ -257,7 +257,7 @@ export const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
         {...attributes}
         onClick={onAdd}
         className={cn(
-          'group cursor-grab active:cursor-grabbing',
+          'group h-full cursor-grab active:cursor-grabbing',
           isDragging ? 'opacity-50' : ''
         )}
       >
