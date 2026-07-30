@@ -155,6 +155,23 @@ export const createFormSubmissionAnalyticsRepository = (
     return rows[0] ?? null;
   };
 
+  /**
+   * Average completion time for a form, computed in SQL so the dashboard-stats
+   * field resolver never loads every submission row into JS memory. Excludes
+   * null and non-positive values, matching the semantics the JS-side
+   * computation historically used.
+   */
+  const getAverageCompletionTime = async (formId: string): Promise<number | null> => {
+    const rows = await prisma.$queryRaw<Array<{ avg: number | null }>>`
+      SELECT AVG("completionTimeSeconds") AS avg
+      FROM form_submission_analytics
+      WHERE "formId" = ${formId}
+        AND "completionTimeSeconds" IS NOT NULL
+        AND "completionTimeSeconds" > 0
+    `;
+    return rows[0]?.avg ?? null;
+  };
+
   return {
     create,
     count,
@@ -166,6 +183,7 @@ export const createFormSubmissionAnalyticsRepository = (
     getDailySubmissionStats,
     getOrgDailySubmissionCounts,
     getCompletionTimePercentiles,
+    getAverageCompletionTime,
   };
 };
 

@@ -419,22 +419,13 @@ const getDashboardViewCounts = async (
 
 /**
  * Average completion time across a form's submission analytics, ignoring
- * null and non-positive values. Used by the `Form.dashboardStats` field
- * resolver.
+ * null and non-positive values. Computed in SQL (not loaded into JS memory)
+ * so this stays cheap on the frequently-hit `Form.dashboardStats` field
+ * resolver even for forms with large submission volumes.
  */
 const getAverageCompletionTime = async (formId: string): Promise<number | null> => {
-  const submissionAnalytics = await formSubmissionAnalyticsRepository.findMany({
-    where: { formId },
-    select: { completionTimeSeconds: true },
-  });
-
-  const validCompletionTimes = submissionAnalytics
-    .map((s) => s.completionTimeSeconds)
-    .filter((t): t is number => t !== null && t > 0);
-
-  return validCompletionTimes.length > 0
-    ? validCompletionTimes.reduce((sum, t) => sum + t, 0) / validCompletionTimes.length
-    : null;
+  const avg = await formSubmissionAnalyticsRepository.getAverageCompletionTime(formId);
+  return avg != null ? Number(avg) : null;
 };
 
 // Database query functions

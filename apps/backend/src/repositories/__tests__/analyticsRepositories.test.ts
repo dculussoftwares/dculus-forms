@@ -379,4 +379,22 @@ describe('Form Submission Analytics Repository', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('getAverageCompletionTime', () => {
+    it('returns the SQL-computed average when present', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ avg: 123.45 }]);
+
+      const result = await repository.getAverageCompletionTime('form-1');
+
+      expect(result).toBe(123.45);
+    });
+
+    it('returns null when there is no data', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ avg: null }]);
+
+      const result = await repository.getAverageCompletionTime('form-1');
+
+      expect(result).toBeNull();
+    });
+  });
 });

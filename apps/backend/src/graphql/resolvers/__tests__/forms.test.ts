@@ -35,6 +35,8 @@ vi.mock('../../../lib/prisma.js', () => ({
     formFile: {
       create: vi.fn(),
     },
+    // Backs formSubmissionAnalyticsRepository.getAverageCompletionTime (SQL-computed avg)
+    $queryRaw: vi.fn(),
   },
   isLocalDatabase: vi.fn(() => true),
 }));
@@ -81,6 +83,8 @@ describe('Forms Resolvers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: no completion-time data (individual tests override as needed)
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -502,11 +506,8 @@ describe('Forms Resolvers', () => {
       // rateThisWeek=(20/200)*100=10, rateLastWeek=(16/200)*100=8 → trendResponseRate=2
       vi.mocked(prisma.formViewAnalytics.count).mockResolvedValue(200);
 
-      vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([
-        { completionTimeSeconds: 120 },
-        { completionTimeSeconds: 180 },
-        { completionTimeSeconds: 150 },
-      ] as any);
+      // Average of [120, 180, 150] = 150, now computed in SQL
+      vi.mocked(prisma.$queryRaw).mockResolvedValue([{ avg: 150 }] as any);
 
       const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
 

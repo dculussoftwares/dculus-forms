@@ -713,6 +713,40 @@ describe('Analytics Service', () => {
     });
   });
 
+  describe('getDashboardViewCounts', () => {
+    it('returns total/thisWeek/lastWeek view counts', async () => {
+      vi.mocked(formViewAnalyticsRepository.count)
+        .mockResolvedValueOnce(100)
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(5);
+
+      const result = await analyticsService.getDashboardViewCounts('form-123', {
+        weekAgo: new Date('2026-05-24'),
+        twoWeeksAgo: new Date('2026-05-17'),
+      });
+
+      expect(result).toEqual({ total: 100, thisWeek: 10, lastWeek: 5 });
+    });
+  });
+
+  describe('getAverageCompletionTime', () => {
+    it('returns the SQL-computed average as a number', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.getAverageCompletionTime).mockResolvedValue(150);
+
+      const result = await analyticsService.getAverageCompletionTime('form-123');
+
+      expect(result).toBe(150);
+    });
+
+    it('returns null when there is no completion-time data', async () => {
+      vi.mocked(formSubmissionAnalyticsRepository.getAverageCompletionTime).mockResolvedValue(null);
+
+      const result = await analyticsService.getAverageCompletionTime('form-123');
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('getOrgDailyUsage', () => {
     const orgId = 'org-abc';
     const periodStart = new Date('2026-06-01T00:00:00Z');

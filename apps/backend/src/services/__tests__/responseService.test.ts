@@ -5,6 +5,7 @@ import {
   getResponsesByFormId,
   getAllResponsesByFormId,
   submitResponse,
+  submitResponseWithMaxLimitCheck,
   updateResponse,
   deleteResponse,
 } from '../responseService.js';
@@ -18,10 +19,13 @@ import { emitResponseEdited } from '../../plugins/core/events.js';
 // Mock dependencies
 vi.mock('../../repositories/index.js');
 vi.mock('../responseFilterService.js');
-// Minimal mock Prisma transaction client used by updateResponse (P2-02)
+// Minimal mock Prisma transaction client used by updateResponse (P2-02) and
+// submitResponseWithMaxLimitCheck's Serializable max-responses transaction
 const mockTxClient = {
   response: {
     update: vi.fn(),
+    count: vi.fn(),
+    create: vi.fn(),
   },
 };
 
@@ -68,8 +72,11 @@ describe('Response Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Transaction-scoped repository used inside updateResponse's prisma.$transaction (P2-02)
+    // and submitResponseWithMaxLimitCheck's Serializable transaction
     vi.mocked(createResponseRepository).mockReturnValue({
       update: mockTxClient.response.update,
+      count: mockTxClient.response.count,
+      create: mockTxClient.response.create,
     } as any);
   });
 
@@ -328,6 +335,59 @@ describe('Response Service', () => {
       const result = await submitResponse(invalidResponse);
 
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('submitResponseWithMaxLimitCheck', () => {
+    const responseData = {
+      id: 'response-123',
+      formId: 'form-123',
+      data: { field1: 'value1' },
+      respondentUserId: null,
+      respondentEmail: null,
+    };
+
+    it('rejects when the current count has already reached the limit', async () => {
+      mockTxClient.response.count.mockResolvedValue(10);
+
+      await expect(
+        submitResponseWithMaxLimitCheck(responseData, 10)
+      ).rejects.toThrow('Form has reached its maximum response limit');
+
+      expect(mockTxClient.response.create).not.toHaveBeenCalled();
+    });
+
+    it('inserts and returns the mapped FormResponse when under the limit', async () => {
+      mockTxClient.response.count.mockResolvedValue(5);
+      mockTxClient.response.create.mockResolvedValue({
+        ...mockResponse,
+        id: 'response-123',
+        formId: 'form-123',
+        data: { field1: 'value1' },
+        metadata: null,
+        respondentEmail: undefined,
+        submittedAt: new Date('2024-01-01'),
+      });
+
+      const result = await submitResponseWithMaxLimitCheck(responseData, 10);
+
+      expect(mockTxClient.response.count).toHaveBeenCalledWith({
+        where: { formId: 'form-123' },
+      });
+      expect(mockTxClient.response.create).toHaveBeenCalledWith({
+        data: {
+          id: 'response-123',
+          formId: 'form-123',
+          data: { field1: 'value1' },
+          respondentUserId: null,
+          respondentEmail: null,
+        },
+      });
+      expect(result).toMatchObject({
+        id: 'response-123',
+        formId: 'form-123',
+        data: { field1: 'value1' },
+      });
     });
   });
 
