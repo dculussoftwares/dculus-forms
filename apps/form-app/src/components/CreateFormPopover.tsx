@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router';
 import { useAppConfig } from '@/hooks';
 import { useTranslation } from '../hooks/useTranslation';
 import { getErrorDetails } from '../utils/graphqlErrors';
+import { generateRandomString } from '@dculus/utils';
 
 interface CreateFormData {
   title: string;
@@ -97,7 +98,7 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
             description: formData.description.trim() || undefined,
             formSchema: {
               pages: [{
-                id: `page-${Date.now()}`,
+                id: `p${generateRandomString(9)}`,
                 title: t('defaultPageTitle'),
                 fields: [], // Start with empty fields
                 order: 1

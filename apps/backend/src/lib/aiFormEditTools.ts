@@ -1,6 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { conditionalRuleSchema, sanitizeConditions, type ConditionOperator, type ConditionalRule } from '@dculus/types';
+import { generateRandomString } from '@dculus/utils';
 import { countResponsesPerField, countResponsesReferencingAnyField } from '../services/responseService.js';
 
 // Field type tokens the AI uses (kept in sync with addField's fieldType enum).
@@ -294,7 +295,7 @@ export function createFormEditTools(
         insertAfterPageId: z.string().nullable().describe('Insert after this page ID; null to append at end'),
       }),
       execute: async (args) => {
-        const pageId = `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        const pageId = `p${generateRandomString(9)}`;
         const newPage = { id: pageId, title: args.title, fields: [] };
         if (args.insertAfterPageId) {
           const insertIdx = workingSchema.pages.findIndex((p: any) => p.id === args.insertAfterPageId);

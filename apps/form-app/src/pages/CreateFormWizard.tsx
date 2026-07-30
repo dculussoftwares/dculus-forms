@@ -9,7 +9,7 @@ import {
   toastError,
   Badge,
 } from '@dculus/ui';
-import { cn } from '@dculus/utils';
+import { cn, generateRandomString } from '@dculus/utils';
 import type { LayoutCode } from '@dculus/types';
 import {
   LayoutTemplate,
@@ -80,7 +80,7 @@ const AI_TYPE_MAP: Record<string, string> = {
 function buildFieldJson(f: AIField) {
   const fieldType = AI_TYPE_MAP[f.type] ?? 'text_input_field';
   const base = {
-    id: `field-${crypto.randomUUID()}`,
+    id: `f${generateRandomString(9)}`,
     type: fieldType,
     label: f.label,
     placeholder: f.placeholder ?? '',
@@ -122,7 +122,7 @@ function buildFormSchema(
 
   if (pageMode === 'single') {
     return {
-      pages: [{ id: `page-${Date.now()}`, title: 'Page 1', fields: fieldJsons, order: 1, showPageName: true }],
+      pages: [{ id: `p${generateRandomString(9)}`, title: 'Page 1', fields: fieldJsons, order: 1, showPageName: true }],
       layout, isShuffleEnabled: false,
     };
   }
@@ -138,7 +138,7 @@ function buildFormSchema(
       end++;
     }
     pages.push({
-      id: `page-${Date.now()}-${pages.length}`,
+      id: `p${generateRandomString(9)}`,
       title: section,
       fields: fieldJsons.slice(start, end),
       order: pages.length + 1,

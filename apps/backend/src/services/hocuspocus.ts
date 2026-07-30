@@ -2,6 +2,7 @@ import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import * as Y from 'yjs';
 import { sanitizeConditions, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import { generateRandomString } from '@dculus/utils';
 import {
   extractFormStatsFromYDoc,
   updateFormMetadata,
@@ -761,7 +762,7 @@ export const initializeHocuspocusDocument = async (
       // Create an empty page if no pages exist
       logger.info(`📝 Creating default empty page for form: ${formId}`);
       const defaultPageMap = new Y.Map();
-      defaultPageMap.set('id', `page-${Date.now()}`);
+      defaultPageMap.set('id', `p${generateRandomString(9)}`);
       defaultPageMap.set('title', 'Page 1');
       defaultPageMap.set('order', 0);
       defaultPageMap.set('showPageName', true);

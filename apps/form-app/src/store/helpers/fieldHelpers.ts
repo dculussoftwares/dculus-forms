@@ -24,6 +24,7 @@ import {
   TextFieldValidation,
   CheckboxFieldValidation,
 } from '@dculus/types';
+import { generateRandomString } from '@dculus/utils';
 import { FieldData } from '../collaboration/CollaborationManager';
 
 /**
@@ -46,12 +47,23 @@ export const FIELD_CONFIGS: Partial<
 };
 
 /**
+ * Generate a short unique ID scoped to a single-character entity prefix
+ * (e.g. 'f' for fields, 'p' for pages).
+ *
+ * Short (10-char) alphanumeric IDs instead of full UUIDs — field/page IDs are
+ * echoed into the AI chat context on every request, so their length directly
+ * drives token cost. Uniqueness only needs to hold within a single form's
+ * field/page count, so a 9-char random suffix is more than collision-safe.
+ */
+export const generateShortEntityId = (prefix: string): string => {
+  return `${prefix}${generateRandomString(9)}`;
+};
+
+/**
  * Generate a unique ID for fields
  */
 export const generateUniqueId = (): string => {
-  // crypto.randomUUID() is collision-proof and available in all modern browsers.
-  // The previous Date.now() approach could collide at millisecond precision.
-  return `field-${crypto.randomUUID()}`;
+  return generateShortEntityId('f');
 };
 
 /**

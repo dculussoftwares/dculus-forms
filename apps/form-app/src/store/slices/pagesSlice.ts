@@ -10,7 +10,7 @@ import { PagesSlice, SliceCreator } from '../types/store.types';
 import { FormPage } from '@dculus/types';
 import { getOrCreatePagesArray } from '../helpers/yjsHelpers';
 import { extractFieldData, FieldData } from '../collaboration/CollaborationManager';
-import { createYJSFieldMap } from '../helpers/fieldHelpers';
+import { createYJSFieldMap, generateShortEntityId } from '../helpers/fieldHelpers';
 
 /**
  * Create the pages slice
@@ -52,7 +52,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
       const pageMap = new Y.Map();
-      const newPageId = `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const newPageId = generateShortEntityId('p');
       const fieldsArray = new Y.Array();
 
       pageMap.set('id', newPageId);
@@ -91,7 +91,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
 
-      const newPageId = pageId ?? `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const newPageId = pageId ?? generateShortEntityId('p');
 
       ydoc.transact(() => {
         const pageMap = new Y.Map();
@@ -190,7 +190,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
 
       const originalPageMap = pagesArray.get(pageIndex);
       const duplicatePageMap = new Y.Map();
-      const newPageId = `page-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const newPageId = generateShortEntityId('p');
 
       duplicatePageMap.set('id', newPageId);
       duplicatePageMap.set('title', `${originalPageMap.get('title')} (Copy)`);
@@ -203,7 +203,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
 
       originalFieldsArray.toArray().forEach((originalFieldMap) => {
         const fieldData = extractFieldData(originalFieldMap);
-        fieldData.id = `field-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        fieldData.id = generateShortEntityId('f');
         const duplicateFieldMap = createYJSFieldMap(fieldData);
         duplicateFieldsArray.push([duplicateFieldMap]);
       });
