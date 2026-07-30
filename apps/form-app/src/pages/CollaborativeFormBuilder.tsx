@@ -373,14 +373,20 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     autoSelectFirstPage();
   }, [autoSelectFirstPage]);
 
-  // Apply background image key passed from the creation wizard via navigation state.
+  // Apply background image/video key passed from the creation wizard via navigation state.
   // Wait for pages.length > 0 as a signal that the YJS document has fully hydrated
   // from Hocuspocus — writing before hydration loses to the server's initial sync.
   useEffect(() => {
     const pendingKey = (location.state as any)?.pendingBackgroundKey as string | undefined;
-    if (!pendingKey || !isConnected || pages.length === 0 || pendingBgApplied.current) return;
+    const pendingVideoKey = (location.state as any)?.pendingBackgroundVideoKey as string | undefined;
+    if ((!pendingKey && !pendingVideoKey) || !isConnected || pages.length === 0 || pendingBgApplied.current) return;
     pendingBgApplied.current = true;
-    updateLayout({ backgroundImageKey: pendingKey });
+    // Mutually exclusive with backgroundImageKey — see BackgroundControls.tsx.
+    updateLayout(
+      pendingVideoKey
+        ? { backgroundVideoKey: pendingVideoKey, backgroundImageKey: '' }
+        : { backgroundImageKey: pendingKey, backgroundVideoKey: '' }
+    );
     navigate(location.pathname, { replace: true, state: {} });
   }, [isConnected, pages.length, location.state, location.pathname, updateLayout, navigate]);
 

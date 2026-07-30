@@ -453,6 +453,8 @@ function TemplatesStrip() {
         {templates.map((template: any) => {
           const bgKey = template.formSchema?.layout?.backgroundImageKey;
           const bgUrl = bgKey && cdnEndpoint ? `${cdnEndpoint}/${bgKey}` : null;
+          const bgVideoKey = template.formSchema?.layout?.backgroundVideoKey;
+          const bgVideoUrl = bgVideoKey && cdnEndpoint ? `${cdnEndpoint}/${bgVideoKey}` : null;
 
           return (
             <div
@@ -460,7 +462,23 @@ function TemplatesStrip() {
               className="group shrink-0 w-44 rounded-xl border border-[var(--tf-border-medium)] bg-white dark:bg-card overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-0.5 shadow-[0_1px_4px_var(--tf-overlay)] hover:shadow-[0_4px_16px_rgba(60,50,62,0.12)]"
             >
               <div className="relative h-24 overflow-hidden">
-                {bgUrl ? (
+                {bgVideoUrl ? (
+                  <>
+                    <video
+                      src={bgVideoUrl}
+                      muted
+                      loop
+                      autoPlay
+                      playsInline
+                      preload="metadata"
+                      aria-hidden="true"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    <div className="absolute top-2 right-2 flex items-center justify-center w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm">
+                      <Video className="w-3.5 h-3.5 text-white" />
+                    </div>
+                  </>
+                ) : bgUrl ? (
                   <div
                     className="w-full h-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
                     style={{ backgroundImage: `url(${bgUrl})` }}

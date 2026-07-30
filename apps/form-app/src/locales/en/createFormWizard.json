@@ -41,13 +41,19 @@
   },
   "appearance": {
     "heading": "Customize your form",
-    "subheading": "Pick a layout and optional background image — you can always change these later",
+    "subheading": "Pick a layout and an optional background photo or video — you can always change these later",
     "layoutLabel": "Layout",
-    "imageLabel": "Background Image",
+    "mediaLabel": "Background",
+    "mediaType": {
+      "photos": "Photos",
+      "videos": "Videos"
+    },
     "optional": "Optional",
     "noImages": "No images found for this topic",
+    "noVideos": "No videos found for this topic",
     "imageSelected": "Image selected",
-    "noImageSelected": "No image selected — you can add one later in the Layout tab",
+    "videoSelected": "Video selected",
+    "noMediaSelected": "No background selected — you can add one later in the Layout tab",
     "create": "Create Form",
     "creating": "Creating…",
     "errors": {
