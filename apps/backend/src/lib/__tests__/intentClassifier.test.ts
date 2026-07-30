@@ -98,6 +98,37 @@ describe('classifyIntent', () => {
     // "analyze" is complex even though the message contains "field"
     expect(classifyIntent('analyze all the fields')).toBe('complex');
   });
+
+  // ── Automation / integration (plugin) requests → complex ─────────────────
+  // Deliberate cost/quality tradeoff: automation has external side effects and its
+  // tools are full-tier only, so even simple-sounding phrasing routes to mini.
+  describe('automation requests → complex (never the cheap path)', () => {
+    it.each([
+      ['add a webhook when the form is submitted', 'complex'],
+      ['set up a webhook to https://example.com', 'complex'],
+      ['create an email notification plugin', 'complex'],
+      ['send an email to admin@example.com when someone submits', 'complex'],
+      ['email me when the form gets a response', 'complex'],
+      ['notify the team on every submission', 'complex'],
+      ['turn off the webhook', 'complex'],
+      ['disable the Slack integration', 'complex'],
+      ['set up quiz grading with a 60% pass mark', 'complex'],
+      ['grade this quiz automatically', 'complex'],
+      ['list my integrations', 'complex'],
+    ])('"%s" → %s', (message, expected) => {
+      expect(classifyIntent(message)).toBe(expected);
+    });
+
+    // Guard against over-widening: ordinary field edits must stay on the nano path.
+    it.each([
+      ['add an email field', 'simple'],
+      ['make the email field required', 'simple'],
+      ['add a text field for feedback', 'simple'],
+      ['rename the second page', 'simple'],
+    ])('"%s" still routes to %s', (message, expected) => {
+      expect(classifyIntent(message)).toBe(expected);
+    });
+  });
 });
 
 describe('intentToModelTier', () => {

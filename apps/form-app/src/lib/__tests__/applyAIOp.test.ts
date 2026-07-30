@@ -40,6 +40,7 @@ function makeStore(overrides = {}) {
     setPendingValidationSuggestions: jest.fn(),
     addPendingConditionSuggestion: jest.fn(),
     addPendingDestructiveAction: jest.fn(),
+    addPendingPluginProposal: jest.fn(),
     ...overrides,
   };
 }
@@ -181,6 +182,67 @@ describe('applyAIOp — PROPOSE_CONDITION_RULE (no immediate add)', () => {
     const store = makeStore();
     applyAIOp({ type: 'PROPOSE_CONDITION_RULE', rule: { ...rule, combinator: 'invalid' }, rationale: 'Bad rule' }, store as any);
     expect(store.addPendingConditionSuggestion).not.toHaveBeenCalled();
+  });
+});
+
+describe('applyAIOp — plugin proposals (no immediate mutation, no schema invalidation)', () => {
+  it('queues a create-plugin proposal keyed by toolCallId', () => {
+    const store = makeStore();
+    ((global as any).fetch as jest.Mock).mockClear();
+    applyAIOp({
+      type: 'PROPOSE_CREATE_PLUGIN',
+      pluginType: 'webhook',
+      name: 'CRM sync',
+      config: { type: 'webhook', url: 'https://example.com/hook' },
+      events: ['form.submitted'],
+      rationale: 'Send submissions to the CRM.',
+    }, store as any, 'form-1', 'call-plugin-1');
+    expect(store.addPendingPluginProposal).toHaveBeenCalledWith({
+      id: 'call-plugin-1',
+      kind: 'create',
+      pluginType: 'webhook',
+      name: 'CRM sync',
+      config: { type: 'webhook', url: 'https://example.com/hook' },
+      events: ['form.submitted'],
+      rationale: 'Send submissions to the CRM.',
+    });
+    // Proposals never invalidate the backend schema cache — nothing changed yet.
+    expect((global as any).fetch).not.toHaveBeenCalled();
+  });
+
+  it('drops a create proposal missing its essential parts', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'PROPOSE_CREATE_PLUGIN', pluginType: 'webhook' }, store as any);
+    expect(store.addPendingPluginProposal).not.toHaveBeenCalled();
+  });
+
+  it('queues an update-plugin proposal', () => {
+    const store = makeStore();
+    applyAIOp({
+      type: 'PROPOSE_UPDATE_PLUGIN',
+      pluginId: 'pl-1',
+      pluginType: 'webhook',
+      name: 'CRM sync',
+      updates: { enabled: false },
+      rationale: 'Turn it off.',
+    }, store as any, 'form-1', 'call-plugin-2');
+    expect(store.addPendingPluginProposal).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'call-plugin-2', kind: 'update', pluginId: 'pl-1', updates: { enabled: false },
+    }));
+  });
+
+  it('queues a delete-plugin proposal', () => {
+    const store = makeStore();
+    applyAIOp({
+      type: 'PROPOSE_DELETE_PLUGIN',
+      pluginId: 'pl-2',
+      pluginType: 'email',
+      name: 'Notify team',
+      rationale: 'No longer needed.',
+    }, store as any, 'form-1', 'call-plugin-3');
+    expect(store.addPendingPluginProposal).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'call-plugin-3', kind: 'delete', pluginId: 'pl-2', name: 'Notify team',
+    }));
   });
 });
 

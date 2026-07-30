@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { conditionalRuleSchema, sanitizeConditions, type ConditionOperator, type ConditionalRule } from '@dculus/types';
 import { generateRandomString } from '@dculus/utils';
 import { countResponsesPerField, countResponsesReferencingAnyField } from '../services/responseService.js';
+import { prisma } from './prisma.js';
 
 // Field type tokens the AI uses (kept in sync with addField's fieldType enum).
 const FIELD_TYPE_TOKENS = ['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file', 'phone'] as const;
@@ -86,13 +87,24 @@ const updatesSchema = z.object({
 
 export type ToolTier = 'full' | 'core' | 'minimal';
 
+// Plugin (integration) types the AI may propose. Mirrors the handlers registered in
+// apps/backend/src/plugins/ that have stable, AI-describable config shapes.
+const AI_PLUGIN_TYPES = ['webhook', 'email', 'quiz-grading'] as const;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Quiz grading compares the response value to correctAnswer with strict equality, so only
+// single-choice fields with a fixed option list are gradable.
+const QUIZ_FIELD_TYPES = new Set(['select_field', 'radio_field']);
+
 export function createFormEditTools(
   schema: { pages: any[] },
-  opts?: { includeReadTools?: boolean; formId?: string; toolTier?: ToolTier }
+  opts?: { includeReadTools?: boolean; formId?: string; toolTier?: ToolTier; canManagePlugins?: boolean }
 ) {
   const includeReadTools = opts?.includeReadTools !== false;
   const formId = opts?.formId;
   const toolTier = opts?.toolTier ?? 'full';
+  // Plugins send data to external systems — createFormPlugin requires form OWNER access, so
+  // the plugin tools are only offered when the caller's resolved permission allows using them.
+  const canManagePlugins = opts?.canManagePlugins === true;
   const totalFields = (schema.pages ?? []).reduce((n: number, p: any) => n + (p.fields?.length ?? 0), 0);
   const totalPages = (schema.pages ?? []).length;
 
@@ -471,6 +483,153 @@ export function createFormEditTools(
         return { type: 'PROPOSE_CONDITION_RULE' as const, rule: sanitized[0], rationale };
       },
     }),
+
+    listPlugins: tool({
+      description:
+        'List this form\'s integrations (plugins) in compact format: id|type|"name"|on/off. Call before updatePlugin/removePlugin.',
+      inputSchema: z.object({}),
+      execute: async () => {
+        if (!formId) return { summary: '0 integrations', plugins: [] };
+        const rows = await prisma.formPlugin.findMany({
+          where: { formId },
+          select: { id: true, type: true, name: true, enabled: true },
+          orderBy: { createdAt: 'asc' },
+        });
+        return {
+          summary: `${rows.length} integration${rows.length !== 1 ? 's' : ''}`,
+          plugins: rows.map((r) => `${r.id}|${r.type}|"${r.name}"|${r.enabled ? 'on' : 'off'}`),
+        };
+      },
+    }),
+
+    /**
+     * AI tool: proposes a new integration (FormPlugin row) for user confirmation.
+     * Unlike the content tools, an accepted proposal is applied via the createFormPlugin
+     * GraphQL mutation on the frontend — plugins live in Postgres, not the Y.js doc.
+     * Never auto-applied; config is validated per plugin type before proposing.
+     */
+    proposePlugin: tool({
+      description:
+        'PROPOSAL: create an integration that runs on form submission (webhook | email | quiz-grading). Does NOT apply — user must confirm in the card. Provide only the config block matching pluginType. Reference form fields by visible label or id.',
+      inputSchema: z.object({
+        pluginType: z.enum(AI_PLUGIN_TYPES),
+        name: z.string().min(1).max(100).describe('Short display name for the integration'),
+        webhook: z.object({
+          url: z.string().describe('HTTPS endpoint to POST submissions to'),
+          secret: z.string().nullable().optional().describe('Optional signing secret'),
+        }).optional(),
+        email: z.object({
+          recipientEmail: z.string().nullable().optional().describe('Static recipient address'),
+          recipientField: z.string().nullable().optional().describe('Email field (label or id) whose answer becomes a recipient'),
+          subject: z.string().min(1),
+          message: z.string().min(1),
+          sendToSubmitter: z.boolean().optional(),
+        }).optional(),
+        quiz: z.object({
+          quizFields: z.array(z.object({
+            field: z.string().min(1).describe('Select/radio field label or id'),
+            correctAnswer: z.string().min(1).describe('Must be one of the field\'s options'),
+            marks: z.number().positive(),
+          })).min(1),
+          passThreshold: z.number().min(0).max(100).describe('Pass percentage'),
+        }).optional(),
+        rationale: z.string().min(1).describe('Brief explanation for the reviewer'),
+      }),
+      execute: async ({ pluginType, name, webhook, email, quiz, rationale }) => {
+        let config: Record<string, unknown>;
+
+        if (pluginType === 'webhook') {
+          if (!webhook?.url) return { error: 'The webhook config block with a url is required for pluginType "webhook".' };
+          let parsed: URL;
+          try { parsed = new URL(webhook.url); } catch { return { error: `"${webhook.url}" is not a valid URL.` }; }
+          if (parsed.protocol !== 'https:') return { error: 'Webhook URLs must use https.' };
+          config = { type: 'webhook', url: webhook.url, ...(webhook.secret ? { secret: webhook.secret } : {}) };
+        } else if (pluginType === 'email') {
+          if (!email) return { error: 'The email config block is required for pluginType "email".' };
+          // Mirrors EmailPluginConfig: at least one of recipientEmail / recipientFieldId is required.
+          if (!email.recipientEmail && !email.recipientField) {
+            return { error: 'Email integrations need recipientEmail, recipientField, or both.' };
+          }
+          if (email.recipientEmail && !EMAIL_REGEX.test(email.recipientEmail)) {
+            return { error: `"${email.recipientEmail}" is not a valid email address.` };
+          }
+          config = { type: 'email', subject: email.subject, message: email.message };
+          if (email.recipientEmail) config.recipientEmail = email.recipientEmail;
+          if (email.sendToSubmitter !== undefined) config.sendToSubmitter = email.sendToSubmitter;
+          if (email.recipientField) {
+            const field = resolveField(workingSchema, email.recipientField);
+            if (!field) return { error: `I couldn't find a unique field matching "${email.recipientField}". Please use the exact field label.` };
+            if (normalizeFieldType(field.type) !== 'email_field') {
+              return { error: `"${field.label ?? email.recipientField}" is not an email field, so it cannot supply the recipient address.` };
+            }
+            config.recipientFieldId = field.id;
+            config.recipientFieldLabel = field.label;
+          }
+        } else {
+          if (!quiz) return { error: 'The quiz config block is required for pluginType "quiz-grading".' };
+          const quizFields: Array<{ fieldId: string; fieldLabel?: string; correctAnswer: string; marks: number }> = [];
+          for (const entry of quiz.quizFields) {
+            const field = resolveField(workingSchema, entry.field);
+            if (!field) return { error: `I couldn't find a unique field matching "${entry.field}". Please use the exact field label.` };
+            if (!QUIZ_FIELD_TYPES.has(normalizeFieldType(field.type))) {
+              return { error: `"${field.label ?? entry.field}" is not a select or radio field — quiz answers must come from a fixed choice list.` };
+            }
+            const options = ((field.options ?? []) as unknown[]).map(String);
+            if (!options.includes(entry.correctAnswer)) {
+              return { error: `"${entry.correctAnswer}" is not one of the options for "${field.label ?? entry.field}" (${options.join(', ')}).` };
+            }
+            if (quizFields.some((q) => q.fieldId === field.id)) {
+              return { error: `"${field.label ?? entry.field}" appears more than once in quizFields.` };
+            }
+            quizFields.push({ fieldId: field.id, fieldLabel: field.label, correctAnswer: entry.correctAnswer, marks: entry.marks });
+          }
+          config = { type: 'quiz-grading', quizFields, passThreshold: quiz.passThreshold };
+        }
+
+        // 'form.submitted' is the only subscribable event today; plugin.test is internal.
+        return { type: 'PROPOSE_CREATE_PLUGIN' as const, pluginType, name, config, events: ['form.submitted'], rationale };
+      },
+    }),
+
+    updatePlugin: tool({
+      description:
+        'PROPOSAL: rename or enable/disable an existing integration. Does NOT apply — user must confirm. Get pluginId from listPlugins.',
+      inputSchema: z.object({
+        pluginId: z.string().min(1).describe('The plugin ID from listPlugins'),
+        name: z.string().min(1).max(100).nullable().optional().describe('New display name; omit to keep'),
+        enabled: z.boolean().nullable().optional().describe('true to enable, false to disable; omit to keep'),
+        rationale: z.string().min(1).describe('Brief explanation for the reviewer'),
+      }),
+      execute: async ({ pluginId, name, enabled, rationale }) => {
+        if (name == null && enabled == null) return { error: 'Nothing to change — provide name and/or enabled.' };
+        if (!formId) return { error: 'Integrations are unavailable for this form.' };
+        const plugin = await prisma.formPlugin.findFirst({ where: { id: pluginId, formId }, select: { id: true, type: true, name: true, enabled: true } });
+        if (!plugin) return { error: `Integration ${pluginId} not found — call listPlugins for valid ids.` };
+        return {
+          type: 'PROPOSE_UPDATE_PLUGIN' as const,
+          pluginId,
+          pluginType: plugin.type,
+          name: plugin.name,
+          updates: { ...(name != null && { name }), ...(enabled != null && { enabled }) },
+          rationale,
+        };
+      },
+    }),
+
+    removePlugin: tool({
+      description:
+        'PROPOSAL: delete an existing integration. Does NOT delete — user must confirm. Get pluginId from listPlugins.',
+      inputSchema: z.object({
+        pluginId: z.string().min(1).describe('The plugin ID from listPlugins'),
+        rationale: z.string().min(1).describe('Brief explanation for the reviewer'),
+      }),
+      execute: async ({ pluginId, rationale }) => {
+        if (!formId) return { error: 'Integrations are unavailable for this form.' };
+        const plugin = await prisma.formPlugin.findFirst({ where: { id: pluginId, formId }, select: { id: true, type: true, name: true } });
+        if (!plugin) return { error: `Integration ${pluginId} not found — call listPlugins for valid ids.` };
+        return { type: 'PROPOSE_DELETE_PLUGIN' as const, pluginId, pluginType: plugin.type, name: plugin.name, rationale };
+      },
+    }),
   };
 
   // Conditional tool inclusion based on tier and form state:
@@ -500,6 +659,15 @@ export function createFormEditTools(
     ...(totalFields > 2 ? { proposeValidation: mutationTools.proposeValidation } : {}),
     ...(totalFields > 0 ? { proposeFieldTypeChange: mutationTools.proposeFieldTypeChange } : {}),
     ...(totalFields > 0 ? { upsertConditionRule: mutationTools.upsertConditionRule } : {}),
+    // Plugin tools are full-tier only AND OWNER-gated: automation has external side effects,
+    // so it never rides the cheap default path, and it is never offered to callers who
+    // couldn't pass createFormPlugin's own OWNER check anyway (no dead-end proposals).
+    ...(canManagePlugins ? {
+      listPlugins: mutationTools.listPlugins,
+      proposePlugin: mutationTools.proposePlugin,
+      updatePlugin: mutationTools.updatePlugin,
+      removePlugin: mutationTools.removePlugin,
+    } : {}),
   };
 
   const tieredTools = toolTier === 'minimal' ? minimalTools : toolTier === 'core' ? coreTools : fullTools;
@@ -523,4 +691,7 @@ export type FormOperation =
   | { type: 'PROPOSE_DELETE_FIELDS'; fields: Array<{ fieldId: string; label: string; responseCount: number }> }
   | { type: 'PROPOSE_DELETE_PAGE'; pageId: string; pageTitle: string; fieldCount: number; responseCount: number }
   | { type: 'PROPOSE_FIELD_TYPE_CHANGE'; fieldId: string; label: string; currentType: string; newFieldType: string; responseCount: number }
-  | { type: 'PROPOSE_CONDITION_RULE'; rule: ConditionalRule; rationale: string };
+  | { type: 'PROPOSE_CONDITION_RULE'; rule: ConditionalRule; rationale: string }
+  | { type: 'PROPOSE_CREATE_PLUGIN'; pluginType: 'webhook' | 'email' | 'quiz-grading'; name: string; config: Record<string, unknown>; events: string[]; rationale: string }
+  | { type: 'PROPOSE_UPDATE_PLUGIN'; pluginId: string; pluginType: string; name: string; updates: { name?: string; enabled?: boolean }; rationale: string }
+  | { type: 'PROPOSE_DELETE_PLUGIN'; pluginId: string; pluginType: string; name: string; rationale: string };

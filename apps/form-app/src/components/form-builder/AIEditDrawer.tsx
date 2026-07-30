@@ -40,6 +40,7 @@ import GetFieldToolPart from './tool-parts/GetFieldToolPart';
 import ChangeSummaryCard from './tool-parts/ChangeSummaryCard';
 import ValidationSuggestionCard from './tool-parts/ValidationSuggestionCard';
 import DestructiveActionCard from './tool-parts/DestructiveActionCard';
+import PluginProposalCard from './tool-parts/PluginProposalCard';
 import AITokenMeter from './AITokenMeter';
 
 interface AIEditDrawerProps {
@@ -223,6 +224,27 @@ function AssistantMessage({
                   return (
                     <span key={key} className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs text-red-700">
                       ⚠ {t('destructive.awaitingConfirmation')}
+                    </span>
+                  );
+                }
+                if (part.type === 'tool-listPlugins') {
+                  if ((part as any).state !== 'output-available') return null;
+                  return (
+                    <span key={key} className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      {(part as any).output?.summary ?? t('pluginProposal.listed')}
+                    </span>
+                  );
+                }
+                if (
+                  part.type === 'tool-proposePlugin' ||
+                  part.type === 'tool-updatePlugin' ||
+                  part.type === 'tool-removePlugin'
+                ) {
+                  // Error outputs ({ error }) carry no op type — nothing awaits confirmation.
+                  if ((part as any).state !== 'output-available' || !(part as any).output?.type) return null;
+                  return (
+                    <span key={key} className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
+                      ⚡ {t('destructive.awaitingConfirmation')}
                     </span>
                   );
                 }
@@ -497,6 +519,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
         {showStatusIndicator && <StatusIndicator />}
         <ValidationSuggestionCard />
         <DestructiveActionCard />
+        <PluginProposalCard />
         <div ref={messagesEndRef} />
       </div>
 

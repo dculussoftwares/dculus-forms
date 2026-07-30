@@ -225,6 +225,39 @@ export interface ConditionSuggestion {
   rationale: string;
 }
 
+/**
+ * An AI-proposed integration (plugin) change awaiting explicit user confirmation.
+ * Unlike other proposals, Accept applies it via the createFormPlugin/updateFormPlugin/
+ * deleteFormPlugin GraphQL mutations (plugins live in Postgres, not the Y.js doc).
+ */
+export type PluginProposal =
+  | {
+      id: string;
+      kind: 'create';
+      pluginType: string;
+      name: string;
+      config: Record<string, unknown>;
+      events: string[];
+      rationale: string;
+    }
+  | {
+      id: string;
+      kind: 'update';
+      pluginId: string;
+      pluginType: string;
+      name: string;
+      updates: { name?: string; enabled?: boolean };
+      rationale: string;
+    }
+  | {
+      id: string;
+      kind: 'delete';
+      pluginId: string;
+      pluginType: string;
+      name: string;
+      rationale: string;
+    };
+
 export interface AISlice {
   aiHighlightedFieldId: string | null;
   setAIHighlightedFieldId: (id: string | null) => void;
@@ -243,6 +276,12 @@ export interface AISlice {
   addPendingDestructiveAction: (action: DestructiveAction) => void;
   acceptDestructiveAction: (id: string) => DestructiveAction | null;
   dismissDestructiveAction: (id: string) => void;
+
+  // Integration (plugin) proposals — applied via GraphQL mutations on Accept
+  pendingPluginProposals: PluginProposal[];
+  addPendingPluginProposal: (proposal: PluginProposal) => void;
+  acceptPluginProposal: (id: string) => PluginProposal | null;
+  dismissPluginProposal: (id: string) => void;
 }
 
 /**

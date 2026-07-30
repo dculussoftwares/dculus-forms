@@ -72,7 +72,7 @@ export function applyAIOp(
     | 'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
     | 'addPageAtPosition' | 'removePage' | 'setSelectedPage'
     | 'setAIHighlightedFieldId' | 'setPendingValidationSuggestions' | 'addPendingConditionSuggestion'
-    | 'moveFieldBetweenPages' | 'addPendingDestructiveAction'
+    | 'moveFieldBetweenPages' | 'addPendingDestructiveAction' | 'addPendingPluginProposal'
   >,
   formId?: string,
   toolCallId?: string
@@ -302,6 +302,50 @@ export function applyAIOp(
       break;
     }
 
+    // ── Integration (plugin) proposals: DO NOT mutate. Enqueue for confirmation. ──
+    // Accept applies them via the plugin GraphQL mutations (PluginProposalCard),
+    // never through the Y.js doc — plugins are Postgres rows, not schema state.
+    case 'PROPOSE_CREATE_PLUGIN': {
+      if (!op.pluginType || !op.name || !op.config) break;
+      store.addPendingPluginProposal({
+        id: toolCallId ?? `create-plugin-${op.pluginType}-${op.name}`,
+        kind: 'create',
+        pluginType: op.pluginType,
+        name: op.name,
+        config: op.config ?? {},
+        events: Array.isArray(op.events) ? op.events : ['form.submitted'],
+        rationale: typeof op.rationale === 'string' ? op.rationale : '',
+      });
+      break;
+    }
+
+    case 'PROPOSE_UPDATE_PLUGIN': {
+      if (!op.pluginId) break;
+      store.addPendingPluginProposal({
+        id: toolCallId ?? `update-plugin-${op.pluginId}`,
+        kind: 'update',
+        pluginId: op.pluginId,
+        pluginType: op.pluginType ?? '',
+        name: op.name ?? op.pluginId,
+        updates: op.updates ?? {},
+        rationale: typeof op.rationale === 'string' ? op.rationale : '',
+      });
+      break;
+    }
+
+    case 'PROPOSE_DELETE_PLUGIN': {
+      if (!op.pluginId) break;
+      store.addPendingPluginProposal({
+        id: toolCallId ?? `delete-plugin-${op.pluginId}`,
+        kind: 'delete',
+        pluginId: op.pluginId,
+        pluginType: op.pluginType ?? '',
+        name: op.name ?? op.pluginId,
+        rationale: typeof op.rationale === 'string' ? op.rationale : '',
+      });
+      break;
+    }
+
     case 'PROPOSE_CONDITION_RULE': {
       // Treat streamed AI output as untrusted even though the backend validates it.
       // Nothing reaches the conditions slice until an explicit user acceptance.
@@ -331,6 +375,9 @@ export function applyAIOp(
     'PROPOSE_DELETE_PAGE',
     'PROPOSE_FIELD_TYPE_CHANGE',
     'PROPOSE_CONDITION_RULE',
+    'PROPOSE_CREATE_PLUGIN',
+    'PROPOSE_UPDATE_PLUGIN',
+    'PROPOSE_DELETE_PLUGIN',
   ]);
   if (formId && !PROPOSAL_OPS.has(op.type)) invalidateSchema(formId);
 }

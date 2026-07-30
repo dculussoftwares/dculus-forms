@@ -38,6 +38,10 @@
     "proposeValidation": "Analysing validation rules…",
     "proposeFieldTypeChange": "Preparing type change…",
     "upsertConditionRule": "Preparing condition suggestion…",
+    "listPlugins": "Reading integrations…",
+    "proposePlugin": "Preparing integration suggestion…",
+    "updatePlugin": "Preparing integration change…",
+    "removePlugin": "Preparing integration removal…",
     "default": "Working…"
   },
   "destructive": {
@@ -84,5 +88,40 @@
     "accept": "Accept",
     "skip": "Skip",
     "acceptAll": "Accept all"
+  },
+  "pluginProposal": {
+    "title": "Suggested integration",
+    "listed": "Read integrations",
+    "createTitle": "Add {{type}} integration \"{{name}}\"?",
+    "updateTitle": "Update integration \"{{name}}\"?",
+    "deleteTitle": "Delete integration \"{{name}}\"?",
+    "confirm": "Apply",
+    "confirmDelete": "Delete",
+    "dismiss": "Dismiss",
+    "renameTo": "Rename to \"{{name}}\"",
+    "willEnable": "Will be enabled",
+    "willDisable": "Will be disabled",
+    "appliedTitle": "Integration updated",
+    "applied": {
+      "create": "\"{{name}}\" was created.",
+      "update": "\"{{name}}\" was updated.",
+      "delete": "\"{{name}}\" was deleted."
+    },
+    "failedTitle": "Could not apply integration",
+    "types": {
+      "webhook": "webhook",
+      "email": "email notification",
+      "quiz-grading": "quiz grading"
+    },
+    "config": {
+      "url": "URL",
+      "secret": "Secret",
+      "recipient": "Recipient",
+      "recipientField": "Recipient from field",
+      "sendToSubmitter": "Also emails the submitter",
+      "subject": "Subject",
+      "quizFields": "{{count}} graded question(s)",
+      "passThreshold": "Pass threshold"
+    }
   }
 }

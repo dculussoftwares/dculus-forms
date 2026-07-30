@@ -7,6 +7,7 @@ import {
   requireOrganizationMembership,
   createBetterAuthContext,
 } from '../middleware/better-auth-middleware.js';
+import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
 import {
   getConversation,
   loadConversationMessages,
@@ -245,10 +246,11 @@ aiChatRouter.post('/chat', async (req, res) => {
   const includeReadTools = fieldCount > SNAPSHOT_FIELD_THRESHOLD;
 
   // Validate messages (handles tool call/result shapes in history). Use the full tool set
-  // (read + mutation) so historical tool calls validate regardless of form size.
+  // (read + mutation + plugin tools) so historical tool calls validate regardless of the
+  // current caller's tier or permission — validation never executes tools.
   let validated: UIMessage[];
   try {
-    const tools = createFormEditAgent(schema).tools as Record<string, any>;
+    const tools = createFormEditAgent(schema, { canManagePlugins: true }).tools as Record<string, any>;
     validated = await validateUIMessages({ messages: allMessages, tools }) as UIMessage[];
   } catch {
     logger.warn({ conversationId }, 'validateUIMessages failed — falling back to unvalidated messages');
@@ -334,6 +336,18 @@ aiChatRouter.post('/chat', async (req, res) => {
   }
 
   // ── ToolLoopAgent path (simple + complex intents) ──────────────────────────
+  // Resolve the caller's form permission to gate the plugin (integration) tools.
+  // Only the 'full' tier can include them, so skip the lookup on cheaper tiers.
+  let canManagePlugins = false;
+  if (toolTier === 'full') {
+    try {
+      const access = await checkFormAccess(auth.user!.id, conv.formId);
+      canManagePlugins = access.permission === PermissionLevel.OWNER;
+    } catch {
+      // Form missing or lookup failed — leave plugin tools off rather than blocking the chat.
+    }
+  }
+
   // Static system prompt + stable per-conversation cache key keep the prefix byte-stable so
   // Azure/OpenAI prefix caching hits on every step and across turns.
   const agent = createFormEditAgent(schema, {
@@ -343,6 +357,7 @@ aiChatRouter.post('/chat', async (req, res) => {
     formId: conv.formId,
     modelTier,
     toolTier,
+    canManagePlugins,
   });
 
   try {

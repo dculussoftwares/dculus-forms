@@ -1,6 +1,16 @@
 // apps/backend/src/lib/__tests__/aiFormEditTools.test.ts
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createFormEditTools } from '../aiFormEditTools.js';
+import { prisma } from '../prisma.js';
+
+vi.mock('../prisma.js', () => ({
+  prisma: {
+    formPlugin: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+  },
+}));
 
 const mockSchema = {
   pages: [
@@ -650,6 +660,300 @@ describe('tool description lengths', () => {
       const desc = (tools as any)[name]?.description as string | undefined;
       // If tool is undefined it means it's conditionally excluded (shouldn't happen with mockSchema + full tier)
       expect(desc, `Tool '${name}' not found in full tool set — check conditional inclusion logic`).toBeDefined();
+      expect(desc!.length).toBeLessThanOrEqual(limit);
+    });
+  }
+});
+
+// ── Plugin (integration) tools ────────────────────────────────────────────────
+
+const PLUGIN_TOOL_NAMES = ['listPlugins', 'proposePlugin', 'updatePlugin', 'removePlugin'];
+
+// Schema with an email field and choice fields for email/quiz config resolution.
+const pluginSchema = {
+  pages: [{
+    id: 'p1', title: 'Quiz', fields: [
+      { id: 'contact', type: 'EMAIL_FIELD', label: 'Contact email' },
+      { id: 'q1', type: 'SELECT_FIELD', label: 'Capital of France', options: ['Paris', 'Lyon'] },
+      { id: 'q2', type: 'RADIO_FIELD', label: 'Two plus two', options: ['3', '4'] },
+      { id: 'notes', type: 'TEXT_AREA_FIELD', label: 'Notes' },
+    ],
+  }],
+};
+
+const makePluginTools = (opts: Record<string, unknown> = {}) =>
+  createFormEditTools(pluginSchema, { toolTier: 'full', canManagePlugins: true, ...opts }) as any;
+
+describe('plugin tool gating (OWNER + full tier only)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('excludes plugin tools by default (no canManagePlugins)', () => {
+    const keys = Object.keys(createFormEditTools(mockSchema, { toolTier: 'full' }));
+    for (const name of PLUGIN_TOOL_NAMES) expect(keys).not.toContain(name);
+  });
+
+  it('includes plugin tools when canManagePlugins is true and tier is full', () => {
+    const keys = Object.keys(createFormEditTools(mockSchema, { toolTier: 'full', canManagePlugins: true }));
+    for (const name of PLUGIN_TOOL_NAMES) expect(keys).toContain(name);
+  });
+
+  it('never includes plugin tools on core or minimal tiers, even for owners', () => {
+    for (const toolTier of ['core', 'minimal'] as const) {
+      const keys = Object.keys(createFormEditTools(mockSchema, { toolTier, canManagePlugins: true }));
+      for (const name of PLUGIN_TOOL_NAMES) expect(keys).not.toContain(name);
+    }
+  });
+});
+
+describe('listPlugins', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns empty list without querying when formId is missing', async () => {
+    const tools = makePluginTools();
+    const result = await tools.listPlugins.execute!({}, { messages: [], toolCallId: 'test' }) as any;
+    expect(result).toEqual({ summary: '0 integrations', plugins: [] });
+    expect(vi.mocked(prisma.formPlugin.findMany)).not.toHaveBeenCalled();
+  });
+
+  it('returns compact id|type|"name"|on/off lines', async () => {
+    vi.mocked(prisma.formPlugin.findMany).mockResolvedValueOnce([
+      { id: 'pl-1', type: 'webhook', name: 'CRM sync', enabled: true },
+      { id: 'pl-2', type: 'email', name: 'Notify team', enabled: false },
+    ] as any);
+    const tools = makePluginTools({ formId: 'form-1' });
+    const result = await tools.listPlugins.execute!({}, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.summary).toBe('2 integrations');
+    expect(result.plugins).toEqual(['pl-1|webhook|"CRM sync"|on', 'pl-2|email|"Notify team"|off']);
+  });
+});
+
+describe('proposePlugin (proposal only)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('proposes a webhook with an https URL and masked-out secret carried in config', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'webhook', name: 'CRM sync',
+      webhook: { url: 'https://example.com/hook', secret: 's3cret' },
+      rationale: 'Send submissions to the CRM.',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result).toEqual({
+      type: 'PROPOSE_CREATE_PLUGIN',
+      pluginType: 'webhook',
+      name: 'CRM sync',
+      config: { type: 'webhook', url: 'https://example.com/hook', secret: 's3cret' },
+      events: ['form.submitted'],
+      rationale: 'Send submissions to the CRM.',
+    });
+  });
+
+  it('rejects a non-https webhook URL', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'webhook', name: 'Bad', webhook: { url: 'http://example.com/hook' }, rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/https/i);
+  });
+
+  it('rejects an unparseable webhook URL', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'webhook', name: 'Bad', webhook: { url: 'not a url' }, rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/not a valid URL/i);
+  });
+
+  it('rejects a webhook proposal missing its config block', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'webhook', name: 'Bad', rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result).toHaveProperty('error');
+  });
+
+  it('proposes an email plugin resolving recipientField by label to an email field', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'email', name: 'Notify',
+      email: { recipientField: 'Contact email', subject: 'New response', message: 'You got a response.' },
+      rationale: 'Notify the submitter contact.',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.type).toBe('PROPOSE_CREATE_PLUGIN');
+    expect(result.config).toMatchObject({
+      type: 'email',
+      recipientFieldId: 'contact',
+      recipientFieldLabel: 'Contact email',
+      subject: 'New response',
+    });
+  });
+
+  it('rejects an email plugin with neither recipientEmail nor recipientField', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'email', name: 'Notify',
+      email: { subject: 'Hi', message: 'Body' }, rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/recipient/i);
+  });
+
+  it('rejects an invalid static recipient address', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'email', name: 'Notify',
+      email: { recipientEmail: 'not-an-email', subject: 'Hi', message: 'Body' }, rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/not a valid email/i);
+  });
+
+  it('rejects a recipientField that is not an email field', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'email', name: 'Notify',
+      email: { recipientField: 'Notes', subject: 'Hi', message: 'Body' }, rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/not an email field/i);
+  });
+
+  it('proposes quiz grading with fields resolved by label and options validated', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'quiz-grading', name: 'Auto grade',
+      quiz: {
+        quizFields: [
+          { field: 'Capital of France', correctAnswer: 'Paris', marks: 2 },
+          { field: 'q2', correctAnswer: '4', marks: 1 },
+        ],
+        passThreshold: 60,
+      },
+      rationale: 'Grade the quiz automatically.',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.type).toBe('PROPOSE_CREATE_PLUGIN');
+    expect(result.config).toEqual({
+      type: 'quiz-grading',
+      quizFields: [
+        { fieldId: 'q1', fieldLabel: 'Capital of France', correctAnswer: 'Paris', marks: 2 },
+        { fieldId: 'q2', fieldLabel: 'Two plus two', correctAnswer: '4', marks: 1 },
+      ],
+      passThreshold: 60,
+    });
+  });
+
+  it('rejects a correctAnswer that is not one of the field options', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'quiz-grading', name: 'Auto grade',
+      quiz: { quizFields: [{ field: 'Capital of France', correctAnswer: 'Berlin', marks: 1 }], passThreshold: 50 },
+      rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/not one of the options/i);
+  });
+
+  it('rejects quiz fields that are not select/radio', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'quiz-grading', name: 'Auto grade',
+      quiz: { quizFields: [{ field: 'Notes', correctAnswer: 'anything', marks: 1 }], passThreshold: 50 },
+      rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/select or radio/i);
+  });
+
+  it('rejects an ambiguous field label', async () => {
+    const ambiguous = {
+      pages: [{ id: 'p1', title: 'P', fields: [
+        { id: 'a', type: 'SELECT_FIELD', label: 'Choice', options: ['X'] },
+        { id: 'b', type: 'SELECT_FIELD', label: 'Choice', options: ['X'] },
+      ] }],
+    };
+    const tools = createFormEditTools(ambiguous, { toolTier: 'full', canManagePlugins: true }) as any;
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'quiz-grading', name: 'Auto grade',
+      quiz: { quizFields: [{ field: 'Choice', correctAnswer: 'X', marks: 1 }], passThreshold: 50 },
+      rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/couldn't find a unique field/i);
+  });
+
+  it('rejects duplicate quiz fields', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'quiz-grading', name: 'Auto grade',
+      quiz: {
+        quizFields: [
+          { field: 'q1', correctAnswer: 'Paris', marks: 1 },
+          { field: 'Capital of France', correctAnswer: 'Lyon', marks: 1 },
+        ],
+        passThreshold: 50,
+      },
+      rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/more than once/i);
+  });
+});
+
+describe('updatePlugin / removePlugin (proposals only)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('updatePlugin errors when nothing would change', async () => {
+    const tools = makePluginTools({ formId: 'form-1' });
+    const result = await tools.updatePlugin.execute!({ pluginId: 'pl-1', rationale: 'x' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/nothing to change/i);
+  });
+
+  it('updatePlugin errors for an unknown plugin id', async () => {
+    vi.mocked(prisma.formPlugin.findFirst).mockResolvedValueOnce(null);
+    const tools = makePluginTools({ formId: 'form-1' });
+    const result = await tools.updatePlugin.execute!({ pluginId: 'nope', enabled: false, rationale: 'x' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/not found/i);
+  });
+
+  it('updatePlugin proposes an enable/disable change for an existing plugin', async () => {
+    vi.mocked(prisma.formPlugin.findFirst).mockResolvedValueOnce({ id: 'pl-1', type: 'webhook', name: 'CRM sync', enabled: true } as any);
+    const tools = makePluginTools({ formId: 'form-1' });
+    const result = await tools.updatePlugin.execute!({ pluginId: 'pl-1', enabled: false, rationale: 'Turn it off.' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result).toEqual({
+      type: 'PROPOSE_UPDATE_PLUGIN',
+      pluginId: 'pl-1',
+      pluginType: 'webhook',
+      name: 'CRM sync',
+      updates: { enabled: false },
+      rationale: 'Turn it off.',
+    });
+  });
+
+  it('removePlugin errors for an unknown plugin id', async () => {
+    vi.mocked(prisma.formPlugin.findFirst).mockResolvedValueOnce(null);
+    const tools = makePluginTools({ formId: 'form-1' });
+    const result = await tools.removePlugin.execute!({ pluginId: 'nope', rationale: 'x' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/not found/i);
+  });
+
+  it('removePlugin proposes deletion of an existing plugin', async () => {
+    vi.mocked(prisma.formPlugin.findFirst).mockResolvedValueOnce({ id: 'pl-2', type: 'email', name: 'Notify team' } as any);
+    const tools = makePluginTools({ formId: 'form-1' });
+    const result = await tools.removePlugin.execute!({ pluginId: 'pl-2', rationale: 'No longer needed.' }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result).toEqual({
+      type: 'PROPOSE_DELETE_PLUGIN',
+      pluginId: 'pl-2',
+      pluginType: 'email',
+      name: 'Notify team',
+      rationale: 'No longer needed.',
+    });
+  });
+});
+
+describe('plugin tool description lengths', () => {
+  const tools = makePluginTools();
+  const LIMITS: Record<string, number> = {
+    listPlugins: 130,
+    proposePlugin: 260, // embeds proposal + config-block + field-reference rules
+    updatePlugin: 135,
+    removePlugin: 120,
+  };
+  for (const [name, limit] of Object.entries(LIMITS)) {
+    it(`${name} description is under ${limit} chars`, () => {
+      const desc = (tools as any)[name]?.description as string | undefined;
+      expect(desc).toBeDefined();
       expect(desc!.length).toBeLessThanOrEqual(limit);
     });
   }

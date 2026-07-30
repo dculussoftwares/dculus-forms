@@ -126,6 +126,40 @@ export interface UpsertConditionRuleToolPart {
   output?: { type: 'PROPOSE_CONDITION_RULE'; rule: import('@dculus/types').ConditionalRule; rationale: string };
 }
 
+// Read-only integration list (OWNER + full tier only).
+export interface ListPluginsToolPart {
+  type: 'tool-listPlugins';
+  toolCallId: string;
+  state: ToolState;
+  input?: Record<string, never>;
+  output?: { summary: string; plugins: string[] };
+}
+
+// proposePlugin is a PROPOSAL: Accept applies it via the createFormPlugin GraphQL mutation.
+export interface ProposePluginToolPart {
+  type: 'tool-proposePlugin';
+  toolCallId: string;
+  state: ToolState;
+  input?: Record<string, unknown>;
+  output?: { type: 'PROPOSE_CREATE_PLUGIN'; pluginType: string; name: string; config: Record<string, unknown>; events: string[]; rationale: string };
+}
+
+export interface UpdatePluginToolPart {
+  type: 'tool-updatePlugin';
+  toolCallId: string;
+  state: ToolState;
+  input?: { pluginId: string; name?: string | null; enabled?: boolean | null; rationale: string };
+  output?: { type: 'PROPOSE_UPDATE_PLUGIN'; pluginId: string; pluginType: string; name: string; updates: { name?: string; enabled?: boolean }; rationale: string };
+}
+
+export interface RemovePluginToolPart {
+  type: 'tool-removePlugin';
+  toolCallId: string;
+  state: ToolState;
+  input?: { pluginId: string; rationale: string };
+  output?: { type: 'PROPOSE_DELETE_PLUGIN'; pluginId: string; pluginType: string; name: string; rationale: string };
+}
+
 export type FormEditToolPart =
   | ListFieldsToolPart
   | GetFieldToolPart
@@ -141,7 +175,11 @@ export type FormEditToolPart =
   | NavigateToPageToolPart
   | ProposeValidationToolPart
   | ProposeFieldTypeChangeToolPart
-  | UpsertConditionRuleToolPart;
+  | UpsertConditionRuleToolPart
+  | ListPluginsToolPart
+  | ProposePluginToolPart
+  | UpdatePluginToolPart
+  | RemovePluginToolPart;
 
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
@@ -173,4 +211,5 @@ export const MUTATION_TOOL_NAMES = new Set([
 export const PROPOSAL_TOOL_NAMES = new Set([
   'proposeValidation', 'removeFields', 'removePage', 'proposeFieldTypeChange',
   'upsertConditionRule',
+  'proposePlugin', 'updatePlugin', 'removePlugin',
 ]);

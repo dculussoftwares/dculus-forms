@@ -26,14 +26,20 @@ export interface FormEditAgentOptions {
    * Defaults to 'full' (all tools) so callers not yet routing remain unaffected.
    */
   toolTier?: ToolTier;
+  /**
+   * True when the caller's resolved form permission is OWNER. Gates the plugin
+   * (integration) tools — plugins send data to external systems, and the GraphQL
+   * mutations they target require OWNER. Defaults to false (tools not offered).
+   */
+  canManagePlugins?: boolean;
 }
 
 export function createFormEditAgent(
   schema: { pages: any[] },
   options: FormEditAgentOptions = {}
 ) {
-  const { instructions, cacheKey, includeReadTools = true, formId, modelTier = 'mini', toolTier = 'full' } = options;
-  const tools = createFormEditTools(schema, { includeReadTools, formId, toolTier });
+  const { instructions, cacheKey, includeReadTools = true, formId, modelTier = 'mini', toolTier = 'full', canManagePlugins = false } = options;
+  const tools = createFormEditTools(schema, { includeReadTools, formId, toolTier, canManagePlugins });
   const providerOptions = buildPromptCacheOptions(cacheKey);
 
   // nano handles simple single-step ops — cap at 8 steps to fail fast on unexpected loops.

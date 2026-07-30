@@ -4,7 +4,7 @@
  * Manages AI-driven field highlighting and pending validation suggestions.
  */
 
-import type { AISlice, ConditionSuggestion, DestructiveAction, SliceCreator, ValidationSuggestion } from '../types/store.types';
+import type { AISlice, ConditionSuggestion, DestructiveAction, PluginProposal, SliceCreator, ValidationSuggestion } from '../types/store.types';
 
 export const createAISlice: SliceCreator<AISlice> = (set, get) => ({
   aiHighlightedFieldId: null,
@@ -74,5 +74,27 @@ export const createAISlice: SliceCreator<AISlice> = (set, get) => ({
   dismissDestructiveAction: (id: string) => {
     const pending: DestructiveAction[] = get().pendingDestructiveActions;
     set({ pendingDestructiveActions: pending.filter((a: DestructiveAction) => a.id !== id) });
+  },
+
+  // ── Integration (plugin) proposals ────────────────────────────────────────
+  pendingPluginProposals: [],
+
+  addPendingPluginProposal: (proposal: PluginProposal) => {
+    const existing: PluginProposal[] = get().pendingPluginProposals;
+    // De-dupe by id so a re-streamed tool part can't enqueue the same proposal twice.
+    if (existing.some((p: PluginProposal) => p.id === proposal.id)) return;
+    set({ pendingPluginProposals: [...existing, proposal] });
+  },
+
+  acceptPluginProposal: (id: string): PluginProposal | null => {
+    const pending: PluginProposal[] = get().pendingPluginProposals;
+    const proposal = pending.find((p: PluginProposal) => p.id === id) ?? null;
+    set({ pendingPluginProposals: pending.filter((p: PluginProposal) => p.id !== id) });
+    return proposal;
+  },
+
+  dismissPluginProposal: (id: string) => {
+    const pending: PluginProposal[] = get().pendingPluginProposals;
+    set({ pendingPluginProposals: pending.filter((p: PluginProposal) => p.id !== id) });
   },
 });

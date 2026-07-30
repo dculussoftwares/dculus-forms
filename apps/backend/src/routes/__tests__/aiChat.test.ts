@@ -86,6 +86,13 @@ vi.mock('../../lib/aiFormEditTools.js', () => ({
   createFormEditTools: vi.fn().mockReturnValue({}),
 }));
 
+// Permission threading: the route resolves the caller's form permission (full tier only)
+// to decide whether the plugin tools are offered to the agent.
+vi.mock('../../graphql/resolvers/formSharing.js', () => ({
+  checkFormAccess: vi.fn().mockResolvedValue({ hasAccess: true, permission: 'OWNER', form: {} }),
+  PermissionLevel: { OWNER: 'OWNER', EDITOR: 'EDITOR', VIEWER: 'VIEWER', NO_ACCESS: 'NO_ACCESS' },
+}));
+
 vi.mock('../../lib/formEditAgent.js', () => ({
   createFormEditAgent: vi.fn().mockReturnValue({
     stream: vi.fn(),
@@ -237,6 +244,112 @@ describe('POST /chat', () => {
 
     expect(res.status).toBe(200);
     expect(mockAgent.stream).toHaveBeenCalled();
+  });
+
+  it('offers plugin tools (canManagePlugins: true) to form owners on complex turns', async () => {
+    const { checkFormAccess } = await import('../../graphql/resolvers/formSharing.js');
+    vi.mocked(checkFormAccess).mockResolvedValueOnce({ hasAccess: true, permission: 'OWNER', form: {} } as any);
+    const streamData = 'data: {"type":"text","value":"ok"}\n\n';
+    const mockAgent = {
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn().mockReturnValue(makeUIMessageStreamResponse([streamData])),
+      }),
+    };
+    (createFormEditAgent as any).mockReturnValue(mockAgent);
+
+    // "add a webhook..." classifies as complex → full tool tier → permission lookup runs
+    const text = 'add a webhook when the form is submitted';
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: text, parts: [{ type: 'text', text }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    expect(res.status).toBe(200);
+    expect(vi.mocked(checkFormAccess)).toHaveBeenCalledWith('user-1', 'form-1');
+    expect(vi.mocked(createFormEditAgent)).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ toolTier: 'full', canManagePlugins: true })
+    );
+  });
+
+  it('withholds plugin tools (canManagePlugins: false) from non-owners on complex turns', async () => {
+    const { checkFormAccess } = await import('../../graphql/resolvers/formSharing.js');
+    vi.mocked(checkFormAccess).mockResolvedValueOnce({ hasAccess: true, permission: 'EDITOR', form: {} } as any);
+    const streamData = 'data: {"type":"text","value":"ok"}\n\n';
+    const mockAgent = {
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn().mockReturnValue(makeUIMessageStreamResponse([streamData])),
+      }),
+    };
+    (createFormEditAgent as any).mockReturnValue(mockAgent);
+
+    const text = 'add a webhook when the form is submitted';
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: text, parts: [{ type: 'text', text }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    expect(res.status).toBe(200);
+    expect(vi.mocked(createFormEditAgent)).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ canManagePlugins: false })
+    );
+  });
+
+  it('skips the permission lookup entirely on simple (non-full-tier) turns', async () => {
+    const { checkFormAccess } = await import('../../graphql/resolvers/formSharing.js');
+    const streamData = 'data: {"type":"text","value":"ok"}\n\n';
+    const mockAgent = {
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn().mockReturnValue(makeUIMessageStreamResponse([streamData])),
+      }),
+    };
+    (createFormEditAgent as any).mockReturnValue(mockAgent);
+
+    const text = 'add a text field for feedback';
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: text, parts: [{ type: 'text', text }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    expect(res.status).toBe(200);
+    expect(vi.mocked(checkFormAccess)).not.toHaveBeenCalled();
+    expect(vi.mocked(createFormEditAgent)).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ canManagePlugins: false })
+    );
+  });
+
+  it('defaults to no plugin tools when the permission lookup throws', async () => {
+    const { checkFormAccess } = await import('../../graphql/resolvers/formSharing.js');
+    vi.mocked(checkFormAccess).mockRejectedValueOnce(new Error('Form not found'));
+    const streamData = 'data: {"type":"text","value":"ok"}\n\n';
+    const mockAgent = {
+      stream: vi.fn().mockResolvedValue({
+        consumeStream: vi.fn(),
+        toUIMessageStreamResponse: vi.fn().mockReturnValue(makeUIMessageStreamResponse([streamData])),
+      }),
+    };
+    (createFormEditAgent as any).mockReturnValue(mockAgent);
+
+    const text = 'add a webhook when the form is submitted';
+    const res = await request(app).post('/chat').send({
+      message: { id: 'm1', role: 'user', content: text, parts: [{ type: 'text', text }] },
+      conversationId: 'conv-1',
+      organizationId: 'org-1',
+    });
+
+    expect(res.status).toBe(200);
+    expect(vi.mocked(createFormEditAgent)).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({ canManagePlugins: false })
+    );
   });
 
   it('routes question-intent messages through streamText fast path', async () => {

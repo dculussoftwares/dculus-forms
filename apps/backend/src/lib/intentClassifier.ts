@@ -29,6 +29,16 @@ const COMPLEX_PATTERNS: RegExp[] = [
   /\ball\s+(fields?|questions?)\b.{0,20}\b(required|optional|validation)\b/i,
   /\b(apply|add)\b.{0,20}\bvalidation\b.{0,30}\b(all|every|each)\b/i,
   /\bconvert\b.{0,30}\b(into|to)\b.{0,30}\b(form|survey|quiz)\b/i,
+  // ── Automation / integration (plugin) requests ──────────────────────────────
+  // Always complex regardless of phrasing simplicity: plugin tools are full-tier only,
+  // and automation has external side effects that warrant the mini model. Patterns are
+  // deliberately scoped to plugin/webhook/notification/quiz-grading phrasing so the
+  // mini-model cost doesn't leak onto unrelated requests.
+  /\bwebhooks?\b/i,
+  /\b(plugin|integration|automation)s?\b/i,
+  /\b(send|sends|fire|trigger|notify|alert)\b.{0,50}\b(email|notification|message)\b/i,
+  /\b(email|notify|alert)\b.{0,40}\b(me|us|when|on|after|every)\b.{0,40}\b(submit|submission|response|filled)/i,
+  /\bquiz\b.{0,30}\b(grade|grading|scor(e|ing)|marks?)\b|\b(grade|grading|scor(e|ing))\b.{0,30}\bquiz\b/i,
 ];
 
 // Matches requests that are likely pure questions (no edits) — no tool loop needed.
