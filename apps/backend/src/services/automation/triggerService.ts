@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/node';
 import type { Prisma } from '#prisma-client';
 import { generateId } from '@dculus/utils';
-import { prisma } from '../../lib/prisma.js';
+import { automationRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
 import { getEventEmitter } from '../../plugins/core/events.js';
 import type { PluginEvent } from '../../plugins/core/types.js';
@@ -42,9 +42,7 @@ async function handlePluginEvent(event: PluginEvent): Promise<void> {
   // via its own writes.
   if (event.type === 'response.edited' && event.data?.sourceRunId) return;
 
-  const automations = await prisma.automation.findMany({
-    where: { formId: event.formId, status: 'ACTIVE', triggerType: event.type },
-  });
+  const automations = await automationRepository.listActiveByFormAndTrigger(event.formId, event.type);
 
   for (const automation of automations) {
     try {
@@ -54,16 +52,14 @@ async function handlePluginEvent(event: PluginEvent): Promise<void> {
         organizationId: event.organizationId,
       };
 
-      const run = await prisma.automationRun.create({
-        data: {
-          id: generateId(),
-          automationId: automation.id,
-          responseId: event.data?.responseId ?? null,
-          automationVersion: automation.version,
-          graphSnapshot: automation.graph as Prisma.InputJsonValue,
-          status: 'RUNNING',
-          context: context as Prisma.InputJsonValue,
-        },
+      const run = await automationRepository.createRun({
+        id: generateId(),
+        automationId: automation.id,
+        responseId: event.data?.responseId ?? null,
+        automationVersion: automation.version,
+        graphSnapshot: automation.graph as Prisma.InputJsonValue,
+        status: 'RUNNING',
+        context: context as Prisma.InputJsonValue,
       });
 
       await enqueueFirstStep(run);
@@ -84,10 +80,7 @@ async function handlePluginEvent(event: PluginEvent): Promise<void> {
  */
 export async function cancelRunsForAutomation(automationId: string, reason: string): Promise<void> {
   try {
-    const runs = await prisma.automationRun.findMany({
-      where: { automationId, status: { in: ['RUNNING', 'WAITING'] } },
-      select: { id: true },
-    });
+    const runs = await automationRepository.listActiveRunsByAutomation(automationId);
 
     if (runs.length === 0) return;
 
@@ -117,10 +110,7 @@ export async function cancelRunsForAutomation(automationId: string, reason: stri
     // Scoped to the exact run ids captured above (not re-queried by status) so a run
     // created for this automation after the findMany snapshot — e.g. a new submission
     // arriving mid-cancellation — is never swept into this update.
-    await prisma.automationRun.updateMany({
-      where: { id: { in: runs.map((run) => run.id) } },
-      data: { status: 'CANCELLED', completedAt: new Date() },
-    });
+    await automationRepository.cancelRunsByIds(runs.map((run) => run.id));
 
     logger.info(
       `[Automation Triggers] Cancelled ${runs.length} run(s) for automation ${automationId}: ${reason}`
@@ -137,7 +127,7 @@ export async function cancelRunsForAutomation(automationId: string, reason: stri
  * returned unchanged rather than re-cancelled. Returns null if the run doesn't exist.
  */
 export async function cancelSingleAutomationRun(runId: string) {
-  const run = await prisma.automationRun.findUnique({ where: { id: runId } });
+  const run = await automationRepository.findRunById(runId);
   if (!run) return null;
   if (run.status !== 'RUNNING' && run.status !== 'WAITING') {
     return run;
@@ -161,16 +151,13 @@ export async function cancelSingleAutomationRun(runId: string) {
   // id: the run may have reached a terminal state concurrently (e.g. the engine completed
   // it) while the pg-boss cancel above was in flight, and this must not overwrite that
   // outcome with a stale CANCELLED.
-  const { count } = await prisma.automationRun.updateMany({
-    where: { id: runId, status: { in: ['RUNNING', 'WAITING'] } },
-    data: { status: 'CANCELLED', completedAt: new Date() },
-  });
+  const { count } = await automationRepository.cancelRunIfActive(runId);
   if (count === 0) {
     logger.info(
       `[Automation Triggers] Run ${runId} reached a terminal state concurrently — skipping cancellation write`
     );
   }
-  return prisma.automationRun.findUnique({ where: { id: runId } });
+  return automationRepository.findRunById(runId);
 }
 
 /**
@@ -216,7 +203,7 @@ export async function unscheduleAutomationCron(automationId: string): Promise<vo
  */
 async function handleScheduledTick(automationId: string): Promise<void> {
   try {
-    const automation = await prisma.automation.findUnique({ where: { id: automationId } });
+    const automation = await automationRepository.findById(automationId);
     if (!automation || automation.status !== 'ACTIVE' || automation.triggerType !== 'schedule') {
       logger.info(
         `[Automation Triggers] Skipping scheduled tick for ${automationId} — automation is not an ACTIVE schedule automation`
@@ -232,16 +219,14 @@ async function handleScheduledTick(automationId: string): Promise<void> {
       trigger: { scheduledAt: scheduledAt.toISOString() },
     };
 
-    const run = await prisma.automationRun.create({
-      data: {
-        id: generateId(),
-        automationId: automation.id,
-        responseId: null,
-        automationVersion: automation.version,
-        graphSnapshot: automation.graph as Prisma.InputJsonValue,
-        status: 'RUNNING',
-        context: context as Prisma.InputJsonValue,
-      },
+    const run = await automationRepository.createRun({
+      id: generateId(),
+      automationId: automation.id,
+      responseId: null,
+      automationVersion: automation.version,
+      graphSnapshot: automation.graph as Prisma.InputJsonValue,
+      status: 'RUNNING',
+      context: context as Prisma.InputJsonValue,
     });
 
     await enqueueFirstStep(run);

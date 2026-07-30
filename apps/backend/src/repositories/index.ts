@@ -10,6 +10,7 @@ export * from './formMetadataRepository.js';
 export * from './collaborativeDocumentRepository.js';
 export * from './formViewAnalyticsRepository.js';
 export * from './formSubmissionAnalyticsRepository.js';
+export * from './automationRepository.js';
 export * from './aiUsageRepository.js';
 export * from './aiChatRepository.js';
 export * from './pluginRepository.js';
