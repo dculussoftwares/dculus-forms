@@ -114,8 +114,6 @@ import enFieldSettingsConstants from './en/fieldSettingsConstants.json';
 import taFieldSettingsConstants from './ta/fieldSettingsConstants.json';
 import enBackgroundImage from './en/backgroundImage.json';
 import taBackgroundImage from './ta/backgroundImage.json';
-import enLayoutOptions from './en/layoutOptions.json';
-import taLayoutOptions from './ta/layoutOptions.json';
 import enLayoutThumbnails from './en/layoutThumbnails.json';
 import taLayoutThumbnails from './ta/layoutThumbnails.json';
 import enHeader from './en/header.json';
@@ -327,7 +325,6 @@ const enTranslations = {
   fieldSettingsHeader: enFieldSettingsHeader,
   fieldSettingsConstants: enFieldSettingsConstants,
   backgroundImage: enBackgroundImage,
-  layoutOptions: enLayoutOptions,
   layoutThumbnails: enLayoutThumbnails,
   header: enHeader,
   createFormPopover: enCreateFormPopover,
@@ -464,7 +461,6 @@ const taTranslations = {
   fieldSettingsHeader: taFieldSettingsHeader,
   fieldSettingsConstants: taFieldSettingsConstants,
   backgroundImage: taBackgroundImage,
-  layoutOptions: taLayoutOptions,
   layoutThumbnails: taLayoutThumbnails,
   header: taHeader,
   createFormPopover: taCreateFormPopover,

@@ -7,29 +7,6 @@
   "layoutFamily": {
     "label": "Layout family"
   },
-  "theme": {
-    "label": "Theme",
-    "options": {
-      "light": "Light",
-      "dark": "Dark",
-      "auto": "Auto"
-    }
-  },
-  "spacing": {
-    "label": "Spacing",
-    "options": {
-      "compact": "Compact",
-      "normal": "Normal",
-      "spacious": "Spacious"
-    }
-  },
-  "pageMode": {
-    "label": "Page mode",
-    "currentValue": "Current: {{value}}",
-    "values": {
-      "multipage": "Multi-page"
-    }
-  },
   "globalBackground": {
     "label": "Global background"
   },

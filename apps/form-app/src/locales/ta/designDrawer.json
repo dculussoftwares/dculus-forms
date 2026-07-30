@@ -7,29 +7,6 @@
   "layoutFamily": {
     "label": "தளவமைப்பு வகை"
   },
-  "theme": {
-    "label": "தீம்",
-    "options": {
-      "light": "ஒளி",
-      "dark": "இருண்ட",
-      "auto": "ஆட்டோ"
-    }
-  },
-  "spacing": {
-    "label": "இடைவெளி",
-    "options": {
-      "compact": "கச்சிதமான",
-      "normal": "சாதாரண",
-      "spacious": "விசாலமான"
-    }
-  },
-  "pageMode": {
-    "label": "பக்க பயன்முறை",
-    "currentValue": "தற்போதைய: {{value}}",
-    "values": {
-      "multipage": "பல பக்கம்"
-    }
-  },
   "globalBackground": {
     "label": "பொதுவான பின்னணி"
   },
