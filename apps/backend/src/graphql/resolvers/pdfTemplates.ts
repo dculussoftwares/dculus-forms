@@ -2,7 +2,6 @@ import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { deserializeFormSchema } from '@dculus/types';
 import { generateId } from '@dculus/utils';
-import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
 import {
   BetterAuthContext,
@@ -19,8 +18,14 @@ import {
   buildPdfFilename,
   buildSampleResponseData,
   coerceAiSampleData,
+  countTemplates,
+  createTemplate,
+  deleteTemplate,
   generatePdfForResponse,
+  getTemplateById,
+  listTemplates,
   stripBasePdf,
+  updateTemplate,
   validatePdfTemplate,
 } from '../../services/pdfTemplateService.js';
 import { generateAiSampleData } from '../../services/aiService.js';
@@ -28,6 +33,8 @@ import {
   checkAITokenBudget,
   recordAITokenUsage,
 } from '../../services/aiUsageService.js';
+import { getFormById } from '../../services/formService.js';
+import { getResponseById } from '../../services/responseService.js';
 
 /**
  * GraphQL Resolvers for PDF Templates (issue #87)
@@ -44,7 +51,7 @@ import {
 const MAX_PDF_TEMPLATES_PER_FORM = 6;
 
 async function getTemplateOrThrow(id: string) {
-  const template = await prisma.pdfTemplate.findUnique({ where: { id } });
+  const template = await getTemplateById(id);
   if (!template) {
     throw createGraphQLError('PDF template not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }
@@ -75,10 +82,7 @@ export const pdfTemplatesResolvers = {
         );
       }
 
-      return prisma.pdfTemplate.findMany({
-        where: { formId },
-        orderBy: { createdAt: 'desc' },
-      });
+      return listTemplates(formId);
     },
 
     /**
@@ -146,7 +150,7 @@ export const pdfTemplatesResolvers = {
         throw createGraphQLError('Template name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      const existingTemplateCount = await prisma.pdfTemplate.count({ where: { formId: input.formId } });
+      const existingTemplateCount = await countTemplates(input.formId);
       if (existingTemplateCount >= MAX_PDF_TEMPLATES_PER_FORM) {
         throw createGraphQLError(
           `This form already has the maximum of ${MAX_PDF_TEMPLATES_PER_FORM} PDF templates`,
@@ -176,19 +180,17 @@ export const pdfTemplatesResolvers = {
 
       const storedTemplate = stripBasePdf(input.template, hasUploadedPdf);
 
-      return prisma.pdfTemplate.create({
-        data: {
-          id: generateId(),
-          formId: input.formId,
-          name: input.name.trim(),
-          template: storedTemplate,
-          fileKey: input.fileKey ?? null,
-          fileName: input.fileName ?? null,
-          pageCount: Array.isArray(input.template?.schemas)
-            ? Math.max(input.template.schemas.length, 1)
-            : 1,
-          createdById: context.auth.user!.id,
-        },
+      return createTemplate({
+        id: generateId(),
+        formId: input.formId,
+        name: input.name.trim(),
+        template: storedTemplate,
+        fileKey: input.fileKey ?? null,
+        fileName: input.fileName ?? null,
+        pageCount: Array.isArray(input.template?.schemas)
+          ? Math.max(input.template.schemas.length, 1)
+          : 1,
+        createdById: context.auth.user!.id,
       });
     },
 
@@ -247,7 +249,7 @@ export const pdfTemplatesResolvers = {
           : existing.pageCount;
       }
 
-      return prisma.pdfTemplate.update({ where: { id }, data });
+      return updateTemplate(id, data);
     },
 
     /**
@@ -274,7 +276,7 @@ export const pdfTemplatesResolvers = {
         );
       }
 
-      await prisma.pdfTemplate.delete({ where: { id } });
+      await deleteTemplate(id);
 
       // Best-effort cleanup of the base PDF in R2 — the DB row is already gone
       if (existing.fileKey) {
@@ -313,17 +315,12 @@ export const pdfTemplatesResolvers = {
         );
       }
 
-      const response = await prisma.response.findUnique({
-        where: { id: responseId },
-      });
-      if (!response || response.deletedAt || response.formId !== template.formId) {
+      const response = await getResponseById(responseId);
+      if (!response || response.formId !== template.formId) {
         throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
-      const form = await prisma.form.findUnique({
-        where: { id: template.formId },
-        select: { formSchema: true },
-      });
+      const form = await getFormById(template.formId);
       if (!form) {
         throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
@@ -418,10 +415,7 @@ export const pdfTemplatesResolvers = {
         workingTemplate = stripBasePdf(template, !!stored.fileKey);
       }
 
-      const form = await prisma.form.findUnique({
-        where: { id: stored.formId },
-        select: { formSchema: true, organizationId: true, title: true },
-      });
+      const form = await getFormById(stored.formId);
       if (!form) {
         throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       }
@@ -429,8 +423,8 @@ export const pdfTemplatesResolvers = {
 
       let responseData: Record<string, any>;
       if (responseId) {
-        const response = await prisma.response.findUnique({ where: { id: responseId } });
-        if (!response || response.deletedAt || response.formId !== stored.formId) {
+        const response = await getResponseById(responseId);
+        if (!response || response.formId !== stored.formId) {
           throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
         }
         responseData = (response.data as Record<string, any>) ?? {};

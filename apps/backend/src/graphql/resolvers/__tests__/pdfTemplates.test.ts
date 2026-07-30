@@ -4,6 +4,8 @@ import * as betterAuthMiddleware from '../../../middleware/better-auth-middlewar
 import * as formSharingResolvers from '../formSharing.js';
 import { prisma } from '../../../lib/prisma.js';
 import { generatePdfForResponse } from '../../../services/pdfTemplateService.js';
+import { getFormById } from '../../../services/formService.js';
+import { getResponseById } from '../../../services/responseService.js';
 
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
@@ -16,12 +18,6 @@ vi.mock('../../../lib/prisma.js', () => ({
       update: vi.fn(),
       delete: vi.fn(),
       count: vi.fn().mockResolvedValue(0),
-    },
-    response: {
-      findUnique: vi.fn(),
-    },
-    form: {
-      findUnique: vi.fn(),
     },
   },
 }));
@@ -44,6 +40,18 @@ vi.mock('../../../services/pdfTemplateService.js', async () => {
     ...actual,
     generatePdfForResponse: vi.fn(),
   };
+});
+vi.mock('../../../services/formService.js', async () => {
+  const actual = await vi.importActual<typeof import('../../../services/formService.js')>(
+    '../../../services/formService.js'
+  );
+  return { ...actual, getFormById: vi.fn() };
+});
+vi.mock('../../../services/responseService.js', async () => {
+  const actual = await vi.importActual<typeof import('../../../services/responseService.js')>(
+    '../../../services/responseService.js'
+  );
+  return { ...actual, getResponseById: vi.fn() };
 });
 vi.mock('@dculus/utils', async () => {
   const actual = await vi.importActual<typeof import('@dculus/utils')>('@dculus/utils');
@@ -174,13 +182,12 @@ describe('PDF Templates Resolvers', () => {
         template: { basePdf: BLANK_A4, schemas: [[]] },
         name: 'Certificate',
       } as any);
-      vi.mocked(prisma.response.findUnique).mockResolvedValue({
+      vi.mocked(getResponseById).mockResolvedValue({
         id: 'response-1',
         formId: 'form-123',
-        deletedAt: null,
         data: {},
       } as any);
-      vi.mocked(prisma.form.findUnique).mockResolvedValue({
+      vi.mocked(getFormById).mockResolvedValue({
         formSchema: { pages: [] },
       } as any);
       vi.mocked(generatePdfForResponse).mockRejectedValue(

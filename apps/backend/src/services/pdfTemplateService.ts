@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import type { Prisma } from '#prisma-client';
 import { checkTemplate, getDefaultFont, BLANK_PDF, type Font, type Template } from '@pdfme/common';
 import { generate } from '@pdfme/generator';
 import {
@@ -19,6 +20,8 @@ import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { FieldType } from '@dculus/types';
 import { substitutePlaceholdersPlainText, createFieldLabelsMap } from '@dculus/utils';
 import { downloadFileBuffer } from './fileUploadService.js';
+import { pdfTemplateRepository, createPdfTemplateRepository } from '../repositories/index.js';
+import { withPrisma } from '../repositories/baseRepository.js';
 import { logger } from '../lib/logger.js';
 
 /**
@@ -54,6 +57,33 @@ export const PDF_GENERATOR_PLUGINS = {
  * Roboto has no Tamil glyphs.
  */
 export const TAMIL_FONT_NAME = 'NotoSansTamil';
+
+/**
+ * PDF Template CRUD — thin pass-throughs onto pdfTemplateRepository. Business
+ * rules (name validation, the per-form template cap, fileKey ownership
+ * checks, template JSON validation) stay in the resolver; this layer is only
+ * the data-access boundary.
+ */
+
+export const listTemplates = async (formId: string) =>
+  pdfTemplateRepository.listByForm(formId);
+
+export const getTemplateById = async (id: string) =>
+  pdfTemplateRepository.findById(id);
+
+export const countTemplates = async (formId: string) =>
+  pdfTemplateRepository.countByForm(formId);
+
+export const createTemplate = async (data: Prisma.PdfTemplateCreateArgs['data']) =>
+  pdfTemplateRepository.createTemplate(data);
+
+export const updateTemplate = async (
+  id: string,
+  data: Prisma.PdfTemplateUpdateArgs['data']
+) => pdfTemplateRepository.updateTemplate(id, data);
+
+export const deleteTemplate = async (id: string) =>
+  pdfTemplateRepository.deleteTemplate(id);
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -479,7 +509,9 @@ export async function resolveResponsePdfAttachment(
   const { pdfTemplateId, formId, responseId, deserializedSchema, responseData } = params;
 
   try {
-    const pdfTemplate = await prisma.pdfTemplate.findUnique({ where: { id: pdfTemplateId } });
+    const pdfTemplate = await createPdfTemplateRepository(withPrisma(prisma)).findUnique({
+      where: { id: pdfTemplateId },
+    });
 
     if (!pdfTemplate || pdfTemplate.formId !== formId) {
       return { error: `PDF template "${pdfTemplateId}" no longer exists` };
