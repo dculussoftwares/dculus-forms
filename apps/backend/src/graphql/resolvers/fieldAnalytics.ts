@@ -7,7 +7,7 @@ import {
   type FieldAnalytics,
 } from '../../services/fieldAnalytics/index.js';
 import { requireAuth, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
-import { prisma } from '../../lib/prisma.js';
+import { getFormById } from '../../services/formService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { logger } from '../../lib/logger.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
@@ -204,10 +204,7 @@ export const fieldAnalyticsResolvers = {
 
         // Fallback to database schema if collaborative document doesn't exist
         // Access already verified above — only fetching schema here
-        const fallbackForm = await prisma.form.findUnique({
-          where: { id: formId },
-          select: { formSchema: true },
-        });
+        const fallbackForm = await getFormById(formId);
         const fallbackSchema = fallbackForm?.formSchema as any;
 
         logger.info('📋 Fallback DB schema structure:', {

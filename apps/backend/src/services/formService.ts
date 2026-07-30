@@ -65,6 +65,20 @@ export const getFormById = async (id: string): Promise<Form | null> => {
   }
 };
 
+/**
+ * Form IDs within an organization that a user can actually access (owner,
+ * explicit non-NO_ACCESS permission grant, or ALL_ORG_MEMBERS sharing with a
+ * non-NO_ACCESS default permission). Callers still need to separately verify
+ * organization membership — this only scopes forms, not org access.
+ */
+export const getAccessibleFormIds = async (
+  organizationId: string,
+  userId: string
+): Promise<string[]> => {
+  const forms = await formRepository.listAccessibleByOrganization(organizationId, userId);
+  return forms.map((form) => form.id);
+};
+
 export const getFormByShortUrl = async (shortUrl: string): Promise<Form | null> => {
   try {
     const form = await formRepository.findByShortUrl(shortUrl);

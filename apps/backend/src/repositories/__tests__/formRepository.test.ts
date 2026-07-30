@@ -93,4 +93,34 @@ describe('formRepository', () => {
     expect(prismaMock.formPermission.create).toHaveBeenCalledWith({ data: { formId: 'form-1' } });
     expect(prismaMock.formFile.create).toHaveBeenCalledWith({ data: { formId: 'form-1', key: 'file' } });
   });
+
+  describe('listAccessibleByOrganization', () => {
+    it('queries with the created/permission/sharing-scope OR clause and id-only select', async () => {
+      const repo = createFormRepository();
+      prismaMock.form.findMany.mockResolvedValueOnce([{ id: 'form-1' }, { id: 'form-2' }]);
+
+      const result = await repo.listAccessibleByOrganization('org-1', 'user-1');
+
+      expect(prismaMock.form.findMany).toHaveBeenCalledWith({
+        where: {
+          organizationId: 'org-1',
+          OR: [
+            { createdById: 'user-1' },
+            { permissions: { some: { userId: 'user-1', permission: { not: 'NO_ACCESS' } } } },
+            { sharingScope: 'ALL_ORG_MEMBERS', defaultPermission: { not: 'NO_ACCESS' } },
+          ],
+        },
+        select: { id: true },
+      });
+      expect(result).toEqual([{ id: 'form-1' }, { id: 'form-2' }]);
+    });
+
+    it('does not filter by deletedAt (matches existing inline behavior)', async () => {
+      const repo = createFormRepository();
+      await repo.listAccessibleByOrganization('org-1', 'user-1');
+
+      const callArgs = prismaMock.form.findMany.mock.calls[0][0];
+      expect(callArgs.where).not.toHaveProperty('deletedAt');
+    });
+  });
 });
