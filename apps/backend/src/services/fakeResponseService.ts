@@ -1,8 +1,7 @@
 import { generateId } from '@dculus/utils';
 import { FieldType } from '@dculus/types';
 import { Prisma } from '#prisma-client';
-import { prisma } from '../lib/prisma.js';
-import { responseRepository } from '../repositories/index.js';
+import { responseRepository, tagRepository } from '../repositories/index.js';
 import { generateAiFakeResponses } from './aiService.js';
 import { coerceAiSampleData } from './pdfTemplateService.js';
 import { ensureSyntheticResponseFile } from './fileUploadService.js';
@@ -119,7 +118,7 @@ export async function generateFakeResponsesForForm(
     // persisted, so a tagging failure shouldn't fail the whole generation.
     try {
       const tag = await upsertAiGeneratedTag(formId);
-      await prisma.responseTagAssignment.createMany({
+      await tagRepository.createMany({
         data: rows.map((row) => ({ responseId: row.id, tagId: tag.id })),
       });
     } catch (error) {

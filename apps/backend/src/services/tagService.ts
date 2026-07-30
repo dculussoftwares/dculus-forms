@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma.js';
+import { tagRepository, responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
 
 export const PREVIEW_TAG_NAME = '__preview__';
@@ -10,23 +10,16 @@ export const AI_GENERATED_TAG_NAME = '__ai_generated__';
 export const AI_GENERATED_RESPONSE_SOURCE = 'ai_generated';
 
 export const getFormTags = async (formId: string) => {
-  return prisma.responseTag.findMany({
-    where: { formId },
-    orderBy: { createdAt: 'asc' },
-  });
+  return tagRepository.listByForm(formId);
 };
 
 export const createTag = async (formId: string, name: string, color?: string) => {
-  return prisma.responseTag.upsert({
-    where: { formId_name: { formId, name: name.trim() } },
-    update: { color: color ?? '#6366f1' },
-    create: { formId, name: name.trim(), color: color ?? '#6366f1' },
-  });
+  return tagRepository.upsertTag(formId, name.trim(), color);
 };
 
 export const deleteTag = async (id: string): Promise<boolean> => {
   try {
-    await prisma.responseTag.delete({ where: { id } });
+    await tagRepository.delete({ where: { id } });
     return true;
   } catch (error) {
     logger.error('Error deleting tag:', error);
@@ -36,11 +29,7 @@ export const deleteTag = async (id: string): Promise<boolean> => {
 
 export const addTagToResponse = async (responseId: string, tagId: string): Promise<boolean> => {
   try {
-    await prisma.responseTagAssignment.upsert({
-      where: { responseId_tagId: { responseId, tagId } },
-      update: {},
-      create: { responseId, tagId },
-    });
+    await tagRepository.assignTag(responseId, tagId);
     return true;
   } catch (error) {
     logger.error('Error adding tag to response:', error);
@@ -50,9 +39,7 @@ export const addTagToResponse = async (responseId: string, tagId: string): Promi
 
 export const removeTagFromResponse = async (responseId: string, tagId: string): Promise<boolean> => {
   try {
-    await prisma.responseTagAssignment.delete({
-      where: { responseId_tagId: { responseId, tagId } },
-    });
+    await tagRepository.unassignTag(responseId, tagId);
     return true;
   } catch (error) {
     logger.error('Error removing tag from response:', error);
@@ -61,19 +48,13 @@ export const removeTagFromResponse = async (responseId: string, tagId: string): 
 };
 
 export const getTagsForResponse = async (responseId: string) => {
-  const assignments = await prisma.responseTagAssignment.findMany({
-    where: { responseId },
-    include: { tag: true },
-  });
+  const assignments = await tagRepository.findAssignmentsByResponse(responseId);
   return assignments.map((a) => a.tag);
 };
 
 export const batchLoadTagsForResponses = async (responseIds: string[]) => {
   if (!responseIds.length) return {};
-  const assignments = await prisma.responseTagAssignment.findMany({
-    where: { responseId: { in: responseIds } },
-    include: { tag: true },
-  });
+  const assignments = await tagRepository.findAssignmentsByResponses(responseIds);
   const map: Record<string, { id: string; formId: string; name: string; color: string; createdAt: Date }[]> = {};
   for (const id of responseIds) map[id] = [];
   for (const a of assignments) {
@@ -83,38 +64,25 @@ export const batchLoadTagsForResponses = async (responseIds: string[]) => {
 };
 
 export const upsertPreviewTag = async (formId: string) => {
-  return prisma.responseTag.upsert({
-    where: { formId_name: { formId, name: PREVIEW_TAG_NAME } },
-    update: {},
-    create: { formId, name: PREVIEW_TAG_NAME, color: '#f59e0b' },
-  });
+  return tagRepository.upsertTag(formId, PREVIEW_TAG_NAME, '#f59e0b');
 };
 
 export const deletePreviewResponses = async (formId: string): Promise<number> => {
-  const previewTag = await prisma.responseTag.findFirst({
-    where: { formId, name: PREVIEW_TAG_NAME },
-  });
+  const previewTag = await tagRepository.findByFormAndName(formId, PREVIEW_TAG_NAME);
   if (!previewTag) return 0;
 
-  const assignments = await prisma.responseTagAssignment.findMany({
-    where: { tagId: previewTag.id },
-    select: { responseId: true },
-  });
+  const assignments = await tagRepository.findAssignmentsByTag(previewTag.id);
   if (!assignments.length) return 0;
 
   const responseIds = assignments.map((a) => a.responseId);
-  const { count } = await prisma.response.deleteMany({
+  const { count } = await responseRepository.deleteMany({
     where: { id: { in: responseIds } },
   });
   return count;
 };
 
 export const upsertAiGeneratedTag = async (formId: string) => {
-  return prisma.responseTag.upsert({
-    where: { formId_name: { formId, name: AI_GENERATED_TAG_NAME } },
-    update: {},
-    create: { formId, name: AI_GENERATED_TAG_NAME, color: '#8b5cf6' },
-  });
+  return tagRepository.upsertTag(formId, AI_GENERATED_TAG_NAME, '#8b5cf6');
 };
 
 /**
@@ -125,7 +93,7 @@ export const upsertAiGeneratedTag = async (formId: string) => {
  * untagged-but-synthetic rows with no way to bulk-clean them.
  */
 export const deleteAiGeneratedResponses = async (formId: string): Promise<number> => {
-  const { count } = await prisma.response.deleteMany({
+  const { count } = await responseRepository.deleteMany({
     where: {
       formId,
       metadata: { path: ['source'], equals: AI_GENERATED_RESPONSE_SOURCE },
