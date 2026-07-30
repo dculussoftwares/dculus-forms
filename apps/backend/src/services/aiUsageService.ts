@@ -1,7 +1,8 @@
-import { prisma } from '../lib/prisma.js';
 import { AI_CREDIT_LIMITS_FALLBACK, tokensToMilliCredits, type AIModelTier } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 import { emitUsageLimitReached, emitUsageLimitExceeded } from '../subscriptions/events.js';
+import { aiUsageRepository } from '../repositories/aiUsageRepository.js';
+import { subscriptionRepository } from '../repositories/subscriptionRepository.js';
 
 /**
  * Design decision (issue #83 — check-then-record race on AI credit budget):
@@ -128,26 +129,20 @@ async function migrateLegacyPeriodUsage(
 
   try {
     const [existingNew, legacy] = await Promise.all([
-      prisma.aIUsage.findFirst({ where: { organizationId, periodStart: newStart } }),
-      prisma.aIUsage.findFirst({ where: { organizationId, periodStart: legacyStart } }),
+      aiUsageRepository.findByOrganizationAndPeriod(organizationId, newStart),
+      aiUsageRepository.findByOrganizationAndPeriod(organizationId, legacyStart),
     ]);
     if (existingNew || !legacy) return;
 
-    await prisma.aIUsage.upsert({
-      where: { organizationId_periodStart: { organizationId, periodStart: newStart } },
-      update: {
-        tokensUsed: { increment: legacy.tokensUsed },
-        creditsUsedMilli: { increment: legacy.creditsUsedMilli },
-      },
-      create: {
-        organizationId,
-        periodStart: newStart,
-        periodEnd: newEnd,
-        tokensUsed: legacy.tokensUsed,
-        creditsUsedMilli: legacy.creditsUsedMilli,
-      },
-    });
-    await prisma.aIUsage.delete({ where: { id: legacy.id } });
+    await aiUsageRepository.migratePeriodUsage(
+      organizationId,
+      legacyStart,
+      newStart,
+      newEnd,
+      legacy.id,
+      legacy.tokensUsed,
+      legacy.creditsUsedMilli
+    );
   } catch {
     logger.warn(
       { organizationId },
@@ -225,13 +220,11 @@ export async function checkAITokenBudget(organizationId: string): Promise<{
 
   const generationAtStart = currentWriteGeneration(organizationId);
 
-  const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
+  const subscription = await subscriptionRepository.findUnique({ where: { organizationId } });
   const { start, end } = currentPeriod(subscription);
   await migrateLegacyPeriodUsage(organizationId, start, end, subscription);
 
-  const usage = await prisma.aIUsage.findFirst({
-    where: { organizationId, periodStart: start },
-  });
+  const usage = await aiUsageRepository.findByOrganizationAndPeriod(organizationId, start);
 
   const limit = effectiveCreditLimit(subscription);
   const creditsUsedMilli = usage?.creditsUsedMilli ?? 0;
@@ -304,29 +297,22 @@ export async function recordAITokenUsage(
   budgetCache.delete(organizationId); // invalidate before the write starts
   // Fetched once (not select-limited): currentPeriod() needs currentPeriodStart/End,
   // and effectiveCreditLimit() below needs planId/aiCreditsLimit/status from the same row.
-  const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
+  const subscription = await subscriptionRepository.findUnique({ where: { organizationId } });
   const { start, end } = currentPeriod(subscription);
   await migrateLegacyPeriodUsage(organizationId, start, end, subscription);
   const creditsUsedMilli = tokensToMilliCredits(tokensUsed, tier);
 
   try {
-    const existing = await prisma.aIUsage.findFirst({ where: { organizationId, periodStart: start } });
+    const existing = await aiUsageRepository.findByOrganizationAndPeriod(organizationId, start);
     const previousMilli = existing?.creditsUsedMilli ?? 0;
 
-    const updated = await prisma.aIUsage.upsert({
-      where: { organizationId_periodStart: { organizationId, periodStart: start } },
-      update: {
-        tokensUsed: { increment: tokensUsed },
-        creditsUsedMilli: { increment: creditsUsedMilli },
-      },
-      create: {
-        organizationId,
-        tokensUsed,
-        creditsUsedMilli,
-        periodStart: start,
-        periodEnd: end,
-      },
-    });
+    const updated = await aiUsageRepository.upsertPeriodUsage(
+      organizationId,
+      start,
+      end,
+      tokensUsed,
+      creditsUsedMilli
+    );
 
     const limitCredits = effectiveCreditLimit(subscription);
     checkAICreditLimits(organizationId, previousMilli, updated.creditsUsedMilli, limitCredits);
@@ -353,11 +339,11 @@ export async function getAITokenUsage(organizationId: string): Promise<{
   creditsUsed: number;
   creditsLimit: number;
 }> {
-  const subscription = await prisma.subscription.findUnique({ where: { organizationId } });
+  const subscription = await subscriptionRepository.findUnique({ where: { organizationId } });
   const { start, end } = currentPeriod(subscription);
   await migrateLegacyPeriodUsage(organizationId, start, end, subscription);
 
-  const usage = await prisma.aIUsage.findFirst({ where: { organizationId, periodStart: start } });
+  const usage = await aiUsageRepository.findByOrganizationAndPeriod(organizationId, start);
 
   const creditsLimit = effectiveCreditLimit(subscription);
   const creditsUsedMilli = usage?.creditsUsedMilli ?? 0;
@@ -371,4 +357,30 @@ export async function getAITokenUsage(organizationId: string): Promise<{
     creditsUsed: Math.round((creditsUsedMilli / 1000) * 10) / 10,
     creditsLimit,
   };
+}
+
+/**
+ * Sum of `tokensUsed` across every period recorded for an org.
+ *
+ * Used by the admin usage-reset flow (`admin.ts` `adminResetUsage`) to report what's
+ * about to be zeroed out — exported here so ticket #14 (Org/Member/User/AuditLog) can
+ * call it instead of touching `prisma.aIUsage` directly.
+ */
+export async function getOrganizationUsageTotals(
+  organizationId: string
+): Promise<{ totalTokensUsed: number }> {
+  const result = await aiUsageRepository.sumTokensUsedByOrganization(organizationId);
+  return { totalTokensUsed: result._sum.tokensUsed ?? 0 };
+}
+
+/**
+ * Zeroes out every usage row for an org and invalidates the in-memory budget cache.
+ *
+ * Used by the admin usage-reset flow (`admin.ts` `adminResetUsage`) — exported here so
+ * ticket #14 (Org/Member/User/AuditLog) can call it instead of touching `prisma.aIUsage`
+ * directly.
+ */
+export async function resetOrganizationUsage(organizationId: string): Promise<void> {
+  await aiUsageRepository.resetUsageByOrganization(organizationId);
+  invalidateAIBudgetCache(organizationId);
 }
