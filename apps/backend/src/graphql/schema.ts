@@ -1605,6 +1605,7 @@ export const typeDefs = gql`
     placeholder: String
     required: Boolean!
     options: [AIFieldOption!]
+    section: String!
   }
 
   type AIGeneratedLayout {

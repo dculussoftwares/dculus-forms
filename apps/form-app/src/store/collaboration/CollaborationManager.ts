@@ -169,6 +169,7 @@ const deserializePagesFromYJS = (
       id: pageId,
       title: pageMap.get('title') || `Page ${index + 1}`,
       order: pageMap.get('order') ?? index,
+      showPageName: pageMap.get('showPageName') ?? true,
       fields,
     };
   });

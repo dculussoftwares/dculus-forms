@@ -116,6 +116,7 @@ export interface FormPage {
   title: string;
   fields: FormField[];
   order: number;
+  showPageName?: boolean; // Whether the page title is shown to respondents in the viewer (default: true)
 }
 
 export type LayoutCode =

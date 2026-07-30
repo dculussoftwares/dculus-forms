@@ -53,6 +53,7 @@ export interface PagesSlice {
   removePage: (pageId: string) => void;
   duplicatePage: (pageId: string) => void;
   updatePageTitle: (pageId: string, title: string) => void;
+  updatePageShowName: (pageId: string, showPageName: boolean) => void;
   reorderPages: (oldIndex: number, newIndex: number) => void;
 
   // Internal helpers

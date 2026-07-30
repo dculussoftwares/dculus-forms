@@ -31,6 +31,11 @@ const AIFieldSchema = z.object({
     .array(AIFieldOptionSchema)
     .nullable()
     .describe('Option list for select/radio/checkbox types, or null for others'),
+  section: z
+    .string()
+    .describe(
+      'Short name (2-4 words) of the logical section/page this field belongs to, e.g. "Personal Information", "Contact Details". Fields with the same section name, listed consecutively, are grouped onto the same page.'
+    ),
 });
 
 const AILayoutSchema = z.object({
@@ -70,7 +75,8 @@ You MUST respond with valid JSON matching EXACTLY this structure — no extra ke
       "label": "Field label",
       "placeholder": "Hint text or null",
       "required": true,
-      "options": null
+      "options": null,
+      "section": "Personal Information"
     }
   ],
   "layout": {
@@ -81,10 +87,11 @@ You MUST respond with valid JSON matching EXACTLY this structure — no extra ke
 
 Strict rules:
 - "suggestedTitle" MUST be a short descriptive title string.
-- Each field MUST have: type, label, placeholder (string or null), required (boolean), options (array or null).
+- Each field MUST have: type, label, placeholder (string or null), required (boolean), options (array or null), section (string).
 - "required" MUST be true or false — never omit it.
 - "placeholder" MUST be a string or null — never omit it.
 - "options" MUST be an array of {"value": "...", "label": "..."} objects for select/radio/checkbox fields; null for all other field types.
+- "section" MUST be a short (2-4 word) name for the logical group/page this field belongs to. List fields belonging to the same section consecutively — they will become one page together.
 - "layout.content" MUST use only <h1> and <p> tags — no other HTML.
 - "layout.customCTAButtonName" MUST be a short action-oriented label (max 4 words).`;
 
@@ -94,6 +101,7 @@ Focus only on the most essential information — nothing extra.
 Use simple field types (text, email, number, textarea).
 Keep labels short and direct. Set placeholder to null unless it genuinely helps.
 Set options to null for non-choice fields.
+Assign every field the same "section" name (e.g. "Details") since a quick form is a single short page.
 ${JSON_SCHEMA_RULES}`,
 
   standard: `You are a form builder assistant. Create well-balanced forms with 6–10 fields.
@@ -102,6 +110,8 @@ Mix field types naturally — use radio or select for categorical choices, texta
 and phone for phone/contact-number questions instead of a plain text field.
 Keep labels concise and user-friendly. Set placeholder to null if not needed.
 Set options to null for non-choice fields.
+Organize fields into 2-3 logical sections with short, descriptive names (e.g. "Personal Information", "Preferences") —
+list fields belonging to the same section consecutively so each section becomes its own page.
 ${JSON_SCHEMA_RULES}`,
 
   professional: `You are a form builder assistant. Create comprehensive, professional forms with 10–20 fields.
@@ -110,6 +120,9 @@ Group related fields logically. Use radio/select for categorical choices, checkb
 textarea for open-ended answers, and specialized types (date, file, number, phone) where natural —
 use phone specifically for phone/contact-number questions instead of a plain text field.
 Set options to null for non-choice fields. Set placeholder to null only if truly unnecessary.
+Organize fields into 3-6 logical sections with short, descriptive names (e.g. "Personal Information",
+"Employment History", "Emergency Contact") — list fields belonging to the same section consecutively,
+keeping each section to roughly 2-6 fields, so each section becomes its own page.
 ${JSON_SCHEMA_RULES}`,
 };
 

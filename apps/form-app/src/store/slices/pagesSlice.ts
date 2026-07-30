@@ -58,6 +58,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
       pageMap.set('id', newPageId);
       pageMap.set('title', `New Page ${pagesArray.length + 1}`);
       pageMap.set('order', pagesArray.length);
+      pageMap.set('showPageName', true);
       pageMap.set('fields', fieldsArray);
 
       pagesArray.push([pageMap]);
@@ -100,6 +101,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
         pageMap.set('title', title);
         pageMap.set('fields', fieldsArray);
         pageMap.set('description', '');
+        pageMap.set('showPageName', true);
         pageMap.set('order', 0); // corrected by the order rewrite loop below
 
         if (insertAfterPageId) {
@@ -194,6 +196,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
       duplicatePageMap.set('title', `${originalPageMap.get('title')} (Copy)`);
       duplicatePageMap.set('description', originalPageMap.get('description') || '');
       duplicatePageMap.set('order', pageIndex + 1);
+      duplicatePageMap.set('showPageName', originalPageMap.get('showPageName') ?? true);
 
       const originalFieldsArray = originalPageMap.get('fields') as Y.Array<Y.Map<any>>;
       const duplicateFieldsArray = new Y.Array();
@@ -240,6 +243,34 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
 
       const pageMap = pagesArray.get(pageIndex);
       pageMap.set('title', title);
+    },
+
+    /**
+     * Update whether the page name is shown to respondents
+     *
+     * Toggles visibility of this page's title in the form viewer.
+     */
+    updatePageShowName: (pageId: string, showPageName: boolean) => {
+      const { _getYDoc, _isYJSReady } = get() as any;
+      const ydoc = _getYDoc();
+      const isReady = _isYJSReady();
+
+      if (!ydoc || !isReady) {
+        console.warn('Cannot update page show name: YJS document not available or not connected');
+        return;
+      }
+
+      const formSchemaMap = ydoc.getMap('formSchema');
+      const pagesArray = getOrCreatePagesArray(formSchemaMap);
+
+      const pageIndex = pagesArray.toArray().findIndex((pageMap) => pageMap.get('id') === pageId);
+      if (pageIndex === -1) {
+        console.warn(`Page with id ${pageId} not found`);
+        return;
+      }
+
+      const pageMap = pagesArray.get(pageIndex);
+      pageMap.set('showPageName', showPageName);
     },
 
     /**
@@ -291,11 +322,13 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
           id: string;
           title: string;
           description: string;
+          showPageName: boolean;
           fields: FieldData[];
         } = {
           id: oldPageMap.get('id'),
           title: oldPageMap.get('title'),
           description: oldPageMap.get('description') || '',
+          showPageName: oldPageMap.get('showPageName') ?? true,
           fields: [],
         };
 
@@ -312,6 +345,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
         pageMap.set('id', pageData.id);
         pageMap.set('title', pageData.title);
         pageMap.set('description', pageData.description);
+        pageMap.set('showPageName', pageData.showPageName);
         pageMap.set('order', newIndex);
 
         const newFieldsArray = new Y.Array();
