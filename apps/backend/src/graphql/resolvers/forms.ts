@@ -13,7 +13,9 @@ import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { generateId } from '@dculus/utils';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
-import { prisma } from '../../lib/prisma.js';
+import { createFormFile } from '../../services/formFileService.js';
+import { getResponseCount, countAllResponses, getDashboardResponseCounts } from '../../services/responseService.js';
+import { analyticsService } from '../../services/analyticsService.js';
 import { randomUUID } from 'crypto';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
@@ -79,9 +81,7 @@ export const formsResolvers = {
 
         // Check maximum responses limit
         if (limits.maxResponses?.enabled) {
-          const currentResponseCount = await prisma.response.count({
-            where: { formId: form.id }
-          });
+          const currentResponseCount = await countAllResponses(form.id);
 
           if (currentResponseCount >= limits.maxResponses.limit) {
             throw createGraphQLError("Form has reached its maximum response limit", GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
@@ -155,7 +155,7 @@ export const formsResolvers = {
       // P3-02: Return pre-fetched _count when available (avoids N+1 on list queries).
       // Fall back to a direct COUNT query for single-form queries where _count is absent.
       if (parent._count?.responses !== undefined) return parent._count.responses;
-      return prisma.response.count({ where: { formId: parent.id, deletedAt: null } });
+      return getResponseCount(parent.id);
     },
     dashboardStats: async (parent: any) => {
       const formId = parent.id;
@@ -167,42 +167,21 @@ export const formsResolvers = {
       const twoWeeksAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000);
       const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      const [
-        responsesToday,
-        responsesThisWeek,
-        responsesThisMonth,
-        totalResponses,
-        totalViews,
-        submissionAnalytics,
-        responsesYesterday,
-        responsesLastWeek,
-        viewsThisWeek,
-        viewsLastWeek,
-      ] = await Promise.all([
-        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: today } } }),
-        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: weekAgo } } }),
-        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: monthAgo } } }),
-        prisma.response.count({ where: { formId, deletedAt: null } }),
-        prisma.formViewAnalytics.count({ where: { formId } }),
-        // Direct formId filter — FormSubmissionAnalytics has an indexed formId column
-        prisma.formSubmissionAnalytics.findMany({
-          where: { formId },
-          select: { completionTimeSeconds: true },
-        }),
-        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: yesterday, lt: today } } }),
-        prisma.response.count({ where: { formId, deletedAt: null, submittedAt: { gte: twoWeeksAgo, lt: weekAgo } } }),
-        prisma.formViewAnalytics.count({ where: { formId, viewedAt: { gte: weekAgo } } }),
-        prisma.formViewAnalytics.count({ where: { formId, viewedAt: { gte: twoWeeksAgo, lt: weekAgo } } }),
+      const [responseCounts, viewCounts, averageCompletionTime] = await Promise.all([
+        getDashboardResponseCounts(formId, { today, weekAgo, monthAgo, yesterday, twoWeeksAgo }),
+        analyticsService.getDashboardViewCounts(formId, { weekAgo, twoWeeksAgo }),
+        analyticsService.getAverageCompletionTime(formId),
       ]);
 
-      const validCompletionTimes = submissionAnalytics
-        .map(s => s.completionTimeSeconds)
-        .filter((t): t is number => t !== null && t > 0);
-
-      const averageCompletionTime =
-        validCompletionTimes.length > 0
-          ? validCompletionTimes.reduce((sum, t) => sum + t, 0) / validCompletionTimes.length
-          : null;
+      const {
+        today: responsesToday,
+        thisWeek: responsesThisWeek,
+        thisMonth: responsesThisMonth,
+        total: totalResponses,
+        yesterday: responsesYesterday,
+        lastWeek: responsesLastWeek,
+      } = responseCounts;
+      const { total: totalViews, thisWeek: viewsThisWeek, lastWeek: viewsLastWeek } = viewCounts;
 
       const responseRate = totalViews > 0 ? (totalResponses / totalViews) * 100 : 0;
 
@@ -343,17 +322,15 @@ export const formsResolvers = {
       // NOW create the FormFile record after the form exists in the database
       if (copiedFileInfo) {
         try {
-          await prisma.formFile.create({
-            data: {
-              id: randomUUID(),
-              key: copiedFileInfo.key,
-              type: 'FormBackground',
-              formId: newFormId,
-              originalName: copiedFileInfo.originalName,
-              url: copiedFileInfo.url,
-              size: copiedFileInfo.size,
-              mimeType: copiedFileInfo.mimeType,
-            }
+          await createFormFile({
+            id: randomUUID(),
+            key: copiedFileInfo.key,
+            type: 'FormBackground',
+            formId: newFormId,
+            originalName: copiedFileInfo.originalName,
+            url: copiedFileInfo.url,
+            size: copiedFileInfo.size,
+            mimeType: copiedFileInfo.mimeType,
           });
         } catch (formFileError) {
           logger.error('Error creating FormFile record:', formFileError);

@@ -1,15 +1,18 @@
 import { FormResponse } from '@dculus/types';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
+import { createGraphQLError } from '#graphql-errors';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import {
   buildRawSQLCondition,
   canFilterAtDatabase
 } from './responseQueryBuilder.js';
 import { batchLoadTagsForResponses } from './tagService.js';
-import { responseRepository } from '../repositories/index.js';
+import { responseRepository, createResponseRepository } from '../repositories/index.js';
+import { withPrisma } from '../repositories/baseRepository.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
 import { emitResponseEdited } from '../plugins/core/events.js';
-import type { Prisma } from '#prisma-client';
+import { Prisma } from '#prisma-client';
 
 
 /**
@@ -66,17 +69,7 @@ export const countResponsesPerField = async (
 
   try {
     // One indexed scan over the form's live responses; count per requested key.
-    const rows = await prisma.$queryRaw<Array<{ field_id: string; count: bigint }>>`
-      SELECT key AS field_id, COUNT(*)::bigint AS count
-      FROM "response", LATERAL jsonb_each("data") AS entry(key, value)
-      WHERE "formId" = ${formId}
-        AND "deletedAt" IS NULL
-        AND key = ANY(${fieldIds})
-        AND value IS NOT NULL
-        AND value <> 'null'::jsonb
-        AND value <> '""'::jsonb
-      GROUP BY key
-    `;
+    const rows = await responseRepository.countPerFieldRaw(formId, fieldIds);
     for (const row of rows) {
       result[row.field_id] = Number(row.count);
     }
@@ -96,24 +89,50 @@ export const countResponsesReferencingAnyField = async (
 ): Promise<number> => {
   if (fieldIds.length === 0) return 0;
   try {
-    const rows = await prisma.$queryRaw<Array<{ count: bigint }>>`
-      SELECT COUNT(*)::bigint AS count
-      FROM "response" r
-      WHERE r."formId" = ${formId}
-        AND r."deletedAt" IS NULL
-        AND EXISTS (
-          SELECT 1 FROM jsonb_each(r."data") AS entry(key, value)
-          WHERE key = ANY(${fieldIds})
-            AND value IS NOT NULL
-            AND value <> 'null'::jsonb
-            AND value <> '""'::jsonb
-        )
-    `;
+    const rows = await responseRepository.countReferencingAnyFieldRaw(formId, fieldIds);
     return rows.length > 0 ? Number(rows[0].count) : 0;
   } catch (error) {
     logger.error('Error counting responses referencing fields:', error);
     return 0;
   }
+};
+
+/** Non-deleted response count for a form. Used by the `Form.responseCount` field resolver. */
+export const getResponseCount = async (formId: string): Promise<number> =>
+  responseRepository.count({ where: { formId, deletedAt: null } });
+
+/**
+ * Total response count for a form, including soft-deleted rows. Used for the
+ * maximum-responses submission-limit check, which is intentionally based on
+ * every response ever recorded (not just currently-visible ones).
+ */
+export const countAllResponses = async (formId: string): Promise<number> =>
+  responseRepository.count({ where: { formId } });
+
+/**
+ * Bucketed non-deleted response counts for the `Form.dashboardStats` field
+ * resolver. All six counts are independent and safe to run concurrently.
+ */
+export const getDashboardResponseCounts = async (
+  formId: string,
+  ranges: { today: Date; weekAgo: Date; monthAgo: Date; yesterday: Date; twoWeeksAgo: Date }
+): Promise<{
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
+  total: number;
+  yesterday: number;
+  lastWeek: number;
+}> => {
+  const [today, thisWeek, thisMonth, total, yesterday, lastWeek] = await Promise.all([
+    responseRepository.count({ where: { formId, deletedAt: null, submittedAt: { gte: ranges.today } } }),
+    responseRepository.count({ where: { formId, deletedAt: null, submittedAt: { gte: ranges.weekAgo } } }),
+    responseRepository.count({ where: { formId, deletedAt: null, submittedAt: { gte: ranges.monthAgo } } }),
+    responseRepository.count({ where: { formId, deletedAt: null } }),
+    responseRepository.count({ where: { formId, deletedAt: null, submittedAt: { gte: ranges.yesterday, lt: ranges.today } } }),
+    responseRepository.count({ where: { formId, deletedAt: null, submittedAt: { gte: ranges.twoWeeksAgo, lt: ranges.weekAgo } } }),
+  ]);
+  return { today, thisWeek, thisMonth, total, yesterday, lastWeek };
 };
 
 export const getResponseById = async (id: string): Promise<FormResponse | null> => {
@@ -220,9 +239,7 @@ export async function getResponsesByFormId(
 
 
       // Count total matching documents
-      const countQuery = `SELECT COUNT(*) as count FROM "response" ${whereClause}`;
-      const countResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(countQuery, ...params);
-      total = Number(countResult[0].count);
+      total = await responseRepository.countFilteredRaw(whereClause, params);
 
       // Build ORDER BY clause
       const orderClause = validSortBy === 'submittedAt'
@@ -230,23 +247,13 @@ export async function getResponsesByFormId(
         : `ORDER BY "id" ${validSortOrder.toUpperCase()}`; // Fallback to id sorting
 
       // Query with pagination and sorting — LIMIT/OFFSET passed as positional params
-      const paginationStart = params.length + 1;
-      const selectQuery = `
-        SELECT id, "formId", data, metadata, "respondentEmail", "submittedAt"
-        FROM "response"
-        ${whereClause}
-        ${orderClause}
-        LIMIT $${paginationStart} OFFSET $${paginationStart + 1}
-      `;
-
-      const dbResponses = await prisma.$queryRawUnsafe<Array<{
-        id: string;
-        formId: string;
-        data: Prisma.JsonValue;
-        metadata: Prisma.JsonValue;
-        respondentEmail: string | null;
-        submittedAt: Date;
-      }>>(selectQuery, ...params, validLimit, skip);
+      const dbResponses = await responseRepository.findFilteredRaw(
+        whereClause,
+        orderClause,
+        params,
+        validLimit,
+        skip
+      );
 
       // Convert to FormResponse format
       responses = dbResponses.map((doc) => ({
@@ -423,6 +430,58 @@ export const submitResponse = async (responseData: Partial<FormResponse>): Promi
   };
 };
 
+/**
+ * Atomic check-then-insert for a form's maximum-responses submission limit.
+ * Uses a Serializable transaction so two concurrent submissions cannot both
+ * pass the count check and both insert, exceeding the limit by one — do not
+ * weaken the isolation level or split the count/insert across transactions.
+ */
+export const submitResponseWithMaxLimitCheck = async (
+  responseData: {
+    id: string;
+    formId: string;
+    data: Prisma.InputJsonValue;
+    respondentUserId: string | null;
+    respondentEmail: string | null;
+  },
+  maxAllowed: number
+): Promise<FormResponse> => {
+  const inserted = await prisma.$transaction(
+    async (tx) => {
+      const txRepo = createResponseRepository(withPrisma(tx as any));
+
+      const currentCount = await txRepo.count({
+        where: { formId: responseData.formId },
+      });
+
+      if (currentCount >= maxAllowed) {
+        throw createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
+      }
+
+      // Insert atomically within the same transaction
+      return txRepo.create({
+        data: {
+          id: responseData.id,
+          formId: responseData.formId,
+          data: responseData.data,
+          respondentUserId: responseData.respondentUserId,
+          respondentEmail: responseData.respondentEmail,
+        },
+      });
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
+
+  return {
+    id: inserted.id,
+    formId: inserted.formId,
+    data: (inserted.data as Prisma.JsonObject) || {},
+    metadata: inserted.metadata as FormResponse['metadata'],
+    respondentEmail: inserted.respondentEmail ?? undefined,
+    submittedAt: inserted.submittedAt,
+  };
+};
+
 export const updateResponse = async (
   responseId: string,
   data: Prisma.JsonObject,
@@ -459,8 +518,12 @@ export const updateResponse = async (
       // transaction so a failure in recordEdit never leaves an untracked edit,
       // and a failure in the response update never creates an orphaned audit record.
       const updatedResponse = await prisma.$transaction(async (tx) => {
+        // Transaction-scoped repository so the response update and edit
+        // history recording share the same Prisma transaction client.
+        const txRepo = createResponseRepository(withPrisma(tx as any));
+
         // 1. Update the response row inside the transaction
-        const updated = await tx.response.update({
+        const updated = await txRepo.update({
           where: { id: responseId },
           data: { data: data as Prisma.InputJsonValue },
         });
@@ -559,10 +622,7 @@ export const deleteResponse = async (id: string): Promise<boolean> => {
 
 export const deleteResponses = async (formId: string, ids: string[]): Promise<boolean> => {
   try {
-    await prisma.response.updateMany({
-      where: { id: { in: ids }, formId, deletedAt: null },
-      data: { deletedAt: new Date() },
-    });
+    await responseRepository.softDeleteMany(formId, ids);
     return true;
   } catch (error) {
     logger.error('Error bulk-deleting responses:', error);

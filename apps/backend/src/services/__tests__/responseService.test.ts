@@ -8,12 +8,11 @@ import {
   updateResponse,
   deleteResponse,
 } from '../responseService.js';
-import { responseRepository } from '../../repositories/index.js';
+import { responseRepository, createResponseRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
 
 import { applyResponseFilters } from '../responseFilterService.js';
 import { ResponseEditTrackingService } from '../responseEditTrackingService.js';
-import { prisma } from '../../lib/prisma.js';
 import { emitResponseEdited } from '../../plugins/core/events.js';
 
 // Mock dependencies
@@ -68,6 +67,10 @@ describe('Response Service', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Transaction-scoped repository used inside updateResponse's prisma.$transaction (P2-02)
+    vi.mocked(createResponseRepository).mockReturnValue({
+      update: mockTxClient.response.update,
+    } as any);
   });
 
   afterEach(() => {
@@ -209,12 +212,10 @@ describe('Response Service', () => {
 
     it('should apply filters when provided', async () => {
       const mockResponses = [mockResponse];
-      
-      // Mock Prisma calls for database-level filtering
-      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([{ count: BigInt(1) }] as any);
-      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce(mockResponses as any);
-      vi.mocked(prisma.response.count).mockResolvedValue(1);
-      vi.mocked(prisma.response.findMany).mockResolvedValue(mockResponses as any);
+
+      // Mock repository calls for database-level filtering
+      vi.mocked(responseRepository.countFilteredRaw).mockResolvedValueOnce(1);
+      vi.mocked(responseRepository.findFilteredRaw).mockResolvedValueOnce(mockResponses as any);
       // Mock memory filtering fallback in case database filtering fails
       vi.mocked(applyResponseFilters).mockReturnValue(mockResponses as any);
 

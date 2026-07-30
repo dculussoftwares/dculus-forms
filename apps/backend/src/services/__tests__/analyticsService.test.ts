@@ -4,18 +4,10 @@ import {
   formViewAnalyticsRepository,
   formSubmissionAnalyticsRepository,
 } from '../../repositories/index.js';
-import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
 
 // Mock repositories
 vi.mock('../../repositories/index.js');
-
-// P2-05: analyticsService now calls prisma.$queryRaw for SQL percentile calculation
-vi.mock('../../lib/prisma.js', () => ({
-  prisma: {
-    $queryRaw: vi.fn(),
-  },
-}));
 
 // Mock external dependencies
 vi.mock('ua-parser-js', () => ({
@@ -530,9 +522,9 @@ describe('Analytics Service', () => {
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
       // P2-05: mock the SQL percentile query result
-      vi.mocked(prisma.$queryRaw).mockResolvedValue([
-        { p50: 120, p75: 120, p90: 120, p95: 120, avg: 120, total: BigInt(1) },
-      ] as any);
+      vi.mocked(formSubmissionAnalyticsRepository.getCompletionTimePercentiles).mockResolvedValue(
+        { p50: 120, p75: 120, p90: 120, p95: 120, avg: 120, total: BigInt(1) } as any
+      );
 
       vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([
         { completionTimeSeconds: 120 },
@@ -560,9 +552,9 @@ describe('Analytics Service', () => {
         .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
 
       // P2-05: mock the SQL percentile query — avg of [60, 120, 180] = 120
-      vi.mocked(prisma.$queryRaw).mockResolvedValue([
-        { p50: 120, p75: 150, p90: 162, p95: 171, avg: 120, total: BigInt(3) },
-      ] as any);
+      vi.mocked(formSubmissionAnalyticsRepository.getCompletionTimePercentiles).mockResolvedValue(
+        { p50: 120, p75: 150, p90: 162, p95: 171, avg: 120, total: BigInt(3) } as any
+      );
 
       vi.mocked(formSubmissionAnalyticsRepository.findMany).mockResolvedValue([
         { completionTimeSeconds: 60 },
@@ -727,15 +719,14 @@ describe('Analytics Service', () => {
     const periodEnd = new Date('2026-06-30T23:59:59Z');
 
     it('returns merged daily views and submissions sorted by date', async () => {
-      (prisma.$queryRaw as any)
-        .mockResolvedValueOnce([
-          { date: new Date('2026-06-01T00:00:00Z'), views: BigInt(5) },
-          { date: new Date('2026-06-03T00:00:00Z'), views: BigInt(2) },
-        ])
-        .mockResolvedValueOnce([
-          { date: new Date('2026-06-01T00:00:00Z'), submissions: BigInt(3) },
-          { date: new Date('2026-06-04T00:00:00Z'), submissions: BigInt(1) },
-        ]);
+      vi.mocked(formViewAnalyticsRepository.getOrgDailyViewCounts).mockResolvedValue([
+        { date: new Date('2026-06-01T00:00:00Z'), views: BigInt(5) },
+        { date: new Date('2026-06-03T00:00:00Z'), views: BigInt(2) },
+      ]);
+      vi.mocked(formSubmissionAnalyticsRepository.getOrgDailySubmissionCounts).mockResolvedValue([
+        { date: new Date('2026-06-01T00:00:00Z'), submissions: BigInt(3) },
+        { date: new Date('2026-06-04T00:00:00Z'), submissions: BigInt(1) },
+      ]);
 
       const result = await analyticsService.getOrgDailyUsage(orgId, periodStart, periodEnd);
 
@@ -747,17 +738,17 @@ describe('Analytics Service', () => {
     });
 
     it('returns empty array when no data exists', async () => {
-      (prisma.$queryRaw as any)
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]);
+      vi.mocked(formViewAnalyticsRepository.getOrgDailyViewCounts).mockResolvedValue([]);
+      vi.mocked(formSubmissionAnalyticsRepository.getOrgDailySubmissionCounts).mockResolvedValue([]);
 
       const result = await analyticsService.getOrgDailyUsage(orgId, periodStart, periodEnd);
 
       expect(result).toEqual([]);
     });
 
-    it('throws when prisma.$queryRaw fails', async () => {
-      (prisma.$queryRaw as any).mockRejectedValueOnce(new Error('DB error'));
+    it('throws when the underlying repository query fails', async () => {
+      vi.mocked(formViewAnalyticsRepository.getOrgDailyViewCounts).mockRejectedValue(new Error('DB error'));
+      vi.mocked(formSubmissionAnalyticsRepository.getOrgDailySubmissionCounts).mockResolvedValue([]);
 
       await expect(
         analyticsService.getOrgDailyUsage(orgId, periodStart, periodEnd)

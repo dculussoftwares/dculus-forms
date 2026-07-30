@@ -9,6 +9,7 @@ describe('Response Repository', () => {
       count: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       delete: vi.fn(),
     },
     responseEditHistory: {
@@ -18,6 +19,8 @@ describe('Response Repository', () => {
     responseFieldChange: {
       create: vi.fn(),
     },
+    $queryRaw: vi.fn(),
+    $queryRawUnsafe: vi.fn(),
   };
 
   const mockContext = { prisma: mockPrisma as any };
@@ -205,6 +208,92 @@ describe('Response Repository', () => {
       expect(mockPrisma.response.findMany).toHaveBeenCalledWith({
         where: { formId: 'form-123', deletedAt: null },
         orderBy: { submittedAt: 'desc' },
+      });
+    });
+  });
+
+  describe('updateMany', () => {
+    it('should update many responses', async () => {
+      mockPrisma.response.updateMany.mockResolvedValue({ count: 3 } as any);
+
+      const result = await responseRepository.updateMany({
+        where: { formId: 'form-123' },
+        data: { deletedAt: new Date() },
+      });
+
+      expect(result).toEqual({ count: 3 });
+    });
+  });
+
+  describe('countPerFieldRaw', () => {
+    it('should return per-field counts', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([
+        { field_id: 'field-1', count: BigInt(5) },
+      ]);
+
+      const result = await responseRepository.countPerFieldRaw('form-123', ['field-1', 'field-2']);
+
+      expect(result).toEqual([{ field_id: 'field-1', count: BigInt(5) }]);
+    });
+  });
+
+  describe('countReferencingAnyFieldRaw', () => {
+    it('should return a count row', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ count: BigInt(7) }]);
+
+      const result = await responseRepository.countReferencingAnyFieldRaw('form-123', ['field-1']);
+
+      expect(result).toEqual([{ count: BigInt(7) }]);
+    });
+  });
+
+  describe('countFilteredRaw', () => {
+    it('should count via queryRawUnsafe and coerce bigint to number', async () => {
+      (mockPrisma.$queryRawUnsafe as any).mockResolvedValue([{ count: BigInt(12) }]);
+
+      const result = await responseRepository.countFilteredRaw('WHERE "formId" = $1', ['form-123']);
+
+      expect(result).toBe(12);
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        'SELECT COUNT(*) as count FROM "response" WHERE "formId" = $1',
+        'form-123'
+      );
+    });
+  });
+
+  describe('findFilteredRaw', () => {
+    it('should query with pagination params appended', async () => {
+      const rows = [{ id: 'response-1', formId: 'form-123', data: {}, metadata: null, respondentEmail: null, submittedAt: new Date() }];
+      (mockPrisma.$queryRawUnsafe as any).mockResolvedValue(rows);
+
+      const result = await responseRepository.findFilteredRaw(
+        'WHERE "formId" = $1',
+        'ORDER BY "submittedAt" DESC',
+        ['form-123'],
+        10,
+        0
+      );
+
+      expect(result).toEqual(rows);
+      expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledWith(
+        expect.stringContaining('LIMIT $2 OFFSET $3'),
+        'form-123',
+        10,
+        0
+      );
+    });
+  });
+
+  describe('softDeleteMany', () => {
+    it('should soft-delete non-deleted responses by id', async () => {
+      mockPrisma.response.updateMany.mockResolvedValue({ count: 2 } as any);
+
+      const result = await responseRepository.softDeleteMany('form-123', ['response-1', 'response-2']);
+
+      expect(result).toEqual({ count: 2 });
+      expect(mockPrisma.response.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['response-1', 'response-2'] }, formId: 'form-123', deletedAt: null },
+        data: { deletedAt: expect.any(Date) },
       });
     });
   });

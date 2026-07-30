@@ -5,7 +5,6 @@ import { createRequire } from 'module';
 import { existsSync } from 'fs';
 import { Reader } from '@maxmind/geoip2-node';
 import { logger } from '../lib/logger.js';
-import { prisma } from '../lib/prisma.js';
 import {
   formViewAnalyticsRepository,
   formSubmissionAnalyticsRepository,
@@ -402,6 +401,42 @@ const createCompletionTimeDistribution = (completionTimes: number[]) => {
   }).filter(range => range.count > 0); // Only return ranges with data
 };
 
+/**
+ * Bucketed view counts for the `Form.dashboardStats` field resolver. All
+ * three counts are independent and safe to run concurrently.
+ */
+const getDashboardViewCounts = async (
+  formId: string,
+  ranges: { weekAgo: Date; twoWeeksAgo: Date }
+): Promise<{ total: number; thisWeek: number; lastWeek: number }> => {
+  const [total, thisWeek, lastWeek] = await Promise.all([
+    formViewAnalyticsRepository.count({ where: { formId } }),
+    formViewAnalyticsRepository.count({ where: { formId, viewedAt: { gte: ranges.weekAgo } } }),
+    formViewAnalyticsRepository.count({ where: { formId, viewedAt: { gte: ranges.twoWeeksAgo, lt: ranges.weekAgo } } }),
+  ]);
+  return { total, thisWeek, lastWeek };
+};
+
+/**
+ * Average completion time across a form's submission analytics, ignoring
+ * null and non-positive values. Used by the `Form.dashboardStats` field
+ * resolver.
+ */
+const getAverageCompletionTime = async (formId: string): Promise<number | null> => {
+  const submissionAnalytics = await formSubmissionAnalyticsRepository.findMany({
+    where: { formId },
+    select: { completionTimeSeconds: true },
+  });
+
+  const validCompletionTimes = submissionAnalytics
+    .map((s) => s.completionTimeSeconds)
+    .filter((t): t is number => t !== null && t > 0);
+
+  return validCompletionTimes.length > 0
+    ? validCompletionTimes.reduce((sum, t) => sum + t, 0) / validCompletionTimes.length
+    : null;
+};
+
 // Database query functions
 const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: Date }) => {
   try {
@@ -538,10 +573,6 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
   }
 };
 
-// Org daily usage types
-type OrgDailyViewRow = { date: Date; views: bigint };
-type OrgDailySubmissionRow = { date: Date; submissions: bigint };
-
 /**
  * Get organization's daily views and submissions for a given time period.
  * Returns merged data sorted by date in ascending order.
@@ -553,30 +584,8 @@ const getOrgDailyUsage = async (
 ): Promise<Array<{ date: string; views: number; submissions: number }>> => {
   try {
     const [viewRows, submissionRows] = await Promise.all([
-      prisma.$queryRaw<OrgDailyViewRow[]>`
-        SELECT
-          DATE_TRUNC('day', fva."viewedAt") AS date,
-          COUNT(*) AS views
-        FROM "form_view_analytics" fva
-        JOIN "form" f ON f.id = fva."formId"
-        WHERE f."organizationId" = ${organizationId}
-          AND fva."viewedAt" >= ${periodStart}
-          AND fva."viewedAt" <= ${periodEnd}
-        GROUP BY DATE_TRUNC('day', fva."viewedAt")
-        ORDER BY date ASC
-      `,
-      prisma.$queryRaw<OrgDailySubmissionRow[]>`
-        SELECT
-          DATE_TRUNC('day', fsa."submittedAt") AS date,
-          COUNT(*) AS submissions
-        FROM "form_submission_analytics" fsa
-        JOIN "form" f ON f.id = fsa."formId"
-        WHERE f."organizationId" = ${organizationId}
-          AND fsa."submittedAt" >= ${periodStart}
-          AND fsa."submittedAt" <= ${periodEnd}
-        GROUP BY DATE_TRUNC('day', fsa."submittedAt")
-        ORDER BY date ASC
-      `,
+      formViewAnalyticsRepository.getOrgDailyViewCounts(organizationId, periodStart, periodEnd),
+      formSubmissionAnalyticsRepository.getOrgDailySubmissionCounts(organizationId, periodStart, periodEnd),
     ]);
 
     const merged = new Map<string, { views: number; submissions: number }>();
@@ -625,8 +634,8 @@ export const cleanupOldAnalytics = async (daysToRetain = 365): Promise<void> => 
   cutoff.setDate(cutoff.getDate() - daysToRetain);
 
   const [viewsDeleted, submissionsDeleted] = await Promise.all([
-    prisma.formViewAnalytics.deleteMany({ where: { viewedAt: { lt: cutoff } } }),
-    prisma.formSubmissionAnalytics.deleteMany({ where: { submittedAt: { lt: cutoff } } }),
+    formViewAnalyticsRepository.deleteMany({ where: { viewedAt: { lt: cutoff } } }),
+    formSubmissionAnalyticsRepository.deleteMany({ where: { submittedAt: { lt: cutoff } } }),
   ]);
 
   logger.info(
@@ -707,20 +716,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
 
       // P2-05: Completion time percentiles computed in SQL to avoid loading all rows
       // into JS memory. PERCENTILE_CONT is a PostgreSQL ordered-set aggregate.
-      prisma.$queryRaw<Array<{
-        p50: number | null; p75: number | null; p90: number | null; p95: number | null;
-        avg: number | null; total: bigint;
-      }>>`
-        SELECT
-          PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY "completionTimeSeconds") AS p50,
-          PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY "completionTimeSeconds") AS p75,
-          PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY "completionTimeSeconds") AS p90,
-          PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY "completionTimeSeconds") AS p95,
-          AVG("completionTimeSeconds") AS avg,
-          COUNT(*) AS total
-        FROM form_submission_analytics
-        WHERE "formId" = ${formId} AND "completionTimeSeconds" IS NOT NULL
-      `,
+      formSubmissionAnalyticsRepository.getCompletionTimePercentiles(formId),
 
       // Distribution still needs individual values — cap at 10,000 rows to avoid
       // loading unbounded data into memory for large forms.
@@ -787,7 +783,7 @@ const getFormSubmissionAnalytics = async (formId: string, timeRange?: { start: D
     }
     
     // P2-05: Use SQL-computed percentiles — no JS-side sort over all rows needed
-    const sqlPercentiles = completionTimePercentilesRaw[0] ?? null;
+    const sqlPercentiles = completionTimePercentilesRaw ?? null;
     const averageCompletionTime = sqlPercentiles?.avg != null ? Number(sqlPercentiles.avg) : null;
     const completionTimePercentiles = sqlPercentiles
       ? {
@@ -831,6 +827,8 @@ const analyticsService = {
   getFormAnalytics,
   getFormSubmissionAnalytics,
   getOrgDailyUsage,
+  getDashboardViewCounts,
+  getAverageCompletionTime,
   initialize: initializeService
 };
 
