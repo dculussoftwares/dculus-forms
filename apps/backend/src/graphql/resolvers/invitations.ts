@@ -1,6 +1,6 @@
 import { createGraphQLError, GraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { prisma } from '../../lib/prisma.js';
+import { getInvitationById } from '../../services/invitationService.js';
 import { isDateExpired } from '../../utils/dateHelpers.js';
 import { logger } from '../../lib/logger.js';
 
@@ -15,13 +15,7 @@ export const invitationResolvers = {
           throw createGraphQLError('Invalid invitation ID', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
 
-        const invitation = await prisma.invitation.findUnique({
-          where: { id },
-          include: {
-            organization: { select: { id: true, name: true, slug: true } },
-            inviter:      { select: { id: true, name: true, email: true } },
-          },
-        });
+        const invitation = await getInvitationById(id);
 
         if (!invitation) {
           throw createGraphQLError('Invitation not found or has expired', GRAPHQL_ERROR_CODES.NOT_FOUND);
