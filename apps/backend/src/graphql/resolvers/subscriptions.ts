@@ -1,4 +1,3 @@
-import { prisma } from '../../lib/prisma.js';
 import type { Subscription as PrismaSubscription } from '#prisma-client';
 import {
   createCheckoutHostedPage,
@@ -9,6 +8,11 @@ import {
   getEnterpriseCheckoutUrl,
   syncFromHostedPage,
 } from '../../services/chargebeeService.js';
+import {
+  getSubscriptionByOrganization,
+  getOrganizationById,
+  getOrganizationOwnerMember,
+} from '../../services/subscriptionService.js';
 import { requireAuth, requireOrganizationMembership, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { GraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
@@ -58,9 +62,7 @@ export const subscriptionResolvers = {
       await requireOrganizationMembership(context.auth, session.activeOrganizationId);
 
       // Get subscription to find Chargebee customer ID
-      const subscription = await prisma.subscription.findUnique({
-        where: { organizationId: session.activeOrganizationId },
-      });
+      const subscription = await getSubscriptionByOrganization(session.activeOrganizationId);
 
       if (!subscription) {
         throw new GraphQLError('No subscription found for organization');
@@ -103,9 +105,7 @@ export const subscriptionResolvers = {
       await requireOrganizationMembership(context.auth, session.activeOrganizationId);
 
       // Get subscription to find Chargebee customer ID
-      const subscription = await prisma.subscription.findUnique({
-        where: { organizationId: session.activeOrganizationId },
-      });
+      const subscription = await getSubscriptionByOrganization(session.activeOrganizationId);
 
       if (!subscription) {
         throw new GraphQLError('No subscription found for organization');
@@ -195,9 +195,7 @@ export const subscriptionResolvers = {
         // safety net.
         logger.error('[Subscription Resolver] Error syncing checkout session:', error);
       }
-      const subscription = await prisma.subscription.findUnique({
-        where: { organizationId: session.activeOrganizationId },
-      });
+      const subscription = await getSubscriptionByOrganization(session.activeOrganizationId);
       return { synced, subscription };
     },
 
@@ -216,9 +214,7 @@ export const subscriptionResolvers = {
 
       try {
         // Check if subscription already exists (idempotency)
-        const existingSubscription = await prisma.subscription.findUnique({
-          where: { organizationId },
-        });
+        const existingSubscription = await getSubscriptionByOrganization(organizationId);
 
         if (existingSubscription) {
           logger.info('[Subscription Resolver] Subscription already exists for organization:', organizationId);
@@ -230,9 +226,7 @@ export const subscriptionResolvers = {
         }
 
         // Get organization details
-        const organization = await prisma.organization.findUnique({
-          where: { id: organizationId },
-        });
+        const organization = await getOrganizationById(organizationId);
 
         if (!organization) {
           throw new GraphQLError('Organization not found');
@@ -247,15 +241,7 @@ export const subscriptionResolvers = {
         }
 
         // Get the organization owner to get email for Chargebee customer
-        const member = await prisma.member.findFirst({
-          where: {
-            organizationId,
-            role: 'owner',
-          },
-          include: {
-            user: true,
-          },
-        });
+        const member = await getOrganizationOwnerMember(organizationId);
 
         if (!member) {
           throw new GraphQLError('Organization owner not found');
@@ -272,9 +258,7 @@ export const subscriptionResolvers = {
         await createFreeSubscription(organizationId, customerId);
 
         // Fetch the created subscription
-        const subscription = await prisma.subscription.findUnique({
-          where: { organizationId },
-        });
+        const subscription = await getSubscriptionByOrganization(organizationId);
 
         logger.info('[Subscription Resolver] ✅ Subscription initialized successfully for organization:', organizationId);
 
@@ -300,11 +284,7 @@ export const subscriptionResolvers = {
      * Fetch subscription for an organization
      */
     subscription: async (organization: any) => {
-      const subscription = await prisma.subscription.findUnique({
-        where: { organizationId: organization.id },
-      });
-
-      return subscription;
+      return await getSubscriptionByOrganization(organization.id);
     },
   },
 
@@ -313,9 +293,7 @@ export const subscriptionResolvers = {
      * Resolve organization relation
      */
     organization: async (subscription: PrismaSubscription) => {
-      return await prisma.organization.findUnique({
-        where: { id: subscription.organizationId },
-      });
+      return await getOrganizationById(subscription.organizationId);
     },
 
     /**

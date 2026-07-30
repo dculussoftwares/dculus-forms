@@ -1,8 +1,7 @@
 import Chargebee from 'chargebee';
 import { resetUsageCounters } from '../subscriptions/usageService.js';
-import { subscriptionRepository } from '../repositories/index.js';
+import { subscriptionRepository, organizationRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
-import { prisma } from '../lib/prisma.js';
 import { sendEmail } from './emailService.js';
 import * as Sentry from '@sentry/node';
 import { AI_CREDIT_LIMITS_FALLBACK } from '../lib/ai.js';
@@ -395,7 +394,7 @@ export const setEnterpriseSubscription = async (
   // Best-effort: email the payment link to the org owner. A failure here must
   // not fail the assignment — the admin still gets the URL to share manually.
   try {
-    const org = await prisma.organization.findUnique({
+    const org = await organizationRepository.findUnique({
       where: { id: organizationId },
       include: {
         members: {
@@ -780,12 +779,12 @@ export const handlePaymentFailed = async (event: any): Promise<void> => {
   if (!organizationId) return;
 
   try {
-    await prisma.subscription.update({
+    await subscriptionRepository.update({
       where: { organizationId },
       data: { status: 'past_due' },
     });
 
-    const org = await prisma.organization.findUnique({
+    const org = await organizationRepository.findUnique({
       where: { id: organizationId },
       include: {
         members: {
