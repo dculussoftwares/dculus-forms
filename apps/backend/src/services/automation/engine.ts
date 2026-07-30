@@ -1,8 +1,9 @@
 import type { PgBoss, JobWithMetadata } from 'pg-boss';
 import * as Sentry from '@sentry/node';
-import { Prisma } from '#prisma-client';
 import { generateId, substituteMentions } from '@dculus/utils';
 import { prisma } from '../../lib/prisma.js';
+import { automationRepository, createAutomationRepository } from '../../repositories/index.js';
+import { withPrisma } from '../../repositories/baseRepository.js';
 import { logger } from '../../lib/logger.js';
 import { getPluginHandler } from '../../plugins/core/registry.js';
 import { createPluginContext } from '../../plugins/core/context.js';
@@ -39,10 +40,7 @@ function findNextNodeId(
 }
 
 async function completeRun(runId: string): Promise<void> {
-  await prisma.automationRun.update({
-    where: { id: runId },
-    data: { status: 'COMPLETED', completedAt: new Date() },
-  });
+  await automationRepository.updateRun(runId, { status: 'COMPLETED', completedAt: new Date() });
 }
 
 async function enqueueStep(
@@ -125,70 +123,22 @@ function mergeStepOutput(context: unknown, nodeId: string, output: any): Automat
 }
 
 /**
- * Builds (without executing) an atomic UPDATE that replaces one node's `data.config` inside a
- * `{ nodes: [...], edges: [...] }` JSON column, leaving every other node untouched. Returns
- * the unresolved `$executeRaw` PrismaPromise so callers can batch it into `$transaction`.
- *
- * Because each single statement's `SET column = jsonb_set(column, ...)` re-reads the row's
- * latest *committed* value at execution time — not a value cached in application memory —
- * two concurrent writes targeting DIFFERENT nodes in the same graph correctly compose:
- * Postgres serializes the two UPDATEs (the second waits for the first to commit, then
- * evaluates against its result), so neither writer's change is lost to the other.
- *
- * This does NOT protect two concurrent *runs* writing to the SAME node from each other. Each
- * run computes its own full replacement `data.config` from whatever it read when its own
- * execution started; if two runs of the same automation both reach the "auto-create
- * spreadsheet/workbook" branch for the same action node before either has persisted an
- * id, each creates its own resource and whichever write lands last wins — the other run's
- * newly created spreadsheet/workbook is silently orphaned (created, but never referenced
- * again). Accepted as a narrow edge case for now: it can only surface on an action's very
- * first-ever execution, and no response data is lost (every run's row still lands in *some*
- * spreadsheet). Closing it fully would mean serializing the auto-create branch itself — e.g.
- * a per-node advisory lock or `SELECT ... FOR UPDATE` before that branch runs — not just this
- * config write.
- */
-function jsonSetNodeConfigQuery(
-  table: 'automation' | 'automation_run',
-  column: 'graph' | 'graphSnapshot',
-  rowId: string,
-  nodeId: string,
-  config: PluginConfig
-) {
-  const tableIdent = Prisma.raw(`"${table}"`);
-  const columnIdent = Prisma.raw(`"${column}"`);
-  const configJson = JSON.stringify(config);
-
-  return prisma.$executeRaw(Prisma.sql`
-    UPDATE ${tableIdent}
-    SET ${columnIdent} = jsonb_set(
-      ${columnIdent},
-      '{nodes}',
-      (
-        SELECT COALESCE(jsonb_agg(
-          CASE WHEN elem->>'id' = ${nodeId}
-            THEN jsonb_set(elem, '{data,config}', ${configJson}::jsonb, true)
-            ELSE elem
-          END
-        ), '[]'::jsonb)
-        FROM jsonb_array_elements(${columnIdent}->'nodes') AS elem
-      )
-    )
-    WHERE id = ${rowId}
-  `);
-}
-
-/**
  * Persists an action-node handler's updated config (auto-created spreadsheet/workbook ID,
  * refreshed OAuth token, etc.) for the Automations system — see `PluginContext.updatePluginConfig`
  * for why handlers can't just write to a `FormPlugin` row here.
  *
- * Writes to two places, both inside one Prisma `$transaction` so they can't diverge if one
+ * Writes to two places, both inside one Prisma transaction so they can't diverge if one
  * write fails after the other succeeds:
  *  - `AutomationRun.graphSnapshot` for THIS run, so a retry after a transient failure (e.g.
  *    the workbook was created but the network dropped before this write) sees the
  *    already-created workbook/spreadsheet instead of creating a duplicate.
  *  - `Automation.graph`, the live graph, so the NEXT run — which snapshots fresh from this
  *    column — reuses the same workbook/spreadsheet and refreshed token too.
+ *
+ * Uses the callback-style `prisma.$transaction(async (tx) => ...)` form (rather than
+ * array-style batching) so both writes share one interactive transaction via a
+ * transaction-scoped repository, per the standard convention — see formService.ts
+ * `createForm()`.
  */
 async function updateAutomationNodeConfig(
   automationId: string,
@@ -196,10 +146,11 @@ async function updateAutomationNodeConfig(
   nodeId: string,
   config: PluginConfig
 ): Promise<void> {
-  await prisma.$transaction([
-    jsonSetNodeConfigQuery('automation', 'graph', automationId, nodeId, config),
-    jsonSetNodeConfigQuery('automation_run', 'graphSnapshot', runId, nodeId, config),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    const txRepo = createAutomationRepository(withPrisma(tx as any));
+    await txRepo.setNodeConfigInGraph(automationId, nodeId, config as any);
+    await txRepo.setNodeConfigInRunSnapshot(runId, nodeId, config as any);
+  });
 }
 
 async function handleDelayNode(
@@ -220,17 +171,15 @@ async function handleDelayNode(
   if (isTest) {
     // Test runs (testAutomation mutation, #195) fast-forward delay nodes instead of
     // scheduling with startAfter, so the user sees end-to-end results immediately.
-    await prisma.automationStepRun.create({
-      data: {
-        id: generateId(),
-        runId: run.id,
-        nodeId: node.id,
-        nodeType: 'delay',
-        status: 'SKIPPED',
-        output: { fastForwarded: true, requestedDelayMs: requestedMs },
-        attempt: 1,
-        finishedAt: new Date(),
-      },
+    await automationRepository.createStepRun({
+      id: generateId(),
+      runId: run.id,
+      nodeId: node.id,
+      nodeType: 'delay',
+      status: 'SKIPPED',
+      output: { fastForwarded: true, requestedDelayMs: requestedMs },
+      attempt: 1,
+      finishedAt: new Date(),
     });
 
     if (!nextNodeId) {
@@ -238,25 +187,20 @@ async function handleDelayNode(
       return;
     }
 
-    await prisma.automationRun.update({
-      where: { id: run.id },
-      data: { currentNodeId: nextNodeId },
-    });
+    await automationRepository.updateRun(run.id, { currentNodeId: nextNodeId });
     await enqueueStep(run.id, nextNodeId, graph);
     return;
   }
 
-  await prisma.automationStepRun.create({
-    data: {
-      id: generateId(),
-      runId: run.id,
-      nodeId: node.id,
-      nodeType: 'delay',
-      status: 'SUCCESS',
-      output: { delayUntil: delayUntil.toISOString(), capped: delayMs < requestedMs },
-      attempt: 1,
-      finishedAt: new Date(),
-    },
+  await automationRepository.createStepRun({
+    id: generateId(),
+    runId: run.id,
+    nodeId: node.id,
+    nodeType: 'delay',
+    status: 'SUCCESS',
+    output: { delayUntil: delayUntil.toISOString(), capped: delayMs < requestedMs },
+    attempt: 1,
+    finishedAt: new Date(),
   });
 
   if (!nextNodeId) {
@@ -264,10 +208,7 @@ async function handleDelayNode(
     return;
   }
 
-  await prisma.automationRun.update({
-    where: { id: run.id },
-    data: { status: 'WAITING', currentNodeId: nextNodeId },
-  });
+  await automationRepository.updateRun(run.id, { status: 'WAITING', currentNodeId: nextNodeId });
   await enqueueStep(run.id, nextNodeId, graph, delayUntil);
 }
 
@@ -281,17 +222,15 @@ async function handleConditionNode(
   const branch: 'true' | 'false' = result ? 'true' : 'false';
   const nextNodeId = findNextNodeId(graph, node.id, branch);
 
-  await prisma.automationStepRun.create({
-    data: {
-      id: generateId(),
-      runId: run.id,
-      nodeId: node.id,
-      nodeType: 'condition',
-      status: 'SUCCESS',
-      output: { result, branch: nextNodeId ? branch : 'end' },
-      attempt: 1,
-      finishedAt: new Date(),
-    },
+  await automationRepository.createStepRun({
+    id: generateId(),
+    runId: run.id,
+    nodeId: node.id,
+    nodeType: 'condition',
+    status: 'SUCCESS',
+    output: { result, branch: nextNodeId ? branch : 'end' },
+    attempt: 1,
+    finishedAt: new Date(),
   });
 
   if (!nextNodeId) {
@@ -299,7 +238,7 @@ async function handleConditionNode(
     return;
   }
 
-  await prisma.automationRun.update({ where: { id: run.id }, data: { currentNodeId: nextNodeId } });
+  await automationRepository.updateRun(run.id, { currentNodeId: nextNodeId });
   await enqueueStep(run.id, nextNodeId, graph);
 }
 
@@ -307,16 +246,14 @@ async function handleEndNode(
   run: { id: string },
   node: Extract<AutomationNode, { type: 'end' }>
 ): Promise<void> {
-  await prisma.automationStepRun.create({
-    data: {
-      id: generateId(),
-      runId: run.id,
-      nodeId: node.id,
-      nodeType: 'end',
-      status: 'SUCCESS',
-      attempt: 1,
-      finishedAt: new Date(),
-    },
+  await automationRepository.createStepRun({
+    id: generateId(),
+    runId: run.id,
+    nodeId: node.id,
+    nodeType: 'end',
+    status: 'SUCCESS',
+    attempt: 1,
+    finishedAt: new Date(),
   });
   await completeRun(run.id);
 }
@@ -337,29 +274,21 @@ async function handleActionNode(
   const attempt = job.retryCount + 1;
 
   if (run.automation.status !== 'ACTIVE') {
-    await prisma.automationStepRun.create({
-      data: {
-        id: generateId(),
-        runId: run.id,
-        nodeId: node.id,
-        nodeType,
-        status: 'SKIPPED',
-        errorMessage: `Automation is ${run.automation.status}, not ACTIVE`,
-        attempt: 1,
-        finishedAt: new Date(),
-      },
+    await automationRepository.createStepRun({
+      id: generateId(),
+      runId: run.id,
+      nodeId: node.id,
+      nodeType,
+      status: 'SKIPPED',
+      errorMessage: `Automation is ${run.automation.status}, not ACTIVE`,
+      attempt: 1,
+      finishedAt: new Date(),
     });
-    await prisma.automationRun.update({
-      where: { id: run.id },
-      data: { status: 'CANCELLED', completedAt: new Date() },
-    });
+    await automationRepository.updateRun(run.id, { status: 'CANCELLED', completedAt: new Date() });
     return;
   }
 
-  await prisma.automationRun.update({
-    where: { id: run.id },
-    data: { status: 'RUNNING', currentNodeId: node.id },
-  });
+  await automationRepository.updateRun(run.id, { status: 'RUNNING', currentNodeId: node.id });
 
   const event = buildPluginEvent(run.automation, run);
   const substitutedConfig = substituteConfigMentions(config, event.data) as PluginConfig;
@@ -378,22 +307,19 @@ async function handleActionNode(
       )
     );
 
-    await prisma.automationStepRun.create({
-      data: {
-        id: generateId(),
-        runId: run.id,
-        nodeId: node.id,
-        nodeType,
-        status: 'SUCCESS',
-        output: result ?? {},
-        attempt,
-        finishedAt: new Date(),
-      },
+    await automationRepository.createStepRun({
+      id: generateId(),
+      runId: run.id,
+      nodeId: node.id,
+      nodeType,
+      status: 'SUCCESS',
+      output: result ?? {},
+      attempt,
+      finishedAt: new Date(),
     });
 
-    await prisma.automationRun.update({
-      where: { id: run.id },
-      data: { context: mergeStepOutput(run.context, node.id, result) },
+    await automationRepository.updateRun(run.id, {
+      context: mergeStepOutput(run.context, node.id, result),
     });
 
     const nextNodeId = findNextNodeId(graph, node.id);
@@ -406,25 +332,20 @@ async function handleActionNode(
     Sentry.captureException(error);
     logger.error(`[Automation Engine] Action step failed: run=${run.id} node=${node.id}`, error);
 
-    await prisma.automationStepRun.create({
-      data: {
-        id: generateId(),
-        runId: run.id,
-        nodeId: node.id,
-        nodeType,
-        status: 'FAILED',
-        errorMessage: error?.message || 'Unknown error',
-        attempt,
-        finishedAt: new Date(),
-      },
+    await automationRepository.createStepRun({
+      id: generateId(),
+      runId: run.id,
+      nodeId: node.id,
+      nodeType,
+      status: 'FAILED',
+      errorMessage: error?.message || 'Unknown error',
+      attempt,
+      finishedAt: new Date(),
     });
 
     const isFinalAttempt = job.retryLimit <= job.retryCount;
     if (isFinalAttempt) {
-      await prisma.automationRun.update({
-        where: { id: run.id },
-        data: { status: 'FAILED', completedAt: new Date() },
-      });
+      await automationRepository.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
       return;
     }
 
@@ -456,9 +377,7 @@ async function reconcileSuccessor(
   // If the successor already has its own step run, it has executed (or progressed further) —
   // the crash window has already closed safely and re-enqueuing now would risk a duplicate
   // execution once pg-boss's singletonKey slot has freed up behind a completed job.
-  const successorStarted = await prisma.automationStepRun.findFirst({
-    where: { runId: run.id, nodeId: nextNodeId },
-  });
+  const successorStarted = await automationRepository.findStepRunByNode(run.id, nextNodeId);
   if (successorStarted) {
     return;
   }
@@ -494,9 +413,8 @@ async function reconcileSuccessStep(
       // step output rather than the (unavailable) live handler result.
       const context = (run.context as AutomationRunContext) ?? {};
       if (!(node.id in (context.stepOutputs ?? {}))) {
-        await prisma.automationRun.update({
-          where: { id: run.id },
-          data: { context: mergeStepOutput(run.context, node.id, existingSuccess.output) },
+        await automationRepository.updateRun(run.id, {
+          context: mergeStepOutput(run.context, node.id, existingSuccess.output),
         });
       }
       await reconcileSuccessor(run, findNextNodeId(graph, node.id), graph);
@@ -525,37 +443,28 @@ async function recordUnhandleableStepFailure(
   // Single transaction: a crash between these two writes would otherwise leave the run
   // non-terminal, causing redelivery to hit this same branch again and insert a duplicate
   // FAILED step run for the same node.
-  await prisma.$transaction([
-    prisma.automationStepRun.create({
-      data: {
-        id: generateId(),
-        runId,
-        nodeId,
-        nodeType,
-        status: 'FAILED',
-        errorMessage: message,
-        attempt,
-        finishedAt: new Date(),
-      },
-    }),
-    prisma.automationRun.update({
-      where: { id: runId },
-      data: { status: 'FAILED', completedAt: new Date() },
-    }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    const txRepo = createAutomationRepository(withPrisma(tx as any));
+    await txRepo.createStepRun({
+      id: generateId(),
+      runId,
+      nodeId,
+      nodeType,
+      status: 'FAILED',
+      errorMessage: message,
+      attempt,
+      finishedAt: new Date(),
+    });
+    await txRepo.updateRun(runId, { status: 'FAILED', completedAt: new Date() });
+  });
 }
 
 export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJobData>): Promise<void> {
   const { runId, nodeId } = job.data;
 
-  const existingSuccess = await prisma.automationStepRun.findFirst({
-    where: { runId, nodeId, status: 'SUCCESS' },
-  });
+  const existingSuccess = await automationRepository.findSuccessStepRun(runId, nodeId);
 
-  const run = await prisma.automationRun.findUnique({
-    where: { id: runId },
-    include: { automation: true },
-  });
+  const run = await automationRepository.findRunByIdWithAutomation(runId);
   if (!run) {
     logger.error(`[Automation Engine] Run ${runId} not found — dropping job`);
     return;

@@ -12,22 +12,19 @@ import {
 import { enqueueFirstStep } from '../engine.js';
 import { getBoss, AUTOMATION_QUEUE, AUTOMATION_CRON_QUEUE } from '../boss.js';
 import { getEventEmitter } from '../../../plugins/core/events.js';
-import { prisma } from '../../../lib/prisma.js';
+import { automationRepository } from '../../../repositories/index.js';
 import { logger } from '../../../lib/logger.js';
 import type { PluginEvent } from '../../../plugins/core/types.js';
 
-vi.mock('../../../lib/prisma.js', () => ({
-  prisma: {
-    automation: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-    },
-    automationRun: {
-      create: vi.fn(),
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      updateMany: vi.fn(),
-    },
+vi.mock('../../../repositories/index.js', () => ({
+  automationRepository: {
+    listActiveByFormAndTrigger: vi.fn(),
+    createRun: vi.fn(),
+    listActiveRunsByAutomation: vi.fn(),
+    cancelRunsByIds: vi.fn(),
+    findRunById: vi.fn(),
+    cancelRunIfActive: vi.fn(),
+    findById: vi.fn(),
   },
 }));
 
@@ -89,7 +86,7 @@ describe('triggerService', () => {
     vi.clearAllMocks();
     getEventEmitter().removeAllListeners('plugin:event');
     vi.mocked(generateId).mockReturnValue('generated-run-id');
-    vi.mocked(prisma.automationRun.create).mockResolvedValue({ id: 'generated-run-id' } as any);
+    vi.mocked(automationRepository.createRun).mockResolvedValue({ id: 'generated-run-id' } as any);
   });
 
   afterEach(() => {
@@ -110,27 +107,26 @@ describe('triggerService', () => {
     it('creates one AutomationRun and enqueues the first step for a single matching automation', async () => {
       initializeAutomationTriggers();
       const automation = makeAutomation();
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([automation] as any);
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([automation] as any);
 
       await emitAndFlush(makeEvent());
 
-      expect(prisma.automation.findMany).toHaveBeenCalledWith({
-        where: { formId: 'form-1', status: 'ACTIVE', triggerType: 'form.submitted' },
-      });
+      expect(automationRepository.listActiveByFormAndTrigger).toHaveBeenCalledWith(
+        'form-1',
+        'form.submitted'
+      );
 
-      expect(prisma.automationRun.create).toHaveBeenCalledWith({
-        data: {
-          id: 'generated-run-id',
-          automationId: 'automation-1',
-          responseId: 'resp-1',
-          automationVersion: 3,
-          graphSnapshot: automation.graph,
-          status: 'RUNNING',
-          context: {
-            triggerData: { responseId: 'resp-1', email: 'a@b.com' },
-            formId: 'form-1',
-            organizationId: 'org-1',
-          },
+      expect(automationRepository.createRun).toHaveBeenCalledWith({
+        id: 'generated-run-id',
+        automationId: 'automation-1',
+        responseId: 'resp-1',
+        automationVersion: 3,
+        graphSnapshot: automation.graph,
+        status: 'RUNNING',
+        context: {
+          triggerData: { responseId: 'resp-1', email: 'a@b.com' },
+          formId: 'form-1',
+          organizationId: 'org-1',
         },
       });
 
@@ -139,7 +135,7 @@ describe('triggerService', () => {
 
     it('creates N runs for N matching automations', async () => {
       initializeAutomationTriggers();
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([
         makeAutomation({ id: 'automation-1' }),
         makeAutomation({ id: 'automation-2' }),
         makeAutomation({ id: 'automation-3' }),
@@ -147,29 +143,30 @@ describe('triggerService', () => {
 
       await emitAndFlush(makeEvent());
 
-      expect(prisma.automationRun.create).toHaveBeenCalledTimes(3);
+      expect(automationRepository.createRun).toHaveBeenCalledTimes(3);
       expect(enqueueFirstStep).toHaveBeenCalledTimes(3);
     });
 
     it('does nothing when there are 0 matching automations', async () => {
       initializeAutomationTriggers();
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([]);
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([]);
 
       await emitAndFlush(makeEvent());
 
-      expect(prisma.automationRun.create).not.toHaveBeenCalled();
+      expect(automationRepository.createRun).not.toHaveBeenCalled();
       expect(enqueueFirstStep).not.toHaveBeenCalled();
     });
 
     it('only queries ACTIVE automations with triggerType form.submitted (inactive/draft excluded by the query)', async () => {
       initializeAutomationTriggers();
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([]);
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([]);
 
       await emitAndFlush(makeEvent());
 
-      expect(prisma.automation.findMany).toHaveBeenCalledWith({
-        where: { formId: 'form-1', status: 'ACTIVE', triggerType: 'form.submitted' },
-      });
+      expect(automationRepository.listActiveByFormAndTrigger).toHaveBeenCalledWith(
+        'form-1',
+        'form.submitted'
+      );
     });
 
     it('ignores non form.submitted/response.edited events', async () => {
@@ -177,28 +174,29 @@ describe('triggerService', () => {
 
       await emitAndFlush(makeEvent({ type: 'plugin.test' }));
 
-      expect(prisma.automation.findMany).not.toHaveBeenCalled();
+      expect(automationRepository.listActiveByFormAndTrigger).not.toHaveBeenCalled();
     });
 
     it('creates a run for a matching response.edited automation', async () => {
       initializeAutomationTriggers();
       const automation = makeAutomation({ triggerType: 'response.edited' });
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([automation] as any);
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([automation] as any);
 
       await emitAndFlush(
         makeEvent({ type: 'response.edited', data: { responseId: 'resp-1', editType: 'MANUAL' } })
       );
 
-      expect(prisma.automation.findMany).toHaveBeenCalledWith({
-        where: { formId: 'form-1', status: 'ACTIVE', triggerType: 'response.edited' },
-      });
-      expect(prisma.automationRun.create).toHaveBeenCalled();
+      expect(automationRepository.listActiveByFormAndTrigger).toHaveBeenCalledWith(
+        'form-1',
+        'response.edited'
+      );
+      expect(automationRepository.createRun).toHaveBeenCalled();
       expect(enqueueFirstStep).toHaveBeenCalledWith({ id: 'generated-run-id' });
     });
 
     it('loop guard: suppresses run creation for a response.edited event carrying sourceRunId', async () => {
       initializeAutomationTriggers();
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([
         makeAutomation({ triggerType: 'response.edited' }),
       ] as any);
 
@@ -209,20 +207,22 @@ describe('triggerService', () => {
         })
       );
 
-      expect(prisma.automation.findMany).not.toHaveBeenCalled();
-      expect(prisma.automationRun.create).not.toHaveBeenCalled();
+      expect(automationRepository.listActiveByFormAndTrigger).not.toHaveBeenCalled();
+      expect(automationRepository.createRun).not.toHaveBeenCalled();
     });
 
     it('does not suppress form.submitted events that happen to carry a sourceRunId-shaped field', async () => {
       // sourceRunId only matters for response.edited — a form.submitted event is never
       // itself caused by an automation action, so the loop guard must not touch it.
       initializeAutomationTriggers();
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([makeAutomation()] as any);
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([
+        makeAutomation(),
+      ] as any);
 
       await emitAndFlush(makeEvent({ data: { responseId: 'resp-1', sourceRunId: 'run-1' } }));
 
-      expect(prisma.automation.findMany).toHaveBeenCalled();
-      expect(prisma.automationRun.create).toHaveBeenCalled();
+      expect(automationRepository.listActiveByFormAndTrigger).toHaveBeenCalled();
+      expect(automationRepository.createRun).toHaveBeenCalled();
     });
 
     it('ignores preview submissions', async () => {
@@ -230,12 +230,12 @@ describe('triggerService', () => {
 
       await emitAndFlush(makeEvent({ data: { responseId: 'resp-1', isPreview: true } }));
 
-      expect(prisma.automation.findMany).not.toHaveBeenCalled();
+      expect(automationRepository.listActiveByFormAndTrigger).not.toHaveBeenCalled();
     });
 
     it('never throws or propagates when the automation lookup fails', async () => {
       initializeAutomationTriggers();
-      vi.mocked(prisma.automation.findMany).mockRejectedValue(new Error('db down'));
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockRejectedValue(new Error('db down'));
 
       expect(() => getEventEmitter().emit('plugin:event', makeEvent())).not.toThrow();
       await emitAndFlush(makeEvent());
@@ -246,17 +246,17 @@ describe('triggerService', () => {
 
     it('logs and reports to Sentry but still processes other automations when one run fails to create', async () => {
       initializeAutomationTriggers();
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([
         makeAutomation({ id: 'automation-1' }),
         makeAutomation({ id: 'automation-2' }),
       ] as any);
-      vi.mocked(prisma.automationRun.create)
+      vi.mocked(automationRepository.createRun)
         .mockRejectedValueOnce(new Error('create failed'))
         .mockResolvedValueOnce({ id: 'generated-run-id' } as any);
 
       await emitAndFlush(makeEvent());
 
-      expect(prisma.automationRun.create).toHaveBeenCalledTimes(2);
+      expect(automationRepository.createRun).toHaveBeenCalledTimes(2);
       expect(enqueueFirstStep).toHaveBeenCalledTimes(1);
       expect(logger.error).toHaveBeenCalled();
       expect(Sentry.captureException).toHaveBeenCalled();
@@ -264,27 +264,29 @@ describe('triggerService', () => {
 
     it('falls back to null responseId when the event data has none', async () => {
       initializeAutomationTriggers();
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([makeAutomation()] as any);
+      vi.mocked(automationRepository.listActiveByFormAndTrigger).mockResolvedValue([
+        makeAutomation(),
+      ] as any);
 
       await emitAndFlush(makeEvent({ data: { email: 'a@b.com' } }));
 
-      expect(prisma.automationRun.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ responseId: null }) })
+      expect(automationRepository.createRun).toHaveBeenCalledWith(
+        expect.objectContaining({ responseId: null })
       );
     });
   });
 
   describe('cancelRunsForAutomation', () => {
     it('does nothing when there are no RUNNING/WAITING runs', async () => {
-      vi.mocked(prisma.automationRun.findMany).mockResolvedValue([]);
+      vi.mocked(automationRepository.listActiveRunsByAutomation).mockResolvedValue([]);
 
       await cancelRunsForAutomation('automation-1', 'automation deleted');
 
-      expect(prisma.automationRun.updateMany).not.toHaveBeenCalled();
+      expect(automationRepository.cancelRunsByIds).not.toHaveBeenCalled();
     });
 
     it('cancels outstanding pg-boss jobs and marks matching runs CANCELLED', async () => {
-      vi.mocked(prisma.automationRun.findMany).mockResolvedValue([
+      vi.mocked(automationRepository.listActiveRunsByAutomation).mockResolvedValue([
         { id: 'run-1' },
         { id: 'run-2' },
       ] as any);
@@ -303,26 +305,22 @@ describe('triggerService', () => {
       expect(cancel).toHaveBeenCalledWith(AUTOMATION_QUEUE, ['job-1']);
       expect(cancel).toHaveBeenCalledTimes(1);
 
-      expect(prisma.automationRun.updateMany).toHaveBeenCalledWith({
-        where: { id: { in: ['run-1', 'run-2'] } },
-        data: { status: 'CANCELLED', completedAt: expect.any(Date) },
-      });
+      expect(automationRepository.cancelRunsByIds).toHaveBeenCalledWith(['run-1', 'run-2']);
     });
 
     it('still marks runs CANCELLED when pg-boss is disabled (getBoss returns null)', async () => {
-      vi.mocked(prisma.automationRun.findMany).mockResolvedValue([{ id: 'run-1' }] as any);
+      vi.mocked(automationRepository.listActiveRunsByAutomation).mockResolvedValue([
+        { id: 'run-1' },
+      ] as any);
       vi.mocked(getBoss).mockReturnValue(null);
 
       await cancelRunsForAutomation('automation-1', 'automation paused');
 
-      expect(prisma.automationRun.updateMany).toHaveBeenCalledWith({
-        where: { id: { in: ['run-1'] } },
-        data: { status: 'CANCELLED', completedAt: expect.any(Date) },
-      });
+      expect(automationRepository.cancelRunsByIds).toHaveBeenCalledWith(['run-1']);
     });
 
     it('never throws when the run lookup fails', async () => {
-      vi.mocked(prisma.automationRun.findMany).mockRejectedValue(new Error('db down'));
+      vi.mocked(automationRepository.listActiveRunsByAutomation).mockRejectedValue(new Error('db down'));
 
       await expect(cancelRunsForAutomation('automation-1', 'reason')).resolves.toBeUndefined();
       expect(logger.error).toHaveBeenCalled();
@@ -330,7 +328,7 @@ describe('triggerService', () => {
     });
 
     it('continues cancelling remaining runs and still updates DB state when one pg-boss cancel call fails', async () => {
-      vi.mocked(prisma.automationRun.findMany).mockResolvedValue([
+      vi.mocked(automationRepository.listActiveRunsByAutomation).mockResolvedValue([
         { id: 'run-1' },
         { id: 'run-2' },
       ] as any);
@@ -342,7 +340,7 @@ describe('triggerService', () => {
       await cancelRunsForAutomation('automation-1', 'reason');
 
       expect(cancel).toHaveBeenCalledTimes(2);
-      expect(prisma.automationRun.updateMany).toHaveBeenCalled();
+      expect(automationRepository.cancelRunsByIds).toHaveBeenCalled();
       expect(logger.error).toHaveBeenCalled();
       expect(Sentry.captureException).toHaveBeenCalled();
     });
@@ -350,54 +348,51 @@ describe('triggerService', () => {
 
   describe('cancelSingleAutomationRun', () => {
     it('returns null when the run does not exist', async () => {
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunById).mockResolvedValue(null);
 
       const result = await cancelSingleAutomationRun('missing-run');
 
       expect(result).toBeNull();
-      expect(prisma.automationRun.updateMany).not.toHaveBeenCalled();
+      expect(automationRepository.cancelRunIfActive).not.toHaveBeenCalled();
     });
 
     it('returns an already-terminal run unchanged without touching pg-boss or the DB', async () => {
       const terminalRun = { id: 'run-1', status: 'COMPLETED' };
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(terminalRun as any);
+      vi.mocked(automationRepository.findRunById).mockResolvedValue(terminalRun as any);
 
       const result = await cancelSingleAutomationRun('run-1');
 
       expect(result).toEqual(terminalRun);
       expect(getBoss).not.toHaveBeenCalled();
-      expect(prisma.automationRun.updateMany).not.toHaveBeenCalled();
+      expect(automationRepository.cancelRunIfActive).not.toHaveBeenCalled();
     });
 
     it('cancels outstanding pg-boss jobs and marks a RUNNING run CANCELLED', async () => {
-      vi.mocked(prisma.automationRun.findUnique)
+      vi.mocked(automationRepository.findRunById)
         .mockResolvedValueOnce({ id: 'run-1', status: 'RUNNING' } as any)
         .mockResolvedValueOnce({ id: 'run-1', status: 'CANCELLED' } as any);
       const findJobs = vi.fn().mockResolvedValue([{ id: 'job-1' }]);
       const cancel = vi.fn().mockResolvedValue(undefined);
       vi.mocked(getBoss).mockReturnValue({ findJobs, cancel } as any);
-      vi.mocked(prisma.automationRun.updateMany).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(automationRepository.cancelRunIfActive).mockResolvedValue({ count: 1 } as any);
 
       const result = await cancelSingleAutomationRun('run-1');
 
       expect(findJobs).toHaveBeenCalledWith(AUTOMATION_QUEUE, { data: { runId: 'run-1' } });
       expect(cancel).toHaveBeenCalledWith(AUTOMATION_QUEUE, ['job-1']);
-      expect(prisma.automationRun.updateMany).toHaveBeenCalledWith({
-        where: { id: 'run-1', status: { in: ['RUNNING', 'WAITING'] } },
-        data: { status: 'CANCELLED', completedAt: expect.any(Date) },
-      });
+      expect(automationRepository.cancelRunIfActive).toHaveBeenCalledWith('run-1');
       expect(result).toEqual({ id: 'run-1', status: 'CANCELLED' });
     });
 
     it('does not corrupt a run that reaches a terminal state concurrently (TOCTOU-safe)', async () => {
-      // The initial read sees RUNNING, but by the time the guarded updateMany runs the
-      // engine has already completed it — updateMany's status-scoped where clause matches
-      // 0 rows, and the final state must be read back rather than assumed to be CANCELLED.
-      vi.mocked(prisma.automationRun.findUnique)
+      // The initial read sees RUNNING, but by the time the guarded update runs the
+      // engine has already completed it — cancelRunIfActive's status-scoped where clause
+      // matches 0 rows, and the final state must be read back rather than assumed to be CANCELLED.
+      vi.mocked(automationRepository.findRunById)
         .mockResolvedValueOnce({ id: 'run-1', status: 'RUNNING' } as any)
         .mockResolvedValueOnce({ id: 'run-1', status: 'COMPLETED' } as any);
       vi.mocked(getBoss).mockReturnValue(null);
-      vi.mocked(prisma.automationRun.updateMany).mockResolvedValue({ count: 0 } as any);
+      vi.mocked(automationRepository.cancelRunIfActive).mockResolvedValue({ count: 0 } as any);
 
       const result = await cancelSingleAutomationRun('run-1');
 
@@ -406,18 +401,15 @@ describe('triggerService', () => {
     });
 
     it('still cancels when pg-boss is disabled (getBoss returns null)', async () => {
-      vi.mocked(prisma.automationRun.findUnique)
+      vi.mocked(automationRepository.findRunById)
         .mockResolvedValueOnce({ id: 'run-1', status: 'WAITING' } as any)
         .mockResolvedValueOnce({ id: 'run-1', status: 'CANCELLED' } as any);
       vi.mocked(getBoss).mockReturnValue(null);
-      vi.mocked(prisma.automationRun.updateMany).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(automationRepository.cancelRunIfActive).mockResolvedValue({ count: 1 } as any);
 
       const result = await cancelSingleAutomationRun('run-1');
 
-      expect(prisma.automationRun.updateMany).toHaveBeenCalledWith({
-        where: { id: 'run-1', status: { in: ['RUNNING', 'WAITING'] } },
-        data: { status: 'CANCELLED', completedAt: expect.any(Date) },
-      });
+      expect(automationRepository.cancelRunIfActive).toHaveBeenCalledWith('run-1');
       expect(result).toEqual({ id: 'run-1', status: 'CANCELLED' });
     });
   });
@@ -505,50 +497,48 @@ describe('triggerService', () => {
 
     it('creates a run with responseId null and enqueues the first step for an ACTIVE schedule automation', async () => {
       const automation = makeAutomation({ triggerType: 'schedule', status: 'ACTIVE' });
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(automation as any);
+      vi.mocked(automationRepository.findById).mockResolvedValue(automation as any);
 
       await fireTick('automation-1');
 
-      expect(prisma.automationRun.create).toHaveBeenCalledWith({
-        data: {
-          id: 'generated-run-id',
-          automationId: automation.id,
-          responseId: null,
-          automationVersion: automation.version,
-          graphSnapshot: automation.graph,
-          status: 'RUNNING',
-          context: expect.objectContaining({
-            triggerData: {},
-            formId: 'form-1',
-            organizationId: 'org-1',
-            trigger: { scheduledAt: expect.any(String) },
-          }),
-        },
+      expect(automationRepository.createRun).toHaveBeenCalledWith({
+        id: 'generated-run-id',
+        automationId: automation.id,
+        responseId: null,
+        automationVersion: automation.version,
+        graphSnapshot: automation.graph,
+        status: 'RUNNING',
+        context: expect.objectContaining({
+          triggerData: {},
+          formId: 'form-1',
+          organizationId: 'org-1',
+          trigger: { scheduledAt: expect.any(String) },
+        }),
       });
       expect(enqueueFirstStep).toHaveBeenCalledWith({ id: 'generated-run-id' });
     });
 
     it('skips a tick when the automation was paused/deleted concurrently', async () => {
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findById).mockResolvedValue(
         makeAutomation({ triggerType: 'schedule', status: 'PAUSED' }) as any
       );
 
       await fireTick('automation-1');
 
-      expect(prisma.automationRun.create).not.toHaveBeenCalled();
+      expect(automationRepository.createRun).not.toHaveBeenCalled();
       expect(enqueueFirstStep).not.toHaveBeenCalled();
     });
 
     it('skips a tick when the automation no longer exists', async () => {
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(null);
+      vi.mocked(automationRepository.findById).mockResolvedValue(null);
 
       await fireTick('missing-automation');
 
-      expect(prisma.automationRun.create).not.toHaveBeenCalled();
+      expect(automationRepository.createRun).not.toHaveBeenCalled();
     });
 
     it('never throws when the run lookup/creation fails', async () => {
-      vi.mocked(prisma.automation.findUnique).mockRejectedValue(new Error('db down'));
+      vi.mocked(automationRepository.findById).mockRejectedValue(new Error('db down'));
 
       await fireTick('automation-1');
 

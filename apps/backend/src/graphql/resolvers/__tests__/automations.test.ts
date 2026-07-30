@@ -3,50 +3,11 @@ import { automationsResolvers } from '../automations.js';
 import { GraphQLError } from '#graphql-errors';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';
-import * as pluginRegistry from '../../../plugins/core/registry.js';
-import * as graphValidator from '../../../services/automation/graphValidator.js';
-import * as engine from '../../../services/automation/engine.js';
-import * as triggerService from '../../../services/automation/triggerService.js';
-import { prisma } from '../../../lib/prisma.js';
+import * as automationService from '../../../services/automationService.js';
 
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
-vi.mock('../../../plugins/core/registry.js');
-vi.mock('../../../services/automation/graphValidator.js');
-vi.mock('../../../services/automation/engine.js');
-vi.mock('../../../services/automation/triggerService.js');
-vi.mock('../../../lib/prisma.js', () => ({
-  prisma: {
-    automation: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    automationRun: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-    automationStepRun: {
-      findMany: vi.fn(),
-    },
-    response: {
-      findFirst: vi.fn(),
-    },
-  },
-}));
-vi.mock('../../../lib/logger.js', () => ({
-  logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
-}));
-vi.mock('@dculus/utils', async () => {
-  const actual = await vi.importActual<typeof import('@dculus/utils')>('@dculus/utils');
-  return {
-    ...actual,
-    generateId: vi.fn(() => 'generated-id'),
-  };
-});
+vi.mock('../../../services/automationService.js');
 
 describe('Automations Resolvers', () => {
   const mockContext = {
@@ -118,7 +79,7 @@ describe('Automations Resolvers', () => {
   describe('Permission matrix', () => {
     it('formAutomations: allows VIEWER access to read', async () => {
       grantAccess('VIEWER');
-      vi.mocked(prisma.automation.findMany).mockResolvedValue([mockAutomation] as any);
+      vi.mocked(automationService.listAutomationsByForm).mockResolvedValue([mockAutomation] as any);
 
       const result = await automationsResolvers.Query.formAutomations(
         {},
@@ -131,6 +92,7 @@ describe('Automations Resolvers', () => {
         'form-123',
         formSharingResolvers.PermissionLevel.VIEWER
       );
+      expect(automationService.listAutomationsByForm).toHaveBeenCalledWith('form-123');
       expect(result).toEqual([mockAutomation]);
     });
 
@@ -176,12 +138,12 @@ describe('Automations Resolvers', () => {
           mockContext
         )
       ).rejects.toThrow(/Access denied/);
-      expect(prisma.automation.create).not.toHaveBeenCalled();
+      expect(automationService.createAutomation).not.toHaveBeenCalled();
     });
 
     it('createAutomation: allows EDITOR access to write', async () => {
       grantAccess('EDITOR');
-      vi.mocked(prisma.automation.create).mockResolvedValue(mockAutomation as any);
+      vi.mocked(automationService.createAutomation).mockResolvedValue(mockAutomation as any);
 
       const result = await automationsResolvers.Mutation.createAutomation(
         {},
@@ -194,12 +156,19 @@ describe('Automations Resolvers', () => {
         'form-123',
         formSharingResolvers.PermissionLevel.EDITOR
       );
+      expect(automationService.createAutomation).toHaveBeenCalledWith({
+        formId: 'form-123',
+        organizationId: 'org-123',
+        name: 'Test',
+        triggerType: 'form.submitted',
+        createdBy: 'user-123',
+      });
       expect(result).toEqual(mockAutomation);
     });
 
     it('automation: allows OWNER access to read', async () => {
       grantAccess('OWNER');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
 
       const result = await automationsResolvers.Query.automation(
         {},
@@ -211,14 +180,16 @@ describe('Automations Resolvers', () => {
     });
 
     it('automation: throws AUTOMATION_NOT_FOUND when the automation does not exist', async () => {
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(null);
+      vi.mocked(automationService.getAutomationById).mockRejectedValue(
+        new GraphQLError('Automation not found')
+      );
 
       await expect(
         automationsResolvers.Query.automation({}, { id: 'missing' }, mockContext)
       ).rejects.toThrow('Automation not found');
     });
 
-    it('automation: checks auth before looking up the automation in the DB', async () => {
+    it('automation: checks auth before looking up the automation', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockImplementation(() => {
         throw new GraphQLError('Authentication required');
       });
@@ -226,55 +197,51 @@ describe('Automations Resolvers', () => {
       await expect(
         automationsResolvers.Query.automation({}, { id: 'automation-123' }, mockContext)
       ).rejects.toThrow('Authentication required');
-      expect(prisma.automation.findUnique).not.toHaveBeenCalled();
+      expect(automationService.getAutomationById).not.toHaveBeenCalled();
     });
   });
 
-  describe('Activation gate (setAutomationStatus)', () => {
-    it('blocks activation and surfaces structured validation errors', async () => {
+  describe('updateAutomation / setAutomationStatus / deleteAutomation / testAutomation orchestration', () => {
+    it('updateAutomation: fetches the automation, checks EDITOR access, then delegates to the service', async () => {
       grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
-      const validationErrors = [
-        { nodeId: 'action-1', code: 'UNKNOWN_ACTION_TYPE', message: 'unregistered action type' },
-      ];
-      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({
-        valid: false,
-        errors: validationErrors,
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+      const updated = { ...mockAutomation, name: 'Renamed' };
+      vi.mocked(automationService.updateAutomation).mockResolvedValue(updated as any);
+
+      const result = await automationsResolvers.Mutation.updateAutomation(
+        {},
+        { id: 'automation-123', name: 'Renamed' },
+        mockContext
+      );
+
+      expect(automationService.getAutomationById).toHaveBeenCalledWith('automation-123');
+      expect(automationService.updateAutomation).toHaveBeenCalledWith(mockAutomation, {
+        name: 'Renamed',
+        graph: undefined,
+        triggerConfig: undefined,
       });
-
-      await expect(
-        automationsResolvers.Mutation.setAutomationStatus(
-          {},
-          { id: 'automation-123', status: 'ACTIVE' },
-          mockContext
-        )
-      ).rejects.toThrow(GraphQLError);
-
-      try {
-        await automationsResolvers.Mutation.setAutomationStatus(
-          {},
-          { id: 'automation-123', status: 'ACTIVE' },
-          mockContext
-        );
-        expect.unreachable('should have thrown');
-      } catch (error: any) {
-        expect(error.extensions.code).toBe('AUTOMATION_INVALID_GRAPH');
-        expect(error.extensions.validationErrors).toEqual(validationErrors);
-      }
-
-      expect(prisma.automation.update).not.toHaveBeenCalled();
+      expect(result).toEqual(updated);
     });
 
-    it('activates when the graph is valid', async () => {
+    it('updateAutomation: denies without EDITOR+ access', async () => {
+      denyAccess();
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+
+      await expect(
+        automationsResolvers.Mutation.updateAutomation(
+          {},
+          { id: 'automation-123', name: 'x' },
+          mockContext
+        )
+      ).rejects.toThrow(/Access denied/);
+      expect(automationService.updateAutomation).not.toHaveBeenCalled();
+    });
+
+    it('setAutomationStatus: fetches the automation, checks EDITOR access, then delegates to the service', async () => {
       grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
-      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...mockAutomation,
-        status: 'ACTIVE',
-      } as any);
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+      const updated = { ...mockAutomation, status: 'ACTIVE' };
+      vi.mocked(automationService.setAutomationStatus).mockResolvedValue(updated as any);
 
       const result = await automationsResolvers.Mutation.setAutomationStatus(
         {},
@@ -282,91 +249,13 @@ describe('Automations Resolvers', () => {
         mockContext
       );
 
-      expect(prisma.automation.update).toHaveBeenCalledWith({
-        where: { id: 'automation-123' },
-        data: { status: 'ACTIVE', updatedAt: expect.any(Date) },
-      });
-      expect(result.status).toBe('ACTIVE');
+      expect(automationService.setAutomationStatus).toHaveBeenCalledWith(mockAutomation, 'ACTIVE');
+      expect(result).toEqual(updated);
     });
 
-    it('does not run graph validation when pausing', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
-        ...mockAutomation,
-        status: 'ACTIVE',
-      } as any);
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...mockAutomation,
-        status: 'PAUSED',
-      } as any);
-
-      await automationsResolvers.Mutation.setAutomationStatus(
-        {},
-        { id: 'automation-123', status: 'PAUSED' },
-        mockContext
-      );
-
-      expect(graphValidator.validateAutomationGraph).not.toHaveBeenCalled();
-    });
-
-    it('rejects unknown status values', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-
-      await expect(
-        automationsResolvers.Mutation.setAutomationStatus(
-          {},
-          { id: 'automation-123', status: 'BOGUS' },
-          mockContext
-        )
-      ).rejects.toThrow(/Invalid status/);
-    });
-  });
-
-  describe('schedule lifecycle (setAutomationStatus)', () => {
-    const scheduleAutomation = {
-      ...mockAutomation,
-      triggerType: 'schedule',
-      triggerConfig: { cron: '0 9 * * *', timezone: 'America/Chicago' },
-    };
-
-    it('activating a valid schedule automation validates the graph, validates the cron, and schedules it', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(scheduleAutomation as any);
-      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
-      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...scheduleAutomation,
-        status: 'ACTIVE',
-      } as any);
-      vi.mocked(triggerService.scheduleAutomationCron).mockResolvedValue(undefined as any);
-
-      await automationsResolvers.Mutation.setAutomationStatus(
-        {},
-        { id: 'automation-123', status: 'ACTIVE' },
-        mockContext
-      );
-
-      expect(graphValidator.validateAutomationGraph).toHaveBeenCalledWith(
-        scheduleAutomation.graph,
-        expect.objectContaining({ triggerType: 'schedule' })
-      );
-      expect(triggerService.scheduleAutomationCron).toHaveBeenCalledWith(
-        'automation-123',
-        '0 9 * * *',
-        'America/Chicago'
-      );
-      expect(triggerService.unscheduleAutomationCron).not.toHaveBeenCalled();
-    });
-
-    it('rejects activating a schedule automation with an invalid cron before updating or scheduling', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
-        ...scheduleAutomation,
-        triggerConfig: { cron: 'not a cron' },
-      } as any);
-      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
-      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
+    it('setAutomationStatus: denies without EDITOR+ access', async () => {
+      denyAccess();
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
 
       await expect(
         automationsResolvers.Mutation.setAutomationStatus(
@@ -374,326 +263,14 @@ describe('Automations Resolvers', () => {
           { id: 'automation-123', status: 'ACTIVE' },
           mockContext
         )
-      ).rejects.toThrow(/Invalid cron expression/);
-
-      expect(prisma.automation.update).not.toHaveBeenCalled();
-      expect(triggerService.scheduleAutomationCron).not.toHaveBeenCalled();
+      ).rejects.toThrow(/Access denied/);
+      expect(automationService.setAutomationStatus).not.toHaveBeenCalled();
     });
 
-    it('rejects activating a schedule automation with no triggerConfig', async () => {
+    it('deleteAutomation: fetches the automation, checks EDITOR access, then delegates to the service', async () => {
       grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
-        ...scheduleAutomation,
-        triggerConfig: null,
-      } as any);
-      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
-      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
-
-      await expect(
-        automationsResolvers.Mutation.setAutomationStatus(
-          {},
-          { id: 'automation-123', status: 'ACTIVE' },
-          mockContext
-        )
-      ).rejects.toThrow(/triggerConfig/);
-    });
-
-    it('pausing a schedule automation unschedules its cron', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
-        ...scheduleAutomation,
-        status: 'ACTIVE',
-      } as any);
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...scheduleAutomation,
-        status: 'PAUSED',
-      } as any);
-      vi.mocked(triggerService.unscheduleAutomationCron).mockResolvedValue(undefined as any);
-
-      await automationsResolvers.Mutation.setAutomationStatus(
-        {},
-        { id: 'automation-123', status: 'PAUSED' },
-        mockContext
-      );
-
-      expect(triggerService.unscheduleAutomationCron).toHaveBeenCalledWith('automation-123');
-      expect(triggerService.scheduleAutomationCron).not.toHaveBeenCalled();
-    });
-
-    it('does not touch pg-boss scheduling for non-schedule automations', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
-      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...mockAutomation,
-        status: 'ACTIVE',
-      } as any);
-
-      await automationsResolvers.Mutation.setAutomationStatus(
-        {},
-        { id: 'automation-123', status: 'ACTIVE' },
-        mockContext
-      );
-
-      expect(triggerService.scheduleAutomationCron).not.toHaveBeenCalled();
-      expect(triggerService.unscheduleAutomationCron).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('updateAutomation version bump', () => {
-    it('bumps version when graph is provided', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      const newGraph = {
-        ...mockGraph,
-        nodes: [...mockGraph.nodes, { id: 'delay-1', type: 'delay', data: { amount: 1, unit: 'minutes' } }],
-      };
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...mockAutomation,
-        graph: newGraph,
-        version: 2,
-      } as any);
-
-      const result = await automationsResolvers.Mutation.updateAutomation(
-        {},
-        { id: 'automation-123', graph: newGraph },
-        mockContext
-      );
-
-      expect(prisma.automation.update).toHaveBeenCalledWith({
-        where: { id: 'automation-123' },
-        data: {
-          updatedAt: expect.any(Date),
-          graph: newGraph,
-          version: { increment: 1 },
-        },
-      });
-      expect(result.version).toBe(2);
-    });
-
-    it('does not bump version when only name changes', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...mockAutomation,
-        name: 'Renamed',
-      } as any);
-
-      await automationsResolvers.Mutation.updateAutomation(
-        {},
-        { id: 'automation-123', name: 'Renamed' },
-        mockContext
-      );
-
-      expect(prisma.automation.update).toHaveBeenCalledWith({
-        where: { id: 'automation-123' },
-        data: { updatedAt: expect.any(Date), name: 'Renamed' },
-      });
-    });
-
-    it('does not bump version when the resubmitted graph is unchanged', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      const sameGraph = JSON.parse(JSON.stringify(mockGraph));
-      vi.mocked(prisma.automation.update).mockResolvedValue(mockAutomation as any);
-
-      await automationsResolvers.Mutation.updateAutomation(
-        {},
-        { id: 'automation-123', graph: sameGraph },
-        mockContext
-      );
-
-      expect(prisma.automation.update).toHaveBeenCalledWith({
-        where: { id: 'automation-123' },
-        data: { updatedAt: expect.any(Date), graph: sameGraph },
-      });
-    });
-
-    it('throws AUTOMATION_NOT_FOUND for a missing automation', async () => {
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(null);
-
-      await expect(
-        automationsResolvers.Mutation.updateAutomation(
-          {},
-          { id: 'missing', name: 'x' },
-          mockContext
-        )
-      ).rejects.toThrow('Automation not found');
-    });
-  });
-
-  describe('updateAutomation validates the graph when the automation is already ACTIVE', () => {
-    it('rejects saving an invalid graph to an ACTIVE automation before writing to the DB', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
-        ...mockAutomation,
-        status: 'ACTIVE',
-      } as any);
-      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
-      const validationErrors = [
-        { nodeId: 'action-1', code: 'UNKNOWN_ACTION_TYPE', message: 'unregistered action type' },
-      ];
-      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({
-        valid: false,
-        errors: validationErrors,
-      });
-
-      await expect(
-        automationsResolvers.Mutation.updateAutomation(
-          {},
-          { id: 'automation-123', graph: mockGraph },
-          mockContext
-        )
-      ).rejects.toThrow(GraphQLError);
-
-      expect(graphValidator.validateAutomationGraph).toHaveBeenCalledWith(
-        mockGraph,
-        expect.objectContaining({ triggerType: 'form.submitted' })
-      );
-      expect(prisma.automation.update).not.toHaveBeenCalled();
-    });
-
-    it('allows saving a valid graph to an ACTIVE automation', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
-        ...mockAutomation,
-        status: 'ACTIVE',
-      } as any);
-      vi.mocked(pluginRegistry.getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
-      vi.mocked(graphValidator.validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...mockAutomation,
-        status: 'ACTIVE',
-        graph: mockGraph,
-      } as any);
-
-      await automationsResolvers.Mutation.updateAutomation(
-        {},
-        { id: 'automation-123', graph: mockGraph },
-        mockContext
-      );
-
-      expect(prisma.automation.update).toHaveBeenCalled();
-    });
-
-    it('does not validate the graph when the automation is DRAFT', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(prisma.automation.update).mockResolvedValue(mockAutomation as any);
-
-      await automationsResolvers.Mutation.updateAutomation(
-        {},
-        { id: 'automation-123', graph: mockGraph },
-        mockContext
-      );
-
-      expect(graphValidator.validateAutomationGraph).not.toHaveBeenCalled();
-      expect(prisma.automation.update).toHaveBeenCalled();
-    });
-  });
-
-  describe('updateAutomation triggerConfig (schedule automations)', () => {
-    const scheduleAutomation = {
-      ...mockAutomation,
-      triggerType: 'schedule',
-      triggerConfig: { cron: '0 9 * * *' },
-    };
-
-    it('rejects an invalid cron expression', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(scheduleAutomation as any);
-
-      await expect(
-        automationsResolvers.Mutation.updateAutomation(
-          {},
-          { id: 'automation-123', triggerConfig: { cron: 'nonsense' } },
-          mockContext
-        )
-      ).rejects.toThrow(/Invalid cron expression/);
-      expect(prisma.automation.update).not.toHaveBeenCalled();
-    });
-
-    it('rejects an invalid timezone', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(scheduleAutomation as any);
-
-      await expect(
-        automationsResolvers.Mutation.updateAutomation(
-          {},
-          { id: 'automation-123', triggerConfig: { cron: '0 9 * * *', timezone: 'Not/A_Zone' } },
-          mockContext
-        )
-      ).rejects.toThrow(/Invalid timezone/);
-    });
-
-    it('re-schedules an ACTIVE schedule automation when triggerConfig changes', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue({
-        ...scheduleAutomation,
-        status: 'ACTIVE',
-      } as any);
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...scheduleAutomation,
-        status: 'ACTIVE',
-        triggerConfig: { cron: '0 18 * * *' },
-      } as any);
-      vi.mocked(triggerService.scheduleAutomationCron).mockResolvedValue(undefined as any);
-
-      await automationsResolvers.Mutation.updateAutomation(
-        {},
-        { id: 'automation-123', triggerConfig: { cron: '0 18 * * *' } },
-        mockContext
-      );
-
-      expect(triggerService.scheduleAutomationCron).toHaveBeenCalledWith(
-        'automation-123',
-        '0 18 * * *',
-        undefined
-      );
-    });
-
-    it('does not re-schedule a DRAFT schedule automation', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(scheduleAutomation as any);
-      vi.mocked(prisma.automation.update).mockResolvedValue({
-        ...scheduleAutomation,
-        triggerConfig: { cron: '0 18 * * *' },
-      } as any);
-
-      await automationsResolvers.Mutation.updateAutomation(
-        {},
-        { id: 'automation-123', triggerConfig: { cron: '0 18 * * *' } },
-        mockContext
-      );
-
-      expect(triggerService.scheduleAutomationCron).not.toHaveBeenCalled();
-    });
-
-    it('does not validate cron for non-schedule automations', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(prisma.automation.update).mockResolvedValue(mockAutomation as any);
-
-      await automationsResolvers.Mutation.updateAutomation(
-        {},
-        { id: 'automation-123', triggerConfig: { cron: 'anything at all' } },
-        mockContext
-      );
-
-      expect(prisma.automation.update).toHaveBeenCalledWith({
-        where: { id: 'automation-123' },
-        data: { updatedAt: expect.any(Date), triggerConfig: { cron: 'anything at all' } },
-      });
-    });
-  });
-
-  describe('deleteAutomation cancels runs', () => {
-    it('cancels in-flight runs before deleting the automation', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(triggerService.cancelRunsForAutomation).mockResolvedValue(undefined as any);
-      vi.mocked(prisma.automation.delete).mockResolvedValue(mockAutomation as any);
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+      vi.mocked(automationService.deleteAutomation).mockResolvedValue(true);
 
       const result = await automationsResolvers.Mutation.deleteAutomation(
         {},
@@ -701,81 +278,25 @@ describe('Automations Resolvers', () => {
         mockContext
       );
 
-      expect(triggerService.cancelRunsForAutomation).toHaveBeenCalledWith(
-        'automation-123',
-        expect.any(String)
-      );
-      const cancelOrder = vi.mocked(triggerService.cancelRunsForAutomation).mock
-        .invocationCallOrder[0];
-      const deleteOrder = vi.mocked(prisma.automation.delete).mock.invocationCallOrder[0];
-      expect(cancelOrder).toBeLessThan(deleteOrder);
-      expect(prisma.automation.delete).toHaveBeenCalledWith({ where: { id: 'automation-123' } });
+      expect(automationService.deleteAutomation).toHaveBeenCalledWith(mockAutomation);
       expect(result).toBe(true);
     });
 
-    it('denies deletion without EDITOR+ access', async () => {
+    it('deleteAutomation: denies without EDITOR+ access', async () => {
       denyAccess();
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
 
       await expect(
         automationsResolvers.Mutation.deleteAutomation({}, { id: 'automation-123' }, mockContext)
       ).rejects.toThrow(/Access denied/);
-      expect(triggerService.cancelRunsForAutomation).not.toHaveBeenCalled();
-      expect(prisma.automation.delete).not.toHaveBeenCalled();
+      expect(automationService.deleteAutomation).not.toHaveBeenCalled();
     });
 
-    it('unschedules the cron before deleting a schedule automation', async () => {
+    it('testAutomation: fetches the automation, checks EDITOR access, then delegates to the service', async () => {
       grantAccess('EDITOR');
-      const scheduleAutomation = { ...mockAutomation, triggerType: 'schedule' };
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(scheduleAutomation as any);
-      vi.mocked(triggerService.unscheduleAutomationCron).mockResolvedValue(undefined as any);
-      vi.mocked(triggerService.cancelRunsForAutomation).mockResolvedValue(undefined as any);
-      vi.mocked(prisma.automation.delete).mockResolvedValue(scheduleAutomation as any);
-
-      await automationsResolvers.Mutation.deleteAutomation(
-        {},
-        { id: 'automation-123' },
-        mockContext
-      );
-
-      expect(triggerService.unscheduleAutomationCron).toHaveBeenCalledWith('automation-123');
-      const unscheduleOrder = vi.mocked(triggerService.unscheduleAutomationCron).mock
-        .invocationCallOrder[0];
-      const deleteOrder = vi.mocked(prisma.automation.delete).mock.invocationCallOrder[0];
-      expect(unscheduleOrder).toBeLessThan(deleteOrder);
-    });
-
-    it('does not call unscheduleAutomationCron for non-schedule automations', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(triggerService.cancelRunsForAutomation).mockResolvedValue(undefined as any);
-      vi.mocked(prisma.automation.delete).mockResolvedValue(mockAutomation as any);
-
-      await automationsResolvers.Mutation.deleteAutomation(
-        {},
-        { id: 'automation-123' },
-        mockContext
-      );
-
-      expect(triggerService.unscheduleAutomationCron).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('testAutomation', () => {
-    const mockResponse = {
-      id: 'response-1',
-      formId: 'form-123',
-      data: { field1: 'value1' },
-      submittedAt: new Date('2026-01-02T00:00:00.000Z'),
-    };
-
-    it('uses the given responseId when provided', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(prisma.response.findFirst).mockResolvedValue(mockResponse as any);
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
       const createdRun = { id: 'run-1', automationId: 'automation-123', status: 'RUNNING' };
-      vi.mocked(prisma.automationRun.create).mockResolvedValue(createdRun as any);
-      vi.mocked(engine.enqueueFirstStep).mockResolvedValue(undefined as any);
+      vi.mocked(automationService.testAutomation).mockResolvedValue(createdRun as any);
 
       const result = await automationsResolvers.Mutation.testAutomation(
         {},
@@ -783,52 +304,73 @@ describe('Automations Resolvers', () => {
         mockContext
       );
 
-      expect(prisma.response.findFirst).toHaveBeenCalledWith({
-        where: { id: 'response-1', formId: 'form-123', deletedAt: null },
-      });
-      expect(prisma.automationRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          automationId: 'automation-123',
-          responseId: 'response-1',
-          status: 'RUNNING',
-          context: expect.objectContaining({
-            test: true,
-            triggerData: expect.objectContaining({ field1: 'value1', responseId: 'response-1' }),
-          }),
-        }),
-      });
-      expect(engine.enqueueFirstStep).toHaveBeenCalledWith(createdRun);
+      expect(automationService.testAutomation).toHaveBeenCalledWith(mockAutomation, 'response-1');
       expect(result).toEqual(createdRun);
     });
 
-    it('falls back to the latest response when none is given', async () => {
-      grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(prisma.response.findFirst).mockResolvedValue(mockResponse as any);
-      vi.mocked(prisma.automationRun.create).mockResolvedValue({ id: 'run-1' } as any);
-      vi.mocked(engine.enqueueFirstStep).mockResolvedValue(undefined as any);
+    it('testAutomation: denies without EDITOR+ access', async () => {
+      denyAccess();
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
 
-      await automationsResolvers.Mutation.testAutomation(
-        {},
-        { id: 'automation-123' },
-        mockContext
-      );
-
-      expect(prisma.response.findFirst).toHaveBeenCalledWith({
-        where: { formId: 'form-123', deletedAt: null },
-        orderBy: { submittedAt: 'desc' },
-      });
+      await expect(
+        automationsResolvers.Mutation.testAutomation({}, { id: 'automation-123' }, mockContext)
+      ).rejects.toThrow(/Access denied/);
+      expect(automationService.testAutomation).not.toHaveBeenCalled();
     });
 
-    it('errors when the form has no responses', async () => {
+    it('testAutomation: surfaces a RESPONSE_NOT_FOUND-style error from the service', async () => {
       grantAccess('EDITOR');
-      vi.mocked(prisma.automation.findUnique).mockResolvedValue(mockAutomation as any);
-      vi.mocked(prisma.response.findFirst).mockResolvedValue(null);
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+      vi.mocked(automationService.testAutomation).mockRejectedValue(
+        new GraphQLError('No response available to test this automation with')
+      );
 
       await expect(
         automationsResolvers.Mutation.testAutomation({}, { id: 'automation-123' }, mockContext)
       ).rejects.toThrow(/No response available/);
-      expect(prisma.automationRun.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('automationRuns / automationRun queries', () => {
+    it('automationRuns: fetches the automation for access, then lists runs via the service', async () => {
+      grantAccess('VIEWER');
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+      const runs = [{ id: 'run-1' }];
+      vi.mocked(automationService.listAutomationRuns).mockResolvedValue(runs as any);
+
+      const result = await automationsResolvers.Query.automationRuns(
+        {},
+        { automationId: 'automation-123', limit: 10, offset: 5 },
+        mockContext
+      );
+
+      expect(automationService.listAutomationRuns).toHaveBeenCalledWith('automation-123', 10, 5);
+      expect(result).toEqual(runs);
+    });
+
+    it('automationRun: fetches the run with its automation, checks access, and returns it', async () => {
+      grantAccess('VIEWER');
+      const run = { id: 'run-1', automation: mockAutomation };
+      vi.mocked(automationService.getAutomationRunWithAutomation).mockResolvedValue(run as any);
+
+      const result = await automationsResolvers.Query.automationRun(
+        {},
+        { id: 'run-1' },
+        mockContext
+      );
+
+      expect(automationService.getAutomationRunWithAutomation).toHaveBeenCalledWith('run-1');
+      expect(result).toEqual(run);
+    });
+
+    it('automationRun: propagates a NOT_FOUND-style error from the service', async () => {
+      vi.mocked(automationService.getAutomationRunWithAutomation).mockRejectedValue(
+        new GraphQLError('Automation run not found')
+      );
+
+      await expect(
+        automationsResolvers.Query.automationRun({}, { id: 'missing' }, mockContext)
+      ).rejects.toThrow('Automation run not found');
     });
   });
 
@@ -836,9 +378,9 @@ describe('Automations Resolvers', () => {
     it('cancels a running run', async () => {
       grantAccess('EDITOR');
       const run = { id: 'run-1', automation: mockAutomation };
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(run as any);
+      vi.mocked(automationService.getAutomationRunWithAutomation).mockResolvedValue(run as any);
       const cancelled = { id: 'run-1', status: 'CANCELLED' };
-      vi.mocked(triggerService.cancelSingleAutomationRun).mockResolvedValue(cancelled as any);
+      vi.mocked(automationService.cancelAutomationRun).mockResolvedValue(cancelled as any);
 
       const result = await automationsResolvers.Mutation.cancelAutomationRun(
         {},
@@ -846,30 +388,40 @@ describe('Automations Resolvers', () => {
         mockContext
       );
 
-      expect(triggerService.cancelSingleAutomationRun).toHaveBeenCalledWith('run-1');
+      expect(automationService.cancelAutomationRun).toHaveBeenCalledWith('run-1');
       expect(result).toEqual(cancelled);
     });
 
     it('throws when the run does not exist', async () => {
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(null);
+      vi.mocked(automationService.getAutomationRunWithAutomation).mockRejectedValue(
+        new GraphQLError('Automation run not found')
+      );
 
       await expect(
         automationsResolvers.Mutation.cancelAutomationRun({}, { runId: 'missing' }, mockContext)
       ).rejects.toThrow('Automation run not found');
     });
+
+    it('denies without EDITOR+ access', async () => {
+      denyAccess();
+      const run = { id: 'run-1', automation: mockAutomation };
+      vi.mocked(automationService.getAutomationRunWithAutomation).mockResolvedValue(run as any);
+
+      await expect(
+        automationsResolvers.Mutation.cancelAutomationRun({}, { runId: 'run-1' }, mockContext)
+      ).rejects.toThrow(/Access denied/);
+      expect(automationService.cancelAutomationRun).not.toHaveBeenCalled();
+    });
   });
 
   describe('Field resolvers', () => {
-    it('AutomationRun.stepRuns fetches step runs for the parent run', async () => {
+    it('AutomationRun.stepRuns fetches step runs for the parent run via the service', async () => {
       const stepRuns = [{ id: 'step-1', nodeId: 'trigger-1' }];
-      vi.mocked(prisma.automationStepRun.findMany).mockResolvedValue(stepRuns as any);
+      vi.mocked(automationService.listStepRuns).mockResolvedValue(stepRuns as any);
 
       const result = await automationsResolvers.AutomationRun.stepRuns({ id: 'run-1' } as any);
 
-      expect(prisma.automationStepRun.findMany).toHaveBeenCalledWith({
-        where: { runId: 'run-1' },
-        orderBy: { startedAt: 'asc' },
-      });
+      expect(automationService.listStepRuns).toHaveBeenCalledWith('run-1');
       expect(result).toEqual(stepRuns);
     });
 

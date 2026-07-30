@@ -7,35 +7,46 @@ import {
   registerAutomationWorker,
   ACTION_RETRY_LIMIT,
 } from '../engine.js';
-import { prisma } from '../../../lib/prisma.js';
+import { automationRepository } from '../../../repositories/index.js';
 import { getPluginHandler } from '../../../plugins/core/registry.js';
 import { createPluginContext } from '../../../plugins/core/context.js';
 import { evaluateCondition } from '../conditionEvaluator.js';
 import { getBoss, AUTOMATION_QUEUE } from '../boss.js';
 import type { AutomationGraph } from '../types.js';
 
-vi.mock('../../../lib/prisma.js', () => ({
-  prisma: {
-    automationStepRun: {
-      findFirst: vi.fn(),
-      create: vi.fn(),
-    },
-    automationRun: {
-      findUnique: vi.fn(),
-      update: vi.fn(),
-    },
-    // Array-form $transaction: operations are already-invoked PrismaPromises by the time
-    // $transaction receives them, so resolving them as-is mirrors the real API.
-    $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
-    $executeRaw: vi.fn().mockResolvedValue(1),
-  },
+// The tx-scoped repository created inside `prisma.$transaction(async (tx) => ...)` calls
+// (updateAutomationNodeConfig, recordUnhandleableStepFailure) is a *second* repository
+// instance built via `createAutomationRepository(withPrisma(tx))` — it is NOT the same
+// object as the singleton `automationRepository` mocked below. We mock the factory to
+// always return the same spy-bearing object so assertions can inspect calls made through
+// either the singleton or a tx-scoped instance uniformly.
+const txRepoMock = vi.hoisted(() => ({
+  setNodeConfigInGraph: vi.fn().mockResolvedValue(1),
+  setNodeConfigInRunSnapshot: vi.fn().mockResolvedValue(1),
+  createStepRun: vi.fn().mockResolvedValue({}),
+  updateRun: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('#prisma-client', () => ({
-  Prisma: {
-    sql: (strings: TemplateStringsArray, ...values: any[]) => ({ strings, values }),
-    raw: (value: string) => ({ raw: value }),
+vi.mock('../../../repositories/index.js', () => ({
+  automationRepository: {
+    findSuccessStepRun: vi.fn(),
+    findRunByIdWithAutomation: vi.fn(),
+    createStepRun: vi.fn().mockResolvedValue({}),
+    updateRun: vi.fn().mockResolvedValue({}),
+    findStepRunByNode: vi.fn(),
   },
+  createAutomationRepository: vi.fn(() => txRepoMock),
+}));
+
+vi.mock('../../../repositories/baseRepository.js', () => ({
+  withPrisma: (client: unknown) => ({ prisma: client }),
+}));
+
+vi.mock('../../../lib/prisma.js', () => ({
+  // Callback-style $transaction: invoke the callback with a stub tx client — the repo
+  // methods called inside are routed to txRepoMock via the createAutomationRepository mock
+  // above, so this stub client itself never needs real query methods.
+  prisma: { $transaction: vi.fn((cb: (tx: unknown) => Promise<unknown>) => cb({})) },
 }));
 
 vi.mock('../../../lib/logger.js', () => ({
@@ -107,6 +118,10 @@ describe('automation engine', () => {
       prisma: {} as any,
       logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
     } as any);
+    txRepoMock.setNodeConfigInGraph.mockResolvedValue(1);
+    txRepoMock.setNodeConfigInRunSnapshot.mockResolvedValue(1);
+    txRepoMock.createStepRun.mockResolvedValue({});
+    txRepoMock.updateRun.mockResolvedValue({});
   });
 
   describe('redelivery reconciliation (existing SUCCESS step found)', () => {
@@ -120,21 +135,17 @@ describe('automation engine', () => {
       };
       const delayUntil = new Date('2026-01-01T02:00:00.000Z');
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
-        if (where.status === 'SUCCESS') {
-          // The step already succeeded and recorded its decision...
-          return { output: { delayUntil: delayUntil.toISOString(), capped: false } } as any;
-        }
-        // ...but the crash happened before the successor was ever enqueued or run.
-        return null;
-      }) as any);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+        output: { delayUntil: delayUntil.toISOString(), capped: false },
+      } as any);
+      vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ status: 'WAITING', graphSnapshot: graph }) as any
       );
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'delay-1' }));
 
-      expect(prisma.automationStepRun.create).not.toHaveBeenCalled();
+      expect(automationRepository.createStepRun).not.toHaveBeenCalled();
       expect(mockBoss.send).toHaveBeenCalledWith(
         AUTOMATION_QUEUE,
         { runId: 'run-1', nodeId: 'action-1' },
@@ -155,13 +166,11 @@ describe('automation engine', () => {
         ],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
-        if (where.status === 'SUCCESS') {
-          return { output: { result: true, branch: 'true' } } as any;
-        }
-        return null;
-      }) as any);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+        output: { result: true, branch: 'true' },
+      } as any);
+      vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ status: 'RUNNING', graphSnapshot: graph }) as any
       );
 
@@ -181,18 +190,18 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue({
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
         output: { delayUntil: new Date().toISOString(), capped: false },
       } as any);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ status: 'WAITING', graphSnapshot: graph }) as any
       );
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'delay-1' }));
 
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'COMPLETED', completedAt: expect.any(Date) },
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'COMPLETED',
+        completedAt: expect.any(Date),
       });
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
@@ -206,22 +215,19 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'action-1', target: 'end-1' }],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
-        if (where.status === 'SUCCESS') {
-          return { output: { delivered: true } } as any;
-        }
-        return null;
-      }) as any);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+        output: { delivered: true },
+      } as any);
+      vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ status: 'RUNNING', graphSnapshot: graph, context: { triggerData: {} } }) as any
       );
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }));
 
       expect(getPluginHandler).not.toHaveBeenCalled();
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { context: { triggerData: {}, stepOutputs: { 'action-1': { delivered: true } } } },
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        context: { triggerData: {}, stepOutputs: { 'action-1': { delivered: true } } },
       });
       expect(mockBoss.send).toHaveBeenCalledWith(
         AUTOMATION_QUEUE,
@@ -239,21 +245,19 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'delay-1', target: 'action-1' }],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
-        if (where.status === 'SUCCESS') {
-          return { output: { delayUntil: new Date().toISOString(), capped: false } } as any;
-        }
-        // The successor already ran (or is itself further along).
-        return { id: 'already-ran' } as any;
-      }) as any);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+        output: { delayUntil: new Date().toISOString(), capped: false },
+      } as any);
+      // The successor already ran (or is itself further along).
+      vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue({ id: 'already-ran' } as any);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ status: 'WAITING', graphSnapshot: graph }) as any
       );
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'delay-1' }));
 
       expect(mockBoss.send).not.toHaveBeenCalled();
-      expect(prisma.automationRun.update).not.toHaveBeenCalled();
+      expect(automationRepository.updateRun).not.toHaveBeenCalled();
     });
 
     it('does not merge stepOutputs again for an action node whose context already recorded the output', async () => {
@@ -262,13 +266,11 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockImplementation((({ where }: any) => {
-        if (where.status === 'SUCCESS') {
-          return { output: { delivered: true } } as any;
-        }
-        return null;
-      }) as any);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+        output: { delivered: true },
+      } as any);
+      vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({
           status: 'RUNNING',
           graphSnapshot: graph,
@@ -280,10 +282,10 @@ describe('automation engine', () => {
 
       // Only the completion update should fire — no redundant context merge, since stepOutputs
       // already has this node's output on record.
-      expect(prisma.automationRun.update).toHaveBeenCalledTimes(1);
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'COMPLETED', completedAt: expect.any(Date) },
+      expect(automationRepository.updateRun).toHaveBeenCalledTimes(1);
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'COMPLETED',
+        completedAt: expect.any(Date),
       });
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
@@ -291,32 +293,32 @@ describe('automation engine', () => {
 
   describe('run lookup guards', () => {
     it('drops the job when the run no longer exists', async () => {
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(null);
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(null);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'node-1' }));
 
-      expect(prisma.automationRun.update).not.toHaveBeenCalled();
+      expect(automationRepository.updateRun).not.toHaveBeenCalled();
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
 
     it('skips execution when the run is already in a terminal state', async () => {
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ status: 'COMPLETED', graphSnapshot: { nodes: [], edges: [] } }) as any
       );
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'node-1' }));
 
-      expect(prisma.automationRun.update).not.toHaveBeenCalled();
+      expect(automationRepository.updateRun).not.toHaveBeenCalled();
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
   });
 
   describe('unhandleable node failures', () => {
     it('records a FAILED step run and reports to Sentry when the node is missing from the graph snapshot', async () => {
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: { nodes: [], edges: [] } }) as any
       );
 
@@ -325,17 +327,19 @@ describe('automation engine', () => {
       expect(Sentry.captureException).toHaveBeenCalledWith(
         expect.objectContaining({ message: expect.stringContaining('missing-node') })
       );
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      // recordUnhandleableStepFailure runs inside prisma.$transaction, using a tx-scoped
+      // repository (txRepoMock) rather than the singleton automationRepository mock.
+      expect(txRepoMock.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
           runId: 'run-1',
           nodeId: 'missing-node',
           nodeType: 'unknown',
           status: 'FAILED',
-        }),
-      });
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'FAILED', completedAt: expect.any(Date) },
+        })
+      );
+      expect(txRepoMock.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'FAILED',
+        completedAt: expect.any(Date),
       });
     });
 
@@ -345,8 +349,8 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
 
@@ -355,17 +359,17 @@ describe('automation engine', () => {
       expect(Sentry.captureException).toHaveBeenCalledWith(
         expect.objectContaining({ message: expect.stringContaining('trigger-1') })
       );
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(txRepoMock.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
           runId: 'run-1',
           nodeId: 'trigger-1',
           nodeType: 'trigger',
           status: 'FAILED',
-        }),
-      });
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'FAILED', completedAt: expect.any(Date) },
+        })
+      );
+      expect(txRepoMock.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'FAILED',
+        completedAt: expect.any(Date),
       });
     });
   });
@@ -384,8 +388,8 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'delay-1', target: 'action-1' }],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
 
@@ -393,19 +397,19 @@ describe('automation engine', () => {
 
       const delayUntil = new Date(now.getTime() + 2 * 60 * 60 * 1000);
 
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
           runId: 'run-1',
           nodeId: 'delay-1',
           nodeType: 'delay',
           status: 'SUCCESS',
           output: { delayUntil: delayUntil.toISOString(), capped: false },
-        }),
-      });
+        })
+      );
 
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'WAITING', currentNodeId: 'action-1' },
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'WAITING',
+        currentNodeId: 'action-1',
       });
 
       expect(mockBoss.send).toHaveBeenCalledWith(
@@ -435,8 +439,8 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'delay-1', target: 'end-1' }],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
 
@@ -444,11 +448,11 @@ describe('automation engine', () => {
 
       const cappedUntil = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
           output: { delayUntil: cappedUntil.toISOString(), capped: true },
-        }),
-      });
+        })
+      );
 
       vi.useRealTimers();
     });
@@ -459,16 +463,16 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'delay-1' }));
 
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'COMPLETED', completedAt: expect.any(Date) },
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'COMPLETED',
+        completedAt: expect.any(Date),
       });
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
@@ -484,8 +488,8 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'action-1', target: 'end-1' }],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, context: { triggerData: { email: 'a@b.com' } } }) as any
       );
 
@@ -506,23 +510,22 @@ describe('automation engine', () => {
         expect.any(Object)
       );
 
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'RUNNING', currentNodeId: 'action-1' },
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'RUNNING',
+        currentNodeId: 'action-1',
       });
 
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
           nodeType: 'action:webhook',
           status: 'SUCCESS',
           output: { delivered: true },
           attempt: 1,
-        }),
-      });
+        })
+      );
 
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { context: { triggerData: { email: 'a@b.com' }, stepOutputs: { 'action-1': { delivered: true } } } },
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        context: { triggerData: { email: 'a@b.com' }, stepOutputs: { 'action-1': { delivered: true } } },
       });
 
       expect(mockBoss.send).toHaveBeenCalledWith(
@@ -538,8 +541,8 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, context: { triggerData: { name: 'Ada' } } }) as any
       );
 
@@ -563,20 +566,20 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, automation: { status: 'PAUSED', formId: 'f', organizationId: 'o', triggerType: 'form.submitted' } }) as any
       );
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }));
 
       expect(getPluginHandler).not.toHaveBeenCalled();
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ status: 'SKIPPED', errorMessage: expect.stringContaining('PAUSED') }),
-      });
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'CANCELLED', completedAt: expect.any(Date) },
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'SKIPPED', errorMessage: expect.stringContaining('PAUSED') })
+      );
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'CANCELLED',
+        completedAt: expect.any(Date),
       });
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
@@ -587,8 +590,8 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
 
@@ -600,11 +603,12 @@ describe('automation engine', () => {
       ).rejects.toThrow('boom');
 
       expect(Sentry.captureException).toHaveBeenCalled();
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ status: 'FAILED', errorMessage: 'boom', attempt: 1 }),
-      });
-      expect(prisma.automationRun.update).not.toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'FAILED' }) })
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'FAILED', errorMessage: 'boom', attempt: 1 })
+      );
+      expect(automationRepository.updateRun).not.toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ status: 'FAILED' })
       );
     });
 
@@ -614,8 +618,8 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
 
@@ -626,12 +630,12 @@ describe('automation engine', () => {
         executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, ACTION_RETRY_LIMIT, ACTION_RETRY_LIMIT))
       ).resolves.toBeUndefined();
 
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ status: 'FAILED', attempt: ACTION_RETRY_LIMIT + 1 }),
-      });
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'FAILED', completedAt: expect.any(Date) },
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'FAILED', attempt: ACTION_RETRY_LIMIT + 1 })
+      );
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'FAILED',
+        completedAt: expect.any(Date),
       });
     });
 
@@ -641,8 +645,8 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
       vi.mocked(getPluginHandler).mockReturnValue(undefined);
@@ -652,14 +656,14 @@ describe('automation engine', () => {
       ).rejects.toThrow('No handler registered for action type: unregistered-type');
     });
 
-    it('wires createPluginContext with a persistence strategy that jsonb_sets the node config into both the live Automation.graph and this run\'s graphSnapshot (#222 regression: handlers previously wrote to a nonexistent FormPlugin row for automation-triggered actions)', async () => {
+    it("wires createPluginContext with a persistence strategy that jsonb_sets the node config into both the live Automation.graph and this run's graphSnapshot (#222 regression: handlers previously wrote to a nonexistent FormPlugin row for automation-triggered actions)", async () => {
       const graph: AutomationGraph = {
         nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'google-sheets', config: { type: 'google-sheets' } } }],
         edges: [],
       };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
 
@@ -683,29 +687,12 @@ describe('automation engine', () => {
       const newConfig = { type: 'google-sheets', spreadsheetId: 'sheet-123', spreadsheetUrl: 'https://sheets.google.com/sheet-123' };
       await capturedPersist!(newConfig);
 
-      expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
-      // Both writes must go through a single $transaction, not Promise.all — otherwise one
-      // write succeeding while the other fails would leave Automation.graph and this run's
+      // Both writes must go through the same interactive `prisma.$transaction(async (tx) => ...)`
+      // callback (via a tx-scoped repository), not independently — otherwise one write
+      // succeeding while the other fails would leave Automation.graph and this run's
       // graphSnapshot permanently diverged.
-      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-      expect(vi.mocked(prisma.$transaction).mock.calls[0][0]).toHaveLength(2);
-
-      const [graphCall, snapshotCall] = vi.mocked(prisma.$executeRaw).mock.calls.map(
-        (call) => call[0] as unknown as { strings: TemplateStringsArray; values: any[] }
-      );
-
-      // Update against the live Automation row — keyed by automationId, not runId — so the
-      // NEXT run's fresh graphSnapshot picks up the same spreadsheet instead of recreating one.
-      expect(graphCall.strings.join('')).toContain('UPDATE');
-      expect(graphCall.values).toContain('action-1');
-      expect(graphCall.values).toContain('automation-1');
-      expect(graphCall.values).toContain(JSON.stringify(newConfig));
-
-      // Update against this run's graphSnapshot — keyed by runId — so a retry of THIS run
-      // doesn't recreate the spreadsheet after a transient failure post-creation.
-      expect(snapshotCall.values).toContain('action-1');
-      expect(snapshotCall.values).toContain('run-1');
-      expect(snapshotCall.values).toContain(JSON.stringify(newConfig));
+      expect(txRepoMock.setNodeConfigInGraph).toHaveBeenCalledWith('automation-1', 'action-1', newConfig);
+      expect(txRepoMock.setNodeConfigInRunSnapshot).toHaveBeenCalledWith('run-1', 'action-1', newConfig);
     });
   });
 
@@ -719,18 +706,15 @@ describe('automation engine', () => {
     };
 
     it('follows the true edge when evaluateCondition returns true', async () => {
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, context: { triggerData: {} } }) as any
       );
       vi.mocked(evaluateCondition).mockReturnValue(true);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'cond-1' }));
 
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { currentNodeId: 'true-1' },
-      });
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', { currentNodeId: 'true-1' });
       expect(mockBoss.send).toHaveBeenCalledWith(
         AUTOMATION_QUEUE,
         { runId: 'run-1', nodeId: 'true-1' },
@@ -739,17 +723,17 @@ describe('automation engine', () => {
     });
 
     it('jumps to end (completes the run) when the matching branch has no outgoing edge', async () => {
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, context: { triggerData: {} } }) as any
       );
       vi.mocked(evaluateCondition).mockReturnValue(false);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'cond-1' }));
 
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'COMPLETED', completedAt: expect.any(Date) },
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'COMPLETED',
+        completedAt: expect.any(Date),
       });
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
@@ -759,19 +743,19 @@ describe('automation engine', () => {
     it('logs a SUCCESS step and marks the run COMPLETED', async () => {
       const graph: AutomationGraph = { nodes: [{ id: 'end-1', type: 'end' }], edges: [] };
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue(null);
-      vi.mocked(prisma.automationRun.findUnique).mockResolvedValue(
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'end-1' }));
 
-      expect(prisma.automationStepRun.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ nodeType: 'end', status: 'SUCCESS' }),
-      });
-      expect(prisma.automationRun.update).toHaveBeenCalledWith({
-        where: { id: 'run-1' },
-        data: { status: 'COMPLETED', completedAt: expect.any(Date) },
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({ nodeType: 'end', status: 'SUCCESS' })
+      );
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'COMPLETED',
+        completedAt: expect.any(Date),
       });
     });
   });
@@ -834,14 +818,14 @@ describe('automation engine', () => {
       };
       await registerAutomationWorker(boss as any);
 
-      vi.mocked(prisma.automationStepRun.findFirst).mockResolvedValue({ status: 'SUCCESS' } as any);
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({ status: 'SUCCESS' } as any);
 
       await handler([
         makeJob({ runId: 'r1', nodeId: 'n1' }),
         makeJob({ runId: 'r2', nodeId: 'n2' }),
       ]);
 
-      expect(prisma.automationStepRun.findFirst).toHaveBeenCalledTimes(2);
+      expect(automationRepository.findSuccessStepRun).toHaveBeenCalledTimes(2);
     });
   });
 });
