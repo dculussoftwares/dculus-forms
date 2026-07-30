@@ -16,3 +16,4 @@ export * from './aiChatRepository.js';
 export * from './pluginRepository.js';
 export * from './invitationRepository.js';
 export * from './tagRepository.js';
+export * from './pdfTemplateRepository.js';
