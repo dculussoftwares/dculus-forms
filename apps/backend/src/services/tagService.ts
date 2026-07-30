@@ -64,7 +64,7 @@ export const batchLoadTagsForResponses = async (responseIds: string[]) => {
 };
 
 export const upsertPreviewTag = async (formId: string) => {
-  return tagRepository.upsertTag(formId, PREVIEW_TAG_NAME, '#f59e0b');
+  return tagRepository.ensureTag(formId, PREVIEW_TAG_NAME, '#f59e0b');
 };
 
 export const deletePreviewResponses = async (formId: string): Promise<number> => {
@@ -82,7 +82,7 @@ export const deletePreviewResponses = async (formId: string): Promise<number> =>
 };
 
 export const upsertAiGeneratedTag = async (formId: string) => {
-  return tagRepository.upsertTag(formId, AI_GENERATED_TAG_NAME, '#8b5cf6');
+  return tagRepository.ensureTag(formId, AI_GENERATED_TAG_NAME, '#8b5cf6');
 };
 
 /**

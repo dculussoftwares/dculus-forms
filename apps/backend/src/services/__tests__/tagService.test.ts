@@ -169,6 +169,7 @@ describe('upsertPreviewTag', () => {
     expect(prisma.responseTag.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { formId_name: { formId: 'form-1', name: PREVIEW_TAG_NAME } },
+        update: {},
         create: expect.objectContaining({ name: PREVIEW_TAG_NAME, color: '#f59e0b' }),
       })
     );
@@ -223,6 +224,7 @@ describe('upsertAiGeneratedTag', () => {
     expect(prisma.responseTag.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { formId_name: { formId: 'form-1', name: AI_GENERATED_TAG_NAME } },
+        update: {},
         create: expect.objectContaining({ name: AI_GENERATED_TAG_NAME, color: '#8b5cf6' }),
       })
     );

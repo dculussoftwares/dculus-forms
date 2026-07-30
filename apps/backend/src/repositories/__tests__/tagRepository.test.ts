@@ -95,6 +95,13 @@ describe('tagRepository', () => {
       })
     );
 
+    await repo.ensureTag('form-1', '__preview__', '#f59e0b');
+    expect(prismaMock.responseTag.upsert).toHaveBeenCalledWith({
+      where: { formId_name: { formId: 'form-1', name: '__preview__' } },
+      update: {},
+      create: { formId: 'form-1', name: '__preview__', color: '#f59e0b' },
+    });
+
     await repo.findByFormAndName('form-1', 'important');
     expect(prismaMock.responseTag.findFirst).toHaveBeenCalledWith({
       where: { formId: 'form-1', name: 'important' },

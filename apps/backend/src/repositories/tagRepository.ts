@@ -55,6 +55,14 @@ export const createTagRepository = (context?: RepositoryContext) => {
       create: { formId, name, color: color ?? '#6366f1' },
     });
 
+  /** Creates the tag with `color` if missing; a no-op if it already exists. */
+  const ensureTag = async (formId: string, name: string, color: string) =>
+    prisma.responseTag.upsert({
+      where: { formId_name: { formId, name } },
+      update: {},
+      create: { formId, name, color },
+    });
+
   const findByFormAndName = async (formId: string, name: string) =>
     prisma.responseTag.findFirst({ where: { formId, name } });
 
@@ -102,6 +110,7 @@ export const createTagRepository = (context?: RepositoryContext) => {
     // Domain helpers
     listByForm,
     upsertTag,
+    ensureTag,
     findByFormAndName,
     assignTag,
     unassignTag,
