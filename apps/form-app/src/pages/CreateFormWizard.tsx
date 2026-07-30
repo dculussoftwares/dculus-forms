@@ -24,6 +24,8 @@ import {
   Loader2,
   Palette,
   Image as ImageIcon,
+  Video as VideoIcon,
+  Play,
   Layout as LayoutIcon,
 } from 'lucide-react';
 import { GENERATE_FORM_WITH_AI, CREATE_FORM } from '../graphql/mutations';
@@ -33,10 +35,16 @@ import { useTranslation } from '../hooks/useTranslation';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { getCdnEndpoint } from '../lib/config';
 import { LayoutThumbnails } from '../components/form-builder/tabs/layout/LayoutThumbnails';
-import { searchPexelsImages, downloadPexelsImage } from '../services/pexelsService';
-import type { PexelsPhoto } from '../services/pexelsService';
-import { searchPixabayImages, downloadPixabayImage } from '../services/pixabayService';
-import type { PixabayImage } from '../services/pixabayService';
+import {
+  searchPexelsImages, downloadPexelsImage,
+  searchPexelsVideos, downloadPexelsVideo,
+} from '../services/pexelsService';
+import type { PexelsPhoto, PexelsVideo } from '../services/pexelsService';
+import {
+  searchPixabayImages, downloadPixabayImage,
+  searchPixabayVideos, downloadPixabayVideo,
+} from '../services/pixabayService';
+import type { PixabayImage, PixabayVideo } from '../services/pixabayService';
 import AIIcon from '../components/icons/AIIcon';
 import { GradientSparkles } from '../components/form-builder/GradientSparkles.js';
 
@@ -55,12 +63,25 @@ interface AIField {
   section: string;
 }
 
+type MediaType = 'photo' | 'video';
+
 interface SelectedImage {
+  kind: 'image';
   source: 'pexels' | 'pixabay';
   downloadUrl: string;
   previewUrl: string;
   credit: string;
 }
+
+interface SelectedVideo {
+  kind: 'video';
+  source: 'pexels' | 'pixabay';
+  video: PexelsVideo | PixabayVideo;
+  previewUrl: string;
+  credit: string;
+}
+
+type SelectedMedia = SelectedImage | SelectedVideo;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -232,15 +253,21 @@ const CreateFormWizard: React.FC = () => {
 
   // Appearance step
   const [selectedLayoutCode, setSelectedLayoutCode] = useState<LayoutCode>('L1');
-  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null);
+  const [mediaType, setMediaType] = useState<MediaType>('photo');
   const [imageTab, setImageTab] = useState<'pexels' | 'pixabay'>('pexels');
   const [pexelsImages, setPexelsImages] = useState<PexelsPhoto[]>([]);
   const [pixabayImages, setPixabayImages] = useState<PixabayImage[]>([]);
+  const [pexelsVideos, setPexelsVideos] = useState<PexelsVideo[]>([]);
+  const [pixabayVideos, setPixabayVideos] = useState<PixabayVideo[]>([]);
   const [pexelsLoading, setPexelsLoading] = useState(false);
   const [pixabayLoading, setPixabayLoading] = useState(false);
+  const [pexelsVideoLoading, setPexelsVideoLoading] = useState(false);
+  const [pixabayVideoLoading, setPixabayVideoLoading] = useState(false);
   const [isCreatingForm, setIsCreatingForm] = useState(false);
-  // Prevent duplicate image fetches across re-renders
+  // Prevent duplicate image/video fetches across re-renders
   const imageFetchedForTitle = useRef('');
+  const videoFetchedForTitle = useRef('');
 
   // Template step
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
@@ -290,6 +317,28 @@ const CreateFormWizard: React.FC = () => {
       .finally(() => setPixabayLoading(false));
   }, [step, aiSuggestedTitle]);
 
+  // Video search is fetched lazily — only once the user switches to the Videos
+  // tab — so we don't burn Pexels/Pixabay video quota on every wizard run.
+  useEffect(() => {
+    if (step !== 'appearance' || !aiSuggestedTitle || mediaType !== 'video') return;
+    if (videoFetchedForTitle.current === aiSuggestedTitle) return;
+    videoFetchedForTitle.current = aiSuggestedTitle;
+
+    const keyword = extractSearchKeyword(aiSuggestedTitle);
+
+    setPexelsVideoLoading(true);
+    searchPexelsVideos(keyword, 1, 9)
+      .then(res => setPexelsVideos(res.videos ?? []))
+      .catch(() => setPexelsVideos([]))
+      .finally(() => setPexelsVideoLoading(false));
+
+    setPixabayVideoLoading(true);
+    searchPixabayVideos(keyword, 1, 9)
+      .then(res => setPixabayVideos(res.hits ?? []))
+      .catch(() => setPixabayVideos([]))
+      .finally(() => setPixabayVideoLoading(false));
+  }, [step, aiSuggestedTitle, mediaType]);
+
   // ── Handlers ─────────────────────────────────────────────────────────────
 
   const handleSelectTemplate = useCallback((template: any) => {
@@ -315,7 +364,7 @@ const CreateFormWizard: React.FC = () => {
       setAiGeneratedFields(fields);
       setAiSuggestedTitle(suggestedTitle);
       if (generatedLayout) setAiGeneratedLayout(generatedLayout);
-      setSelectedImage(null);
+      setSelectedMedia(null);
       setIsGenerating(false);
       setStep('appearance');
     } catch (err: any) {
@@ -343,28 +392,37 @@ const CreateFormWizard: React.FC = () => {
 
       const formId = formData.createForm.id;
       let pendingBgKey: string | undefined;
+      let pendingBgVideoKey: string | undefined;
 
-      if (selectedImage) {
+      if (selectedMedia) {
         try {
-          const download = selectedImage.source === 'pexels'
-            ? downloadPexelsImage(selectedImage.downloadUrl, formId)
-            : downloadPixabayImage(selectedImage.downloadUrl, formId);
-          const result = await download;
-          pendingBgKey = result.key;
+          if (selectedMedia.kind === 'image') {
+            const result = selectedMedia.source === 'pexels'
+              ? await downloadPexelsImage(selectedMedia.downloadUrl, formId)
+              : await downloadPixabayImage(selectedMedia.downloadUrl, formId);
+            pendingBgKey = result.key;
+          } else {
+            const result = selectedMedia.source === 'pexels'
+              ? await downloadPexelsVideo(selectedMedia.video as PexelsVideo, formId)
+              : await downloadPixabayVideo(selectedMedia.video as PixabayVideo, formId);
+            pendingBgVideoKey = result.key;
+          }
         } catch {
-          // Image download failed — not fatal; user can add it later
+          // Media download failed — not fatal; user can add it later
         }
       }
 
       navigate(`/dashboard/form/${formId}/builder/page-builder`, {
-        state: pendingBgKey ? { pendingBackgroundKey: pendingBgKey } : undefined,
+        state: (pendingBgKey || pendingBgVideoKey)
+          ? { pendingBackgroundKey: pendingBgKey, pendingBackgroundVideoKey: pendingBgVideoKey }
+          : undefined,
       });
     } catch (err: any) {
       setIsCreatingForm(false);
       const { messageKey } = getErrorDetails(err);
       toastError(t('appearance.errors.failed'), tErr(messageKey) || t('appearance.errors.failedDesc'));
     }
-  }, [aiGeneratedFields, aiSuggestedTitle, aiGeneratedLayout, pageMode, selectedLayoutCode, selectedImage, organizationId, createForm, navigate, t, tErr]);
+  }, [aiGeneratedFields, aiSuggestedTitle, aiGeneratedLayout, pageMode, selectedLayoutCode, selectedMedia, organizationId, createForm, navigate, t, tErr]);
 
   const handleCreateFromTemplate = useCallback(async () => {
     if (!templateTitle.trim()) {
@@ -402,22 +460,38 @@ const CreateFormWizard: React.FC = () => {
     }
   }, [step, navigate]);
 
-  // ── Image selection toggle ────────────────────────────────────────────────
+  // ── Media selection toggle ───────────────────────────────────────────────
 
   const handleSelectPexels = useCallback((photo: PexelsPhoto) => {
-    setSelectedImage(prev =>
-      prev?.source === 'pexels' && prev.downloadUrl === photo.src.large2x
+    setSelectedMedia(prev =>
+      prev?.kind === 'image' && prev.source === 'pexels' && prev.downloadUrl === photo.src.large2x
         ? null
-        : { source: 'pexels', downloadUrl: photo.src.large2x, previewUrl: photo.src.medium, credit: photo.photographer }
+        : { kind: 'image', source: 'pexels', downloadUrl: photo.src.large2x, previewUrl: photo.src.medium, credit: photo.photographer }
     );
   }, []);
 
   const handleSelectPixabay = useCallback((image: PixabayImage) => {
     const downloadUrl = image.fullHDURL ?? image.largeImageURL;
-    setSelectedImage(prev =>
-      prev?.source === 'pixabay' && prev.downloadUrl === downloadUrl
+    setSelectedMedia(prev =>
+      prev?.kind === 'image' && prev.source === 'pixabay' && prev.downloadUrl === downloadUrl
         ? null
-        : { source: 'pixabay', downloadUrl, previewUrl: image.webformatURL, credit: image.user }
+        : { kind: 'image', source: 'pixabay', downloadUrl, previewUrl: image.webformatURL, credit: image.user }
+    );
+  }, []);
+
+  const handleSelectPexelsVideo = useCallback((video: PexelsVideo) => {
+    setSelectedMedia(prev =>
+      prev?.kind === 'video' && prev.source === 'pexels' && (prev.video as PexelsVideo).id === video.id
+        ? null
+        : { kind: 'video', source: 'pexels', video, previewUrl: video.image, credit: '' }
+    );
+  }, []);
+
+  const handleSelectPixabayVideo = useCallback((video: PixabayVideo) => {
+    setSelectedMedia(prev =>
+      prev?.kind === 'video' && prev.source === 'pixabay' && (prev.video as PixabayVideo).id === video.id
+        ? null
+        : { kind: 'video', source: 'pixabay', video, previewUrl: video.videos.tiny.thumbnail, credit: video.user }
     );
   }, []);
 
@@ -597,14 +671,38 @@ const CreateFormWizard: React.FC = () => {
                 />
               </div>
 
-              {/* ── Image picker ──────────────────────────────────────── */}
+              {/* ── Media picker ─────────────────────────────────────── */}
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                    {t('appearance.imageLabel')}
+                    {mediaType === 'video' ? (
+                      <VideoIcon className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    {t('appearance.mediaLabel')}
                   </h2>
                   <span className="text-xs text-muted-foreground">{t('appearance.optional')}</span>
+                </div>
+
+                {/* Media type toggle */}
+                <div className="flex gap-2 mb-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={mediaType === 'photo' ? 'default' : 'outline'}
+                    onClick={() => setMediaType('photo')}
+                  >
+                    {t('appearance.mediaType.photos')}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={mediaType === 'video' ? 'default' : 'outline'}
+                    onClick={() => setMediaType('video')}
+                  >
+                    {t('appearance.mediaType.videos')}
+                  </Button>
                 </div>
 
                 {/* Source tabs */}
@@ -626,8 +724,8 @@ const CreateFormWizard: React.FC = () => {
                   ))}
                 </div>
 
-                {/* Pexels images */}
-                {imageTab === 'pexels' && (
+                {/* Pexels photos */}
+                {imageTab === 'pexels' && mediaType === 'photo' && (
                   <div>
                     {pexelsLoading ? (
                       <div className="flex items-center justify-center h-44">
@@ -639,7 +737,7 @@ const CreateFormWizard: React.FC = () => {
                       <>
                         <div className="grid grid-cols-3 gap-2">
                           {pexelsImages.map(photo => {
-                            const isSelected = selectedImage?.source === 'pexels' && selectedImage.downloadUrl === photo.src.large2x;
+                            const isSelected = selectedMedia?.kind === 'image' && selectedMedia.source === 'pexels' && selectedMedia.downloadUrl === photo.src.large2x;
                             return (
                               <button
                                 key={photo.id}
@@ -683,8 +781,68 @@ const CreateFormWizard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Pixabay images */}
-                {imageTab === 'pixabay' && (
+                {/* Pexels videos */}
+                {imageTab === 'pexels' && mediaType === 'video' && (
+                  <div>
+                    {pexelsVideoLoading ? (
+                      <div className="flex items-center justify-center h-44">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : pexelsVideos.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-12 text-center">{t('appearance.noVideos')}</p>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-3 gap-2">
+                          {pexelsVideos.map(video => {
+                            const isSelected = selectedMedia?.kind === 'video' && selectedMedia.source === 'pexels' && (selectedMedia.video as PexelsVideo).id === video.id;
+                            return (
+                              <button
+                                key={video.id}
+                                type="button"
+                                onClick={() => handleSelectPexelsVideo(video)}
+                                className={cn(
+                                  'relative overflow-hidden rounded-lg aspect-video border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                                  isSelected
+                                    ? 'border-primary shadow-md'
+                                    : 'border-transparent hover:border-primary/50'
+                                )}
+                              >
+                                <img
+                                  src={video.image}
+                                  alt={`Pexels video ${video.id}`}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                  <Play className="h-6 w-6 text-white/90" />
+                                </div>
+                                {isSelected && (
+                                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                    <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">
+                          Videos provided by{' '}
+                          <a
+                            href="https://www.pexels.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-foreground"
+                          >
+                            Pexels
+                          </a>
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Pixabay photos */}
+                {imageTab === 'pixabay' && mediaType === 'photo' && (
                   <div>
                     {pixabayLoading ? (
                       <div className="flex items-center justify-center h-44">
@@ -695,7 +853,7 @@ const CreateFormWizard: React.FC = () => {
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
                         {pixabayImages.map(image => {
-                          const isSelected = selectedImage?.source === 'pixabay' && selectedImage.downloadUrl === (image.fullHDURL ?? image.largeImageURL);
+                          const isSelected = selectedMedia?.kind === 'image' && selectedMedia.source === 'pixabay' && selectedMedia.downloadUrl === (image.fullHDURL ?? image.largeImageURL);
                           return (
                             <button
                               key={image.id}
@@ -726,24 +884,71 @@ const CreateFormWizard: React.FC = () => {
                     )}
                   </div>
                 )}
+
+                {/* Pixabay videos */}
+                {imageTab === 'pixabay' && mediaType === 'video' && (
+                  <div>
+                    {pixabayVideoLoading ? (
+                      <div className="flex items-center justify-center h-44">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : pixabayVideos.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-12 text-center">{t('appearance.noVideos')}</p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        {pixabayVideos.map(video => {
+                          const isSelected = selectedMedia?.kind === 'video' && selectedMedia.source === 'pixabay' && (selectedMedia.video as PixabayVideo).id === video.id;
+                          return (
+                            <button
+                              key={video.id}
+                              type="button"
+                              onClick={() => handleSelectPixabayVideo(video)}
+                              className={cn(
+                                'relative overflow-hidden rounded-lg aspect-video border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                                isSelected
+                                  ? 'border-primary shadow-md'
+                                  : 'border-transparent hover:border-primary/50'
+                              )}
+                            >
+                              <img
+                                src={video.videos.tiny.thumbnail}
+                                alt={video.tags}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <Play className="h-6 w-6 text-white/90" />
+                              </div>
+                              {isSelected && (
+                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                                  <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Footer: status + create button */}
             <div className="mt-4 flex items-center justify-between pt-4 border-t border-border">
               <div className="text-sm text-muted-foreground">
-                {selectedImage ? (
+                {selectedMedia ? (
                   <span className="flex items-center gap-1.5 text-primary">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    {t('appearance.imageSelected')}
-                    {selectedImage.credit && (
+                    {selectedMedia.kind === 'video' ? t('appearance.videoSelected') : t('appearance.imageSelected')}
+                    {selectedMedia.credit && (
                       <span className="text-muted-foreground font-normal">
-                        {' '}— {selectedImage.credit}
+                        {' '}— {selectedMedia.credit}
                       </span>
                     )}
                   </span>
                 ) : (
-                  t('appearance.noImageSelected')
+                  t('appearance.noMediaSelected')
                 )}
               </div>
               <Button
@@ -821,6 +1026,8 @@ const CreateFormWizard: React.FC = () => {
                 {filteredTemplates.map((template: any) => {
                   const bgImageKey = template.formSchema?.layout?.backgroundImageKey;
                   const bgImageUrl = bgImageKey && cdnEndpoint ? `${cdnEndpoint}/${bgImageKey}` : null;
+                  const bgVideoKey = template.formSchema?.layout?.backgroundVideoKey;
+                  const bgVideoUrl = bgVideoKey && cdnEndpoint ? `${cdnEndpoint}/${bgVideoKey}` : null;
                   const isSelected = selectedTemplate?.id === template.id;
 
                   return (
@@ -838,7 +1045,17 @@ const CreateFormWizard: React.FC = () => {
                     >
                       {/* Preview image */}
                       <div className="h-28 bg-gradient-to-br from-slate-100 to-slate-50 relative overflow-hidden">
-                        {bgImageUrl ? (
+                        {bgVideoUrl ? (
+                          <video
+                            src={bgVideoUrl}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            muted
+                            loop
+                            autoPlay
+                            playsInline
+                            preload="metadata"
+                          />
+                        ) : bgImageUrl ? (
                           <div
                             className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
                             style={{ backgroundImage: `url(${bgImageUrl})` }}

@@ -52,19 +52,37 @@ const Templates: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {data?.templates?.map((template: any) => {
                   const backgroundImage = template.formSchema?.layout?.backgroundImageKey;
-                  const backgroundImageUrl = backgroundImage && cdnEndpoint 
+                  const backgroundImageUrl = backgroundImage && cdnEndpoint
                     ? `${cdnEndpoint}/${backgroundImage}`
                     : null;
+                  const backgroundVideo = template.formSchema?.layout?.backgroundVideoKey;
+                  const backgroundVideoUrl = backgroundVideo && cdnEndpoint
+                    ? `${cdnEndpoint}/${backgroundVideo}`
+                    : null;
                   return (
-                    <Card 
-                      key={template.id} 
+                    <Card
+                      key={template.id}
                       data-testid="template-card"
                       className="group relative overflow-hidden border-0 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white"
                     >
                       {/* Template Preview */}
                       <div className="relative overflow-hidden">
-                        {backgroundImageUrl ? (
-                          <div 
+                        {backgroundVideoUrl ? (
+                          <div className="h-48 relative overflow-hidden">
+                            <video
+                              src={backgroundVideoUrl}
+                              muted
+                              loop
+                              autoPlay
+                              playsInline
+                              preload="metadata"
+                              aria-hidden="true"
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                          </div>
+                        ) : backgroundImageUrl ? (
+                          <div
                             className="h-48 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
                             style={{ backgroundImage: `url(${backgroundImageUrl})` }}
                           >
