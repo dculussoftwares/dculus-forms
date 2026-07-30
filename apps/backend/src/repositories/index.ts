@@ -1,5 +1,6 @@
 export * from './baseRepository.js';
 export * from './formRepository.js';
+export * from './formFileRepository.js';
 export * from './subscriptionRepository.js';
 export * from './responseRepository.js';
 export * from './formTemplateRepository.js';
