@@ -502,7 +502,7 @@ describe('addPage', () => {
     expect(result).toMatchObject({ type: 'ADD_PAGE', title: 'Step 2', insertAfterPageId: null });
     expect(typeof result.pageId).toBe('string');
     expect(result.pageId.length).toBeGreaterThan(0);
-    expect(result.pageId).toMatch(/^page-/);
+    expect(result.pageId).toMatch(/^p[a-zA-Z0-9]{9}$/);
   });
 });
 
