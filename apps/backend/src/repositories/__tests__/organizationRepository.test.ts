@@ -6,6 +6,7 @@ describe('Organization Repository', () => {
     organization: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -81,6 +82,17 @@ describe('Organization Repository', () => {
       expect(result).toBe(3);
       expect(mockPrisma.organization.count).toHaveBeenCalledWith(undefined);
     });
+
+    it('should proxy findFirst', async () => {
+      const mockOrg = { id: 'org-123', name: 'Acme', logo: 'uploads/logo-key' };
+      mockPrisma.organization.findFirst.mockResolvedValue(mockOrg as any);
+
+      const args = { where: { logo: 'uploads/logo-key' } };
+      const result = await repository.findFirst(args as any);
+
+      expect(result).toEqual(mockOrg);
+      expect(mockPrisma.organization.findFirst).toHaveBeenCalledWith(args);
+    });
   });
 
   describe('findById', () => {
@@ -102,6 +114,31 @@ describe('Organization Repository', () => {
       const result = await repository.findById('missing-org');
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('findByIdWithMembers', () => {
+    it('should look up an organization with members and their users included', async () => {
+      const mockOrg = {
+        id: 'org-123',
+        name: 'Acme',
+        members: [{ id: 'member-1', user: { id: 'user-1' } }],
+      };
+      mockPrisma.organization.findUnique.mockResolvedValue(mockOrg as any);
+
+      const result = await repository.findByIdWithMembers('org-123');
+
+      expect(result).toEqual(mockOrg);
+      expect(mockPrisma.organization.findUnique).toHaveBeenCalledWith({
+        where: { id: 'org-123' },
+        include: {
+          members: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
     });
   });
 });

@@ -18,3 +18,6 @@ export * from './invitationRepository.js';
 export * from './tagRepository.js';
 export * from './pdfTemplateRepository.js';
 export * from './pdfGeneratorRepository.js';
+export * from './userRepository.js';
+export * from './auditLogRepository.js';
+export * from './systemRepository.js';

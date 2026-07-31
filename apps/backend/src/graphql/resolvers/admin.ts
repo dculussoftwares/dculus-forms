@@ -1,6 +1,5 @@
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { prisma } from '../../lib/prisma.js';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { s3Config } from '../../lib/env.js';
 import { logger } from '../../lib/logger.js';
@@ -18,7 +17,16 @@ import {
   type PlanPriceInput,
 } from '../../services/chargebeeService.js';
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
-import { invalidateAIBudgetCache, getAITokenUsage } from '../../services/aiUsageService.js';
+import {
+  invalidateAIBudgetCache,
+  getAITokenUsage,
+  getOrganizationUsageTotals,
+  resetOrganizationUsage,
+} from '../../services/aiUsageService.js';
+import * as organizationService from '../../services/organizationService.js';
+import * as userService from '../../services/userService.js';
+import * as auditLogService from '../../services/auditLogService.js';
+import * as subscriptionService from '../../services/subscriptionService.js';
 import { type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 
 export interface AdminOrganizationsArgs {
@@ -99,7 +107,7 @@ function validatePlanLimits(limits: AdminPlanLimitsArg): PlanLimitsInput {
 async function getAdminPlansWithSubscriberCounts() {
   const [catalog, counts] = await Promise.all([
     getAdminPlanCatalog(),
-    prisma.subscription.groupBy({ by: ['planId'], _count: { _all: true } }),
+    subscriptionService.getSubscriptionCountsByPlan(),
   ]);
   const countByPlan = new Map(counts.map((c) => [c.planId, c._count._all]));
   return catalog.map((plan) => ({
@@ -200,14 +208,11 @@ async function getS3StorageStats(): Promise<{ storageUsed: string; fileCount: nu
 
 async function getPostgresStats(): Promise<{ postgresDbSize: string; postgresTableCount: number }> {
   try {
-    const [sizeResult, tableResult] = await Promise.all([
-      prisma.$queryRaw<[{ size: string }]>`SELECT pg_size_pretty(pg_database_size(current_database())) AS size`,
-      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`,
+    const [postgresDbSize, postgresTableCount] = await Promise.all([
+      organizationService.getDatabaseSizePretty(),
+      organizationService.getPublicTableCount(),
     ]);
-    return {
-      postgresDbSize: sizeResult[0]?.size ?? '0 B',
-      postgresTableCount: Number(tableResult[0]?.count ?? 0),
-    };
+    return { postgresDbSize, postgresTableCount };
   } catch (error) {
     logger.error('Error fetching PostgreSQL stats:', error);
     return { postgresDbSize: '0 B', postgresTableCount: 0 };
@@ -236,7 +241,7 @@ export const adminResolvers = {
             }
           : {};
 
-        const organizations = await prisma.organization.findMany({
+        const organizations = await organizationService.listOrganizations({
           skip: offset,
           take: limit,
           where: whereClause,
@@ -256,7 +261,7 @@ export const adminResolvers = {
           orderBy: { createdAt: 'desc' },
         });
 
-        const total = await prisma.organization.count({ where: whereClause });
+        const total = await organizationService.countOrganizations({ where: whereClause });
 
         return {
           organizations: organizations.map(org => ({
@@ -289,7 +294,7 @@ export const adminResolvers = {
       requireAdminRole(context);
 
       try {
-        const organization = await prisma.organization.findUnique({
+        const organization = await organizationService.getOrganizationDetail({
           where: { id: args.id },
           include: {
             members: {
@@ -350,10 +355,8 @@ export const adminResolvers = {
 
       try {
         const [
-          organizationCount,
+          platformCounts,
           userCount,
-          formCount,
-          responseCount,
           s3Stats,
           pgStats,
           freePlanCount,
@@ -361,20 +364,16 @@ export const adminResolvers = {
           advancedPlanCount,
           subscriptionsWithLimits,
         ] = await Promise.all([
-          prisma.organization.count(),
-          prisma.user.count(),
-          prisma.form.count(),
-          prisma.response.count(),
+          organizationService.getPlatformCounts(),
+          userService.countUsers(),
           getS3StorageStats(),
           getPostgresStats(),
-          prisma.subscription.count({ where: { planId: 'free' } }),
-          prisma.subscription.count({ where: { planId: 'starter' } }),
-          prisma.subscription.count({ where: { planId: 'advanced' } }),
-          prisma.subscription.findMany({
-            where: { submissionsLimit: { not: null } },
-            include: { organization: { select: { id: true, name: true } } },
-          }),
+          subscriptionService.countSubscriptionsByPlan('free'),
+          subscriptionService.countSubscriptionsByPlan('starter'),
+          subscriptionService.countSubscriptionsByPlan('advanced'),
+          subscriptionService.findSubscriptionsWithLimits(),
         ]);
+        const { organizationCount, formCount, responseCount } = platformCounts;
 
         const orgsNearLimit = (subscriptionsWithLimits as any[])
           .filter(s => s.submissionsLimit && s.submissionsUsed / s.submissionsLimit >= 0.8)
@@ -426,7 +425,7 @@ export const adminResolvers = {
         }
 
         const [users, totalCount] = await Promise.all([
-          prisma.user.findMany({
+          userService.listUsers({
             where: whereClause,
             skip,
             take: limit,
@@ -447,7 +446,7 @@ export const adminResolvers = {
               createdAt: 'desc',
             },
           }),
-          prisma.user.count({ where: whereClause }),
+          userService.countUsers({ where: whereClause }),
         ]);
 
         const totalPages = Math.ceil(totalCount / limit);
@@ -484,7 +483,7 @@ export const adminResolvers = {
       requireAdminRole(context);
 
       try {
-        const user = await prisma.user.findUnique({
+        const user = await userService.getUserDetail({
           where: { id: args.id },
           include: {
             members: {
@@ -534,7 +533,7 @@ export const adminResolvers = {
         // Database
         (async () => {
           const start = Date.now();
-          await prisma.$queryRaw`SELECT 1`;
+          await organizationService.pingDatabase();
           return { label: 'Database', status: 'ok', latencyMs: Date.now() - start, detail: null };
         })(),
         // Chargebee
@@ -570,7 +569,7 @@ export const adminResolvers = {
         // `formSchema` JSON blob. Loading `forms: true` would eagerly fetch the
         // full schema for every form in the organisation — this is wasteful for
         // the admin overview which only needs basic metadata.
-        const organization = await prisma.organization.findUnique({
+        const organization = await organizationService.getOrganizationDetail({
           where: { id: args.id },
           include: {
             members: {
@@ -604,13 +603,9 @@ export const adminResolvers = {
         }
 
         // Count total responses for this organization
-        const totalResponses = await prisma.response.count({
-          where: {
-            form: {
-              organizationId: organization.id,
-            },
-          },
-        });
+        const totalResponses = await organizationService.countResponsesForOrganization(
+          organization.id
+        );
 
         let aiCreditsUsed = 0;
         if (organization.subscription) {
@@ -710,19 +705,17 @@ export const adminResolvers = {
         throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      await prisma.auditLog.create({
-        data: {
-          action: 'plan_created',
-          actorId: admin.id,
-          resourceType: 'Plan',
-          resourceId: input.id,
-          metadata: {
-            name: input.name,
-            prices: prices as any,
-            limits: limits as any,
-            visibleOnPricingPage: input.visibleOnPricingPage ?? false,
-            changedBy: admin.email,
-          },
+      await auditLogService.logAction({
+        action: 'plan_created',
+        actorId: admin.id,
+        resourceType: 'Plan',
+        resourceId: input.id,
+        metadata: {
+          name: input.name,
+          prices: prices as any,
+          limits: limits as any,
+          visibleOnPricingPage: input.visibleOnPricingPage ?? false,
+          changedBy: admin.email,
         },
       });
 
@@ -769,20 +762,18 @@ export const adminResolvers = {
         throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      await prisma.auditLog.create({
-        data: {
-          action: 'plan_updated',
-          actorId: admin.id,
-          resourceType: 'Plan',
-          resourceId: input.id,
-          metadata: {
-            name: input.name ?? null,
-            prices: (prices ?? null) as any,
-            limits: (limits ?? null) as any,
-            visibleOnPricingPage: input.visibleOnPricingPage ?? null,
-            backfilledOrganizations,
-            changedBy: admin.email,
-          },
+      await auditLogService.logAction({
+        action: 'plan_updated',
+        actorId: admin.id,
+        resourceType: 'Plan',
+        resourceId: input.id,
+        metadata: {
+          name: input.name ?? null,
+          prices: (prices ?? null) as any,
+          limits: (limits ?? null) as any,
+          visibleOnPricingPage: input.visibleOnPricingPage ?? null,
+          backfilledOrganizations,
+          changedBy: admin.email,
         },
       });
 
@@ -804,14 +795,12 @@ export const adminResolvers = {
         throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      await prisma.auditLog.create({
-        data: {
-          action: 'plan_archived',
-          actorId: admin.id,
-          resourceType: 'Plan',
-          resourceId: planId,
-          metadata: { changedBy: admin.email },
-        },
+      await auditLogService.logAction({
+        action: 'plan_archived',
+        actorId: admin.id,
+        resourceType: 'Plan',
+        resourceId: planId,
+        metadata: { changedBy: admin.email },
       });
 
       logger.info(`[Admin] Plan ${planId} archived by ${admin.email}`);
@@ -828,14 +817,12 @@ export const adminResolvers = {
         throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      await prisma.auditLog.create({
-        data: {
-          action: 'plan_unarchived',
-          actorId: admin.id,
-          resourceType: 'Plan',
-          resourceId: planId,
-          metadata: { changedBy: admin.email },
-        },
+      await auditLogService.logAction({
+        action: 'plan_unarchived',
+        actorId: admin.id,
+        resourceType: 'Plan',
+        resourceId: planId,
+        metadata: { changedBy: admin.email },
       });
 
       logger.info(`[Admin] Plan ${planId} restored by ${admin.email}`);
@@ -853,7 +840,7 @@ export const adminResolvers = {
       const admin = requireAdminRole(context);
       const { orgId, planId } = args;
 
-      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      const subscription = await subscriptionService.getSubscriptionByOrganization(orgId);
       if (!subscription) {
         throw createGraphQLError('Subscription not found for this organization', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
@@ -866,14 +853,12 @@ export const adminResolvers = {
         throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      await prisma.auditLog.create({
-        data: {
-          action: 'plan_changed',
-          actorId: admin.id,
-          resourceType: 'Organization',
-          resourceId: orgId,
-          metadata: { from: previousPlan, to: planId, changedBy: admin.email },
-        },
+      await auditLogService.logAction({
+        action: 'plan_changed',
+        actorId: admin.id,
+        resourceType: 'Organization',
+        resourceId: orgId,
+        metadata: { from: previousPlan, to: planId, changedBy: admin.email },
       });
 
       logger.info(`[Admin] Plan changed for org ${orgId}: ${previousPlan} -> ${planId} by ${admin.email}`);
@@ -929,7 +914,7 @@ export const adminResolvers = {
         }
       }
 
-      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      const subscription = await subscriptionService.getSubscriptionByOrganization(orgId);
       if (!subscription) {
         throw createGraphQLError('Subscription not found for this organization', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
@@ -945,24 +930,22 @@ export const adminResolvers = {
         aiCreditsLimit: aiCreditsLimit ?? null,
       });
 
-      await prisma.auditLog.create({
-        data: {
-          action: 'enterprise_plan_set',
-          actorId: admin.id,
-          resourceType: 'Organization',
-          resourceId: orgId,
-          metadata: {
-            from: previousPlan,
-            to: 'enterprise',
-            currency,
-            period,
-            priceInSmallestUnit,
-            viewsLimit: viewsLimit ?? null,
-            submissionsLimit: submissionsLimit ?? null,
-            aiCreditsLimit: aiCreditsLimit ?? null,
-            requiresPayment: priceInSmallestUnit > 0,
-            changedBy: admin.email,
-          },
+      await auditLogService.logAction({
+        action: 'enterprise_plan_set',
+        actorId: admin.id,
+        resourceType: 'Organization',
+        resourceId: orgId,
+        metadata: {
+          from: previousPlan,
+          to: 'enterprise',
+          currency,
+          period,
+          priceInSmallestUnit,
+          viewsLimit: viewsLimit ?? null,
+          submissionsLimit: submissionsLimit ?? null,
+          aiCreditsLimit: aiCreditsLimit ?? null,
+          requiresPayment: priceInSmallestUnit > 0,
+          changedBy: admin.email,
         },
       });
 
@@ -974,38 +957,30 @@ export const adminResolvers = {
       const admin = requireAdminRole(context);
       const { orgId } = args;
 
-      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      const subscription = await subscriptionService.getSubscriptionByOrganization(orgId);
       if (!subscription) {
         throw createGraphQLError('Subscription not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
 
-      const previousTokensUsed = await prisma.aIUsage.aggregate({
-        where: { organizationId: orgId },
-        _sum: { tokensUsed: true },
-      });
+      const previousUsage = await getOrganizationUsageTotals(orgId);
 
       await Promise.all([
         resetUsageCounters(orgId, subscription.currentPeriodStart, subscription.currentPeriodEnd),
-        prisma.aIUsage.updateMany({
-          where: { organizationId: orgId },
-          data: { tokensUsed: 0, creditsUsedMilli: 0 },
-        }),
+        resetOrganizationUsage(orgId),
       ]);
 
       invalidateAIBudgetCache(orgId);
 
-      await prisma.auditLog.create({
-        data: {
-          action: 'usage_reset',
-          actorId: admin.id,
-          resourceType: 'Organization',
-          resourceId: orgId,
-          metadata: {
-            resetBy: admin.email,
-            previousSubmissionsUsed: subscription.submissionsUsed,
-            previousViewsUsed: subscription.viewsUsed,
-            previousTokensUsed: previousTokensUsed._sum.tokensUsed ?? 0,
-          },
+      await auditLogService.logAction({
+        action: 'usage_reset',
+        actorId: admin.id,
+        resourceType: 'Organization',
+        resourceId: orgId,
+        metadata: {
+          resetBy: admin.email,
+          previousSubmissionsUsed: subscription.submissionsUsed,
+          previousViewsUsed: subscription.viewsUsed,
+          previousTokensUsed: previousUsage.totalTokensUsed,
         },
       });
 
@@ -1017,7 +992,7 @@ export const adminResolvers = {
       requireAdminRole(context);
       const { orgId } = args;
 
-      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      const subscription = await subscriptionService.getSubscriptionByOrganization(orgId);
       if (!subscription) {
         throw createGraphQLError('Subscription not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
@@ -1026,10 +1001,7 @@ export const adminResolvers = {
       }
 
       await cancelChargebeeSubscription(subscription.chargebeeSubscriptionId, true);
-      await prisma.subscription.update({
-        where: { organizationId: orgId },
-        data: { status: 'cancelled' },
-      });
+      await subscriptionService.updateSubscriptionStatus(orgId, 'cancelled');
 
       return true;
     },
@@ -1038,7 +1010,7 @@ export const adminResolvers = {
       requireAdminRole(context);
       const { orgId } = args;
 
-      const subscription = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+      const subscription = await subscriptionService.getSubscriptionByOrganization(orgId);
       if (!subscription) {
         throw createGraphQLError('Subscription not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
       }
@@ -1047,10 +1019,7 @@ export const adminResolvers = {
       }
 
       await reactivateChargebeeSubscription(subscription.chargebeeSubscriptionId);
-      await prisma.subscription.update({
-        where: { organizationId: orgId },
-        data: { status: 'active' },
-      });
+      await subscriptionService.updateSubscriptionStatus(orgId, 'active');
 
       return true;
     },
