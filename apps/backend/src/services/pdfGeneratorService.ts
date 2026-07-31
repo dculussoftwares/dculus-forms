@@ -1,8 +1,12 @@
 import { generateId } from '@dculus/utils';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
+import {
+  pdfGeneratorRepository,
+  pdfTemplateRepository,
+  responseRepository,
+} from '../repositories/index.js';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import { getAllResponsesByFormId } from './responseService.js';
 import { deleteGeneratedPdfsForGenerator } from './pdfGeneratorStorage.js';
@@ -36,34 +40,32 @@ const normalizeOptionalString = (value: string | null | undefined): string | nul
   value === '' ? null : value;
 
 export const createPdfGenerator = async (input: PdfGeneratorInput) => {
-  const template = await prisma.pdfTemplate.findUnique({ where: { id: input.templateId } });
+  const template = await pdfTemplateRepository.findById(input.templateId);
   if (!template || template.formId !== input.formId) {
     throw createGraphQLError('PDF template not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }
 
-  return prisma.pdfGenerator.create({
-    data: {
-      id: generateId(),
-      formId: input.formId,
-      templateId: input.templateId,
-      name: input.name,
-      columnName: normalizeOptionalString(input.columnName) ?? null,
-      filenameFieldId: normalizeOptionalString(input.filenameFieldId) ?? null,
-      filters: input.filters as any,
-      filterLogic: input.filterLogic ?? 'AND',
-      autoRunOnSubmit: input.autoRunOnSubmit ?? false,
-    },
+  return pdfGeneratorRepository.createGenerator({
+    id: generateId(),
+    formId: input.formId,
+    templateId: input.templateId,
+    name: input.name,
+    columnName: normalizeOptionalString(input.columnName) ?? null,
+    filenameFieldId: normalizeOptionalString(input.filenameFieldId) ?? null,
+    filters: input.filters as any,
+    filterLogic: input.filterLogic ?? 'AND',
+    autoRunOnSubmit: input.autoRunOnSubmit ?? false,
   });
 };
 
 export const updatePdfGenerator = async (id: string, input: PdfGeneratorUpdateInput) => {
-  const generator = await prisma.pdfGenerator.findUnique({ where: { id } });
+  const generator = await pdfGeneratorRepository.findById(id);
   if (!generator) {
     throw createGraphQLError('PDF generator not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }
 
   if (input.templateId) {
-    const template = await prisma.pdfTemplate.findUnique({ where: { id: input.templateId } });
+    const template = await pdfTemplateRepository.findById(input.templateId);
     if (!template || template.formId !== generator.formId) {
       throw createGraphQLError('PDF template not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
     }
@@ -83,30 +85,27 @@ export const updatePdfGenerator = async (id: string, input: PdfGeneratorUpdateIn
     );
   }
 
-  return prisma.pdfGenerator.update({
-    where: { id },
-    data: {
-      ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
-      ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.columnName !== undefined ? { columnName: normalizeOptionalString(input.columnName) } : {}),
-      ...(input.filenameFieldId !== undefined
-        ? { filenameFieldId: normalizeOptionalString(input.filenameFieldId) }
-        : {}),
-      ...(input.filters !== undefined ? { filters: input.filters as any } : {}),
-      ...(input.filterLogic !== undefined ? { filterLogic: input.filterLogic } : {}),
-      ...(input.autoRunOnSubmit !== undefined ? { autoRunOnSubmit: input.autoRunOnSubmit } : {}),
-      ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
-    },
+  return pdfGeneratorRepository.updateGenerator(id, {
+    ...(input.templateId !== undefined ? { templateId: input.templateId } : {}),
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.columnName !== undefined ? { columnName: normalizeOptionalString(input.columnName) } : {}),
+    ...(input.filenameFieldId !== undefined
+      ? { filenameFieldId: normalizeOptionalString(input.filenameFieldId) }
+      : {}),
+    ...(input.filters !== undefined ? { filters: input.filters as any } : {}),
+    ...(input.filterLogic !== undefined ? { filterLogic: input.filterLogic } : {}),
+    ...(input.autoRunOnSubmit !== undefined ? { autoRunOnSubmit: input.autoRunOnSubmit } : {}),
+    ...(input.enabled !== undefined ? { enabled: input.enabled } : {}),
   });
 };
 
 export const deletePdfGenerator = async (id: string): Promise<boolean> => {
-  const generator = await prisma.pdfGenerator.findUnique({ where: { id } });
+  const generator = await pdfGeneratorRepository.findById(id);
   if (!generator) {
     throw createGraphQLError('PDF generator not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }
 
-  await prisma.pdfGenerator.delete({ where: { id } });
+  await pdfGeneratorRepository.deleteGenerator(id);
 
   try {
     await deleteGeneratedPdfsForGenerator(generator.formId, generator.id);
@@ -118,19 +117,19 @@ export const deletePdfGenerator = async (id: string): Promise<boolean> => {
 };
 
 export const listPdfGenerators = async (formId: string) => {
-  return prisma.pdfGenerator.findMany({ where: { formId }, orderBy: { createdAt: 'desc' } });
+  return pdfGeneratorRepository.listByForm(formId);
 };
 
 export const getPdfGenerator = async (id: string) => {
-  return prisma.pdfGenerator.findUnique({ where: { id } });
+  return pdfGeneratorRepository.findById(id);
 };
 
 export const countPdfGenerators = async (formId: string): Promise<number> => {
-  return prisma.pdfGenerator.count({ where: { formId } });
+  return pdfGeneratorRepository.countByForm(formId);
 };
 
 export const getPdfTemplateById = async (templateId: string) => {
-  return prisma.pdfTemplate.findUnique({ where: { id: templateId } });
+  return pdfTemplateRepository.findById(templateId);
 };
 
 // Single-result lookup, the results list, and the ZIP-availability count all
@@ -139,9 +138,7 @@ export const getPdfTemplateById = async (templateId: string) => {
 // generated must disappear from every one of these, not just the list view.
 
 export const getPdfGenerationResult = async (generatorId: string, responseId: string) => {
-  const result = await prisma.pdfGenerationResult.findUnique({
-    where: { generatorId_responseId: { generatorId, responseId } },
-  });
+  const result = await pdfGeneratorRepository.findResult(generatorId, responseId);
   if (!result) return null;
   const [live] = await filterResultsToLiveResponses([result]);
   return live ?? null;
@@ -152,18 +149,12 @@ export const getPdfGenerationResult = async (generatorId: string, responseId: st
  * the source for the "View results" modal.
  */
 export const listPdfGenerationResults = async (generatorId: string) => {
-  const results = await prisma.pdfGenerationResult.findMany({
-    where: { generatorId },
-    orderBy: { generatedAt: 'desc' },
-  });
+  const results = await pdfGeneratorRepository.listResultsByGenerator(generatorId);
   return filterResultsToLiveResponses(results);
 };
 
 export const countSuccessfulResults = async (generatorId: string): Promise<number> => {
-  const results = await prisma.pdfGenerationResult.findMany({
-    where: { generatorId, status: 'success' },
-    select: { responseId: true },
-  });
+  const results = await pdfGeneratorRepository.listSuccessfulResultResponseIdsByGenerator(generatorId);
   const live = await filterResultsToLiveResponses(results);
   return live.length;
 };
@@ -209,7 +200,7 @@ export const filterResultsToLiveResponses = async <T extends { responseId: strin
   results: T[]
 ): Promise<T[]> => {
   if (results.length === 0) return results;
-  const liveResponses = await prisma.response.findMany({
+  const liveResponses = await responseRepository.findMany({
     where: { id: { in: results.map((r) => r.responseId) }, deletedAt: null },
     select: { id: true },
   });
