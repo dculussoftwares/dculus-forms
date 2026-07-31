@@ -82,6 +82,33 @@ export const createFormRepository = (context?: RepositoryContext) => {
     });
 
   /**
+   * Form + the relations `checkFormAccess` needs to resolve a user's effective
+   * permission: creator, every permission grant (with grantee/granter), and
+   * the caller's own membership row in the form's organization.
+   */
+  const findByIdWithAccessContext = async (id: string, userId: string) =>
+    prisma.form.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        createdBy: true,
+        permissions: {
+          include: {
+            user: true,
+            grantedBy: true,
+          },
+        },
+        organization: {
+          include: {
+            members: {
+              where: { userId },
+              include: { user: true },
+            },
+          },
+        },
+      },
+    });
+
+  /**
    * Forms within an organization that a user can actually see: forms they
    * created, forms with an explicit non-NO_ACCESS permission grant, or forms
    * shared org-wide (ALL_ORG_MEMBERS) with a non-NO_ACCESS default permission.
@@ -176,6 +203,7 @@ export const createFormRepository = (context?: RepositoryContext) => {
     listByOrganization,
     findById,
     findByShortUrl,
+    findByIdWithAccessContext,
     listAccessibleByOrganization,
     createForm,
     updateForm,
