@@ -5,24 +5,27 @@ import {
   getResponsesByFormId,
   getAllResponsesByFormId,
   submitResponse,
+  submitResponseWithMaxLimitCheck,
   updateResponse,
   deleteResponse,
 } from '../responseService.js';
-import { responseRepository } from '../../repositories/index.js';
+import { responseRepository, createResponseRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
 
 import { applyResponseFilters } from '../responseFilterService.js';
 import { ResponseEditTrackingService } from '../responseEditTrackingService.js';
-import { prisma } from '../../lib/prisma.js';
 import { emitResponseEdited } from '../../plugins/core/events.js';
 
 // Mock dependencies
 vi.mock('../../repositories/index.js');
 vi.mock('../responseFilterService.js');
-// Minimal mock Prisma transaction client used by updateResponse (P2-02)
+// Minimal mock Prisma transaction client used by updateResponse (P2-02) and
+// submitResponseWithMaxLimitCheck's Serializable max-responses transaction
 const mockTxClient = {
   response: {
     update: vi.fn(),
+    count: vi.fn(),
+    create: vi.fn(),
   },
 };
 
@@ -68,6 +71,13 @@ describe('Response Service', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Transaction-scoped repository used inside updateResponse's prisma.$transaction (P2-02)
+    // and submitResponseWithMaxLimitCheck's Serializable transaction
+    vi.mocked(createResponseRepository).mockReturnValue({
+      update: mockTxClient.response.update,
+      count: mockTxClient.response.count,
+      create: mockTxClient.response.create,
+    } as any);
   });
 
   afterEach(() => {
@@ -209,12 +219,10 @@ describe('Response Service', () => {
 
     it('should apply filters when provided', async () => {
       const mockResponses = [mockResponse];
-      
-      // Mock Prisma calls for database-level filtering
-      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce([{ count: BigInt(1) }] as any);
-      vi.mocked(prisma.$queryRawUnsafe).mockResolvedValueOnce(mockResponses as any);
-      vi.mocked(prisma.response.count).mockResolvedValue(1);
-      vi.mocked(prisma.response.findMany).mockResolvedValue(mockResponses as any);
+
+      // Mock repository calls for database-level filtering
+      vi.mocked(responseRepository.countFilteredRaw).mockResolvedValueOnce(1);
+      vi.mocked(responseRepository.findFilteredRaw).mockResolvedValueOnce(mockResponses as any);
       // Mock memory filtering fallback in case database filtering fails
       vi.mocked(applyResponseFilters).mockReturnValue(mockResponses as any);
 
@@ -327,6 +335,59 @@ describe('Response Service', () => {
       const result = await submitResponse(invalidResponse);
 
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('submitResponseWithMaxLimitCheck', () => {
+    const responseData = {
+      id: 'response-123',
+      formId: 'form-123',
+      data: { field1: 'value1' },
+      respondentUserId: null,
+      respondentEmail: null,
+    };
+
+    it('rejects when the current count has already reached the limit', async () => {
+      mockTxClient.response.count.mockResolvedValue(10);
+
+      await expect(
+        submitResponseWithMaxLimitCheck(responseData, 10)
+      ).rejects.toThrow('Form has reached its maximum response limit');
+
+      expect(mockTxClient.response.create).not.toHaveBeenCalled();
+    });
+
+    it('inserts and returns the mapped FormResponse when under the limit', async () => {
+      mockTxClient.response.count.mockResolvedValue(5);
+      mockTxClient.response.create.mockResolvedValue({
+        ...mockResponse,
+        id: 'response-123',
+        formId: 'form-123',
+        data: { field1: 'value1' },
+        metadata: null,
+        respondentEmail: undefined,
+        submittedAt: new Date('2024-01-01'),
+      });
+
+      const result = await submitResponseWithMaxLimitCheck(responseData, 10);
+
+      expect(mockTxClient.response.count).toHaveBeenCalledWith({
+        where: { formId: 'form-123' },
+      });
+      expect(mockTxClient.response.create).toHaveBeenCalledWith({
+        data: {
+          id: 'response-123',
+          formId: 'form-123',
+          data: { field1: 'value1' },
+          respondentUserId: null,
+          respondentEmail: null,
+        },
+      });
+      expect(result).toMatchObject({
+        id: 'response-123',
+        formId: 'form-123',
+        data: { field1: 'value1' },
+      });
     });
   });
 

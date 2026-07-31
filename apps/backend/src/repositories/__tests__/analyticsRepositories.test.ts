@@ -6,6 +6,7 @@ const mockPrisma = {
   formViewAnalytics: {
     create: vi.fn(),
     updateMany: vi.fn(),
+    deleteMany: vi.fn(),
     count: vi.fn(),
     groupBy: vi.fn(),
     findMany: vi.fn(),
@@ -13,6 +14,7 @@ const mockPrisma = {
   formSubmissionAnalytics: {
     create: vi.fn(),
     count: vi.fn(),
+    deleteMany: vi.fn(),
     groupBy: vi.fn(),
     findMany: vi.fn(),
   },
@@ -178,6 +180,31 @@ describe('Form View Analytics Repository', () => {
       expect(result).toEqual([]);
     });
   });
+
+  describe('deleteMany', () => {
+    it('should delete many view analytics records', async () => {
+      mockPrisma.formViewAnalytics.deleteMany.mockResolvedValue({ count: 4 } as any);
+
+      const result = await repository.deleteMany({ where: { viewedAt: { lt: new Date() } } });
+
+      expect(result).toEqual({ count: 4 });
+    });
+  });
+
+  describe('getOrgDailyViewCounts', () => {
+    it('returns raw org daily view rows', async () => {
+      const rows = [{ date: new Date('2026-05-15'), views: BigInt(9) }];
+      (mockPrisma.$queryRaw as any).mockResolvedValue(rows);
+
+      const result = await repository.getOrgDailyViewCounts(
+        'org-1',
+        new Date('2026-05-01'),
+        new Date('2026-05-31')
+      );
+
+      expect(result).toEqual(rows);
+    });
+  });
 });
 
 describe('Form Submission Analytics Repository', () => {
@@ -306,6 +333,68 @@ describe('Form Submission Analytics Repository', () => {
       const timeRange = { start: new Date('2026-01-01'), end: new Date('2026-06-01') };
       const result = await repository.getDailySubmissionStats('form-1', timeRange);
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('deleteMany', () => {
+    it('should delete many submission analytics records', async () => {
+      mockPrisma.formSubmissionAnalytics.deleteMany.mockResolvedValue({ count: 6 } as any);
+
+      const result = await repository.deleteMany({ where: { submittedAt: { lt: new Date() } } });
+
+      expect(result).toEqual({ count: 6 });
+    });
+  });
+
+  describe('getOrgDailySubmissionCounts', () => {
+    it('returns raw org daily submission rows', async () => {
+      const rows = [{ date: new Date('2026-05-01'), submissions: BigInt(3) }];
+      (mockPrisma.$queryRaw as any).mockResolvedValue(rows);
+
+      const result = await repository.getOrgDailySubmissionCounts(
+        'org-1',
+        new Date('2026-05-01'),
+        new Date('2026-05-31')
+      );
+
+      expect(result).toEqual(rows);
+    });
+  });
+
+  describe('getCompletionTimePercentiles', () => {
+    it('returns the percentile row when present', async () => {
+      const row = { p50: 10, p75: 20, p90: 30, p95: 40, avg: 15, total: BigInt(100) };
+      (mockPrisma.$queryRaw as any).mockResolvedValue([row]);
+
+      const result = await repository.getCompletionTimePercentiles('form-1');
+
+      expect(result).toEqual(row);
+    });
+
+    it('returns null when no rows are returned', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([]);
+
+      const result = await repository.getCompletionTimePercentiles('form-1');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getAverageCompletionTime', () => {
+    it('returns the SQL-computed average when present', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ avg: 123.45 }]);
+
+      const result = await repository.getAverageCompletionTime('form-1');
+
+      expect(result).toBe(123.45);
+    });
+
+    it('returns null when there is no data', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValue([{ avg: null }]);
+
+      const result = await repository.getAverageCompletionTime('form-1');
+
+      expect(result).toBeNull();
     });
   });
 });
