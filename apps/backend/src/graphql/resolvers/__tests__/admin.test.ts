@@ -99,16 +99,24 @@ vi.mock('../../../subscriptions/usageService.js', () => ({
   resetUsageCounters: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../../services/aiUsageService.js', () => ({
-  invalidateAIBudgetCache: vi.fn(),
-  getAITokenUsage: vi.fn().mockResolvedValue({
-    used: 0,
-    limit: 1000,
-    resetAt: '2026-05-31T23:59:59.999Z',
-    creditsUsed: 0,
-    creditsLimit: 100,
-  }),
-}));
+vi.mock('../../../services/aiUsageService.js', async (importOriginal) => {
+  // getOrganizationUsageTotals/resetOrganizationUsage are kept as the real
+  // implementations (they route through aiUsageRepository -> the mocked
+  // prisma.aIUsage.* calls above) so existing assertions on those raw prisma
+  // calls still hold after routing admin.ts's usage-reset flow through them.
+  const actual = await importOriginal<typeof import('../../../services/aiUsageService.js')>();
+  return {
+    ...actual,
+    invalidateAIBudgetCache: vi.fn(),
+    getAITokenUsage: vi.fn().mockResolvedValue({
+      used: 0,
+      limit: 1000,
+      resetAt: '2026-05-31T23:59:59.999Z',
+      creditsUsed: 0,
+      creditsLimit: 100,
+    }),
+  };
+});
 
 describe('Admin Resolvers', () => {
   const makeAuthContext = (user: Record<string, unknown> | null) => ({

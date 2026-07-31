@@ -19,6 +19,10 @@ export const createOrganizationRepository = (context?: RepositoryContext) => {
     args: Prisma.SelectSubset<T, Prisma.OrganizationFindUniqueArgs>
   ) => prisma.organization.findUnique(args);
 
+  const findFirst = <T extends Prisma.OrganizationFindFirstArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.OrganizationFindFirstArgs>
+  ) => prisma.organization.findFirst(args);
+
   const create = <T extends Prisma.OrganizationCreateArgs>(
     args: Prisma.SelectSubset<T, Prisma.OrganizationCreateArgs>
   ) => prisma.organization.create(args);
@@ -44,10 +48,28 @@ export const createOrganizationRepository = (context?: RepositoryContext) => {
   const findById = async (id: string) =>
     prisma.organization.findUnique({ where: { id } });
 
+  /**
+   * Fetch an organization with its members (and each member's user) eagerly
+   * loaded — the shape `better-auth.ts` needs for `activeOrganization`,
+   * `createOrganization`, and `setActiveOrganization`.
+   */
+  const findByIdWithMembers = async (id: string) =>
+    prisma.organization.findUnique({
+      where: { id },
+      include: {
+        members: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
   return {
     // Generic operations (used when custom queries are needed)
     findMany,
     findUnique,
+    findFirst,
     create,
     update,
     delete: remove,
@@ -55,6 +77,7 @@ export const createOrganizationRepository = (context?: RepositoryContext) => {
 
     // Domain helpers (preferred for service layer)
     findById,
+    findByIdWithMembers,
   };
 };
 

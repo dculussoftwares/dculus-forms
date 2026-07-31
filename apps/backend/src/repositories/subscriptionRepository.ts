@@ -8,6 +8,14 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
     args: Prisma.SelectSubset<T, Prisma.SubscriptionFindUniqueArgs>
   ) => prisma.subscription.findUnique(args);
 
+  const findMany = <T extends Prisma.SubscriptionFindManyArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.SubscriptionFindManyArgs>
+  ) => prisma.subscription.findMany(args);
+
+  const count = <T extends Prisma.SubscriptionCountArgs>(
+    args?: Prisma.SelectSubset<T, Prisma.SubscriptionCountArgs>
+  ) => prisma.subscription.count(args);
+
   const upsert = <T extends Prisma.SubscriptionUpsertArgs>(
     args: Prisma.SelectSubset<T, Prisma.SubscriptionUpsertArgs>
   ) => prisma.subscription.upsert(args);
@@ -62,8 +70,28 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
       },
     });
 
+  /**
+   * Subscriber count per plan — feeds the admin plan catalog's
+   * `subscriberCount` column.
+   */
+  const groupByPlan = () =>
+    prisma.subscription.groupBy({ by: ['planId'], _count: { _all: true } });
+
+  /**
+   * Subscriptions with an explicit (non-unlimited) submissions cap, with the
+   * owning organization's id/name eagerly loaded — used by the admin
+   * dashboard's "orgs near their usage limit" widget.
+   */
+  const findManyWithLimits = () =>
+    prisma.subscription.findMany({
+      where: { submissionsLimit: { not: null } },
+      include: { organization: { select: { id: true, name: true } } },
+    });
+
   return {
     findUnique,
+    findMany,
+    count,
     upsert,
     create,
     update,
@@ -71,6 +99,8 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
     createSubscription,
     upsertForOrganization,
     findByOrganizationPublic,
+    groupByPlan,
+    findManyWithLimits,
   };
 };
 

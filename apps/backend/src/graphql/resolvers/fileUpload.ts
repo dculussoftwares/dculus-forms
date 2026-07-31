@@ -6,7 +6,9 @@ import {
   deleteFile,
   generatePresignedDownloadUrl,
 } from '../../services/fileUploadService.js';
-import { prisma } from '../../lib/prisma.js';
+import { createFormFile, findFormFileByKeyWithForm } from '../../services/formFileService.js';
+import { findUserByImageKey } from '../../services/userService.js';
+import { findOrganizationByLogoKey } from '../../services/organizationService.js';
 import { randomUUID } from 'crypto';
 import {
   BetterAuthContext,
@@ -181,17 +183,15 @@ export const fileUploadResolvers = {
 
         // If formId is provided and type is FormBackground, save to FormFile table
         if (formId && type === 'FormBackground') {
-          await prisma.formFile.create({
-            data: {
-              id: randomUUID(),
-              key: result.key,
-              type: result.type,
-              formId: formId,
-              originalName: result.originalName,
-              url: result.url,
-              size: result.size,
-              mimeType: result.mimeType,
-            },
+          await createFormFile({
+            id: randomUUID(),
+            key: result.key,
+            type: result.type,
+            formId: formId,
+            originalName: result.originalName,
+            url: result.url,
+            size: result.size,
+            mimeType: result.mimeType,
           });
         }
 
@@ -219,10 +219,7 @@ export const fileUploadResolvers = {
 
         // 🔒 SECURITY: Verify file ownership before deletion
         // Check if this file belongs to a form the user has access to
-        const formFile = await prisma.formFile.findUnique({
-          where: { key: args.key },
-          include: { form: true },
-        });
+        const formFile = await findFormFileByKeyWithForm(args.key);
 
         const userId = context.auth.user!.id;
 
@@ -238,13 +235,13 @@ export const fileUploadResolvers = {
         } else {
           // 🔒 SECURITY: Verify ownership for non-FormFile uploads.
           // User.image and Organization.logo store the S3 key directly — use them for lookup.
-          const ownerUser = await prisma.user.findFirst({ where: { image: args.key }, select: { id: true } });
+          const ownerUser = await findUserByImageKey(args.key);
           if (ownerUser) {
             if (ownerUser.id !== userId) {
               throw createGraphQLError('Access denied: You can only delete your own avatar', GRAPHQL_ERROR_CODES.NO_ACCESS);
             }
           } else {
-            const ownerOrg = await prisma.organization.findFirst({
+            const ownerOrg = await findOrganizationByLogoKey({
               where: { logo: args.key },
               include: { members: { where: { userId }, select: { role: true } } },
             });

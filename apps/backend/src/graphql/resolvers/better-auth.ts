@@ -6,7 +6,6 @@ import {
   requireOrganizationMembership,
 } from '../../middleware/better-auth-middleware.js';
 import { auth } from '../../lib/better-auth.js';
-import { prisma } from '../../lib/prisma.js';
 import { nanoid } from 'nanoid';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
@@ -15,11 +14,12 @@ import {
   createChargebeeCustomer,
   createFreeSubscription,
 } from '../../services/chargebeeService.js';
+import * as organizationService from '../../services/organizationService.js';
 
 export const betterAuthResolvers = {
   User: {
     organizations: async (user: { id: string }) => {
-      const memberships = await prisma.member.findMany({
+      const memberships = await organizationService.listUserMemberships({
         where: { userId: user.id },
         include: { organization: true },
       });
@@ -53,16 +53,9 @@ export const betterAuthResolvers = {
         );
 
         // User is verified member - return full organization with members
-        const organization = await prisma.organization.findUnique({
-          where: { id: context.auth.session.activeOrganizationId },
-          include: {
-            members: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        });
+        const organization = await organizationService.getOrganizationWithMembers(
+          context.auth.session.activeOrganizationId
+        );
 
         // If organization not found, return null
         if (!organization) {
@@ -91,7 +84,7 @@ export const betterAuthResolvers = {
       requireAuth(context.auth);
 
       // Check if user already belongs to an organization (single organization rule)
-      const existingMembership = await prisma.member.findFirst({
+      const existingMembership = await organizationService.findExistingMembership({
         where: { userId: context.auth.user!.id },
       });
 
@@ -103,7 +96,7 @@ export const betterAuthResolvers = {
       const memberId = nanoid();
 
       // Create organization first
-      const organization = await prisma.organization.create({
+      const organization = await organizationService.createOrganizationRecord({
         data: {
           id: organizationId,
           name,
@@ -116,7 +109,7 @@ export const betterAuthResolvers = {
       });
 
       // Create membership separately
-      await prisma.member.create({
+      await organizationService.createMembership({
         data: {
           id: memberId,
           organizationId: organization.id,
@@ -151,16 +144,7 @@ export const betterAuthResolvers = {
         // This prevents organization creation from failing due to Chargebee issues
       }
 
-      return await prisma.organization.findUnique({
-        where: { id: organization.id },
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      });
+      return await organizationService.getOrganizationWithMembers(organization.id);
     },
 
     setActiveOrganization: async (
@@ -175,16 +159,7 @@ export const betterAuthResolvers = {
       // Update user's session to set the active organization
       // For now, we'll just return the organization as the session update
       // would typically be handled by better-auth's session management
-      const organization = await prisma.organization.findUnique({
-        where: { id: organizationId },
-        include: {
-          members: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      });
+      const organization = await organizationService.getOrganizationWithMembers(organizationId);
 
       if (!organization) {
         throw createGraphQLError('Organization not found', GRAPHQL_ERROR_CODES.ORGANIZATION_NOT_FOUND);
