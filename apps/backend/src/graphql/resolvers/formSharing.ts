@@ -1,12 +1,18 @@
 import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 import * as formSharingService from '../../services/formSharingService.js';
+import { checkFormAccess } from '../../services/formSharingService.js';
+import type { Permission, Scope } from '../../services/formSharingService.js';
 
 // Re-exported for backward compatibility — other resolvers/services import these
 // directly from this file (e.g. formService.ts's checkFormAccess-based permission
 // checks). The implementations now live in formSharingService.ts.
-export const { PermissionLevel, SharingScope, PERMISSION_HIERARCHY, checkFormAccess } = formSharingService;
-export type Permission = formSharingService.Permission;
-export type Scope = formSharingService.Scope;
+export {
+  PermissionLevel,
+  SharingScope,
+  PERMISSION_HIERARCHY,
+  checkFormAccess,
+} from '../../services/formSharingService.js';
+export type { Permission, Scope } from '../../services/formSharingService.js';
 
 export const formSharingResolvers = {
   Query: {

@@ -83,8 +83,8 @@ export const createFormRepository = (context?: RepositoryContext) => {
 
   /**
    * Form + the relations `checkFormAccess` needs to resolve a user's effective
-   * permission: creator, every permission grant (with grantee/granter), and
-   * the caller's own membership row in the form's organization.
+   * permission: creator, the caller's own explicit permission grant (if any),
+   * and the caller's own membership row in the form's organization.
    */
   const findByIdWithAccessContext = async (id: string, userId: string) =>
     prisma.form.findFirst({
@@ -92,6 +92,7 @@ export const createFormRepository = (context?: RepositoryContext) => {
       include: {
         createdBy: true,
         permissions: {
+          where: { userId },
           include: {
             user: true,
             grantedBy: true,

@@ -95,7 +95,7 @@ describe('formRepository', () => {
   });
 
   describe('findByIdWithAccessContext', () => {
-    it('queries with createdBy, permission grants, and the caller-scoped membership row', async () => {
+    it('queries with createdBy, the caller-scoped permission grant, and the caller-scoped membership row', async () => {
       const repo = createFormRepository();
       const mockForm = { id: 'form-1', organization: { members: [] } };
       prismaMock.form.findFirst.mockResolvedValueOnce(mockForm as any);
@@ -107,6 +107,7 @@ describe('formRepository', () => {
         include: {
           createdBy: true,
           permissions: {
+            where: { userId: 'user-1' },
             include: { user: true, grantedBy: true },
           },
           organization: {
