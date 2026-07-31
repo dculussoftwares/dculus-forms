@@ -94,6 +94,36 @@ describe('formRepository', () => {
     expect(prismaMock.formFile.create).toHaveBeenCalledWith({ data: { formId: 'form-1', key: 'file' } });
   });
 
+  describe('findByIdWithAccessContext', () => {
+    it('queries with createdBy, the caller-scoped permission grant, and the caller-scoped membership row', async () => {
+      const repo = createFormRepository();
+      const mockForm = { id: 'form-1', organization: { members: [] } };
+      prismaMock.form.findFirst.mockResolvedValueOnce(mockForm as any);
+
+      const result = await repo.findByIdWithAccessContext('form-1', 'user-1');
+
+      expect(prismaMock.form.findFirst).toHaveBeenCalledWith({
+        where: { id: 'form-1', deletedAt: null },
+        include: {
+          createdBy: true,
+          permissions: {
+            where: { userId: 'user-1' },
+            include: { user: true, grantedBy: true },
+          },
+          organization: {
+            include: {
+              members: {
+                where: { userId: 'user-1' },
+                include: { user: true },
+              },
+            },
+          },
+        },
+      });
+      expect(result).toEqual(mockForm);
+    });
+  });
+
   describe('listAccessibleByOrganization', () => {
     it('queries with the created/permission/sharing-scope OR clause and id-only select', async () => {
       const repo = createFormRepository();
