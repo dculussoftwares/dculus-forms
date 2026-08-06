@@ -9,6 +9,7 @@ import { collaboration } from './collaboration';
 import { aiFormEditor } from './aiFormEditor';
 import { authorization } from './authorization';
 import { billing } from './billing';
+import { fileStorage } from './fileStorage';
 
 /**
  * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
@@ -118,6 +119,16 @@ export const docPages: DocPageMeta[] = [
     order: 10,
     diagramSection: 'The flow',
   },
+  {
+    slug: 'file-storage',
+    title: 'Where Files Live',
+    summary:
+      'Two R2 buckets with different access models, and the routing table that fails closed.',
+    tier: 'Cross-cutting',
+    markdownFile: '11-file-storage.md',
+    order: 11,
+    diagramSection: 'The flow',
+  },
 ];
 
 /** Diagrams by slug. A page without an entry here renders as Markdown only. */
@@ -132,6 +143,7 @@ export const docDiagrams: Record<string, DocDiagram> = {
   'ai-form-editor': aiFormEditor,
   authorization,
   'plans-usage-billing': billing,
+  'file-storage': fileStorage,
 };
 
 export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;

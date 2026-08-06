@@ -33,6 +33,7 @@ And the cross-cutting concerns, which touch everything above:
 |---|------|----------------------|
 | 9 | [Who Can Do What](./09-authorization.md) | The two authorization systems, and why they must not be conflated |
 | 10 | [Plans, Usage & Billing](./10-plans-usage-billing.md) | Chargebee, cached counters, and the three reset clocks |
+| 11 | [Where Files Live](./11-file-storage.md) | Public vs private buckets, and why the routing table fails closed |
 
 ### Planned
 
@@ -43,7 +44,6 @@ it — pick one up when you next touch that subsystem, while it's fresh.
 
 | Page | Would cover |
 |------|-------------|
-| Where Files Live | Public vs private R2, the upload type allowlist, pre-signed URLs, temporary export TTL |
 | The Field Type System | The `FormField` class tree, and the serialization boundary between classes in memory and plain JSON in Postgres and Y.js |
 
 ---
