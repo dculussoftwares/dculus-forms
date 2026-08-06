@@ -5,6 +5,7 @@ import { requestAnatomy } from './requestAnatomy';
 import { automations } from './automations';
 import { pluginPipeline } from './pluginPipeline';
 import { pdfGeneration } from './pdfGeneration';
+import { collaboration } from './collaboration';
 
 /**
  * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
@@ -74,6 +75,16 @@ export const docPages: DocPageMeta[] = [
     order: 6,
     diagramSection: 'The flow',
   },
+  {
+    slug: 'realtime-collaboration',
+    title: 'Real-Time Collaboration',
+    summary:
+      'Y.js, Hocuspocus, and why the rest of the backend reads form schemas from here rather than from the Form table.',
+    tier: 'Feature engines',
+    markdownFile: '07-realtime-collaboration.md',
+    order: 7,
+    diagramSection: 'The flow',
+  },
 ];
 
 /** Diagrams by slug. A page without an entry here renders as Markdown only. */
@@ -84,6 +95,7 @@ export const docDiagrams: Record<string, DocDiagram> = {
   automations,
   'plugin-pipeline': pluginPipeline,
   'pdf-generation': pdfGeneration,
+  'realtime-collaboration': collaboration,
 };
 
 export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;
