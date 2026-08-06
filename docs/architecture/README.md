@@ -25,17 +25,12 @@ Then, in any order, the feature engines:
 | 5 | [The Plugin Pipeline](./05-plugin-pipeline.md) | How a form reaches webhooks, email, spreadsheets and quiz grading |
 | 6 | [PDF Generation](./06-pdf-generation.md) | How a designed template plus a response becomes a filled PDF |
 | 7 | [Real-Time Collaboration](./07-realtime-collaboration.md) | How two people edit one form at once, and where the schema really lives |
+| 8 | [The AI Form Editor](./08-ai-form-editor.md) | How an AI edit reaches the document, and what every prompt decision costs |
 
 ### Planned
 
 Not written yet. Listed so the set has a shape, and so nobody has to re-derive
 it — pick one up when you next touch that subsystem, while it's fresh.
-
-**Feature engines**
-
-| Page | Would cover |
-|------|-------------|
-| The AI Form Editor | Two-tier model routing, tool tiers, prompt-cache affinity, context compaction, and the hand-off into AI credit accounting |
 
 **Cross-cutting**
 

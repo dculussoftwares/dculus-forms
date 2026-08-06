@@ -6,6 +6,7 @@ import { automations } from './automations';
 import { pluginPipeline } from './pluginPipeline';
 import { pdfGeneration } from './pdfGeneration';
 import { collaboration } from './collaboration';
+import { aiFormEditor } from './aiFormEditor';
 
 /**
  * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
@@ -85,6 +86,16 @@ export const docPages: DocPageMeta[] = [
     order: 7,
     diagramSection: 'The flow',
   },
+  {
+    slug: 'ai-form-editor',
+    title: 'The AI Form Editor',
+    summary:
+      'Why the backend never edits the form, and how every prompt decision here is really a cost decision.',
+    tier: 'Feature engines',
+    markdownFile: '08-ai-form-editor.md',
+    order: 8,
+    diagramSection: 'The flow',
+  },
 ];
 
 /** Diagrams by slug. A page without an entry here renders as Markdown only. */
@@ -96,6 +107,7 @@ export const docDiagrams: Record<string, DocDiagram> = {
   'plugin-pipeline': pluginPipeline,
   'pdf-generation': pdfGeneration,
   'realtime-collaboration': collaboration,
+  'ai-form-editor': aiFormEditor,
 };
 
 export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;
