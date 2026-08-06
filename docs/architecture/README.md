@@ -17,6 +17,12 @@ New to the codebase? Read them in this order:
 | 2 | [One Event, Three Listeners](./02-event-fanout.md) | Why plugins, automations, and PDFs all fire on submit |
 | 3 | [Request Anatomy](./03-request-anatomy.md) | How any GraphQL request flows through the backend layers |
 
+Then, in any order, the feature engines:
+
+| # | Page | Read it to understand |
+|---|------|----------------------|
+| 4 | [Automations: From Graph to Run](./04-automations.md) | How a canvas of boxes becomes a chain of durable jobs |
+
 ### Planned
 
 Not written yet. Listed so the set has a shape, and so nobody has to re-derive
@@ -26,7 +32,6 @@ it — pick one up when you next touch that subsystem, while it's fresh.
 
 | Page | Would cover |
 |------|-------------|
-| Automations: From Graph to Run | Graph snapshotting per run, pg-boss enqueue and `runId:nodeId` keying, delay/condition/action nodes, the retry policy, and the fact that automation actions *are* plugin handlers |
 | The Plugin Pipeline | Registry, sequential execution, `PluginDelivery`, export-column registration, backfill jobs |
 | PDF Generation | `PdfTemplate → PdfGenerator → PdfGenerationRun → PdfGenerationResult`, the binding conventions, private-bucket storage, auto-run on submit |
 | Real-Time Collaboration | Zustand slices → Y.js → Hocuspocus → `CollaborativeDocument`, WebSocket auth, the debounced metadata extractor |

@@ -2,6 +2,7 @@ import type { DocDiagram, DocPageMeta } from '../types';
 import { submissionLifecycle } from './submissionLifecycle';
 import { eventFanout } from './eventFanout';
 import { requestAnatomy } from './requestAnatomy';
+import { automations } from './automations';
 
 /**
  * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
@@ -41,6 +42,16 @@ export const docPages: DocPageMeta[] = [
     order: 3,
     diagramSection: 'The layers',
   },
+  {
+    slug: 'automations',
+    title: 'Automations: From Graph to Run',
+    summary:
+      'How a canvas of boxes becomes a chain of durable jobs that survives a two-week delay and a deploy in the middle.',
+    tier: 'Feature engines',
+    markdownFile: '04-automations.md',
+    order: 4,
+    diagramSection: 'The flow',
+  },
 ];
 
 /** Diagrams by slug. A page without an entry here renders as Markdown only. */
@@ -48,6 +59,7 @@ export const docDiagrams: Record<string, DocDiagram> = {
   'submission-lifecycle': submissionLifecycle,
   'event-fanout': eventFanout,
   'request-anatomy': requestAnatomy,
+  automations,
 };
 
 export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;
