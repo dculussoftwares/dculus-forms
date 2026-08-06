@@ -3,6 +3,7 @@ import { submissionLifecycle } from './submissionLifecycle';
 import { eventFanout } from './eventFanout';
 import { requestAnatomy } from './requestAnatomy';
 import { automations } from './automations';
+import { pluginPipeline } from './pluginPipeline';
 
 /**
  * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
@@ -52,6 +53,16 @@ export const docPages: DocPageMeta[] = [
     order: 4,
     diagramSection: 'The flow',
   },
+  {
+    slug: 'plugin-pipeline',
+    title: 'The Plugin Pipeline',
+    summary:
+      'A Map, a sequential loop, and a delivery log — how a form reaches webhooks, email, spreadsheets and quiz grading.',
+    tier: 'Feature engines',
+    markdownFile: '05-plugin-pipeline.md',
+    order: 5,
+    diagramSection: 'The flow',
+  },
 ];
 
 /** Diagrams by slug. A page without an entry here renders as Markdown only. */
@@ -60,6 +71,7 @@ export const docDiagrams: Record<string, DocDiagram> = {
   'event-fanout': eventFanout,
   'request-anatomy': requestAnatomy,
   automations,
+  'plugin-pipeline': pluginPipeline,
 };
 
 export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;

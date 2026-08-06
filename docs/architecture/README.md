@@ -22,6 +22,7 @@ Then, in any order, the feature engines:
 | # | Page | Read it to understand |
 |---|------|----------------------|
 | 4 | [Automations: From Graph to Run](./04-automations.md) | How a canvas of boxes becomes a chain of durable jobs |
+| 5 | [The Plugin Pipeline](./05-plugin-pipeline.md) | How a form reaches webhooks, email, spreadsheets and quiz grading |
 
 ### Planned
 
@@ -32,7 +33,6 @@ it — pick one up when you next touch that subsystem, while it's fresh.
 
 | Page | Would cover |
 |------|-------------|
-| The Plugin Pipeline | Registry, sequential execution, `PluginDelivery`, export-column registration, backfill jobs |
 | PDF Generation | `PdfTemplate → PdfGenerator → PdfGenerationRun → PdfGenerationResult`, the binding conventions, private-bucket storage, auto-run on submit |
 | Real-Time Collaboration | Zustand slices → Y.js → Hocuspocus → `CollaborativeDocument`, WebSocket auth, the debounced metadata extractor |
 | The AI Form Editor | Two-tier model routing, tool tiers, prompt-cache affinity, context compaction, and the hand-off into AI credit accounting |
@@ -135,7 +135,8 @@ Things that have burned someone, or will. Name collisions especially.
 1. Write `docs/architecture/NN-your-topic.md` using the outline above.
 2. Add a diagram in `apps/form-app/src/pages/docs/diagrams/yourTopic.ts`
    (nodes carry a `file` reference — that's what powers click-to-explain).
-3. Register both in `apps/form-app/src/pages/docs/registry.ts`.
+3. Register both in `apps/form-app/src/pages/docs/diagrams/index.ts` — add a
+   `docPages` entry and, if it has one, a `docDiagrams` entry.
 
 A page with no diagram is fine — it just renders the Markdown. Not everything is
 a flow.
