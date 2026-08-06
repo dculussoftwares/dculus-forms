@@ -8,6 +8,7 @@ import { pdfGeneration } from './pdfGeneration';
 import { collaboration } from './collaboration';
 import { aiFormEditor } from './aiFormEditor';
 import { authorization } from './authorization';
+import { billing } from './billing';
 
 /**
  * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
@@ -107,6 +108,16 @@ export const docPages: DocPageMeta[] = [
     order: 9,
     diagramSection: 'The layers',
   },
+  {
+    slug: 'plans-usage-billing',
+    title: 'Plans, Usage & Billing',
+    summary:
+      'Keeping Chargebee and Postgres in step — and the three different clocks that reset the three usage counters.',
+    tier: 'Cross-cutting',
+    markdownFile: '10-plans-usage-billing.md',
+    order: 10,
+    diagramSection: 'The flow',
+  },
 ];
 
 /** Diagrams by slug. A page without an entry here renders as Markdown only. */
@@ -120,6 +131,7 @@ export const docDiagrams: Record<string, DocDiagram> = {
   'realtime-collaboration': collaboration,
   'ai-form-editor': aiFormEditor,
   authorization,
+  'plans-usage-billing': billing,
 };
 
 export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;
