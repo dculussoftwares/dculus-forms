@@ -23,6 +23,7 @@ Then, in any order, the feature engines:
 |---|------|----------------------|
 | 4 | [Automations: From Graph to Run](./04-automations.md) | How a canvas of boxes becomes a chain of durable jobs |
 | 5 | [The Plugin Pipeline](./05-plugin-pipeline.md) | How a form reaches webhooks, email, spreadsheets and quiz grading |
+| 6 | [PDF Generation](./06-pdf-generation.md) | How a designed template plus a response becomes a filled PDF |
 
 ### Planned
 
@@ -33,7 +34,6 @@ it — pick one up when you next touch that subsystem, while it's fresh.
 
 | Page | Would cover |
 |------|-------------|
-| PDF Generation | `PdfTemplate → PdfGenerator → PdfGenerationRun → PdfGenerationResult`, the binding conventions, private-bucket storage, auto-run on submit |
 | Real-Time Collaboration | Zustand slices → Y.js → Hocuspocus → `CollaborativeDocument`, WebSocket auth, the debounced metadata extractor |
 | The AI Form Editor | Two-tier model routing, tool tiers, prompt-cache affinity, context compaction, and the hand-off into AI credit accounting |
 
