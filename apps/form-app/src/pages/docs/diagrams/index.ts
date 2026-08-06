@@ -7,6 +7,7 @@ import { pluginPipeline } from './pluginPipeline';
 import { pdfGeneration } from './pdfGeneration';
 import { collaboration } from './collaboration';
 import { aiFormEditor } from './aiFormEditor';
+import { authorization } from './authorization';
 
 /**
  * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
@@ -96,6 +97,16 @@ export const docPages: DocPageMeta[] = [
     order: 8,
     diagramSection: 'The flow',
   },
+  {
+    slug: 'authorization',
+    title: 'Who Can Do What',
+    summary:
+      'Two separate authorization systems — one for team members working on a form, one for the people filling it in.',
+    tier: 'Cross-cutting',
+    markdownFile: '09-authorization.md',
+    order: 9,
+    diagramSection: 'The layers',
+  },
 ];
 
 /** Diagrams by slug. A page without an entry here renders as Markdown only. */
@@ -108,6 +119,7 @@ export const docDiagrams: Record<string, DocDiagram> = {
   'pdf-generation': pdfGeneration,
   'realtime-collaboration': collaboration,
   'ai-form-editor': aiFormEditor,
+  authorization,
 };
 
 export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;

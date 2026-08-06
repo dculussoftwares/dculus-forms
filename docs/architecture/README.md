@@ -27,6 +27,12 @@ Then, in any order, the feature engines:
 | 7 | [Real-Time Collaboration](./07-realtime-collaboration.md) | How two people edit one form at once, and where the schema really lives |
 | 8 | [The AI Form Editor](./08-ai-form-editor.md) | How an AI edit reaches the document, and what every prompt decision costs |
 
+And the cross-cutting concerns, which touch everything above:
+
+| # | Page | Read it to understand |
+|---|------|----------------------|
+| 9 | [Who Can Do What](./09-authorization.md) | The two authorization systems, and why they must not be conflated |
+
 ### Planned
 
 Not written yet. Listed so the set has a shape, and so nobody has to re-derive
@@ -36,7 +42,6 @@ it — pick one up when you next touch that subsystem, while it's fresh.
 
 | Page | Would cover |
 |------|-------------|
-| Who Can Do What | The builder-side stack (`User.role` × `Member.role` × `FormPermission` × sharing scope) and the separate respondent-side gate |
 | Plans, Usage & Billing | Chargebee checkout and webhooks, cached usage counters, the 80% threshold, and why AI credits reset on a different clock |
 | Where Files Live | Public vs private R2, the upload type allowlist, pre-signed URLs, temporary export TTL |
 | The Field Type System | The `FormField` class tree, and the serialization boundary between classes in memory and plain JSON in Postgres and Y.js |
