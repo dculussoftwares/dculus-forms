@@ -34,17 +34,7 @@ And the cross-cutting concerns, which touch everything above:
 | 9 | [Who Can Do What](./09-authorization.md) | The two authorization systems, and why they must not be conflated |
 | 10 | [Plans, Usage & Billing](./10-plans-usage-billing.md) | Chargebee, cached counters, and the three reset clocks |
 | 11 | [Where Files Live](./11-file-storage.md) | Public vs private buckets, and why the routing table fails closed |
-
-### Planned
-
-Not written yet. Listed so the set has a shape, and so nobody has to re-derive
-it — pick one up when you next touch that subsystem, while it's fresh.
-
-**Cross-cutting**
-
-| Page | Would cover |
-|------|-------------|
-| The Field Type System | The `FormField` class tree, and the serialization boundary between classes in memory and plain JSON in Postgres and Y.js |
+| 12 | [The Field Type System](./12-field-type-system.md) | Classes in memory, JSON at rest, and the boundary between them |
 
 ---
 

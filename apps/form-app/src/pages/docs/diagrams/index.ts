@@ -10,6 +10,7 @@ import { aiFormEditor } from './aiFormEditor';
 import { authorization } from './authorization';
 import { billing } from './billing';
 import { fileStorage } from './fileStorage';
+import { fieldTypes } from './fieldTypes';
 
 /**
  * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
@@ -129,6 +130,16 @@ export const docPages: DocPageMeta[] = [
     order: 11,
     diagramSection: 'The flow',
   },
+  {
+    slug: 'field-type-system',
+    title: 'The Field Type System',
+    summary:
+      'Classes in memory, plain JSON at rest — and what happens to a field whose type the running code has never heard of.',
+    tier: 'Cross-cutting',
+    markdownFile: '12-field-type-system.md',
+    order: 12,
+    diagramSection: 'The hierarchy',
+  },
 ];
 
 /** Diagrams by slug. A page without an entry here renders as Markdown only. */
@@ -144,6 +155,7 @@ export const docDiagrams: Record<string, DocDiagram> = {
   authorization,
   'plans-usage-billing': billing,
   'file-storage': fileStorage,
+  'field-type-system': fieldTypes,
 };
 
 export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;
