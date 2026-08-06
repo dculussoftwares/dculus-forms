@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { LayoutDashboard, Settings, Layers, Plus } from 'lucide-react';
+import { LayoutDashboard, Settings, Layers, Plus, Compass } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { NavMain } from './nav-main';
@@ -35,6 +35,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: t('navigation.settings'),
         url: '/settings',
         icon: Settings,
+      },
+      {
+        // Architecture docs. The pages themselves are English-only developer
+        // documentation; only this nav label is translated.
+        title: t('navigation.docs'),
+        url: '/docs',
+        icon: Compass,
       },
     ],
     [t],

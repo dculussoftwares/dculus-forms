@@ -39,6 +39,10 @@ const PdfTemplates = lazy(() => import('./pages/PdfTemplates'));
 const PdfTemplateDesigner = lazy(() => import('./pages/PdfTemplateDesigner'));
 const PdfGeneratorEditor = lazy(() => import('./pages/PdfGeneratorEditor'));
 const Settings = lazy(() => import('./pages/Settings'));
+// Architecture docs — lazy so the Markdown and React Flow canvas never land in
+// the initial bundle for people who never open /docs.
+const DocsIndex = lazy(() => import('./pages/docs/DocsIndex'));
+const DocPage = lazy(() => import('./pages/docs/DocPage'));
 const ResponseEditHistory = lazy(() =>
   import('./pages/ResponseEditHistory').then(m => ({ default: m.ResponseEditHistory }))
 );
@@ -153,6 +157,14 @@ function App() {
           } />
           <Route path="/responses" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><Responses /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
+          {/* Architecture docs ("How Dculus Works") — /docs and /docs/:slug.
+              More specific than the /* catch-all, so ranking picks these first. */}
+          <Route path="/docs" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><DocsIndex /></Suspense></PageErrorBoundary></ProtectedRoute>
+          } />
+          <Route path="/docs/:slug" element={
+            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><DocPage /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           {/* Templates is now nested under Dashboard */}
           </Routes>

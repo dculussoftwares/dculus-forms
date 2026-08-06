@@ -1,7 +1,8 @@
 {
   "navigation": {
     "dashboard": "Dashboard",
-    "templates": "Templates", 
-    "settings": "Settings"
+    "templates": "Templates",
+    "settings": "Settings",
+    "docs": "How it works"
   }
 }
