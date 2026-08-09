@@ -159,7 +159,7 @@
     "country-list": "^2.4.1",
     "graphql-request": "7.2.0",
     "lucide-react": "0.534.0",
-    "nanoid": "5.1.5",
+    "nanoid": "5.1.16",
     "tailwind-merge": "3.3.1",
     "ua-parser-js": "^1.0.41"
   }
