@@ -32,8 +32,8 @@
     "vitest": "^4.1.8"
   },
   "dependencies": {
-    "libphonenumber-js": "^1.13.8",
-    "react-hook-form": "7.62.0",
+    "libphonenumber-js": "^1.13.10",
+    "react-hook-form": "7.84.0",
     "zod": "^4.4.3"
   }
 }
