@@ -15,6 +15,8 @@ This is a monorepo structure with the following components:
 - **Shared Packages**: Common types, utilities, and UI components
 - **Package Manager**: pnpm for efficient dependency management
 
+📖 **[How Dculus Works](docs/architecture/)** — Interactive architecture documentation with 12 guides covering submission flows, integrations, storage, billing, collaboration, authorization, and more. Perfect for onboarding new developers.
+
 ## 📁 Project Structure
 
 ```
