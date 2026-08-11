@@ -1,0 +1,161 @@
+import type { DocDiagram, DocPageMeta } from '../types';
+import { submissionLifecycle } from './submissionLifecycle';
+import { eventFanout } from './eventFanout';
+import { requestAnatomy } from './requestAnatomy';
+import { automations } from './automations';
+import { pluginPipeline } from './pluginPipeline';
+import { pdfGeneration } from './pdfGeneration';
+import { collaboration } from './collaboration';
+import { aiFormEditor } from './aiFormEditor';
+import { authorization } from './authorization';
+import { billing } from './billing';
+import { fileStorage } from './fileStorage';
+import { fieldTypes } from './fieldTypes';
+
+/**
+ * Deliberately free of `import.meta.glob` and any other Vite-only syntax so the
+ * file-reference test can import it under Jest. Markdown loading lives in
+ * `../content.ts` for exactly that reason.
+ */
+
+/** Reading order for the whole doc set. Add new pages here. */
+export const docPages: DocPageMeta[] = [
+  {
+    slug: 'submission-lifecycle',
+    title: 'The Life of a Submission',
+    summary:
+      'Eight checks, one write, and three background jobs — what happens between Submit and the thank-you screen.',
+    tier: 'The spine',
+    markdownFile: '01-submission-lifecycle.md',
+    order: 1,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'event-fanout',
+    title: 'One Event, Three Listeners',
+    summary:
+      'Why Integrations, Automations and PDF generation all fire on submit, without any of them appearing in the submission code.',
+    tier: 'The spine',
+    markdownFile: '02-event-fanout.md',
+    order: 2,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'request-anatomy',
+    title: 'Request Anatomy',
+    summary:
+      'Resolver to service to repository to Postgres — and the rules about which layer may do what.',
+    tier: 'The spine',
+    markdownFile: '03-request-anatomy.md',
+    order: 3,
+    diagramSection: 'The layers',
+  },
+  {
+    slug: 'automations',
+    title: 'Automations: From Graph to Run',
+    summary:
+      'How a canvas of boxes becomes a chain of durable jobs that survives a two-week delay and a deploy in the middle.',
+    tier: 'Feature engines',
+    markdownFile: '04-automations.md',
+    order: 4,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'plugin-pipeline',
+    title: 'The Plugin Pipeline',
+    summary:
+      'A Map, a sequential loop, and a delivery log — how a form reaches webhooks, email, spreadsheets and quiz grading.',
+    tier: 'Feature engines',
+    markdownFile: '05-plugin-pipeline.md',
+    order: 5,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'pdf-generation',
+    title: 'PDF Generation',
+    summary:
+      'Four models, three field-binding conventions, and how a box on a pdfme canvas finds the right answer.',
+    tier: 'Feature engines',
+    markdownFile: '06-pdf-generation.md',
+    order: 6,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'realtime-collaboration',
+    title: 'Real-Time Collaboration',
+    summary:
+      'Y.js, Hocuspocus, and why the rest of the backend reads form schemas from here rather than from the Form table.',
+    tier: 'Feature engines',
+    markdownFile: '07-realtime-collaboration.md',
+    order: 7,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'ai-form-editor',
+    title: 'The AI Form Editor',
+    summary:
+      'Why the backend never edits the form, and how every prompt decision here is really a cost decision.',
+    tier: 'Feature engines',
+    markdownFile: '08-ai-form-editor.md',
+    order: 8,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'authorization',
+    title: 'Who Can Do What',
+    summary:
+      'Two separate authorization systems — one for team members working on a form, one for the people filling it in.',
+    tier: 'Cross-cutting',
+    markdownFile: '09-authorization.md',
+    order: 9,
+    diagramSection: 'The layers',
+  },
+  {
+    slug: 'plans-usage-billing',
+    title: 'Plans, Usage & Billing',
+    summary:
+      'Keeping Chargebee and Postgres in step — and the three different clocks that reset the three usage counters.',
+    tier: 'Cross-cutting',
+    markdownFile: '10-plans-usage-billing.md',
+    order: 10,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'file-storage',
+    title: 'Where Files Live',
+    summary:
+      'Two R2 buckets with different access models, and the routing table that fails closed.',
+    tier: 'Cross-cutting',
+    markdownFile: '11-file-storage.md',
+    order: 11,
+    diagramSection: 'The flow',
+  },
+  {
+    slug: 'field-type-system',
+    title: 'The Field Type System',
+    summary:
+      'Classes in memory, plain JSON at rest — and what happens to a field whose type the running code has never heard of.',
+    tier: 'Cross-cutting',
+    markdownFile: '12-field-type-system.md',
+    order: 12,
+    diagramSection: 'The hierarchy',
+  },
+];
+
+/** Diagrams by slug. A page without an entry here renders as Markdown only. */
+export const docDiagrams: Record<string, DocDiagram> = {
+  'submission-lifecycle': submissionLifecycle,
+  'event-fanout': eventFanout,
+  'request-anatomy': requestAnatomy,
+  automations,
+  'plugin-pipeline': pluginPipeline,
+  'pdf-generation': pdfGeneration,
+  'realtime-collaboration': collaboration,
+  'ai-form-editor': aiFormEditor,
+  authorization,
+  'plans-usage-billing': billing,
+  'file-storage': fileStorage,
+  'field-type-system': fieldTypes,
+};
+
+export const TIER_ORDER = ['The spine', 'Feature engines', 'Cross-cutting'] as const;
