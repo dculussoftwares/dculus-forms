@@ -197,3 +197,64 @@ export const checkRuleReferences = (
       missingActionPageIds.length > 0,
   };
 };
+
+export interface BackwardReferenceCheck {
+  hasBackwardReference: boolean;
+  triggerPageIndex: number | null;
+  earliestTargetPageIndex: number | null;
+}
+
+/**
+ * Flags a rule whose action targets an earlier page than its own trigger
+ * fields — e.g. Page 1's visibility depends on a Page 3 answer the user
+ * hasn't given yet. The evaluator scans the whole response map regardless of
+ * page order, so this "works" mechanically; this check only surfaces the UX
+ * concern as a builder warning (locked decision: warn, don't block — unlike
+ * skipToPage, which the evaluator already enforces forward-only and treats a
+ * backward target as inert, so skipToPage actions are excluded here).
+ */
+export const checkBackwardReference = (
+  rule: ConditionalRule,
+  pages: FormPage[]
+): BackwardReferenceCheck => {
+  const pageIndexByFieldId = new Map<string, number>();
+  const pageIndexByPageId = new Map<string, number>();
+  pages.forEach((page, index) => {
+    pageIndexByPageId.set(page.id, index);
+    page.fields.forEach((field) => pageIndexByFieldId.set(field.id, index));
+  });
+
+  const triggerPageIndexes = rule.terms
+    .map((term) => pageIndexByFieldId.get(term.fieldId))
+    .filter((index): index is number => index !== undefined);
+  if (triggerPageIndexes.length === 0) {
+    return { hasBackwardReference: false, triggerPageIndex: null, earliestTargetPageIndex: null };
+  }
+  // The rule can only be meaningfully evaluated once its LATEST-page trigger has been
+  // answered, so that is the page whose answer effectively gates the action.
+  const triggerPageIndex = Math.max(...triggerPageIndexes);
+
+  const targetPageIndexes: number[] = [];
+  for (const action of rule.actions) {
+    if (action.type === 'skipToPage') continue;
+    if ('fieldIds' in action) {
+      action.fieldIds.forEach((fieldId) => {
+        const index = pageIndexByFieldId.get(fieldId);
+        if (index !== undefined) targetPageIndexes.push(index);
+      });
+    } else {
+      const index = pageIndexByPageId.get(action.pageId);
+      if (index !== undefined) targetPageIndexes.push(index);
+    }
+  }
+  if (targetPageIndexes.length === 0) {
+    return { hasBackwardReference: false, triggerPageIndex, earliestTargetPageIndex: null };
+  }
+  const earliestTargetPageIndex = Math.min(...targetPageIndexes);
+
+  return {
+    hasBackwardReference: earliestTargetPageIndex < triggerPageIndex,
+    triggerPageIndex,
+    earliestTargetPageIndex,
+  };
+};

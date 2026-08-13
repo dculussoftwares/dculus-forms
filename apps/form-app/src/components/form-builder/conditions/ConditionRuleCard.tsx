@@ -3,7 +3,7 @@ import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { Badge, Button, Card, Switch } from '@dculus/ui';
 import { ConditionalRule, FormPage } from '@dculus/types';
 import { useTranslation } from '../../../hooks/useTranslation';
-import { checkRuleReferences, fieldDisplayLabel } from './conditionFieldConfig';
+import { checkBackwardReference, checkRuleReferences, fieldDisplayLabel } from './conditionFieldConfig';
 
 interface ConditionRuleCardProps {
   rule: ConditionalRule;
@@ -39,6 +39,7 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
   }, [pages]);
 
   const references = useMemo(() => checkRuleReferences(rule, pages), [rule, pages]);
+  const backwardReference = useMemo(() => checkBackwardReference(rule, pages), [rule, pages]);
 
   const fieldLabel = (fieldId: string) =>
     fieldLabels.get(fieldId) ?? t('card.deletedField');
@@ -117,6 +118,18 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
               >
                 <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                 {t('card.circular')}
+              </Badge>
+            )}
+
+            {backwardReference.hasBackwardReference && (
+              <Badge
+                variant="outline"
+                className="gap-1 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                title={t('card.backwardReferenceHint')}
+                data-testid={`condition-backward-${rule.id}`}
+              >
+                <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                {t('card.backwardReference')}
               </Badge>
             )}
           </div>

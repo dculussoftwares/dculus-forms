@@ -1,5 +1,13 @@
-@skip-ci @builder-ux @collaboration
+@builder-ux @collaboration
 Feature: Real-time Collaboration for Condition Rules
+
+  # Runs in CI via the dedicated `pnpm test:e2e:collab` step (build.yml), serially
+  # (--parallel 1), not in the main `pnpm test:e2e` parallel run — these scenarios
+  # each open two concurrent browser sessions, and running several of them under
+  # the main run's --parallel 6 caused ~40% flaky timeouts opening session B
+  # (verified locally: 2/5 scenarios failed after 3 retries each at parallel 6,
+  # while parallel 1 passed 5/5 cleanly). @collaboration is excluded from
+  # test:e2e's tag filter for the same reason.
 
   Background:
     Given I sign in with valid credentials
