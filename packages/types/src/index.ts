@@ -651,39 +651,33 @@ export const serializeFormField = (field: FormField): any => {
  * - FillableFormFieldValidation for all other field types
  */
 export const deserializeFormField = (data: any): FormField | null => {
+  // `data.validation` is the canonical source; `data.required`/`data.min`/`data.max` are
+  // fallbacks for field payloads that set these at the top level instead (e.g. the AI
+  // form-edit tools). `??` only falls through on null/undefined, so an explicit `false`
+  // or `0` in `data.validation` is never overridden by the fallback.
   const getValidation = (data: any, fieldType: FieldType) => {
-    if (!data.validation) {
-      if (
-        fieldType === FieldType.TEXT_INPUT_FIELD ||
-        fieldType === FieldType.TEXT_AREA_FIELD
-      ) {
-        return new TextFieldValidation(false);
-      } else if (fieldType === FieldType.CHECKBOX_FIELD) {
-        return new CheckboxFieldValidation(false);
-      }
-      return new FillableFormFieldValidation(false);
-    }
+    const required = data.validation?.required ?? data.required ?? false;
 
     if (
       fieldType === FieldType.TEXT_INPUT_FIELD ||
       fieldType === FieldType.TEXT_AREA_FIELD
     ) {
       return new TextFieldValidation(
-        data.validation.required || false,
-        data.validation.minLength,
-        data.validation.maxLength
+        required,
+        data.validation?.minLength ?? data.min,
+        data.validation?.maxLength ?? data.max
       );
     }
 
     if (fieldType === FieldType.CHECKBOX_FIELD) {
       return new CheckboxFieldValidation(
-        data.validation.required || false,
-        data.validation.minSelections,
-        data.validation.maxSelections
+        required,
+        data.validation?.minSelections,
+        data.validation?.maxSelections
       );
     }
 
-    return new FillableFormFieldValidation(data.validation.required || false);
+    return new FillableFormFieldValidation(required);
   };
 
   switch (data.type || data.__type) {
