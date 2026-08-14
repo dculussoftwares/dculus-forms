@@ -1,4 +1,4 @@
-import crypto, { createHmac, randomBytes } from 'crypto';
+import crypto from 'crypto';
 import express, { Router } from 'express';
 import { logger } from '../lib/logger.js';
 import { chargebeeConfig } from '../lib/env.js';
@@ -9,6 +9,26 @@ import {
 } from '../services/chargebeeService.js';
 
 const router: Router = express.Router();
+
+// Upper bound on compared secret length — no real webhook password is anywhere
+// near this long; it just bounds the padded-buffer allocation below.
+const MAX_SECRET_LENGTH = 512;
+
+// Constant-time string comparison without hashing the secret: both inputs are
+// copied into fixed-size zero-padded buffers before crypto.timingSafeEqual,
+// so differing lengths neither throw nor leak via comparison timing.
+function timingSafeStringEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  if (bufA.length > MAX_SECRET_LENGTH || bufB.length > MAX_SECRET_LENGTH) {
+    return false;
+  }
+  const paddedA = Buffer.alloc(MAX_SECRET_LENGTH);
+  const paddedB = Buffer.alloc(MAX_SECRET_LENGTH);
+  bufA.copy(paddedA);
+  bufB.copy(paddedB);
+  return crypto.timingSafeEqual(paddedA, paddedB) && bufA.length === bufB.length;
+}
 
 /**
  * Chargebee Webhook Handler
@@ -32,17 +52,9 @@ router.post('/webhooks/chargebee', async (req, res) => {
     const decoded = Buffer.from(base64, 'base64').toString('utf8');
     const incomingPassword = decoded.includes(':') ? decoded.slice(decoded.indexOf(':') + 1) : decoded;
 
-    // P3-09: Compare via a random-keyed HMAC (double-HMAC pattern) so that differing
-    // buffer lengths don't throw, and neither the password nor its direct hash is ever
-    // compared/leaked via timing — the digest key changes on every request.
-    const hmacKey = randomBytes(32);
-    const mac = (s: string) => createHmac('sha256', hmacKey).update(s).digest();
-    let valid = false;
-    try {
-      valid = crypto.timingSafeEqual(mac(incomingPassword), mac(chargebeeConfig.webhookPassword));
-    } catch {
-      valid = false;
-    }
+    // P3-09: Constant-time compare via zero-padded buffers (see timingSafeStringEqual)
+    // so that differing lengths don't throw and aren't revealed via timing.
+    const valid = timingSafeStringEqual(incomingPassword, chargebeeConfig.webhookPassword);
 
     if (!valid) {
       logger.warn('[Chargebee Webhook] Rejected request with invalid credentials');
