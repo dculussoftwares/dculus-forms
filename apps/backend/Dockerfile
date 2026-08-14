@@ -4,8 +4,11 @@
 
 FROM --platform=$BUILDPLATFORM node:22-alpine
 
-# Install pnpm globally
-RUN npm install -g pnpm
+# Install pnpm globally, pinned to match the workspace's packageManager field
+# (root package.json) — an unpinned `npm install -g pnpm` grabs the latest
+# pnpm, whose self-management feature cross-checks its own binary against
+# pnpm-lock.yaml and fails against this repo's older pnpm 8 lockfile.
+RUN npm install -g pnpm@8.15.0
 
 # Set working directory
 WORKDIR /app
