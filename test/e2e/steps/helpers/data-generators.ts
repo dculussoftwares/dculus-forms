@@ -3,6 +3,28 @@
  * Generates varied, realistic form data for comprehensive testing
  */
 
+import { randomInt } from 'crypto';
+
+/**
+ * Cryptographically secure replacement for Math.random() * max,
+ * returning an integer in [0, max).
+ */
+function secureRandomIndex(max: number): number {
+    return randomInt(0, max);
+}
+
+/**
+ * Fisher-Yates shuffle using a cryptographically secure random source.
+ */
+function secureShuffle<T>(items: T[]): T[] {
+    const result = [...items];
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = randomInt(0, i + 1);
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+}
+
 // Name pool for variety
 const NAMES = [
     'Alice Johnson', 'Bob Smith', 'Carol Williams', 'David Brown', 'Emma Davis',
@@ -85,9 +107,9 @@ export function generateRandomEmail(): string {
 export function generateRandomDate(): string {
     const startYear = 1970;
     const endYear = 2005;
-    const year = startYear + Math.floor(Math.random() * (endYear - startYear + 1));
-    const month = Math.floor(Math.random() * 12) + 1;
-    const day = Math.floor(Math.random() * 28) + 1; // Use 28 to avoid month-length issues
+    const year = startYear + secureRandomIndex(endYear - startYear + 1);
+    const month = secureRandomIndex(12) + 1;
+    const day = secureRandomIndex(28) + 1; // Use 28 to avoid month-length issues
 
     const monthStr = month.toString().padStart(2, '0');
     const dayStr = day.toString().padStart(2, '0');
@@ -99,21 +121,21 @@ export function generateRandomDate(): string {
  * Generate a random color from dropdown options
  */
 export function generateRandomColor(): string {
-    return COLORS[Math.floor(Math.random() * COLORS.length)];
+    return COLORS[secureRandomIndex(COLORS.length)];
 }
 
 /**
  * Generate a random experience level
  */
 export function generateRandomExperience(): string {
-    return EXPERIENCE_LEVELS[Math.floor(Math.random() * EXPERIENCE_LEVELS.length)];
+    return EXPERIENCE_LEVELS[secureRandomIndex(EXPERIENCE_LEVELS.length)];
 }
 
 /**
  * Generate random years of experience (0-50)
  */
 export function generateRandomYears(): number {
-    return Math.floor(Math.random() * 51); // 0 to 50 inclusive
+    return secureRandomIndex(51); // 0 to 50 inclusive
 }
 
 /**
@@ -121,8 +143,8 @@ export function generateRandomYears(): number {
  * Returns array of selected interests
  */
 export function generateRandomInterests(): string[] {
-    const count = Math.floor(Math.random() * INTERESTS.length) + 1; // 1 to 6
-    const shuffled = [...INTERESTS].sort(() => Math.random() - 0.5);
+    const count = secureRandomIndex(INTERESTS.length) + 1; // 1 to 6
+    const shuffled = secureShuffle(INTERESTS);
     return shuffled.slice(0, count);
 }
 
@@ -130,7 +152,7 @@ export function generateRandomInterests(): string[] {
  * Generate a random comment from templates
  */
 export function generateRandomComment(): string {
-    const templateIndex = Math.floor(Math.random() * COMMENT_TEMPLATES.length);
+    const templateIndex = secureRandomIndex(COMMENT_TEMPLATES.length);
     return COMMENT_TEMPLATES[templateIndex];
 }
 
@@ -138,7 +160,7 @@ export function generateRandomComment(): string {
  * Generate a random satisfaction level
  */
 export function generateRandomSatisfaction(): string {
-    return SATISFACTION_LEVELS[Math.floor(Math.random() * SATISFACTION_LEVELS.length)];
+    return SATISFACTION_LEVELS[secureRandomIndex(SATISFACTION_LEVELS.length)];
 }
 
 /**
