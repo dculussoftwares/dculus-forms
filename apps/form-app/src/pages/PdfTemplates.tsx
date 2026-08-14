@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Button,
@@ -12,20 +12,11 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  Tabs,
-  TabsList,
-  TabsTrigger,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
-import {
-  AlertCircle,
-  FileText,
-  FileUp,
-  FilePlus2,
-  Trash2,
-  PencilRuler,
-} from 'lucide-react';
+import { AlertCircle, FileText, FileUp, FilePlus2 } from 'lucide-react';
+import { deserializeFormSchema, FillableFormField, FormSchema } from '@dculus/types';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -34,31 +25,21 @@ import {
   CREATE_PDF_TEMPLATE,
   DELETE_PDF_TEMPLATE,
 } from '../graphql/pdfTemplates';
+import { GET_PDF_GENERATORS } from '../graphql/pdfGenerators';
 import { uploadFileHTTP } from '../services/fileUploadService';
-import { PdfGeneratorsList } from '../components/PdfGenerators/PdfGeneratorsList';
+import { TemplateAutomationRow } from '../components/PdfTemplates/TemplateAutomationRow';
 
 // A4 portrait in mm — default page for blank templates
 const BLANK_A4_BASE_PDF = { width: 210, height: 297, padding: [10, 10, 10, 10] };
 const MAX_PDF_TEMPLATES_PER_FORM = 6;
+const ACTIVE_RUN_STATUSES = new Set(['running', 'cancelling']);
 
 type CreateMode = 'blank' | 'upload';
 
 const PdfTemplates: React.FC = () => {
   const { formId } = useParams<{ formId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
   const { t } = useTranslation('pdfTemplates');
-  const { t: tGenerators } = useTranslation('pdfGenerators');
-  const [activeTab, setActiveTab] = useState<'templates' | 'generators'>(
-    location.pathname.endsWith('/generators') ? 'generators' : 'templates'
-  );
-
-  // /pdf-templates and /pdf-templates/generators render this same component
-  // without remounting, so the useState initializer above only runs once —
-  // keep activeTab in sync with the URL on browser back/forward navigation.
-  useEffect(() => {
-    setActiveTab(location.pathname.endsWith('/generators') ? 'generators' : 'templates');
-  }, [location.pathname]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [createMode, setCreateMode] = useState<CreateMode | null>(null);
@@ -78,6 +59,17 @@ const PdfTemplates: React.FC = () => {
     fetchPolicy: 'cache-and-network',
   });
 
+  const {
+    data: generatorsData,
+    refetch: refetchGenerators,
+    startPolling,
+    stopPolling,
+  } = useQuery(GET_PDF_GENERATORS, {
+    variables: { formId },
+    skip: !formId,
+    fetchPolicy: 'cache-and-network',
+  });
+
   const [createPdfTemplate] = useMutation(CREATE_PDF_TEMPLATE);
   const [deletePdfTemplate, { loading: deleting }] = useMutation(DELETE_PDF_TEMPLATE);
 
@@ -85,6 +77,39 @@ const PdfTemplates: React.FC = () => {
   const canEdit = form?.userPermission === 'EDITOR' || form?.userPermission === 'OWNER';
   const templates = templatesData?.pdfTemplates || [];
   const atTemplateLimit = templates.length >= MAX_PDF_TEMPLATES_PER_FORM;
+
+  const generators: any[] = generatorsData?.pdfGenerators ?? [];
+  const generatorsByTemplateId = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    generators.forEach((g) => {
+      (map[g.templateId] ??= []).push(g);
+    });
+    return map;
+  }, [generators]);
+
+  // Poll while any automation has a run in flight — same pattern the old
+  // Generators tab used, now owned by the page since automations render
+  // inline on each template row instead of a separate list.
+  const hasActiveRun = generators.some((g) => g.latestRun && ACTIVE_RUN_STATUSES.has(g.latestRun.status));
+  useEffect(() => {
+    if (hasActiveRun) {
+      startPolling(3000);
+    } else {
+      stopPolling();
+    }
+  }, [hasActiveRun, startPolling, stopPolling]);
+
+  const fillableFields = useMemo(() => {
+    if (!form?.formSchema) return [];
+    const formSchema: FormSchema = deserializeFormSchema(form.formSchema);
+    const fields: FillableFormField[] = [];
+    formSchema.pages.forEach((page) => {
+      page.fields.forEach((field) => {
+        if (field instanceof FillableFormField && !field.deleted) fields.push(field);
+      });
+    });
+    return fields;
+  }, [form]);
 
   const breadcrumbs = [
     { label: t('layout.breadcrumbs.dashboard'), href: '/dashboard' },
@@ -162,6 +187,7 @@ const PdfTemplates: React.FC = () => {
       toastSuccess(t('toasts.deletedTitle'), t('toasts.deletedDescription'));
       setDeleteTarget(null);
       refetch();
+      refetchGenerators();
     } catch (error) {
       toastError(
         t('toasts.deleteFailedTitle'),
@@ -207,33 +233,23 @@ const PdfTemplates: React.FC = () => {
           </div>
         </div>
 
-        {/* Templates / Generators tabs */}
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => {
-            const tab = v as 'templates' | 'generators';
-            setActiveTab(tab);
-            navigate(
-              tab === 'generators'
-                ? `/dashboard/form/${formId}/pdf-templates/generators`
-                : `/dashboard/form/${formId}/pdf-templates`
-            );
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="templates" data-testid="pdf-templates-tab">
-              {tGenerators('tabs.templates')}
-            </TabsTrigger>
-            <TabsTrigger value="generators" data-testid="pdf-generators-tab">
-              {tGenerators('tabs.generators')}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* First-time explainer: how the feature works end to end */}
+        {templates.length === 0 && !templatesLoading && (
+          <div
+            className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-xl px-5 py-4"
+            style={{ background: 'var(--tf-faint)', border: '1px solid var(--tf-border-light)' }}
+          >
+            {(['design', 'bind', 'deliver'] as const).map((step) => (
+              <div key={step}>
+                <p className="text-xs font-semibold text-primary">{t(`empty.steps.${step}.title`)}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {t(`empty.steps.${step}.description`)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {activeTab === 'generators' ? (
-          <PdfGeneratorsList formId={formId!} canEdit={canEdit} />
-        ) : (
-          <>
         {/* Create options */}
         {canEdit && (
           <>
@@ -305,64 +321,21 @@ const PdfTemplates: React.FC = () => {
             description={canEdit ? t('empty.description') : t('empty.viewerDescription')}
           />
         ) : (
-          <div
-            className="rounded-xl bg-white dark:bg-card overflow-hidden"
-            style={{
-              border: '1px solid var(--tf-border-medium)',
-              boxShadow: '0 1px 4px var(--tf-overlay)',
-            }}
-          >
-            {templates.map((template: any, i: number) => (
-              <div
+          <div className="space-y-3">
+            {templates.map((template: any) => (
+              <TemplateAutomationRow
                 key={template.id}
-                className="flex items-center gap-4 px-5 py-4"
-                style={{
-                  borderTop: i > 0 ? '1px solid var(--tf-border-light)' : undefined,
-                }}
-              >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-blue-50">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-primary truncate">{template.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {template.fileName
-                      ? t('list.uploadedSource', { values: { fileName: template.fileName } })
-                      : t('list.blankSource')}
-                    {' · '}
-                    {t('list.pageCount', { values: { count: template.pageCount } })}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 px-3 text-xs"
-                    data-testid={`pdf-template-open-${template.id}`}
-                    onClick={() => navigate(`/dashboard/form/${formId}/pdf-templates/${template.id}`)}
-                  >
-                    <PencilRuler className="h-3.5 w-3.5 mr-1.5" />
-                    {canEdit ? t('list.openButton') : t('list.viewButton')}
-                  </Button>
-                  {canEdit && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                      data-testid={`pdf-template-delete-${template.id}`}
-                      onClick={() => setDeleteTarget({ id: template.id, name: template.name })}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+                template={template}
+                formId={formId!}
+                canEdit={canEdit}
+                fillableFields={fillableFields}
+                generators={generatorsByTemplateId[template.id] ?? []}
+                refetchGenerators={refetchGenerators}
+                onOpenDesigner={() => navigate(`/dashboard/form/${formId}/pdf-templates/${template.id}`)}
+                onDelete={() => setDeleteTarget({ id: template.id, name: template.name })}
+              />
             ))}
           </div>
-        )}
-          </>
         )}
       </div>
 

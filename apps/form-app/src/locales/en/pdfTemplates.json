@@ -44,7 +44,21 @@
   "empty": {
     "title": "No PDF templates yet",
     "description": "Create your first template from a blank page or an uploaded PDF.",
-    "viewerDescription": "No PDF templates have been created for this form yet."
+    "viewerDescription": "No PDF templates have been created for this form yet.",
+    "steps": {
+      "design": {
+        "title": "1. Design",
+        "description": "Lay out text, images, and tables on a page"
+      },
+      "bind": {
+        "title": "2. Bind",
+        "description": "Click a form field to place its answer on the page"
+      },
+      "deliver": {
+        "title": "3. Deliver",
+        "description": "Download per response, or automate it for every submission"
+      }
+    }
   },
   "limits": {
     "templateLimitReached": "This form has reached the maximum of {{max}} PDF templates. Delete one to create another."
@@ -119,7 +133,9 @@
     "generateButton": "Generate & download",
     "generatingButton": "Generating...",
     "cancelButton": "Cancel",
-    "noTemplates": "No PDF templates exist for this form yet. Create one from the form dashboard."
+    "noTemplates": "No PDF templates exist for this form yet. Create one from the form dashboard.",
+    "automateHint": "Want this generated automatically for every response?",
+    "automateHintLink": "Set up auto-generate"
   },
   "toasts": {
     "createdTitle": "Template created",

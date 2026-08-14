@@ -86,7 +86,7 @@
       },
       "pdfTemplates": {
         "title": "PDF Templates",
-        "description": "Design PDFs filled with responses"
+        "description": "Generate certificates, receipts & letters from responses — manually or automatically"
       },
       "settings": {
         "title": "Settings",

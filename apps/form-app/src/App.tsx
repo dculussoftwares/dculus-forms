@@ -37,7 +37,6 @@ const FormDashboard = lazy(() => import('./pages/FormDashboard'));
 const Responses = lazy(() => import('./pages/Responses'));
 const PdfTemplates = lazy(() => import('./pages/PdfTemplates'));
 const PdfTemplateDesigner = lazy(() => import('./pages/PdfTemplateDesigner'));
-const PdfGeneratorEditor = lazy(() => import('./pages/PdfGeneratorEditor'));
 const Settings = lazy(() => import('./pages/Settings'));
 // Architecture docs — lazy so the Markdown and React Flow canvas never land in
 // the initial bundle for people who never open /docs.
@@ -121,12 +120,6 @@ function App() {
           } />
           <Route path="/dashboard/form/:formId/pdf-templates" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplates /></Suspense></PageErrorBoundary></ProtectedRoute>
-          } />
-          <Route path="/dashboard/form/:formId/pdf-templates/generators" element={
-            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplates /></Suspense></PageErrorBoundary></ProtectedRoute>
-          } />
-          <Route path="/dashboard/form/:formId/pdf-templates/generators/:generatorId" element={
-            <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfGeneratorEditor /></Suspense></PageErrorBoundary></ProtectedRoute>
           } />
           <Route path="/dashboard/form/:formId/pdf-templates/:templateId" element={
             <ProtectedRoute><PageErrorBoundary><Suspense fallback={<RouteSpinner />}><PdfTemplateDesigner /></Suspense></PageErrorBoundary></ProtectedRoute>

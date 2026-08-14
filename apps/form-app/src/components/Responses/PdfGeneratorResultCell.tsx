@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Button, toastError } from '@dculus/ui';
+import { Button, Tooltip, TooltipContent, TooltipTrigger, toastError } from '@dculus/ui';
 import { Download, Loader2, RotateCcw, Wand2 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
@@ -85,17 +85,29 @@ export const PdfGeneratorResultCell: React.FC<PdfGeneratorResultCellProps> = ({
     <Wand2 className="h-4 w-4 text-muted-foreground" />
   );
 
+  const tooltipLabel =
+    result?.status === 'success'
+      ? t('responseAction.cellTooltip.generated')
+      : result?.status === 'failed'
+        ? t('responseAction.cellTooltip.failed')
+        : t('responseAction.cellTooltip.notGenerated');
+
   return (
     <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 w-8 p-0"
-        disabled={busy}
-        onClick={handleClick}
-      >
-        {icon}
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            disabled={busy}
+            onClick={handleClick}
+          >
+            {icon}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{tooltipLabel}</TooltipContent>
+      </Tooltip>
     </div>
   );
 };

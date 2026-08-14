@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Button,
@@ -8,15 +9,19 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
-import { FileText } from 'lucide-react';
+import { FileText, Zap } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import {
   GET_PDF_TEMPLATES,
   GENERATE_PDF_FROM_RESPONSE,
 } from '../../graphql/pdfTemplates';
+import { GET_PDF_GENERATORS } from '../../graphql/pdfGenerators';
 
 interface GeneratePdfButtonProps {
   formId: string;
@@ -33,6 +38,7 @@ export const GeneratePdfButton: React.FC<GeneratePdfButtonProps> = ({
   responseId,
 }) => {
   const { t } = useTranslation('pdfTemplates');
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -41,10 +47,18 @@ export const GeneratePdfButton: React.FC<GeneratePdfButtonProps> = ({
     variables: { formId },
     skip: !formId,
   });
+  const { data: generatorsData } = useQuery(GET_PDF_GENERATORS, {
+    variables: { formId },
+    skip: !formId,
+  });
   const [generatePdf] = useMutation(GENERATE_PDF_FROM_RESPONSE);
 
   const templates = data?.pdfTemplates || [];
   if (templates.length === 0) return null;
+
+  // Only nudge toward automation while the form has no generator at all —
+  // once one exists, the user has already discovered that path.
+  const hasNoGenerators = (generatorsData?.pdfGenerators?.length ?? 0) === 0;
 
   const runGeneration = async (templateId: string) => {
     setGenerating(true);
@@ -97,6 +111,24 @@ export const GeneratePdfButton: React.FC<GeneratePdfButtonProps> = ({
         <FileText className="h-3.5 w-3.5" />
         {generating && !open ? t('generate.generatingButton') : t('generate.menuLabel')}
       </Button>
+
+      {hasNoGenerators && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground"
+              data-testid="generate-pdf-automate-hint"
+              onClick={() => navigate(`/dashboard/form/${formId}/pdf-templates`)}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              {t('generate.automateHintLink')}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t('generate.automateHint')}</TooltipContent>
+        </Tooltip>
+      )}
 
       <Dialog open={open} onOpenChange={(o) => !o && !generating && setOpen(false)}>
         <DialogContent className="sm:max-w-md">
