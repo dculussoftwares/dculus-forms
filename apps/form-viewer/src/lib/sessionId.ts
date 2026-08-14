@@ -25,6 +25,11 @@ export function getOrCreateSessionId(): string {
     if (typeof crypto?.randomUUID === 'function') {
       return crypto.randomUUID();
     }
-    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    if (typeof crypto?.getRandomValues === 'function') {
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    }
+    // No Web Crypto API available at all — extremely unlikely in a modern browser.
+    return `${Date.now().toString(36)}-${performance.now().toString(36)}`;
   }
 }

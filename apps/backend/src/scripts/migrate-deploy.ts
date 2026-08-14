@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -72,7 +72,7 @@ async function main() {
         const migrations = getAllMigrationNames();
         console.log(`Existing database detected (no migration history). Resolving ${migrations.length} migrations as baseline...`);
         for (const migration of migrations) {
-          execSync(`npx prisma migrate resolve --applied ${migration}`, { stdio: 'inherit' });
+          execFileSync('npx', ['prisma', 'migrate', 'resolve', '--applied', migration], { stdio: 'inherit' });
         }
         console.log('All migrations resolved as baseline.');
       } else {
@@ -95,11 +95,11 @@ async function main() {
           // The column/index already exists — the migration's intent is satisfied.
           // Resolve as applied so migrate deploy skips it cleanly.
           console.log(`Migration ${migration_name} failed with "already exists" — resolving as applied.`);
-          execSync(`npx prisma migrate resolve --applied ${migration_name}`, { stdio: 'inherit' });
+          execFileSync('npx', ['prisma', 'migrate', 'resolve', '--applied', migration_name], { stdio: 'inherit' });
         } else {
           // Genuine failure — resolve as rolled-back so migrate deploy re-applies it.
           console.log(`Migration ${migration_name} failed — resolving as rolled-back to re-apply.`);
-          execSync(`npx prisma migrate resolve --rolled-back ${migration_name}`, { stdio: 'inherit' });
+          execFileSync('npx', ['prisma', 'migrate', 'resolve', '--rolled-back', migration_name], { stdio: 'inherit' });
         }
       }
     }
@@ -107,7 +107,7 @@ async function main() {
     await prisma.$disconnect();
   }
 
-  execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+  execFileSync('npx', ['prisma', 'migrate', 'deploy'], { stdio: 'inherit' });
 }
 
 main().catch((err) => {

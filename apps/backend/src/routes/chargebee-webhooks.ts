@@ -1,4 +1,4 @@
-import crypto, { createHash } from 'crypto';
+import crypto, { createHmac, randomBytes } from 'crypto';
 import express, { Router } from 'express';
 import { logger } from '../lib/logger.js';
 import { chargebeeConfig } from '../lib/env.js';
@@ -32,12 +32,14 @@ router.post('/webhooks/chargebee', async (req, res) => {
     const decoded = Buffer.from(base64, 'base64').toString('utf8');
     const incomingPassword = decoded.includes(':') ? decoded.slice(decoded.indexOf(':') + 1) : decoded;
 
-    // P3-09: Hash both sides to a fixed length before comparing so that differing
-    // buffer lengths don't throw and reveal the correct password length via timing.
-    const hash = (s: string) => createHash('sha256').update(s).digest();
+    // P3-09: Compare via a random-keyed HMAC (double-HMAC pattern) so that differing
+    // buffer lengths don't throw, and neither the password nor its direct hash is ever
+    // compared/leaked via timing — the digest key changes on every request.
+    const hmacKey = randomBytes(32);
+    const mac = (s: string) => createHmac('sha256', hmacKey).update(s).digest();
     let valid = false;
     try {
-      valid = crypto.timingSafeEqual(hash(incomingPassword), hash(chargebeeConfig.webhookPassword));
+      valid = crypto.timingSafeEqual(mac(incomingPassword), mac(chargebeeConfig.webhookPassword));
     } catch {
       valid = false;
     }
