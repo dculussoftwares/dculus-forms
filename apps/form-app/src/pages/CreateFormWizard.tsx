@@ -393,6 +393,7 @@ const CreateFormWizard: React.FC = () => {
       const formId = formData.createForm.id;
       let pendingBgKey: string | undefined;
       let pendingBgVideoKey: string | undefined;
+      let pendingBgDominantColor: string | undefined;
 
       if (selectedMedia) {
         try {
@@ -401,11 +402,13 @@ const CreateFormWizard: React.FC = () => {
               ? await downloadPexelsImage(selectedMedia.downloadUrl, formId)
               : await downloadPixabayImage(selectedMedia.downloadUrl, formId);
             pendingBgKey = result.key;
+            pendingBgDominantColor = result.dominantColor;
           } else {
             const result = selectedMedia.source === 'pexels'
               ? await downloadPexelsVideo(selectedMedia.video as PexelsVideo, formId)
               : await downloadPixabayVideo(selectedMedia.video as PixabayVideo, formId);
             pendingBgVideoKey = result.key;
+            pendingBgDominantColor = result.dominantColor;
           }
         } catch {
           // Media download failed — not fatal; user can add it later
@@ -414,7 +417,11 @@ const CreateFormWizard: React.FC = () => {
 
       navigate(`/dashboard/form/${formId}/builder/page-builder`, {
         state: (pendingBgKey || pendingBgVideoKey)
-          ? { pendingBackgroundKey: pendingBgKey, pendingBackgroundVideoKey: pendingBgVideoKey }
+          ? {
+              pendingBackgroundKey: pendingBgKey,
+              pendingBackgroundVideoKey: pendingBgVideoKey,
+              pendingBackgroundDominantColor: pendingBgDominantColor,
+            }
           : undefined,
       });
     } catch (err: any) {

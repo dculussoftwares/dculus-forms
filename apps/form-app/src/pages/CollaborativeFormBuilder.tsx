@@ -379,13 +379,14 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   useEffect(() => {
     const pendingKey = (location.state as any)?.pendingBackgroundKey as string | undefined;
     const pendingVideoKey = (location.state as any)?.pendingBackgroundVideoKey as string | undefined;
+    const pendingDominantColor = (location.state as any)?.pendingBackgroundDominantColor as string | undefined;
     if ((!pendingKey && !pendingVideoKey) || !isConnected || pages.length === 0 || pendingBgApplied.current) return;
     pendingBgApplied.current = true;
     // Mutually exclusive with backgroundImageKey — see BackgroundControls.tsx.
     updateLayout(
       pendingVideoKey
-        ? { backgroundVideoKey: pendingVideoKey, backgroundImageKey: '' }
-        : { backgroundImageKey: pendingKey, backgroundVideoKey: '' }
+        ? { backgroundVideoKey: pendingVideoKey, backgroundImageKey: '', backgroundDominantColor: pendingDominantColor || '' }
+        : { backgroundImageKey: pendingKey, backgroundVideoKey: '', backgroundDominantColor: pendingDominantColor || '' }
     );
     navigate(location.pathname, { replace: true, state: {} });
   }, [isConnected, pages.length, location.state, location.pathname, updateLayout, navigate]);

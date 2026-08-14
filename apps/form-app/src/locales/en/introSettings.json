@@ -33,12 +33,14 @@
     "pexelsTab": {
       "browseButton": "Browse Photos & Videos from Pexels",
       "helpTextEnabled": "Search and select from high-quality Pexels photos and videos",
-      "helpTextDisabled": "View-only mode - browsing disabled"
+      "helpTextDisabled": "View-only mode - browsing disabled",
+      "recentLabel": "Recently used"
     },
     "pixabayTab": {
       "browseButton": "Browse Photos & Videos from Pixabay",
       "helpTextEnabled": "Search and select from thousands of free background photos and videos",
-      "helpTextDisabled": "View-only mode - browsing disabled"
+      "helpTextDisabled": "View-only mode - browsing disabled",
+      "recentLabel": "Recently used"
     },
     "clearButton": "Clear Background"
   }
