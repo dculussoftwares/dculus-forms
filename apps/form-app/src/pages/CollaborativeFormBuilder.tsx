@@ -67,6 +67,19 @@ const OLD_TAB_REDIRECTS: Record<string, { tab: BuilderTab; params?: Record<strin
   settings: { tab: 'content', params: { settings: '1' } },
 };
 
+// Shape of the navigation state CreateFormWizard.tsx hands off after downloading a
+// Pexels/Pixabay background — validated before it's merged into FormLayout and
+// persisted to Y.js, since it otherwise arrives here as an untyped `location.state`.
+const pendingBackgroundStateSchema = z
+  .object({
+    pendingBackgroundKey: z.string().optional(),
+    pendingBackgroundVideoKey: z.string().optional(),
+    pendingBackgroundDominantColor: z.string().optional(),
+  })
+  .refine((value) => !(value.pendingBackgroundKey && value.pendingBackgroundVideoKey), {
+    message: 'pendingBackgroundKey and pendingBackgroundVideoKey are mutually exclusive',
+  });
+
 const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   className,
 }) => {
@@ -377,9 +390,9 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
   // Wait for pages.length > 0 as a signal that the YJS document has fully hydrated
   // from Hocuspocus — writing before hydration loses to the server's initial sync.
   useEffect(() => {
-    const pendingKey = (location.state as any)?.pendingBackgroundKey as string | undefined;
-    const pendingVideoKey = (location.state as any)?.pendingBackgroundVideoKey as string | undefined;
-    const pendingDominantColor = (location.state as any)?.pendingBackgroundDominantColor as string | undefined;
+    const parsedState = pendingBackgroundStateSchema.safeParse(location.state ?? {});
+    if (!parsedState.success) return;
+    const { pendingBackgroundKey: pendingKey, pendingBackgroundVideoKey: pendingVideoKey, pendingBackgroundDominantColor: pendingDominantColor } = parsedState.data;
     if ((!pendingKey && !pendingVideoKey) || !isConnected || pages.length === 0 || pendingBgApplied.current) return;
     pendingBgApplied.current = true;
     // Mutually exclusive with backgroundImageKey — see BackgroundControls.tsx.

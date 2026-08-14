@@ -97,7 +97,7 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
   };
 
   const handleApplyBackgroundImage = () => {
-    if (!selectedImageKey) return;
+    if (!canEditLayout || !selectedImageKey) return;
     const selectedFile = formFilesData?.getFormFiles?.find(
       (file: { key: string }) => file.key === selectedImageKey
     );
@@ -265,6 +265,7 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
                 selectedImageKey !== layout.backgroundVideoKey && (
                   <Button
                     onClick={handleApplyBackgroundImage}
+                    disabled={!canEditLayout}
                     className="w-full bg-purple-600 hover:bg-purple-700"
                   >
                     {t('backgroundImages.customTab.applyButton')}
@@ -309,6 +310,7 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
                 selectedImageKey !== layout.backgroundVideoKey && (
                   <Button
                     onClick={handleApplyBackgroundImage}
+                    disabled={!canEditLayout}
                     className="w-full bg-purple-600 hover:bg-purple-700"
                   >
                     {t('backgroundImages.customTab.applyButton')}
