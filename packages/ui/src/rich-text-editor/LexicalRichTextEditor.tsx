@@ -121,7 +121,7 @@ function normalizeHtmlContent(html: string): string {
   if (!html) return '';
   // Lexical empty editor outputs: <p class="editor-paragraph"><br></p> or similar
   const stripped = html
-    .replace(/<p[^>]*>\s*<br\s*\/?\s*>\s*<\/p>/gi, '')
+    .replace(/<p[^>]{0,300}>\s{0,50}<br[\s/]{0,10}>\s{0,50}<\/p>/gi, '')
     .trim();
   return stripped;
 }
