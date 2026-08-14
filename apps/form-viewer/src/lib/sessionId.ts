@@ -21,15 +21,16 @@ export function getOrCreateSessionId(): string {
     localStorage.setItem(SESSION_EXPIRY_KEY, String(Date.now() + SESSION_TTL_MS));
     return sessionId;
   } catch {
-    // localStorage or crypto.randomUUID may be unavailable (private browsing, HTTP origins)
-    if (typeof crypto?.randomUUID === 'function') {
-      return crypto.randomUUID();
+    // localStorage or crypto.randomUUID may be unavailable (private browsing, HTTP origins).
+    // Read via globalThis so a missing `crypto`/`performance` binding doesn't itself throw.
+    if (typeof globalThis.crypto?.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID();
     }
-    if (typeof crypto?.getRandomValues === 'function') {
-      const bytes = crypto.getRandomValues(new Uint8Array(16));
+    if (typeof globalThis.crypto?.getRandomValues === 'function') {
+      const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
       return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
     }
     // No Web Crypto API available at all — extremely unlikely in a modern browser.
-    return `${Date.now().toString(36)}-${performance.now().toString(36)}`;
+    return `${Date.now().toString(36)}-${(globalThis.performance?.now() ?? Date.now()).toString(36)}`;
   }
 }
