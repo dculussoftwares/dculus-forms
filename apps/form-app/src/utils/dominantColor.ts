@@ -12,21 +12,31 @@ function toHex(value: number): string {
   return Math.round(value).toString(16).padStart(2, '0');
 }
 
+type Bucket = { r: number; g: number; b: number; count: number };
+
 /**
- * Lightweight histogram-based "poor man's color-thief": bucket pixels by rounding
- * each RGB channel to the nearest BUCKET_STEP, count frequency per bucket, and
- * return the highest-frequency bucket's average color. Not a full k-means palette —
- * good enough for a tint wash.
+ * Buckets pixels by rounding each RGB channel to the nearest BUCKET_STEP. When
+ * skipExtremes is set, near-white/near-black pixels are excluded — highlights,
+ * shadows, and plain backdrops are common but don't represent "the image's color";
+ * letting them dominate the pixel count produces a washed-out grey tint that visually
+ * doesn't match the photo (the original complaint this scoring was tuned to fix).
  */
-function computeDominantColor(data: Uint8ClampedArray): string {
-  const buckets = new Map<string, { r: number; g: number; b: number; count: number }>();
+function buildBuckets(data: Uint8ClampedArray, skipExtremes: boolean): Map<string, Bucket> {
+  const buckets = new Map<string, Bucket>();
 
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
-    const key = `${Math.round(r / BUCKET_STEP)}-${Math.round(g / BUCKET_STEP)}-${Math.round(b / BUCKET_STEP)}`;
 
+    if (skipExtremes) {
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      if (max > 240 && min > 215) continue; // near-white
+      if (max < 25) continue; // near-black
+    }
+
+    const key = `${Math.round(r / BUCKET_STEP)}-${Math.round(g / BUCKET_STEP)}-${Math.round(b / BUCKET_STEP)}`;
     const bucket = buckets.get(key);
     if (bucket) {
       bucket.r += r;
@@ -38,13 +48,46 @@ function computeDominantColor(data: Uint8ClampedArray): string {
     }
   }
 
-  let winner: { r: number; g: number; b: number; count: number } | undefined;
+  return buckets;
+}
+
+/**
+ * Scores buckets by pixel count weighted toward saturation (chroma), so a moderately
+ * sized vivid cluster (the actual subject) can outscore a much larger but dull cluster
+ * (sky, pavement, a plain wall) — a pure frequency count picks the latter every time.
+ */
+function pickWinner(buckets: Map<string, Bucket>): Bucket | undefined {
+  let winner: Bucket | undefined;
+  let winnerScore = -Infinity;
+
   for (const bucket of buckets.values()) {
-    if (!winner || bucket.count > winner.count) {
+    const r = bucket.r / bucket.count;
+    const g = bucket.g / bucket.count;
+    const b = bucket.b / bucket.count;
+    const chroma = Math.max(r, g, b) - Math.min(r, g, b); // 0 (grey) .. 255 (fully saturated)
+    const score = bucket.count * (1 + chroma / 255);
+    if (score > winnerScore) {
+      winnerScore = score;
       winner = bucket;
     }
   }
 
+  return winner;
+}
+
+/**
+ * Lightweight histogram-based "poor man's color-thief". Not a full k-means palette —
+ * good enough for a tint wash.
+ */
+function computeDominantColor(data: Uint8ClampedArray): string {
+  let buckets = buildBuckets(data, true);
+  // Every pixel got filtered out (e.g. a near-pure white/black image) — fall back to
+  // sampling unfiltered rather than returning nothing.
+  if (buckets.size === 0) {
+    buckets = buildBuckets(data, false);
+  }
+
+  const winner = pickWinner(buckets);
   if (!winner) return '';
 
   const r = winner.r / winner.count;

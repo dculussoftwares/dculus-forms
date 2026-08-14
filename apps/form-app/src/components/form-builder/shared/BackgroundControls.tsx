@@ -77,6 +77,17 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
     fetchPolicy: 'cache-and-network',
   });
 
+  // downloadPexelsImage/downloadPixabayImage (services/pexelsService.ts, pixabayService.ts) name
+  // every file `pexels-<timestamp>.*` / `pixabay-<timestamp>.*` — reused here as a source tag so
+  // each tab's "recently used" gallery can filter the same FormBackground files without a
+  // dedicated source column on FormFile.
+  const pexelsFiles = (formFilesData?.getFormFiles ?? []).filter((file: { originalName: string }) =>
+    file.originalName.startsWith('pexels-')
+  );
+  const pixabayFiles = (formFilesData?.getFormFiles ?? []).filter((file: { originalName: string }) =>
+    file.originalName.startsWith('pixabay-')
+  );
+
   const handleImageUploadSuccess = () => {
     refetchFormFiles();
   };
@@ -86,14 +97,14 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
   };
 
   const handleApplyBackgroundImage = () => {
-    if (!selectedImageKey) return;
+    if (!canEditLayout || !selectedImageKey) return;
     const selectedFile = formFilesData?.getFormFiles?.find(
       (file: { key: string }) => file.key === selectedImageKey
     );
     const isVideo = selectedFile?.mimeType?.startsWith('video/');
-    // No fresh blob available for re-applying an already-uploaded gallery asset, so we
-    // can't sample a new dominant color here — clear the old one rather than showing a
-    // stale/mismatched wash; rendering falls back to the flat tint when this is empty.
+    // No fresh blob available for re-applying an already-uploaded gallery asset (Custom tab,
+    // or a previously-downloaded Pexels/Pixabay pick shown in "Recently used"), so we can't
+    // sample a dominant color here — clear it rather than keeping a stale/mismatched value.
     onLayoutUpdate(
       isVideo
         ? { backgroundVideoKey: selectedImageKey, backgroundImageKey: '', backgroundDominantColor: '' }
@@ -234,6 +245,32 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
                   ? t('backgroundImages.pexelsTab.helpTextEnabled')
                   : t('backgroundImages.pexelsTab.helpTextDisabled')}
               </p>
+
+              {pexelsFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="block text-xs text-foreground dark:text-gray-400">
+                    {t('backgroundImages.pexelsTab.recentLabel')}
+                  </Label>
+                  <BackgroundImageGallery
+                    images={pexelsFiles}
+                    selectedImageKey={selectedImageKey || undefined}
+                    onImageSelect={handleImageSelect}
+                  />
+                </div>
+              )}
+
+              {selectedImageKey &&
+                pexelsFiles.some((file: { key: string }) => file.key === selectedImageKey) &&
+                selectedImageKey !== layout.backgroundImageKey &&
+                selectedImageKey !== layout.backgroundVideoKey && (
+                  <Button
+                    onClick={handleApplyBackgroundImage}
+                    disabled={!canEditLayout}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  >
+                    {t('backgroundImages.customTab.applyButton')}
+                  </Button>
+                )}
             </div>
           </TabsContent>
 
@@ -253,6 +290,32 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
                   ? t('backgroundImages.pixabayTab.helpTextEnabled')
                   : t('backgroundImages.pixabayTab.helpTextDisabled')}
               </p>
+
+              {pixabayFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="block text-xs text-foreground dark:text-gray-400">
+                    {t('backgroundImages.pixabayTab.recentLabel')}
+                  </Label>
+                  <BackgroundImageGallery
+                    images={pixabayFiles}
+                    selectedImageKey={selectedImageKey || undefined}
+                    onImageSelect={handleImageSelect}
+                  />
+                </div>
+              )}
+
+              {selectedImageKey &&
+                pixabayFiles.some((file: { key: string }) => file.key === selectedImageKey) &&
+                selectedImageKey !== layout.backgroundImageKey &&
+                selectedImageKey !== layout.backgroundVideoKey && (
+                  <Button
+                    onClick={handleApplyBackgroundImage}
+                    disabled={!canEditLayout}
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  >
+                    {t('backgroundImages.customTab.applyButton')}
+                  </Button>
+                )}
             </div>
           </TabsContent>
         </Tabs>
