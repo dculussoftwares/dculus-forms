@@ -43,7 +43,19 @@ export function useTranslation(namespace?: Namespace) {
   const translate = useCallback(
     (key: string, options: TranslateOptions = {}) => {
       const segments = namespace ? [namespace as string, ...splitKey(key)] : splitKey(key);
-      const result = resolveMessage(messages, segments);
+      let result = resolveMessage(messages, segments);
+
+      const count = options.values?.count;
+      if (typeof result !== 'string' && typeof count === 'number' && segments.length > 0) {
+        const pluralRule = new Intl.PluralRules(locale).select(count);
+        const pluralSegments = segments.slice(0, -1).concat(`${segments[segments.length - 1]}_${pluralRule}`);
+        result = resolveMessage(messages, pluralSegments);
+
+        if (typeof result !== 'string' && pluralRule !== 'other') {
+          const otherSegments = segments.slice(0, -1).concat(`${segments[segments.length - 1]}_other`);
+          result = resolveMessage(messages, otherSegments);
+        }
+      }
 
       if (typeof result === 'string') {
         return formatMessage(result, options.values);
@@ -55,7 +67,7 @@ export function useTranslation(namespace?: Namespace) {
 
       return key;
     },
-    [messages, namespace],
+    [messages, namespace, locale],
   );
 
   return { t: translate, locale };
