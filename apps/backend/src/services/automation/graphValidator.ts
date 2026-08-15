@@ -191,7 +191,7 @@ const FIELD_LABELS: Record<string, string> = {
   channel: 'Slack channel',
 };
 
-function fieldLabel(path: (string | number)[]): string | null {
+function fieldLabel(path: PropertyKey[]): string | null {
   const key = path.find((segment) => typeof segment === 'string');
   if (typeof key !== 'string') return null;
   return FIELD_LABELS[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
