@@ -45,6 +45,7 @@
     "selectField": "Select a field",
     "selectOperator": "Select an operator",
     "selectOption": "Select an option",
+    "staleOptionValue": "{{value}} (no longer an option)",
     "selectPage": "Select a page",
     "valuePlaceholder": "Value",
     "numberPlaceholder": "Enter a number",

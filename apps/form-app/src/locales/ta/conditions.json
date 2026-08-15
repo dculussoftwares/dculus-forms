@@ -45,6 +45,7 @@
     "selectField": "ஒரு புலத்தைத் தேர்ந்தெடுக்கவும்",
     "selectOperator": "ஒரு செயற்குறியைத் தேர்ந்தெடுக்கவும்",
     "selectOption": "ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்",
+    "staleOptionValue": "{{value}} (இனி விருப்பமாக இல்லை)",
     "selectPage": "ஒரு பக்கத்தைத் தேர்ந்தெடுக்கவும்",
     "valuePlaceholder": "மதிப்பு",
     "numberPlaceholder": "எண்ணை உள்ளிடவும்",

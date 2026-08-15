@@ -424,7 +424,7 @@ export function createFormEditTools(
         terms: z.array(z.object({
           field: z.string().min(1).describe('Trigger field label or id'),
           operator: z.enum(['equals', 'notEquals', 'contains', 'notContains', 'startsWith', 'endsWith', 'isEmpty', 'isFilled', 'lessThan', 'greaterThan', 'before', 'after']),
-          value: z.union([z.string(), z.number(), z.array(z.string())]).optional(),
+          value: z.union([z.string(), z.number(), z.array(z.string())]).optional().describe('Single comparison value — never a list. For a select/radio/checkbox field, use the exact option text. For a date field, use YYYY-MM-DD.'),
         })).min(1),
         actions: z.array(z.union([
           z.object({ type: z.enum(['showField', 'hideField', 'requireField', 'unrequireField']), fields: z.array(z.string().min(1)).min(1).describe('Target field labels or ids') }),
@@ -440,7 +440,40 @@ export function createFormEditTools(
           const allowed = CONDITION_OPERATORS_BY_TYPE[normalizeFieldType(field.type)];
           if (!allowed) return { error: `"${field.label ?? term.field}" is a display-only or unsupported field and cannot trigger a condition.` };
           if (!allowed.includes(term.operator)) return { error: `"${term.operator}" is not valid for the ${field.label ?? term.field} field. Choose an operator supported by its field type.` };
-          resolvedTerms.push({ fieldId: field.id, operator: term.operator, ...(term.value !== undefined && { value: term.value }) });
+
+          // The evaluator (conditions.ts) never reads array values for ANY field type — every
+          // operator (equals/contains/lessThan/etc.) coerces a term value that isn't a plain
+          // string/number to null and the term silently never matches. A rule built from an
+          // array value would look configured but never fire, so reject it outright rather
+          // than accepting a value shape nothing can evaluate.
+          if (Array.isArray(term.value)) {
+            return { error: `A condition value must be a single value, not a list. Choose one option for "${field.label ?? term.field}".` };
+          }
+
+          let resolvedValue = term.value;
+          const fieldTypeToken = normalizeFieldType(field.type);
+          if (resolvedValue !== undefined && ['select_field', 'radio_field', 'checkbox_field'].includes(fieldTypeToken)) {
+            const options = ((field.options ?? []) as unknown[]).map(String);
+            const match =
+              options.find((option) => option === String(resolvedValue)) ??
+              options.find((option) => normalizeLabel(option) === normalizeLabel(String(resolvedValue)));
+            if (!match) return { error: `"${String(resolvedValue)}" is not one of the options for "${field.label ?? term.field}" (${options.join(', ')}).` };
+            resolvedValue = match;
+          } else if (resolvedValue !== undefined && fieldTypeToken === 'number_field') {
+            // evaluateNumberTerm silently treats a non-finite value as "never matches" —
+            // catch a non-numeric string here instead of creating a dead rule.
+            const num = typeof resolvedValue === 'number' ? resolvedValue : Number(resolvedValue);
+            if (!Number.isFinite(num)) return { error: `"${String(resolvedValue)}" is not a valid number for "${field.label ?? term.field}".` };
+            resolvedValue = num;
+          } else if (resolvedValue !== undefined && fieldTypeToken === 'date_field') {
+            // Stored dates are plain 'YYYY-MM-DD' strings compared lexicographically
+            // (conditions.ts evaluateDateTerm) — any other format never matches.
+            const isoMatch = /^\d{4}-\d{2}-\d{2}/.exec(String(resolvedValue));
+            if (!isoMatch) return { error: `"${String(resolvedValue)}" must be a date in YYYY-MM-DD format for "${field.label ?? term.field}".` };
+            resolvedValue = isoMatch[0];
+          }
+
+          resolvedTerms.push({ fieldId: field.id, operator: term.operator, ...(resolvedValue !== undefined && { value: resolvedValue }) });
         }
 
         const resolvedActions: ConditionalRule['actions'] = [];

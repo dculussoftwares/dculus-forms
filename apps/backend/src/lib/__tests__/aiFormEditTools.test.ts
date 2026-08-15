@@ -401,6 +401,102 @@ describe('upsertConditionRule (proposal only)', () => {
     }, { messages: [], toolCallId: 'test' });
     expect(unreqResult).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { actions: [{ type: 'unrequireField', fieldIds: ['gst'] }] } });
   });
+
+  it('rejects a term value that is not one of the select field options', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Country', operator: 'equals', value: 'Germany' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('is not one of the options') }));
+  });
+
+  it('normalizes a case/whitespace-mismatched option value to the canonical option text', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Country', operator: 'equals', value: 'india' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toMatchObject({
+      type: 'PROPOSE_CONDITION_RULE',
+      rule: { terms: [{ fieldId: 'country', operator: 'equals', value: 'India' }] },
+    });
+  });
+
+  it('rejects an array term value (no operator ever evaluates a list)', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Country', operator: 'equals', value: ['India', 'USA'] }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('not a list') }));
+  });
+
+  const numberDateSchema = {
+    pages: [{
+      id: 'page-1', title: 'Details', fields: [
+        { id: 'age', type: 'NUMBER_FIELD', label: 'Age' },
+        { id: 'dob', type: 'DATE_FIELD', label: 'Date of birth' },
+        { id: 'gst', type: 'TEXT_INPUT_FIELD', label: 'GST field' },
+      ],
+    }],
+  };
+
+  it('rejects a non-numeric value for a number field', async () => {
+    const tools = makeFullTools(numberDateSchema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Age', operator: 'greaterThan', value: 'eighteen' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('not a valid number') }));
+  });
+
+  it('coerces a numeric string value for a number field to a number', async () => {
+    const tools = makeFullTools(numberDateSchema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Age', operator: 'greaterThan', value: '18' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toMatchObject({
+      type: 'PROPOSE_CONDITION_RULE',
+      rule: { terms: [{ fieldId: 'age', operator: 'greaterThan', value: 18 }] },
+    });
+  });
+
+  it('rejects a date value that is not YYYY-MM-DD', async () => {
+    const tools = makeFullTools(numberDateSchema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Date of birth', operator: 'before', value: 'August 20 2026' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('YYYY-MM-DD') }));
+  });
+
+  it('truncates a full ISO datetime value down to the YYYY-MM-DD date portion', async () => {
+    const tools = makeFullTools(numberDateSchema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Date of birth', operator: 'before', value: '2026-08-20T00:00:00.000Z' }],
+      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      rationale: 'Test',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toMatchObject({
+      type: 'PROPOSE_CONDITION_RULE',
+      rule: { terms: [{ fieldId: 'dob', operator: 'before', value: '2026-08-20' }] },
+    });
+  });
 });
 
 describe('updateFields', () => {

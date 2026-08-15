@@ -171,13 +171,21 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
     switch (kind) {
       case 'none':
         return null;
-      case 'number':
+      case 'number': {
+        // Values are normally stored as `number`, but tolerate a numeric string
+        // (e.g. an AI-authored rule) instead of showing a blank input.
+        const numericValue =
+          typeof term.value === 'number'
+            ? term.value
+            : typeof term.value === 'string' && term.value.trim() !== '' && Number.isFinite(Number(term.value))
+              ? Number(term.value)
+              : '';
         return (
           <Input
             type="number"
             className="w-40"
             placeholder={t('editor.numberPlaceholder')}
-            value={typeof term.value === 'number' ? term.value : ''}
+            value={numericValue}
             onChange={(e) =>
               updateTerm(index, {
                 value: e.target.value === '' ? undefined : Number(e.target.value),
@@ -186,31 +194,39 @@ export const ConditionRuleEditor: React.FC<ConditionRuleEditorProps> = ({
             data-testid={`condition-term-value-${index}`}
           />
         );
-      case 'date':
+      }
+      case 'date': {
+        // Stored dates are plain 'YYYY-MM-DD' strings; guard against any other
+        // shape producing an Invalid Date instead of just showing "unset".
+        const isIsoDate = typeof term.value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(term.value);
         return (
           <DatePicker
-            date={
-              typeof term.value === 'string' && term.value
-                ? parseCalendarDate(term.value)
-                : undefined
-            }
+            date={isIsoDate ? parseCalendarDate(term.value as string) : undefined}
             onDateChange={(date?: Date) =>
               updateTerm(index, { value: date ? formatCalendarDate(date) : undefined })
             }
             placeholder={t('editor.pickDate')}
           />
         );
+      }
       case 'option': {
         const options = (field as { options?: string[] }).options ?? [];
+        const currentValue = typeof term.value === 'string' ? term.value : '';
+        const isStaleValue = currentValue !== '' && !options.includes(currentValue);
         return (
           <Select
-            value={typeof term.value === 'string' ? term.value : ''}
+            value={currentValue}
             onValueChange={(value) => updateTerm(index, { value })}
           >
             <SelectTrigger className="w-44" data-testid={`condition-term-value-${index}`}>
               <SelectValue placeholder={t('editor.selectOption')} />
             </SelectTrigger>
             <SelectContent>
+              {isStaleValue && (
+                <SelectItem value={currentValue}>
+                  {t('editor.staleOptionValue', { values: { value: currentValue } })}
+                </SelectItem>
+              )}
               {options.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
