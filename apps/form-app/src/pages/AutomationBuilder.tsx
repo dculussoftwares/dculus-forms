@@ -310,6 +310,12 @@ const AutomationBuilder: React.FC = () => {
   const { data: formData, loading: formLoading } = useQuery(GET_FORM_BY_ID, {
     variables: { id: formId },
     skip: !formId,
+    // This tab remounts on every visit (CollaborativeFormBuilder's tab switch is a full
+    // element swap, not a visibility toggle), but Apollo's default cache-first policy would
+    // still serve whatever the Content tab's own GET_FORM_BY_ID fetched at page load — so
+    // field edits (required toggle, label, options, ...) made after that never show up here.
+    // cache-and-network shows the cached form immediately, then revalidates from the server.
+    fetchPolicy: 'cache-and-network',
   });
 
   const {

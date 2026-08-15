@@ -121,7 +121,7 @@ const EmailActionConfigSchema = z
     attachPdfTemplateName: z.string().optional(),
   })
   .refine((cfg) => Boolean(cfg.recipientEmail?.trim() || cfg.recipientFieldId), {
-    message: 'Email action requires recipientEmail or recipientFieldId',
+    message: 'Add a recipient — either a fixed email address or a form field to pull it from',
   });
 
 const WebhookActionConfigSchema = z.object({
@@ -167,6 +167,67 @@ function configReferencesResponseData(config: Record<string, any>): boolean {
   };
 
   return scan(config);
+}
+
+// Friendly labels for the trigger/delay/condition/action-config field names referenced by the
+// schemas above. Falls back to a space-separated version of the raw camelCase key for any field
+// added later without an entry here, so new plugin config fields still degrade gracefully rather
+// than crashing or reverting to raw JSON.
+const FIELD_LABELS: Record<string, string> = {
+  triggerType: 'Trigger type',
+  actionType: 'Action type',
+  amount: 'Wait time',
+  unit: 'Time unit',
+  rules: 'Condition rules',
+  combinator: 'Match type',
+  fieldId: 'Field',
+  operator: 'Comparison',
+  recipientEmail: 'Recipient email',
+  recipientFieldId: 'Recipient field',
+  subject: 'Subject',
+  message: 'Message',
+  url: 'Webhook URL',
+  webhookUrl: 'Slack webhook URL',
+  channel: 'Slack channel',
+};
+
+function fieldLabel(path: (string | number)[]): string | null {
+  const key = path.find((segment) => typeof segment === 'string');
+  if (typeof key !== 'string') return null;
+  return FIELD_LABELS[key] ?? key.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/^./, (c) => c.toUpperCase());
+}
+
+/** Turns one ZodIssue into a plain-English sentence fragment instead of its raw code/path/message shape. */
+function humanizeZodIssue(issue: z.ZodError['issues'][number]): string {
+  const label = fieldLabel(issue.path);
+
+  // A schema-level .refine() (e.g. the email action's "needs a recipient" rule) attaches to the
+  // root path and already carries a hand-written, user-facing message — use it verbatim.
+  if (!label) return issue.message;
+
+  if (issue.code === 'invalid_type') return `${label} is required`;
+  if (issue.code === 'too_small') {
+    const origin = (issue as { origin?: string }).origin;
+    if (origin === 'number') return `${label} must be greater than 0`;
+    if (origin === 'array') return `Add at least one item to ${label.toLowerCase()}`;
+    return `${label} is required`;
+  }
+  if (issue.code === 'invalid_format') {
+    const format = (issue as { format?: string }).format;
+    if (format === 'email') return `${label} must be a valid email address`;
+    if (format === 'url') return `${label} must be a valid URL`;
+  }
+  return `${label}: ${issue.message}`;
+}
+
+/**
+ * Renders a ZodError as a human-readable sentence list instead of the raw JSON-stringified
+ * issues array `ZodError.message` produces — used everywhere a schema failure is surfaced in a
+ * GraphValidationError, so every node/action type (not just email) gets a readable message on
+ * the canvas tooltip.
+ */
+function formatZodError(error: z.ZodError): string {
+  return error.issues.map(humanizeZodIssue).join('; ');
 }
 
 function detectCycle(nodeIds: string[], adjacency: Map<string, string[]>): string[] {
@@ -290,7 +351,7 @@ export function validateAutomationGraph(
       errors: [
         {
           code: GRAPH_ERROR_CODES.INVALID_GRAPH_SHAPE,
-          message: `Automation graph does not match the expected shape: ${parsed.error.message}`,
+          message: "This automation's saved structure looks corrupted and can't be checked. Try reloading the page — if it keeps happening, contact support.",
         },
       ],
     };
@@ -309,12 +370,12 @@ export function validateAutomationGraph(
   if (triggerNodes.length === 0) {
     errors.push({
       code: GRAPH_ERROR_CODES.MISSING_TRIGGER,
-      message: 'Automation graph must have exactly one trigger node',
+      message: 'This automation needs a starting trigger — add one to begin the flow.',
     });
   } else if (triggerNodes.length > 1) {
     errors.push({
       code: GRAPH_ERROR_CODES.MULTIPLE_TRIGGERS,
-      message: 'Automation graph must have exactly one trigger node',
+      message: 'This automation has more than one starting trigger — remove all but one.',
     });
   }
 
@@ -324,7 +385,7 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: node.id,
         code: GRAPH_ERROR_CODES.INVALID_TRIGGER_CONFIG,
-        message: `Trigger node ${node.id} has invalid data: ${result.error.message}`,
+        message: `This trigger isn't fully set up yet: ${formatZodError(result.error)}`,
       });
     }
   }
@@ -335,7 +396,7 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: node.id,
         code: GRAPH_ERROR_CODES.INVALID_DELAY,
-        message: `Delay node ${node.id} must have a positive amount and unit in minutes|hours|days: ${result.error.message}`,
+        message: `This delay step needs a wait time greater than zero and a unit (minutes, hours, or days): ${formatZodError(result.error)}`,
       });
     }
   }
@@ -346,7 +407,7 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: node.id,
         code: GRAPH_ERROR_CODES.INVALID_CONDITION_CONFIG,
-        message: `Condition node ${node.id} must have non-empty rules with valid operators and an AND|OR combinator: ${result.error.message}`,
+        message: `This condition step needs at least one complete rule (a field, a comparison, and a value): ${formatZodError(result.error)}`,
       });
       continue;
     }
@@ -357,7 +418,11 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: node.id,
         code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE,
-        message: `Condition node ${node.id} evaluates response fields, which are unavailable for a scheduled (cron) trigger`,
+        // Mirrors the plain-language phrasing already used in the builder UI's schedule-trigger
+        // hint (automations.json "builder.panel.trigger.descriptionSchedule") — no node IDs or
+        // internal field names (fieldId, cron), since the tooltip is already anchored to this
+        // exact node on the canvas.
+        message: `This step checks an answer from a submission, but this automation doesn't have a triggering response — it runs on a schedule, so steps can't reference response data.`,
       });
     }
   }
@@ -368,7 +433,7 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: node.id,
         code: GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG,
-        message: `Action node ${node.id} has invalid data: ${result.error.message}`,
+        message: `This step isn't fully set up yet: ${formatZodError(result.error)}`,
       });
       continue;
     }
@@ -378,7 +443,7 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: node.id,
         code: GRAPH_ERROR_CODES.UNKNOWN_ACTION_TYPE,
-        message: `Action node ${node.id} references unregistered action type: ${actionType}`,
+        message: `This step's action type ("${actionType}") isn't available anymore — remove this step and choose a different action.`,
       });
       continue;
     }
@@ -390,7 +455,7 @@ export function validateAutomationGraph(
         errors.push({
           nodeId: node.id,
           code: GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG,
-          message: `Action node ${node.id} (${actionType}) has an invalid config: ${configResult.error.message}`,
+          message: `This ${actionType} step has missing or invalid details: ${formatZodError(configResult.error)}`,
         });
       }
     }
@@ -399,7 +464,7 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: node.id,
         code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE,
-        message: `Action node ${node.id} references response data (a {{field}} mention, recipientFieldId, or sendToSubmitter), which is unavailable for a scheduled (cron) trigger`,
+        message: `This step is set up to use an answer from a submission (e.g. a recipient pulled from a field, or "send to submitter"), but this automation doesn't have a triggering response — it runs on a schedule, so steps can't reference response data.`,
       });
     }
   }
@@ -409,7 +474,7 @@ export function validateAutomationGraph(
     if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
       errors.push({
         code: GRAPH_ERROR_CODES.INVALID_EDGE,
-        message: `Edge ${edge.id} references a non-existent node (source: ${edge.source}, target: ${edge.target})`,
+        message: 'Two steps in this automation are connected incorrectly — try reconnecting them or removing the connection.',
       });
       continue;
     }
@@ -425,7 +490,7 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: node.id,
         code: GRAPH_ERROR_CODES.INVALID_CONDITION_BRANCH,
-        message: `Condition node ${node.id} must have at most one 'true' and one 'false' outgoing edge, and no untagged edges`,
+        message: "This condition step has too many outgoing paths — it should have at most one \"Yes\" path and one \"No\" path, and every path must be labeled.",
       });
     }
   }
@@ -441,7 +506,7 @@ export function validateAutomationGraph(
   if (cycleNodeIds.length > 0) {
     errors.push({
       code: GRAPH_ERROR_CODES.GRAPH_CYCLE,
-      message: `Automation graph contains a cycle: ${cycleNodeIds.join(' -> ')}`,
+      message: 'This automation loops back on itself, which would run forever — remove the connection that leads back to an earlier step.',
     });
   }
 
@@ -454,7 +519,7 @@ export function validateAutomationGraph(
       errors.push({
         nodeId: orphan.id,
         code: GRAPH_ERROR_CODES.ORPHAN_NODE,
-        message: `Node ${orphan.id} is unreachable from the trigger`,
+        message: "This step isn't connected to the flow starting from the trigger — connect it to the automation or remove it.",
       });
     }
 
@@ -469,7 +534,7 @@ export function validateAutomationGraph(
     if (!hasReachableEnd) {
       errors.push({
         code: GRAPH_ERROR_CODES.NO_REACHABLE_END,
-        message: 'Automation graph has no reachable end (a node with no outgoing edges)',
+        message: "This automation's flow never ends — every path from the trigger should eventually reach a step with nothing after it.",
       });
     }
 
@@ -477,7 +542,7 @@ export function validateAutomationGraph(
     if (maxDelayMinutes > MAX_DELAY_DAYS * 24 * 60) {
       errors.push({
         code: GRAPH_ERROR_CODES.DELAY_LIMIT_EXCEEDED,
-        message: `Total delay along at least one path exceeds ${MAX_DELAY_DAYS} days`,
+        message: `One of the paths in this automation waits more than ${MAX_DELAY_DAYS} days in total — shorten the delays so it finishes sooner.`,
       });
     }
   }
