@@ -204,6 +204,12 @@ svg.lucide {
   animation: ai-spin-gradient 3s linear infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .ai-gradient-ring {
+    animation: none;
+  }
+}
+
 /* pdfme designer (PDF templates) — enlarge react-moveable resize handles for
    easier grabbing. Moveable portals its controls to document.body, so this
    cannot be scoped to the designer container; pdfme is the only moveable
