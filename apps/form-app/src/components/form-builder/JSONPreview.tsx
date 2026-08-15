@@ -26,8 +26,8 @@ export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuff
   };
   
   return (
-    <div className="p-4 h-full flex flex-col w-full">
-      <div className="flex items-center justify-between mb-3">
+    <div className="p-4 h-full min-h-0 flex flex-col w-full">
+      <div className="flex items-center justify-between mb-3 pr-9 shrink-0">
         <h4 className="text-sm font-medium text-primary dark:text-white">
           {t('title')}
         </h4>
@@ -40,8 +40,8 @@ export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuff
           {t('copyButton')}
         </Button>
       </div>
-      
-      <div className="flex-1 relative w-full min-w-0">
+
+      <div className="flex-1 relative w-full min-w-0 min-h-0">
         <pre className="bg-background dark:bg-gray-800 rounded-lg p-3 text-xs font-mono overflow-x-auto overflow-y-auto h-full border border-[var(--tf-border-medium)] dark:border-gray-700 whitespace-pre w-full max-w-full">
           <code className="text-foreground dark:text-gray-300 block min-w-max">
             {jsonString}
@@ -49,7 +49,7 @@ export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuff
         </pre>
       </div>
       
-      <div className="mt-3 text-xs text-muted-foreground dark:text-gray-400">
+      <div className="mt-3 text-xs text-muted-foreground dark:text-gray-400 shrink-0">
         {t('totalFields', { values: { count: pages.reduce((sum, page) => sum + page.fields.length, 0) } })}
       </div>
     </div>
