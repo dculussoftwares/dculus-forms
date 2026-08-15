@@ -345,6 +345,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
     conversations,
     conversationsLoading,
     activeConversationId,
+    isConversationReady,
     activeConversation,
     activeConvLoading,
     messages,
@@ -375,10 +376,10 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
 
   const handleSend = useCallback(() => {
     const trimmed = input.trim();
-    if (!trimmed || isStreaming || !activeConversationId) return;
+    if (!trimmed || isStreaming || !isConversationReady) return;
     setInput('');
     sendMessage(trimmed);
-  }, [input, isStreaming, activeConversationId, sendMessage]);
+  }, [input, isStreaming, isConversationReady, sendMessage]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -398,10 +399,10 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
       return;
     }
     if (!initialMessage || initialMessageSentRef.current) return;
-    if (!activeConversationId || isStreaming) return;
+    if (!isConversationReady || isStreaming) return;
     initialMessageSentRef.current = true;
     sendMessage(initialMessage);
-  }, [isOpen, initialMessage, activeConversationId, isStreaming, sendMessage]);
+  }, [isOpen, initialMessage, isConversationReady, isStreaming, sendMessage]);
 
   if (!isOpen) return null;
 
@@ -527,7 +528,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
 
       {/* Input */}
       <div className="border-t border-border p-3">
-        {!isStreaming && activeConversationId && chips.length > 0 && (
+        {!isStreaming && isConversationReady && chips.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
             {chips.map((chip) => {
               // Phase 3.2: premium styles per chip category
@@ -579,7 +580,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t('inputPlaceholder')}
-            disabled={isStreaming || !activeConversationId}
+            disabled={isStreaming || !isConversationReady}
             rows={1}
             className={cn(
               'flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground',
@@ -599,7 +600,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
           ) : (
             <button
               onClick={handleSend}
-              disabled={!input.trim() || !activeConversationId}
+              disabled={!input.trim() || !isConversationReady}
               aria-label={t('send')}
               className={cn(
                 'mb-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',

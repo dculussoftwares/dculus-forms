@@ -231,13 +231,19 @@ export function useAIChat({
 
   const handleSendMessage = useCallback(
     async (content: string) => {
-      if (!activeConversationId || status !== 'ready') return;
+      // Gate on `chatConversationId` (not the raw `activeConversationId`) — useChat's
+      // internal Chat instance only gets recreated with a fresh transport once its `id`
+      // option changes to the real conversation ID. Sending while `chatConversationId` is
+      // still null (activeConversationId set but activeConvLoading not yet finished) would
+      // hit the stale Chat instance / transport closure, sending conversationId: null to
+      // the backend.
+      if (!chatConversationId || status !== 'ready') return;
       clearBatch();
       undoDepthBeforeRef.current = getUndoStackDepth(); // always 0 after clear = correct baseline
       beginBatch();
       sendMessage({ text: content });
     },
-    [activeConversationId, status, clearBatch, beginBatch, sendMessage, getUndoStackDepth]
+    [chatConversationId, status, clearBatch, beginBatch, sendMessage, getUndoStackDepth]
   );
 
   const conversations = conversationsData?.listAIChatConversations ?? [];
@@ -259,6 +265,11 @@ export function useAIChat({
     conversations,
     conversationsLoading,
     activeConversationId,
+    // True once activeConversationId is set AND its conversation data has finished loading —
+    // i.e. once useChat's internal Chat instance has actually switched to this conversation's
+    // id/transport. UI send triggers must gate on this, not activeConversationId, to avoid
+    // racing the underlying Chat instance recreation (see handleSendMessage above).
+    isConversationReady: Boolean(chatConversationId),
     activeConversation,
     activeConvLoading,
     messages,
