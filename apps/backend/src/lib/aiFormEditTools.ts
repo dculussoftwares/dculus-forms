@@ -418,7 +418,15 @@ export function createFormEditTools(
      */
     upsertConditionRule: tool({
       description:
-        'PROPOSAL: turn a described condition into ONE ready-to-review rule. Never apply it directly. Terms may identify trigger fields by their visible label or id; targets may identify fields/pages by label/title or id. Use only operators appropriate for each trigger field type. Rich text/display-only fields cannot be triggers.',
+        'PROPOSAL: turn a described condition into ONE ready-to-review rule. Never apply it directly. Terms may identify trigger fields by their visible label or id; targets may identify fields/pages by label/title or id. Use only operators appropriate for each trigger field type. Rich text/display-only fields cannot be triggers. Terms are ALWAYS written exactly as the description states — never invert an operator (e.g. equals -> notEquals) to compensate for "unless"/"except" phrasing; that phrasing is handled entirely by defaultState below, not by the terms.\n\n' +
+        'setFieldVisibility/setPageVisibility take a defaultState instead of a show/hide verb — this is deliberate: do NOT try to translate the description\'s verb into an action name yourself, answer the defaultState question below and the system derives the correct mechanics.\n' +
+        'defaultState = the state of X when these terms are NOT matching (its normal/starting state, before any relevant answer is given) — NOT the state while the terms match:\n' +
+        '  * "Hide X unless P" / "Hide X except (when) P" / "Only show X if/when P"  -> defaultState "hidden" (the stated verb IS the normal state; "unless/except" carves out the one case where it flips)\n' +
+        '  * "Show X unless P" / "Show X except (when) P" / "Only hide X if/when P"  -> defaultState "visible" (same reasoning, opposite verb)\n' +
+        '  * "Hide X when P" / "Hide X if P" (no unless/except/only)                -> defaultState "visible" (X is normally shown; P is what triggers hiding it)\n' +
+        '  * "Show X when P" / "Show X if P" (no unless/except/only)                -> defaultState "hidden" (X is normally hidden; P is what triggers showing it)\n' +
+        'requireField/unrequireField use the same "state when terms are NOT matching" logic but only ever change the required flag — they never affect visibility. If the same target is also hidden by another rule, hidden always wins (a hidden field is never enforced as required), so don\'t add a redundant unrequireField just because a field is also conditionally hidden.\n' +
+        'skipToPage only ever skips forward — from the trigger\'s page to a later page — hiding the pages strictly between them. Never propose skipToPage to the current page, an earlier page, or as a substitute for hidePage on the trigger\'s own page.',
       inputSchema: z.object({
         combinator: z.enum(['any', 'all']),
         terms: z.array(z.object({
@@ -427,8 +435,18 @@ export function createFormEditTools(
           value: z.union([z.string(), z.number(), z.array(z.string())]).optional().describe('Single comparison value — never a list. For a select/radio/checkbox field, use the exact option text. For a date field, use YYYY-MM-DD.'),
         })).min(1),
         actions: z.array(z.union([
-          z.object({ type: z.enum(['showField', 'hideField', 'requireField', 'unrequireField']), fields: z.array(z.string().min(1)).min(1).describe('Target field labels or ids') }),
-          z.object({ type: z.enum(['showPage', 'hidePage', 'skipToPage']), page: z.string().min(1).describe('Target page title or id') }),
+          z.object({
+            type: z.literal('setFieldVisibility'),
+            fields: z.array(z.string().min(1)).min(1).describe('Target field labels or ids'),
+            defaultState: z.enum(['hidden', 'visible']).describe('The target\'s state when these terms are NOT matching — see the tool description for how to derive this from "unless"/"except"/"when"/"if" phrasing.'),
+          }),
+          z.object({ type: z.enum(['requireField', 'unrequireField']), fields: z.array(z.string().min(1)).min(1).describe('Target field labels or ids') }),
+          z.object({
+            type: z.literal('setPageVisibility'),
+            page: z.string().min(1).describe('Target page title or id'),
+            defaultState: z.enum(['hidden', 'visible']).describe('Same derivation as setFieldVisibility.defaultState, applied to the page.'),
+          }),
+          z.object({ type: z.literal('skipToPage'), page: z.string().min(1).describe('Target page title or id') }),
         ])).min(1),
         rationale: z.string().min(1).describe('Brief explanation for the reviewer'),
       }),
@@ -478,25 +496,37 @@ export function createFormEditTools(
 
         const resolvedActions: ConditionalRule['actions'] = [];
         for (const action of actions) {
-          if ('fields' in action) {
+          if (action.type === 'setFieldVisibility') {
             const fieldIds: string[] = [];
             for (const reference of action.fields) {
               const field = resolveField(workingSchema, reference);
               if (!field) return { error: `I couldn't find a unique target field matching "${reference}". Please use the exact field label.` };
               fieldIds.push(field.id);
             }
-            if (action.type === 'showField' || action.type === 'hideField') {
-              resolvedActions.push({ type: action.type, fieldIds });
-            } else {
-              resolvedActions.push({ type: action.type as 'requireField' | 'unrequireField', fieldIds });
+            // defaultState 'hidden' means the target is hidden until a showField rule matches;
+            // 'visible' means it's shown until a hideField rule matches — see conditions.ts
+            // evaluateConditions doc comment. The model states the outcome it wants (defaultState);
+            // this is the single place that maps it to the actual stored action type, removing the
+            // show/hide-verb judgement call that was previously left to the model and was the
+            // dominant source of backwards ("hide unless") rules.
+            resolvedActions.push({ type: action.defaultState === 'hidden' ? 'showField' : 'hideField', fieldIds });
+          } else if ('fields' in action) {
+            const fieldIds: string[] = [];
+            for (const reference of action.fields) {
+              const field = resolveField(workingSchema, reference);
+              if (!field) return { error: `I couldn't find a unique target field matching "${reference}". Please use the exact field label.` };
+              fieldIds.push(field.id);
             }
+            resolvedActions.push({ type: action.type, fieldIds });
           } else {
             const matchingPages = (workingSchema.pages ?? []).filter((candidate: any) => candidate.id === action.page || normalizeLabel(String(candidate.title ?? '')) === normalizeLabel(action.page));
             if (matchingPages.length === 0) return { error: `I couldn't find a page matching "${action.page}". Please use the exact page title.` };
             if (matchingPages.length > 1) return { error: `"${action.page}" matches multiple pages. Please use the exact page title to disambiguate.` };
             const page = matchingPages[0];
-            if (action.type === 'showPage' || action.type === 'hidePage' || action.type === 'skipToPage') {
-              resolvedActions.push({ type: action.type, pageId: page.id });
+            if (action.type === 'setPageVisibility') {
+              resolvedActions.push({ type: action.defaultState === 'hidden' ? 'showPage' : 'hidePage', pageId: page.id });
+            } else {
+              resolvedActions.push({ type: 'skipToPage', pageId: page.id });
             }
           }
         }

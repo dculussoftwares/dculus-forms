@@ -216,7 +216,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'country', operator: 'equals', value: 'India' }],
-      actions: [{ type: 'showField', fields: ['GST field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'hidden' }],
       rationale: 'GST is only needed in India.',
     }, { messages: [], toolCallId: 'test' });
 
@@ -231,11 +231,52 @@ describe('upsertConditionRule (proposal only)', () => {
     });
   });
 
+  it('defaultState "visible" resolves to a hideField action (not shown-verb driven)', async () => {
+    const tools = makeFullTools(schema);
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Country', operator: 'equals', value: 'USA' }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }],
+      rationale: 'GST is normally shown; hide it for USA.',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toMatchObject({
+      type: 'PROPOSE_CONDITION_RULE',
+      rule: { actions: [{ type: 'hideField', fieldIds: ['gst'] }] },
+    });
+  });
+
+  // Regression test for the "hide X unless P" inversion bug: a naive translation of
+  // "Hide the GST field unless Country equals India" used to produce a hideField action
+  // gated on "Country equals India" (backwards — GST would be visible by default and hidden
+  // exactly when Country is India). The fix moves the show/hide-verb judgement out of the
+  // model's hands entirely: the model states defaultState directly, and defaultState 'hidden'
+  // always maps to showField regardless of which English verb ("hide"/"show"/"unless") appeared
+  // in the description that produced it.
+  it('"hide unless" phrasing maps to defaultState hidden -> showField, not hideField', async () => {
+    const tools = makeFullTools(schema);
+    // A correct translation of "Hide the GST field unless Country equals India" states the terms
+    // exactly as given (Country equals India, unmodified) and defaultState 'hidden' (GST starts
+    // hidden; the "unless" clause is what the defaultState choice encodes, not an inverted term).
+    const result = await tools.upsertConditionRule.execute!({
+      combinator: 'all',
+      terms: [{ field: 'Country', operator: 'equals', value: 'India' }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'hidden' }],
+      rationale: 'Hide GST unless Country is India (hidden by default, shown only for India).',
+    }, { messages: [], toolCallId: 'test' });
+    expect(result).toMatchObject({
+      type: 'PROPOSE_CONDITION_RULE',
+      rule: {
+        terms: [{ fieldId: 'country', operator: 'equals', value: 'India' }],
+        actions: [{ type: 'showField', fieldIds: ['gst'] }],
+      },
+    });
+  });
+
   it('rejects an operator that is invalid for the trigger field', async () => {
     const tools = makeFullTools(schema);
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all', terms: [{ field: 'Country', operator: 'contains', value: 'India' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }], rationale: 'Invalid',
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }], rationale: 'Invalid',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('not valid') }));
   });
@@ -244,7 +285,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const tools = makeFullTools(schema);
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all', terms: [{ field: 'Information', operator: 'isFilled' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }], rationale: 'Invalid',
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }], rationale: 'Invalid',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('display-only') }));
   });
@@ -253,7 +294,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const tools = makeFullTools(schema);
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all', terms: [{ field: 'Missing field', operator: 'isFilled' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }], rationale: 'Invalid',
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }], rationale: 'Invalid',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
   });
@@ -263,7 +304,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'any',
       terms: [{ field: 'country', operator: 'equals', value: 'USA' }],
-      actions: [{ type: 'hideField', fields: ['gst'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['gst'], defaultState: 'visible' }],
       rationale: 'Hide GST for USA.',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { combinator: 'any' } });
@@ -274,13 +315,13 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Country', operator: 'equals', value: 'India' }],
-      actions: [{ type: 'showField', fields: ['Nonexistent field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['Nonexistent field'], defaultState: 'hidden' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
   });
 
-  it('handles page actions (showPage/hidePage/skipToPage) by page title', async () => {
+  it('handles page actions (showPage/hidePage via setPageVisibility, and skipToPage) by page title', async () => {
     const multiPageSchema = {
       pages: [
         { id: 'p1', title: 'Page One', fields: [
@@ -302,7 +343,7 @@ describe('upsertConditionRule (proposal only)', () => {
     });
   });
 
-  it('handles showPage and hidePage actions', async () => {
+  it('handles setPageVisibility with defaultState hidden/visible', async () => {
     const multiPageSchema = {
       pages: [
         { id: 'p1', title: 'Main', fields: [
@@ -315,7 +356,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const showResult = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Show extra?', operator: 'equals', value: 'Yes' }],
-      actions: [{ type: 'showPage', page: 'Extra' }],
+      actions: [{ type: 'setPageVisibility', page: 'Extra', defaultState: 'hidden' }],
       rationale: 'Show extra page.',
     }, { messages: [], toolCallId: 'test' });
     expect(showResult).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { actions: [{ type: 'showPage', pageId: 'p2' }] } });
@@ -323,7 +364,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const hideResult = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Show extra?', operator: 'equals', value: 'No' }],
-      actions: [{ type: 'hidePage', page: 'p2' }],
+      actions: [{ type: 'setPageVisibility', page: 'p2', defaultState: 'visible' }],
       rationale: 'Hide extra page.',
     }, { messages: [], toolCallId: 'test' });
     expect(hideResult).toMatchObject({ type: 'PROPOSE_CONDITION_RULE', rule: { actions: [{ type: 'hidePage', pageId: 'p2' }] } });
@@ -377,7 +418,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Name', operator: 'isFilled' }],
-      actions: [{ type: 'showField', fields: ['f1'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['f1'], defaultState: 'hidden' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining("couldn't find") }));
@@ -407,7 +448,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Country', operator: 'equals', value: 'Germany' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('is not one of the options') }));
@@ -418,7 +459,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Country', operator: 'equals', value: 'india' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toMatchObject({
@@ -432,7 +473,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Country', operator: 'equals', value: ['India', 'USA'] }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('not a list') }));
@@ -453,7 +494,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Age', operator: 'greaterThan', value: 'eighteen' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('not a valid number') }));
@@ -464,7 +505,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Age', operator: 'greaterThan', value: '18' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toMatchObject({
@@ -478,7 +519,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Date of birth', operator: 'before', value: 'August 20 2026' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual(expect.objectContaining({ error: expect.stringContaining('YYYY-MM-DD') }));
@@ -489,7 +530,7 @@ describe('upsertConditionRule (proposal only)', () => {
     const result = await tools.upsertConditionRule.execute!({
       combinator: 'all',
       terms: [{ field: 'Date of birth', operator: 'before', value: '2026-08-20T00:00:00.000Z' }],
-      actions: [{ type: 'hideField', fields: ['GST field'] }],
+      actions: [{ type: 'setFieldVisibility', fields: ['GST field'], defaultState: 'visible' }],
       rationale: 'Test',
     }, { messages: [], toolCallId: 'test' });
     expect(result).toMatchObject({
