@@ -115,6 +115,22 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
           allowedDomains
         }
         collectRespondentEmail
+        quiz {
+          enabled
+          passThresholdPercent
+          gradeRelease
+          releaseAt
+          respondentVisibility {
+            totalScore
+            perQuestionCorrectness
+            correctAnswers
+            pointValues
+            feedback
+            passFailBadge
+          }
+          resultMessagePass
+          resultMessageFail
+        }
       }
       organization {
         id

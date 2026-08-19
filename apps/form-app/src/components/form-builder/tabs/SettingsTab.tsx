@@ -44,6 +44,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
     updateAccessControl,
     saveAccessControlSettings,
     updateCollectRespondentEmail,
+    updateQuizSettings,
+    saveQuizSettings,
   } = useFormSettings({
     formId,
     initialSettings: formData?.form?.settings,
@@ -195,6 +197,8 @@ export const SettingsTab: React.FC<SettingsTabProps> = ({ formId }) => {
           onUpdateAccessControl={updateAccessControl}
           onSaveAccessControlSettings={saveAccessControlSettings}
           onUpdateCollectRespondentEmail={updateCollectRespondentEmail}
+          onUpdateQuizSettings={updateQuizSettings}
+          onSaveQuizSettings={saveQuizSettings}
         />
 
         {errors.general && (

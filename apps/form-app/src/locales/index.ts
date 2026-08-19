@@ -191,6 +191,8 @@ import enSubmissionLimitsSettings from './en/submissionLimitsSettings.json';
 import taSubmissionLimitsSettings from './ta/submissionLimitsSettings.json';
 import enAccessControlSettings from './en/accessControlSettings.json';
 import taAccessControlSettings from './ta/accessControlSettings.json';
+import enQuizSettings from './en/quizSettings.json';
+import taQuizSettings from './ta/quizSettings.json';
 import enMetricHelper from './en/metricHelper.json';
 import taMetricHelper from './ta/metricHelper.json';
 import enQuizGradingMetadataViewer from './en/quizGradingMetadataViewer.json';
@@ -364,6 +366,7 @@ const enTranslations = {
   emailFieldAnalytics: enEmailFieldAnalytics,
   submissionLimitsSettings: enSubmissionLimitsSettings,
   accessControlSettings: enAccessControlSettings,
+  quizSettings: enQuizSettings,
   metricHelper: enMetricHelper,
   quizGradingMetadataViewer: enQuizGradingMetadataViewer,
   quizResultsDialog: enQuizResultsDialog,
@@ -500,6 +503,7 @@ const taTranslations = {
   emailFieldAnalytics: taEmailFieldAnalytics,
   submissionLimitsSettings: taSubmissionLimitsSettings,
   accessControlSettings: taAccessControlSettings,
+  quizSettings: taQuizSettings,
   metricHelper: taMetricHelper,
   quizGradingMetadataViewer: taQuizGradingMetadataViewer,
   quizResultsDialog: taQuizResultsDialog,

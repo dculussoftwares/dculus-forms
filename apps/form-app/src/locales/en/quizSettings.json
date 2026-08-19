@@ -1,0 +1,74 @@
+{
+  "title": "Quiz",
+  "description": "Turn this form into a quiz — score responses and control what respondents see",
+  "enable": {
+    "title": "Enable quiz mode",
+    "description": "Grade responses and show results using each field's answer key"
+  },
+  "disableConfirm": "Turning off quiz mode keeps every answer key you've set on your fields — they're just ignored until you turn it back on. Continue?",
+  "keysPreservedNotice": "Answer keys are never deleted from this panel. Turning quiz mode off only stops grading — your fields keep their answer keys for whenever you turn it back on.",
+  "passThreshold": {
+    "label": "Pass threshold",
+    "help": "Minimum percentage score required to pass",
+    "suffix": "%"
+  },
+  "gradeRelease": {
+    "label": "Grade release",
+    "immediate": "Immediately",
+    "immediateDescription": "Respondents see their grade right after submitting",
+    "afterReview": "After manual review",
+    "afterReviewDescription": "Grades are held until you release them",
+    "scheduled": "At a scheduled time",
+    "scheduledDescription": "Grades are released automatically at a date and time you choose",
+    "never": "Never",
+    "neverDescription": "Respondents never see their grade",
+    "releaseAt": {
+      "label": "Release at",
+      "required": "Choose a release date and time to save a scheduled grade release"
+    }
+  },
+  "visibility": {
+    "title": "What respondents can see",
+    "description": "Each of these is independent — turn on only what you want to share",
+    "totalScore": {
+      "title": "Total score",
+      "description": "Overall points and percentage"
+    },
+    "perQuestionCorrectness": {
+      "title": "Per-question correctness",
+      "description": "Whether each answer was right or wrong"
+    },
+    "correctAnswers": {
+      "title": "Correct answers",
+      "description": "The accepted answer for each question"
+    },
+    "pointValues": {
+      "title": "Point values",
+      "description": "How many points each question was worth"
+    },
+    "feedback": {
+      "title": "Feedback",
+      "description": "Any per-question feedback you've written"
+    },
+    "passFailBadge": {
+      "title": "Pass/fail badge",
+      "description": "Whether the respondent passed or failed"
+    }
+  },
+  "resultMessages": {
+    "title": "Result messages",
+    "pass": {
+      "label": "Pass message",
+      "placeholder": "Shown to respondents who pass"
+    },
+    "fail": {
+      "label": "Fail message",
+      "placeholder": "Shown to respondents who fail"
+    }
+  },
+  "save": "Save Quiz Settings",
+  "saving": "Saving...",
+  "toasts": {
+    "saved": "Quiz settings saved successfully"
+  }
+}

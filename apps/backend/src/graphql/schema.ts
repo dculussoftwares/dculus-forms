@@ -126,11 +126,31 @@ export const typeDefs = gql`
     allowedDomains: [String!]
   }
 
+  type QuizRespondentVisibility {
+    totalScore: Boolean!
+    perQuestionCorrectness: Boolean!
+    correctAnswers: Boolean!
+    pointValues: Boolean!
+    feedback: Boolean!
+    passFailBadge: Boolean!
+  }
+
+  type QuizSettings {
+    enabled: Boolean!
+    passThresholdPercent: Float
+    gradeRelease: String!
+    releaseAt: String
+    respondentVisibility: QuizRespondentVisibility!
+    resultMessagePass: String
+    resultMessageFail: String
+  }
+
   type FormSettings {
     submissionLimits: SubmissionLimitsSettings
     responseCopy: ResponseCopySettings
     accessControl: AccessControlSettings
     collectRespondentEmail: Boolean
+    quiz: QuizSettings
   }
 
   # Whether the current requester can see the form's real content.
@@ -372,11 +392,31 @@ export const typeDefs = gql`
     allowedDomains: [String!]
   }
 
+  input QuizRespondentVisibilityInput {
+    totalScore: Boolean!
+    perQuestionCorrectness: Boolean!
+    correctAnswers: Boolean!
+    pointValues: Boolean!
+    feedback: Boolean!
+    passFailBadge: Boolean!
+  }
+
+  input QuizSettingsInput {
+    enabled: Boolean!
+    passThresholdPercent: Float
+    gradeRelease: String!
+    releaseAt: String
+    respondentVisibility: QuizRespondentVisibilityInput!
+    resultMessagePass: String
+    resultMessageFail: String
+  }
+
   input FormSettingsInput {
     submissionLimits: SubmissionLimitsSettingsInput
     responseCopy: ResponseCopySettingsInput
     accessControl: AccessControlSettingsInput
     collectRespondentEmail: Boolean
+    quiz: QuizSettingsInput
   }
 
   input UpdateFormInput {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { UPDATE_FORM } from '../graphql/mutations';
-import type { SubmissionLimitsSettings, ResponseCopySettings, AccessControlSettings } from '@dculus/types';
+import type { SubmissionLimitsSettings, ResponseCopySettings, AccessControlSettings, QuizSettings } from '@dculus/types';
 import { toastSuccess, toastError } from '@dculus/ui';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { useTranslation } from './useTranslation';
@@ -11,6 +11,10 @@ interface FormSettingsData {
   responseCopy: ResponseCopySettings;
   accessControl: AccessControlSettings;
   collectRespondentEmail: boolean;
+  // Absent (not `{}`) for a form that has never opened the Quiz panel — see
+  // the additive guarantee in epic #289: an unrelated settings save must not
+  // introduce a `quiz` key for a form that was never a quiz.
+  quiz?: QuizSettings;
 }
 
 interface UseFormSettingsProps {
@@ -43,6 +47,7 @@ export const useFormSettings = ({
   const [isSaving, setIsSaving] = useState(false);
 
   const { t: tErr } = useTranslation('graphqlErrors');
+  const { t: tQuiz } = useTranslation('quizSettings');
 
   const [updateForm] = useMutation(UPDATE_FORM, {
     onCompleted: () => {
@@ -80,16 +85,22 @@ export const useFormSettings = ({
           allowedDomains: initialSettings.accessControl?.allowedDomains ?? [],
         },
         collectRespondentEmail: initialSettings.collectRespondentEmail ?? false,
+        // Preserve absence: `initialSettings.quiz` is `null` (not present in
+        // the DB), not `undefined` (GraphQL always resolves the field key) —
+        // normalize both to `undefined` so a non-quiz form's state never
+        // carries a `quiz` key into the next unrelated settings save.
+        quiz: initialSettings.quiz ?? undefined,
       }));
     }
   }, [initialSettings]);
 
-  // Update nested settings helper — restricted to object-valued sections
-  // (e.g. responseCopy), since `collectRespondentEmail` is a plain
-  // boolean and can't be spread as `{ ...prev[section] }`.
-  type ObjectSettingKey = {
-    [K in keyof FormSettingsData]: FormSettingsData[K] extends object ? K : never;
-  }[keyof FormSettingsData];
+  // Update nested settings helper — restricted to the always-present
+  // object-valued sections, since `collectRespondentEmail` is a plain
+  // boolean and can't be spread as `{ ...prev[section] }`. `quiz` is
+  // deliberately not listed here — it's optional (`QuizSettings |
+  // undefined`, absent for non-quiz forms) and has its own dedicated
+  // updateQuizSettings below instead.
+  type ObjectSettingKey = 'submissionLimits' | 'responseCopy' | 'accessControl';
 
   const updateSetting = <T extends ObjectSettingKey>(
     section: T,
@@ -215,6 +226,27 @@ export const useFormSettings = ({
     }));
   };
 
+  // Update quiz settings
+  const updateQuizSettings = (quiz: QuizSettings) => {
+    setSettings(prev => ({
+      ...prev,
+      quiz,
+    }));
+  };
+
+  // Save quiz settings. This panel only ever writes settings.quiz — it never
+  // touches formSchema (answer keys live on the fields, not here).
+  const saveQuizSettings = async () => {
+    try {
+      await saveSettings({
+        quiz: settings.quiz,
+      });
+      toastSuccess(tQuiz('toasts.saved'));
+    } catch {
+      // Error already handled in the mutation onError callback
+    }
+  };
+
   return {
     settings,
     isSaving,
@@ -226,5 +258,7 @@ export const useFormSettings = ({
     updateAccessControl,
     saveAccessControlSettings,
     updateCollectRespondentEmail,
+    updateQuizSettings,
+    saveQuizSettings,
   };
 };
