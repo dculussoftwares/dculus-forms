@@ -5,6 +5,7 @@ import {
   FieldType,
   FIELD_TYPE_DEFAULT_GRADING_MODE,
   isGradableFieldType,
+  type FieldFormData,
   type FieldGrading,
   type GradingMode,
 } from '@dculus/types';
@@ -55,18 +56,12 @@ export interface GradingSettingsProps {
    * with in-progress edits in the Options section above, which is what makes the
    * "renamed option" staleness warning possible. */
   options?: string[];
-  // `any` as the RHF generic (not a hand-rolled `(name: string) => any` signature)
-  // — this one component is shared across four distinct per-field-type form-data
-  // shapes (TextInputFieldFormData, NumberFieldFormData, ...), so a real
-  // `UseFormWatch<FieldFormData>` fails at every call site: `Path<FieldFormData>`
-  // is the union of each shape's own literal field names, and passing e.g. a
-  // `UseFormSetValue<RadioFieldFormData>` into a prop typed over the wider
-  // `FieldFormData` union isn't assignable (TS's parameter contravariance).
-  // `any` here still keeps `watch`/`setValue`'s real parameter count and options
-  // shape from react-hook-form's own types — only the field-name space is erased.
-  watch: UseFormWatch<any>;
-  setValue: UseFormSetValue<any>;
-  errors?: FieldErrors<any>;
+  // `FieldFormData` (not a per-field-type member) because every call site's `form`
+  // comes from `useFieldEditor`'s `useForm<FieldFormData>(...)` — the same union
+  // type regardless of which specific field is being edited.
+  watch: UseFormWatch<FieldFormData>;
+  setValue: UseFormSetValue<FieldFormData>;
+  errors?: FieldErrors<FieldFormData>;
   isEditable: boolean;
 }
 
@@ -95,12 +90,25 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
   const { t } = useTranslation('quizGrading');
   const constants = useFieldSettingsConstants();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Number mode ("target" vs "range") can't be derived purely from
+  // grading.numeric.min/max: choosing "range" starts with both bounds empty, so
+  // deriving the mode from their presence would immediately snap back to
+  // "target" before the author can type either one. Tracks the author's explicit
+  // choice until grading.numeric actually has a bound to derive from again.
+  const [numberModeOverride, setNumberModeOverride] = useState<'target' | 'range' | null>(
+    null
+  );
 
   const grading: FieldGrading | undefined = watch('grading');
-  // FieldErrors<any> still resolves nested access to the generic FieldError shape
-  // (message/type only) rather than GradingFormData's own error tree, so a cast is
-  // needed here — same "shared across 4 schemas" reasoning as the props above.
-  const gradingErrors = errors?.grading as any;
+  // `errors.grading` doesn't type-check directly on the `FieldFormData` union:
+  // some members (e.g. PhoneNumberFieldFormData) have no `grading` key at all, and
+  // TS only allows property access on a union when every member has it. Every
+  // member this component is actually invoked for does carry `grading` (see the
+  // `gradingFormSchema` additions across all 8 relevant schemas in
+  // packages/types/src/validation.ts), so narrow to just the shape this file
+  // needs rather than casting to `any`.
+  const gradingErrors = (errors as FieldErrors<{ grading?: FieldGrading }> | undefined)
+    ?.grading;
 
   if (!isGradableFieldType(fieldType)) return null;
 
@@ -475,7 +483,7 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
   // ---------------------------------------------------------------------------
   const renderNumber = () => {
     const hasRange = grading?.numeric?.min !== undefined || grading?.numeric?.max !== undefined;
-    const rangeMode = hasRange ? 'range' : 'target';
+    const rangeMode = numberModeOverride ?? (hasRange ? 'range' : 'target');
     const toleranceType =
       grading?.numeric?.tolerance !== undefined
         ? 'absolute'
@@ -488,9 +496,21 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
         <div className={constants.CSS_CLASSES.INPUT_SPACING}>
           <Label className={constants.CSS_CLASSES.LABEL_STYLE}>{t('number.modeLabel')}</Label>
           <Select
+            // Forces a fresh mount the moment real Y.js data first arrives (grading
+            // flips from undefined to defined). Without this, the *same* Select
+            // instance's controlled `value` jumps target -> range on that first data
+            // render — a prop change, not a click — and Radix's hidden native
+            // <select> mirror (kept in sync for accessibility/native-form fallback)
+            // fires a real `change` event echoing the stale pre-data value back
+            // through `onValueChange`, which then calls `updateGrading` and wipes
+            // `numeric` right after it was correctly populated. A remount never
+            // exhibits this because the fresh instance's first value is already
+            // correct — nothing "changes" for the mirror to echo.
+            key={grading === undefined ? 'pending' : 'ready'}
             value={rangeMode}
             disabled={!isEditable}
             onValueChange={(value) => {
+              setNumberModeOverride(value as 'target' | 'range');
               if (value === 'range') {
                 updateGrading({
                   mode: 'numeric',
@@ -526,7 +546,14 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
                 disabled={!isEditable}
                 value={acceptedAnswers[0] ?? ''}
                 onChange={(e) =>
-                  updateGrading({ mode: 'numeric', acceptedAnswers: [e.target.value] })
+                  // A blank target must stay an empty answer list, not `['']` —
+                  // the engine's gradeNumeric casts with `Number(value)`, and
+                  // `Number('')` is `0`, which would mark a genuine submitted 0
+                  // as correct even though no target was ever set.
+                  updateGrading({
+                    mode: 'numeric',
+                    acceptedAnswers: e.target.value === '' ? [] : [e.target.value],
+                  })
                 }
               />
             </div>
@@ -648,7 +675,12 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
         type="date"
         disabled={!isEditable}
         value={acceptedAnswers[0] ?? ''}
-        onChange={(e) => updateGrading({ mode: 'exact', acceptedAnswers: [e.target.value] })}
+        onChange={(e) =>
+          updateGrading({
+            mode: 'exact',
+            acceptedAnswers: e.target.value === '' ? [] : [e.target.value],
+          })
+        }
       />
     </div>
   );

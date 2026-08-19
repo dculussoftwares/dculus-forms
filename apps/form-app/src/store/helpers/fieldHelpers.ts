@@ -325,11 +325,17 @@ const createFormFieldInstance = (
  *
  * Pass an existing `grading` Y.Map as `target` to update it in place instead of
  * replacing it wholesale — fieldsSlice's `updateField` does this on every save so
- * the map's identity survives, keeping Y.js's per-key CRDT merge granularity for
- * two collaborators editing the same field's grading concurrently (a full
- * `fieldMap.set('grading', new Y.Map())` would make the whole answer key one
- * conflict unit instead). Existing keys are cleared first so a mode switch (e.g.
- * 'set' -> 'text') doesn't leave a stale `set`/`numeric` sub-map behind.
+ * the map's own identity survives across saves rather than being orphaned each
+ * time. NOTE this does NOT give per-key CRDT merge granularity: every key
+ * (including nested `text`/`numeric`/`set` sub-maps and the `acceptedAnswers` /
+ * `optionFeedback` arrays) is cleared and fully rewritten from the caller's
+ * complete `FieldGrading` snapshot on every call, the same "whole settings
+ * panel, one save" model every other field property in this file already uses.
+ * Two collaborators concurrently editing different parts of the same field's
+ * grading can still have one save overwrite the other's change with a stale
+ * value — that would need real per-key diffing, which this doesn't attempt.
+ * Existing keys are cleared first so a mode switch (e.g. 'set' -> 'text')
+ * doesn't leave a stale `set`/`numeric` sub-map behind.
  */
 export const createGradingYMap = (
   grading: FieldGrading,

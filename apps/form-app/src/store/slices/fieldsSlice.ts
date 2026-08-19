@@ -11,6 +11,7 @@ import { FieldsSlice, SliceCreator } from '../types/store.types';
 import {
   FieldType,
   FIELD_TYPE_DEFAULT_GRADING_MODE,
+  FieldGrading,
   FormField,
   FormPage,
   isGradableFieldType,
@@ -256,13 +257,19 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
           // `value !== undefined` branch below and skips entirely — no write at all.
           //
           // Update the existing grading Y.Map in place when there is one, rather than
-          // replacing it wholesale — preserves per-key CRDT merge granularity if another
-          // collaborator is concurrently editing a different part of this same answer key.
+          // `fieldMap.set('grading', new Y.Map())` — keeps the map's own identity
+          // stable instead of orphaning it every save. createGradingYMap still clears
+          // and fully rewrites the map's keys from this save's complete snapshot (see
+          // its own doc comment) — like every other field property in this function
+          // (options, validation, ...), this is a whole-field-settings-panel save, not
+          // a keystroke-level collab merge, so a concurrent edit to a different part of
+          // the same field's grading can still be overwritten by whichever save lands
+          // second. Fixing that for real needs per-key diffing, which is out of scope here.
           const existingGradingMap = fieldMap.get('grading');
           if (existingGradingMap instanceof Y.Map) {
-            createGradingYMap(value as any, existingGradingMap);
+            createGradingYMap(value as FieldGrading, existingGradingMap);
           } else {
-            fieldMap.set('grading', createGradingYMap(value as any));
+            fieldMap.set('grading', createGradingYMap(value as FieldGrading));
           }
         } else if (
           key === 'defaultValue' &&
