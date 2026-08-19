@@ -846,7 +846,7 @@ const CreateFormWizard: React.FC = () => {
                     min={0}
                     max={100}
                     value={quizPassThreshold}
-                    onChange={e => { setQuizPassThreshold(Number(e.target.value)); setQuizPassThresholdError(''); }}
+                    onChange={e => { setQuizPassThreshold(e.target.valueAsNumber); setQuizPassThresholdError(''); }}
                     disabled={isGeneratingQuiz}
                     className={cn(quizPassThresholdError && 'border-destructive')}
                   />
