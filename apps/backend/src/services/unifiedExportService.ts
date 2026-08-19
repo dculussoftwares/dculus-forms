@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
+import { z } from 'zod';
 import { FormResponse, FormSchema, FieldType, QuestionGradeResult } from '@dculus/types';
 import {
   getPluginTypesWithData,
@@ -210,29 +211,48 @@ const normalizeNativeGrade = (row: QuizGradeExportRow): NormalizedQuizGrade => (
   })),
 });
 
-// Legacy plugin metadata (QuizGradingMetadata, @dculus/types) predates
-// ResponseGrade and uses a different shape/status vocabulary — map it onto
-// the same fields the native path produces so a single set of columns
-// covers both. 'plugin' grading was always fully automatic; 'manual' meant
-// a human had entered the score, closest today to REVIEWED.
-const normalizeLegacyQuizMetadata = (raw: any): NormalizedQuizGrade => {
-  const passThreshold = typeof raw?.passThreshold === 'number' ? raw.passThreshold : 60;
-  const percentage = typeof raw?.percentage === 'number' ? raw.percentage : 0;
+// Legacy plugin metadata (QuizGradingMetadata, @dculus/types) is untrusted
+// persisted JSON — validate it with Zod rather than trusting an `any` cast.
+// Invalid/missing fields fall back to safe defaults instead of throwing, the
+// same "drop, don't crash" posture as sanitizeFieldGrading in @dculus/types.
+const legacyQuizFieldResultSchema = z.object({
+  fieldId: z.string(),
+  fieldLabel: z.string().optional(),
+  marksAwarded: z.number().default(0),
+  maxMarks: z.number().default(0),
+});
+
+const legacyQuizMetadataSchema = z.object({
+  quizScore: z.number().default(0),
+  totalMarks: z.number().default(0),
+  percentage: z.number().default(0),
+  passThreshold: z.number().default(60),
+  gradedAt: z.union([z.string(), z.date()]).nullish(),
+  gradedBy: z.enum(['plugin', 'manual']).optional(),
+  fieldResults: z.array(legacyQuizFieldResultSchema).default([]),
+});
+
+// Legacy plugin metadata predates ResponseGrade and uses a different
+// shape/status vocabulary — map it onto the same fields the native path
+// produces so a single set of columns covers both. 'plugin' grading was
+// always fully automatic; 'manual' meant a human had entered the score,
+// closest today to REVIEWED.
+const normalizeLegacyQuizMetadata = (raw: unknown): NormalizedQuizGrade => {
+  const parsed = legacyQuizMetadataSchema.safeParse(raw);
+  const data = parsed.success ? parsed.data : legacyQuizMetadataSchema.parse({});
   return {
-    score: typeof raw?.quizScore === 'number' ? raw.quizScore : 0,
-    maxScore: typeof raw?.totalMarks === 'number' ? raw.totalMarks : 0,
-    percentage,
-    passed: percentage >= passThreshold,
-    status: raw?.gradedBy === 'manual' ? 'REVIEWED' : 'AUTO_GRADED',
-    gradedAt: raw?.gradedAt ?? null,
-    questions: Array.isArray(raw?.fieldResults)
-      ? raw.fieldResults.map((fr: any) => ({
-          fieldId: fr.fieldId,
-          label: fr.fieldLabel || fr.fieldId,
-          pointsAwarded: typeof fr.marksAwarded === 'number' ? fr.marksAwarded : 0,
-          pointValue: typeof fr.maxMarks === 'number' ? fr.maxMarks : 0,
-        }))
-      : [],
+    score: data.quizScore,
+    maxScore: data.totalMarks,
+    percentage: data.percentage,
+    passed: data.percentage >= data.passThreshold,
+    status: data.gradedBy === 'manual' ? 'REVIEWED' : 'AUTO_GRADED',
+    gradedAt: data.gradedAt ?? null,
+    questions: data.fieldResults.map((fr) => ({
+      fieldId: fr.fieldId,
+      label: fr.fieldLabel || fr.fieldId,
+      pointsAwarded: fr.marksAwarded,
+      pointValue: fr.maxMarks,
+    })),
   };
 };
 
@@ -281,7 +301,7 @@ const formatQuizGradedAt = (value: Date | string | null): string => {
 };
 
 const quizBaseValues = (grade: NormalizedQuizGrade | null): string[] => {
-  if (!grade) return ['', '', '', '', '', ''];
+  if (!grade) return QUIZ_BASE_HEADERS.map(() => '');
   return [
     `${grade.score}/${grade.maxScore}`,
     `${grade.maxScore}`,
@@ -322,14 +342,21 @@ const buildQuizQuestionColumns = (
     });
   });
 
+  // Fields the schema doesn't know about (deleted fields, or legacy data for
+  // a field that's since been removed) — sorted by fieldId so their column
+  // order is deterministic regardless of response/grade iteration order,
+  // which changes between a full export and a filtered/selected one.
+  const unknown: Array<{ fieldId: string; label: string }> = [];
   grades.forEach((grade) => {
     grade.questions.forEach((q) => {
       if (!seenIds.has(q.fieldId)) {
-        ordered.push({ fieldId: q.fieldId, label: q.label });
+        unknown.push({ fieldId: q.fieldId, label: q.label });
         seenIds.add(q.fieldId);
       }
     });
   });
+  unknown.sort((a, b) => a.fieldId.localeCompare(b.fieldId));
+  ordered.push(...unknown);
 
   const seenLabels = new Map<string, number>();
   return ordered.map(({ fieldId, label }) => ({
@@ -341,11 +368,17 @@ const buildQuizQuestionColumns = (
 const quizQuestionValues = (
   grade: NormalizedQuizGrade | null,
   columns: Array<{ fieldId: string }>
-): string[] =>
-  columns.map(({ fieldId }) => {
-    const q = grade?.questions.find((question) => question.fieldId === fieldId);
+): string[] => {
+  if (!grade) return columns.map(() => '');
+  // Indexed once per response rather than re-scanning `questions` for every
+  // column — matters once a quiz has many graded questions and exports can
+  // run to tens of thousands of responses.
+  const byFieldId = new Map(grade.questions.map((q) => [q.fieldId, q]));
+  return columns.map(({ fieldId }) => {
+    const q = byFieldId.get(fieldId);
     return q ? `${q.pointsAwarded}/${q.pointValue}` : '';
   });
+};
 
 interface QuizExportPlan {
   emit: boolean;
@@ -759,10 +792,8 @@ const generateExcelContent = async (
         : pluginExport.getColumns();
     return count + cols.length;
   }, 0);
-  const totalColumns = 3 + pluginColumnCount + quizPlan.headers.length + orderedFieldIds.length; // 3 for Response ID + Submitted At + Tags
-
   logger.info(
-    `Unified Export - Generated Excel with ${responses.length} rows and ${totalColumns} columns (${pluginColumnCount} plugin columns, ${quizPlan.headers.length} quiz columns)`
+    `Unified Export - Generated Excel with ${responses.length} rows and ${headers.length} columns (${pluginColumnCount} plugin columns, ${quizPlan.headers.length} quiz columns)`
   );
 
   // Generate buffer

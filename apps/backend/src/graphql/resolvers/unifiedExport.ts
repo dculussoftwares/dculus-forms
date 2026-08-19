@@ -6,12 +6,13 @@ import { getAllResponsesByFormId } from '../../services/responseService.js';
 import { generateExportFile, ExportFormat, QuizGradeExportRow } from '../../services/unifiedExportService.js';
 import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
-import { deserializeFormSchema } from '@dculus/types';
+import { deserializeFormSchema, QuestionGradeResult } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from '../../services/responseFilterService.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { logger } from '../../lib/logger.js';
 import * as pluginService from '../../services/pluginService.js';
-import { getGradesForForm } from '../../services/quiz/gradingService.js';
+import { getGradesForResponses, questionGradeResultSchema } from '../../services/quiz/gradingService.js';
+import { z } from 'zod';
 
 
 export const unifiedExportResolvers = {
@@ -120,14 +121,20 @@ export const unifiedExportResolvers = {
           form.settings?.accessControl?.enabled || form.settings?.collectRespondentEmail
         );
 
-        // Native Quiz (epic #289): fetch persisted ResponseGrade rows so the
-        // export service can build the native gradebook columns. Cheap
-        // indexed lookup by formId — a no-op for the vast majority of forms
-        // that have never used quiz mode.
+        // Native Quiz (epic #289): fetch persisted ResponseGrade rows for
+        // exactly the responses being exported (after ids/filters have
+        // narrowed the set) so a selected or filtered export never loads
+        // grade details for responses it isn't going to render.
         const quizEnabled = !!form.settings?.quiz?.enabled;
-        const grades = await getGradesForForm(formId);
+        const grades = await getGradesForResponses(responses.map((r) => r.id));
         const quizGrades: Record<string, QuizGradeExportRow> = {};
+        const questionGradeResultArraySchema = z.array(questionGradeResultSchema);
         for (const grade of grades) {
+          // `detail` is persisted Json — validate it against the same schema
+          // saveGrade wrote it with, rather than trusting the cast. Malformed
+          // rows fall back to an empty question list instead of poisoning
+          // the per-question export columns.
+          const parsedDetail = questionGradeResultArraySchema.safeParse(grade.detail);
           quizGrades[grade.responseId] = {
             score: grade.score,
             maxScore: grade.maxScore,
@@ -135,7 +142,11 @@ export const unifiedExportResolvers = {
             passed: grade.passed,
             status: grade.status,
             gradedAt: grade.gradedAt,
-            detail: Array.isArray(grade.detail) ? (grade.detail as any) : [],
+            // `fieldType` is validated as a non-empty string by the shared
+            // schema (it's persisted from the FieldType enum by saveGrade,
+            // never authored freehand), so this narrows a runtime-checked
+            // string back to the enum type the export contract expects.
+            detail: parsedDetail.success ? (parsedDetail.data as unknown as QuestionGradeResult[]) : [],
           };
         }
 

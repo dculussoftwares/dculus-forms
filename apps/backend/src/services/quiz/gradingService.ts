@@ -25,7 +25,7 @@ const jsonSubmittedValueSchema = z.preprocess(
   z.json()
 );
 
-const questionGradeResultSchema = z.object({
+export const questionGradeResultSchema = z.object({
   fieldId: z.string().min(1),
   fieldLabel: z.string(),
   fieldType: z.string(),
@@ -135,6 +135,19 @@ export const getGradesForForm = async (
   formId: string,
   opts?: { status?: GradeStatus }
 ): Promise<ResponseGradeRow[]> => responseGradeRepository.findManyByFormId(formId, opts);
+
+/**
+ * Grades for a specific set of responses (e.g. the final, filtered/selected
+ * response set an export is about to render) rather than every grade a form
+ * has ever accumulated. Empty input short-circuits to avoid an unbounded
+ * `IN ()` query.
+ */
+export const getGradesForResponses = async (
+  responseIds: string[]
+): Promise<ResponseGradeRow[]> => {
+  if (responseIds.length === 0) return [];
+  return responseGradeRepository.findMany({ where: { responseId: { in: responseIds } } });
+};
 
 /**
  * Read `detail` back out as `QuestionGradeResult[]`. Storage is `Json`, so

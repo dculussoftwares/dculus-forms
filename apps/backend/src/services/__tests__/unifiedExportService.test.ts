@@ -12,6 +12,9 @@ import {
   SpacingType,
   PageModeType,
   DEFAULT_THANK_YOU_CONTENT,
+  RadioField,
+  FillableFormFieldValidation,
+  type FieldGrading,
   type QuestionGradeResult,
 } from '@dculus/types';
 // Exposed by the exceljs mock above so tests can inspect exactly what was
@@ -590,7 +593,9 @@ describe('Unified Export Service', () => {
         'Score', 'Max Score', 'Percentage', 'Result', 'Grading Status', 'Graded At',
       ]);
       expect(dataRow.slice(3, 8)).toEqual(['7.5/10', '10', '75.0%', 'Pass', 'AUTO_GRADED']);
-      expect(dataRow[8]).toContain('2024');
+      // en-US, UTC — matches the explicit `timeZone: 'UTC'` in formatQuizGradedAt,
+      // so this is deterministic regardless of the host machine's local zone.
+      expect(dataRow[8]).toBe('01/01/2024, 12:34:56');
     });
 
     it('emits blank quiz cells for a quiz-enabled form when a response has no grade yet', async () => {
@@ -658,6 +663,19 @@ describe('Unified Export Service', () => {
     });
 
     describe('per-question columns', () => {
+      // Real @dculus/types field-class instances (mirroring
+      // deserializeFormField's pattern of assigning `grading` post-construction)
+      // rather than plain object literals cast with `as any`.
+      const radioFieldWithGrading = (
+        id: string,
+        label: string,
+        grading: FieldGrading
+      ): FormSchema['pages'][number]['fields'][number] => {
+        const field = new RadioField(id, label, '', '', '', new FillableFormFieldValidation(false), []);
+        (field as typeof field & { grading?: FieldGrading }).grading = grading;
+        return field;
+      };
+
       const quizSchema: FormSchema = {
         ...mockFormSchema,
         pages: [
@@ -666,24 +684,22 @@ describe('Unified Export Service', () => {
             title: 'Page 1',
             order: 0,
             fields: [
-              {
-                id: 'q1',
-                type: FieldType.RADIO_FIELD,
-                label: 'Capital of France?',
-                grading: { mode: 'exact', pointValue: 5, acceptedAnswers: ['Paris'] },
-              } as any,
-              {
-                id: 'q2',
-                type: FieldType.RADIO_FIELD,
-                label: 'Question 1',
-                grading: { mode: 'exact', pointValue: 5, acceptedAnswers: ['A'] },
-              } as any,
-              {
-                id: 'q3',
-                type: FieldType.RADIO_FIELD,
-                label: 'Question 1', // duplicate label — must not collide with q2's column
-                grading: { mode: 'exact', pointValue: 5, acceptedAnswers: ['B'] },
-              } as any,
+              radioFieldWithGrading('q1', 'Capital of France?', {
+                mode: 'exact',
+                pointValue: 5,
+                acceptedAnswers: ['Paris'],
+              }),
+              radioFieldWithGrading('q2', 'Question 1', {
+                mode: 'exact',
+                pointValue: 5,
+                acceptedAnswers: ['A'],
+              }),
+              radioFieldWithGrading('q3', 'Question 1', {
+                // duplicate label — must not collide with q2's column
+                mode: 'exact',
+                pointValue: 5,
+                acceptedAnswers: ['B'],
+              }),
             ],
           },
         ],
@@ -789,6 +805,81 @@ describe('Unified Export Service', () => {
           'Response ID', 'Submitted At', 'Tags',
           'Score', 'Max Score', 'Percentage', 'Result', 'Grading Status', 'Graded At',
         ]);
+      });
+
+      it('blanks the cell for a schema question the response grade has no detail entry for', async () => {
+        const quizGrades: Record<string, QuizGradeExportRow> = {
+          'resp-1': {
+            score: 5,
+            maxScore: 15,
+            percentage: 33.3,
+            passed: false,
+            status: 'AUTO_GRADED',
+            gradedAt: null,
+            // Only q1 graded — q2/q3 might have been added to the schema
+            // after this response was submitted.
+            detail: [buildDetail('q1', 'Capital of France?', 5, 5)],
+          },
+        };
+
+        await generateExportFile({
+          formTitle: 'Quiz Form',
+          responses: [quizResponse] as any,
+          formSchema: quizSchema,
+          format: 'excel',
+          quizEnabled: true,
+          quizGrades,
+          includeQuizQuestionColumns: true,
+        });
+
+        const worksheet = getLastWorkbook().worksheets[0];
+        const [dataRow] = worksheet.addRow.mock.calls[1];
+
+        expect(dataRow.slice(9, 12)).toEqual(['5/5', '', '']);
+      });
+
+      it('appends a trailing column, sorted by fieldId, for a graded question the schema does not contain', async () => {
+        const quizGrades: Record<string, QuizGradeExportRow> = {
+          'resp-1': {
+            score: 15,
+            maxScore: 25,
+            percentage: 60,
+            passed: true,
+            status: 'AUTO_GRADED',
+            gradedAt: null,
+            detail: [
+              buildDetail('q1', 'Capital of France?', 5, 5),
+              buildDetail('q2', 'Question 1', 5, 5),
+              buildDetail('q3', 'Question 1', 0, 5),
+              // Deleted/legacy field, absent from quizSchema entirely.
+              buildDetail('z-deleted-field', 'Old Removed Question', 5, 10),
+            ],
+          },
+        };
+
+        await generateExportFile({
+          formTitle: 'Quiz Form',
+          responses: [quizResponse] as any,
+          formSchema: quizSchema,
+          format: 'excel',
+          quizEnabled: true,
+          quizGrades,
+          includeQuizQuestionColumns: true,
+        });
+
+        const worksheet = getLastWorkbook().worksheets[0];
+        const [headerRow] = worksheet.addRow.mock.calls[0];
+        const [dataRow] = worksheet.addRow.mock.calls[1];
+
+        // Schema fields (q1, q2, q3) keep their order; the schema-unknown
+        // field is appended last regardless of its position in `detail`.
+        expect(headerRow.slice(9, 13)).toEqual([
+          'Capital of France?',
+          'Question 1',
+          'Question 1 (2)',
+          'Old Removed Question',
+        ]);
+        expect(dataRow.slice(9, 13)).toEqual(['5/5', '5/5', '0/5', '5/10']);
       });
     });
   });

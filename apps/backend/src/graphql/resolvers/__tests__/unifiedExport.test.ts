@@ -22,9 +22,17 @@ vi.mock('../../../services/hocuspocus.js');
 vi.mock('../../../services/responseFilterService.js');
 // Native Quiz (epic #289): defaults to no grades so every existing test in
 // this file keeps exercising the "no quiz data" path without per-test setup.
-vi.mock('../../../services/quiz/gradingService.js', () => ({
-  getGradesForForm: vi.fn().mockResolvedValue([]),
-}));
+// `questionGradeResultSchema` must be a real Zod schema — the resolver calls
+// `z.array(questionGradeResultSchema)` on it — so a permissive `z.any()`
+// stands in for the real (fully-validated) one covered by gradingService's
+// own tests.
+vi.mock('../../../services/quiz/gradingService.js', async () => {
+  const { z } = await import('zod');
+  return {
+    getGradesForResponses: vi.fn().mockResolvedValue([]),
+    questionGradeResultSchema: z.any(),
+  };
+});
 vi.mock('../../../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -1187,7 +1195,7 @@ describe('Unified Export Resolvers', () => {
         vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(
           quizForm.formSchema as any
         );
-        vi.mocked(quizGradingService.getGradesForForm).mockResolvedValue([gradeRow as any]);
+        vi.mocked(quizGradingService.getGradesForResponses).mockResolvedValue([gradeRow as any]);
         vi.mocked(unifiedExportService.generateExportFile).mockResolvedValue(
           mockExportResult
         );
@@ -1201,7 +1209,12 @@ describe('Unified Export Resolvers', () => {
           mockContext
         );
 
-        expect(quizGradingService.getGradesForForm).toHaveBeenCalledWith('form-123');
+        // Scoped to the responses actually being exported, not every grade
+        // the form has ever accumulated.
+        expect(quizGradingService.getGradesForResponses).toHaveBeenCalledWith([
+          'response-1',
+          'response-2',
+        ]);
         expect(unifiedExportService.generateExportFile).toHaveBeenCalledWith(
           expect.objectContaining({
             quizEnabled: true,
