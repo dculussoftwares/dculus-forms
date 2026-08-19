@@ -3,7 +3,7 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { getFormById } from '../../services/formService.js';
 import { getAllResponsesByFormId } from '../../services/responseService.js';
-import { generateExportFile, ExportFormat } from '../../services/unifiedExportService.js';
+import { generateExportFile, ExportFormat, QuizGradeExportRow } from '../../services/unifiedExportService.js';
 import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { deserializeFormSchema } from '@dculus/types';
@@ -11,18 +11,20 @@ import { ResponseFilter, applyResponseFilters } from '../../services/responseFil
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { logger } from '../../lib/logger.js';
 import * as pluginService from '../../services/pluginService.js';
+import { getGradesForForm } from '../../services/quiz/gradingService.js';
 
 
 export const unifiedExportResolvers = {
   Mutation: {
     generateFormResponseReport: async (
       _: any,
-      { formId, format, filters = [], filterLogic = 'AND', ids }: {
+      { formId, format, filters = [], filterLogic = 'AND', ids, includeQuizQuestionColumns = false }: {
         formId: string;
         format: 'EXCEL' | 'CSV';
         filters?: ResponseFilter[];
         filterLogic?: 'AND' | 'OR';
         ids?: string[];
+        includeQuizQuestionColumns?: boolean;
       },
       context: { auth: BetterAuthContext }
     ) => {
@@ -118,6 +120,25 @@ export const unifiedExportResolvers = {
           form.settings?.accessControl?.enabled || form.settings?.collectRespondentEmail
         );
 
+        // Native Quiz (epic #289): fetch persisted ResponseGrade rows so the
+        // export service can build the native gradebook columns. Cheap
+        // indexed lookup by formId — a no-op for the vast majority of forms
+        // that have never used quiz mode.
+        const quizEnabled = !!form.settings?.quiz?.enabled;
+        const grades = await getGradesForForm(formId);
+        const quizGrades: Record<string, QuizGradeExportRow> = {};
+        for (const grade of grades) {
+          quizGrades[grade.responseId] = {
+            score: grade.score,
+            maxScore: grade.maxScore,
+            percentage: grade.percentage,
+            passed: grade.passed,
+            status: grade.status,
+            gradedAt: grade.gradedAt,
+            detail: Array.isArray(grade.detail) ? (grade.detail as any) : [],
+          };
+        }
+
         // Generate export file using unified service
         const exportResult = await generateExportFile({
           formTitle: form.title,
@@ -126,6 +147,9 @@ export const unifiedExportResolvers = {
           format: exportFormat,
           pluginConfigs,
           includeRespondentEmail,
+          quizEnabled,
+          quizGrades,
+          includeQuizQuestionColumns,
         });
 
         logger.info(`${exportFormat.toUpperCase()} file generated, size: ${exportResult.buffer.length} bytes`);
