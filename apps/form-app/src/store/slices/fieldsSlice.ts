@@ -254,7 +254,16 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
           // silently losing the answer key on the next reload despite persisting fine.
           // `value` undefined (untouched, non-quiz field) falls through to the generic
           // `value !== undefined` branch below and skips entirely — no write at all.
-          fieldMap.set('grading', createGradingYMap(value as any));
+          //
+          // Update the existing grading Y.Map in place when there is one, rather than
+          // replacing it wholesale — preserves per-key CRDT merge granularity if another
+          // collaborator is concurrently editing a different part of this same answer key.
+          const existingGradingMap = fieldMap.get('grading');
+          if (existingGradingMap instanceof Y.Map) {
+            createGradingYMap(value as any, existingGradingMap);
+          } else {
+            fieldMap.set('grading', createGradingYMap(value as any));
+          }
         } else if (
           key === 'defaultValue' &&
           Array.isArray(value) &&

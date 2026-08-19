@@ -39,12 +39,7 @@
     "maxLabel": "அதிகபட்சம்"
   },
   "date": {
-    "modeLabel": "பொருத்தும் முறை",
-    "modeExact": "குறிப்பிட்ட தேதி",
-    "modeRange": "தேதி வரம்பு",
-    "targetLabel": "சரியான தேதி",
-    "fromLabel": "இருந்து",
-    "toLabel": "வரை"
+    "targetLabel": "சரியான தேதி"
   },
   "feedback": {
     "toggleShow": "கருத்து விருப்பங்களைக் காட்டு",

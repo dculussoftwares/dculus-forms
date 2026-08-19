@@ -316,15 +316,29 @@ const createFormFieldInstance = (
 };
 
 /**
- * Build the `grading` Y.Map for a field, giving `acceptedAnswers` and
- * `optionFeedback` the same explicit Y.Array treatment as `options` /
+ * Build (or repopulate) the `grading` Y.Map for a field, giving `acceptedAnswers`
+ * and `optionFeedback` the same explicit Y.Array treatment as `options` /
  * `allowedMimeTypes` above, and the mode-specific option objects
  * (`text`/`numeric`/`set`) their own nested Y.Map — mirrors `validation`.
  * Only called when `fieldData.grading` is present; callers skip this
  * entirely otherwise so a non-quiz field's Y.Map has no `grading` key at all.
+ *
+ * Pass an existing `grading` Y.Map as `target` to update it in place instead of
+ * replacing it wholesale — fieldsSlice's `updateField` does this on every save so
+ * the map's identity survives, keeping Y.js's per-key CRDT merge granularity for
+ * two collaborators editing the same field's grading concurrently (a full
+ * `fieldMap.set('grading', new Y.Map())` would make the whole answer key one
+ * conflict unit instead). Existing keys are cleared first so a mode switch (e.g.
+ * 'set' -> 'text') doesn't leave a stale `set`/`numeric` sub-map behind.
  */
-export const createGradingYMap = (grading: FieldGrading): Y.Map<any> => {
-  const gradingMap = new Y.Map();
+export const createGradingYMap = (
+  grading: FieldGrading,
+  target?: Y.Map<any>
+): Y.Map<any> => {
+  const gradingMap = target ?? new Y.Map();
+  if (target) {
+    Array.from(target.keys()).forEach((key) => target.delete(key));
+  }
 
   gradingMap.set('mode', grading.mode);
   gradingMap.set('pointValue', grading.pointValue);

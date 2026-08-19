@@ -44,22 +44,6 @@ const createDefaultGrading = (fieldType: FieldType): FieldGrading => ({
   acceptedAnswers: [],
 });
 
-/** epoch-ms <-> "YYYY-MM-DD" round trip for date-range grading, done in UTC so it
- * never drifts a day depending on the author's local timezone. */
-const msToDateInputValue = (ms?: number): string => {
-  if (ms === undefined || Number.isNaN(ms)) return '';
-  const d = new Date(ms);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(
-    d.getUTCDate()
-  ).padStart(2, '0')}`;
-};
-const dateInputValueToMs = (value: string): number | undefined => {
-  if (!value) return undefined;
-  const [y, m, d] = value.split('-').map(Number);
-  if (!y || !m || !d) return undefined;
-  return Date.UTC(y, m - 1, d);
-};
-
 // =============================================================================
 // Props
 // =============================================================================
@@ -71,6 +55,15 @@ export interface GradingSettingsProps {
    * with in-progress edits in the Options section above, which is what makes the
    * "renamed option" staleness warning possible. */
   options?: string[];
+  // `any` as the RHF generic (not a hand-rolled `(name: string) => any` signature)
+  // — this one component is shared across four distinct per-field-type form-data
+  // shapes (TextInputFieldFormData, NumberFieldFormData, ...), so a real
+  // `UseFormWatch<FieldFormData>` fails at every call site: `Path<FieldFormData>`
+  // is the union of each shape's own literal field names, and passing e.g. a
+  // `UseFormSetValue<RadioFieldFormData>` into a prop typed over the wider
+  // `FieldFormData` union isn't assignable (TS's parameter contravariance).
+  // `any` here still keeps `watch`/`setValue`'s real parameter count and options
+  // shape from react-hook-form's own types — only the field-name space is erased.
   watch: UseFormWatch<any>;
   setValue: UseFormSetValue<any>;
   errors?: FieldErrors<any>;
@@ -104,7 +97,10 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   const grading: FieldGrading | undefined = watch('grading');
-  const gradingErrors = (errors as any)?.grading;
+  // FieldErrors<any> still resolves nested access to the generic FieldError shape
+  // (message/type only) rather than GradingFormData's own error tree, so a cast is
+  // needed here — same "shared across 4 schemas" reasoning as the props above.
+  const gradingErrors = errors?.grading as any;
 
   if (!isGradableFieldType(fieldType)) return null;
 
@@ -633,93 +629,29 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
   };
 
   // ---------------------------------------------------------------------------
-  // Date field — exact date, or a range.
+  // Date field — exact date only.
   //
-  // NOTE: the grading engine (Story 02, apps/backend/src/services/quiz/gradingEngine.ts)
-  // only implements exact-string matching for `mode: 'exact'` today. The range option
-  // below stores boundaries in `grading.numeric.min/max` (epoch ms, matching
-  // NumericMatchOptions' number type) with `mode: 'numeric'` so the shape is ready for
-  // the engine to grade — an authoring-side range picker without a grading path would
-  // silently 0-score every range question, and that's exactly the ambiguity the
-  // regex/points checks in `gradingFormSchema` exist to prevent.
+  // A date-range picker was dropped from this ticket's scope: the grading engine
+  // (Story 02, apps/backend/src/services/quiz/gradingEngine.ts) only implements
+  // exact-string matching for `mode: 'exact'` today — `gradeNumeric` casts the
+  // submitted value with `Number(value)`, which is NaN for a "YYYY-MM-DD" string,
+  // so a range stored under `mode: 'numeric'` would silently 0-score every
+  // submission once Story 06 wires grading into submitResponse. Shipping a picker
+  // for a key the engine can't grade is exactly what `gradingFormSchema`'s
+  // regex/points checks exist to prevent elsewhere — so it's not offered here
+  // either, until the engine gains real date-range support.
   // ---------------------------------------------------------------------------
-  const renderDate = () => {
-    const isRange = grading?.mode === 'numeric';
-
-    return (
-      <div className="space-y-3">
-        <div className={constants.CSS_CLASSES.INPUT_SPACING}>
-          <Label className={constants.CSS_CLASSES.LABEL_STYLE}>{t('date.modeLabel')}</Label>
-          <Select
-            value={isRange ? 'range' : 'exact'}
-            disabled={!isEditable}
-            onValueChange={(value) => {
-              if (value === 'range') {
-                updateGrading({ mode: 'numeric', acceptedAnswers: [], numeric: {} });
-              } else {
-                updateGrading({ mode: 'exact', numeric: undefined });
-              }
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="exact">{t('date.modeExact')}</SelectItem>
-              <SelectItem value="range">{t('date.modeRange')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {isRange ? (
-          <div className="grid grid-cols-2 gap-3">
-            <div className={constants.CSS_CLASSES.INPUT_SPACING}>
-              <Label className={constants.CSS_CLASSES.LABEL_STYLE}>{t('date.fromLabel')}</Label>
-              <Input
-                type="date"
-                disabled={!isEditable}
-                value={msToDateInputValue(grading?.numeric?.min)}
-                onChange={(e) =>
-                  updateGrading({
-                    numeric: {
-                      ...(grading?.numeric ?? {}),
-                      min: dateInputValueToMs(e.target.value),
-                    },
-                  })
-                }
-              />
-            </div>
-            <div className={constants.CSS_CLASSES.INPUT_SPACING}>
-              <Label className={constants.CSS_CLASSES.LABEL_STYLE}>{t('date.toLabel')}</Label>
-              <Input
-                type="date"
-                disabled={!isEditable}
-                value={msToDateInputValue(grading?.numeric?.max)}
-                onChange={(e) =>
-                  updateGrading({
-                    numeric: {
-                      ...(grading?.numeric ?? {}),
-                      max: dateInputValueToMs(e.target.value),
-                    },
-                  })
-                }
-              />
-            </div>
-          </div>
-        ) : (
-          <div className={constants.CSS_CLASSES.INPUT_SPACING}>
-            <Label className={constants.CSS_CLASSES.LABEL_STYLE}>{t('date.targetLabel')}</Label>
-            <Input
-              type="date"
-              disabled={!isEditable}
-              value={acceptedAnswers[0] ?? ''}
-              onChange={(e) => updateGrading({ mode: 'exact', acceptedAnswers: [e.target.value] })}
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
+  const renderDate = () => (
+    <div className={constants.CSS_CLASSES.INPUT_SPACING}>
+      <Label className={constants.CSS_CLASSES.LABEL_STYLE}>{t('date.targetLabel')}</Label>
+      <Input
+        type="date"
+        disabled={!isEditable}
+        value={acceptedAnswers[0] ?? ''}
+        onChange={(e) => updateGrading({ mode: 'exact', acceptedAnswers: [e.target.value] })}
+      />
+    </div>
+  );
 
   return (
     <div className={constants.CSS_CLASSES.SECTION_SPACING} data-testid="grading-settings-section">

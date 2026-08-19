@@ -39,12 +39,7 @@
     "maxLabel": "Maximum"
   },
   "date": {
-    "modeLabel": "Match using",
-    "modeExact": "Exact date",
-    "modeRange": "Date range",
-    "targetLabel": "Correct date",
-    "fromLabel": "From",
-    "toLabel": "To"
+    "targetLabel": "Correct date"
   },
   "feedback": {
     "toggleShow": "Show feedback options",
