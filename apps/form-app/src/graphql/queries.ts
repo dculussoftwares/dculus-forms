@@ -169,7 +169,7 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
 `;
 
 export const GET_FORM_RESPONSES : TypedDocumentNode<any, any> = gql`
-  query GetFormResponses($formId: ID!, $page: Int = 1, $limit: Int = 10, $sortBy: String = "submittedAt", $sortOrder: String = "desc", $filters: [ResponseFilterInput!], $filterLogic: FilterLogic) {
+  query GetFormResponses($formId: ID!, $page: Int = 1, $limit: Int = 10, $sortBy: String = "submittedAt", $sortOrder: String = "desc", $filters: [ResponseFilterInput!], $filterLogic: FilterLogic, $quizEnabled: Boolean = false) {
     responsesByForm(formId: $formId, page: $page, limit: $limit, sortBy: $sortBy, sortOrder: $sortOrder, filters: $filters, filterLogic: $filterLogic) {
       data {
         id
@@ -191,11 +191,57 @@ export const GET_FORM_RESPONSES : TypedDocumentNode<any, any> = gql`
           name
           color
         }
+        # Native Quiz (epic #289, Story 11): only requested for quiz-enabled
+        # forms — @include(if: false) means the field is never sent to the
+        # server, so a non-quiz form's query fires no extra work at all.
+        responseGrade @include(if: $quizEnabled) {
+          score
+          maxScore
+          percentage
+          passed
+          status
+          gradedAt
+        }
       }
       total
       page
       limit
       totalPages
+    }
+  }
+`;
+
+// Native Quiz (epic #289, Story 11): full per-question breakdown for the grade
+// detail drawer — kept out of GET_FORM_RESPONSES so the main table query
+// doesn't pull every response's full answer-key JSON on every page load.
+export const GET_RESPONSE_GRADE_DETAIL : TypedDocumentNode<any, any> = gql`
+  query GetResponseGradeDetail($id: ID!) {
+    response(id: $id) {
+      id
+      submittedAt
+      responseGrade {
+        score
+        maxScore
+        percentage
+        passed
+        status
+        gradedAt
+        detail {
+          fieldId
+          fieldLabel
+          fieldType
+          mode
+          submittedValue
+          acceptedAnswers
+          correct
+          pointsAwarded
+          pointValue
+          autoPointsAwarded
+          overriddenBy
+          graderComment
+          feedbackShown
+        }
+      }
     }
   }
 `;

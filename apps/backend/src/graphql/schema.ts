@@ -273,6 +273,14 @@ export const typeDefs = gql`
     # this response synchronously — absent for every non-quiz form/response,
     # and for queries other than submitResponse, which never compute it.
     grade: ResponseGradeView
+    # Native Quiz (epic #289, Story 11): the full builder-side grade record
+    # for the responses table + grade detail drawer — unlike grade above,
+    # this is NOT filtered by the form's respondent-visibility/release
+    # policy (the builder should always see everything it authored) and
+    # detail can contain correct answers. Guarded by form-permission
+    # checks in the resolver, never by quiz release policy — must never be
+    # reachable without VIEWER+ access to the form.
+    responseGrade: ResponseGradeRecord
   }
 
   # Native Quiz (epic #289) — mirrors RespondentGradeView
@@ -299,6 +307,34 @@ export const typeDefs = gql`
     yourAnswer: JSON
     correctAnswer: [String!]
     feedback: String
+  }
+
+  # Native Quiz (epic #289, Story 11) — the raw ResponseGrade row, unfiltered
+  # by quiz release/visibility policy. Builder-only; see FormResponse.responseGrade.
+  type ResponseGradeRecord {
+    score: Float!
+    maxScore: Float!
+    percentage: Float!
+    passed: Boolean!
+    status: String!
+    gradedAt: String!
+    detail: [ResponseGradeQuestionDetail!]!
+  }
+
+  type ResponseGradeQuestionDetail {
+    fieldId: ID!
+    fieldLabel: String!
+    fieldType: String!
+    mode: String!
+    submittedValue: JSON
+    acceptedAnswers: [String!]!
+    correct: Boolean
+    pointsAwarded: Float!
+    pointValue: Float!
+    autoPointsAwarded: Float!
+    overriddenBy: String
+    graderComment: String
+    feedbackShown: String
   }
 
   # Response Edit Tracking Types

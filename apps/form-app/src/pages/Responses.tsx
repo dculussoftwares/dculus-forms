@@ -24,6 +24,7 @@ import { QuizResultsDialog } from '../plugins/quiz/ResultsDialog';
 import { ResponsesToolbar } from '../components/Responses/ResponsesToolbar';
 import { ResponsesTable } from '../components/Responses/ResponsesTable';
 import { ResponseDetailPanel } from '../components/Responses/ResponseDetailPanel';
+import { GradeDetailDrawer } from '../components/Responses/GradeDetailDrawer';
 import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS, GET_RESPONSE_BY_ID } from '../graphql/queries';
@@ -120,6 +121,17 @@ const Responses: React.FC = () => {
   const actualFormId = formId || id;
   const responsesState = useResponsesState({ formId: actualFormId });
 
+  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
+    variables: { id: actualFormId },
+    skip: !actualFormId,
+  });
+
+  // Native Quiz (epic #289, Story 11): additive guarantee — quizEnabled stays
+  // false for every non-quiz form (and before formData has loaded), so
+  // GET_FORM_RESPONSES's `responseGrade @include(if: $quizEnabled)` field is
+  // never sent to the server and fires zero extra work.
+  const quizEnabled = !!formData?.form?.settings?.quiz?.enabled;
+
   // Deep-link support: open a specific response's detail panel via ?responseId=
   // (used by the automation run history trigger link).
   const [searchParams, setSearchParams] = useSearchParams();
@@ -170,6 +182,7 @@ const Responses: React.FC = () => {
           responsesState.graphqlFilters.length > 1
             ? responsesState.filterLogic
             : undefined,
+        quizEnabled,
       },
     },
   ];
@@ -227,11 +240,6 @@ const Responses: React.FC = () => {
     }
   };
 
-  const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
-    variables: { id: actualFormId },
-    skip: !actualFormId,
-  });
-
   const { data: pluginsData } = useQuery(GET_FORM_PLUGINS, {
     variables: { formId: actualFormId },
     skip: !actualFormId,
@@ -266,6 +274,7 @@ const Responses: React.FC = () => {
       sortOrder: responsesState.sortOrder,
       filters: responsesState.graphqlFilters,
       filterLogic: responsesState.graphqlFilters && responsesState.graphqlFilters.length > 1 ? responsesState.filterLogic : undefined,
+      quizEnabled,
     },
     skip: !actualFormId,
     notifyOnNetworkStatusChange: true,
@@ -303,13 +312,15 @@ const Responses: React.FC = () => {
         formData?.form?.settings?.accessControl?.enabled ||
         formData?.form?.settings?.collectRespondentEmail
       ),
+      quizEnabled,
+      onViewGrade: responsesState.openGradeDrawer,
       onPluginClick: (pluginType, metadata, responseId) => {
         responsesState.setPluginDialogState({ pluginType, metadata, responseId });
       },
       onDeleteResponse: handleDeleteResponse,
       t,
     }),
-    [formData, pluginsData, formTags, enabledPdfGenerators, locale, actualFormId, responses, t]
+    [formData, pluginsData, formTags, enabledPdfGenerators, locale, actualFormId, responses, quizEnabled, t]
   );
 
   // Apply stored column order: fixed cols keep their positions; hideable cols are reordered
@@ -634,6 +645,14 @@ const Responses: React.FC = () => {
           handleDeleteResponse(id);
           responsesState.closeDetailPanel();
         }}
+        t={t}
+      />
+
+      {/* Native Quiz (epic #289, Story 11): grade detail drawer */}
+      <GradeDetailDrawer
+        responseId={responsesState.gradeDrawerResponseId}
+        open={!!responsesState.gradeDrawerResponseId}
+        onClose={responsesState.closeGradeDrawer}
         t={t}
       />
 

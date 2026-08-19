@@ -27,6 +27,7 @@ import {
   Badge,
   Button,
   Checkbox,
+  DataTableColumnHeader,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -91,6 +92,12 @@ interface CreateResponsesColumnsOptions {
   // collectRespondentEmail enabled) get the "Respondent" column — most forms
   // are anonymous and every response's respondentEmail would just be empty.
   showRespondentEmail?: boolean;
+  // Native Quiz (epic #289, Story 11): additive guarantee — Score/Status
+  // columns are built ONLY when true. For a non-quiz form this stays false,
+  // so the returned column set/layout is byte-identical to before this
+  // feature existed.
+  quizEnabled?: boolean;
+  onViewGrade?: (responseId: string) => void;
   onPluginClick: (
     pluginType: string,
     metadata: any,
@@ -687,6 +694,95 @@ const ResponsesActionsCell: React.FC<{
   );
 };
 
+interface ResponseGradeSummary {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  status: string;
+}
+
+/**
+ * Native Quiz (epic #289, Story 11): Score + Status columns. Only ever called
+ * when quizEnabled is true — createResponsesColumns skips this pair entirely
+ * for a non-quiz form, satisfying the additive guarantee (no columns, no
+ * extra rendering work).
+ */
+const createGradeColumns = (
+  onViewGrade: ((responseId: string) => void) | undefined,
+  t: CreateResponsesColumnsOptions['t']
+): ColumnDef<FormResponse>[] => {
+  const scoreColumn: ColumnDef<FormResponse> = {
+    id: 'score',
+    accessorFn: (row) => (row as any).responseGrade?.percentage,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('table.columns.score')} />
+    ),
+    cell: ({ row }) => {
+      const grade = (row.original as any).responseGrade as ResponseGradeSummary | undefined;
+      if (!grade) {
+        return <span className="text-sm text-muted-foreground italic">{t('table.grade.notGraded')}</span>;
+      }
+      return (
+        <button
+          type="button"
+          className="text-sm font-medium text-primary hover:underline"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewGrade?.(row.original.id);
+          }}
+        >
+          {t('table.grade.scoreFormat', {
+            values: {
+              score: grade.score,
+              maxScore: grade.maxScore,
+              percentage: Math.round(grade.percentage),
+            },
+          })}
+        </button>
+      );
+    },
+    enableSorting: true,
+    enableHiding: true,
+    size: 140,
+  };
+
+  const statusColumn: ColumnDef<FormResponse> = {
+    id: 'gradeStatus',
+    accessorFn: (row) => (row as any).responseGrade?.status,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title={t('table.columns.status')} />
+    ),
+    cell: ({ row }) => {
+      const grade = (row.original as any).responseGrade as ResponseGradeSummary | undefined;
+      if (!grade) {
+        return <span className="text-sm text-muted-foreground">—</span>;
+      }
+      if (grade.status === 'NEEDS_REVIEW') {
+        return (
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+            {t('table.grade.statusNeedsReview')}
+          </Badge>
+        );
+      }
+      return grade.passed ? (
+        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          {t('table.grade.statusPassed')}
+        </Badge>
+      ) : (
+        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+          {t('table.grade.statusFailed')}
+        </Badge>
+      );
+    },
+    enableSorting: true,
+    enableHiding: true,
+    size: 130,
+  };
+
+  return [scoreColumn, statusColumn];
+};
+
 /**
  * Create actions column
  * Note: This uses a React component internally that needs navigate context
@@ -729,6 +825,8 @@ export const createResponsesColumns = ({
   onDeleteResponse,
   responses = [],
   showRespondentEmail = false,
+  quizEnabled = false,
+  onViewGrade,
   t,
 }: CreateResponsesColumnsOptions): ColumnDef<FormResponse>[] => {
   if (!formSchema) return [];
@@ -822,6 +920,11 @@ export const createResponsesColumns = ({
   // Field columns
   const fieldColumns = createFieldColumns(deserializedSchema, responses, t);
 
+  // Native Quiz (epic #289, Story 11): Score/Status columns — built ONLY
+  // when quizEnabled. Additive guarantee: a non-quiz form gets an empty
+  // array here, so its column set/layout is unchanged from before.
+  const gradeColumns = quizEnabled ? createGradeColumns(onViewGrade, t) : [];
+
   // Plugin columns — pass full plugin instances so column titles can be
   // derived from each plugin's stored config (e.g. quiz columnName setting)
   const enabledPluginInstances: PluginInstance[] =
@@ -874,6 +977,7 @@ export const createResponsesColumns = ({
     ...fieldColumns,
     ...pluginColumns,
     ...generatorColumns,
+    ...gradeColumns,
     ...metaColumns,
     actionsColumn,
   ];

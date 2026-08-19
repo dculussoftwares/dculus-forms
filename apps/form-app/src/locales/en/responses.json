@@ -105,7 +105,16 @@
       "editStatus": "Edit Status",
       "tags": "Tags",
       "respondentEmail": "Respondent",
-      "actions": "Actions"
+      "actions": "Actions",
+      "score": "Score",
+      "status": "Status"
+    },
+    "grade": {
+      "scoreFormat": "{{score}}/{{maxScore}} · {{percentage}}%",
+      "notGraded": "Not graded",
+      "statusPassed": "Pass",
+      "statusFailed": "Fail",
+      "statusNeedsReview": "Needs review"
     },
     "tags": {
       "addTag": "Add tag",
@@ -195,5 +204,28 @@
   },
   "breadcrumbs": {
     "formDashboard": "Form Dashboard"
+  },
+  "gradeDrawer": {
+    "title": "Grade details",
+    "response": "Response",
+    "graded": "Graded",
+    "overallScore": "Overall score",
+    "pointsEarned": "Points earned",
+    "percentage": "Percentage",
+    "correct": "Correct",
+    "answerBreakdown": "Answer breakdown",
+    "questionCount": "{{count}} questions",
+    "questionLabel": "Question {{number}}",
+    "yourAnswer": "Your answer:",
+    "correctAnswer": "Correct answer:",
+    "noAnswer": "No answer",
+    "needsManualGrading": "Needs manual grading",
+    "status": {
+      "passed": "Passed",
+      "failed": "Failed",
+      "needsReview": "Needs review"
+    },
+    "loading": "Loading grade details...",
+    "error": "Failed to load grade details"
   }
 }
