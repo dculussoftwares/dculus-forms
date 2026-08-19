@@ -10,7 +10,8 @@ import {
   Badge,
 } from '@dculus/ui';
 import { cn, generateRandomString } from '@dculus/utils';
-import type { LayoutCode } from '@dculus/types';
+import type { LayoutCode, GradeRelease } from '@dculus/types';
+import { DEFAULT_QUIZ_SETTINGS } from '@dculus/types';
 import {
   LayoutTemplate,
   ArrowLeft,
@@ -27,6 +28,10 @@ import {
   Video as VideoIcon,
   Play,
   Layout as LayoutIcon,
+  GraduationCap,
+  PenLine,
+  Clock,
+  EyeOff,
 } from 'lucide-react';
 import { GENERATE_FORM_WITH_AI, CREATE_FORM } from '../graphql/mutations';
 import { GET_TEMPLATES } from '../graphql/templates';
@@ -50,9 +55,11 @@ import { GradientSparkles } from '../components/form-builder/GradientSparkles.js
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Step = 'choice' | 'ai' | 'appearance' | 'template';
+type Step = 'choice' | 'ai' | 'appearance' | 'template' | 'quiz';
 type AIMode = 'quick' | 'standard' | 'professional';
 type PageMode = 'single' | 'multi';
+type CreationSource = 'ai' | 'quiz';
+type QuizStartMode = 'blank' | 'ai';
 
 interface AIField {
   type: string;
@@ -238,6 +245,20 @@ const CreateFormWizard: React.FC = () => {
 
   // ── Wizard state ─────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>('choice');
+  // Which choice-step card led into the shared 'appearance' step — determines
+  // whether settings.quiz is attached at creation and where "Back" returns to.
+  const [creationSource, setCreationSource] = useState<CreationSource>('ai');
+
+  // Quiz step
+  const [quizTitle, setQuizTitle] = useState('');
+  const [quizTitleError, setQuizTitleError] = useState('');
+  const [quizDescription, setQuizDescription] = useState('');
+  const [quizStartMode, setQuizStartMode] = useState<QuizStartMode>('blank');
+  const [quizPrompt, setQuizPrompt] = useState('');
+  const [quizPromptError, setQuizPromptError] = useState('');
+  const [quizPassThreshold, setQuizPassThreshold] = useState<number>(DEFAULT_QUIZ_SETTINGS.passThresholdPercent ?? 60);
+  const [quizGradeRelease, setQuizGradeRelease] = useState<GradeRelease>(DEFAULT_QUIZ_SETTINGS.gradeRelease);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
   // AI step
   const [prompt, setPrompt] = useState('');
@@ -374,20 +395,83 @@ const CreateFormWizard: React.FC = () => {
     }
   }, [prompt, aiMode, organizationId, generateForm, t, tErr]);
 
+  // Quiz step — "Continue" branches into blank creation or AI generation,
+  // both of which land on the shared 'appearance' step (no parallel flow).
+  const handleQuizContinue = useCallback(async () => {
+    if (!quizTitle.trim()) {
+      setQuizTitleError(t('quiz.errors.titleRequired'));
+      return;
+    }
+    setQuizTitleError('');
+
+    if (quizStartMode === 'blank') {
+      setAiGeneratedFields([]);
+      setAiSuggestedTitle(quizTitle.trim());
+      setAiGeneratedLayout(null);
+      setSelectedMedia(null);
+      setCreationSource('quiz');
+      setStep('appearance');
+      return;
+    }
+
+    if (!quizPrompt.trim()) {
+      setQuizPromptError(t('quiz.errors.promptRequired'));
+      return;
+    }
+    setQuizPromptError('');
+    setIsGeneratingQuiz(true);
+
+    try {
+      // REUSE the existing AI generation mutation — only the prompt is
+      // quiz-framed, no forked AI pipeline (epic #289, Story 09).
+      const framedPrompt = t('quiz.aiPromptTemplate', { values: { topic: quizPrompt.trim() } });
+      const { data: genData } = await generateForm({
+        variables: { prompt: framedPrompt, organizationId, mode: aiMode },
+      });
+
+      const { fields, layout: generatedLayout } = genData.generateFormWithAI;
+      setAiGeneratedFields(fields);
+      setAiSuggestedTitle(quizTitle.trim());
+      if (generatedLayout) setAiGeneratedLayout(generatedLayout);
+      setSelectedMedia(null);
+      setCreationSource('quiz');
+      setIsGeneratingQuiz(false);
+      setStep('appearance');
+    } catch (err: any) {
+      setIsGeneratingQuiz(false);
+      const { messageKey } = getErrorDetails(err);
+      toastError(t('quiz.errors.failed'), tErr(messageKey) || t('quiz.errors.failedDesc'));
+    }
+  }, [quizTitle, quizStartMode, quizPrompt, aiMode, organizationId, generateForm, t, tErr]);
+
   const handleCreateFormWithAppearance = useCallback(async () => {
     setIsCreatingForm(true);
 
     try {
       const formSchema = buildFormSchema(aiGeneratedFields, pageMode, selectedLayoutCode, aiGeneratedLayout ?? undefined);
 
-      const { data: formData } = await createForm({
-        variables: {
-          input: {
-            title: aiSuggestedTitle,
-            formSchema,
-            organizationId,
+      const input: Record<string, unknown> = {
+        title: aiSuggestedTitle,
+        formSchema,
+        organizationId,
+      };
+
+      // Only the quiz path attaches settings.quiz — the AI path's payload
+      // stays byte-identical to before (additive guarantee, epic #289).
+      if (creationSource === 'quiz') {
+        input.description = quizDescription.trim() || undefined;
+        input.settings = {
+          quiz: {
+            enabled: true,
+            passThresholdPercent: quizPassThreshold,
+            gradeRelease: quizGradeRelease,
+            respondentVisibility: DEFAULT_QUIZ_SETTINGS.respondentVisibility,
           },
-        },
+        };
+      }
+
+      const { data: formData } = await createForm({
+        variables: { input },
       });
 
       const formId = formData.createForm.id;
@@ -429,7 +513,7 @@ const CreateFormWizard: React.FC = () => {
       const { messageKey } = getErrorDetails(err);
       toastError(t('appearance.errors.failed'), tErr(messageKey) || t('appearance.errors.failedDesc'));
     }
-  }, [aiGeneratedFields, aiSuggestedTitle, aiGeneratedLayout, pageMode, selectedLayoutCode, selectedMedia, organizationId, createForm, navigate, t, tErr]);
+  }, [aiGeneratedFields, aiSuggestedTitle, aiGeneratedLayout, pageMode, selectedLayoutCode, selectedMedia, organizationId, createForm, navigate, t, tErr, creationSource, quizDescription, quizPassThreshold, quizGradeRelease]);
 
   const handleCreateFromTemplate = useCallback(async () => {
     if (!templateTitle.trim()) {
@@ -461,11 +545,11 @@ const CreateFormWizard: React.FC = () => {
     if (step === 'choice') {
       navigate('/forms');
     } else if (step === 'appearance') {
-      setStep('ai');
+      setStep(creationSource === 'quiz' ? 'quiz' : 'ai');
     } else {
       setStep('choice');
     }
-  }, [step, navigate]);
+  }, [step, navigate, creationSource]);
 
   // ── Media selection toggle ───────────────────────────────────────────────
 
@@ -522,7 +606,7 @@ const CreateFormWizard: React.FC = () => {
 
         {/* ── Step 1: Choice ─────────────────────────────────────────────── */}
         {step === 'choice' && (
-          <div className="w-full max-w-3xl">
+          <div className="w-full max-w-4xl">
             <div className="text-center mb-10">
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2">
                 {t('choice.subheading')}
@@ -532,11 +616,11 @@ const CreateFormWizard: React.FC = () => {
               </h1>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* AI Card — highlighted, blue (matches AI accent used across the app) */}
               <button
                 type="button"
-                onClick={() => setStep('ai')}
+                onClick={() => { setCreationSource('ai'); setStep('ai'); }}
                 className="relative group text-left p-7 rounded-2xl border-2 transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 style={{ borderColor: 'rgba(37,99,235,0.35)', backgroundColor: 'rgba(59,130,246,0.06)' }}
               >
@@ -571,6 +655,23 @@ const CreateFormWizard: React.FC = () => {
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {t('choice.template.description')}
+                </p>
+              </button>
+
+              {/* Quiz Card — teal, a peer of the other two (not a promotion) */}
+              <button
+                type="button"
+                onClick={() => { setCreationSource('quiz'); setStep('quiz'); }}
+                className="relative group text-left p-7 rounded-2xl border-2 border-border bg-card hover:border-[var(--tf-green)]/40 hover:bg-[var(--tf-icon-teal)]/30 transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-xl" style={{ backgroundColor: 'var(--tf-icon-teal)' }}>
+                  <GraduationCap className="h-6 w-6" style={{ color: 'var(--tf-green)' }} />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">
+                  {t('choice.quiz.title')}
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t('choice.quiz.description')}
                 </p>
               </button>
             </div>
@@ -645,6 +746,136 @@ const CreateFormWizard: React.FC = () => {
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('ai.generating')}</>
                 ) : (
                   <><AIIcon className="mr-2 h-4 w-4" />{t('ai.generate')}</>
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 2C: Quiz ──────────────────────────────────────────────── */}
+        {step === 'quiz' && (
+          <div className="w-full max-w-xl">
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-1">
+                <GraduationCap className="h-5 w-5 text-primary" />
+                <h1 className="text-2xl font-bold text-foreground">{t('quiz.heading')}</h1>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Title */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  {t('quiz.titleLabel')}
+                </label>
+                <Input
+                  placeholder={t('quiz.titlePlaceholder')}
+                  value={quizTitle}
+                  onChange={e => { setQuizTitle(e.target.value); setQuizTitleError(''); }}
+                  disabled={isGeneratingQuiz}
+                  className={cn(quizTitleError && 'border-destructive')}
+                />
+                {quizTitleError && (
+                  <p className="text-xs text-destructive">{quizTitleError}</p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  {t('quiz.descriptionLabel')}
+                </label>
+                <Textarea
+                  placeholder={t('quiz.descriptionPlaceholder')}
+                  value={quizDescription}
+                  onChange={e => setQuizDescription(e.target.value)}
+                  rows={2}
+                  disabled={isGeneratingQuiz}
+                  className="resize-none"
+                />
+              </div>
+
+              {/* Start mode */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">{t('quiz.startMode.label')}</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <ModeChip
+                    active={quizStartMode === 'blank'} onClick={() => setQuizStartMode('blank')}
+                    icon={PenLine} label={t('quiz.startMode.blank')} sub={t('quiz.startMode.blankSub')}
+                  />
+                  <ModeChip
+                    active={quizStartMode === 'ai'} onClick={() => setQuizStartMode('ai')}
+                    icon={AIIcon} label={t('quiz.startMode.ai')} sub={t('quiz.startMode.aiSub')}
+                  />
+                </div>
+              </div>
+
+              {/* AI prompt — only shown when generating with AI */}
+              {quizStartMode === 'ai' && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    {t('quiz.aiPromptLabel')}
+                  </label>
+                  <Textarea
+                    placeholder={t('quiz.aiPromptPlaceholder')}
+                    value={quizPrompt}
+                    onChange={e => { setQuizPrompt(e.target.value); setQuizPromptError(''); }}
+                    rows={2}
+                    disabled={isGeneratingQuiz}
+                    className={cn('resize-none', quizPromptError && 'border-destructive')}
+                  />
+                  {quizPromptError && (
+                    <p className="text-xs text-destructive">{quizPromptError}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Pass threshold */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">{t('quiz.passThreshold.label')}</label>
+                <div className="flex items-center gap-2 max-w-[160px]">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={quizPassThreshold}
+                    onChange={e => setQuizPassThreshold(Number(e.target.value))}
+                    disabled={isGeneratingQuiz}
+                  />
+                  <span className="text-sm text-muted-foreground">{t('quiz.passThreshold.suffix')}</span>
+                </div>
+              </div>
+
+              {/* Grade release */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">{t('quiz.gradeRelease.label')}</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <ModeChip
+                    active={quizGradeRelease === 'immediate'} onClick={() => setQuizGradeRelease('immediate')}
+                    icon={CheckCircle2} label={t('quiz.gradeRelease.immediate')} sub=""
+                  />
+                  <ModeChip
+                    active={quizGradeRelease === 'afterReview'} onClick={() => setQuizGradeRelease('afterReview')}
+                    icon={Clock} label={t('quiz.gradeRelease.afterReview')} sub=""
+                  />
+                  <ModeChip
+                    active={quizGradeRelease === 'never'} onClick={() => setQuizGradeRelease('never')}
+                    icon={EyeOff} label={t('quiz.gradeRelease.never')} sub=""
+                  />
+                </div>
+              </div>
+
+              {/* Continue button */}
+              <Button
+                onClick={handleQuizContinue}
+                disabled={isGeneratingQuiz}
+                className="w-full h-11 text-base font-medium"
+                size="lg"
+              >
+                {isGeneratingQuiz ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('quiz.generating')}</>
+                ) : (
+                  <><GraduationCap className="mr-2 h-4 w-4" />{t('quiz.continue')}</>
                 )}
               </Button>
             </div>
