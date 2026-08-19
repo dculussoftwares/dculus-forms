@@ -14,6 +14,7 @@ import type {
   QuestionGradeResult,
   QuizSettings,
 } from '@dculus/types';
+import safeRegex from 'safe-regex';
 
 export interface GradeResult {
   score: number;
@@ -25,6 +26,10 @@ export interface GradeResult {
 }
 
 const MAX_REGEX_PATTERN_LENGTH = 200;
+// Defense-in-depth backstop: safe-regex's star-height heuristic has known
+// false negatives, so also cap the string it runs against — bounds the
+// worst case even for a pattern that slips past the heuristic.
+const MAX_REGEX_INPUT_LENGTH = 500;
 
 const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -108,10 +113,17 @@ const gradeText = (grading: FieldGrading, value: unknown): ModeOutcome => {
   const opts = grading.text ?? {};
 
   if (opts.regex) {
-    const submitted = normalizeText(value, { ...opts, caseSensitive: true, ignorePunctuation: false });
+    const normalized = normalizeText(value, { ...opts, caseSensitive: true, ignorePunctuation: false });
+    const submitted = normalized.slice(0, MAX_REGEX_INPUT_LENGTH);
     const flags = opts.caseSensitive ? '' : 'i';
     const matched = grading.acceptedAnswers.some((pattern) => {
-      if (typeof pattern !== 'string' || pattern.length > MAX_REGEX_PATTERN_LENGTH) return false;
+      if (typeof pattern !== 'string' || pattern.length === 0 || pattern.length > MAX_REGEX_PATTERN_LENGTH) {
+        return false;
+      }
+      // safe-regex rejects catastrophic-backtracking shapes (nested/ambiguous
+      // quantifiers, e.g. `(a+)+$`) by limiting star height — the anchoring
+      // and length cap above don't bound that on their own.
+      if (!safeRegex(pattern)) return false;
       try {
         const anchored = new RegExp(`^(?:${pattern})$`, flags);
         return anchored.test(submitted);

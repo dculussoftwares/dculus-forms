@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import type { FieldGrading, FormLayout, FormSchema, QuizSettings } from '@dculus/types';
-import { FieldType } from '@dculus/types';
+import type { FieldGrading, FormField, FormLayout, FormSchema, QuizSettings } from '@dculus/types';
+import {
+  CheckboxField,
+  CheckboxFieldValidation,
+  FieldType,
+  FillableFormFieldValidation,
+  NumberField,
+  RadioField,
+  TextAreaField,
+  TextFieldValidation,
+  TextInputField,
+} from '@dculus/types';
 import { gradeResponse } from '../gradingEngine.js';
 
 const baseSettings: QuizSettings = {
@@ -25,16 +35,44 @@ interface FieldOpts {
   deleted?: boolean;
 }
 
-const field = ({ id, type, label = id, grading, deleted }: FieldOpts) => ({
-  id,
-  type,
-  label,
-  grading,
-  deleted,
-});
+/** Builds a real @dculus/types field-class instance, mirroring deserializeFormField's
+ * pattern of assigning `grading` after construction. */
+const field = ({ id, type, label = id, grading, deleted }: FieldOpts): FormField => {
+  let instance: FormField;
+  switch (type) {
+    case FieldType.RADIO_FIELD:
+      instance = new RadioField(id, label, '', '', '', new FillableFormFieldValidation(false), []);
+      break;
+    case FieldType.CHECKBOX_FIELD:
+      instance = new CheckboxField(
+        id,
+        label,
+        [],
+        '',
+        '',
+        '',
+        new CheckboxFieldValidation(false),
+        []
+      );
+      break;
+    case FieldType.NUMBER_FIELD:
+      instance = new NumberField(id, label, '', '', '', '', new FillableFormFieldValidation(false));
+      break;
+    case FieldType.TEXT_AREA_FIELD:
+      instance = new TextAreaField(id, label, '', '', '', '', new TextFieldValidation(false));
+      break;
+    case FieldType.TEXT_INPUT_FIELD:
+    default:
+      instance = new TextInputField(id, label, '', '', '', '', new TextFieldValidation(false));
+      break;
+  }
+  if (grading) (instance as FormField & { grading?: FieldGrading }).grading = grading;
+  instance.deleted = deleted;
+  return instance;
+};
 
-const schemaWith = (fields: ReturnType<typeof field>[]): FormSchema => ({
-  pages: [{ id: 'page-1', title: 'Page 1', fields: fields as FormSchema['pages'][number]['fields'], order: 0 }],
+const schemaWith = (fields: FormField[]): FormSchema => ({
+  pages: [{ id: 'page-1', title: 'Page 1', fields, order: 0 }],
   layout: {} as FormLayout,
   isShuffleEnabled: false,
 });
@@ -233,7 +271,7 @@ describe('gradeResponse', () => {
         expect(gradeResponse(schema, baseSettings, { q1: 'anything' }).score).toBe(0);
       });
 
-      it('completes promptly against a long input for a catastrophic-backtracking pattern', () => {
+      it('rejects a catastrophic-backtracking pattern outright, never compiling it', () => {
         const grading: FieldGrading = {
           mode: 'text',
           pointValue: 5,
@@ -241,14 +279,31 @@ describe('gradeResponse', () => {
           text: { regex: true },
         };
         const schema = schemaWith([field({ id: 'q1', type: FieldType.TEXT_INPUT_FIELD, grading })]);
-        const longInput = 'a'.repeat(100_000);
+        // A fully-matching input, which a naive backtracking engine resolves
+        // instantly — proves rejection, not luck with an easy input.
+        const result = gradeResponse(schema, baseSettings, { q1: 'a'.repeat(100) });
+        expect(result.score).toBe(0);
+        expect(result.questions[0].correct).toBe(false);
+      });
+
+      it('completes promptly against the exact adversarial input that hangs a naive backtracking match', () => {
+        const grading: FieldGrading = {
+          mode: 'text',
+          pointValue: 5,
+          acceptedAnswers: ['(a+)+$'],
+          text: { regex: true },
+        };
+        const schema = schemaWith([field({ id: 'q1', type: FieldType.TEXT_INPUT_FIELD, grading })]);
+        // 'a' * 30 + '!' triggers exponential backtracking (100+ ms) against
+        // ^(?:(a+)+$)$ in a naive regex engine — see the PR's ReDoS finding.
+        const adversarialInput = 'a'.repeat(30) + '!';
 
         const start = Date.now();
-        const result = gradeResponse(schema, baseSettings, { q1: longInput });
+        const result = gradeResponse(schema, baseSettings, { q1: adversarialInput });
         const elapsedMs = Date.now() - start;
 
-        expect(elapsedMs).toBeLessThan(1000);
-        expect(result.score).toBe(5);
+        expect(elapsedMs).toBeLessThan(50);
+        expect(result.score).toBe(0);
       });
 
       it('never interpolates the submitted value into the compiled pattern', () => {
