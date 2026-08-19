@@ -204,17 +204,31 @@ export const responsesResolvers = {
         }
       }
 
+      // Live schema for form.id (Hocuspocus, falling back to the DB column),
+      // resolved at most once and shared by conditional stripping below and
+      // quiz grading further down — both need the exact same schema, and
+      // getFormSchemaFromHocuspocus is a DB read plus a full Y.Doc rebuild,
+      // not a cheap call to repeat.
+      let liveSchema: unknown;
+      let liveSchemaResolved = false;
+      const resolveLiveSchema = async () => {
+        if (!liveSchemaResolved) {
+          liveSchema = (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
+          liveSchemaResolved = true;
+        }
+        return liveSchema;
+      };
+
       // Server-side conditional-logic enforcement (defense in depth): strip
       // values of fields/pages the form's rules hide, evaluated against the
-      // same live schema the viewer was served (Hocuspocus, falling back to
-      // the DB column). The client strips too, but this mutation is public
-      // and callable directly. Runs before BOTH insert paths below.
+      // same live schema the viewer was served. The client strips too, but
+      // this mutation is public and callable directly. Runs before BOTH
+      // insert paths below.
       if (input.data && typeof input.data === 'object') {
-        const liveSchema =
-          (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
-        if (liveSchema) {
+        const schema = await resolveLiveSchema();
+        if (schema) {
           input.data = stripConditionallyHiddenValues(
-            liveSchema,
+            schema,
             input.data as Record<string, unknown>
           );
         }
@@ -294,10 +308,9 @@ export const responsesResolvers = {
       const quizSettings = form.settings?.quiz;
       if (quizSettings?.enabled) {
         try {
-          const liveSchema =
-            (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
-          if (liveSchema) {
-            const deserializedSchema = deserializeFormSchema(liveSchema);
+          const schema = await resolveLiveSchema();
+          if (schema) {
+            const deserializedSchema = deserializeFormSchema(schema);
             const gradeResult = gradeResponse(
               deserializedSchema,
               quizSettings,
@@ -327,7 +340,13 @@ export const responsesResolvers = {
           // let the submission succeed either way.
           logger.error('Error grading quiz response:', error);
           try {
-            const fallbackGrade = await saveGrade({
+            // Persisted for a human reviewer, but deliberately not assigned to
+            // `grade`/`quizFanout`: under gradeRelease 'immediate' (and a
+            // past-due 'scheduled' release), toRespondentView.isReleased()
+            // ignores grade status entirely, so surfacing this placeholder
+            // would show the respondent — and automations via quizPassed —
+            // a false "you scored 0%" instead of just staying silent.
+            await saveGrade({
               responseId: savedResponse.id,
               score: 0,
               maxScore: 0,
@@ -337,13 +356,6 @@ export const responsesResolvers = {
               autoScore: 0,
               detail: [],
             });
-            grade = toRespondentView(fallbackGrade, quizSettings);
-            quizFanout = {
-              quizScore: fallbackGrade.score,
-              quizMaxScore: fallbackGrade.maxScore,
-              quizPercentage: fallbackGrade.percentage,
-              quizPassed: fallbackGrade.passed,
-            };
           } catch (persistError) {
             logger.error(
               'Error persisting NEEDS_REVIEW grade after grading failure:',

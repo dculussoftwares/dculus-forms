@@ -4,7 +4,9 @@ import { GraphQLError } from '#graphql-errors';
 import {
   DEFAULT_THANK_YOU_CONTENT,
   RadioField,
+  TextInputField,
   FillableFormFieldValidation,
+  TextFieldValidation,
   serializeFormSchema,
   type FormSchema,
   type QuizSettings,
@@ -1077,30 +1079,30 @@ describe('Responses Resolvers', () => {
       );
 
       it('excludes a conditionally-hidden graded question from maxScore', async () => {
-        const bonusField = {
-          id: 'bonus',
-          type: 'text_input_field',
-          label: 'Bonus',
-          validation: { required: false, type: 'text_field_validation' },
-          grading: { mode: 'text', pointValue: 5, acceptedAnswers: ['42'] },
-        };
-        const schemaWithCondition = {
-          ...rawQuizSchema,
+        const triggerField = new RadioField(
+          'trigger',
+          'Trigger',
+          '',
+          '',
+          '',
+          new FillableFormFieldValidation(false),
+          ['Yes', 'No']
+        );
+        const bonusField = new TextInputField(
+          'bonus',
+          'Bonus',
+          '',
+          '',
+          '',
+          '',
+          new TextFieldValidation(false)
+        );
+        bonusField.grading = { mode: 'text', pointValue: 5, acceptedAnswers: ['42'] };
+
+        const schemaWithConditionObj: FormSchema = {
+          ...quizSchema,
           pages: [
-            {
-              ...rawQuizSchema.pages[0],
-              fields: [
-                ...rawQuizSchema.pages[0].fields,
-                {
-                  id: 'trigger',
-                  type: 'radio_field',
-                  label: 'Trigger',
-                  options: ['Yes', 'No'],
-                  validation: { required: false, type: 'fillable_form_field' },
-                },
-                bonusField,
-              ],
-            },
+            { ...quizSchema.pages[0], fields: [gradedField, triggerField, bonusField] },
           ],
           conditions: [
             {
@@ -1112,6 +1114,7 @@ describe('Responses Resolvers', () => {
             },
           ],
         };
+        const schemaWithCondition = serializeFormSchema(schemaWithConditionObj);
         const quiz: QuizSettings = {
           enabled: true,
           passThresholdPercent: 60,
@@ -1139,7 +1142,7 @@ describe('Responses Resolvers', () => {
         ).toBe(false);
       });
 
-      it('lets the submission succeed and saves a NEEDS_REVIEW fallback when grading throws', async () => {
+      it('lets the submission succeed when grading and the NEEDS_REVIEW fallback both fail', async () => {
         const quiz: QuizSettings = {
           enabled: true,
           passThresholdPercent: 60,
@@ -1161,6 +1164,42 @@ describe('Responses Resolvers', () => {
         expect(result).toMatchObject({ id: mockResponse.id, formId: mockResponse.formId });
         expect(result).not.toHaveProperty('grade');
         expect(responseGradeRepository.upsertForResponse).not.toHaveBeenCalled();
+      });
+
+      it('persists a NEEDS_REVIEW fallback when grading throws, but never surfaces it to the respondent or automations', async () => {
+        const quiz: QuizSettings = {
+          enabled: true,
+          passThresholdPercent: 60,
+          gradeRelease: 'immediate',
+          respondentVisibility: baseVisibility,
+        };
+        // `pages: 'not-a-schema'` makes deserializeFormSchema throw (a bare
+        // string has no .map), exercising the branch where grading itself
+        // fails but the NEEDS_REVIEW fallback save succeeds.
+        vi.mocked(formService.getFormById).mockResolvedValue(
+          buildFormWithQuiz(quiz, { pages: 'not-a-schema' }) as any
+        );
+        stubGradeUpsert();
+
+        const result = await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: { formId: 'form-123', data: { q1: 'Paris' } } },
+          mockContext
+        );
+
+        expect(responseGradeRepository.upsertForResponse).toHaveBeenCalledWith(
+          'response-123',
+          expect.objectContaining({ status: 'NEEDS_REVIEW', score: 0, maxScore: 0 })
+        );
+        // isReleased() ignores grade status under 'immediate' release, so this
+        // placeholder must never be projected — it would read as a genuine
+        // "you scored 0%" to the respondent instead of silence.
+        expect(result).not.toHaveProperty('grade');
+        expect(pluginEvents.emitFormSubmitted).toHaveBeenCalledWith(
+          'form-123',
+          'org-123',
+          expect.not.objectContaining({ quizScore: expect.anything() })
+        );
       });
     });
   });
