@@ -1198,8 +1198,13 @@ describe('Responses Resolvers', () => {
         expect(pluginEvents.emitFormSubmitted).toHaveBeenCalledWith(
           'form-123',
           'org-123',
-          expect.not.objectContaining({ quizScore: expect.anything() })
+          expect.objectContaining({ responseId: 'response-123' })
         );
+        const emittedPayload = vi.mocked(pluginEvents.emitFormSubmitted).mock.calls[0][2];
+        expect(emittedPayload).not.toHaveProperty('quizScore');
+        expect(emittedPayload).not.toHaveProperty('quizMaxScore');
+        expect(emittedPayload).not.toHaveProperty('quizPercentage');
+        expect(emittedPayload).not.toHaveProperty('quizPassed');
       });
     });
   });
