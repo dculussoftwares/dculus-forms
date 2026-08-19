@@ -19,7 +19,7 @@ import { analyticsService } from '../../services/analyticsService.js';
 import { randomUUID } from 'crypto';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { sanitizeQuizSettings } from '@dculus/types';
+import { sanitizeQuizSettings, type FormSettings } from '@dculus/types';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
@@ -245,7 +245,7 @@ export const formsResolvers = {
   Mutation: {
     createForm: async (
       _: any,
-      { input }: { input: { templateId?: string; formSchema?: any; title: string; description?: string; organizationId: string; settings?: any } },
+      { input }: { input: { templateId?: string; formSchema?: any; title: string; description?: string; organizationId: string; settings?: FormSettings } },
       context: { auth: BetterAuthContext }
     ) => {
       // 🔒 SECURITY: Verify user is a member of the target organization
@@ -266,7 +266,7 @@ export const formsResolvers = {
       // `settings` is optional so every pre-existing caller (CreateFormPopover,
       // the template flow, tests) is unaffected; only sanitize when the quiz
       // wizard step actually sends a `settings.quiz` payload.
-      let settings: any = undefined;
+      let settings: FormSettings | undefined = undefined;
       const incomingQuiz = input.settings?.quiz;
       if (incomingQuiz !== undefined) {
         const sanitizedQuiz = sanitizeQuizSettings(incomingQuiz);

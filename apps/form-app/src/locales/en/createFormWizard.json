@@ -73,6 +73,7 @@
     "generating": "Generating…",
     "errors": {
       "titleRequired": "Please enter a quiz title",
+      "passThresholdInvalid": "Pass threshold must be a number between 0 and 100",
       "promptRequired": "Please describe what the quiz should cover",
       "failed": "Failed to generate quiz",
       "failedDesc": "Something went wrong. Please try again."

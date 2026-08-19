@@ -252,6 +252,7 @@ const CreateFormWizard: React.FC = () => {
   // Quiz step
   const [quizTitle, setQuizTitle] = useState('');
   const [quizTitleError, setQuizTitleError] = useState('');
+  const [quizPassThresholdError, setQuizPassThresholdError] = useState('');
   const [quizDescription, setQuizDescription] = useState('');
   const [quizStartMode, setQuizStartMode] = useState<QuizStartMode>('blank');
   const [quizPrompt, setQuizPrompt] = useState('');
@@ -404,6 +405,12 @@ const CreateFormWizard: React.FC = () => {
     }
     setQuizTitleError('');
 
+    if (!Number.isFinite(quizPassThreshold) || quizPassThreshold < 0 || quizPassThreshold > 100) {
+      setQuizPassThresholdError(t('quiz.errors.passThresholdInvalid'));
+      return;
+    }
+    setQuizPassThresholdError('');
+
     if (quizStartMode === 'blank') {
       setAiGeneratedFields([]);
       setAiSuggestedTitle(quizTitle.trim());
@@ -442,7 +449,7 @@ const CreateFormWizard: React.FC = () => {
       const { messageKey } = getErrorDetails(err);
       toastError(t('quiz.errors.failed'), tErr(messageKey) || t('quiz.errors.failedDesc'));
     }
-  }, [quizTitle, quizStartMode, quizPrompt, aiMode, organizationId, generateForm, t, tErr]);
+  }, [quizTitle, quizPassThreshold, quizStartMode, quizPrompt, aiMode, organizationId, generateForm, t, tErr]);
 
   const handleCreateFormWithAppearance = useCallback(async () => {
     setIsCreatingForm(true);
@@ -839,11 +846,15 @@ const CreateFormWizard: React.FC = () => {
                     min={0}
                     max={100}
                     value={quizPassThreshold}
-                    onChange={e => setQuizPassThreshold(Number(e.target.value))}
+                    onChange={e => { setQuizPassThreshold(Number(e.target.value)); setQuizPassThresholdError(''); }}
                     disabled={isGeneratingQuiz}
+                    className={cn(quizPassThresholdError && 'border-destructive')}
                   />
                   <span className="text-sm text-muted-foreground">{t('quiz.passThreshold.suffix')}</span>
                 </div>
+                {quizPassThresholdError && (
+                  <p className="text-xs text-destructive">{quizPassThresholdError}</p>
+                )}
               </div>
 
               {/* Grade release */}
