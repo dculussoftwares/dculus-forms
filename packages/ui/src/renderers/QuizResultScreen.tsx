@@ -1,7 +1,7 @@
 import React from 'react';
 import type { RespondentGradeView } from '@dculus/types';
 import { CheckCircle2, XCircle, Clock3 } from 'lucide-react';
-import { cn } from '../utils';
+import { cn } from '@dculus/utils';
 
 /**
  * Every string this component shows to the respondent. `QuizResultScreen`
@@ -97,12 +97,13 @@ export const QuizResultScreen: React.FC<QuizResultScreenProps> = ({
 
   if (!gradeResult.released) {
     return (
-      <div className={cn('text-center', className)} data-testid="quiz-result-pending">
-        <div
-          role="status"
-          aria-live="polite"
-          className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"
-        >
+      <div
+        className={cn('text-center', className)}
+        role="status"
+        aria-live="polite"
+        data-testid="quiz-result-pending"
+      >
+        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
           <Clock3 className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
         </div>
         <p className="text-base text-foreground" data-testid="quiz-result-pending-message">
