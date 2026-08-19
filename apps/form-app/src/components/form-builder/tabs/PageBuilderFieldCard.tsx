@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
 import { FieldPreview, Button, Badge } from '@dculus/ui';
-import { FormField, FormPage, FillableFormField } from '@dculus/types';
+import { FormField, FormPage, FillableFormField, isGradableFieldType } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useConditionReferenceCounts } from '../../../hooks/useConditionReferenceCounts';
 import { useTranslation } from '../../../hooks/useTranslation';
+import { useQuizMode } from '../../../contexts/QuizModeContext';
+import { hasAnswerKey } from '../../../utils/quizGrading';
 
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import {
@@ -30,6 +32,7 @@ import {
   Upload,
   Phone,
   Link2,
+  AlertTriangle,
 } from 'lucide-react';
 import { PageActionsSelector } from '../PageActionsSelector';
 
@@ -155,12 +158,22 @@ export const FieldCard: React.FC<{
 
   // Logic cross-reference chip — see issue #168
   const { t } = useTranslation('pageBuilderTab');
+  const { t: tQuiz } = useTranslation('quizGrading');
   const navigate = useNavigate();
   const location = useLocation();
   const { formId } = useParams<{ formId: string }>();
   const conditions = useFormBuilderStore((s) => s.conditions);
   const { fieldRuleCounts } = useConditionReferenceCounts(conditions);
   const fieldRuleCount = fieldRuleCounts.get(field.id) ?? 0;
+
+  // Quiz points badge / "no answer key" marker — only when quiz mode is on for
+  // this form (additive guarantee, GitHub epic #289): with no QuizModeProvider,
+  // or `settings.quiz?.enabled` false, `isQuizModeEnabled` is false and this
+  // block renders nothing, same as before Story 08 shipped.
+  const { enabled: isQuizModeEnabled } = useQuizMode();
+  const isGradable = isQuizModeEnabled && isGradableFieldType(field.type);
+  const grading = isGradable ? (field as FillableFormField).grading : undefined;
+  const isKeyed = isGradable && hasAnswerKey(grading);
 
   const handleRuleCountClick = (e: React.SyntheticEvent) => {
     e.stopPropagation();
@@ -255,6 +268,29 @@ export const FieldCard: React.FC<{
           </div>
           <div className="text-xs text-[#655d67] dark:text-gray-400 flex items-center gap-1.5">
             <span>{typeConfig.label}</span>
+            {isGradable && isKeyed && (
+              <Badge
+                variant="outline"
+                data-testid={`field-points-badge-${field.id}`}
+                title={tQuiz('fieldCard.pointsBadgeTooltip', {
+                  values: { count: grading?.pointValue ?? 0 },
+                })}
+                className="gap-1 px-1.5 py-0 text-[10px] leading-4"
+              >
+                {tQuiz('fieldCard.pointsBadge', { values: { count: grading?.pointValue ?? 0 } })}
+              </Badge>
+            )}
+            {isGradable && !isKeyed && (
+              <Badge
+                variant="outline"
+                data-testid={`field-no-key-badge-${field.id}`}
+                title={tQuiz('fieldCard.noKeyBadgeTooltip')}
+                className="gap-1 px-1.5 py-0 text-[10px] leading-4 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700"
+              >
+                <AlertTriangle className="w-2.5 h-2.5" />
+                {tQuiz('fieldCard.noKeyBadge')}
+              </Badge>
+            )}
             {fieldRuleCount > 0 && (
               <Badge
                 variant="outline"

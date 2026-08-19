@@ -11,6 +11,7 @@ import { FieldsSlice, SliceCreator } from '../types/store.types';
 import {
   FieldType,
   FIELD_TYPE_DEFAULT_GRADING_MODE,
+  FieldGrading,
   FormField,
   FormPage,
   isGradableFieldType,
@@ -19,6 +20,7 @@ import { getOrCreatePagesArray } from '../helpers/yjsHelpers';
 import {
   createFormField,
   createYJSFieldMap,
+  createGradingYMap,
   serializeFieldToYMap,
   generateUniqueId,
 } from '../helpers/fieldHelpers';
@@ -245,6 +247,30 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
           const mimeArray = new Y.Array();
           value.forEach((mime: string) => mimeArray.push([mime]));
           fieldMap.set('allowedMimeTypes', mimeArray);
+        } else if (key === 'grading' && value) {
+          // `grading` is a nested shape (acceptedAnswers/text/numeric/set are their own
+          // Y.Array/Y.Map, same as `createYJSFieldMap` builds for a new field) — a plain
+          // `fieldMap.set('grading', value)` would store a bare JS object instead, which
+          // CollaborationManager's `extractGrading` (expects a Y.Map) then can't read back,
+          // silently losing the answer key on the next reload despite persisting fine.
+          // `value` undefined (untouched, non-quiz field) falls through to the generic
+          // `value !== undefined` branch below and skips entirely — no write at all.
+          //
+          // Update the existing grading Y.Map in place when there is one, rather than
+          // `fieldMap.set('grading', new Y.Map())` — keeps the map's own identity
+          // stable instead of orphaning it every save. createGradingYMap still clears
+          // and fully rewrites the map's keys from this save's complete snapshot (see
+          // its own doc comment) — like every other field property in this function
+          // (options, validation, ...), this is a whole-field-settings-panel save, not
+          // a keystroke-level collab merge, so a concurrent edit to a different part of
+          // the same field's grading can still be overwritten by whichever save lands
+          // second. Fixing that for real needs per-key diffing, which is out of scope here.
+          const existingGradingMap = fieldMap.get('grading');
+          if (existingGradingMap instanceof Y.Map) {
+            createGradingYMap(value as FieldGrading, existingGradingMap);
+          } else {
+            fieldMap.set('grading', createGradingYMap(value as FieldGrading));
+          }
         } else if (
           key === 'defaultValue' &&
           Array.isArray(value) &&

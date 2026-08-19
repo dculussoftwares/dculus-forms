@@ -316,15 +316,35 @@ const createFormFieldInstance = (
 };
 
 /**
- * Build the `grading` Y.Map for a field, giving `acceptedAnswers` and
- * `optionFeedback` the same explicit Y.Array treatment as `options` /
+ * Build (or repopulate) the `grading` Y.Map for a field, giving `acceptedAnswers`
+ * and `optionFeedback` the same explicit Y.Array treatment as `options` /
  * `allowedMimeTypes` above, and the mode-specific option objects
  * (`text`/`numeric`/`set`) their own nested Y.Map — mirrors `validation`.
  * Only called when `fieldData.grading` is present; callers skip this
  * entirely otherwise so a non-quiz field's Y.Map has no `grading` key at all.
+ *
+ * Pass an existing `grading` Y.Map as `target` to update it in place instead of
+ * replacing it wholesale — fieldsSlice's `updateField` does this on every save so
+ * the map's own identity survives across saves rather than being orphaned each
+ * time. NOTE this does NOT give per-key CRDT merge granularity: every key
+ * (including nested `text`/`numeric`/`set` sub-maps and the `acceptedAnswers` /
+ * `optionFeedback` arrays) is cleared and fully rewritten from the caller's
+ * complete `FieldGrading` snapshot on every call, the same "whole settings
+ * panel, one save" model every other field property in this file already uses.
+ * Two collaborators concurrently editing different parts of the same field's
+ * grading can still have one save overwrite the other's change with a stale
+ * value — that would need real per-key diffing, which this doesn't attempt.
+ * Existing keys are cleared first so a mode switch (e.g. 'set' -> 'text')
+ * doesn't leave a stale `set`/`numeric` sub-map behind.
  */
-const createGradingYMap = (grading: FieldGrading): Y.Map<any> => {
-  const gradingMap = new Y.Map();
+export const createGradingYMap = (
+  grading: FieldGrading,
+  target?: Y.Map<any>
+): Y.Map<any> => {
+  const gradingMap = target ?? new Y.Map();
+  if (target) {
+    Array.from(target.keys()).forEach((key) => target.delete(key));
+  }
 
   gradingMap.set('mode', grading.mode);
   gradingMap.set('pointValue', grading.pointValue);

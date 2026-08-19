@@ -1,0 +1,79 @@
+{
+  "sectionTitle": "Answer key",
+  "pointsLabel": "Points",
+  "pointsPlaceholder": "1",
+  "selection": {
+    "correctColumnLabel": "Correct answer",
+    "markCorrectSingle": "Mark as the correct answer",
+    "markCorrectMultiple": "Mark as a correct answer",
+    "noOptionsYet": "Add options above before setting the answer key.",
+    "scoringLabel": "Scoring",
+    "scoring": {
+      "all": "All correct options required",
+      "partial": "Partial credit for each correct pick",
+      "any": "Any one correct option"
+    },
+    "staleAnswerWarning": "\"{{option}}\" was marked correct but no longer matches any option — an option was likely renamed. Choose the correct option again.",
+    "removeStaleAnswer": "Remove"
+  },
+  "text": {
+    "acceptedAnswersLabel": "Accepted answers",
+    "addAnswer": "Add accepted answer",
+    "removeAnswer": "Remove",
+    "answerPlaceholder": "Accepted answer {{index}}",
+    "noAcceptedAnswers": "Add at least one accepted answer.",
+    "caseSensitive": "Case-sensitive",
+    "ignorePunctuation": "Ignore punctuation",
+    "treatAsRegex": "Treat accepted answers as regular expressions",
+    "manualNotice": "Long text answers are graded manually — there's no automatic answer key for this field."
+  },
+  "number": {
+    "modeLabel": "Match using",
+    "modeTarget": "Target value",
+    "modeRange": "Min / max range",
+    "targetLabel": "Correct value",
+    "toleranceTypeLabel": "Tolerance",
+    "toleranceNone": "Exact match",
+    "toleranceAbsolute": "± amount",
+    "tolerancePercent": "± percent",
+    "toleranceValueLabel": "Tolerance amount",
+    "minLabel": "Minimum",
+    "maxLabel": "Maximum"
+  },
+  "date": {
+    "targetLabel": "Correct date"
+  },
+  "feedback": {
+    "toggleShow": "Show feedback options",
+    "toggleHide": "Hide feedback options",
+    "whenCorrectLabel": "Feedback when correct",
+    "whenCorrectPlaceholder": "Shown to respondents who answer correctly",
+    "whenIncorrectLabel": "Feedback when incorrect",
+    "whenIncorrectPlaceholder": "Shown to respondents who answer incorrectly",
+    "generalLabel": "General feedback",
+    "generalPlaceholder": "Shown regardless of correctness (used when there's no more specific message)"
+  },
+  "errors": {
+    "pointValueNegative": "Points can't be negative.",
+    "noCorrectOption": "Mark at least one correct option to save this answer key.",
+    "regexTooLong": "Regular expressions can't be longer than 200 characters.",
+    "regexInvalid": "This isn't a valid regular expression."
+  },
+  "summary": {
+    "totalPoints_one": "{{count}} point total",
+    "totalPoints_other": "{{count}} points total",
+    "questionCount_one": "{{count}} graded question",
+    "questionCount_other": "{{count}} graded questions",
+    "unkeyedCount_one": "{{count}} question needs an answer key",
+    "unkeyedCount_other": "{{count}} questions need an answer key",
+    "allKeyed": "All questions keyed"
+  },
+  "fieldCard": {
+    "pointsBadge_one": "{{count}} pt",
+    "pointsBadge_other": "{{count}} pts",
+    "pointsBadgeTooltip_one": "{{count}} point for a correct answer",
+    "pointsBadgeTooltip_other": "{{count}} points for a correct answer",
+    "noKeyBadge": "No answer key",
+    "noKeyBadgeTooltip": "Quiz mode is on but this question has no answer key yet"
+  }
+}

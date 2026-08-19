@@ -1,6 +1,70 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js/max';
 import { FieldType } from './index.js';
+import { fieldGradingSchema } from './quiz.js';
+
+// Mirrors MAX_REGEX_PATTERN_LENGTH in apps/backend/src/services/quiz/gradingEngine.ts —
+// the engine silently treats a longer pattern as non-matching (score 0); this schema
+// rejects it inline instead, at the point where a human can still fix it.
+const MAX_GRADING_REGEX_LENGTH = 200;
+
+/**
+ * Authoring-time answer-key validation (Native Quiz Story 08, GitHub issue #297).
+ *
+ * Extends the canonical `fieldGradingSchema` (the shape the grading engine and the
+ * Y.js sanitizer trust) with checks that only matter while a human is editing the
+ * key: points can't go negative, an `exact`/`set` question needs at least one
+ * correct option, and a `regex` accepted answer must compile and stay under the
+ * engine's length cap. Failing these here means field-settings-v2 rejects the save
+ * inline — the alternative is silently persisting a key the engine will score as
+ * wrong (or, for an over-long/invalid regex, as zero) forever.
+ */
+export const gradingFormSchema = fieldGradingSchema
+  .extend({
+    pointValue: z.number().min(0, 'quizGrading:errors.pointValueNegative'),
+  })
+  .superRefine((grading, ctx) => {
+    const nonEmptyAnswers = grading.acceptedAnswers.filter(
+      (answer) => answer.trim().length > 0
+    );
+
+    if (
+      (grading.mode === 'exact' || grading.mode === 'set') &&
+      nonEmptyAnswers.length === 0
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'quizGrading:errors.noCorrectOption',
+        path: ['acceptedAnswers'],
+      });
+    }
+
+    if (grading.mode === 'text' && grading.text?.regex) {
+      grading.acceptedAnswers.forEach((pattern, index) => {
+        if (pattern.length === 0) return;
+        if (pattern.length > MAX_GRADING_REGEX_LENGTH) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'quizGrading:errors.regexTooLong',
+            path: ['acceptedAnswers', index],
+          });
+          return;
+        }
+        try {
+          // eslint-disable-next-line no-new
+          new RegExp(pattern);
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'quizGrading:errors.regexInvalid',
+            path: ['acceptedAnswers', index],
+          });
+        }
+      });
+    }
+  });
+
+export type GradingFormData = z.infer<typeof gradingFormSchema>;
 
 // Base validation schema for common field properties
 export const baseFieldValidationSchema = z.object({
@@ -30,6 +94,7 @@ export const baseFieldValidationSchema = z.object({
 // Field-specific validation schemas
 export const textInputFieldValidationSchema = baseFieldValidationSchema
   .extend({
+    grading: gradingFormSchema.optional(),
     validation: z
       .object({
         required: z.boolean().default(false),
@@ -136,6 +201,7 @@ export const textInputFieldValidationSchema = baseFieldValidationSchema
 
 export const textAreaFieldValidationSchema = baseFieldValidationSchema
   .extend({
+    grading: gradingFormSchema.optional(),
     validation: z
       .object({
         required: z.boolean().default(false),
@@ -245,10 +311,12 @@ export const emailFieldValidationSchema = baseFieldValidationSchema.extend({
     .string()
     .max(100, 'fieldSettingsConstants:errorMessages.placeholderTooLong')
     .optional(),
+  grading: gradingFormSchema.optional(),
 });
 
 export const numberFieldValidationSchema = baseFieldValidationSchema
   .extend({
+    grading: gradingFormSchema.optional(),
     min: z
       .number()
       .optional()
@@ -330,6 +398,7 @@ export const numberFieldValidationSchema = baseFieldValidationSchema
 export const selectFieldValidationSchema = baseFieldValidationSchema
   .omit({ placeholder: true })
   .extend({
+    grading: gradingFormSchema.optional(),
     options: z
       .array(
         z.string().min(1, 'fieldSettingsConstants:errorMessages.optionEmpty')
@@ -346,6 +415,7 @@ export const selectFieldValidationSchema = baseFieldValidationSchema
 export const radioFieldValidationSchema = baseFieldValidationSchema
   .omit({ placeholder: true })
   .extend({
+    grading: gradingFormSchema.optional(),
     options: z
       .array(
         z.string().min(1, 'fieldSettingsConstants:errorMessages.optionEmpty')
@@ -361,6 +431,7 @@ export const radioFieldValidationSchema = baseFieldValidationSchema
 
 export const checkboxFieldValidationSchema = baseFieldValidationSchema
   .extend({
+    grading: gradingFormSchema.optional(),
     // Override defaultValue to accept string[] for checkbox fields
     defaultValue: z
       .array(z.string())
@@ -487,6 +558,7 @@ export const checkboxFieldValidationSchema = baseFieldValidationSchema
 
 export const dateFieldValidationSchema = baseFieldValidationSchema
   .extend({
+    grading: gradingFormSchema.optional(),
     minDate: z
       .string()
       .optional()

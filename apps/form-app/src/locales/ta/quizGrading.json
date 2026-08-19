@@ -1,0 +1,79 @@
+{
+  "sectionTitle": "விடை திறவுகோல்",
+  "pointsLabel": "மதிப்பெண்கள்",
+  "pointsPlaceholder": "1",
+  "selection": {
+    "correctColumnLabel": "சரியான விடை",
+    "markCorrectSingle": "சரியான விடையாகக் குறிக்கவும்",
+    "markCorrectMultiple": "சரியான விடைகளில் ஒன்றாகக் குறிக்கவும்",
+    "noOptionsYet": "விடை திறவுகோலை அமைக்கும் முன் மேலே உள்ள விருப்பங்களைச் சேர்க்கவும்.",
+    "scoringLabel": "மதிப்பீடு",
+    "scoring": {
+      "all": "அனைத்து சரியான விருப்பங்களும் தேவை",
+      "partial": "தேர்ந்தெடுத்த ஒவ்வொரு சரியான விருப்பத்திற்கும் பகுதி மதிப்பெண்",
+      "any": "ஏதேனும் ஒரு சரியான விருப்பம்"
+    },
+    "staleAnswerWarning": "\"{{option}}\" சரியான விடையாகக் குறிக்கப்பட்டிருந்தது, ஆனால் இப்போது எந்த விருப்பத்துடனும் பொருந்தவில்லை — ஒரு விருப்பத்தின் பெயர் மாற்றப்பட்டிருக்கலாம். சரியான விடையை மீண்டும் தேர்ந்தெடுக்கவும்.",
+    "removeStaleAnswer": "அகற்று"
+  },
+  "text": {
+    "acceptedAnswersLabel": "ஏற்றுக்கொள்ளப்படும் விடைகள்",
+    "addAnswer": "ஏற்றுக்கொள்ளப்படும் விடையைச் சேர்க்கவும்",
+    "removeAnswer": "நீக்கு",
+    "answerPlaceholder": "ஏற்றுக்கொள்ளப்படும் விடை {{index}}",
+    "noAcceptedAnswers": "குறைந்தது ஒரு ஏற்றுக்கொள்ளப்படும் விடையைச் சேர்க்கவும்.",
+    "caseSensitive": "எழுத்துவகை உணர்திறன்",
+    "ignorePunctuation": "நிறுத்தற்குறிகளைப் புறக்கணிக்கவும்",
+    "treatAsRegex": "ஏற்றுக்கொள்ளப்படும் விடைகளை regular expression ஆகக் கருதவும்",
+    "manualNotice": "நீண்ட உரை விடைகள் கைமுறையாக மதிப்பிடப்படுகின்றன — இந்தப் புலத்திற்கு தானியங்கி விடை திறவுகோல் இல்லை."
+  },
+  "number": {
+    "modeLabel": "பொருத்தும் முறை",
+    "modeTarget": "இலக்கு மதிப்பு",
+    "modeRange": "குறைந்தபட்சம் / அதிகபட்சம் வரம்பு",
+    "targetLabel": "சரியான மதிப்பு",
+    "toleranceTypeLabel": "அனுமதிக்கப்படும் விலகல்",
+    "toleranceNone": "சரியாகப் பொருந்த வேண்டும்",
+    "toleranceAbsolute": "± அளவு",
+    "tolerancePercent": "± சதவீதம்",
+    "toleranceValueLabel": "விலகல் அளவு",
+    "minLabel": "குறைந்தபட்சம்",
+    "maxLabel": "அதிகபட்சம்"
+  },
+  "date": {
+    "targetLabel": "சரியான தேதி"
+  },
+  "feedback": {
+    "toggleShow": "கருத்து விருப்பங்களைக் காட்டு",
+    "toggleHide": "கருத்து விருப்பங்களை மறை",
+    "whenCorrectLabel": "சரியாக இருக்கும்போது கருத்து",
+    "whenCorrectPlaceholder": "சரியாக பதிலளிக்கும் பதிலளிப்பவர்களுக்குக் காட்டப்படும்",
+    "whenIncorrectLabel": "தவறாக இருக்கும்போது கருத்து",
+    "whenIncorrectPlaceholder": "தவறாக பதிலளிக்கும் பதிலளிப்பவர்களுக்குக் காட்டப்படும்",
+    "generalLabel": "பொதுவான கருத்து",
+    "generalPlaceholder": "சரியா தவறா என்பதைப் பொருட்படுத்தாமல் காட்டப்படும் (இது துல்லியமான செய்தி இல்லாதபோது பயன்படுத்தப்படும்)"
+  },
+  "errors": {
+    "pointValueNegative": "மதிப்பெண்கள் எதிர்மறையாக இருக்க முடியாது.",
+    "noCorrectOption": "இந்த விடை திறவுகோலைச் சேமிக்க குறைந்தது ஒரு சரியான விருப்பத்தைக் குறிக்கவும்.",
+    "regexTooLong": "Regular expression 200 எழுத்துகளுக்கு மேல் இருக்கக்கூடாது.",
+    "regexInvalid": "இது சரியான regular expression அல்ல."
+  },
+  "summary": {
+    "totalPoints_one": "மொத்தம் {{count}} மதிப்பெண்",
+    "totalPoints_other": "மொத்தம் {{count}} மதிப்பெண்கள்",
+    "questionCount_one": "{{count}} மதிப்பிடப்படும் கேள்வி",
+    "questionCount_other": "{{count}} மதிப்பிடப்படும் கேள்விகள்",
+    "unkeyedCount_one": "{{count}} கேள்விக்கு விடை திறவுகோல் தேவை",
+    "unkeyedCount_other": "{{count}} கேள்விகளுக்கு விடை திறவுகோல் தேவை",
+    "allKeyed": "அனைத்து கேள்விகளுக்கும் விடை திறவுகோல் அமைக்கப்பட்டுள்ளது"
+  },
+  "fieldCard": {
+    "pointsBadge_one": "{{count}} மதிப்பெண்",
+    "pointsBadge_other": "{{count}} மதிப்பெண்கள்",
+    "pointsBadgeTooltip_one": "சரியான விடைக்கு {{count}} மதிப்பெண்",
+    "pointsBadgeTooltip_other": "சரியான விடைக்கு {{count}} மதிப்பெண்கள்",
+    "noKeyBadge": "விடை திறவுகோல் இல்லை",
+    "noKeyBadgeTooltip": "வினாடி வினா முறை இயக்கத்தில் உள்ளது, ஆனால் இந்தக் கேள்விக்கு இன்னும் விடை திறவுகோல் இல்லை"
+  }
+}

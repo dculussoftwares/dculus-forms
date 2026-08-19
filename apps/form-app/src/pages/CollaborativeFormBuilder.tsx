@@ -8,6 +8,7 @@ import {
   FormPermissionProvider,
   PermissionLevel,
 } from '../contexts/FormPermissionContext';
+import { QuizModeProvider } from '../contexts/QuizModeContext';
 import { useTranslation } from '../hooks/useTranslation';
 import {
   DndContext,
@@ -569,6 +570,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
   return (
     <FormPermissionProvider userPermission={userPermission}>
+      <QuizModeProvider quiz={formData?.form?.settings?.quiz}>
       <DndContext
         sensors={canEdit ? sensors : []}
         collisionDetection={collisionDetectionStrategy}
@@ -742,6 +744,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
         </div>
       </DndContext>
+      </QuizModeProvider>
     </FormPermissionProvider>
   );
 };
