@@ -3,26 +3,29 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-middleware.js';
 import { getFormById } from '../../services/formService.js';
 import { getAllResponsesByFormId } from '../../services/responseService.js';
-import { generateExportFile, ExportFormat } from '../../services/unifiedExportService.js';
+import { generateExportFile, ExportFormat, QuizGradeExportRow } from '../../services/unifiedExportService.js';
 import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
-import { deserializeFormSchema } from '@dculus/types';
+import { deserializeFormSchema, QuestionGradeResult } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from '../../services/responseFilterService.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { logger } from '../../lib/logger.js';
 import * as pluginService from '../../services/pluginService.js';
+import { getGradesForResponses, questionGradeResultSchema } from '../../services/quiz/gradingService.js';
+import { z } from 'zod';
 
 
 export const unifiedExportResolvers = {
   Mutation: {
     generateFormResponseReport: async (
       _: any,
-      { formId, format, filters = [], filterLogic = 'AND', ids }: {
+      { formId, format, filters = [], filterLogic = 'AND', ids, includeQuizQuestionColumns = false }: {
         formId: string;
         format: 'EXCEL' | 'CSV';
         filters?: ResponseFilter[];
         filterLogic?: 'AND' | 'OR';
         ids?: string[];
+        includeQuizQuestionColumns?: boolean;
       },
       context: { auth: BetterAuthContext }
     ) => {
@@ -118,6 +121,35 @@ export const unifiedExportResolvers = {
           form.settings?.accessControl?.enabled || form.settings?.collectRespondentEmail
         );
 
+        // Native Quiz (epic #289): fetch persisted ResponseGrade rows for
+        // exactly the responses being exported (after ids/filters have
+        // narrowed the set) so a selected or filtered export never loads
+        // grade details for responses it isn't going to render.
+        const quizEnabled = !!form.settings?.quiz?.enabled;
+        const grades = await getGradesForResponses(responses.map((r) => r.id));
+        const quizGrades: Record<string, QuizGradeExportRow> = {};
+        const questionGradeResultArraySchema = z.array(questionGradeResultSchema);
+        for (const grade of grades) {
+          // `detail` is persisted Json — validate it against the same schema
+          // saveGrade wrote it with, rather than trusting the cast. Malformed
+          // rows fall back to an empty question list instead of poisoning
+          // the per-question export columns.
+          const parsedDetail = questionGradeResultArraySchema.safeParse(grade.detail);
+          quizGrades[grade.responseId] = {
+            score: grade.score,
+            maxScore: grade.maxScore,
+            percentage: grade.percentage,
+            passed: grade.passed,
+            status: grade.status,
+            gradedAt: grade.gradedAt,
+            // `fieldType` is validated as a non-empty string by the shared
+            // schema (it's persisted from the FieldType enum by saveGrade,
+            // never authored freehand), so this narrows a runtime-checked
+            // string back to the enum type the export contract expects.
+            detail: parsedDetail.success ? (parsedDetail.data as unknown as QuestionGradeResult[]) : [],
+          };
+        }
+
         // Generate export file using unified service
         const exportResult = await generateExportFile({
           formTitle: form.title,
@@ -126,6 +158,9 @@ export const unifiedExportResolvers = {
           format: exportFormat,
           pluginConfigs,
           includeRespondentEmail,
+          quizEnabled,
+          quizGrades,
+          includeQuizQuestionColumns,
         });
 
         logger.info(`${exportFormat.toUpperCase()} file generated, size: ${exportResult.buffer.length} bytes`);

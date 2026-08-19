@@ -1584,6 +1584,9 @@ export const typeDefs = gql`
       filters: [ResponseFilterInput!]
       filterLogic: FilterLogic = AND
       ids: [ID!]
+      # Native Quiz (epic #289): emit one export column per graded question,
+      # headed by the question label. Ignored for non-quiz forms.
+      includeQuizQuestionColumns: Boolean = false
     ): ExportResult!
 
     # Analytics Mutations

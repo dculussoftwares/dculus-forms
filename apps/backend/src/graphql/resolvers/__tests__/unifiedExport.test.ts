@@ -9,6 +9,7 @@ import * as unifiedExportService from '../../../services/unifiedExportService.js
 import * as temporaryFileService from '../../../services/temporaryFileService.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
 import * as responseFilterService from '../../../services/responseFilterService.js';
+import * as quizGradingService from '../../../services/quiz/gradingService.js';
 
 // Mock all dependencies
 vi.mock('../../../middleware/better-auth-middleware.js');
@@ -19,6 +20,19 @@ vi.mock('../../../services/unifiedExportService.js');
 vi.mock('../../../services/temporaryFileService.js');
 vi.mock('../../../services/hocuspocus.js');
 vi.mock('../../../services/responseFilterService.js');
+// Native Quiz (epic #289): defaults to no grades so every existing test in
+// this file keeps exercising the "no quiz data" path without per-test setup.
+// `questionGradeResultSchema` must be a real Zod schema — the resolver calls
+// `z.array(questionGradeResultSchema)` on it — so a permissive `z.any()`
+// stands in for the real (fully-validated) one covered by gradingService's
+// own tests.
+vi.mock('../../../services/quiz/gradingService.js', async () => {
+  const { z } = await import('zod');
+  return {
+    getGradesForResponses: vi.fn().mockResolvedValue([]),
+    questionGradeResultSchema: z.any(),
+  };
+});
 vi.mock('../../../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -818,6 +832,9 @@ describe('Unified Export Resolvers', () => {
           format: 'excel',
           pluginConfigs: {},
           includeRespondentEmail: false,
+          quizEnabled: false,
+          quizGrades: {},
+          includeQuizQuestionColumns: false,
         });
         expect(result.format).toBe('EXCEL');
       });
@@ -932,6 +949,9 @@ describe('Unified Export Resolvers', () => {
           format: 'csv',
           pluginConfigs: {},
           includeRespondentEmail: false,
+          quizEnabled: false,
+          quizGrades: {},
+          includeQuizQuestionColumns: false,
         });
         expect(result.format).toBe('CSV');
       });
@@ -1142,6 +1162,76 @@ describe('Unified Export Resolvers', () => {
         );
 
         expect(result.filename).toBe('Test_Form_2024-01-01.xlsx');
+      });
+    });
+
+    describe('Native Quiz (epic #289, Story 12/#301)', () => {
+      it('passes quizEnabled and the ResponseGrade map through to the export service', async () => {
+        const quizForm = {
+          ...mockForm,
+          settings: { quiz: { enabled: true } },
+        };
+        const gradeRow = {
+          responseId: 'response-1',
+          score: 8,
+          maxScore: 10,
+          percentage: 80,
+          passed: true,
+          status: 'AUTO_GRADED',
+          gradedAt: new Date('2024-01-01T00:00:00Z'),
+          detail: [],
+        };
+
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'EDITOR' as any,
+          form: quizForm as any,
+        });
+        vi.mocked(formService.getFormById).mockResolvedValue(quizForm as any);
+        vi.mocked(responseService.getAllResponsesByFormId).mockResolvedValue(
+          mockResponses as any
+        );
+        vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(
+          quizForm.formSchema as any
+        );
+        vi.mocked(quizGradingService.getGradesForResponses).mockResolvedValue([gradeRow as any]);
+        vi.mocked(unifiedExportService.generateExportFile).mockResolvedValue(
+          mockExportResult
+        );
+        vi.mocked(temporaryFileService.uploadTemporaryFile).mockResolvedValue(
+          mockTemporaryFile as any
+        );
+
+        await unifiedExportResolvers.Mutation.generateFormResponseReport(
+          {},
+          { formId: 'form-123', format: 'EXCEL', includeQuizQuestionColumns: true },
+          mockContext
+        );
+
+        // Scoped to the responses actually being exported, not every grade
+        // the form has ever accumulated.
+        expect(quizGradingService.getGradesForResponses).toHaveBeenCalledWith([
+          'response-1',
+          'response-2',
+        ]);
+        expect(unifiedExportService.generateExportFile).toHaveBeenCalledWith(
+          expect.objectContaining({
+            quizEnabled: true,
+            includeQuizQuestionColumns: true,
+            quizGrades: {
+              'response-1': {
+                score: 8,
+                maxScore: 10,
+                percentage: 80,
+                passed: true,
+                status: 'AUTO_GRADED',
+                gradedAt: gradeRow.gradedAt,
+                detail: [],
+              },
+            },
+          })
+        );
       });
     });
 
