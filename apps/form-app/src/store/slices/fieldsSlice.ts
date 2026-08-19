@@ -8,7 +8,13 @@
 import * as Y from 'yjs';
 import { toastError } from '@dculus/ui';
 import { FieldsSlice, SliceCreator } from '../types/store.types';
-import { FieldType, FormField, FormPage } from '@dculus/types';
+import {
+  FieldType,
+  FIELD_TYPE_DEFAULT_GRADING_MODE,
+  FormField,
+  FormPage,
+  isGradableFieldType,
+} from '@dculus/types';
 import { getOrCreatePagesArray } from '../helpers/yjsHelpers';
 import {
   createFormField,
@@ -413,6 +419,18 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       if (oldType === FieldType.DATE_FIELD && newType === FieldType.DATE_FIELD) {
         if (oldData.minDate != null) carriedData.minDate = oldData.minDate;
         if (oldData.maxDate != null) carriedData.maxDate = oldData.maxDate;
+      }
+
+      // Carry the answer key only when the new type's default grading mode matches
+      // the grading's own mode — e.g. radio_field -> select_field (both 'exact').
+      // Otherwise drop it: a stale key on an incompatible field (e.g. select_field ->
+      // file_upload_field, 'exact' vs 'manual') is worse than no key at all.
+      if (
+        oldData.grading &&
+        isGradableFieldType(newType) &&
+        oldData.grading.mode === FIELD_TYPE_DEFAULT_GRADING_MODE[newType]
+      ) {
+        carriedData.grading = oldData.grading;
       }
 
       const newField = createFormField(newType, carriedData);
