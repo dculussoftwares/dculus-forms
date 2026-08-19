@@ -145,7 +145,7 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
         min={0}
         step="1"
         value={grading ? pointValue : ''}
-        placeholder="1"
+        placeholder={t('pointsPlaceholder')}
         disabled={!isEditable}
         onChange={(e) => {
           const raw = e.target.value;
@@ -242,6 +242,13 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
       });
     };
 
+    // A renamed/deleted option's old value has no checkbox to uncheck (it isn't
+    // in `nonEmptyOptions` any more) — without this, the stale-answer warning
+    // would be permanently informational with no way to actually clear it.
+    const removeStaleAnswer = (answer: string) => {
+      updateGrading({ acceptedAnswers: acceptedAnswers.filter((a) => a !== answer) });
+    };
+
     return (
       <div className="space-y-3">
         {nonEmptyOptions.length === 0 ? (
@@ -316,9 +323,21 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
           >
             <AlertTriangle className="w-4 h-4" />
             <AlertDescription>
-              {staleAnswers
-                .map((answer) => t('selection.staleAnswerWarning', { values: { option: answer } }))
-                .join(' ')}
+              <div className="space-y-1.5">
+                {staleAnswers.map((answer) => (
+                  <div key={answer} className="flex items-center justify-between gap-2">
+                    <span>{t('selection.staleAnswerWarning', { values: { option: answer } })}</span>
+                    <button
+                      type="button"
+                      disabled={!isEditable}
+                      onClick={() => removeStaleAnswer(answer)}
+                      className="text-xs font-medium underline shrink-0"
+                    >
+                      {t('selection.removeStaleAnswer')}
+                    </button>
+                  </div>
+                ))}
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -502,17 +521,18 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
         <div className={constants.CSS_CLASSES.INPUT_SPACING}>
           <Label className={constants.CSS_CLASSES.LABEL_STYLE}>{t('number.modeLabel')}</Label>
           <Select
-            // Forces a fresh mount the moment real Y.js data first arrives (grading
-            // flips from undefined to defined). Without this, the *same* Select
-            // instance's controlled `value` jumps target -> range on that first data
-            // render — a prop change, not a click — and Radix's hidden native
-            // <select> mirror (kept in sync for accessibility/native-form fallback)
-            // fires a real `change` event echoing the stale pre-data value back
-            // through `onValueChange`, which then calls `updateGrading` and wipes
-            // `numeric` right after it was correctly populated. A remount never
-            // exhibits this because the fresh instance's first value is already
-            // correct — nothing "changes" for the mirror to echo.
-            key={grading === undefined ? 'pending' : 'ready'}
+            // Forces a fresh mount whenever real numeric bounds arrive or disappear
+            // (hasRange flips). Without this, the *same* Select instance's
+            // controlled `value` can jump target -> range on the same render Y.js
+            // delivers a bound — a prop change, not a click — and Radix's hidden
+            // native <select> mirror (kept in sync for accessibility/native-form
+            // fallback) fires a real `change` event echoing the stale pre-data
+            // value back through `onValueChange`, which then calls `updateGrading`
+            // and wipes `numeric` right after it was correctly populated. Keying
+            // on grading-definedness alone missed the case where a field already
+            // has a grading object (no bounds yet) and Y.js later adds min/max
+            // onto it — hasRange changing is the actual signal to remount on.
+            key={hasRange ? 'range' : 'no-range'}
             value={rangeMode}
             disabled={!isEditable}
             onValueChange={(value) => {
@@ -520,6 +540,13 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
               if (value === 'range') {
                 updateGrading({
                   mode: 'numeric',
+                  // Switching to range must drop any leftover target value —
+                  // otherwise a field previously keyed with a target (e.g. "10")
+                  // keeps `acceptedAnswers: ['10']` while the range UI shows
+                  // empty bounds, and the engine's gradeNumeric (which only reads
+                  // `numeric` when min/max are set) falls back to that stale
+                  // target the moment the author leaves both bounds empty.
+                  acceptedAnswers: [],
                   numeric: { min: grading?.numeric?.min, max: grading?.numeric?.max },
                 });
               } else {

@@ -1,6 +1,7 @@
 {
   "sectionTitle": "Answer key",
   "pointsLabel": "Points",
+  "pointsPlaceholder": "1",
   "selection": {
     "correctColumnLabel": "Correct answer",
     "markCorrectSingle": "Mark as the correct answer",
@@ -12,7 +13,8 @@
       "partial": "Partial credit for each correct pick",
       "any": "Any one correct option"
     },
-    "staleAnswerWarning": "\"{{option}}\" was marked correct but no longer matches any option — an option was likely renamed. Choose the correct option again."
+    "staleAnswerWarning": "\"{{option}}\" was marked correct but no longer matches any option — an option was likely renamed. Choose the correct option again.",
+    "removeStaleAnswer": "Remove"
   },
   "text": {
     "acceptedAnswersLabel": "Accepted answers",
