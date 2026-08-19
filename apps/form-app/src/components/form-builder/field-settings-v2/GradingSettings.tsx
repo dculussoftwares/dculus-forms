@@ -483,7 +483,13 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
   // ---------------------------------------------------------------------------
   const renderNumber = () => {
     const hasRange = grading?.numeric?.min !== undefined || grading?.numeric?.max !== undefined;
-    const rangeMode = numberModeOverride ?? (hasRange ? 'range' : 'target');
+    // Real bounds always win over the local override — otherwise a stale
+    // `numberModeOverride: 'target'` (e.g. from an earlier click in this same
+    // session) could hide a range a collaborator just set concurrently.
+    // `numberModeOverride` only matters for the ambiguous "range chosen but
+    // both bounds still empty" state, which hasRange can't distinguish from
+    // "target".
+    const rangeMode = hasRange ? 'range' : (numberModeOverride ?? 'target');
     const toleranceType =
       grading?.numeric?.tolerance !== undefined
         ? 'absolute'
