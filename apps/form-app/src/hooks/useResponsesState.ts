@@ -102,6 +102,11 @@ export interface UseResponsesStateReturn {
   openDetailPanel: (response: FormResponse) => void;
   closeDetailPanel: () => void;
 
+  // Native Quiz (epic #289, Story 11): grade detail drawer
+  gradeDrawerResponseId: string | null;
+  openGradeDrawer: (responseId: string) => void;
+  closeGradeDrawer: () => void;
+
   // Column sizing
   columnSizing: ColumnSizingState;
   onColumnSizingChange: OnChangeFn<ColumnSizingState>;
@@ -205,6 +210,11 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
   const [detailPanelResponse, setDetailPanelResponse] = useState<FormResponse | null>(null);
   const openDetailPanel = (response: FormResponse) => setDetailPanelResponse(response);
   const closeDetailPanel = () => setDetailPanelResponse(null);
+
+  // Native Quiz (epic #289, Story 11): grade detail drawer
+  const [gradeDrawerResponseId, setGradeDrawerResponseId] = useState<string | null>(null);
+  const openGradeDrawer = (responseId: string) => setGradeDrawerResponseId(responseId);
+  const closeGradeDrawer = () => setGradeDrawerResponseId(null);
 
   // Row density (persisted)
   const [rowDensity, setRowDensityRaw] = useState<'compact' | 'default' | 'comfortable'>(() => {
@@ -409,6 +419,11 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     detailPanelResponse,
     openDetailPanel,
     closeDetailPanel,
+
+    // Native Quiz (epic #289, Story 11): grade detail drawer
+    gradeDrawerResponseId,
+    openGradeDrawer,
+    closeGradeDrawer,
 
     // Column sizing
     columnSizing,

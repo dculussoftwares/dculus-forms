@@ -22,7 +22,9 @@ import {
   substituteMentions,
 } from '@dculus/utils';
 import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
-import type { RespondentGradeView } from '@dculus/types';
+import type { RespondentGradeView, QuizGradingMetadata } from '@dculus/types';
+import { pluginTypeFromMetadataKey } from '../../plugins/core/exportRegistry.js';
+import { QUIZ_GRADING_PLUGIN_TYPE } from '../../plugins/quiz/types.js';
 import { stripConditionallyHiddenValues } from '../../lib/conditionalStrip.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { gradeResponse } from '../../services/quiz/gradingEngine.js';
@@ -45,9 +47,11 @@ import {
 } from '../../services/fakeResponseService.js';
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { sendResponseCopyIfEnabled } from '../../services/responseCopyService.js';
+import { responseGradeRepository } from '../../repositories/index.js';
 
 interface ResponseParent {
   id: string;
+  formId: string;
   _editHistoryPromise?: Promise<Awaited<ReturnType<typeof import('../../services/responseEditTrackingService.js').ResponseEditTrackingService.getEditHistory>>>;
 }
 
@@ -61,6 +65,104 @@ async function getEditHistoryMemoised(parent: ResponseParent) {
     parent._editHistoryPromise = ResponseEditTrackingService.getEditHistory(parent.id);
   }
   return parent._editHistoryPromise;
+}
+
+// Native Quiz (epic #289, Story 11): per-request cache of formId -> form-access
+// Promise, keyed off the GraphQL context object. A single responsesByForm page
+// shares one formId across every row, so this collapses what would otherwise be
+// one permission-check query per row into exactly one for the whole request.
+const formAccessCache = new WeakMap<object, Map<string, ReturnType<typeof checkFormAccess>>>();
+
+function getCachedFormAccess(context: { auth: BetterAuthContext }, userId: string, formId: string) {
+  let cache = formAccessCache.get(context);
+  if (!cache) {
+    cache = new Map();
+    formAccessCache.set(context, cache);
+  }
+  const key = `${userId}:${formId}`;
+  let pending = cache.get(key);
+  if (!pending) {
+    pending = checkFormAccess(userId, formId, PermissionLevel.VIEWER);
+    cache.set(key, pending);
+  }
+  return pending;
+}
+
+/**
+ * Native Quiz (epic #289, Story 11) legacy compatibility: a response graded
+ * by the old quiz-grading plugin (before ResponseGrade existed, or from an
+ * instance never migrated) has its score in Response.metadata under a
+ * 'quiz-grading' or 'quiz-grading:<pluginId>' key instead of a ResponseGrade
+ * row. Reading this fallback lets a form migrated mid-term show one
+ * continuous Score/Status column rather than a half-empty one. Returns the
+ * same shape the ResponseGrade-backed path returns, so callers don't need to
+ * know which source the data came from.
+ */
+function legacyQuizGradeFromMetadata(metadata: unknown): {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  status: string;
+  gradedAt: string;
+  detail: Array<{
+    fieldId: string;
+    fieldLabel: string;
+    fieldType: string;
+    mode: string;
+    submittedValue: unknown;
+    acceptedAnswers: string[];
+    correct: boolean;
+    pointsAwarded: number;
+    pointValue: number;
+    autoPointsAwarded: number;
+  }>;
+} | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+
+  for (const [key, value] of Object.entries(metadata as Record<string, unknown>)) {
+    if (pluginTypeFromMetadataKey(key) !== QUIZ_GRADING_PLUGIN_TYPE) continue;
+    if (!value || typeof value !== 'object') continue;
+
+    const legacy = value as Partial<QuizGradingMetadata>;
+    if (
+      typeof legacy.quizScore !== 'number' ||
+      typeof legacy.totalMarks !== 'number' ||
+      typeof legacy.percentage !== 'number'
+    ) {
+      continue;
+    }
+
+    const passThreshold = legacy.passThreshold ?? 60;
+    const passed = legacy.percentage >= passThreshold;
+
+    return {
+      score: legacy.quizScore,
+      maxScore: legacy.totalMarks,
+      percentage: legacy.percentage,
+      passed,
+      // The old plugin has no manual-review workflow — every legacy grade is
+      // effectively machine-graded, so it never surfaces "Needs review".
+      status: 'AUTO_GRADED',
+      gradedAt: legacy.gradedAt ?? new Date(0).toISOString(),
+      detail: (legacy.fieldResults ?? []).map((r) => ({
+        fieldId: r.fieldId,
+        fieldLabel: r.fieldLabel,
+        // Not recorded by the old plugin — the drawer falls back to raw
+        // string display when fieldType is unrecognized.
+        fieldType: '',
+        mode: 'exact',
+        submittedValue: r.userAnswer,
+        acceptedAnswers: r.correctAnswer !== undefined ? [r.correctAnswer] : [],
+        correct: r.isCorrect,
+        pointsAwarded: r.marksAwarded,
+        pointValue: r.maxMarks,
+        autoPointsAwarded: r.marksAwarded,
+      })),
+    };
+  }
+
+  return null;
 }
 
 export const responsesResolvers = {
@@ -795,6 +897,47 @@ export const extendedResponsesResolvers = {
       } catch (error) {
         logger.error('Error getting editHistory for response:', parent.id, error);
         return [];
+      }
+    },
+
+    // Native Quiz (epic #289, Story 11): the full builder-side grade record.
+    // SECURITY: never reachable without VIEWER+ form access — checked here
+    // explicitly (not just relied on at the parent query), since this field
+    // is reachable from any FormResponse-returning resolver, including the
+    // public submitResponse mutation where context.auth.user may be absent
+    // or may belong to the anonymous respondent, not a form builder.
+    // `detail` can contain correct answers, so this must fail closed (return
+    // null) rather than leak grade data on any error.
+    responseGrade: async (
+      parent: any,
+      _args: unknown,
+      context: { auth: BetterAuthContext }
+    ) => {
+      if (!context.auth?.user) return null;
+      try {
+        const accessCheck = await getCachedFormAccess(context, context.auth.user.id, parent.formId);
+        if (!accessCheck.hasAccess) return null;
+
+        const gradeRow = await responseGradeRepository.findByResponseId(parent.id);
+        if (gradeRow) {
+          return {
+            score: gradeRow.score,
+            maxScore: gradeRow.maxScore,
+            percentage: gradeRow.percentage,
+            passed: gradeRow.passed,
+            status: gradeRow.status,
+            gradedAt: gradeRow.gradedAt.toISOString(),
+            detail: Array.isArray(gradeRow.detail) ? gradeRow.detail : [],
+          };
+        }
+
+        // Legacy compatibility: no native ResponseGrade row — fall back to
+        // the old quiz-grading plugin's metadata so a form migrated mid-term
+        // shows one continuous Score/Status column.
+        return legacyQuizGradeFromMetadata(parent.metadata);
+      } catch (error) {
+        logger.error('Error getting responseGrade for response:', parent.id, error);
+        return null;
       }
     },
   },

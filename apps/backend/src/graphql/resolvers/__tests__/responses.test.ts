@@ -1726,4 +1726,265 @@ describe('Responses Resolvers', () => {
       expect(result).toEqual([]);
     });
   });
+
+  // Native Quiz (epic #289, Story 11): `responseGrade` is the full builder-side
+  // grade record — unlike the respondent-facing `grade` field, this is guarded
+  // by form-permission checks, not by quiz release policy, and must never be
+  // reachable without VIEWER+ form access.
+  describe('Extended Resolvers: FormResponse.responseGrade (issue #300)', () => {
+    const mockGradeRow = {
+      score: 8,
+      maxScore: 10,
+      percentage: 80,
+      passed: true,
+      status: 'AUTO_GRADED',
+      gradedAt: new Date('2024-01-02T00:00:00Z'),
+      detail: [
+        {
+          fieldId: 'f1',
+          fieldLabel: 'Q1',
+          fieldType: 'RADIO_FIELD',
+          mode: 'exact',
+          submittedValue: 'a',
+          acceptedAnswers: ['a'],
+          correct: true,
+          pointsAwarded: 8,
+          pointValue: 10,
+          autoPointsAwarded: 8,
+        },
+      ],
+    };
+
+    it('returns null with no authenticated user (e.g. a public submitResponse caller) and never checks form access', async () => {
+      const parent = { id: 'response-1', formId: 'form-grade-anon' };
+      const anonContext = { auth: { user: null } };
+
+      const result = await extendedResponsesResolvers.FormResponse.responseGrade(
+        parent,
+        {},
+        anonContext as any
+      );
+
+      expect(result).toBeNull();
+      expect(formSharingResolvers.checkFormAccess).not.toHaveBeenCalled();
+      expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
+    });
+
+    it('returns null when the authenticated user lacks form access', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: false,
+        permission: 'NO_ACCESS' as any,
+        form: mockForm as any,
+      });
+      const parent = { id: 'response-2', formId: 'form-grade-noaccess' };
+
+      const result = await extendedResponsesResolvers.FormResponse.responseGrade(
+        parent,
+        {},
+        mockContext as any
+      );
+
+      expect(result).toBeNull();
+      expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
+    });
+
+    it('returns the full grade record when the user has VIEWER+ access', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(mockGradeRow as any);
+      const parent = { id: 'response-3', formId: 'form-grade-access' };
+
+      const result = await extendedResponsesResolvers.FormResponse.responseGrade(
+        parent,
+        {},
+        mockContext as any
+      );
+
+      expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
+        'user-123',
+        'form-grade-access',
+        formSharingResolvers.PermissionLevel.VIEWER
+      );
+      expect(result).toEqual({
+        score: 8,
+        maxScore: 10,
+        percentage: 80,
+        passed: true,
+        status: 'AUTO_GRADED',
+        gradedAt: '2024-01-02T00:00:00.000Z',
+        detail: mockGradeRow.detail,
+      });
+    });
+
+    it('returns null when no grade row exists yet', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(null);
+      const parent = { id: 'response-4', formId: 'form-grade-nogrades' };
+
+      const result = await extendedResponsesResolvers.FormResponse.responseGrade(
+        parent,
+        {},
+        mockContext as any
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('caches the form-access check across rows sharing the same form (no per-row permission N+1)', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(mockGradeRow as any);
+
+      await extendedResponsesResolvers.FormResponse.responseGrade(
+        { id: 'row-1', formId: 'form-grade-shared' },
+        {},
+        mockContext as any
+      );
+      await extendedResponsesResolvers.FormResponse.responseGrade(
+        { id: 'row-2', formId: 'form-grade-shared' },
+        {},
+        mockContext as any
+      );
+
+      expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledTimes(1);
+      expect(responseGradeRepository.findByResponseId).toHaveBeenCalledTimes(2);
+    });
+
+    it('falls back to the legacy quiz-grading plugin metadata when no ResponseGrade row exists (bare key)', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(null);
+      const parent = {
+        id: 'response-6',
+        formId: 'form-grade-legacy',
+        metadata: {
+          'quiz-grading': {
+            quizScore: 6,
+            totalMarks: 10,
+            percentage: 60,
+            passThreshold: 60,
+            gradedAt: '2023-06-01T00:00:00.000Z',
+            gradedBy: 'plugin',
+            fieldResults: [
+              {
+                fieldId: 'f1',
+                fieldLabel: 'Q1',
+                userAnswer: 'b',
+                correctAnswer: 'a',
+                isCorrect: false,
+                marksAwarded: 0,
+                maxMarks: 5,
+              },
+            ],
+          },
+        },
+      };
+
+      const result = await extendedResponsesResolvers.FormResponse.responseGrade(
+        parent,
+        {},
+        mockContext as any
+      );
+
+      expect(result).toEqual({
+        score: 6,
+        maxScore: 10,
+        percentage: 60,
+        passed: true,
+        status: 'AUTO_GRADED',
+        gradedAt: '2023-06-01T00:00:00.000Z',
+        detail: [
+          {
+            fieldId: 'f1',
+            fieldLabel: 'Q1',
+            fieldType: '',
+            mode: 'exact',
+            submittedValue: 'b',
+            acceptedAnswers: ['a'],
+            correct: false,
+            pointsAwarded: 0,
+            pointValue: 5,
+            autoPointsAwarded: 0,
+          },
+        ],
+      });
+    });
+
+    it('falls back to the legacy quiz-grading plugin metadata under an instance-scoped key (quiz-grading:pluginId)', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(null);
+      const parent = {
+        id: 'response-7',
+        formId: 'form-grade-legacy-scoped',
+        metadata: {
+          'quiz-grading:plugin-abc': {
+            quizScore: 3,
+            totalMarks: 10,
+            percentage: 30,
+            passThreshold: 60,
+            gradedAt: '2023-05-01T00:00:00.000Z',
+            gradedBy: 'plugin',
+            fieldResults: [],
+          },
+        },
+      };
+
+      const result = await extendedResponsesResolvers.FormResponse.responseGrade(
+        parent,
+        {},
+        mockContext as any
+      );
+
+      expect(result).toMatchObject({ score: 3, maxScore: 10, percentage: 30, passed: false, status: 'AUTO_GRADED' });
+    });
+
+    it('returns null when neither a ResponseGrade row nor legacy metadata is present', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(null);
+      const parent = { id: 'response-8', formId: 'form-grade-neither', metadata: { someOtherPlugin: {} } };
+
+      const result = await extendedResponsesResolvers.FormResponse.responseGrade(
+        parent,
+        {},
+        mockContext as any
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('fails closed (returns null) rather than leaking grade data when the access check throws', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockRejectedValue(new Error('boom'));
+      const parent = { id: 'response-5', formId: 'form-grade-error' };
+
+      const result = await extendedResponsesResolvers.FormResponse.responseGrade(
+        parent,
+        {},
+        mockContext as any
+      );
+
+      expect(result).toBeNull();
+      expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
+    });
+  });
 });

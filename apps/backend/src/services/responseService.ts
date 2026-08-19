@@ -4,7 +4,9 @@ import { createGraphQLError } from '#graphql-errors';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
 import {
   buildRawSQLCondition,
-  canFilterAtDatabase
+  canFilterAtDatabase,
+  filtersNeedGradeJoin,
+  RESPONSE_GRADE_JOIN,
 } from './responseQueryBuilder.js';
 import { batchLoadTagsForResponses } from './tagService.js';
 import { responseRepository, createResponseRepository } from '../repositories/index.js';
@@ -187,9 +189,12 @@ export async function getResponsesByFormId(
 
   // Check if sorting by a form field (starts with 'data.')
   const isFormFieldSort = sortBy.startsWith('data.');
+  // Native Quiz (epic #289, Story 11): sort by the joined ResponseGrade row,
+  // done in SQL (Prisma relation orderBy / a raw-SQL JOIN below) — never in memory.
+  const isGradeSort = sortBy === 'grade.percentage';
   let validSortBy = sortBy;
 
-  if (!isFormFieldSort && !allowedSortFields.includes(sortBy)) {
+  if (!isFormFieldSort && !isGradeSort && !allowedSortFields.includes(sortBy)) {
     validSortBy = 'submittedAt';
   }
 
@@ -228,8 +233,15 @@ export async function getResponsesByFormId(
         if (sql) { fieldConditions.push(sql); params.push(...values); paramIndex += values.length; }
       }
 
+      // Native Quiz (epic #289, Story 11): a LEFT JOIN against response_grade
+      // is only added when a filter or the sort actually targets a grade
+      // field — a non-quiz form's query never references it, so its SQL
+      // (and query count) stays identical to before this feature existed.
+      const gradeJoinNeeded = filtersNeedGradeJoin(filters) || isGradeSort;
+      const joinClause = gradeJoinNeeded ? RESPONSE_GRADE_JOIN : '';
+
       const logicOperator = filterLogic === 'OR' ? ' OR ' : ' AND ';
-      let whereClause = `WHERE "formId" = $1`;
+      let whereClause = `WHERE "response"."formId" = $1`;
       if (fieldConditions.length > 0) {
         whereClause += ` AND (${fieldConditions.join(logicOperator)})`;
       }
@@ -239,12 +251,14 @@ export async function getResponsesByFormId(
 
 
       // Count total matching documents
-      total = await responseRepository.countFilteredRaw(whereClause, params);
+      total = await responseRepository.countFilteredRaw(whereClause, params, joinClause);
 
       // Build ORDER BY clause
-      const orderClause = validSortBy === 'submittedAt'
-        ? `ORDER BY "submittedAt" ${validSortOrder.toUpperCase()}`
-        : `ORDER BY "id" ${validSortOrder.toUpperCase()}`; // Fallback to id sorting
+      const orderClause = isGradeSort
+        ? `ORDER BY rg.percentage ${validSortOrder.toUpperCase()} NULLS LAST`
+        : validSortBy === 'submittedAt'
+        ? `ORDER BY "response"."submittedAt" ${validSortOrder.toUpperCase()}`
+        : `ORDER BY "response".id ${validSortOrder.toUpperCase()}`; // Fallback to id sorting
 
       // Query with pagination and sorting — LIMIT/OFFSET passed as positional params
       const dbResponses = await responseRepository.findFilteredRaw(
@@ -252,7 +266,8 @@ export async function getResponsesByFormId(
         orderClause,
         params,
         validLimit,
-        skip
+        skip,
+        joinClause
       );
 
       // Convert to FormResponse format
@@ -334,9 +349,17 @@ export async function getResponsesByFormId(
       where: { formId, deletedAt: null },
     });
 
+    // Native Quiz (epic #289, Story 11): ordering by the joined ResponseGrade
+    // row via Prisma's relation orderBy — a genuine SQL ORDER BY over a JOIN,
+    // never done in memory. Only reached when the caller actually asks to
+    // sort by grade.percentage; every other sort keeps the prior orderBy shape.
+    const orderBy = isGradeSort
+      ? { grade: { percentage: validSortOrder as Prisma.SortOrder } }
+      : { [validSortBy]: validSortOrder };
+
     responses = await responseRepository.findMany({
       where: { formId, deletedAt: null },
-      orderBy: { [validSortBy]: validSortOrder },
+      orderBy,
       skip,
       take: validLimit,
     });

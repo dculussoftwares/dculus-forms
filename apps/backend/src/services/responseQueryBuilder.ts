@@ -35,6 +35,33 @@ export interface RawSQLFilter {
 }
 
 /**
+ * Native Quiz (epic #289, Story 11): special fieldIds for filtering on a
+ * response's ResponseGrade row, mirroring the existing __submittedAt/__tags
+ * convention for non-form-field filters. Handled with a LEFT JOIN against
+ * "response_grade" (aliased `rg`) rather than the JSONB `data` column, since
+ * grade fields are real indexed columns, not respondent-submitted JSON.
+ */
+export const GRADE_FIELD_IDS = new Set([
+  '__gradePercentage',
+  '__gradePassed',
+  '__gradeStatus',
+]);
+
+/**
+ * Raw SQL join fragment shared by every grade-aware query. `"response".id` is
+ * used (rather than a bare `id`) so it stays unambiguous once the join brings
+ * response_grade's own `id`/`formId` columns into scope — valid even when no
+ * join is present, since Postgres accepts a table's own name as its implicit
+ * range variable.
+ */
+export const RESPONSE_GRADE_JOIN = 'LEFT JOIN "response_grade" rg ON rg."responseId" = "response".id';
+
+/** Whether any filter in the list targets a grade field (Story 11) — used to decide whether to add RESPONSE_GRADE_JOIN. */
+export function filtersNeedGradeJoin(filters?: ResponseFilter[]): boolean {
+  return !!filters?.some((f) => GRADE_FIELD_IDS.has(f.fieldId));
+}
+
+/**
  * Determines if filters can be fully executed at database level
  * With raw PostgreSQL queries, ALL filters can be executed at database level
  */
@@ -112,6 +139,90 @@ function buildSubmittedAtCondition(filter: ResponseFilter, startIndex: number): 
 }
 
 /**
+ * Grade percentage filter (0..100), built against the joined `rg` alias.
+ * Native Quiz (epic #289, Story 11).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildGradePercentageCondition(filter: ResponseFilter, startIndex: number): { sql: string; values: any[] } {
+  switch (filter.operator) {
+    case 'EQUALS':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `rg.percentage = $${startIndex}::numeric`, values: [filter.value] };
+    case 'NOT_EQUALS':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `(rg.percentage IS NULL OR rg.percentage != $${startIndex}::numeric)`, values: [filter.value] };
+    case 'GREATER_THAN':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `rg.percentage > $${startIndex}::numeric`, values: [filter.value] };
+    case 'GREATER_THAN_OR_EQUAL':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `rg.percentage >= $${startIndex}::numeric`, values: [filter.value] };
+    case 'LESS_THAN':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `rg.percentage < $${startIndex}::numeric`, values: [filter.value] };
+    case 'LESS_THAN_OR_EQUAL':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `rg.percentage <= $${startIndex}::numeric`, values: [filter.value] };
+    case 'BETWEEN': {
+      if (!filter.numberRange) return { sql: '', values: [] };
+      const conditions: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const values: any[] = [];
+      let idx = startIndex;
+      if (filter.numberRange.min !== undefined) {
+        conditions.push(`rg.percentage >= $${idx}::numeric`);
+        values.push(filter.numberRange.min);
+        idx++;
+      }
+      if (filter.numberRange.max !== undefined) {
+        conditions.push(`rg.percentage <= $${idx}::numeric`);
+        values.push(filter.numberRange.max);
+      }
+      if (conditions.length === 0) return { sql: '', values: [] };
+      return { sql: `(${conditions.join(' AND ')})`, values };
+    }
+    default:
+      return { sql: '', values: [] };
+  }
+}
+
+/** Grade pass/fail filter. Native Quiz (epic #289, Story 11). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildGradePassedCondition(filter: ResponseFilter, startIndex: number): { sql: string; values: any[] } {
+  if (filter.operator !== 'EQUALS' || filter.value === undefined) return { sql: '', values: [] };
+  const boolValue = filter.value === 'true';
+  return { sql: `rg.passed = $${startIndex}::boolean`, values: [boolValue] };
+}
+
+/** Grade status filter (AUTO_GRADED / NEEDS_REVIEW / REVIEWED / RELEASED). Native Quiz (epic #289, Story 11). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildGradeStatusCondition(filter: ResponseFilter, startIndex: number): { sql: string; values: any[] } {
+  switch (filter.operator) {
+    case 'EQUALS':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `rg.status = $${startIndex}`, values: [filter.value] };
+    case 'NOT_EQUALS':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `(rg.status IS NULL OR rg.status != $${startIndex})`, values: [filter.value] };
+    case 'IN': {
+      if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
+      const placeholders = filter.values.map((_, i) => `$${startIndex + i}`).join(', ');
+      return { sql: `rg.status = ANY(ARRAY[${placeholders}]::text[])`, values: filter.values };
+    }
+    case 'NOT_IN': {
+      if (!filter.values || filter.values.length === 0) return { sql: '', values: [] };
+      const placeholders = filter.values.map((_, i) => `$${startIndex + i}`).join(', ');
+      return {
+        sql: `(rg.status IS NULL OR NOT (rg.status = ANY(ARRAY[${placeholders}]::text[])))`,
+        values: filter.values,
+      };
+    }
+    default:
+      return { sql: '', values: [] };
+  }
+}
+
+/**
  * Builds raw SQL condition for a single filter
  * Returns SQL string with PostgreSQL placeholders ($1, $2, etc.) and parameter values
  */
@@ -130,11 +241,23 @@ export function buildRawSQLCondition(
     return {
       sql: `EXISTS (
         SELECT 1 FROM "response_tag_assignment" rta
-        WHERE rta."responseId" = id
+        WHERE rta."responseId" = "response".id
         AND rta."tagId" = ANY(ARRAY[${placeholders}]::text[])
       )`,
       values: filter.values,
     };
+  }
+
+  if (filter.fieldId === '__gradePercentage') {
+    return buildGradePercentageCondition(filter, startIndex);
+  }
+
+  if (filter.fieldId === '__gradePassed') {
+    return buildGradePassedCondition(filter, startIndex);
+  }
+
+  if (filter.fieldId === '__gradeStatus') {
+    return buildGradeStatusCondition(filter, startIndex);
   }
 
   const safeFieldId = ensureSafeFieldId(filter.fieldId);

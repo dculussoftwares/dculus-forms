@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPostgreSQLFilter, buildRawSQLCondition, canFilterAtDatabase } from '../responseQueryBuilder.js';
+import { buildPostgreSQLFilter, buildRawSQLCondition, canFilterAtDatabase, filtersNeedGradeJoin } from '../responseQueryBuilder.js';
 
 describe('Response Query Builder', () => {
   describe('Security - SQL Injection Protection', () => {
@@ -723,6 +723,113 @@ describe('buildRawSQLCondition', () => {
       const r = buildRawSQLCondition({ fieldId: 'field-date', operator: 'DATE_LAST_N_DAYS', value: '-5' }, 1);
       expect(r.sql).toBe('');
     });
+  });
+
+  // Native Quiz (epic #289, Story 11): grade filters, built against the
+  // joined `rg` alias rather than the JSONB `data` column.
+  describe('__gradePercentage filters', () => {
+    it('GREATER_THAN_OR_EQUAL with value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePercentage', operator: 'GREATER_THAN_OR_EQUAL', value: '80' }, 1);
+      expect(r.sql).toBe('rg.percentage >= $1::numeric');
+      expect(r.values).toEqual(['80']);
+    });
+    it('GREATER_THAN_OR_EQUAL without value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePercentage', operator: 'GREATER_THAN_OR_EQUAL' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('EQUALS with value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePercentage', operator: 'EQUALS', value: '50' }, 1);
+      expect(r.sql).toContain('rg.percentage =');
+    });
+    it('BETWEEN with min and max', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePercentage', operator: 'BETWEEN', numberRange: { min: 40, max: 90 } }, 1);
+      expect(r.sql).toContain('rg.percentage >= $1::numeric');
+      expect(r.sql).toContain('rg.percentage <= $2::numeric');
+      expect(r.values).toEqual([40, 90]);
+    });
+    it('BETWEEN without numberRange returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePercentage', operator: 'BETWEEN' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('unsupported operator returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePercentage', operator: 'CONTAINS' as any, value: '1' }, 1);
+      expect(r.sql).toBe('');
+    });
+  });
+
+  describe('__gradePassed filters', () => {
+    it('EQUALS true', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePassed', operator: 'EQUALS', value: 'true' }, 1);
+      expect(r.sql).toBe('rg.passed = $1::boolean');
+      expect(r.values).toEqual([true]);
+    });
+    it('EQUALS false', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePassed', operator: 'EQUALS', value: 'false' }, 1);
+      expect(r.values).toEqual([false]);
+    });
+    it('non-EQUALS operator returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePassed', operator: 'CONTAINS' as any, value: 'true' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('missing value returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradePassed', operator: 'EQUALS' }, 1);
+      expect(r.sql).toBe('');
+    });
+  });
+
+  describe('__gradeStatus filters', () => {
+    it('EQUALS with value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradeStatus', operator: 'EQUALS', value: 'NEEDS_REVIEW' }, 1);
+      expect(r.sql).toBe('rg.status = $1');
+      expect(r.values).toEqual(['NEEDS_REVIEW']);
+    });
+    it('EQUALS without value returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradeStatus', operator: 'EQUALS' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('IN with values', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradeStatus', operator: 'IN', values: ['NEEDS_REVIEW', 'AUTO_GRADED'] }, 1);
+      expect(r.sql).toContain('rg.status = ANY(ARRAY[$1, $2]::text[])');
+      expect(r.values).toEqual(['NEEDS_REVIEW', 'AUTO_GRADED']);
+    });
+    it('IN without values returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradeStatus', operator: 'IN' }, 1);
+      expect(r.sql).toBe('');
+    });
+    it('NOT_IN with values', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradeStatus', operator: 'NOT_IN', values: ['RELEASED'] }, 1);
+      expect(r.sql).toContain('NOT (rg.status = ANY(ARRAY[$1]::text[]))');
+    });
+    it('unsupported operator returns empty', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradeStatus', operator: 'CONTAINS' as any, value: 'x' }, 1);
+      expect(r.sql).toBe('');
+    });
+  });
+
+  describe('__tags filter is unambiguous under a grade JOIN', () => {
+    it('references the response table explicitly rather than a bare id', () => {
+      const r = buildRawSQLCondition({ fieldId: '__tags', operator: 'EQUALS', values: ['tag-1'] }, 1);
+      expect(r.sql).toContain('rta."responseId" = "response".id');
+    });
+  });
+});
+
+describe('filtersNeedGradeJoin', () => {
+  it('returns false for undefined/empty filters', () => {
+    expect(filtersNeedGradeJoin(undefined)).toBe(false);
+    expect(filtersNeedGradeJoin([])).toBe(false);
+  });
+  it('returns false when no filter targets a grade field', () => {
+    expect(filtersNeedGradeJoin([{ fieldId: 'field-1', operator: 'EQUALS', value: 'x' }])).toBe(false);
+  });
+  it('returns true when a filter targets __gradePercentage', () => {
+    expect(filtersNeedGradeJoin([{ fieldId: '__gradePercentage', operator: 'GREATER_THAN_OR_EQUAL', value: '80' }])).toBe(true);
+  });
+  it('returns true when a filter targets __gradePassed', () => {
+    expect(filtersNeedGradeJoin([{ fieldId: '__gradePassed', operator: 'EQUALS', value: 'true' }])).toBe(true);
+  });
+  it('returns true when a filter targets __gradeStatus', () => {
+    expect(filtersNeedGradeJoin([{ fieldId: '__gradeStatus', operator: 'EQUALS', value: 'NEEDS_REVIEW' }])).toBe(true);
   });
 });
 

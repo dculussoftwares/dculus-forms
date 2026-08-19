@@ -105,7 +105,16 @@
       "editStatus": "நிலையை திருத்தவும்",
       "tags": "குறிச்சொற்கள்",
       "respondentEmail": "பதிலளிப்பவர்",
-      "actions": "செயல்கள்"
+      "actions": "செயல்கள்",
+      "score": "மதிப்பெண்",
+      "status": "நிலை"
+    },
+    "grade": {
+      "scoreFormat": "{{score}}/{{maxScore}} · {{percentage}}%",
+      "notGraded": "மதிப்பிடப்படவில்லை",
+      "statusPassed": "தேர்ச்சி",
+      "statusFailed": "தோல்வி",
+      "statusNeedsReview": "மறுஆய்வு தேவை"
     },
     "tags": {
       "addTag": "குறிச்சொல் சேர்க்கவும்",
@@ -195,5 +204,28 @@
   },
   "breadcrumbs": {
     "formDashboard": "படிவம் டாஷ்போர்டு"
+  },
+  "gradeDrawer": {
+    "title": "மதிப்பெண் விவரங்கள்",
+    "response": "பதில்",
+    "graded": "மதிப்பிடப்பட்டது",
+    "overallScore": "மொத்த மதிப்பெண்",
+    "pointsEarned": "பெறப்பட்ட புள்ளிகள்",
+    "percentage": "சதவீதம்",
+    "correct": "சரியானவை",
+    "answerBreakdown": "பதில் விவரம்",
+    "questionCount": "{{count}} கேள்விகள்",
+    "questionLabel": "கேள்வி {{number}}",
+    "yourAnswer": "உங்கள் பதில்:",
+    "correctAnswer": "சரியான பதில்:",
+    "noAnswer": "பதில் இல்லை",
+    "needsManualGrading": "கைமுறை மதிப்பீடு தேவை",
+    "status": {
+      "passed": "தேர்ச்சி பெற்றது",
+      "failed": "தோல்வியடைந்தது",
+      "needsReview": "மறுஆய்வு தேவை"
+    },
+    "loading": "மதிப்பெண் விவரங்களை ஏற்றுகிறது...",
+    "error": "மதிப்பெண் விவரங்களை ஏற்ற முடியவில்லை"
   }
 }

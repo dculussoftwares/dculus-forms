@@ -138,6 +138,23 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
         return filter.values.some(tagId => responseTags.some(t => t.id === tagId));
       }
 
+      // Native Quiz (epic #289, Story 11): grade filters, for the in-memory
+      // fallback path only (used when DB-level filtering throws). The
+      // primary path is the SQL JOIN in responseQueryBuilder.ts — this exists
+      // so the fallback degrades gracefully instead of crashing when a
+      // grade filter is combined with something the fallback already covers.
+      // `response.grade` is only populated by callers that explicitly
+      // attached it; when absent these simply evaluate against `undefined`.
+      if (filter.fieldId === '__gradePercentage') {
+        return evaluateFilterOperator(filter.operator, response.grade?.percentage, filter);
+      }
+      if (filter.fieldId === '__gradePassed') {
+        return evaluateFilterOperator(filter.operator, response.grade?.passed, filter);
+      }
+      if (filter.fieldId === '__gradeStatus') {
+        return evaluateFilterOperator(filter.operator, response.grade?.status, filter);
+      }
+
       // Get field value from response data (handles both 'data' and 'responseData' properties)
       const fieldValue =
         response.responseData?.[filter.fieldId] ??

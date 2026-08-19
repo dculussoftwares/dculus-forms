@@ -17,6 +17,8 @@ vi.mock('../../repositories/index.js', () => ({
     listByForm: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    countFilteredRaw: vi.fn(),
+    findFilteredRaw: vi.fn(),
   }
 }));
 
@@ -291,6 +293,99 @@ describe('Response Service - Additional Coverage', () => {
       const result = await deleteResponse('response-123');
 
       expect(result).toBe(false);
+    });
+  });
+
+  // Native Quiz (epic #289, Story 11): grade.percentage sort/filter must be
+  // pushed down to SQL — a Prisma relation orderBy (no filters) or a raw-SQL
+  // JOIN + ORDER BY (with filters) — never sorted/filtered in memory.
+  describe('getResponsesByFormId - grade.percentage sort (Story 11)', () => {
+    it('sorts via a Prisma relation orderBy when no filters are given', async () => {
+      vi.mocked(responseRepository.count).mockResolvedValue(0);
+      vi.mocked(responseRepository.findMany).mockResolvedValue([]);
+
+      await getResponsesByFormId('form-1', 1, 10, 'grade.percentage', 'desc');
+
+      expect(responseRepository.listByForm).not.toHaveBeenCalled();
+      expect(responseRepository.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { grade: { percentage: 'desc' } },
+        })
+      );
+    });
+
+    it('adds the response_grade JOIN and orders by rg.percentage when filters are present', async () => {
+      vi.mocked(responseRepository.countFilteredRaw).mockResolvedValue(0);
+      vi.mocked(responseRepository.findFilteredRaw).mockResolvedValue([]);
+
+      await getResponsesByFormId(
+        'form-1',
+        1,
+        10,
+        'grade.percentage',
+        'desc',
+        [{ fieldId: 'field-1', operator: 'EQUALS' as const, value: 'x' }]
+      );
+
+      expect(responseRepository.findFilteredRaw).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('ORDER BY rg.percentage DESC'),
+        expect.any(Array),
+        10,
+        0,
+        expect.stringContaining('LEFT JOIN "response_grade" rg')
+      );
+      expect(responseRepository.countFilteredRaw).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Array),
+        expect.stringContaining('LEFT JOIN "response_grade" rg')
+      );
+    });
+
+    it('adds the JOIN when a grade filter is present even without a grade sort', async () => {
+      vi.mocked(responseRepository.countFilteredRaw).mockResolvedValue(0);
+      vi.mocked(responseRepository.findFilteredRaw).mockResolvedValue([]);
+
+      await getResponsesByFormId(
+        'form-1',
+        1,
+        10,
+        'submittedAt',
+        'desc',
+        [{ fieldId: '__gradePassed', operator: 'EQUALS' as const, value: 'true' }]
+      );
+
+      expect(responseRepository.findFilteredRaw).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        expect.any(Array),
+        10,
+        0,
+        expect.stringContaining('LEFT JOIN "response_grade" rg')
+      );
+    });
+
+    it('does not add the JOIN for an ordinary filtered query with no grade involvement', async () => {
+      vi.mocked(responseRepository.countFilteredRaw).mockResolvedValue(0);
+      vi.mocked(responseRepository.findFilteredRaw).mockResolvedValue([]);
+
+      await getResponsesByFormId(
+        'form-1',
+        1,
+        10,
+        'submittedAt',
+        'desc',
+        [{ fieldId: 'field-1', operator: 'EQUALS' as const, value: 'x' }]
+      );
+
+      expect(responseRepository.findFilteredRaw).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        expect.any(Array),
+        10,
+        0,
+        ''
+      );
     });
   });
 

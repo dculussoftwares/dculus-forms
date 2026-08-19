@@ -120,13 +120,19 @@ export const createResponseRepository = (context?: RepositoryContext) => {
    * Count of responses matching a caller-built raw WHERE clause (dynamic
    * filter conditions constructed by responseQueryBuilder). `whereClause`
    * must start with `WHERE "formId" = $1` — params[0] is always the formId.
+   *
+   * `joinClause` is optional (Native Quiz, epic #289, Story 11) — pass
+   * `RESPONSE_GRADE_JOIN` when a filter/sort targets a grade field. Omitted,
+   * it produces the exact same SQL as before this parameter existed.
    */
   const countFilteredRaw = async (
     whereClause: string,
-    params: unknown[]
+    params: unknown[],
+    joinClause: string = ''
   ): Promise<number> => {
+    const fromClause = joinClause ? `"response" ${joinClause}` : '"response"';
     const result = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
-      `SELECT COUNT(*) as count FROM "response" ${whereClause}`,
+      `SELECT COUNT(*) as count FROM ${fromClause} ${whereClause}`,
       ...params
     );
     return Number(result[0].count);
@@ -135,13 +141,20 @@ export const createResponseRepository = (context?: RepositoryContext) => {
   /**
    * Page of responses matching a caller-built raw WHERE/ORDER BY clause.
    * `limit`/`offset` are appended as the final positional params.
+   *
+   * `joinClause` is optional (Native Quiz, epic #289, Story 11) — pass
+   * `RESPONSE_GRADE_JOIN` when a filter/sort targets a grade field. The
+   * SELECT list is always table-qualified for `id`/`"formId"` since
+   * "response_grade" has columns of the same name that become ambiguous
+   * once joined — qualifying them is a no-op when there is no join.
    */
   const findFilteredRaw = (
     whereClause: string,
     orderClause: string,
     params: unknown[],
     limit: number,
-    offset: number
+    offset: number,
+    joinClause: string = ''
   ): Promise<
     Array<{
       id: string;
@@ -153,9 +166,10 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     }>
   > => {
     const paginationStart = params.length + 1;
+    const fromClause = joinClause ? `"response" ${joinClause}` : '"response"';
     const selectQuery = `
-      SELECT id, "formId", data, metadata, "respondentEmail", "submittedAt"
-      FROM "response"
+      SELECT "response".id, "response"."formId", "response".data, "response".metadata, "response"."respondentEmail", "response"."submittedAt"
+      FROM ${fromClause}
       ${whereClause}
       ${orderClause}
       LIMIT $${paginationStart} OFFSET $${paginationStart + 1}
