@@ -123,6 +123,26 @@ export const formsResolvers = {
       // Fall back to the DB column when Hocuspocus is unavailable (e.g. pool pressure timeout)
       return schema ?? parent.formSchema ?? null;
     },
+    // This is the ONLY resolver the public form-viewer renders from
+    // (apps/form-viewer/src/pages/FormViewer.tsx) — it is reachable by any
+    // respondent, unauthenticated, before they submit anything. Every field's
+    // optional `grading` (Native Quiz answer key: acceptedAnswers, pointValue,
+    // etc. — see packages/types/src/quiz.ts) is stripped unconditionally
+    // below, regardless of whether quiz mode is on, because leaking it here
+    // would hand out the answer key to every respondent ahead of submission.
+    // `Form.formSchema` (above) is the builder-only counterpart and keeps
+    // `grading` intact for authors.
+    //
+    // The other two surfaces that read form structure are already safe and
+    // need no stripping:
+    //   - The Hocuspocus Y.doc (services/hocuspocus.ts) is builder-only —
+    //     form-viewer never opens a Y.js connection; only the authenticated
+    //     builder does, via CollaborationManager, which sends a bearer token
+    //     (apps/form-app/src/store/collaboration/CollaborationManager.ts).
+    //   - `Form.settings` (below) is a typed GraphQL object (see
+    //     `type FormSettings` in schema.ts), so a client only ever receives
+    //     the subfields it explicitly selects in its query — there is no
+    //     JSON blob to accidentally over-expose a new settings key through.
     formSchemaPublic: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
       // Withhold form structure while access control isn't satisfied — this
       // is what lets `formByShortUrl` return a gate-able Form instead of a
@@ -137,7 +157,14 @@ export const formsResolvers = {
         ...raw,
         pages: raw.pages.map((page: any) => ({
           ...page,
-          fields: (page.fields || []).filter((f: any) => !f.deleted),
+          fields: (page.fields || [])
+            .filter((f: any) => !f.deleted)
+            .map((f: any) => {
+              if (!('grading' in f)) return f;
+              const fieldWithoutGrading = { ...f };
+              delete fieldWithoutGrading.grading;
+              return fieldWithoutGrading;
+            }),
         })),
       };
     },
