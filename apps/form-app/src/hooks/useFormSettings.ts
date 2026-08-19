@@ -146,20 +146,26 @@ export const useFormSettings = ({
 
     setIsSaving(true);
 
-    try {
-      // Strip __typename fields from the settings object
-      const cleanedSettings = stripTypename({ ...settings, ...settingsToSave });
+    // Strip __typename fields from the settings object
+    const cleanedSettings = stripTypename({ ...settings, ...settingsToSave });
 
-      await updateForm({
-        variables: {
-          id: formId,
-          input: {
-            settings: cleanedSettings,
-          },
+    const result = await updateForm({
+      variables: {
+        id: formId,
+        input: {
+          settings: cleanedSettings,
         },
-      });
-    } catch {
-      // Error handled by onError callback
+      },
+    });
+
+    // The Apollo client is configured with `mutate: { errorPolicy: 'all' }`
+    // (see services/apolloClient.ts), so a GraphQL error (e.g. the backend
+    // rejecting invalid quiz settings) resolves this promise instead of
+    // rejecting it — the mutation's own `onError` callback still surfaces a
+    // toastError, but without this throw every saveXxxSettings caller below
+    // would fall through to its own toastSuccess on top of that.
+    if (result.error) {
+      throw result.error;
     }
   };
 

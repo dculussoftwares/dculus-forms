@@ -6,6 +6,7 @@ import SubmissionLimitsSettings from './SubmissionLimitsSettings';
 import ResponseCopySettings from './ResponseCopySettings';
 import AccessControlSettings from './AccessControlSettings';
 import QuizSettings from './QuizSettings';
+import type { QuizSettings as QuizSettingsType } from '@dculus/types';
 
 interface FormSettingsContainerProps {
   form: any;
@@ -22,7 +23,7 @@ interface FormSettingsContainerProps {
   onUpdateAccessControl: (accessControl: any) => void;
   onSaveAccessControlSettings: () => void;
   onUpdateCollectRespondentEmail: (collectRespondentEmail: boolean) => void;
-  onUpdateQuizSettings: (quiz: any) => void;
+  onUpdateQuizSettings: (quiz: QuizSettingsType) => void;
   onSaveQuizSettings: () => void;
 }
 

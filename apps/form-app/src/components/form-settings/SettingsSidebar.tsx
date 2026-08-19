@@ -42,7 +42,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             {title}
           </p>
           <div className="space-y-0.5">
-            {items.map(({ id, label }) => {
+            {items.map(({ id, label, icon: Icon }) => {
               const isActive = selectedSection === id;
               return (
                 <Button
@@ -50,12 +50,13 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                   variant="ghost"
                   onClick={() => onSectionChange(id)}
                   data-testid={`settings-section-${id}`}
-                  className="w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors h-auto justify-start"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors h-auto justify-start"
                   style={{
                     backgroundColor: isActive ? 'var(--tf-tab-bg)' : 'transparent',
                     color: isActive ? 'var(--tf-dark)' : 'var(--tf-muted)',
                   }}
                 >
+                  <Icon className="h-4 w-4 shrink-0" />
                   {label}
                 </Button>
               );
