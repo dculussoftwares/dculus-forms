@@ -269,6 +269,36 @@ export const typeDefs = gql`
     lastEditedBy: User
     editHistory: [ResponseEditHistory!]!
     tags: [ResponseTag!]!
+    # Native Quiz (epic #289, D3): populated only when submitResponse graded
+    # this response synchronously — absent for every non-quiz form/response,
+    # and for queries other than submitResponse, which never compute it.
+    grade: ResponseGradeView
+  }
+
+  # Native Quiz (epic #289) — mirrors RespondentGradeView
+  # (packages/types/src/quiz.ts). This IS the release/visibility boundary
+  # (D5-adjacent): when released is false, every other field is genuinely
+  # absent, never zeroed or null-but-present. Built only via
+  # gradingService.toRespondentView — never hand-roll this projection.
+  type ResponseGradeView {
+    released: Boolean!
+    score: Float
+    maxScore: Float
+    percentage: Float
+    passed: Boolean
+    message: String
+    questions: [ResponseGradeQuestionView!]
+  }
+
+  type ResponseGradeQuestionView {
+    fieldId: ID!
+    label: String!
+    correct: Boolean
+    pointsAwarded: Float
+    pointValue: Float
+    yourAnswer: JSON
+    correctAnswer: [String!]
+    feedback: String
   }
 
   # Response Edit Tracking Types

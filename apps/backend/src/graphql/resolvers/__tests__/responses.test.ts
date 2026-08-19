@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { responsesResolvers, extendedResponsesResolvers } from '../responses.js';
 import { GraphQLError } from '#graphql-errors';
-import { DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import {
+  DEFAULT_THANK_YOU_CONTENT,
+  RadioField,
+  FillableFormFieldValidation,
+  serializeFormSchema,
+  type FormSchema,
+  type QuizSettings,
+} from '@dculus/types';
 import * as responseService from '../../../services/responseService.js';
 import * as formService from '../../../services/formService.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
@@ -13,6 +20,8 @@ import * as subscriptionEvents from '../../../subscriptions/events.js';
 import * as editTrackingService from '../../../services/responseEditTrackingService.js';
 import * as tagService from '../../../services/tagService.js';
 import * as responseCopyService from '../../../services/responseCopyService.js';
+import * as hocuspocusService from '../../../services/hocuspocus.js';
+import { responseRepository, responseGradeRepository } from '../../../repositories/index.js';
 
 // Mock all dependencies
 vi.mock('../../../services/responseService.js');
@@ -23,6 +32,11 @@ vi.mock('../../../services/analyticsService.js');
 vi.mock('../../../plugins/core/events.js');
 vi.mock('../../../subscriptions/usageService.js');
 vi.mock('../../../subscriptions/events.js');
+vi.mock('../../../services/hocuspocus.js');
+// Native Quiz (issue #295): only the DB boundary is mocked here — gradingEngine
+// and gradingService run for real, so these tests exercise the actual grading
+// and release/visibility projection logic, not a stand-in for it.
+vi.mock('../../../repositories/index.js');
 vi.mock('../../../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -105,6 +119,10 @@ describe('Responses Resolvers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Matches the pre-existing effective behavior in this suite: no real DB,
+    // so the internal try/catch in getFormSchemaFromHocuspocus always
+    // resolved to null and every schema fell back to form.formSchema.
+    vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -916,6 +934,233 @@ describe('Responses Resolvers', () => {
         expect(responseCopyService.sendResponseCopyIfEnabled).toHaveBeenCalledWith(
           expect.objectContaining({ form: formWithResponseCopyEnabled })
         );
+      });
+    });
+
+    describe('Native Quiz grading (issue #295)', () => {
+      const baseVisibility = {
+        totalScore: true,
+        perQuestionCorrectness: true,
+        correctAnswers: true,
+        pointValues: true,
+        feedback: true,
+        passFailBadge: true,
+      };
+
+      const gradedField = new RadioField(
+        'q1',
+        'Capital of France',
+        '',
+        '',
+        '',
+        new FillableFormFieldValidation(false),
+        ['Paris', 'London', 'Berlin']
+      );
+      gradedField.grading = { mode: 'exact', pointValue: 10, acceptedAnswers: ['Paris'] };
+
+      const quizSchema: FormSchema = {
+        pages: [{ id: 'page-1', title: 'Page 1', fields: [gradedField], order: 0 }],
+        layout: { theme: 'light', backgroundImageKey: '' } as any,
+        isShuffleEnabled: false,
+      };
+      const rawQuizSchema = serializeFormSchema(quizSchema);
+
+      const buildFormWithQuiz = (quiz: QuizSettings, schema: unknown = rawQuizSchema) => ({
+        ...mockForm,
+        settings: { quiz },
+        formSchema: schema,
+      });
+
+      const stubGradeUpsert = () => {
+        vi.mocked(responseRepository.findUnique).mockResolvedValue({ formId: 'form-123' } as any);
+        vi.mocked(responseGradeRepository.upsertForResponse).mockImplementation(
+          async (responseId: string, data: any) =>
+            ({
+              id: 'grade-1',
+              responseId,
+              gradedAt: new Date('2026-01-01T00:00:00Z'),
+              gradedById: null,
+              releasedAt: null,
+              schemaVersion: 1,
+              attemptNumber: 1,
+              integrity: null,
+              ...data,
+            }) as any
+        );
+      };
+
+      it('performs zero extra work for a form with settings.quiz absent (additive guarantee)', async () => {
+        // mockForm.settings is null — quiz absent, exactly the pre-existing fixture.
+        const result = await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: mockInput },
+          mockContext
+        );
+
+        expect(result).toEqual({ ...mockResponse, thankYouMessage: DEFAULT_THANK_YOU_CONTENT });
+        expect(result).not.toHaveProperty('grade');
+        expect(responseGradeRepository.upsertForResponse).not.toHaveBeenCalled();
+        expect(responseRepository.findUnique).not.toHaveBeenCalled();
+        // Unchanged from before this change: one Hocuspocus lookup for the
+        // conditional-strip pass, one for the thank-you mention substitution.
+        expect(hocuspocusService.getFormSchemaFromHocuspocus).toHaveBeenCalledTimes(2);
+      });
+
+      it('returns a populated, released grade under gradeRelease: immediate', async () => {
+        const quiz: QuizSettings = {
+          enabled: true,
+          passThresholdPercent: 60,
+          gradeRelease: 'immediate',
+          respondentVisibility: baseVisibility,
+        };
+        vi.mocked(formService.getFormById).mockResolvedValue(buildFormWithQuiz(quiz) as any);
+        stubGradeUpsert();
+
+        const result = await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: { formId: 'form-123', data: { q1: 'Paris' } } },
+          mockContext
+        );
+
+        expect(result.grade).toEqual({
+          released: true,
+          score: 10,
+          maxScore: 10,
+          percentage: 100,
+          passed: true,
+          questions: [
+            {
+              fieldId: 'q1',
+              label: 'Capital of France',
+              yourAnswer: 'Paris',
+              correct: true,
+              pointsAwarded: 10,
+              pointValue: 10,
+              correctAnswer: ['Paris'],
+            },
+          ],
+        });
+        expect(responseGradeRepository.upsertForResponse).toHaveBeenCalledWith(
+          'response-123',
+          expect.objectContaining({
+            score: 10,
+            maxScore: 10,
+            percentage: 100,
+            passed: true,
+            status: 'AUTO_GRADED',
+          })
+        );
+      });
+
+      it.each(['afterReview', 'never'] as const)(
+        'returns only { released: false } under gradeRelease: %s',
+        async (gradeRelease) => {
+          const quiz: QuizSettings = {
+            enabled: true,
+            passThresholdPercent: 60,
+            gradeRelease,
+            respondentVisibility: baseVisibility,
+          };
+          vi.mocked(formService.getFormById).mockResolvedValue(buildFormWithQuiz(quiz) as any);
+          stubGradeUpsert();
+
+          const result = await responsesResolvers.Mutation.submitResponse(
+            {},
+            { input: { formId: 'form-123', data: { q1: 'Paris' } } },
+            mockContext
+          );
+
+          expect(result.grade).toEqual({ released: false });
+          expect(Object.keys(result.grade!)).toEqual(['released']);
+          expect(JSON.stringify(result.grade)).not.toMatch(/score|percentage|pointsAwarded|Paris/);
+        }
+      );
+
+      it('excludes a conditionally-hidden graded question from maxScore', async () => {
+        const bonusField = {
+          id: 'bonus',
+          type: 'text_input_field',
+          label: 'Bonus',
+          validation: { required: false, type: 'text_field_validation' },
+          grading: { mode: 'text', pointValue: 5, acceptedAnswers: ['42'] },
+        };
+        const schemaWithCondition = {
+          ...rawQuizSchema,
+          pages: [
+            {
+              ...rawQuizSchema.pages[0],
+              fields: [
+                ...rawQuizSchema.pages[0].fields,
+                {
+                  id: 'trigger',
+                  type: 'radio_field',
+                  label: 'Trigger',
+                  options: ['Yes', 'No'],
+                  validation: { required: false, type: 'fillable_form_field' },
+                },
+                bonusField,
+              ],
+            },
+          ],
+          conditions: [
+            {
+              id: 'r-show-bonus',
+              enabled: true,
+              combinator: 'all',
+              terms: [{ fieldId: 'trigger', operator: 'equals', value: 'Yes' }],
+              actions: [{ type: 'showField', fieldIds: ['bonus'] }],
+            },
+          ],
+        };
+        const quiz: QuizSettings = {
+          enabled: true,
+          passThresholdPercent: 60,
+          gradeRelease: 'immediate',
+          respondentVisibility: baseVisibility,
+        };
+        vi.mocked(formService.getFormById).mockResolvedValue(
+          buildFormWithQuiz(quiz, schemaWithCondition) as any
+        );
+        stubGradeUpsert();
+
+        // trigger === 'No' hides `bonus` — stripConditionallyHiddenValues removes it
+        // from input.data before grading ever sees it.
+        const result = await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: { formId: 'form-123', data: { q1: 'Paris', trigger: 'No', bonus: 'sneaky' } } },
+          mockContext
+        );
+
+        // Only q1 (10 pts) counts toward maxScore — bonus (5 pts) never saw the
+        // respondent, so it's excluded from the denominator, not scored wrong.
+        expect(result.grade).toMatchObject({ maxScore: 10, score: 10 });
+        expect(
+          (result.grade as any).questions.some((q: any) => q.fieldId === 'bonus')
+        ).toBe(false);
+      });
+
+      it('lets the submission succeed and saves a NEEDS_REVIEW fallback when grading throws', async () => {
+        const quiz: QuizSettings = {
+          enabled: true,
+          passThresholdPercent: 60,
+          gradeRelease: 'immediate',
+          respondentVisibility: baseVisibility,
+        };
+        vi.mocked(formService.getFormById).mockResolvedValue(buildFormWithQuiz(quiz) as any);
+        // Forces saveGrade to throw for both the primary and the NEEDS_REVIEW
+        // fallback attempt — simulates a grading-path failure end to end.
+        vi.mocked(responseRepository.findUnique).mockRejectedValue(new Error('DB is down'));
+
+        const result = await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: { formId: 'form-123', data: { q1: 'Paris' } } },
+          mockContext
+        );
+
+        expect(responseService.submitResponse).toHaveBeenCalled();
+        expect(result).toMatchObject({ id: mockResponse.id, formId: mockResponse.formId });
+        expect(result).not.toHaveProperty('grade');
+        expect(responseGradeRepository.upsertForResponse).not.toHaveBeenCalled();
       });
     });
   });

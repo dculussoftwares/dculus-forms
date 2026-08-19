@@ -22,8 +22,11 @@ import {
   substituteMentions,
 } from '@dculus/utils';
 import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import type { RespondentGradeView } from '@dculus/types';
 import { stripConditionallyHiddenValues } from '../../lib/conditionalStrip.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
+import { gradeResponse } from '../../services/quiz/gradingEngine.js';
+import { saveGrade, toRespondentView } from '../../services/quiz/gradingService.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/core/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
@@ -273,6 +276,83 @@ export const responsesResolvers = {
       // At this point response is guaranteed non-null — both branches above set it.
       const savedResponse = response!;
 
+      // Native Quiz (D3, epic #289): grade synchronously, here, so the score
+      // can be included in this mutation's payload — emitFormSubmitted below
+      // fires after this resolver returns and structurally cannot do that.
+      // Grades against input.data AFTER stripConditionallyHiddenValues ran
+      // above (~line 209), so a question hidden by conditional logic is
+      // excluded from maxScore rather than scored wrong — two respondents
+      // can legitimately face different denominators.
+      // Additive guarantee: settings.quiz absent/disabled is zero extra work
+      // below — no schema fetch, no grading engine call, no ResponseGrade
+      // write, and `grade` stays undefined so it is omitted from the payload.
+      let grade: RespondentGradeView | undefined;
+      let quizFanout:
+        | { quizScore: number; quizMaxScore: number; quizPercentage: number; quizPassed: boolean }
+        | undefined;
+
+      const quizSettings = form.settings?.quiz;
+      if (quizSettings?.enabled) {
+        try {
+          const liveSchema =
+            (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
+          if (liveSchema) {
+            const deserializedSchema = deserializeFormSchema(liveSchema);
+            const gradeResult = gradeResponse(
+              deserializedSchema,
+              quizSettings,
+              (input.data || {}) as Record<string, unknown>
+            );
+            const savedGrade = await saveGrade({
+              responseId: savedResponse.id,
+              score: gradeResult.score,
+              maxScore: gradeResult.maxScore,
+              percentage: gradeResult.percentage,
+              passed: gradeResult.passed,
+              status: gradeResult.status,
+              autoScore: gradeResult.score,
+              detail: gradeResult.questions,
+            });
+            grade = toRespondentView(savedGrade, quizSettings);
+            quizFanout = {
+              quizScore: savedGrade.score,
+              quizMaxScore: savedGrade.maxScore,
+              quizPercentage: savedGrade.percentage,
+              quizPassed: savedGrade.passed,
+            };
+          }
+        } catch (error) {
+          // D7: losing a response to a grading bug is far worse than an
+          // ungraded one — log, best-effort persist a NEEDS_REVIEW grade, and
+          // let the submission succeed either way.
+          logger.error('Error grading quiz response:', error);
+          try {
+            const fallbackGrade = await saveGrade({
+              responseId: savedResponse.id,
+              score: 0,
+              maxScore: 0,
+              percentage: 0,
+              passed: false,
+              status: 'NEEDS_REVIEW',
+              autoScore: 0,
+              detail: [],
+            });
+            grade = toRespondentView(fallbackGrade, quizSettings);
+            quizFanout = {
+              quizScore: fallbackGrade.score,
+              quizMaxScore: fallbackGrade.maxScore,
+              quizPercentage: fallbackGrade.percentage,
+              quizPassed: fallbackGrade.passed,
+            };
+          } catch (persistError) {
+            logger.error(
+              'Error persisting NEEDS_REVIEW grade after grading failure:',
+              persistError
+            );
+          }
+        }
+      }
+
       // Auto-assign __preview__ system tag when submitted from the builder preview panel
       if (input.isPreview) {
         try {
@@ -362,12 +442,15 @@ export const responsesResolvers = {
         emitFormSubmitted(input.formId, form.organizationId, {
           // input.data is user-submitted field values; spreading it first (and the
           // control fields after) keeps a form field literally named "responseId"/
-          // "isPreview" from spoofing these — isPreview in particular now gates
-          // whether automations fire, so it must stay server-authoritative.
+          // "isPreview"/"quizScore" from spoofing these — isPreview in particular
+          // now gates whether automations fire, so it must stay server-authoritative.
+          // quizFanout (quizScore/quizMaxScore/quizPercentage/quizPassed) is only
+          // present when settings.quiz is enabled and grading actually ran.
           ...input.data,
           responseId: savedResponse.id,
           submittedAt: savedResponse.submittedAt.toISOString(),
           isPreview: Boolean(input.isPreview),
+          ...(quizFanout ?? {}),
         });
       } catch (error) {
         // Log error but don't fail the response submission
@@ -398,6 +481,10 @@ export const responsesResolvers = {
       return {
         ...savedResponse,
         thankYouMessage,
+        // Omitted entirely (not `grade: undefined`) when quiz grading did not
+        // run — keeps the payload byte-identical to before this change for
+        // every non-quiz form (epic #289's additive guarantee).
+        ...(grade !== undefined ? { grade } : {}),
       };
     },
     updateResponse: async (
