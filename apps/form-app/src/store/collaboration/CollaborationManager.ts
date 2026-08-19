@@ -4,11 +4,13 @@ import { getBearerToken } from '../../lib/auth-client';
 import {
   ConditionalRule,
   deserializeFormField,
+  FieldGrading,
   FieldType,
   FormField,
   FormLayout,
   FormPage,
   sanitizeConditions,
+  sanitizeFieldGrading,
 } from '@dculus/types';
 import * as Y from 'yjs';
 import { DEFAULT_LAYOUT } from '../helpers/defaultLayout';
@@ -34,6 +36,47 @@ export type FieldData = {
   maxFiles?: number;
   defaultCountry?: string;
   deleted?: boolean;
+  grading?: FieldGrading;
+};
+
+// Converts a nested Y.Map (e.g. `grading.text`/`grading.numeric`/`grading.set`) into a
+// plain object, leaving primitives untouched. Only used for grading's small,
+// flat sub-option-objects — not a general Y-type deep-unwrap.
+const yMapToPlainObject = (value: any): any => {
+  if (!(value instanceof Y.Map)) return value;
+  const plain: Record<string, any> = {};
+  value.forEach((v, k) => {
+    plain[k] = v;
+  });
+  return plain;
+};
+
+// Reads the `grading` Y.Map (built by createYJSFieldMap) back into a plain
+// FieldGrading object, then re-validates it through sanitizeFieldGrading so
+// downstream code only ever sees well-formed grading — mirrors the same
+// trust-boundary treatment applied to conditions/quiz settings elsewhere.
+// Returns undefined (never {}) when the field has no grading.
+const extractGrading = (fieldMap: Y.Map<any>): FieldGrading | undefined => {
+  const gradingYMap = fieldMap.get('grading');
+  if (!(gradingYMap instanceof Y.Map)) return undefined;
+
+  const plain: Record<string, any> = {};
+  gradingYMap.forEach((value, key) => {
+    if (key === 'acceptedAnswers') {
+      plain[key] = value instanceof Y.Array ? value.toArray() : value;
+    } else if (key === 'optionFeedback') {
+      const arr = value instanceof Y.Array ? value.toArray() : value;
+      plain[key] = Array.isArray(arr)
+        ? arr.map((entry) => yMapToPlainObject(entry))
+        : arr;
+    } else if (key === 'text' || key === 'numeric' || key === 'set') {
+      plain[key] = yMapToPlainObject(value);
+    } else {
+      plain[key] = value;
+    }
+  });
+
+  return sanitizeFieldGrading(plain);
 };
 
 export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
@@ -94,6 +137,7 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     maxFiles: fieldMap.get('maxFiles'),
     defaultCountry: fieldMap.get('defaultCountry') || undefined,
     deleted: fieldMap.get('deleted') || undefined,
+    grading: extractGrading(fieldMap),
   };
 
   if (fieldType === FieldType.RICH_TEXT_FIELD) {

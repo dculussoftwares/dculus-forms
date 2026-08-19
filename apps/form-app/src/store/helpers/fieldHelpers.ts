@@ -23,6 +23,7 @@ import {
   FillableFormFieldValidation,
   TextFieldValidation,
   CheckboxFieldValidation,
+  FieldGrading,
 } from '@dculus/types';
 import { generateRandomString } from '@dculus/utils';
 import { FieldData } from '../collaboration/CollaborationManager';
@@ -95,6 +96,35 @@ export const createFormField = (
   const hint = fieldData.hint || '';
   const placeholder = fieldData.placeholder || '';
 
+  const field = createFormFieldInstance(fieldType, fieldId, fieldData, {
+    label,
+    defaultValue,
+    prefix,
+    hint,
+    placeholder,
+  });
+
+  // `grading` is deliberately not a constructor parameter (see
+  // FillableFormField.grading) — assign after construction instead.
+  if (fieldData.grading && field instanceof FillableFormField) {
+    field.grading = fieldData.grading;
+  }
+
+  return field;
+};
+
+const createFormFieldInstance = (
+  fieldType: FieldType,
+  fieldId: string,
+  fieldData: Partial<FieldData>,
+  { label, defaultValue, prefix, hint, placeholder }: {
+    label: string;
+    defaultValue: string;
+    prefix: string;
+    hint: string;
+    placeholder: string;
+  }
+): FormField => {
   switch (fieldType) {
     case FieldType.TEXT_INPUT_FIELD: {
       const textValidation = new TextFieldValidation(
@@ -286,6 +316,70 @@ export const createFormField = (
 };
 
 /**
+ * Build the `grading` Y.Map for a field, giving `acceptedAnswers` and
+ * `optionFeedback` the same explicit Y.Array treatment as `options` /
+ * `allowedMimeTypes` above, and the mode-specific option objects
+ * (`text`/`numeric`/`set`) their own nested Y.Map — mirrors `validation`.
+ * Only called when `fieldData.grading` is present; callers skip this
+ * entirely otherwise so a non-quiz field's Y.Map has no `grading` key at all.
+ */
+const createGradingYMap = (grading: FieldGrading): Y.Map<any> => {
+  const gradingMap = new Y.Map();
+
+  gradingMap.set('mode', grading.mode);
+  gradingMap.set('pointValue', grading.pointValue);
+
+  const acceptedAnswersArray = new Y.Array();
+  (grading.acceptedAnswers || []).forEach((answer) =>
+    acceptedAnswersArray.push([answer])
+  );
+  gradingMap.set('acceptedAnswers', acceptedAnswersArray);
+
+  if (grading.text) {
+    const textMap = new Y.Map();
+    Object.entries(grading.text).forEach(([key, value]) => {
+      if (value !== undefined) textMap.set(key, value);
+    });
+    gradingMap.set('text', textMap);
+  }
+  if (grading.numeric) {
+    const numericMap = new Y.Map();
+    Object.entries(grading.numeric).forEach(([key, value]) => {
+      if (value !== undefined) numericMap.set(key, value);
+    });
+    gradingMap.set('numeric', numericMap);
+  }
+  if (grading.set) {
+    const setMap = new Y.Map();
+    Object.entries(grading.set).forEach(([key, value]) => {
+      if (value !== undefined) setMap.set(key, value);
+    });
+    gradingMap.set('set', setMap);
+  }
+
+  if (grading.whenCorrect !== undefined) gradingMap.set('whenCorrect', grading.whenCorrect);
+  if (grading.whenIncorrect !== undefined) gradingMap.set('whenIncorrect', grading.whenIncorrect);
+  if (grading.general !== undefined) gradingMap.set('general', grading.general);
+
+  if (grading.optionFeedback) {
+    const optionFeedbackArray = new Y.Array();
+    grading.optionFeedback.forEach((entry) => {
+      const entryMap = new Y.Map();
+      entryMap.set('option', entry.option);
+      entryMap.set('feedback', entry.feedback);
+      optionFeedbackArray.push([entryMap]);
+    });
+    gradingMap.set('optionFeedback', optionFeedbackArray);
+  }
+
+  if (grading.shuffleOptions !== undefined) {
+    gradingMap.set('shuffleOptions', grading.shuffleOptions);
+  }
+
+  return gradingMap;
+};
+
+/**
  * Create a YJS Map from field data
  */
 export const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
@@ -302,6 +396,8 @@ export const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
       const mimeArray = new Y.Array();
       value.forEach((mime: string) => mimeArray.push([mime]));
       fieldMap.set('allowedMimeTypes', mimeArray);
+    } else if (key === 'grading' && value) {
+      fieldMap.set('grading', createGradingYMap(value as FieldGrading));
     } else if (value !== undefined) {
       fieldMap.set(key, value);
     }
@@ -388,6 +484,7 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     allowedMimeTypes: (fillableField as FileUploadField).allowedMimeTypes,
     maxFileSizeMb: (fillableField as FileUploadField).maxFileSizeMb,
     maxFiles: (fillableField as FileUploadField).maxFiles,
+    grading: fillableField.grading,
     defaultCountry: (fillableField as PhoneNumberField).defaultCountry,
   };
 
