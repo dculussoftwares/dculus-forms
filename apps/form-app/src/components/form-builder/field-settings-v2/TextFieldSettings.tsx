@@ -5,6 +5,7 @@ import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
 import { Label, Checkbox } from '@dculus/ui';
 import { useFieldEditor } from '@/hooks';
+import { useQuizMode } from '../../../contexts/QuizModeContext';
 import {
   ValidationSummary,
   FieldSettingsHeader,
@@ -12,6 +13,7 @@ import {
   FormInputField,
   useFieldSettingsConstants
 } from '../field-settings';
+import { GradingSettings } from './GradingSettings';
 
 interface TextFieldSettingsProps {
   field: TextInputField | TextAreaField | EmailField | null;
@@ -34,6 +36,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
 }) => {
   const constants = useFieldSettingsConstants();
   const isEditable = isConnected && !isReadOnly;
+  const { enabled: isQuizModeEnabled } = useQuizMode();
   const {
     form,
     isSaving,
@@ -48,7 +51,7 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
     onCancel: () => console.log('Text field edit cancelled'),
   });
 
-  const { control, formState: { isDirty } } = form;
+  const { control, watch, setValue, formState: { isDirty } } = form;
   const errors = formErrors as FieldErrors<TextInputFieldFormData>;
 
   // Track field changes (auto-save disabled)
@@ -220,6 +223,19 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
               </>
             )}
           </div>
+
+          {/* Answer key — only when quiz mode is on for this form. Absent/disabled
+              quiz settings must render byte-for-byte nothing here (additive guarantee,
+              GitHub epic #289). */}
+          {isQuizModeEnabled && (
+            <GradingSettings
+              fieldType={field.type}
+              watch={watch}
+              setValue={setValue}
+              errors={formErrors}
+              isEditable={isEditable}
+            />
+          )}
 
           {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
           <div className="pb-4"></div>

@@ -12,6 +12,7 @@ import {
   RichTextFormField,
   TextFieldValidation,
   CheckboxFieldValidation,
+  FieldGrading,
 } from '@dculus/types';
 import {
   BaseFieldData,
@@ -148,21 +149,34 @@ export function extractRichTextData(field: FormField): RichTextFieldData {
 /**
  * Field type specific data extractors
  */
+/**
+ * Extract the answer key for a gradable field. Absent on non-quiz fields (and on
+ * field types field-settings-v2 never composes GradingSettings into) — mirrors the
+ * additive guarantee: reading `undefined` through means nothing new gets written
+ * back on save (see useFieldEditor's updateField skip-if-undefined behavior).
+ */
+function extractGradingData(field: FormField): { grading?: FieldGrading } {
+  return { grading: (field as FillableFormField).grading };
+}
+
 const FIELD_DATA_EXTRACTORS: Partial<
   Record<FieldType, (field: FormField) => Record<string, any>>
 > = {
   [FieldType.TEXT_INPUT_FIELD]: (field: FormField) => ({
     ...extractBaseFieldData(field),
     ...extractValidationData(field),
+    ...extractGradingData(field),
   }),
 
   [FieldType.TEXT_AREA_FIELD]: (field: FormField) => ({
     ...extractBaseFieldData(field),
     ...extractValidationData(field),
+    ...extractGradingData(field),
   }),
 
   [FieldType.EMAIL_FIELD]: (field: FormField) => ({
     ...extractBaseFieldData(field),
+    ...extractGradingData(field),
   }),
 
   [FieldType.NUMBER_FIELD]: (field: FormField) => {
@@ -172,6 +186,7 @@ const FIELD_DATA_EXTRACTORS: Partial<
       ...restBaseData,
       required,
       ...extractNumberRangeData(field),
+      ...extractGradingData(field),
       validation: {
         required: required,
       },
@@ -185,6 +200,7 @@ const FIELD_DATA_EXTRACTORS: Partial<
       ...restBaseData,
       required,
       ...extractOptionData(field),
+      ...extractGradingData(field),
       validation: {
         required: required,
       },
@@ -198,6 +214,7 @@ const FIELD_DATA_EXTRACTORS: Partial<
       ...restBaseData,
       required,
       ...extractOptionData(field),
+      ...extractGradingData(field),
       validation: {
         required: required,
       },
@@ -212,6 +229,7 @@ const FIELD_DATA_EXTRACTORS: Partial<
       ...restBaseData,
       required,
       ...extractOptionData(field),
+      ...extractGradingData(field),
       validation: {
         ...checkboxValidation.validation,
         required: required,
@@ -227,6 +245,7 @@ const FIELD_DATA_EXTRACTORS: Partial<
       ...restBaseData,
       required,
       ...extractDateRangeData(field),
+      ...extractGradingData(field),
       validation: {
         required: required,
       },

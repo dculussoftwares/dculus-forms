@@ -13,6 +13,7 @@ import {
   Checkbox
 } from '@dculus/ui';
 import { useFieldEditor } from '../../../hooks';
+import { useQuizMode } from '../../../contexts/QuizModeContext';
 import {
   ValidationSummary,
   FieldSettingsHeader,
@@ -21,6 +22,7 @@ import {
   OptionsSettings,
   useFieldSettingsConstants
 } from '../field-settings';
+import { GradingSettings } from './GradingSettings';
 
 interface SelectionFieldSettingsProps {
   field: SelectField | RadioField | CheckboxField | null;
@@ -43,6 +45,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
 }) => {
   const constants = useFieldSettingsConstants();
   const isEditable = isConnected && !isReadOnly;
+  const { enabled: isQuizModeEnabled } = useQuizMode();
   const {
     form,
     isSaving,
@@ -390,6 +393,20 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 </Label>
               </div>
             </div>
+
+            {/* Answer key — only when quiz mode is on for this form. Absent/disabled
+                quiz settings must render byte-for-byte nothing here (additive guarantee,
+                GitHub epic #289). */}
+            {isQuizModeEnabled && (
+              <GradingSettings
+                fieldType={field.type}
+                options={options}
+                watch={watch}
+                setValue={setValue}
+                errors={formErrors}
+                isEditable={isEditable}
+              />
+            )}
 
             {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
             <div className="pb-4"></div>

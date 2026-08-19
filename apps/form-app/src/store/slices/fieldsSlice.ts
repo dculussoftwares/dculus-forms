@@ -19,6 +19,7 @@ import { getOrCreatePagesArray } from '../helpers/yjsHelpers';
 import {
   createFormField,
   createYJSFieldMap,
+  createGradingYMap,
   serializeFieldToYMap,
   generateUniqueId,
 } from '../helpers/fieldHelpers';
@@ -245,6 +246,15 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
           const mimeArray = new Y.Array();
           value.forEach((mime: string) => mimeArray.push([mime]));
           fieldMap.set('allowedMimeTypes', mimeArray);
+        } else if (key === 'grading' && value) {
+          // `grading` is a nested shape (acceptedAnswers/text/numeric/set are their own
+          // Y.Array/Y.Map, same as `createYJSFieldMap` builds for a new field) — a plain
+          // `fieldMap.set('grading', value)` would store a bare JS object instead, which
+          // CollaborationManager's `extractGrading` (expects a Y.Map) then can't read back,
+          // silently losing the answer key on the next reload despite persisting fine.
+          // `value` undefined (untouched, non-quiz field) falls through to the generic
+          // `value !== undefined` branch below and skips entirely — no write at all.
+          fieldMap.set('grading', createGradingYMap(value as any));
         } else if (
           key === 'defaultValue' &&
           Array.isArray(value) &&

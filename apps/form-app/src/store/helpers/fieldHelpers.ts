@@ -323,7 +323,7 @@ const createFormFieldInstance = (
  * Only called when `fieldData.grading` is present; callers skip this
  * entirely otherwise so a non-quiz field's Y.Map has no `grading` key at all.
  */
-const createGradingYMap = (grading: FieldGrading): Y.Map<any> => {
+export const createGradingYMap = (grading: FieldGrading): Y.Map<any> => {
   const gradingMap = new Y.Map();
 
   gradingMap.set('mode', grading.mode);

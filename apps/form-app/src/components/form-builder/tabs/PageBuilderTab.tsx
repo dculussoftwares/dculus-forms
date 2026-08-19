@@ -31,6 +31,9 @@ import { FieldCard } from './PageBuilderFieldCard';
 import { FormArea } from './PageBuilderFormArea';
 import { RightSidebar } from './PageBuilderSidebar';
 import { CanvasToolbar, type CanvasDevice } from '../CanvasToolbar';
+import { QuizSummaryStrip } from '../QuizSummaryStrip';
+import { useQuizMode } from '../../../contexts/QuizModeContext';
+import { computeQuizSummary } from '../../../utils/quizGrading';
 import { DesignDrawer } from '../design/DesignDrawer';
 import { MOBILE_CANVAS_CSS } from '../shared/mobileCanvasStyles';
 
@@ -99,6 +102,16 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
   } = useFormBuilderStore();
 
   const cdnEndpoint = getCdnEndpoint();
+
+  // Quiz summary strip — only computed/rendered when quiz mode is on for this form
+  // (additive guarantee, GitHub epic #289). With no QuizModeProvider or
+  // `settings.quiz?.enabled` false, `isQuizModeEnabled` is false and neither the
+  // summary computation nor the strip render, same as before Story 08 shipped.
+  const { enabled: isQuizModeEnabled } = useQuizMode();
+  const quizSummary = useMemo(
+    () => (isQuizModeEnabled ? computeQuizSummary(pages || []) : null),
+    [isQuizModeEnabled, pages]
+  );
 
   const handleLayoutUpdate = (updates: Partial<FormLayout>) => {
     if (canEditLayout) updateLayout(updates);
@@ -416,6 +429,8 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
             onDeviceChange={setDevice}
             onOpenPreview={() => onOpenPreview?.()}
           />
+
+          {quizSummary && <QuizSummaryStrip summary={quizSummary} />}
 
           <div
             className={cn(
