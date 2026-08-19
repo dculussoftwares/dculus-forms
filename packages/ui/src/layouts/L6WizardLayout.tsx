@@ -20,6 +20,8 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
   thankYouMessage,
   onSubmitAnother,
   responseCopyNotice,
+  gradeResult,
+  quizResultLabels,
 }) => {
   // L6 has no intro/pages toggle — content and pages stack together in one
   // continuous view. The thank-you screen is the only alternate state it needs.
@@ -145,6 +147,8 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
                   mentionFields={extractMentionFields(pages)}
                   onSubmitAnother={onSubmitAnother}
                   responseCopyNotice={responseCopyNotice}
+                  gradeResult={gradeResult}
+                  quizResultLabels={quizResultLabels}
                 />
               </div>
             ) : (

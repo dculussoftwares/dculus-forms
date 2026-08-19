@@ -20,6 +20,8 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
   thankYouMessage,
   onSubmitAnother,
   responseCopyNotice,
+  gradeResult,
+  quizResultLabels,
 }) => {
   // L4 Minimal layout styles
   const getLayoutStyles = () => ({
@@ -356,6 +358,8 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
                   mentionFields={extractMentionFields(pages)}
                   onSubmitAnother={onSubmitAnother}
                   responseCopyNotice={responseCopyNotice}
+                  gradeResult={gradeResult}
+                  quizResultLabels={quizResultLabels}
                 />
               </div>
             </div>

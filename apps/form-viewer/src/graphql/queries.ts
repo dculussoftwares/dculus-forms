@@ -54,6 +54,24 @@ export const SUBMIT_RESPONSE: TypedDocumentNode<any, any> = gql`
       data
       submittedAt
       thankYouMessage
+      grade {
+        released
+        score
+        maxScore
+        percentage
+        passed
+        message
+        questions {
+          fieldId
+          label
+          correct
+          pointsAwarded
+          pointValue
+          yourAnswer
+          correctAnswer
+          feedback
+        }
+      }
     }
   }
 `;

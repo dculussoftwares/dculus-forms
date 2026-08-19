@@ -29,6 +29,8 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
   thankYouMessage,
   onSubmitAnother,
   responseCopyNotice,
+  gradeResult,
+  quizResultLabels,
 }) => {
   const commonProps: LayoutProps = {
     pages,
@@ -42,6 +44,8 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
     thankYouMessage,
     onSubmitAnother,
     responseCopyNotice,
+    gradeResult,
+    quizResultLabels,
   };
 
   const renderLayout = () => {

@@ -1,5 +1,6 @@
-import { FormPage, FormLayout } from '@dculus/types';
+import { FormPage, FormLayout, RespondentGradeView } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
+import type { QuizResultScreenLabels } from './renderers/QuizResultScreen';
 
 export type LayoutScreen = 'intro' | 'pages' | 'thankYou';
 
@@ -20,4 +21,13 @@ export interface LayoutProps {
   onSubmitAnother?: () => void;
   /** e.g. "We've sent a copy of your responses to you@example.com." shown under the thank-you message. */
   responseCopyNotice?: string;
+  /**
+   * Present only when the server graded this submission synchronously
+   * (epic #289, D3) — renders `QuizResultScreen` in place of the normal
+   * thank-you content. Absent for every non-quiz form/response, so existing
+   * thank-you screens are byte-for-byte unaffected.
+   */
+  gradeResult?: RespondentGradeView;
+  /** Override the default English `QuizResultScreen` copy (e.g. a translated app). */
+  quizResultLabels?: Partial<QuizResultScreenLabels>;
 }

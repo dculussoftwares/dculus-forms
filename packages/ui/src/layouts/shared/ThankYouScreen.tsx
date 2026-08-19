@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import DOMPurify from 'dompurify';
+import type { RespondentGradeView } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../../rich-text-editor/LexicalRichTextEditor';
 import type { MentionFieldOption } from '../../utils/mentionFields';
+import { QuizResultScreen, type QuizResultScreenLabels } from '../../renderers/QuizResultScreen';
 
 export interface ThankYouScreenProps {
   /** Resolved (mention-substituted) message when available, else the raw layout.thankYouContent template. */
@@ -14,6 +16,14 @@ export interface ThankYouScreenProps {
   onSubmitAnother?: () => void;
   /** e.g. "We've sent a copy of your responses to you@example.com." */
   responseCopyNotice?: string;
+  /**
+   * Present only when the server graded this submission synchronously
+   * (epic #289, D3). When set, `QuizResultScreen` renders in place of the
+   * normal thank-you message — absent for every non-quiz response, leaving
+   * this screen byte-for-byte unchanged.
+   */
+  gradeResult?: RespondentGradeView;
+  quizResultLabels?: Partial<QuizResultScreenLabels>;
 }
 
 const SuccessIcon: React.FC = () => (
@@ -37,6 +47,8 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
   mentionFields = [],
   onSubmitAnother,
   responseCopyNotice,
+  gradeResult,
+  quizResultLabels,
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempContent, setTempContent] = useState(content);
@@ -71,58 +83,64 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
 
   return (
     <div className="text-center p-4 sm:p-8 max-w-2xl mx-auto" data-testid="thank-you-display">
-      <SuccessIcon />
+      {gradeResult ? (
+        <QuizResultScreen gradeResult={gradeResult} labels={quizResultLabels} className="mb-6" />
+      ) : (
+        <>
+          <SuccessIcon />
 
-      {isBuilder && (
-        <div className="flex justify-between items-center mb-4 max-w-md mx-auto">
-          <div className="flex gap-2">
-            {isEditMode && hasUnsavedChanges && (
-              <>
-                <button
-                  onClick={handleSave}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
-                >
-                  Cancel
-                </button>
-              </>
+          {isBuilder && (
+            <div className="flex justify-between items-center mb-4 max-w-md mx-auto">
+              <div className="flex gap-2">
+                {isEditMode && hasUnsavedChanges && (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+              <button
+                onClick={() => setIsEditMode(!isEditMode)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                {isEditMode ? 'View Mode' : 'Edit Mode'}
+              </button>
+            </div>
+          )}
+
+          <div className="mb-6 prose prose-lg max-w-none mx-auto" data-testid="thank-you-message">
+            {isBuilder ? (
+              <LexicalRichTextEditor
+                key={`thank-you-editor-${editorKey}`}
+                value={tempContent}
+                onChange={handleContentChange}
+                placeholder="Enter your thank-you message..."
+                className="border-none bg-transparent"
+                editable={isEditMode}
+                mentionFields={mentionFields}
+              />
+            ) : (
+              <LexicalRichTextEditor
+                value={DOMPurify.sanitize(content)}
+                editable={false}
+                onChange={() => {}}
+                className="border-none shadow-none"
+                placeholder=""
+              />
             )}
           </div>
-          <button
-            onClick={() => setIsEditMode(!isEditMode)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-          >
-            {isEditMode ? 'View Mode' : 'Edit Mode'}
-          </button>
-        </div>
+        </>
       )}
-
-      <div className="mb-6 prose prose-lg max-w-none mx-auto" data-testid="thank-you-message">
-        {isBuilder ? (
-          <LexicalRichTextEditor
-            key={`thank-you-editor-${editorKey}`}
-            value={tempContent}
-            onChange={handleContentChange}
-            placeholder="Enter your thank-you message..."
-            className="border-none bg-transparent"
-            editable={isEditMode}
-            mentionFields={mentionFields}
-          />
-        ) : (
-          <LexicalRichTextEditor
-            value={DOMPurify.sanitize(content)}
-            editable={false}
-            onChange={() => {}}
-            className="border-none shadow-none"
-            placeholder=""
-          />
-        )}
-      </div>
 
       {responseCopyNotice && (
         <p className="text-sm text-muted-foreground mb-4" data-testid="thank-you-copy-notice">
