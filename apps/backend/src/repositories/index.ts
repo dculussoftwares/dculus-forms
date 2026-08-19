@@ -6,6 +6,7 @@ export * from './subscriptionRepository.js';
 export * from './organizationRepository.js';
 export * from './memberRepository.js';
 export * from './responseRepository.js';
+export * from './responseGradeRepository.js';
 export * from './formTemplateRepository.js';
 export * from './formMetadataRepository.js';
 export * from './collaborativeDocumentRepository.js';

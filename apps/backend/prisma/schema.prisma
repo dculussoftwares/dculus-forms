@@ -195,12 +195,42 @@ model Response {
   formSubmissionAnalytics FormSubmissionAnalytics?
   editHistory             ResponseEditHistory[]
   tagAssignments          ResponseTagAssignment[]
+  grade                   ResponseGrade?
 
   @@index([formId])
   @@index([formId, submittedAt])
   @@index([deletedAt])
   @@index([respondentUserId])
   @@map("response")
+}
+
+// Native Quiz (D4, epic #289): grades live in a dedicated 1:1 table rather
+// than Response.metadata so scores can be indexed, sorted and aggregated in
+// SQL. Mirrors the FormSubmissionAnalytics 1:1 precedent.
+model ResponseGrade {
+  id            String    @id @default(cuid())
+  responseId    String    @unique
+  formId        String // denormalized: cohort aggregates without joining through response
+  score         Float
+  maxScore      Float
+  percentage    Float // 0..100, persisted so it can be indexed and sorted directly
+  passed        Boolean
+  status        String // AUTO_GRADED | NEEDS_REVIEW | REVIEWED | RELEASED
+  autoScore     Float // pre-override machine score, kept for audit
+  gradedAt      DateTime  @default(now())
+  gradedById    String? // null for machine grading
+  releasedAt    DateTime?
+  schemaVersion Int       @default(1)
+  detail        Json // QuestionGradeResult[]
+  attemptNumber Int       @default(1)
+  integrity     Json?
+
+  response Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([formId, percentage])
+  @@index([formId, status])
+  @@map("response_grade")
 }
 
 model ResponseTag {
