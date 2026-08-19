@@ -11,6 +11,7 @@ import {
   FileUploadField,
   PhoneNumberField,
   RichTextFormField,
+  FillableFormField,
   TextFieldValidation,
   CheckboxFieldValidation,
   FillableFormFieldValidation,
@@ -257,8 +258,9 @@ describe('quiz.ts — round-trip: grading through serializeFormSchema/deserializ
         JSON.parse(JSON.stringify(serialized))
       );
 
-      const deserializedField = roundTripped.pages[0].fields[0] as any;
-      expect(deserializedField.grading).toEqual(grading);
+      const deserializedField = roundTripped.pages[0].fields[0];
+      expect(deserializedField).toBeInstanceOf(FillableFormField);
+      expect((deserializedField as FillableFormField).grading).toEqual(grading);
     });
   }
 });
@@ -274,10 +276,12 @@ describe('quiz.ts — absence of grading', () => {
       '',
       new TextFieldValidation(false)
     );
-    const deserialized = deserializeFormField(serializeFormField(field)) as any;
-    expect(deserialized.grading).toBeUndefined();
-    expect(deserialized.grading).not.toEqual({});
-    expect(deserialized.grading).not.toBeNull();
+    const deserialized = deserializeFormField(serializeFormField(field));
+    expect(deserialized).toBeInstanceOf(FillableFormField);
+    const grading = (deserialized as FillableFormField).grading;
+    expect(grading).toBeUndefined();
+    expect(grading).not.toEqual({});
+    expect(grading).not.toBeNull();
   });
 
   it('RICH_TEXT_FIELD never receives grading, even if the input JSON contains one', () => {
@@ -335,9 +339,9 @@ describe('quiz.ts — sanitizeFieldGrading', () => {
       label: 'Label',
       grading: { mode: 'bogus', pointValue: 'not-a-number' },
     };
-    const deserialized = deserializeFormField(data) as any;
-    expect(deserialized).not.toBeNull();
-    expect(deserialized.grading).toBeUndefined();
+    const deserialized = deserializeFormField(data);
+    expect(deserialized).toBeInstanceOf(FillableFormField);
+    expect((deserialized as FillableFormField).grading).toBeUndefined();
   });
 });
 
@@ -357,6 +361,43 @@ describe('quiz.ts — sanitizeQuizSettings', () => {
   it('drops non-object input', () => {
     expect(sanitizeQuizSettings('quiz')).toBeUndefined();
     expect(sanitizeQuizSettings(null)).toBeUndefined();
+  });
+
+  it('drops passThresholdPercent outside 0..100', () => {
+    expect(
+      sanitizeQuizSettings({ ...DEFAULT_QUIZ_SETTINGS, passThresholdPercent: -1 })
+    ).toBeUndefined();
+    expect(
+      sanitizeQuizSettings({ ...DEFAULT_QUIZ_SETTINGS, passThresholdPercent: 101 })
+    ).toBeUndefined();
+  });
+
+  it('drops gradeRelease: "scheduled" without a releaseAt timestamp', () => {
+    expect(
+      sanitizeQuizSettings({
+        ...DEFAULT_QUIZ_SETTINGS,
+        gradeRelease: 'scheduled',
+      })
+    ).toBeUndefined();
+  });
+
+  it('drops a non-ISO-8601 releaseAt', () => {
+    expect(
+      sanitizeQuizSettings({
+        ...DEFAULT_QUIZ_SETTINGS,
+        gradeRelease: 'scheduled',
+        releaseAt: 'not-a-date',
+      })
+    ).toBeUndefined();
+  });
+
+  it('accepts gradeRelease: "scheduled" with a valid ISO 8601 releaseAt', () => {
+    const settings = {
+      ...DEFAULT_QUIZ_SETTINGS,
+      gradeRelease: 'scheduled' as const,
+      releaseAt: '2026-09-01T00:00:00Z',
+    };
+    expect(sanitizeQuizSettings(settings)).toEqual(settings);
   });
 });
 

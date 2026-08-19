@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { FieldType } from './index.js';
+import type { FieldType } from './index.js';
 
 export type GradingMode = 'exact' | 'set' | 'text' | 'numeric' | 'manual';
 
@@ -200,15 +200,22 @@ const quizRespondentVisibilitySchema = z.object({
   passFailBadge: z.boolean(),
 });
 
-export const quizSettingsSchema = z.object({
-  enabled: z.boolean(),
-  passThresholdPercent: z.number().optional(),
-  gradeRelease: z.enum(['immediate', 'afterReview', 'scheduled', 'never']),
-  releaseAt: z.string().optional(),
-  respondentVisibility: quizRespondentVisibilitySchema,
-  resultMessagePass: z.string().optional(),
-  resultMessageFail: z.string().optional(),
-});
+export const quizSettingsSchema = z
+  .object({
+    enabled: z.boolean(),
+    passThresholdPercent: z.number().min(0).max(100).optional(),
+    gradeRelease: z.enum(['immediate', 'afterReview', 'scheduled', 'never']),
+    releaseAt: z.iso.datetime({ offset: true }).optional(),
+    respondentVisibility: quizRespondentVisibilitySchema,
+    resultMessagePass: z.string().optional(),
+    resultMessageFail: z.string().optional(),
+  })
+  // "scheduled" release without a timestamp is meaningless — never let it
+  // silently drop into "release whenever nobody looks" behavior downstream.
+  .refine(
+    (settings) => settings.gradeRelease !== 'scheduled' || !!settings.releaseAt,
+    { message: 'releaseAt is required when gradeRelease is "scheduled"', path: ['releaseAt'] }
+  );
 
 /**
  * Validates untrusted persisted data into a clean FieldGrading. Invalid
