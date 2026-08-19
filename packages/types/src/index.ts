@@ -39,6 +39,7 @@
  */
 
 import { sanitizeConditions, type ConditionalRule } from './conditions.js';
+import { sanitizeFieldGrading, type FieldGrading, type QuizSettings } from './quiz.js';
 
 // Form Settings types
 export interface MaxResponsesSettings {
@@ -87,6 +88,9 @@ export interface FormSettings {
   // (Google/OTP) purely to capture a verified email, without restricting
   // who may respond (no domain allowlist applies to this flag alone).
   collectRespondentEmail?: boolean;
+  // Absent or enabled: false = byte-for-byte identical to a non-quiz form
+  // (see docs/native-quiz-strategy.md and GitHub issue #289's additive guarantee).
+  quiz?: QuizSettings;
 }
 
 // Form related types
@@ -282,6 +286,11 @@ export class FillableFormField extends FormField {
   hint: string;
   placeholder: string;
   validation: FillableFormFieldValidation;
+  // Optional quiz answer key, sibling to `validation`. Absent = not a quiz
+  // field. Deliberately NOT a constructor parameter — every existing
+  // `new XField(...)` call site across the monorepo must keep compiling
+  // unchanged; assign after construction instead (see deserializeFormField).
+  grading?: FieldGrading;
 
   constructor(
     id: string,
@@ -680,9 +689,18 @@ export const deserializeFormField = (data: any): FormField | null => {
     return new FillableFormFieldValidation(required);
   };
 
+  // Assigns the sanitized answer key after construction (never a constructor
+  // param — see FillableFormField.grading) so every `new XField(...)` call
+  // site across the monorepo keeps compiling unchanged.
+  const withGrading = <T extends FillableFormField>(field: T): T => {
+    const grading = sanitizeFieldGrading(data.grading);
+    if (grading) field.grading = grading;
+    return field;
+  };
+
   switch (data.type || data.__type) {
     case FieldType.TEXT_INPUT_FIELD:
-      return new TextInputField(
+      return withGrading(new TextInputField(
         data.id,
         data.label || '',
         data.defaultValue || '',
@@ -690,9 +708,9 @@ export const deserializeFormField = (data: any): FormField | null => {
         data.hint || '',
         data.placeholder || '',
         getValidation(data, FieldType.TEXT_INPUT_FIELD) as TextFieldValidation
-      );
+      ));
     case FieldType.TEXT_AREA_FIELD:
-      return new TextAreaField(
+      return withGrading(new TextAreaField(
         data.id,
         data.label || '',
         data.defaultValue || '',
@@ -700,9 +718,9 @@ export const deserializeFormField = (data: any): FormField | null => {
         data.hint || '',
         data.placeholder || '',
         getValidation(data, FieldType.TEXT_AREA_FIELD) as TextFieldValidation
-      );
+      ));
     case FieldType.EMAIL_FIELD:
-      return new EmailField(
+      return withGrading(new EmailField(
         data.id,
         data.label || '',
         data.defaultValue || '',
@@ -713,9 +731,9 @@ export const deserializeFormField = (data: any): FormField | null => {
           data,
           FieldType.EMAIL_FIELD
         ) as FillableFormFieldValidation
-      );
+      ));
     case FieldType.NUMBER_FIELD:
-      return new NumberField(
+      return withGrading(new NumberField(
         data.id,
         data.label || '',
         data.defaultValue || '',
@@ -728,9 +746,9 @@ export const deserializeFormField = (data: any): FormField | null => {
         ) as FillableFormFieldValidation,
         data.min,
         data.max
-      );
+      ));
     case FieldType.SELECT_FIELD:
-      return new SelectField(
+      return withGrading(new SelectField(
         data.id,
         data.label || '',
         data.defaultValue || '',
@@ -741,9 +759,9 @@ export const deserializeFormField = (data: any): FormField | null => {
           FieldType.SELECT_FIELD
         ) as FillableFormFieldValidation,
         data.options || []
-      );
+      ));
     case FieldType.RADIO_FIELD:
-      return new RadioField(
+      return withGrading(new RadioField(
         data.id,
         data.label || '',
         data.defaultValue || '',
@@ -754,9 +772,9 @@ export const deserializeFormField = (data: any): FormField | null => {
           FieldType.RADIO_FIELD
         ) as FillableFormFieldValidation,
         data.options || []
-      );
+      ));
     case FieldType.CHECKBOX_FIELD:
-      return new CheckboxField(
+      return withGrading(new CheckboxField(
         data.id,
         data.label || '',
         data.defaultValues || data.defaultValue || [], // Support both new and legacy formats
@@ -768,9 +786,9 @@ export const deserializeFormField = (data: any): FormField | null => {
           FieldType.CHECKBOX_FIELD
         ) as CheckboxFieldValidation,
         data.options || []
-      );
+      ));
     case FieldType.DATE_FIELD:
-      return new DateField(
+      return withGrading(new DateField(
         data.id,
         data.label || '',
         data.defaultValue || '',
@@ -783,9 +801,9 @@ export const deserializeFormField = (data: any): FormField | null => {
         ) as FillableFormFieldValidation,
         data.minDate,
         data.maxDate
-      );
+      ));
     case FieldType.FILE_UPLOAD_FIELD:
-      return new FileUploadField(
+      return withGrading(new FileUploadField(
         data.id,
         data.label || '',
         data.prefix || '',
@@ -797,9 +815,9 @@ export const deserializeFormField = (data: any): FormField | null => {
         data.allowedMimeTypes,
         data.maxFileSizeMb,
         data.maxFiles
-      );
+      ));
     case FieldType.PHONE_NUMBER_FIELD:
-      return new PhoneNumberField(
+      return withGrading(new PhoneNumberField(
         data.id,
         data.label || '',
         data.defaultValue || '',
@@ -811,7 +829,7 @@ export const deserializeFormField = (data: any): FormField | null => {
           FieldType.PHONE_NUMBER_FIELD
         ) as FillableFormFieldValidation,
         data.defaultCountry
-      );
+      ));
     case FieldType.RICH_TEXT_FIELD: {
       const richTextContent = data.content || '';
       return new RichTextFormField(data.id, richTextContent);
@@ -1019,6 +1037,9 @@ export interface PaginatedResponse<T> {
 
 // Re-export conditional logic types and evaluator
 export * from './conditions.js';
+
+// Re-export native quiz types, sanitizers and shared defaults
+export * from './quiz.js';
 
 // Re-export validation schemas and types
 export * from './validation.js';
