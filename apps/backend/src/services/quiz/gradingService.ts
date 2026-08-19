@@ -15,12 +15,22 @@ export type GradeStatus = 'AUTO_GRADED' | 'NEEDS_REVIEW' | 'REVIEWED' | 'RELEASE
 
 const gradeStatusSchema = z.enum(['AUTO_GRADED', 'NEEDS_REVIEW', 'REVIEWED', 'RELEASED']);
 
+// `submittedValue` is `unknown` at the type level (packages/types/src/quiz.ts),
+// but it's persisted into a Prisma `Json` column — a Map would silently
+// serialize to `{}` and a BigInt would throw, so it's validated as JSON here
+// rather than trusted as-is. Missing/`undefined` is normalized to `null`
+// (an unanswered question is valid domain data, not a malformed payload).
+const jsonSubmittedValueSchema = z.preprocess(
+  (value) => (value === undefined ? null : value),
+  z.json()
+);
+
 const questionGradeResultSchema = z.object({
   fieldId: z.string().min(1),
   fieldLabel: z.string(),
   fieldType: z.string(),
   mode: z.enum(['exact', 'set', 'text', 'numeric', 'manual']),
-  submittedValue: z.unknown(),
+  submittedValue: jsonSubmittedValueSchema,
   acceptedAnswers: z.array(z.string()),
   correct: z.boolean().nullable(),
   pointsAwarded: z.number(),
@@ -50,7 +60,10 @@ const saveGradeInputSchema = z
     releasedAt: z.date().nullable().optional(),
     schemaVersion: z.number().int().positive().optional(),
     attemptNumber: z.number().int().positive().optional(),
-    integrity: z.unknown().optional(),
+    // Same JSON-safety concern as submittedValue above, but integrity is
+    // genuinely optional (no value = not tracked), so undefined stays absent
+    // rather than being coerced to null.
+    integrity: z.json().nullable().optional(),
   })
   .refine((data) => data.score <= data.maxScore, {
     message: 'score cannot exceed maxScore',

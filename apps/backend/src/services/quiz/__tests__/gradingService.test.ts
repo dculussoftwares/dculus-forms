@@ -187,6 +187,25 @@ describe('gradingService', () => {
           detail: [question],
         })
       ).rejects.toThrow();
+
+      expect(responseRepository.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('rejects autoScore greater than maxScore', async () => {
+      await expect(
+        saveGrade({
+          responseId: 'response-1',
+          score: 8,
+          maxScore: 10,
+          percentage: 80,
+          passed: true,
+          status: 'AUTO_GRADED',
+          autoScore: 12,
+          detail: [question],
+        })
+      ).rejects.toThrow();
+
+      expect(responseRepository.findUnique).not.toHaveBeenCalled();
     });
 
     it('rejects a malformed detail entry', async () => {
@@ -202,6 +221,54 @@ describe('gradingService', () => {
           detail: [{ fieldId: 'field-1' } as unknown as QuestionGradeResult],
         })
       ).rejects.toThrow();
+    });
+
+    it('rejects a submittedValue that is not JSON-safe (e.g. a Map)', async () => {
+      await expect(
+        saveGrade({
+          responseId: 'response-1',
+          score: 8,
+          maxScore: 10,
+          percentage: 80,
+          passed: true,
+          status: 'AUTO_GRADED',
+          autoScore: 8,
+          detail: [
+            {
+              ...question,
+              submittedValue: new Map([['answer', 4]]) as unknown,
+            },
+          ],
+        })
+      ).rejects.toThrow();
+    });
+
+    it('normalizes an absent submittedValue to null rather than persisting undefined', async () => {
+      vi.mocked(responseRepository.findUnique).mockResolvedValue({ formId: 'form-1' } as any);
+      vi.mocked(responseGradeRepository.upsertForResponse).mockResolvedValue(
+        makeGrade() as any
+      );
+
+      const { submittedValue, ...questionWithoutAnswer } = question;
+      void submittedValue; // intentionally omitted from questionWithoutAnswer below
+
+      await saveGrade({
+        responseId: 'response-1',
+        score: 0,
+        maxScore: 10,
+        percentage: 0,
+        passed: false,
+        status: 'NEEDS_REVIEW',
+        autoScore: 0,
+        detail: [questionWithoutAnswer as QuestionGradeResult],
+      });
+
+      expect(responseGradeRepository.upsertForResponse).toHaveBeenCalledWith(
+        'response-1',
+        expect.objectContaining({
+          detail: [expect.objectContaining({ submittedValue: null })],
+        })
+      );
     });
   });
 
