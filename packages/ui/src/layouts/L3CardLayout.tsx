@@ -20,6 +20,8 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
   thankYouMessage,
   onSubmitAnother,
   responseCopyNotice,
+  gradeResult,
+  quizResultLabels,
 }) => {
   // L3 Card layout styles
   const getLayoutStyles = () => ({
@@ -344,6 +346,8 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                   mentionFields={extractMentionFields(pages)}
                   onSubmitAnother={onSubmitAnother}
                   responseCopyNotice={responseCopyNotice}
+                  gradeResult={gradeResult}
+                  quizResultLabels={quizResultLabels}
                 />
               </div>
             </div>

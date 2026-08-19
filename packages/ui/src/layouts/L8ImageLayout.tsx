@@ -19,6 +19,8 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
   thankYouMessage,
   onSubmitAnother,
   responseCopyNotice,
+  gradeResult,
+  quizResultLabels,
 }) => {
   // L8 Image layout styles - using minimal/image-friendly styles
   const getLayoutStyles = () => ({
@@ -245,6 +247,8 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
                   mentionFields={extractMentionFields(pages)}
                   onSubmitAnother={onSubmitAnother}
                   responseCopyNotice={responseCopyNotice}
+                  gradeResult={gradeResult}
+                  quizResultLabels={quizResultLabels}
                 />
               </div>
             </div>

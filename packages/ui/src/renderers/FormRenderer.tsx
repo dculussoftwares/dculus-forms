@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useCallback, useState } from 'react';
-import type { FormSchema, FormLayout } from '@dculus/types';
+import type { FormSchema, FormLayout, RespondentGradeView } from '@dculus/types';
 import { LayoutRenderer } from './LayoutRenderer';
 import type { LayoutScreen } from '../types';
+import type { QuizResultScreenLabels } from './QuizResultScreen';
 import { RendererMode } from '@dculus/utils';
 import { useFormResponseStore, useFormResponseUtils } from '../stores/useFormResponseStore';
 import { useConditionalVisibility } from '../hooks/useConditionalVisibility';
@@ -45,6 +46,14 @@ export interface FormRendererProps {
   onSubmitAnother?: () => void;
   /** e.g. "We've sent a copy of your responses to you@example.com." shown under the thank-you message. */
   responseCopyNotice?: string;
+  /**
+   * Present only when the server graded this submission synchronously
+   * (epic #289, D3) — renders `QuizResultScreen` in the existing thank-you
+   * screen slot. Absent for every non-quiz form/response.
+   */
+  gradeResult?: RespondentGradeView;
+  /** Override the default English `QuizResultScreen` copy (e.g. a translated app). */
+  quizResultLabels?: Partial<QuizResultScreenLabels>;
 }
 
 export const FormRenderer: React.FC<FormRendererProps> = ({
@@ -66,6 +75,8 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   thankYouMessage,
   onSubmitAnother,
   responseCopyNotice,
+  gradeResult,
+  quizResultLabels,
 }) => {
   const { getFormattedResponses } = useFormResponseUtils();
   const store = useFormResponseStore();
@@ -194,6 +205,8 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         thankYouMessage={thankYouMessage}
         onSubmitAnother={onSubmitAnother}
         responseCopyNotice={responseCopyNotice}
+        gradeResult={gradeResult}
+        quizResultLabels={quizResultLabels}
       />
     </FormResponseContext.Provider>
   );

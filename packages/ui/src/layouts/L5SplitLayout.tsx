@@ -20,6 +20,8 @@ export const L5SplitLayout: React.FC<LayoutProps> = ({
   thankYouMessage,
   onSubmitAnother,
   responseCopyNotice,
+  gradeResult,
+  quizResultLabels,
 }) => {
   // L5 Split layout styles
   const getLayoutStyles = () => ({
@@ -356,6 +358,8 @@ export const L5SplitLayout: React.FC<LayoutProps> = ({
                   mentionFields={extractMentionFields(pages)}
                   onSubmitAnother={onSubmitAnother}
                   responseCopyNotice={responseCopyNotice}
+                  gradeResult={gradeResult}
+                  quizResultLabels={quizResultLabels}
                 />
               </div>
             </div>

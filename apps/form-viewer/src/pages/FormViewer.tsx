@@ -4,6 +4,7 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import { CombinedGraphQLErrors } from '@apollo/client';
 import { Button, FormRenderer, useFormResponseStore, LoadingSpinner } from '@dculus/ui';
 import { deserializeFormSchema, extractEmailFields, FieldType } from '@dculus/types';
+import type { RespondentGradeView } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
@@ -11,6 +12,7 @@ import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics'
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
 import { buildCompletionTimeInput } from '../lib/completionTime';
 import { getFormErrorMessage, isSubmissionLimitError, isAccessControlError } from '../lib/formError';
+import { quizResultLabels } from '../locales/quizResult';
 import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
 import { signOut } from '../lib/auth-client';
@@ -93,6 +95,7 @@ const FormViewer: React.FC = () => {
   const [thankYouData, setThankYouData] = useState<{
     message: string;
     copyEmail?: string;
+    grade?: RespondentGradeView;
   } | null>(null);
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
   const [sendResponseCopy, setSendResponseCopy] = useState<boolean>(false);
@@ -247,7 +250,7 @@ const FormViewer: React.FC = () => {
         timeoutPromise,
       ]);
 
-      const { thankYouMessage } = result.data.submitResponse;
+      const { thankYouMessage, grade } = result.data.submitResponse;
 
       setSubmissionState('success');
       setThankYouData({
@@ -258,6 +261,9 @@ const FormViewer: React.FC = () => {
           effectiveSendResponseCopy || responseCopySettings?.mode === 'always'
             ? copyRecipientEmail
             : undefined,
+        // Absent for every non-quiz form — `grade` is only populated when the
+        // server graded this submission synchronously (epic #289, D3).
+        grade: grade ?? undefined,
       });
       // Leave isSubmittingRef true on success — form is done, no re-submit needed
     } catch (err: unknown) {
@@ -462,6 +468,8 @@ const FormViewer: React.FC = () => {
             ? `We've sent a copy of your responses to ${thankYouData.copyEmail}.`
             : undefined
         }
+        gradeResult={thankYouData?.grade}
+        quizResultLabels={quizResultLabels}
       />
 
       {/* Re-auth overlay — token expired/revoked mid-fill. Rendered on top of

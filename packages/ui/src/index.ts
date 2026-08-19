@@ -274,9 +274,11 @@ export { PageRenderer } from "./renderers/PageRenderer"
 export { FormFieldRenderer } from "./renderers/FormFieldRenderer"
 export { FormRenderer, useFormResponseContext } from "./renderers/FormRenderer"
 export { SinglePageForm, useSinglePageForm } from "./renderers/SinglePageForm"
+export { QuizResultScreen } from "./renderers/QuizResultScreen"
 export type { LayoutStyles } from "./renderers/PageRenderer"
 export type { FormRendererProps } from "./renderers/FormRenderer"
 export type { SinglePageFormProps } from "./renderers/SinglePageForm"
+export type { QuizResultScreenProps, QuizResultScreenLabels } from "./renderers/QuizResultScreen"
 export type { LayoutProps, LayoutScreen } from "./types"
 
 // Form Response Store
