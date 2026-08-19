@@ -453,6 +453,157 @@ describe('Forms Resolvers', () => {
     });
   });
 
+  describe('Form: formSchemaPublic', () => {
+    const buildSchema = () => ({
+      pages: [
+        {
+          id: 'page-1',
+          title: 'Page 1',
+          fields: [
+            {
+              id: 'field-1',
+              type: 'radio_field',
+              label: 'Q1',
+              grading: {
+                mode: 'exact',
+                pointValue: 10,
+                acceptedAnswers: ['Paris'],
+              },
+            },
+            {
+              id: 'field-2',
+              type: 'text_input_field',
+              label: 'Q2',
+              // no grading on this field
+            },
+            {
+              id: 'field-3',
+              type: 'checkbox_field',
+              label: 'Q3 (deleted)',
+              deleted: true,
+              grading: {
+                mode: 'set',
+                pointValue: 5,
+                acceptedAnswers: ['a', 'b'],
+              },
+            },
+          ],
+        },
+        {
+          id: 'page-2',
+          title: 'Page 2',
+          fields: [
+            {
+              id: 'field-4',
+              type: 'number_field',
+              label: 'Q4',
+              grading: {
+                mode: 'numeric',
+                pointValue: 7,
+                acceptedAnswers: ['42'],
+                numeric: { tolerance: 0.5 },
+              },
+            },
+          ],
+        },
+      ],
+      layout: { theme: 'light' },
+    });
+
+    it('filters out deleted fields', async () => {
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(buildSchema());
+
+      const result = await formsResolvers.Form.formSchemaPublic(mockForm, {}, mockContext);
+
+      const fieldIds = result.pages.flatMap((p: any) => p.fields.map((f: any) => f.id));
+      expect(fieldIds).toEqual(['field-1', 'field-2', 'field-4']);
+    });
+
+    it('strips grading from every field so the answer key never reaches the serialized payload', async () => {
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(buildSchema());
+
+      const result = await formsResolvers.Form.formSchemaPublic(mockForm, {}, mockContext);
+      const serialized = JSON.stringify(result);
+
+      expect(serialized).not.toContain('grading');
+      expect(serialized).not.toContain('acceptedAnswers');
+      expect(serialized).not.toContain('pointValue');
+
+      // Sanity: the fields themselves (and non-grading data) survived the strip.
+      expect(serialized).toContain('field-1');
+      expect(serialized).toContain('field-4');
+    });
+
+    it('does not mutate the schema returned by getFormSchemaFromHocuspocus', async () => {
+      const schema = buildSchema();
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(schema);
+
+      await formsResolvers.Form.formSchemaPublic(mockForm, {}, mockContext);
+      // Call again on the SAME underlying object — if the first call mutated
+      // it in place, grading would already be gone here.
+      await formsResolvers.Form.formSchemaPublic(mockForm, {}, mockContext);
+
+      expect(schema.pages[0].fields[0]).toHaveProperty('grading');
+      expect((schema.pages[0].fields[0] as any).grading.acceptedAnswers).toEqual(['Paris']);
+      expect(schema.pages[1].fields[0]).toHaveProperty('grading');
+    });
+
+    it('leaves the authenticated formSchema resolver untouched — grading still returned', async () => {
+      const schema = buildSchema();
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(schema);
+
+      const result = await formsResolvers.Form.formSchema(mockForm);
+
+      expect(JSON.stringify(result)).toContain('grading');
+      expect(result.pages[0].fields[0].grading.acceptedAnswers).toEqual(['Paris']);
+    });
+
+    it('produces a byte-identical payload to before when a form has no grading anywhere', async () => {
+      const noGradingSchema = {
+        pages: [
+          {
+            id: 'page-1',
+            title: 'Page 1',
+            fields: [
+              { id: 'field-1', type: 'text_input_field', label: 'Q1' },
+              { id: 'field-2', type: 'text_input_field', label: 'Q2', deleted: true },
+            ],
+          },
+        ],
+        layout: { theme: 'light' },
+      };
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(noGradingSchema);
+
+      const result = await formsResolvers.Form.formSchemaPublic(mockForm, {}, mockContext);
+
+      // Same shape the pre-Story-04 resolver would have produced: only the
+      // deleted-field filter applied, nothing else changed.
+      expect(result).toEqual({
+        pages: [
+          {
+            id: 'page-1',
+            title: 'Page 1',
+            fields: [{ id: 'field-1', type: 'text_input_field', label: 'Q1' }],
+          },
+        ],
+        layout: { theme: 'light' },
+      });
+    });
+
+    it('returns null when access control gates the form', async () => {
+      const gatedForm = {
+        ...mockForm,
+        settings: JSON.stringify({ accessControl: { enabled: true, requireSignIn: true } }),
+      };
+      const unauthenticatedContext = { auth: { user: null, session: null, isAuthenticated: false } };
+
+      const result = await formsResolvers.Form.formSchemaPublic(gatedForm, {}, unauthenticatedContext as any);
+
+      expect(result).toBeNull();
+      expect(hocuspocusService.getFormSchemaFromHocuspocus).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Form: settings', () => {
     it('should parse and return JSON settings', () => {
       const settings = { theme: 'dark', spacing: 'compact' };
