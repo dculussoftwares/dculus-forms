@@ -5,6 +5,8 @@ import GeneralSettings from './GeneralSettings';
 import SubmissionLimitsSettings from './SubmissionLimitsSettings';
 import ResponseCopySettings from './ResponseCopySettings';
 import AccessControlSettings from './AccessControlSettings';
+import QuizSettings from './QuizSettings';
+import type { QuizSettings as QuizSettingsType } from '@dculus/types';
 
 interface FormSettingsContainerProps {
   form: any;
@@ -21,6 +23,8 @@ interface FormSettingsContainerProps {
   onUpdateAccessControl: (accessControl: any) => void;
   onSaveAccessControlSettings: () => void;
   onUpdateCollectRespondentEmail: (collectRespondentEmail: boolean) => void;
+  onUpdateQuizSettings: (quiz: QuizSettingsType) => void;
+  onSaveQuizSettings: () => void;
 }
 
 const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
@@ -29,6 +33,7 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
   onUpdateSubmissionLimits, onSaveSubmissionLimits,
   onUpdateResponseCopySetting, onSaveResponseCopySettings,
   onUpdateAccessControl, onSaveAccessControlSettings, onUpdateCollectRespondentEmail,
+  onUpdateQuizSettings, onSaveQuizSettings,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedSection = searchParams.get('section') || 'general';
@@ -68,6 +73,14 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
             onUpdate={onUpdateAccessControl}
             onUpdateCollectRespondentEmail={onUpdateCollectRespondentEmail}
             onSave={onSaveAccessControlSettings}
+          />
+        );
+      case 'quiz':
+        return (
+          <QuizSettings
+            settings={settings.quiz} isSaving={isSaving}
+            onUpdate={onUpdateQuizSettings}
+            onSave={onSaveQuizSettings}
           />
         );
       default:

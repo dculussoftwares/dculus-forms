@@ -50,6 +50,8 @@ const FormSettings: React.FC = () => {
     updateAccessControl,
     saveAccessControlSettings,
     updateCollectRespondentEmail,
+    updateQuizSettings,
+    saveQuizSettings,
   } = useFormSettings({
     formId,
     initialSettings: formData?.form?.settings,
@@ -259,6 +261,8 @@ const FormSettings: React.FC = () => {
           onUpdateAccessControl={updateAccessControl}
           onSaveAccessControlSettings={saveAccessControlSettings}
           onUpdateCollectRespondentEmail={updateCollectRespondentEmail}
+          onUpdateQuizSettings={updateQuizSettings}
+          onSaveQuizSettings={saveQuizSettings}
         />
 
         {/* Error display */}

@@ -83,6 +83,22 @@ export const UPDATE_FORM : TypedDocumentNode<any, any> = gql`
           allowedDomains
         }
         collectRespondentEmail
+        quiz {
+          enabled
+          passThresholdPercent
+          gradeRelease
+          releaseAt
+          respondentVisibility {
+            totalScore
+            perQuestionCorrectness
+            correctAnswers
+            pointValues
+            feedback
+            passFailBadge
+          }
+          resultMessagePass
+          resultMessageFail
+        }
       }
       isPublished
       organization {

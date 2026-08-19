@@ -1,5 +1,5 @@
 import React from 'react';
-import { Globe, Shield, Mail, Lock } from 'lucide-react';
+import { Globe, Shield, Mail, Lock, GraduationCap } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -28,6 +28,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         { id: 'submission-limits', label: t('sidebar.settings.submissionLimits'), icon: Shield },
         { id: 'response-copy', label: t('sidebar.settings.responseCopy'), icon: Mail },
         { id: 'access-control', label: t('sidebar.settings.accessControl'), icon: Lock },
+        { id: 'quiz', label: t('sidebar.settings.quiz'), icon: GraduationCap },
       ],
     },
   ];
@@ -41,7 +42,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             {title}
           </p>
           <div className="space-y-0.5">
-            {items.map(({ id, label }) => {
+            {items.map(({ id, label, icon: Icon }) => {
               const isActive = selectedSection === id;
               return (
                 <Button
@@ -49,12 +50,13 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                   variant="ghost"
                   onClick={() => onSectionChange(id)}
                   data-testid={`settings-section-${id}`}
-                  className="w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors h-auto justify-start"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-left transition-colors h-auto justify-start"
                   style={{
                     backgroundColor: isActive ? 'var(--tf-tab-bg)' : 'transparent',
                     color: isActive ? 'var(--tf-dark)' : 'var(--tf-muted)',
                   }}
                 >
+                  <Icon className="h-4 w-4 shrink-0" />
                   {label}
                 </Button>
               );

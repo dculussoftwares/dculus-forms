@@ -19,6 +19,7 @@ import { analyticsService } from '../../services/analyticsService.js';
 import { randomUUID } from 'crypto';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
+import { sanitizeQuizSettings } from '@dculus/types';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
@@ -477,6 +478,23 @@ export const formsResolvers = {
           "responseCopy.mode must be 'always' or 'respondentChoice'",
           GRAPHQL_ERROR_CODES.BAD_USER_INPUT
         );
+      }
+
+      // Quiz is a free, opt-in feature (no plan gating — see epic #289 D8).
+      // Sanitize at the trust boundary: an invalid shape (e.g. gradeRelease
+      // 'scheduled' without a releaseAt) is rejected rather than silently
+      // persisted, so the panel's save fails loudly instead of corrupting
+      // settings.quiz.
+      const incomingQuiz = input.settings?.quiz;
+      if (incomingQuiz !== undefined) {
+        const sanitizedQuiz = sanitizeQuizSettings(incomingQuiz);
+        if (!sanitizedQuiz) {
+          throw createGraphQLError(
+            'Invalid quiz settings: check the pass threshold, grade release, and (if scheduled) releaseAt',
+            GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+          );
+        }
+        input.settings.quiz = sanitizedQuiz;
       }
 
       const updateData = {
