@@ -1,6 +1,7 @@
+import { z } from 'zod';
 import type { QuestionGradeResult, QuizSettings, RespondentGradeView } from '@dculus/types';
 import type { ResponseGrade as ResponseGradeRow, Prisma } from '#prisma-client';
-import { responseGradeRepository } from '../../repositories/index.js';
+import { responseGradeRepository, responseRepository } from '../../repositories/index.js';
 
 /**
  * Native Quiz persistence (D4, epic #289). Thin orchestration over
@@ -12,9 +13,56 @@ import { responseGradeRepository } from '../../repositories/index.js';
 
 export type GradeStatus = 'AUTO_GRADED' | 'NEEDS_REVIEW' | 'REVIEWED' | 'RELEASED';
 
+const gradeStatusSchema = z.enum(['AUTO_GRADED', 'NEEDS_REVIEW', 'REVIEWED', 'RELEASED']);
+
+const questionGradeResultSchema = z.object({
+  fieldId: z.string().min(1),
+  fieldLabel: z.string(),
+  fieldType: z.string(),
+  mode: z.enum(['exact', 'set', 'text', 'numeric', 'manual']),
+  submittedValue: z.unknown(),
+  acceptedAnswers: z.array(z.string()),
+  correct: z.boolean().nullable(),
+  pointsAwarded: z.number(),
+  pointValue: z.number(),
+  autoPointsAwarded: z.number(),
+  overriddenBy: z.string().optional(),
+  graderComment: z.string().optional(),
+  feedbackShown: z.string().optional(),
+});
+
+// `formId` is deliberately NOT accepted here — it is denormalized on
+// ResponseGrade for query performance, but has no FK relation protecting it.
+// Trusting a caller-supplied formId would let a mismatched value corrupt
+// form-level listings and aggregates, so saveGrade always derives it from
+// the response the grade belongs to.
+const saveGradeInputSchema = z
+  .object({
+    responseId: z.string().min(1),
+    score: z.number().min(0),
+    maxScore: z.number().min(0),
+    percentage: z.number().min(0).max(100),
+    passed: z.boolean(),
+    status: gradeStatusSchema,
+    autoScore: z.number().min(0),
+    detail: z.array(questionGradeResultSchema),
+    gradedById: z.string().nullable().optional(),
+    releasedAt: z.date().nullable().optional(),
+    schemaVersion: z.number().int().positive().optional(),
+    attemptNumber: z.number().int().positive().optional(),
+    integrity: z.unknown().optional(),
+  })
+  .refine((data) => data.score <= data.maxScore, {
+    message: 'score cannot exceed maxScore',
+    path: ['score'],
+  })
+  .refine((data) => data.autoScore <= data.maxScore, {
+    message: 'autoScore cannot exceed maxScore',
+    path: ['autoScore'],
+  });
+
 export interface SaveGradeInput {
   responseId: string;
-  formId: string;
   score: number;
   maxScore: number;
   percentage: number;
@@ -33,11 +81,24 @@ export interface SaveGradeInput {
  * Persist (create-or-replace) the grade for a response. `responseId` is
  * unique on the table, so this is always an upsert — a response can never
  * accumulate more than one grade row.
+ *
+ * `formId` is resolved from the response record rather than trusted from the
+ * caller (see `saveGradeInputSchema` above), and the rest of the payload is
+ * validated (score/percentage bounds, `detail` shape) before it is written.
  */
 export const saveGrade = async (input: SaveGradeInput): Promise<ResponseGradeRow> => {
-  const { responseId, ...rest } = input;
+  const { responseId, ...rest } = saveGradeInputSchema.parse(input);
+
+  const response = await responseRepository.findUnique({
+    where: { id: responseId },
+    select: { formId: true },
+  });
+  if (!response) {
+    throw new Error(`Cannot save grade: response "${responseId}" was not found`);
+  }
+
   return responseGradeRepository.upsertForResponse(responseId, {
-    formId: rest.formId,
+    formId: response.formId,
     score: rest.score,
     maxScore: rest.maxScore,
     percentage: rest.percentage,

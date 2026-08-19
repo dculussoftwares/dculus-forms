@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { QuestionGradeResult, QuizSettings } from '@dculus/types';
+import { FieldType, type QuestionGradeResult, type QuizSettings } from '@dculus/types';
 import {
   saveGrade,
   getGradeForResponse,
   getGradesForForm,
   toRespondentView,
 } from '../gradingService.js';
-import { responseGradeRepository } from '../../../repositories/index.js';
+import { responseGradeRepository, responseRepository } from '../../../repositories/index.js';
 
 vi.mock('../../../repositories/index.js');
 
@@ -38,7 +38,7 @@ const baseSettings: QuizSettings = {
 const question: QuestionGradeResult = {
   fieldId: 'field-1',
   fieldLabel: 'What is 2+2?',
-  fieldType: 'number_field' as any,
+  fieldType: FieldType.NUMBER_FIELD,
   mode: 'numeric',
   submittedValue: 4,
   acceptedAnswers: ['4'],
@@ -75,14 +75,14 @@ describe('gradingService', () => {
   });
 
   describe('saveGrade', () => {
-    it('upserts through the repository, keyed on responseId', async () => {
+    it('resolves formId from the response and upserts through the repository, keyed on responseId', async () => {
+      vi.mocked(responseRepository.findUnique).mockResolvedValue({ formId: 'form-1' } as any);
       vi.mocked(responseGradeRepository.upsertForResponse).mockResolvedValue(
         makeGrade() as any
       );
 
       await saveGrade({
         responseId: 'response-1',
-        formId: 'form-1',
         score: 8,
         maxScore: 10,
         percentage: 80,
@@ -92,6 +92,10 @@ describe('gradingService', () => {
         detail: [question],
       });
 
+      expect(responseRepository.findUnique).toHaveBeenCalledWith({
+        where: { id: 'response-1' },
+        select: { formId: true },
+      });
       expect(responseGradeRepository.upsertForResponse).toHaveBeenCalledWith(
         'response-1',
         expect.objectContaining({
@@ -107,6 +111,97 @@ describe('gradingService', () => {
           releasedAt: null,
         })
       );
+    });
+
+    it('ignores a formId smuggled onto the input — it is never trusted from the caller', async () => {
+      vi.mocked(responseRepository.findUnique).mockResolvedValue({ formId: 'form-1' } as any);
+      vi.mocked(responseGradeRepository.upsertForResponse).mockResolvedValue(
+        makeGrade() as any
+      );
+
+      await saveGrade({
+        responseId: 'response-1',
+        // @ts-expect-error formId is intentionally not part of SaveGradeInput
+        formId: 'attacker-controlled-form',
+        score: 8,
+        maxScore: 10,
+        percentage: 80,
+        passed: true,
+        status: 'AUTO_GRADED',
+        autoScore: 8,
+        detail: [question],
+      });
+
+      expect(responseGradeRepository.upsertForResponse).toHaveBeenCalledWith(
+        'response-1',
+        expect.objectContaining({ formId: 'form-1' })
+      );
+    });
+
+    it('throws when the response does not exist', async () => {
+      vi.mocked(responseRepository.findUnique).mockResolvedValue(null);
+
+      await expect(
+        saveGrade({
+          responseId: 'missing-response',
+          score: 8,
+          maxScore: 10,
+          percentage: 80,
+          passed: true,
+          status: 'AUTO_GRADED',
+          autoScore: 8,
+          detail: [question],
+        })
+      ).rejects.toThrow('missing-response');
+
+      expect(responseGradeRepository.upsertForResponse).not.toHaveBeenCalled();
+    });
+
+    it('rejects percentage outside 0..100', async () => {
+      await expect(
+        saveGrade({
+          responseId: 'response-1',
+          score: 8,
+          maxScore: 10,
+          percentage: 180,
+          passed: true,
+          status: 'AUTO_GRADED',
+          autoScore: 8,
+          detail: [question],
+        })
+      ).rejects.toThrow();
+
+      expect(responseRepository.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('rejects score greater than maxScore', async () => {
+      await expect(
+        saveGrade({
+          responseId: 'response-1',
+          score: 12,
+          maxScore: 10,
+          percentage: 80,
+          passed: true,
+          status: 'AUTO_GRADED',
+          autoScore: 8,
+          detail: [question],
+        })
+      ).rejects.toThrow();
+    });
+
+    it('rejects a malformed detail entry', async () => {
+      await expect(
+        saveGrade({
+          responseId: 'response-1',
+          score: 8,
+          maxScore: 10,
+          percentage: 80,
+          passed: true,
+          status: 'AUTO_GRADED',
+          autoScore: 8,
+          detail: [{ fieldId: 'field-1' } as unknown as QuestionGradeResult],
+        })
+      ).rejects.toThrow();
     });
   });
 
