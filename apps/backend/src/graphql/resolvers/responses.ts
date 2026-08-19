@@ -22,8 +22,11 @@ import {
   substituteMentions,
 } from '@dculus/utils';
 import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import type { RespondentGradeView } from '@dculus/types';
 import { stripConditionallyHiddenValues } from '../../lib/conditionalStrip.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
+import { gradeResponse } from '../../services/quiz/gradingEngine.js';
+import { saveGrade, toRespondentView } from '../../services/quiz/gradingService.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/core/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
@@ -201,17 +204,31 @@ export const responsesResolvers = {
         }
       }
 
+      // Live schema for form.id (Hocuspocus, falling back to the DB column),
+      // resolved at most once and shared by conditional stripping below and
+      // quiz grading further down — both need the exact same schema, and
+      // getFormSchemaFromHocuspocus is a DB read plus a full Y.Doc rebuild,
+      // not a cheap call to repeat.
+      let liveSchema: unknown;
+      let liveSchemaResolved = false;
+      const resolveLiveSchema = async () => {
+        if (!liveSchemaResolved) {
+          liveSchema = (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
+          liveSchemaResolved = true;
+        }
+        return liveSchema;
+      };
+
       // Server-side conditional-logic enforcement (defense in depth): strip
       // values of fields/pages the form's rules hide, evaluated against the
-      // same live schema the viewer was served (Hocuspocus, falling back to
-      // the DB column). The client strips too, but this mutation is public
-      // and callable directly. Runs before BOTH insert paths below.
+      // same live schema the viewer was served. The client strips too, but
+      // this mutation is public and callable directly. Runs before BOTH
+      // insert paths below.
       if (input.data && typeof input.data === 'object') {
-        const liveSchema =
-          (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
-        if (liveSchema) {
+        const schema = await resolveLiveSchema();
+        if (schema) {
           input.data = stripConditionallyHiddenValues(
-            liveSchema,
+            schema,
             input.data as Record<string, unknown>
           );
         }
@@ -272,6 +289,81 @@ export const responsesResolvers = {
       }
       // At this point response is guaranteed non-null — both branches above set it.
       const savedResponse = response!;
+
+      // Native Quiz (D3, epic #289): grade synchronously, here, so the score
+      // can be included in this mutation's payload — emitFormSubmitted below
+      // fires after this resolver returns and structurally cannot do that.
+      // Grades against input.data AFTER stripConditionallyHiddenValues ran
+      // above (~line 209), so a question hidden by conditional logic is
+      // excluded from maxScore rather than scored wrong — two respondents
+      // can legitimately face different denominators.
+      // Additive guarantee: settings.quiz absent/disabled is zero extra work
+      // below — no schema fetch, no grading engine call, no ResponseGrade
+      // write, and `grade` stays undefined so it is omitted from the payload.
+      let grade: RespondentGradeView | undefined;
+      let quizFanout:
+        | { quizScore: number; quizMaxScore: number; quizPercentage: number; quizPassed: boolean }
+        | undefined;
+
+      const quizSettings = form.settings?.quiz;
+      if (quizSettings?.enabled) {
+        try {
+          const schema = await resolveLiveSchema();
+          if (schema) {
+            const deserializedSchema = deserializeFormSchema(schema);
+            const gradeResult = gradeResponse(
+              deserializedSchema,
+              quizSettings,
+              (input.data || {}) as Record<string, unknown>
+            );
+            const savedGrade = await saveGrade({
+              responseId: savedResponse.id,
+              score: gradeResult.score,
+              maxScore: gradeResult.maxScore,
+              percentage: gradeResult.percentage,
+              passed: gradeResult.passed,
+              status: gradeResult.status,
+              autoScore: gradeResult.score,
+              detail: gradeResult.questions,
+            });
+            grade = toRespondentView(savedGrade, quizSettings);
+            quizFanout = {
+              quizScore: savedGrade.score,
+              quizMaxScore: savedGrade.maxScore,
+              quizPercentage: savedGrade.percentage,
+              quizPassed: savedGrade.passed,
+            };
+          }
+        } catch (error) {
+          // D7: losing a response to a grading bug is far worse than an
+          // ungraded one — log, best-effort persist a NEEDS_REVIEW grade, and
+          // let the submission succeed either way.
+          logger.error('Error grading quiz response:', error);
+          try {
+            // Persisted for a human reviewer, but deliberately not assigned to
+            // `grade`/`quizFanout`: under gradeRelease 'immediate' (and a
+            // past-due 'scheduled' release), toRespondentView.isReleased()
+            // ignores grade status entirely, so surfacing this placeholder
+            // would show the respondent — and automations via quizPassed —
+            // a false "you scored 0%" instead of just staying silent.
+            await saveGrade({
+              responseId: savedResponse.id,
+              score: 0,
+              maxScore: 0,
+              percentage: 0,
+              passed: false,
+              status: 'NEEDS_REVIEW',
+              autoScore: 0,
+              detail: [],
+            });
+          } catch (persistError) {
+            logger.error(
+              'Error persisting NEEDS_REVIEW grade after grading failure:',
+              persistError
+            );
+          }
+        }
+      }
 
       // Auto-assign __preview__ system tag when submitted from the builder preview panel
       if (input.isPreview) {
@@ -362,12 +454,15 @@ export const responsesResolvers = {
         emitFormSubmitted(input.formId, form.organizationId, {
           // input.data is user-submitted field values; spreading it first (and the
           // control fields after) keeps a form field literally named "responseId"/
-          // "isPreview" from spoofing these — isPreview in particular now gates
-          // whether automations fire, so it must stay server-authoritative.
+          // "isPreview"/"quizScore" from spoofing these — isPreview in particular
+          // now gates whether automations fire, so it must stay server-authoritative.
+          // quizFanout (quizScore/quizMaxScore/quizPercentage/quizPassed) is only
+          // present when settings.quiz is enabled and grading actually ran.
           ...input.data,
           responseId: savedResponse.id,
           submittedAt: savedResponse.submittedAt.toISOString(),
           isPreview: Boolean(input.isPreview),
+          ...(quizFanout ?? {}),
         });
       } catch (error) {
         // Log error but don't fail the response submission
@@ -398,6 +493,10 @@ export const responsesResolvers = {
       return {
         ...savedResponse,
         thankYouMessage,
+        // Omitted entirely (not `grade: undefined`) when quiz grading did not
+        // run — keeps the payload byte-identical to before this change for
+        // every non-quiz form (epic #289's additive guarantee).
+        ...(grade !== undefined ? { grade } : {}),
       };
     },
     updateResponse: async (
