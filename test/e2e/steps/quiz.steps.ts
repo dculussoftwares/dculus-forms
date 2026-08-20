@@ -171,8 +171,12 @@ When('I dismiss the viewer cover screen if present', async function (this: Custo
   let coverScreenPresent = true;
   try {
     await getStarted.waitFor({ state: 'visible', timeout: 3_000 });
-  } catch {
-    coverScreenPresent = false; // No cover screen for this layout (or it didn't appear in time).
+  } catch (error) {
+    // Only a genuine timeout means "no cover screen for this layout" — any
+    // other error (e.g. the page/context was closed) is a real failure and
+    // must propagate rather than being silently treated as "absent".
+    if (!(error instanceof Error) || error.name !== 'TimeoutError') throw error;
+    coverScreenPresent = false;
   }
   if (coverScreenPresent) {
     await getStarted.click();
