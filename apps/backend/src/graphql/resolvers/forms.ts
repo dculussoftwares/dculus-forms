@@ -312,14 +312,17 @@ export const formsResolvers = {
         // Knowledge Quiz") carries its quiz policy as an extra top-level
         // `settings` key inside formSchema — serializeFormSchema/
         // deserializeFormSchema round-trip unknown keys unchanged, so it
-        // survives storage. Apply it to the new form here (unless the caller
-        // already sent explicit settings) so a form created from a quiz
-        // template is actually quiz-enabled, then strip the carrier key back
-        // out — it was never a real part of the schema.
-        if (settings === undefined && formSchema.settings?.quiz !== undefined) {
+        // survives storage. Apply it to the new form here so a form created
+        // from a quiz template is actually quiz-enabled, then strip the
+        // carrier key back out — it was never a real part of the schema.
+        // Only fills in `quiz`: checked on `settings?.quiz` (not `settings`)
+        // so a caller sending other settings (e.g. collectRespondentEmail)
+        // without an explicit quiz policy still gets the template's quiz
+        // settings, and an explicitly supplied settings.quiz always wins.
+        if (settings?.quiz === undefined && formSchema.settings?.quiz !== undefined) {
           const sanitizedQuiz = sanitizeQuizSettings(formSchema.settings.quiz);
           if (sanitizedQuiz) {
-            settings = { quiz: sanitizedQuiz };
+            settings = { ...settings, quiz: sanitizedQuiz };
           }
         }
         delete formSchema.settings;

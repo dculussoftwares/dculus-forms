@@ -166,11 +166,16 @@ When('I dismiss the viewer cover screen if present', async function (this: Custo
   // `isVisible()` checks the current DOM snapshot only — it doesn't wait —
   // so calling it right after navigation can race the cover screen's render
   // and report "absent" even when one is coming. `waitFor` actually waits.
+  // Only the wait is caught (a real click failure must still propagate,
+  // rather than being swallowed as "no cover screen present").
+  let coverScreenPresent = true;
   try {
     await getStarted.waitFor({ state: 'visible', timeout: 3_000 });
-    await getStarted.click();
   } catch {
-    // No cover screen for this layout (or it didn't appear in time) — nothing to dismiss.
+    coverScreenPresent = false; // No cover screen for this layout (or it didn't appear in time).
+  }
+  if (coverScreenPresent) {
+    await getStarted.click();
   }
 });
 
@@ -295,8 +300,9 @@ async function createQuizFormViaGraphQL(
   const organizationId = await world.page.evaluate(() => {
     const orgFromStorage = localStorage.getItem('organization_id');
     if (orgFromStorage) return orgFromStorage;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const apolloClient = (window as any).__APOLLO_CLIENT__;
+    const apolloClient = (
+      window as Window & { __APOLLO_CLIENT__?: { cache?: { extract: () => Record<string, unknown> } } }
+    ).__APOLLO_CLIENT__;
     if (apolloClient?.cache) {
       try {
         const cacheData = apolloClient.cache.extract();
