@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
 import {
   Button,
   toastSuccess,
@@ -32,6 +33,7 @@ import {
   PowerOff,
 } from 'lucide-react';
 import { useMutation } from '@apollo/client/react';
+import { allPluginManifests } from '@dculus/plugins';
 import {
   UPDATE_FORM_PLUGIN,
   DELETE_FORM_PLUGIN,
@@ -67,6 +69,9 @@ export const PluginCard: React.FC<PluginCardProps> = ({
   onUpdated,
 }) => {
   const { t } = useTranslation('pluginCard');
+  const navigate = useNavigate();
+  const manifest = allPluginManifests.find((m) => m.id === plugin.type);
+  const isDeprecated = manifest?.deprecated === true;
   const [showDashboard, setShowDashboard] = useState(false);
   const [isTogglingEnabled, setIsTogglingEnabled] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
@@ -196,10 +201,31 @@ export const PluginCard: React.FC<PluginCardProps> = ({
             >
               {plugin.enabled ? t('status.enabled') : t('status.disabled')}
             </span>
+            {isDeprecated && (
+              <span
+                className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}
+              >
+                {t('deprecated.badge')}
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             {getPluginTypeLabel()} · {t('eventsCount', { values: { count: plugin.events.length } })}
           </p>
+          {isDeprecated && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/dashboard/form/${plugin.formId}/settings?section=quiz`);
+              }}
+              className="text-[10px] mt-1 underline"
+              style={{ color: 'var(--tf-muted)' }}
+            >
+              {t('deprecated.link')}
+            </button>
+          )}
           {plugin.events.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
               {plugin.events.map((event: string) => (

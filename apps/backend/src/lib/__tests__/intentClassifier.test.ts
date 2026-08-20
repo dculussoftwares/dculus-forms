@@ -112,8 +112,6 @@ describe('classifyIntent', () => {
       ['notify the team on every submission', 'complex'],
       ['turn off the webhook', 'complex'],
       ['disable the Slack integration', 'complex'],
-      ['set up quiz grading with a 60% pass mark', 'complex'],
-      ['grade this quiz automatically', 'complex'],
       ['list my integrations', 'complex'],
     ])('"%s" → %s', (message, expected) => {
       expect(classifyIntent(message)).toBe(expected);
@@ -126,6 +124,16 @@ describe('classifyIntent', () => {
       ['add a text field for feedback', 'simple'],
       ['rename the second page', 'simple'],
     ])('"%s" still routes to %s', (message, expected) => {
+      expect(classifyIntent(message)).toBe(expected);
+    });
+
+    // The quiz-grading plugin is deprecated (native quiz mode replaces it, see Form
+    // Settings → Quiz) and the AI no longer proposes it, so quiz phrasing must no longer
+    // route to the plugin-creation (complex) path — it falls through to the default tier.
+    it.each([
+      ['set up quiz grading with a 60% pass mark', 'simple'],
+      ['grade this quiz automatically', 'simple'],
+    ])('"%s" no longer routes to plugin creation — now %s', (message, expected) => {
       expect(classifyIntent(message)).toBe(expected);
     });
   });

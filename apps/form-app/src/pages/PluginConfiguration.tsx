@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { LoadingSpinner, Button, toastSuccess, toastError, EmptyState } from '@dculus/ui';
+import { allPluginManifests } from '@dculus/plugins';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import { GET_FORM_BY_ID } from '../graphql/queries';
@@ -120,19 +121,67 @@ const PluginConfiguration: React.FC = () => {
   const form = formData.form;
   const existingPlugin = pluginData?.formPlugin;
   const plugin = getFrontendPlugin(currentPluginType);
+  const manifest = allPluginManifests.find((m) => m.id === currentPluginType);
+  const isDeprecated = manifest?.deprecated === true;
+  const goToQuizSettings = () => navigate(`/dashboard/form/${formId}/settings?section=quiz`);
 
   const renderPluginConfig = () => {
+    // New instances of a deprecated plugin are rejected server-side (createFormPlugin) —
+    // block the create form here too rather than letting the user fill it out and hit an
+    // error on submit. Existing instances (mode 'edit') stay editable; see the banner below.
+    if (mode === 'create' && isDeprecated) {
+      return (
+        <div
+          className="rounded-xl bg-white p-10 text-center"
+          style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
+        >
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: 'var(--tf-error-bg)' }}
+          >
+            <AlertCircle className="h-6 w-6" style={{ color: 'var(--tf-error)' }} />
+          </div>
+          <h3 className="text-sm font-semibold mb-1 text-primary">{t('deprecated.title')}</h3>
+          <p className="text-xs mb-5 text-muted-foreground">
+            {t('deprecated.description')}
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Button variant="outline" onClick={backToPlugins}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t('actions.backToPlugins')}
+            </Button>
+            <Button onClick={goToQuizSettings}>{t('deprecated.goToQuizSettings')}</Button>
+          </div>
+        </div>
+      );
+    }
+
     if (plugin) {
       const { ConfigForm } = plugin;
       return (
-        <ConfigForm
-          form={form}
-          initialData={existingPlugin}
-          mode={mode}
-          isSaving={isSaving}
-          onSave={handleSave}
-          onCancel={backToPlugins}
-        />
+        <div className="space-y-4">
+          {mode === 'edit' && isDeprecated && (
+            <div
+              className="rounded-xl px-5 py-4 flex items-center justify-between gap-4 max-w-4xl mx-auto"
+              style={{ background: 'var(--tf-error-bg)', border: '1px solid var(--tf-error-bg-md)' }}
+            >
+              <p className="text-xs" style={{ color: 'var(--tf-error)' }}>
+                {t('deprecated.description')}
+              </p>
+              <Button variant="outline" size="sm" className="shrink-0 h-8 px-3 text-xs" onClick={goToQuizSettings}>
+                {t('deprecated.goToQuizSettings')}
+              </Button>
+            </div>
+          )}
+          <ConfigForm
+            form={form}
+            initialData={existingPlugin}
+            mode={mode}
+            isSaving={isSaving}
+            onSave={handleSave}
+            onCancel={backToPlugins}
+          />
+        </div>
       );
     }
 

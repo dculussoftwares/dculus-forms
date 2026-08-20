@@ -20,6 +20,10 @@
     "google-sheets": "Google Sheets",
     "ai-tagger": "AI Auto-Tagger"
   },
+  "deprecated": {
+    "badge": "Deprecated",
+    "link": "Migrate to native quiz mode →"
+  },
   "toasts": {
     "enabledTitle": "Integration enabled",
     "enabledMessage": "\"{{name}}\" has been enabled",

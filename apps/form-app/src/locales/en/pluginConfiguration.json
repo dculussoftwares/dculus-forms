@@ -20,6 +20,11 @@
       "description": "The plugin type \"{{pluginType}}\" is not recognized."
     }
   },
+  "deprecated": {
+    "title": "This plugin is deprecated",
+    "description": "Quiz Auto-Grading has been replaced by native quiz mode. Existing setups keep working, but new instances can no longer be created.",
+    "goToQuizSettings": "Go to Quiz Settings"
+  },
   "toasts": {
     "pluginCreated": {
       "title": "Plugin Created",

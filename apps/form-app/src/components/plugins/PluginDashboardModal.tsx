@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
+import { allPluginManifests } from '@dculus/plugins';
 import {
   Dialog,
   DialogContent,
@@ -123,6 +125,9 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
   onUpdated,
 }) => {
   const { t } = useTranslation('pluginDashboard');
+  const navigate = useNavigate();
+  const manifest = allPluginManifests.find((m) => m.id === plugin.type);
+  const isDeprecated = manifest?.deprecated === true;
   const [activeTab, setActiveTab] = useState<TabId>('configure');
   const [isSaving, setIsSaving] = useState(false);
 
@@ -372,6 +377,25 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
             {/* ── CONFIGURE TAB (merged config + overview) ── */}
             <TabsContent value="configure" className="mt-0">
               <div className="space-y-5">
+                {isDeprecated && (
+                  <div
+                    className="rounded-lg px-4 py-3 flex items-center justify-between gap-3"
+                    style={{ background: 'var(--tf-error-bg)', border: '1px solid var(--tf-error-bg-md)' }}
+                  >
+                    <p className="text-xs" style={{ color: 'var(--tf-error)' }}>
+                      {t('deprecated.description')}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 h-7 px-2.5 text-xs"
+                      onClick={() => navigate(`/dashboard/form/${plugin.formId}/settings?section=quiz`)}
+                    >
+                      {t('deprecated.goToQuizSettings')}
+                    </Button>
+                  </div>
+                )}
+
                 {/* Config section */}
                 {ConfigForm ? (
                   <ConfigForm

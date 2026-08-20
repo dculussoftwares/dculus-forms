@@ -10,4 +10,7 @@ export const quizManifest: PluginManifest = {
   iconBgColor: '#ddd6fa',
   category: 'Workflow',
   available: true,
+  deprecated: true,
+  deprecationMessage:
+    'This plugin is deprecated. Use native quiz mode in Form Settings → Quiz for new forms — existing quiz plugin instances keep working.',
 };

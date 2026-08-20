@@ -43,12 +43,18 @@ const Integrations: React.FC = () => {
     })),
   ];
 
+  // Description shown for a catalog entry — the localized deprecation notice for deprecated
+  // plugins, otherwise the manifest's own description. Shared by the search filter below so
+  // search always matches what's actually rendered.
+  const catalogDescription = (plugin: (typeof AVAILABLE_PLUGIN_TYPES)[number]) =>
+    plugin.deprecated ? t('catalogSection.deprecatedDescription') : plugin.description;
+
   // Filter catalog by search + category
   const filteredCatalog = AVAILABLE_PLUGIN_TYPES.filter((plugin) => {
     const matchesSearch =
       !searchQuery ||
       plugin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      plugin.description.toLowerCase().includes(searchQuery.toLowerCase());
+      catalogDescription(plugin).toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || plugin.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -268,7 +274,7 @@ const Integrations: React.FC = () => {
                             className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                             style={{
                               backgroundColor: pluginType.iconBgColor,
-                              opacity: pluginType.comingSoon ? 0.5 : 1,
+                              opacity: pluginType.comingSoon || pluginType.deprecated ? 0.5 : 1,
                             }}
                           >
                             <Icon className="h-5 w-5" style={{ color: pluginType.iconColor }} />
@@ -292,6 +298,18 @@ const Integrations: React.FC = () => {
                                   {t('catalogSection.comingSoonLabel')}
                                 </span>
                               )}
+                              {pluginType.deprecated && (
+                                <span
+                                  className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                                  style={{
+                                    backgroundColor: 'var(--tf-error-bg)',
+                                    color: 'var(--tf-error)',
+                                    border: '1px solid var(--tf-error-bg-md)',
+                                  }}
+                                >
+                                  {t('catalogSection.deprecatedLabel')}
+                                </span>
+                              )}
                               {activeCount > 0 && (
                                 <span
                                   className="px-2 py-0.5 rounded-full text-[10px] font-medium"
@@ -306,13 +324,22 @@ const Integrations: React.FC = () => {
                               )}
                             </div>
                             <p className="text-xs text-[#655d67] leading-relaxed">
-                              {pluginType.description}
+                              {catalogDescription(pluginType)}
                             </p>
                           </div>
 
-                          {/* Connect / Add another button */}
+                          {/* Connect / Add another / migrate button */}
                           <div className="shrink-0">
-                            {!pluginType.comingSoon && (
+                            {pluginType.deprecated ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-4 text-xs font-medium"
+                                onClick={() => navigate(`/dashboard/form/${formId}/settings?section=quiz`)}
+                              >
+                                {t('catalogSection.goToQuizSettingsButton')}
+                              </Button>
+                            ) : !pluginType.comingSoon && (
                               <Button
                                 size="sm"
                                 variant={activeCount > 0 ? 'outline' : 'default'}

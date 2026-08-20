@@ -162,6 +162,16 @@ export const pluginsResolvers = {
         throw createGraphQLError('Access denied: You need OWNER access to create plugins for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
+      // quiz-grading is deprecated (native quiz mode replaces it — see Form Settings → Quiz).
+      // Block new instances here; UI-level gating alone isn't enough since this mutation is
+      // directly callable. Existing quiz-grading instances are untouched and keep executing.
+      if (input.type === 'quiz-grading') {
+        throw createGraphQLError(
+          'The Quiz Auto-Grading plugin is deprecated. Use native quiz mode in Form Settings → Quiz instead.',
+          GRAPHQL_ERROR_CODES.PLUGIN_DEPRECATED
+        );
+      }
+
       // Validate events (only allow supported events)
       const supportedEvents = ['form.submitted', 'plugin.test'];
       const invalidEvents = input.events.filter(

@@ -951,80 +951,12 @@ describe('proposePlugin (proposal only)', () => {
     expect(result.error).toMatch(/not an email field/i);
   });
 
-  it('proposes quiz grading with fields resolved by label and options validated', async () => {
+  it('no longer accepts "quiz-grading" as a pluginType (deprecated — native quiz mode replaces it)', () => {
     const tools = makePluginTools();
-    const result = await tools.proposePlugin.execute!({
-      pluginType: 'quiz-grading', name: 'Auto grade',
-      quiz: {
-        quizFields: [
-          { field: 'Capital of France', correctAnswer: 'Paris', marks: 2 },
-          { field: 'q2', correctAnswer: '4', marks: 1 },
-        ],
-        passThreshold: 60,
-      },
-      rationale: 'Grade the quiz automatically.',
-    }, { messages: [], toolCallId: 'test' }) as any;
-    expect(result.type).toBe('PROPOSE_CREATE_PLUGIN');
-    expect(result.config).toEqual({
-      type: 'quiz-grading',
-      quizFields: [
-        { fieldId: 'q1', fieldLabel: 'Capital of France', correctAnswer: 'Paris', marks: 2 },
-        { fieldId: 'q2', fieldLabel: 'Two plus two', correctAnswer: '4', marks: 1 },
-      ],
-      passThreshold: 60,
+    const parsed = tools.proposePlugin.inputSchema.safeParse({
+      pluginType: 'quiz-grading', name: 'Auto grade', rationale: 'x',
     });
-  });
-
-  it('rejects a correctAnswer that is not one of the field options', async () => {
-    const tools = makePluginTools();
-    const result = await tools.proposePlugin.execute!({
-      pluginType: 'quiz-grading', name: 'Auto grade',
-      quiz: { quizFields: [{ field: 'Capital of France', correctAnswer: 'Berlin', marks: 1 }], passThreshold: 50 },
-      rationale: 'x',
-    }, { messages: [], toolCallId: 'test' }) as any;
-    expect(result.error).toMatch(/not one of the options/i);
-  });
-
-  it('rejects quiz fields that are not select/radio', async () => {
-    const tools = makePluginTools();
-    const result = await tools.proposePlugin.execute!({
-      pluginType: 'quiz-grading', name: 'Auto grade',
-      quiz: { quizFields: [{ field: 'Notes', correctAnswer: 'anything', marks: 1 }], passThreshold: 50 },
-      rationale: 'x',
-    }, { messages: [], toolCallId: 'test' }) as any;
-    expect(result.error).toMatch(/select or radio/i);
-  });
-
-  it('rejects an ambiguous field label', async () => {
-    const ambiguous = {
-      pages: [{ id: 'p1', title: 'P', fields: [
-        { id: 'a', type: 'SELECT_FIELD', label: 'Choice', options: ['X'] },
-        { id: 'b', type: 'SELECT_FIELD', label: 'Choice', options: ['X'] },
-      ] }],
-    };
-    const tools = createFormEditTools(ambiguous, { toolTier: 'full', canManagePlugins: true }) as any;
-    const result = await tools.proposePlugin.execute!({
-      pluginType: 'quiz-grading', name: 'Auto grade',
-      quiz: { quizFields: [{ field: 'Choice', correctAnswer: 'X', marks: 1 }], passThreshold: 50 },
-      rationale: 'x',
-    }, { messages: [], toolCallId: 'test' }) as any;
-    expect(result.error).toMatch(/couldn't find a unique field/i);
-  });
-
-  it('rejects duplicate quiz fields', async () => {
-    const tools = makePluginTools();
-    const result = await tools.proposePlugin.execute!({
-      pluginType: 'quiz-grading', name: 'Auto grade',
-      quiz: {
-        quizFields: [
-          { field: 'q1', correctAnswer: 'Paris', marks: 1 },
-          { field: 'Capital of France', correctAnswer: 'Lyon', marks: 1 },
-        ],
-        passThreshold: 50,
-      },
-      rationale: 'x',
-    }, { messages: [], toolCallId: 'test' }) as any;
-    expect(result.error).toMatch(/more than once/i);
+    expect(parsed.success).toBe(false);
   });
 });
 

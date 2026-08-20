@@ -6,6 +6,10 @@
   "configure": {
     "noSettings": "No settings available for this plugin type."
   },
+  "deprecated": {
+    "description": "This plugin is deprecated. Migrate to native quiz mode.",
+    "goToQuizSettings": "Go to Quiz Settings"
+  },
   "overview": {
     "stats": {
       "totalDeliveries": "Total Deliveries",

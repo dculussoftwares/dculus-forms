@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { pluginsResolvers } from '../plugins.js';
 import { GraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';
 import * as pluginEvents from '../../../plugins/core/events.js';
@@ -459,7 +460,7 @@ describe('Plugins Resolvers', () => {
       expect(result).toEqual(mockEmailPlugin);
     });
 
-    it('should create quiz grading plugin', async () => {
+    it('should reject creating a quiz-grading plugin (deprecated — R1)', async () => {
       const input = {
         formId: 'form-123',
         type: 'quiz-grading',
@@ -479,15 +480,14 @@ describe('Plugins Resolvers', () => {
         permission: 'EDITOR' as any,
         form: mockForm as any,
       });
-      vi.mocked(prisma.formPlugin.create).mockResolvedValue(mockQuizPlugin as any);
 
-      const result = await pluginsResolvers.Mutation.createFormPlugin(
-        {},
-        { input },
-        mockContext
-      );
-
-      expect(result).toEqual(mockQuizPlugin);
+      await expect(
+        pluginsResolvers.Mutation.createFormPlugin({}, { input }, mockContext)
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('deprecated'),
+        extensions: expect.objectContaining({ code: GRAPHQL_ERROR_CODES.PLUGIN_DEPRECATED }),
+      });
+      expect(prisma.formPlugin.create).not.toHaveBeenCalled();
     });
 
     it('should default enabled to true when not provided', async () => {

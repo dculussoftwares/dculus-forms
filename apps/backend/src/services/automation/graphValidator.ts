@@ -108,7 +108,9 @@ const ActionDataSchema = z.object({
 // Per-type action config schemas — mirror what plugins/*/handler.ts reads from plugin.config.
 // Types without a dedicated schema here (quiz-grading, google-sheets, ai-tagger, …) still get
 // the generic ActionDataSchema.config check above; only well-known automation actions get
-// stricter per-type validation.
+// stricter per-type validation. quiz-grading is deprecated (#303 — native quiz mode replaces
+// it) and isn't even in AUTOMATION_ACTION_TYPES on the frontend, so it never reaches here in
+// practice; the schema is left generic rather than adding dedicated validation for it.
 const EmailActionConfigSchema = z
   .object({
     recipientEmail: z.email().optional(),
