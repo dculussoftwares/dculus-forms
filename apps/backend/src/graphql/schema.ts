@@ -426,6 +426,7 @@ export const typeDefs = gql`
     title: String!
     description: String
     organizationId: ID!
+    settings: FormSettingsInput
   }
 
   input MaxResponsesSettingsInput {

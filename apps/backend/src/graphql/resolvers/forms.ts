@@ -19,7 +19,7 @@ import { analyticsService } from '../../services/analyticsService.js';
 import { randomUUID } from 'crypto';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
-import { sanitizeQuizSettings } from '@dculus/types';
+import { sanitizeQuizSettings, type FormSettings } from '@dculus/types';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
@@ -245,7 +245,7 @@ export const formsResolvers = {
   Mutation: {
     createForm: async (
       _: any,
-      { input }: { input: { templateId?: string; formSchema?: any; title: string; description?: string; organizationId: string } },
+      { input }: { input: { templateId?: string; formSchema?: any; title: string; description?: string; organizationId: string; settings?: FormSettings } },
       context: { auth: BetterAuthContext }
     ) => {
       // 🔒 SECURITY: Verify user is a member of the target organization
@@ -260,6 +260,25 @@ export const formsResolvers = {
       }
       if (input.description && input.description.length > 5000) {
         throw createGraphQLError('Description must be 5000 characters or less', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      // Quiz is a free, opt-in feature (no plan gating — see epic #289 D8).
+      // `settings` is optional so every pre-existing caller (CreateFormPopover,
+      // the template flow, tests) is unaffected; only sanitize when the quiz
+      // wizard step actually sends a `settings.quiz` payload.
+      let settings: FormSettings | undefined = undefined;
+      const incomingQuiz = input.settings?.quiz;
+      if (incomingQuiz !== undefined) {
+        const sanitizedQuiz = sanitizeQuizSettings(incomingQuiz);
+        if (!sanitizedQuiz) {
+          throw createGraphQLError(
+            'Invalid quiz settings: check the pass threshold, grade release, and (if scheduled) releaseAt',
+            GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+          );
+        }
+        settings = { ...input.settings, quiz: sanitizedQuiz };
+      } else if (input.settings) {
+        settings = input.settings;
       }
 
       // ✅ VALIDATION: Ensure exactly one of templateId or formSchema is provided
@@ -342,6 +361,7 @@ export const formsResolvers = {
         isPublished: false,
         organizationId: input.organizationId,
         createdById: context.auth.user!.id,
+        settings,
       };
 
       // Create the form first (this creates the database record)

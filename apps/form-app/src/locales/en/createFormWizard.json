@@ -11,6 +11,10 @@
     "template": {
       "title": "Start from Template",
       "description": "Browse 50+ ready-made forms for any use case"
+    },
+    "quiz": {
+      "title": "Create a Quiz",
+      "description": "Score responses automatically with pass/fail grading and a results screen"
     }
   },
   "ai": {
@@ -36,6 +40,42 @@
     "errors": {
       "promptRequired": "Please describe the form you want to create",
       "failed": "Failed to generate form",
+      "failedDesc": "Something went wrong. Please try again."
+    }
+  },
+  "quiz": {
+    "heading": "Create a Quiz",
+    "titleLabel": "Quiz title",
+    "titlePlaceholder": "e.g. \"World Capitals Trivia\"",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Tell respondents what this quiz covers (optional)",
+    "startMode": {
+      "label": "How do you want to start?",
+      "blank": "Blank quiz",
+      "blankSub": "Add questions yourself",
+      "ai": "Generate with AI",
+      "aiSub": "AI writes the questions"
+    },
+    "aiPromptLabel": "What should the quiz cover?",
+    "aiPromptPlaceholder": "e.g. \"10 questions about world capitals, multiple choice\"",
+    "aiPromptTemplate": "Create a quiz about: {{topic}}. Use multiple-choice or single-select questions, each phrased as a quiz question with one clearly correct answer choice.",
+    "passThreshold": {
+      "label": "Pass threshold",
+      "suffix": "%"
+    },
+    "gradeRelease": {
+      "label": "Show results",
+      "immediate": "Immediately",
+      "afterReview": "After review",
+      "never": "Never"
+    },
+    "continue": "Continue",
+    "generating": "Generating…",
+    "errors": {
+      "titleRequired": "Please enter a quiz title",
+      "passThresholdInvalid": "Pass threshold must be a number between 0 and 100",
+      "promptRequired": "Please describe what the quiz should cover",
+      "failed": "Failed to generate quiz",
       "failedDesc": "Something went wrong. Please try again."
     }
   },
