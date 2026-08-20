@@ -1,7 +1,7 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import * as Y from 'yjs';
-import { sanitizeConditions, sanitizeFieldGrading, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import { sanitizeConditions, sanitizeFieldGrading, DEFAULT_THANK_YOU_CONTENT, type FieldGrading } from '@dculus/types';
 import { generateRandomString } from '@dculus/utils';
 import {
   extractFormStatsFromYDoc,
@@ -389,7 +389,7 @@ const yMapToPlainObject = (value: any): any => {
 // practice despite the answer key being saved correctly. Mirrors the
 // frontend's extractGrading exactly, including the sanitizeFieldGrading
 // trust-boundary pass.
-const extractGrading = (fieldMap: Y.Map<any>): unknown => {
+const extractGrading = (fieldMap: Y.Map<any>): FieldGrading | undefined => {
   const gradingYMap = fieldMap.get('grading');
   if (!(gradingYMap instanceof Y.Map)) return undefined;
 
@@ -677,7 +677,7 @@ export const getFormSchemaFromHocuspocus = async (
 // createGradingYMap (apps/form-app/src/store/helpers/fieldHelpers.ts), minus
 // its "update an existing map in place" mode: this only ever runs once, when
 // a brand-new Y.doc is first seeded from a form's stored formSchema.
-const buildGradingYMap = (grading: any): Y.Map<any> => {
+const buildGradingYMap = (grading: FieldGrading): Y.Map<any> => {
   const gradingMap = new Y.Map();
 
   gradingMap.set('mode', grading.mode);

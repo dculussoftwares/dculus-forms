@@ -733,8 +733,8 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
         "Which of these numbers are prime?",
         "",
         "",
-        "",
         "Select all that apply.",
+        "",
         new CheckboxFieldValidation(true, 1),
         ["2", "3", "4", "5"]
       );

@@ -617,7 +617,7 @@ const Responses: React.FC = () => {
               onPageSizeChange={responsesState.handlePageSizeChange}
               globalFilter={responsesState.globalFilter}
               columnVisibility={responsesState.columnVisibility}
-              sortBy={responsesState.sortBy}
+              sortBy={responsesState.sortColumnId}
               sortOrder={responsesState.sortOrder}
               onSortingChange={responsesState.handleSortingChange}
               onRowClick={responsesState.openDetailPanel}

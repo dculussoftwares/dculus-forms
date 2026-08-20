@@ -163,8 +163,14 @@ When('I fill the only text field with valid data in the viewer', async function 
 When('I dismiss the viewer cover screen if present', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
   const getStarted = this.viewerPage.getByRole('button', { name: /get started/i });
-  if (await getStarted.isVisible({ timeout: 3_000 }).catch(() => false)) {
+  // `isVisible()` checks the current DOM snapshot only — it doesn't wait —
+  // so calling it right after navigation can race the cover screen's render
+  // and report "absent" even when one is coming. `waitFor` actually waits.
+  try {
+    await getStarted.waitFor({ state: 'visible', timeout: 3_000 });
     await getStarted.click();
+  } catch {
+    // No cover screen for this layout (or it didn't appear in time) — nothing to dismiss.
   }
 });
 
@@ -340,6 +346,9 @@ async function createQuizFormViaGraphQL(
 
   if (response.errors) {
     throw new Error(`GraphQL error creating quiz form: ${JSON.stringify(response.errors)}`);
+  }
+  if (!response.data?.createForm?.id) {
+    throw new Error(`createForm returned no form id: ${JSON.stringify(response)}`);
   }
 
   const formId = response.data.createForm.id;
