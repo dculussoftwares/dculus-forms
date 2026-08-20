@@ -677,7 +677,7 @@ export const getFormSchemaFromHocuspocus = async (
 // createGradingYMap (apps/form-app/src/store/helpers/fieldHelpers.ts), minus
 // its "update an existing map in place" mode: this only ever runs once, when
 // a brand-new Y.doc is first seeded from a form's stored formSchema.
-const buildGradingYMap = (grading: FieldGrading): Y.Map<any> => {
+export const buildGradingYMap = (grading: FieldGrading): Y.Map<any> => {
   const gradingMap = new Y.Map();
 
   gradingMap.set('mode', grading.mode);
