@@ -32,6 +32,8 @@
     "addAnotherButton": "மற்றொன்றைச் சேர்க்கவும்",
     "activeCount": "{{count}} செயலில்",
     "comingSoonLabel": "விரைவில் வரும்",
+    "deprecatedLabel": "நிறுத்தப்பட்டது",
+    "goToQuizSettingsButton": "வினாடி வினா அமைப்புகளுக்குச் செல்லவும்",
     "noResults": "\"{{searchQuery}}\" க்கு ஒருங்கிணைப்புகள் எதுவும் கிடைக்கவில்லை"
   },
   "header": {

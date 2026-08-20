@@ -32,6 +32,8 @@
     "addAnotherButton": "Add another",
     "activeCount": "{{count}} active",
     "comingSoonLabel": "Coming Soon",
+    "deprecatedLabel": "Deprecated",
+    "goToQuizSettingsButton": "Go to Quiz Settings",
     "noResults": "No integrations found for \"{{searchQuery}}\""
   },
   "header": {

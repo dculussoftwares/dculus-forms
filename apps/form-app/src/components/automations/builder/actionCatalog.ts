@@ -14,6 +14,9 @@ export const ACTION_ICON_MAP: Record<string, LucideIcon> = {
  * are per-response plugins, not something that fits a step in a workflow, so they're
  * excluded here even though they're registered plugin types.
  *
+ * Quiz grading is also deprecated as of #303 — native quiz mode (Form Settings → Quiz)
+ * replaces it — so it would be excluded from new automations either way.
+ *
  * Slack stays in the list (matching the Plugins gallery) but its manifest is still
  * `available: false` — no backend handler is registered for it yet — so it renders
  * disabled with a "coming soon" badge, same as everywhere else in the app.

@@ -32,13 +32,16 @@ const COMPLEX_PATTERNS: RegExp[] = [
   // ── Automation / integration (plugin) requests ──────────────────────────────
   // Always complex regardless of phrasing simplicity: plugin tools are full-tier only,
   // and automation has external side effects that warrant the mini model. Patterns are
-  // deliberately scoped to plugin/webhook/notification/quiz-grading phrasing so the
-  // mini-model cost doesn't leak onto unrelated requests.
+  // deliberately scoped to plugin/webhook/notification phrasing so the mini-model cost
+  // doesn't leak onto unrelated requests.
+  //
+  // Note: quiz-grading is a deprecated plugin (native quiz mode replaces it — see Form
+  // Settings → Quiz) and the AI no longer proposes it, so quiz/grading phrasing is
+  // deliberately NOT routed here anymore — it falls through to the default 'simple' tier.
   /\bwebhooks?\b/i,
   /\b(plugin|integration|automation)s?\b/i,
   /\b(send|sends|fire|trigger|notify|alert)\b.{0,50}\b(email|notification|message)\b/i,
   /\b(email|notify|alert)\b.{0,40}\b(me|us|when|on|after|every)\b.{0,40}\b(submit|submission|response|filled)/i,
-  /\bquiz\b.{0,30}\b(grade|grading|scor(e|ing)|marks?)\b|\b(grade|grading|scor(e|ing))\b.{0,30}\bquiz\b/i,
 ];
 
 // Matches requests that are likely pure questions (no edits) — no tool loop needed.

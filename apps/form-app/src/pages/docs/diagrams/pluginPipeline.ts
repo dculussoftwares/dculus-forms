@@ -52,7 +52,7 @@ export const pluginPipeline: DocDiagram = {
         kind: 'store',
         file: 'apps/backend/src/plugins/core/registry.ts',
         does: 'A Map from type name to handler, populated as an import side effect at boot.',
-        note: 'webhook, email, quiz, ai-tagger, google-sheets, microsoft-sheets. Registering a duplicate type warns and overwrites rather than throwing.',
+        note: 'webhook, email, quiz, ai-tagger, google-sheets, microsoft-sheets. Registering a duplicate type warns and overwrites rather than throwing. quiz is deprecated (#303, native quiz mode replaces it) but its handler stays registered — existing instances still execute.',
         shared: 'Also used by automation action nodes',
       },
     },

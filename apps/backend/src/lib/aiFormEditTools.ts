@@ -89,11 +89,10 @@ export type ToolTier = 'full' | 'core' | 'minimal';
 
 // Plugin (integration) types the AI may propose. Mirrors the handlers registered in
 // apps/backend/src/plugins/ that have stable, AI-describable config shapes.
-const AI_PLUGIN_TYPES = ['webhook', 'email', 'quiz-grading'] as const;
+// quiz-grading is deprecated (native quiz mode replaces it — see Form Settings → Quiz) and is
+// deliberately excluded so the AI stops proposing a plugin type the API no longer accepts.
+const AI_PLUGIN_TYPES = ['webhook', 'email'] as const;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Quiz grading compares the response value to correctAnswer with strict equality, so only
-// single-choice fields with a fixed option list are gradable.
-const QUIZ_FIELD_TYPES = new Set(['select_field', 'radio_field']);
 
 export function createFormEditTools(
   schema: { pages: any[] },
@@ -573,7 +572,7 @@ export function createFormEditTools(
      */
     proposePlugin: tool({
       description:
-        'PROPOSAL: create an integration that runs on form submission (webhook | email | quiz-grading). Does NOT apply — user must confirm in the card. Provide only the config block matching pluginType. Reference form fields by visible label or id.',
+        'PROPOSAL: create an integration that runs on form submission (webhook | email). Does NOT apply — user must confirm in the card. Provide only the config block matching pluginType. Reference form fields by visible label or id.',
       inputSchema: z.object({
         pluginType: z.enum(AI_PLUGIN_TYPES),
         name: z.string().min(1).max(100).describe('Short display name for the integration'),
@@ -588,17 +587,9 @@ export function createFormEditTools(
           message: z.string().min(1),
           sendToSubmitter: z.boolean().optional(),
         }).optional(),
-        quiz: z.object({
-          quizFields: z.array(z.object({
-            field: z.string().min(1).describe('Select/radio field label or id'),
-            correctAnswer: z.string().min(1).describe('Must be one of the field\'s options'),
-            marks: z.number().positive(),
-          })).min(1),
-          passThreshold: z.number().min(0).max(100).describe('Pass percentage'),
-        }).optional(),
         rationale: z.string().min(1).describe('Brief explanation for the reviewer'),
       }),
-      execute: async ({ pluginType, name, webhook, email, quiz, rationale }) => {
+      execute: async ({ pluginType, name, webhook, email, rationale }) => {
         let config: Record<string, unknown>;
 
         if (pluginType === 'webhook') {
@@ -607,7 +598,7 @@ export function createFormEditTools(
           try { parsed = new URL(webhook.url); } catch { return { error: `"${webhook.url}" is not a valid URL.` }; }
           if (parsed.protocol !== 'https:') return { error: 'Webhook URLs must use https.' };
           config = { type: 'webhook', url: webhook.url, ...(webhook.secret ? { secret: webhook.secret } : {}) };
-        } else if (pluginType === 'email') {
+        } else {
           if (!email) return { error: 'The email config block is required for pluginType "email".' };
           // Mirrors EmailPluginConfig: at least one of recipientEmail / recipientFieldId is required.
           if (!email.recipientEmail && !email.recipientField) {
@@ -628,25 +619,6 @@ export function createFormEditTools(
             config.recipientFieldId = field.id;
             config.recipientFieldLabel = field.label;
           }
-        } else {
-          if (!quiz) return { error: 'The quiz config block is required for pluginType "quiz-grading".' };
-          const quizFields: Array<{ fieldId: string; fieldLabel?: string; correctAnswer: string; marks: number }> = [];
-          for (const entry of quiz.quizFields) {
-            const field = resolveField(workingSchema, entry.field);
-            if (!field) return { error: `I couldn't find a unique field matching "${entry.field}". Please use the exact field label.` };
-            if (!QUIZ_FIELD_TYPES.has(normalizeFieldType(field.type))) {
-              return { error: `"${field.label ?? entry.field}" is not a select or radio field — quiz answers must come from a fixed choice list.` };
-            }
-            const options = ((field.options ?? []) as unknown[]).map(String);
-            if (!options.includes(entry.correctAnswer)) {
-              return { error: `"${entry.correctAnswer}" is not one of the options for "${field.label ?? entry.field}" (${options.join(', ')}).` };
-            }
-            if (quizFields.some((q) => q.fieldId === field.id)) {
-              return { error: `"${field.label ?? entry.field}" appears more than once in quizFields.` };
-            }
-            quizFields.push({ fieldId: field.id, fieldLabel: field.label, correctAnswer: entry.correctAnswer, marks: entry.marks });
-          }
-          config = { type: 'quiz-grading', quizFields, passThreshold: quiz.passThreshold };
         }
 
         // 'form.submitted' is the only subscribable event today; plugin.test is internal.
@@ -755,6 +727,6 @@ export type FormOperation =
   | { type: 'PROPOSE_DELETE_PAGE'; pageId: string; pageTitle: string; fieldCount: number; responseCount: number }
   | { type: 'PROPOSE_FIELD_TYPE_CHANGE'; fieldId: string; label: string; currentType: string; newFieldType: string; responseCount: number }
   | { type: 'PROPOSE_CONDITION_RULE'; rule: ConditionalRule; rationale: string }
-  | { type: 'PROPOSE_CREATE_PLUGIN'; pluginType: 'webhook' | 'email' | 'quiz-grading'; name: string; config: Record<string, unknown>; events: string[]; rationale: string }
+  | { type: 'PROPOSE_CREATE_PLUGIN'; pluginType: 'webhook' | 'email'; name: string; config: Record<string, unknown>; events: string[]; rationale: string }
   | { type: 'PROPOSE_UPDATE_PLUGIN'; pluginId: string; pluginType: string; name: string; updates: { name?: string; enabled?: boolean }; rationale: string }
   | { type: 'PROPOSE_DELETE_PLUGIN'; pluginId: string; pluginType: string; name: string; rationale: string };
