@@ -43,12 +43,18 @@ const Integrations: React.FC = () => {
     })),
   ];
 
+  // Description shown for a catalog entry — the localized deprecation notice for deprecated
+  // plugins, otherwise the manifest's own description. Shared by the search filter below so
+  // search always matches what's actually rendered.
+  const catalogDescription = (plugin: (typeof AVAILABLE_PLUGIN_TYPES)[number]) =>
+    plugin.deprecated ? t('catalogSection.deprecatedDescription') : plugin.description;
+
   // Filter catalog by search + category
   const filteredCatalog = AVAILABLE_PLUGIN_TYPES.filter((plugin) => {
     const matchesSearch =
       !searchQuery ||
       plugin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      plugin.description.toLowerCase().includes(searchQuery.toLowerCase());
+      catalogDescription(plugin).toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || plugin.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -318,7 +324,7 @@ const Integrations: React.FC = () => {
                               )}
                             </div>
                             <p className="text-xs text-[#655d67] leading-relaxed">
-                              {pluginType.deprecated ? t('catalogSection.deprecatedDescription') : pluginType.description}
+                              {catalogDescription(pluginType)}
                             </p>
                           </div>
 
