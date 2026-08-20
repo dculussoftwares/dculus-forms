@@ -1,7 +1,7 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import * as Y from 'yjs';
-import { sanitizeConditions, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import { sanitizeConditions, sanitizeFieldGrading, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 import { generateRandomString } from '@dculus/utils';
 import {
   extractFormStatsFromYDoc,
@@ -366,6 +366,52 @@ export const createHocuspocusServer = () => {
 /**
  * Get form schema from Hocuspocus collaborative document
  */
+// Converts a nested Y.Map (grading's `text`/`numeric`/`set` sub-options) into a
+// plain object — mirrors the frontend's identically-named helper in
+// apps/form-app/src/store/collaboration/CollaborationManager.ts.
+const yMapToPlainObject = (value: any): any => {
+  if (!(value instanceof Y.Map)) return value;
+  const plain: Record<string, any> = {};
+  value.forEach((v, k) => {
+    plain[k] = v;
+  });
+  return plain;
+};
+
+// Reads a field's `grading` Y.Map (built by createGradingYMap in
+// apps/form-app/src/store/helpers/fieldHelpers.ts) back into a plain
+// FieldGrading object. Native Quiz (epic #289, Story 06/13): without this,
+// submitResponse's grading pass reads the live Hocuspocus schema and finds
+// every field's `grading` silently undefined the moment a Y.doc exists for
+// the form (any form opened in the builder, or — since
+// getFormSchemaFromHocuspocus lazily materializes a doc from the DB row on
+// first read — any quiz form at all), so nothing is ever gradable in
+// practice despite the answer key being saved correctly. Mirrors the
+// frontend's extractGrading exactly, including the sanitizeFieldGrading
+// trust-boundary pass.
+const extractGrading = (fieldMap: Y.Map<any>): unknown => {
+  const gradingYMap = fieldMap.get('grading');
+  if (!(gradingYMap instanceof Y.Map)) return undefined;
+
+  const plain: Record<string, any> = {};
+  gradingYMap.forEach((value, key) => {
+    if (key === 'acceptedAnswers') {
+      plain[key] = value instanceof Y.Array ? value.toArray() : value;
+    } else if (key === 'optionFeedback') {
+      const arr = value instanceof Y.Array ? value.toArray() : value;
+      plain[key] = Array.isArray(arr)
+        ? arr.map((entry) => yMapToPlainObject(entry))
+        : arr;
+    } else if (key === 'text' || key === 'numeric' || key === 'set') {
+      plain[key] = yMapToPlainObject(value);
+    } else {
+      plain[key] = value;
+    }
+  });
+
+  return sanitizeFieldGrading(plain);
+};
+
 export const getFormSchemaFromHocuspocus = async (
   formId: string
 ): Promise<any | null> => {
@@ -502,15 +548,36 @@ export const getFormSchemaFromHocuspocus = async (
                       };
                     }
 
+                    // Checkbox fields store `defaultValue` as a Y.Array (see
+                    // fieldsSlice.ts's dedicated CHECKBOX_FIELD branch) — every
+                    // other field type stores it as a plain scalar. Unwrap it here
+                    // the same way the frontend's extractFieldData does, otherwise
+                    // a raw Y.Array instance reaches CheckboxField's constructor,
+                    // which isn't Array.isArray-true and has no `.split`, throwing
+                    // `defaultValues.split is not a function` the moment any
+                    // checkbox field round-trips through Hocuspocus (e.g. during
+                    // Native Quiz grading, epic #289 Story 06/13).
+                    const rawDefaultValue = fieldMap.get('defaultValue');
+                    const defaultValue =
+                      rawDefaultValue instanceof Y.Array
+                        ? rawDefaultValue.toArray()
+                        : rawDefaultValue;
+
                     const field: any = {
                       id: fieldMap.get('id'),
                       type: fieldType,
                       label: fieldMap.get('label'),
-                      defaultValue: fieldMap.get('defaultValue'),
+                      defaultValue,
                       prefix: fieldMap.get('prefix'),
                       hint: fieldMap.get('hint'),
                       validation: validationData,
                     };
+
+                    // Native Quiz (epic #289, Story 06/13): sibling to
+                    // `validation` — absent for every non-quiz field, so this is
+                    // zero extra work/shape change when grading was never set.
+                    const grading = extractGrading(fieldMap);
+                    if (grading) field.grading = grading;
 
                     // Handle field-specific properties
                     if (fieldMap.has('options')) {
@@ -605,6 +672,67 @@ export const getFormSchemaFromHocuspocus = async (
  * Initialize a Hocuspocus document with form schema
  * This ensures the collaboration service has the correct document structure
  */
+// Builds a field's `grading` Y.Map from a plain FieldGrading object — the
+// write-side counterpart of `extractGrading` above, mirroring the frontend's
+// createGradingYMap (apps/form-app/src/store/helpers/fieldHelpers.ts), minus
+// its "update an existing map in place" mode: this only ever runs once, when
+// a brand-new Y.doc is first seeded from a form's stored formSchema.
+const buildGradingYMap = (grading: any): Y.Map<any> => {
+  const gradingMap = new Y.Map();
+
+  gradingMap.set('mode', grading.mode);
+  gradingMap.set('pointValue', grading.pointValue);
+
+  const acceptedAnswersArray = new Y.Array();
+  (grading.acceptedAnswers || []).forEach((answer: string) =>
+    acceptedAnswersArray.push([answer])
+  );
+  gradingMap.set('acceptedAnswers', acceptedAnswersArray);
+
+  if (grading.text) {
+    const textMap = new Y.Map();
+    Object.entries(grading.text).forEach(([key, value]) => {
+      if (value !== undefined) textMap.set(key, value);
+    });
+    gradingMap.set('text', textMap);
+  }
+  if (grading.numeric) {
+    const numericMap = new Y.Map();
+    Object.entries(grading.numeric).forEach(([key, value]) => {
+      if (value !== undefined) numericMap.set(key, value);
+    });
+    gradingMap.set('numeric', numericMap);
+  }
+  if (grading.set) {
+    const setMap = new Y.Map();
+    Object.entries(grading.set).forEach(([key, value]) => {
+      if (value !== undefined) setMap.set(key, value);
+    });
+    gradingMap.set('set', setMap);
+  }
+
+  if (grading.whenCorrect !== undefined) gradingMap.set('whenCorrect', grading.whenCorrect);
+  if (grading.whenIncorrect !== undefined) gradingMap.set('whenIncorrect', grading.whenIncorrect);
+  if (grading.general !== undefined) gradingMap.set('general', grading.general);
+
+  if (grading.optionFeedback) {
+    const optionFeedbackArray = new Y.Array();
+    grading.optionFeedback.forEach((entry: any) => {
+      const entryMap = new Y.Map();
+      entryMap.set('option', entry.option);
+      entryMap.set('feedback', entry.feedback);
+      optionFeedbackArray.push([entryMap]);
+    });
+    gradingMap.set('optionFeedback', optionFeedbackArray);
+  }
+
+  if (grading.shuffleOptions !== undefined) {
+    gradingMap.set('shuffleOptions', grading.shuffleOptions);
+  }
+
+  return gradingMap;
+};
+
 export const initializeHocuspocusDocument = async (
   formId: string,
   formSchema: any
@@ -725,6 +853,18 @@ export const initializeHocuspocusDocument = async (
               }
 
               fieldMap.set('validation', validationMap);
+
+              // Native Quiz (epic #289, Story 06/13): sanitize the same way
+              // deserializeFormField does — sibling to `validation`, absent
+              // for every non-quiz field. Without this, grading saved on a
+              // form at creation time (e.g. the wizard's blank-quiz flow, or
+              // any quiz form created directly via the createForm mutation)
+              // is silently missing the moment this seeded Y.doc becomes the
+              // "live schema" submitResponse grades against.
+              const sanitizedGrading = sanitizeFieldGrading(field.grading);
+              if (sanitizedGrading) {
+                fieldMap.set('grading', buildGradingYMap(sanitizedGrading));
+              }
 
               // Handle field-specific properties
               if (field.options && Array.isArray(field.options)) {
