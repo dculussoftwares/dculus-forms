@@ -306,6 +306,26 @@ export const formsResolvers = {
           throw createGraphQLError('Template not found', GRAPHQL_ERROR_CODES.TEMPLATE_NOT_FOUND);
         }
         formSchema = JSON.parse(JSON.stringify(template.formSchema));
+
+        // Native Quiz (epic #289): FormTemplate has no dedicated settings
+        // column, so a quiz template (e.g. seed-templates.ts's "General
+        // Knowledge Quiz") carries its quiz policy as an extra top-level
+        // `settings` key inside formSchema — serializeFormSchema/
+        // deserializeFormSchema round-trip unknown keys unchanged, so it
+        // survives storage. Apply it to the new form here so a form created
+        // from a quiz template is actually quiz-enabled, then strip the
+        // carrier key back out — it was never a real part of the schema.
+        // Only fills in `quiz`: checked on `settings?.quiz` (not `settings`)
+        // so a caller sending other settings (e.g. collectRespondentEmail)
+        // without an explicit quiz policy still gets the template's quiz
+        // settings, and an explicitly supplied settings.quiz always wins.
+        if (settings?.quiz === undefined && formSchema.settings?.quiz !== undefined) {
+          const sanitizedQuiz = sanitizeQuizSettings(formSchema.settings.quiz);
+          if (sanitizedQuiz) {
+            settings = { ...settings, quiz: sanitizedQuiz };
+          }
+        }
+        delete formSchema.settings;
       } else {
         // New flow: Use provided schema with validation
         formSchema = input.formSchema;

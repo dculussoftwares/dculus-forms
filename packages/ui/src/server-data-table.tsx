@@ -12,7 +12,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getSortedRowModel,
   useReactTable,
   ColumnResizeMode,
 } from "@tanstack/react-table"
@@ -54,14 +53,18 @@ interface ServerDataTableProps<TData, TValue> {
 export function ServerDataTable<TData, TValue>({
   columns,
   data,
-  searchPlaceholder = "Search...",
+  // Unused here (no search input in this component) — kept in the prop
+  // interface since callers already pass it; prefixed to satisfy the linter.
+  searchPlaceholder: _searchPlaceholder = "Search...",
   onRowClick,
   className,
   maxHeight = "600px",
   pageCount,
   currentPage,
   pageSize,
-  totalItems,
+  // Unused here (the pagination footer only shows "page X of Y", not an item
+  // count) — kept in the prop interface since callers already pass it.
+  totalItems: _totalItems,
   onPageChange,
   onPageSizeChange,
   sortBy,
@@ -79,7 +82,7 @@ export function ServerDataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [internalRowSelection, setInternalRowSelection] = React.useState<RowSelectionState>({})
   const [globalFilter, setGlobalFilter] = React.useState("")
-  const [columnResizeMode, setColumnResizeMode] = React.useState<ColumnResizeMode>('onChange')
+  const columnResizeMode: ColumnResizeMode = 'onChange'
 
   const rowSelection = controlledRowSelection ?? internalRowSelection
   const setRowSelection = onRowSelectionChange ?? setInternalRowSelection
@@ -127,15 +130,26 @@ export function ServerDataTable<TData, TValue>({
     onColumnVisibilityChange: setColumnVisibility,
     onColumnSizingChange: setColumnSizing,
     onGlobalFilterChange: setGlobalFilter,
+    // `sorting` above is derived entirely from the `sortBy`/`sortOrder` props
+    // (server-driven, manualSorting) — this table owns no sorting state of
+    // its own. A header click still routes through TanStack's normal
+    // `column.toggleSorting()` -> `table.setSorting(updater)` path, so this
+    // callback is required for that click to go anywhere: it resolves the
+    // updater against the current (prop-derived) `sorting` array and forwards
+    // just the clicked column's id to the caller, which owns the actual
+    // sortBy/sortOrder state and decides the resulting direction.
+    onSortingChange: (updater) => {
+      if (!onSortingChange) return
+      const nextSorting = typeof updater === 'function' ? updater(sorting) : updater
+      const clickedColumn = nextSorting[0]
+      if (clickedColumn) onSortingChange(clickedColumn.id)
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     manualPagination: true,
     manualSorting: true,
     manualFiltering: true,
   })
-
-  const startItem = (currentPage - 1) * pageSize + 1
-  const endItem = Math.min(currentPage * pageSize, totalItems)
 
   return (
     <div className={cn("flex flex-col h-full", className)}>

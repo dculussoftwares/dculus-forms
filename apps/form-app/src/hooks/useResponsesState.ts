@@ -20,6 +20,18 @@ import { DELETE_RESPONSES } from '../graphql/mutations';
 
 const getStorageKey = (formId: string) => `dculus-responses-col-${formId}`;
 
+// Maps a ServerDataTable column id to the `sortBy` value getResponsesByFormId
+// actually understands (apps/backend/src/services/responseService.ts's
+// `allowedSortFields`/`isFormFieldSort`/`isGradeSort`). Native Quiz (epic
+// #289, Story 11): the Score column's id is 'score' (createResponsesColumns.tsx),
+// but the backend sorts it via the joined ResponseGrade row's `percentage`.
+const COLUMN_ID_TO_SORT_BY: Record<string, string> = {
+  score: 'grade.percentage',
+};
+const SORT_BY_TO_COLUMN_ID: Record<string, string> = Object.fromEntries(
+  Object.entries(COLUMN_ID_TO_SORT_BY).map(([columnId, sortByValue]) => [sortByValue, columnId])
+);
+
 function loadPersistedColState(formId: string | undefined): { order: string[]; visibility: VisibilityState } {
   if (!formId) return { order: [], visibility: {} };
   try {
@@ -54,10 +66,14 @@ export interface UseResponsesStateReturn {
   pageSize: number;
   sortBy: string;
   sortOrder: 'asc' | 'desc';
+  // The ServerDataTable column id currently sorted — see the `sortColumnId`
+  // implementation for why this differs from `sortBy` for some columns.
+  sortColumnId: string;
   setCurrentPage: (page: number) => void;
   setPageSize: (size: number) => void;
   handlePageChange: (page: number) => void;
   handlePageSizeChange: (size: number) => void;
+  handleSortingChange: (columnId: string) => void;
 
   // Search and filters
   globalFilter: string;
@@ -133,8 +149,8 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
   // Pagination and sorting state
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [sortBy] = useState('submittedAt');
-  const [sortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState('submittedAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Enhanced UI state
   const [globalFilter, setGlobalFilter] = useState('');
@@ -251,6 +267,27 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setCurrentPage(1); // Reset to first page when page size changes
+  };
+
+  // The column id ServerDataTable should show as sorted — the inverse of
+  // COLUMN_ID_TO_SORT_BY. Passing `sortBy` (a backend field name like
+  // 'grade.percentage') straight through as the display value would never
+  // match any actual column id ('score'), leaving that header's sort arrow
+  // permanently neutral even while a sort is genuinely active.
+  const sortColumnId = SORT_BY_TO_COLUMN_ID[sortBy] ?? sortBy;
+
+  // Toggles sort direction when the same column is clicked again, otherwise
+  // starts a new sort ascending — mirrors DataTableColumnHeader's own
+  // `column.toggleSorting(column.getIsSorted() === "asc")` semantics, which
+  // this hook is the (previously missing) other half of: ServerDataTable's
+  // `sorting` display state is derived from `sortBy`/`sortOrder` alone, so
+  // this handler is the only place those actually change.
+  const handleSortingChange = (columnId: string) => {
+    const nextSortBy = COLUMN_ID_TO_SORT_BY[columnId] ?? columnId;
+    const nextSortOrder = sortBy === nextSortBy && sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortBy(nextSortBy);
+    setSortOrder(nextSortOrder);
+    setCurrentPage(1);
   };
 
   // Commits the Filter Modal's draft filters as the ones that actually drive the GraphQL query.
@@ -372,10 +409,12 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     pageSize,
     sortBy,
     sortOrder,
+    sortColumnId,
     setCurrentPage,
     setPageSize,
     handlePageChange,
     handlePageSizeChange,
+    handleSortingChange,
 
     // Search and filters
     globalFilter,

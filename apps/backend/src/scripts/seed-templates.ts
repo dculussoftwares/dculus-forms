@@ -1,7 +1,7 @@
 import { createTemplate } from '../services/templateService.js';
-import { 
-  TextInputField, 
-  EmailField, 
+import {
+  TextInputField,
+  EmailField,
   TextAreaField,
   NumberField,
   SelectField,
@@ -16,7 +16,9 @@ import {
   SpacingType,
   PageModeType,
   LayoutCode,
-  DEFAULT_THANK_YOU_CONTENT
+  DEFAULT_THANK_YOU_CONTENT,
+  DEFAULT_QUIZ_SETTINGS,
+  type FieldGrading
 } from '@dculus/types';
 import { randomUUID } from 'crypto';
 import { logger } from '../lib/logger.js';
@@ -47,6 +49,9 @@ const getHtmlContent = (type: string): string => {
 
     case 'newsletter':
       return '<h1><strong>Stay Updated</strong></h1><p>Subscribe to our newsletter and be the first to know about our latest updates and offers.</p>';
+
+    case 'quiz':
+      return '<h1><strong>General Knowledge Quiz</strong></h1><p>Answer each question to the best of your ability, then submit to see your score.</p>';
 
     default:
       return '<h1><strong>Welcome</strong></h1><p>Please fill out this form.</p>';
@@ -700,7 +705,101 @@ export const seedTemplates = async (uploadedFiles: UploadedFile[] = []): Promise
         },
         isShuffleEnabled: false
       }
-    }
+    },
+
+    // General Knowledge Quiz Template — demonstrates the Native Quiz feature
+    // (GitHub epic #289). settings.quiz is populated so a form created from this
+    // template starts quiz-enabled, and grading is populated on three question
+    // types to cover the three most common grading modes: `exact` (radio),
+    // `set` (checkbox), and `text` (short answer). See docs/native-quiz-strategy.md.
+    (() => {
+      const capitalQuestion = new RadioField(
+        randomUUID(),
+        "What is the capital of France?",
+        "",
+        "",
+        "Choose one answer.",
+        new FillableFormFieldValidation(true),
+        ["Paris", "London", "Berlin", "Madrid"]
+      );
+      capitalQuestion.grading = {
+        mode: 'exact',
+        pointValue: 1,
+        acceptedAnswers: ["Paris"],
+      } satisfies FieldGrading;
+
+      const primeQuestion = new CheckboxField(
+        randomUUID(),
+        "Which of these numbers are prime?",
+        "",
+        "",
+        "Select all that apply.",
+        "",
+        new CheckboxFieldValidation(true, 1),
+        ["2", "3", "4", "5"]
+      );
+      primeQuestion.grading = {
+        mode: 'set',
+        pointValue: 2,
+        acceptedAnswers: ["2", "3", "5"],
+        set: { scoring: 'all' },
+      } satisfies FieldGrading;
+
+      const planetQuestion = new TextInputField(
+        randomUUID(),
+        "What planet do we live on?",
+        "",
+        "",
+        "One word answer.",
+        "e.g. Earth",
+        new TextFieldValidation(true, 1, 50)
+      );
+      planetQuestion.grading = {
+        mode: 'text',
+        pointValue: 1,
+        acceptedAnswers: ["Earth"],
+        text: { caseSensitive: false, trimWhitespace: true },
+      } satisfies FieldGrading;
+
+      return {
+        name: "General Knowledge Quiz",
+        description: "A short quiz demonstrating auto-graded radio, checkbox and text questions",
+        category: "Quiz",
+        formSchema: {
+          pages: [
+            {
+              id: randomUUID(),
+              title: "Quiz",
+              order: 1,
+              fields: [capitalQuestion, primeQuestion, planetQuestion]
+            }
+          ],
+          layout: {
+            theme: ThemeType.LIGHT,
+            textColor: "#333333",
+            spacing: SpacingType.NORMAL,
+            code: "L2" as LayoutCode,
+            content: getHtmlContent('quiz'),
+            thankYouContent: DEFAULT_THANK_YOU_CONTENT,
+            customBackGroundColor: "#eef7f1",
+            customCTAButtonName: "Submit Quiz",
+            backgroundImageKey: getImageKey(1),
+            pageMode: PageModeType.MULTIPAGE
+          },
+          isShuffleEnabled: false,
+          // Not part of the FormSchema type (settings live on Form.settings, not
+          // formSchema — see @dculus/types FormSettings), but serializeFormSchema /
+          // deserializeFormSchema round-trip extra top-level keys unchanged, so this
+          // survives storage as the template's carried quiz policy.
+          settings: {
+            quiz: {
+              ...DEFAULT_QUIZ_SETTINGS,
+              enabled: true,
+            }
+          }
+        }
+      };
+    })()
   ];
 
   try {

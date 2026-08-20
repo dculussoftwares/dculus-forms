@@ -31,6 +31,11 @@ interface ResponsesTableProps {
   globalFilter: string;
   columnVisibility: VisibilityState;
 
+  // Sorting (server-side)
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSortingChange?: (columnId: string) => void;
+
   // Row selection (bulk actions)
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
@@ -61,6 +66,9 @@ export const ResponsesTable: React.FC<ResponsesTableProps> = ({
   onPageSizeChange,
   globalFilter,
   columnVisibility,
+  sortBy,
+  sortOrder,
+  onSortingChange,
   rowSelection,
   onRowSelectionChange,
   density,
@@ -106,6 +114,9 @@ export const ResponsesTable: React.FC<ResponsesTableProps> = ({
             onRowClick(row as FormResponse);
           }
         }}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortingChange={onSortingChange}
         pageCount={totalPages}
         currentPage={currentPage}
         pageSize={pageSize}
