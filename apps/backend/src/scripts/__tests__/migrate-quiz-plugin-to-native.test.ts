@@ -5,6 +5,7 @@ vi.mock('../../lib/prisma.js', () => ({
   prisma: {
     form: { findUnique: vi.fn(), update: vi.fn() },
     formPlugin: { findMany: vi.fn(), update: vi.fn() },
+    collaborativeDocument: { updateMany: vi.fn() },
     $disconnect: vi.fn(),
   },
 }));
@@ -20,6 +21,12 @@ vi.mock('../../repositories/index.js', () => ({
 vi.mock('../../lib/better-auth.js');
 vi.mock('../../graphql/resolvers/formSharing.js');
 vi.mock('../../services/formMetadataService.js');
+// No real snapshot files on disk — this suite only cares that snapshotForm
+// was invoked with the right data, not about the filesystem.
+vi.mock('node:fs', () => ({
+  mkdirSync: vi.fn(),
+  writeFileSync: vi.fn(),
+}));
 
 // The mocked module (see vi.mock above) is a plain object of vi.fn()s, but
 // the real `prisma` export carries Prisma's branded PrismaPromise return
@@ -29,6 +36,7 @@ import { prisma as typedPrisma } from '../../lib/prisma.js';
 const prisma = typedPrisma as unknown as {
   form: { findUnique: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
   formPlugin: { findMany: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+  collaborativeDocument: { updateMany: ReturnType<typeof vi.fn> };
 };
 import { collaborativeDocumentRepository } from '../../repositories/index.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
@@ -103,24 +111,41 @@ const quizFieldConfig = (fieldId: string, correctAnswer: string, marks = 10) => 
 });
 
 describe('migrate-quiz-plugin-to-native', () => {
-  // In-memory "CollaborativeDocument" row, mutated by saveDocumentState so
-  // apply -> re-read round-trips can be verified against the real
-  // getFormSchemaFromHocuspocus reconstruction path.
-  let collabState: Uint8Array | null = null;
+  // In-memory "CollaborativeDocument" row. Reads go through
+  // fetchDocumentWithState; writes go through prisma.collaborativeDocument
+  // .updateMany — the same optimistic-concurrency compare-and-swap the
+  // script itself uses (WHERE updatedAt = <value read>). This lets tests
+  // both verify apply -> re-read round-trips via the real
+  // getFormSchemaFromHocuspocus reconstruction, and simulate a concurrent
+  // writer racing the migration.
+  let collabRow: { state: Uint8Array; updatedAt: Date } | null = null;
+
+  const setCollabState = (state: Uint8Array) => {
+    collabRow = { state, updatedAt: new Date('2024-01-01T00:00:00.000Z') };
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    collabState = null;
+    collabRow = null;
 
     vi.mocked(collaborativeDocumentRepository.fetchDocumentWithState).mockImplementation(async () =>
-      collabState ? ({ state: Buffer.from(collabState) } as any) : null
+      collabRow ? ({ state: Buffer.from(collabRow.state), updatedAt: collabRow.updatedAt } as any) : null
     );
+    // Kept for type-completeness — applyMigration no longer calls this for
+    // writes (it uses the CAS updateMany below), but the interface remains.
     vi.mocked(collaborativeDocumentRepository.saveDocumentState).mockImplementation(
       async (_name: string, state: Buffer) => {
-        collabState = new Uint8Array(state);
+        if (collabRow) collabRow = { state: new Uint8Array(state), updatedAt: new Date() };
         return {} as any;
       }
     );
+    prisma.collaborativeDocument.updateMany.mockImplementation(async ({ where, data }: any) => {
+      if (!collabRow || collabRow.updatedAt.getTime() !== where.updatedAt.getTime()) {
+        return { count: 0 };
+      }
+      collabRow = { state: new Uint8Array(data.state), updatedAt: new Date(collabRow.updatedAt.getTime() + 1) };
+      return { count: 1 };
+    });
   });
 
   describe('matchQuizFields (pure)', () => {
@@ -172,7 +197,7 @@ describe('migrate-quiz-plugin-to-native', () => {
 
   describe('processForm — clean form (Y.doc present)', () => {
     it('dry-run matches the field and writes nothing', async () => {
-      collabState = buildYDocState([{ id: 'f1', type: 'radio_field', label: 'Q1', options: ['A', 'B'] }]);
+      setCollabState(buildYDocState([{ id: 'f1', type: 'radio_field', label: 'Q1', options: ['A', 'B'] }]));
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         id: 'form-1',
@@ -198,11 +223,11 @@ describe('migrate-quiz-plugin-to-native', () => {
       expect(report.needsReview).toBe(false);
       expect(prisma.form.update).not.toHaveBeenCalled();
       expect(prisma.formPlugin.update).not.toHaveBeenCalled();
-      expect(collaborativeDocumentRepository.saveDocumentState).not.toHaveBeenCalled();
+      expect(prisma.collaborativeDocument.updateMany).not.toHaveBeenCalled();
     });
 
     it('--apply writes grading into the Y.doc such that the builder read path sees it, disables the plugin, and is idempotent on re-run', async () => {
-      collabState = buildYDocState([{ id: 'f1', type: 'radio_field', label: 'Q1', options: ['A', 'B'] }]);
+      setCollabState(buildYDocState([{ id: 'f1', type: 'radio_field', label: 'Q1', options: ['A', 'B'] }]));
 
       const pluginConfig = {
         type: 'quiz-grading',
@@ -276,23 +301,59 @@ describe('migrate-quiz-plugin-to-native', () => {
       // Re-run: must be a no-op (idempotent).
       vi.mocked(prisma.form.update).mockClear();
       vi.mocked(prisma.formPlugin.update).mockClear();
-      vi.mocked(collaborativeDocumentRepository.saveDocumentState).mockClear();
+      prisma.collaborativeDocument.updateMany.mockClear();
 
       const secondReport = await processForm('form-1', { apply: true, snapshotDir: '/tmp/quiz-migration-test' });
       expect(secondReport.status).toBe('already-migrated');
       expect(secondReport.needsReview).toBe(false);
       expect(prisma.form.update).not.toHaveBeenCalled();
       expect(prisma.formPlugin.update).not.toHaveBeenCalled();
-      expect(collaborativeDocumentRepository.saveDocumentState).not.toHaveBeenCalled();
+      expect(prisma.collaborativeDocument.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('--apply refuses to write when a concurrent writer (e.g. a live builder session) changed the document between read and write', async () => {
+      setCollabState(buildYDocState([{ id: 'f1', type: 'radio_field', label: 'Q1', options: ['A', 'B'] }]));
+
+      vi.mocked(prisma.form.findUnique).mockResolvedValue({
+        id: 'form-1',
+        title: 'Clean Quiz',
+        formSchema: { pages: [] },
+        settings: null,
+      } as any);
+      vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([
+        {
+          id: 'plugin-1',
+          formId: 'form-1',
+          type: QUIZ_GRADING_PLUGIN_TYPE,
+          enabled: true,
+          config: { type: 'quiz-grading', quizFields: [quizFieldConfig('f1', 'A')], passThreshold: 60 },
+          createdAt: new Date('2024-01-01'),
+        } as any,
+      ]);
+
+      // Simulate a live builder session's autosave landing after this
+      // script's read but before its write — the CAS `updatedAt` it holds is
+      // now stale.
+      prisma.collaborativeDocument.updateMany.mockResolvedValue({ count: 0 });
+
+      const report = await processForm('form-1', { apply: true, snapshotDir: '/tmp/quiz-migration-test' });
+
+      expect(report.status).toBe('error');
+      expect(report.needsReview).toBe(true);
+      expect(report.error).toMatch(/concurrent modification/i);
+      // Refused before either of these — nothing about the form is left
+      // half-migrated.
+      expect(prisma.form.update).not.toHaveBeenCalled();
+      expect(prisma.formPlugin.update).not.toHaveBeenCalled();
     });
   });
 
   describe('processForm — form with a deleted keyed field', () => {
     it('migrates the still-live field and reports the deleted one, without guessing', async () => {
-      collabState = buildYDocState([
+      setCollabState(buildYDocState([
         { id: 'f1', type: 'radio_field', label: 'Q1', options: ['A', 'B'] },
         { id: 'f2', type: 'radio_field', label: 'Q2 (deleted)', options: ['A', 'B'], deleted: true },
-      ]);
+      ]));
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         id: 'form-2',
@@ -325,7 +386,7 @@ describe('migrate-quiz-plugin-to-native', () => {
 
   describe('processForm — form with a renamed option', () => {
     it('flags the field as a stale option instead of matching or dropping silently', async () => {
-      collabState = buildYDocState([{ id: 'f1', type: 'radio_field', label: 'Q1', options: ['Paris', 'London'] }]);
+      setCollabState(buildYDocState([{ id: 'f1', type: 'radio_field', label: 'Q1', options: ['Paris', 'London'] }]));
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         id: 'form-3',
@@ -356,10 +417,10 @@ describe('migrate-quiz-plugin-to-native', () => {
 
   describe('processForm — form with two quiz plugin instances', () => {
     it('migrates only the first enabled instance and flags the other for manual review', async () => {
-      collabState = buildYDocState([
+      setCollabState(buildYDocState([
         { id: 'f1', type: 'radio_field', label: 'Q1', options: ['A', 'B'] },
         { id: 'f2', type: 'radio_field', label: 'Q2', options: ['A', 'B'] },
-      ]);
+      ]));
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         id: 'form-4',
@@ -400,7 +461,7 @@ describe('migrate-quiz-plugin-to-native', () => {
 
   describe('processForm — no CollaborativeDocument row (DB column only)', () => {
     it('writes grading into Form.formSchema directly, since no live Y.doc can clobber it', async () => {
-      collabState = null; // never materialized in the builder
+      collabRow = null; // never materialized in the builder
 
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         id: 'form-5',
@@ -431,13 +492,13 @@ describe('migrate-quiz-plugin-to-native', () => {
         pointValue: 10,
         acceptedAnswers: ['A'],
       });
-      expect(collaborativeDocumentRepository.saveDocumentState).not.toHaveBeenCalled();
+      expect(prisma.collaborativeDocument.updateMany).not.toHaveBeenCalled();
     });
   });
 
   describe('processForm — form with no enabled quiz plugin instance', () => {
     it('reports no-enabled-instance and touches nothing', async () => {
-      collabState = null;
+      collabRow = null;
       vi.mocked(prisma.form.findUnique).mockResolvedValue({
         id: 'form-6',
         title: 'All Disabled',

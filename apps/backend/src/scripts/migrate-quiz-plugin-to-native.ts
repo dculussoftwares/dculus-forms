@@ -48,6 +48,14 @@
  *   - Forms are processed one at a time, in logged batches.
  *   - Idempotent: a form whose primary quiz-grading plugin already has
  *     `config.migratedToNativeAt` set is skipped entirely (report-only).
+ *   - This script never talks to the running Hocuspocus server process, so it
+ *     cannot see whether a form is open in someone's builder right now. The
+ *     Y.doc write is therefore an atomic compare-and-swap on
+ *     `CollaborativeDocument.updatedAt`: if a live session's autosave lands
+ *     between this script's read and write, the row has changed underneath
+ *     it, the write is refused, and the form is reported (not silently
+ *     skipped) for a later re-run. RUN `--apply` DURING A LOW-TRAFFIC WINDOW
+ *     regardless — the guard prevents corruption, not lost migration attempts.
  *
  * Usage:
  *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts                     # dry run, all forms
@@ -317,11 +325,24 @@ const applyMigration = async (
   const collabDoc = await collaborativeDocumentRepository.fetchDocumentWithState(formId);
   if (collabDoc?.state) {
     const updatedState = applyGradingToYDoc(new Uint8Array(collabDoc.state), matched);
-    await collaborativeDocumentRepository.saveDocumentState(
-      formId,
-      Buffer.from(updatedState),
-      (name) => `collab-${name}`
-    );
+
+    // Optimistic concurrency guard: this script never talks to the running
+    // Hocuspocus server process, so if a live builder session has this form
+    // open, we can't see it — but we CAN detect whether anything wrote to
+    // this row between our read above and this write, which is exactly what
+    // a live session's next autosave would do. `updatedAt` in the WHERE
+    // clause makes this an atomic compare-and-swap: if the row changed
+    // underneath us, `count` comes back 0 and we refuse to clobber it rather
+    // than guess which version should win.
+    const result = await prisma.collaborativeDocument.updateMany({
+      where: { documentName: formId, updatedAt: collabDoc.updatedAt },
+      data: { state: Buffer.from(updatedState) },
+    });
+    if (result.count === 0) {
+      throw new Error(
+        `Concurrent modification detected for form ${formId}: its collaborative document changed between read and write (likely a live builder session). Left untouched — re-run later once the form isn't being actively edited.`
+      );
+    }
   } else {
     formUpdateData.formSchema = applyGradingToPlainSchema(form.formSchema, matched);
   }
@@ -431,8 +452,22 @@ export const processForm = async (
   }
 
   if (opts.apply) {
-    report.snapshotPath = await snapshotForm(formId, form, quizPlugins, opts.snapshotDir);
-    await applyMigration(formId, form, primary, config, matched);
+    try {
+      report.snapshotPath = await snapshotForm(formId, form, quizPlugins, opts.snapshotDir);
+      await applyMigration(formId, form, primary, config, matched);
+    } catch (error) {
+      // Caught here (rather than left to bubble to main()'s per-form catch)
+      // so a write-time failure — most notably the concurrent-modification
+      // guard in applyMigration — still returns the matched/unmatched/stale
+      // field detail already computed above, instead of losing it to a bare
+      // generic error report.
+      return {
+        ...report,
+        status: 'error',
+        needsReview: true,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   return report;
@@ -484,7 +519,11 @@ const summarize = (reports: FormMigrationReport[]) => {
 export const main = async (): Promise<number> => {
   const apply = process.argv.includes('--apply');
   const formIdFilter = getArgValue('--form-id');
-  const batchSize = Number(getArgValue('--batch-size') ?? '20') || 20;
+  // parseInt + explicit range check, not `Number(...) || 20`: a negative
+  // value is truthy (so `|| 20` never catches it) and would make `i +=
+  // batchSize` an infinite loop below.
+  const parsedBatchSize = Number.parseInt(getArgValue('--batch-size') ?? '20', 10);
+  const batchSize = Number.isFinite(parsedBatchSize) && parsedBatchSize > 0 ? parsedBatchSize : 20;
   const snapshotDir = path.resolve(process.cwd(), getArgValue('--snapshot-dir') ?? 'quiz-migration-snapshots');
 
   logger.info(`[migrate-quiz-plugin] Starting (${apply ? 'APPLY' : 'DRY RUN'})...`);
