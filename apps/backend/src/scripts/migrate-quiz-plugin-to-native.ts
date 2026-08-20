@@ -51,21 +51,29 @@
  *   - This script never talks to the running Hocuspocus server process, so it
  *     cannot see whether a form is open in someone's builder right now. The
  *     Y.doc write is therefore an atomic compare-and-swap on
- *     `CollaborativeDocument.updatedAt`: if a live session's autosave lands
- *     between this script's read and write, the row has changed underneath
- *     it, the write is refused, and the form is reported (not silently
- *     skipped) for a later re-run. RUN `--apply` DURING A LOW-TRAFFIC WINDOW
- *     regardless — the guard prevents corruption, not lost migration attempts.
+ *     `CollaborativeDocument.updatedAt`: if another writer's change lands in
+ *     the database between this script's read and write, the row has
+ *     changed underneath it, the write is refused, and the form is reported
+ *     (not silently skipped) for a later re-run.
+ *   - That CAS does NOT cover a session that already had the document loaded
+ *     in memory before migration started and hasn't written anything yet —
+ *     no DB write happens for the CAS to see, but that session's next
+ *     autosave still persists its own (pre-migration) state afterwards and
+ *     silently erases the grading this script wrote. There is no way for
+ *     this out-of-process script to see into the running server, so `--apply`
+ *     REQUIRES `--confirm-drained`: drain the Hocuspocus collaboration
+ *     server, or otherwise confirm zero active builder sessions for every
+ *     form being migrated, before running it.
  *
  * Usage:
- *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts                     # dry run, all forms
- *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts --apply             # write changes
- *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts --form-id=abc123    # single form
+ *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts                                       # dry run, all forms
+ *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts --apply --confirm-drained              # write changes
+ *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts --form-id=abc123                       # single form (dry run)
  *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts --batch-size=10
  *   npx tsx src/scripts/migrate-quiz-plugin-to-native.ts --snapshot-dir=./snapshots
  *
  * Exit codes: 0 = clean, 1 = completed but something needs human review,
- * 2 = fatal error.
+ * 2 = fatal error (including --apply without --confirm-drained).
  */
 
 import './load-env.js'; // MUST be first: lib/env.js validates env at import time
@@ -518,6 +526,7 @@ const summarize = (reports: FormMigrationReport[]) => {
 
 export const main = async (): Promise<number> => {
   const apply = process.argv.includes('--apply');
+  const confirmedDrained = process.argv.includes('--confirm-drained');
   const formIdFilter = getArgValue('--form-id');
   // parseInt + explicit range check, not `Number(...) || 20`: a negative
   // value is truthy (so `|| 20` never catches it) and would make `i +=
@@ -525,6 +534,29 @@ export const main = async (): Promise<number> => {
   const parsedBatchSize = Number.parseInt(getArgValue('--batch-size') ?? '20', 10);
   const batchSize = Number.isFinite(parsedBatchSize) && parsedBatchSize > 0 ? parsedBatchSize : 20;
   const snapshotDir = path.resolve(process.cwd(), getArgValue('--snapshot-dir') ?? 'quiz-migration-snapshots');
+
+  // The compare-and-swap in applyMigration only catches a write that lands
+  // in the DATABASE between this script's read and write (e.g. another run
+  // of this script). It does NOT catch a live Hocuspocus session that
+  // already had the document loaded in memory before migration started: no
+  // DB write happens for the CAS to see, so it isn't a "conflict" — but that
+  // session's next autosave still persists its own (pre-migration) state
+  // afterwards, silently erasing the grading we just wrote. There is no
+  // in-process way for this script to see into the running server, so the
+  // only real defense is operational: the collaboration server must be
+  // drained (or every target form confirmed to have zero active builder
+  // sessions) before --apply runs. Require an explicit acknowledgement of
+  // that rather than relying on a comment nobody reads under time pressure.
+  if (apply && !confirmedDrained) {
+    logger.error(
+      '[migrate-quiz-plugin] --apply requires --confirm-drained. This script cannot see whether a form is ' +
+        "open in a live builder session right now — if it is, that session's next autosave can silently " +
+        'overwrite the grading this script just wrote (see the header comment and the issue #304 spike ' +
+        'writeup). Drain the Hocuspocus collaboration server, or otherwise confirm zero active builder ' +
+        'sessions for every form being migrated, then re-run with --confirm-drained to proceed.'
+    );
+    return 2;
+  }
 
   logger.info(`[migrate-quiz-plugin] Starting (${apply ? 'APPLY' : 'DRY RUN'})...`);
   if (!apply) {

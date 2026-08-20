@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as Y from 'yjs';
 
 vi.mock('../../lib/prisma.js', () => ({
@@ -44,6 +44,7 @@ import {
   processForm,
   matchQuizFields,
   applyGradingToPlainSchema,
+  main,
 } from '../migrate-quiz-plugin-to-native.js';
 import { QUIZ_GRADING_PLUGIN_TYPE } from '../../plugins/quiz/types.js';
 
@@ -535,6 +536,42 @@ describe('migrate-quiz-plugin-to-native', () => {
       expect(result.pages[0].fields[0].grading).toEqual({ mode: 'exact', pointValue: 1, acceptedAnswers: ['A'] });
       expect(result.pages[0].fields[1].grading).toBeUndefined();
       expect((original.pages[0].fields[0] as any).grading).toBeUndefined();
+    });
+  });
+
+  describe('main — --confirm-drained gate', () => {
+    const originalArgv = process.argv;
+
+    afterEach(() => {
+      process.argv = originalArgv;
+    });
+
+    it('refuses --apply without --confirm-drained and touches nothing', async () => {
+      process.argv = [...originalArgv, '--apply'];
+
+      const exitCode = await main();
+
+      expect(exitCode).toBe(2);
+      expect(prisma.formPlugin.findMany).not.toHaveBeenCalled();
+    });
+
+    it('proceeds once --confirm-drained accompanies --apply', async () => {
+      process.argv = [...originalArgv, '--apply', '--confirm-drained'];
+      vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([]);
+
+      const exitCode = await main();
+
+      expect(exitCode).toBe(0);
+      expect(prisma.formPlugin.findMany).toHaveBeenCalled();
+    });
+
+    it('does not require --confirm-drained for a dry run', async () => {
+      process.argv = [...originalArgv];
+      vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([]);
+
+      const exitCode = await main();
+
+      expect(exitCode).toBe(0);
     });
   });
 });
