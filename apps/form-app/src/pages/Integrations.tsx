@@ -318,7 +318,7 @@ const Integrations: React.FC = () => {
                               )}
                             </div>
                             <p className="text-xs text-[#655d67] leading-relaxed">
-                              {pluginType.deprecated ? pluginType.deprecationMessage : pluginType.description}
+                              {pluginType.deprecated ? t('catalogSection.deprecatedDescription') : pluginType.description}
                             </p>
                           </div>
 

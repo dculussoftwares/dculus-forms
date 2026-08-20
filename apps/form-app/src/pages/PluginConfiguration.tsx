@@ -143,7 +143,7 @@ const PluginConfiguration: React.FC = () => {
           </div>
           <h3 className="text-sm font-semibold mb-1 text-primary">{t('deprecated.title')}</h3>
           <p className="text-xs mb-5 text-muted-foreground">
-            {manifest?.deprecationMessage ?? t('deprecated.description')}
+            {t('deprecated.description')}
           </p>
           <div className="flex items-center justify-center gap-3">
             <Button variant="outline" onClick={backToPlugins}>
@@ -166,7 +166,7 @@ const PluginConfiguration: React.FC = () => {
               style={{ background: 'var(--tf-error-bg)', border: '1px solid var(--tf-error-bg-md)' }}
             >
               <p className="text-xs" style={{ color: 'var(--tf-error)' }}>
-                {manifest?.deprecationMessage ?? t('deprecated.description')}
+                {t('deprecated.description')}
               </p>
               <Button variant="outline" size="sm" className="shrink-0 h-8 px-3 text-xs" onClick={goToQuizSettings}>
                 {t('deprecated.goToQuizSettings')}

@@ -383,7 +383,7 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                     style={{ background: 'var(--tf-error-bg)', border: '1px solid var(--tf-error-bg-md)' }}
                   >
                     <p className="text-xs" style={{ color: 'var(--tf-error)' }}>
-                      {manifest?.deprecationMessage ?? t('deprecated.description')}
+                      {t('deprecated.description')}
                     </p>
                     <Button
                       variant="outline"

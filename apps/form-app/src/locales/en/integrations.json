@@ -33,6 +33,7 @@
     "activeCount": "{{count}} active",
     "comingSoonLabel": "Coming Soon",
     "deprecatedLabel": "Deprecated",
+    "deprecatedDescription": "This plugin is deprecated. Use native quiz mode in Form Settings → Quiz for new forms — existing quiz plugin instances keep working.",
     "goToQuizSettingsButton": "Go to Quiz Settings",
     "noResults": "No integrations found for \"{{searchQuery}}\""
   },

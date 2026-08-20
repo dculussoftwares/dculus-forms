@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { pluginsResolvers } from '../plugins.js';
 import { GraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';
 import * as pluginEvents from '../../../plugins/core/events.js';
@@ -482,7 +483,10 @@ describe('Plugins Resolvers', () => {
 
       await expect(
         pluginsResolvers.Mutation.createFormPlugin({}, { input }, mockContext)
-      ).rejects.toThrow('deprecated');
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('deprecated'),
+        extensions: expect.objectContaining({ code: GRAPHQL_ERROR_CODES.PLUGIN_DEPRECATED }),
+      });
       expect(prisma.formPlugin.create).not.toHaveBeenCalled();
     });
 
