@@ -184,6 +184,9 @@ skills-lock.json
 dculus-chargebee-webhook-passwords.txt
 *.env.bak*
 
+# Quiz plugin -> native migration snapshots (may contain real form/response data — never commit)
+quiz-migration-snapshots/
+
 # Local UX reference screenshots (JotForm) — never commit
 /pdf-template/
 /ui-design-refernce/
