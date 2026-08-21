@@ -28,7 +28,7 @@ import { QUIZ_GRADING_PLUGIN_TYPE } from '../../plugins/quiz/types.js';
 import { stripConditionallyHiddenValues } from '../../lib/conditionalStrip.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { gradeResponse } from '../../services/quiz/gradingEngine.js';
-import { saveGrade, toRespondentView } from '../../services/quiz/gradingService.js';
+import { saveGrade, toRespondentView, getMyQuizResult } from '../../services/quiz/gradingService.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/core/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
@@ -47,7 +47,7 @@ import {
 } from '../../services/fakeResponseService.js';
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { sendResponseCopyIfEnabled } from '../../services/responseCopyService.js';
-import { responseGradeRepository, responseRepository } from '../../repositories/index.js';
+import { responseGradeRepository } from '../../repositories/index.js';
 
 interface ResponseParent {
   id: string;
@@ -843,21 +843,11 @@ export const extendedResponsesResolvers = {
       const form = await getFormById(formId);
       if (!form || !form.settings?.quiz?.enabled) return null;
 
-      // v1 limitation (documented, not a bug): a form that permits
-      // resubmission can have more than one Response row for this
-      // respondent — only the most recent by submittedAt is considered.
-      const response = await responseRepository.findFirst({
-        where: { formId, respondentUserId: userId, deletedAt: null },
-        orderBy: { submittedAt: 'desc' },
-      });
-      if (!response) return null;
-
-      const gradeRow = await responseGradeRepository.findByResponseId(response.id);
-      if (!gradeRow) return null;
-
-      // Reuse the exact same release/visibility projection submitResponse
-      // uses — never hand-roll a second one (D5 precedent).
-      return toRespondentView(gradeRow, form.settings.quiz);
+      // Delegates the respondent-scoped lookup + release/visibility
+      // projection to gradingService — resolvers stay thin, and this reuses
+      // the exact same toRespondentView submitResponse uses rather than
+      // hand-rolling a second projection (D5 precedent).
+      return getMyQuizResult(formId, userId, form.settings.quiz);
     },
   },
 

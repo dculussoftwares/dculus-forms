@@ -92,18 +92,7 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
   return (
     <div className="text-center p-4 sm:p-8 max-w-2xl mx-auto" data-testid="thank-you-display">
       {gradeResult ? (
-        <>
-          <QuizResultScreen gradeResult={gradeResult} labels={quizResultLabels} className="mb-6" />
-          {resultLink && (
-            <a
-              href={resultLink.href}
-              className="inline-block text-sm font-medium text-primary hover:underline mb-4"
-              data-testid="thank-you-result-link"
-            >
-              {resultLink.label}
-            </a>
-          )}
-        </>
+        <QuizResultScreen gradeResult={gradeResult} labels={quizResultLabels} className="mb-6" />
       ) : (
         <>
           <SuccessIcon />
@@ -159,6 +148,20 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
             )}
           </div>
         </>
+      )}
+
+      {/* Native Quiz (epic #289, Story 16/#320, D9): rendered regardless of
+          whether `gradeResult` is present — e.g. under a D7 grading-failure
+          fallback, the response still saves and the deferred link is still
+          the respondent's only way back to a grade a reviewer finishes later. */}
+      {resultLink && (
+        <a
+          href={resultLink.href}
+          className="inline-block text-sm font-medium text-primary hover:underline mb-4"
+          data-testid="thank-you-result-link"
+        >
+          {resultLink.label}
+        </a>
       )}
 
       {responseCopyNotice && (

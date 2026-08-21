@@ -35,4 +35,6 @@ export const quizResultPageLabels = {
   notSubmitted: "We don't have a result for you on this form yet.",
   notSubmittedHint: 'Make sure you sign in with the same email or account you used to submit.',
   backToForm: 'Back to form',
+  loadError: 'Something went wrong while loading your result. Please try again.',
+  retry: 'Try again',
 };

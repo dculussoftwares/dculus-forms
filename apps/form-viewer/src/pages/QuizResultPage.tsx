@@ -110,6 +110,20 @@ export default function QuizResultPage() {
     );
   }
 
+  // A network/server failure here is not the same thing as "you haven't
+  // submitted this form" — falling through to the not-submitted state would
+  // misreport a transient failure as a real (and wrong) result status.
+  if (resultError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4 px-6 text-center">
+        <p className="text-muted-foreground">{quizResultPageLabels.loadError}</p>
+        <Button variant="outline" onClick={() => refetchResult()}>
+          {quizResultPageLabels.retry}
+        </Button>
+      </div>
+    );
+  }
+
   const gradeResult = resultData?.myQuizResult;
 
   return (

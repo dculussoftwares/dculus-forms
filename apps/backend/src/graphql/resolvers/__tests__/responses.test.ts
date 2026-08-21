@@ -2180,5 +2180,72 @@ describe('Responses Resolvers', () => {
 
       expect(result).toEqual({ released: false });
     });
+
+    it('returns not-released view for a scheduled grade whose releaseAt is still in the future', async () => {
+      const scheduledForm = {
+        ...quizForm,
+        settings: {
+          quiz: {
+            enabled: true,
+            gradeRelease: 'scheduled',
+            releaseAt: new Date(Date.now() + 60_000).toISOString(),
+            respondentVisibility: quizVisibility,
+          },
+        },
+      };
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(scheduledForm as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue({
+        id: 'response-mine',
+        formId: 'form-quiz',
+        respondentUserId: 'user-123',
+      } as any);
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(releasedGradeRow as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(result).toEqual({ released: false });
+    });
+
+    it('returns the released grade for a scheduled grade whose releaseAt has already passed', async () => {
+      const scheduledForm = {
+        ...quizForm,
+        settings: {
+          quiz: {
+            enabled: true,
+            gradeRelease: 'scheduled',
+            releaseAt: new Date(Date.now() - 60_000).toISOString(),
+            respondentVisibility: quizVisibility,
+          },
+        },
+      };
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(scheduledForm as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue({
+        id: 'response-mine',
+        formId: 'form-quiz',
+        respondentUserId: 'user-123',
+      } as any);
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(releasedGradeRow as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(result).toEqual({
+        released: true,
+        score: 8,
+        maxScore: 10,
+        percentage: 80,
+        passed: true,
+        questions: [],
+      });
+    });
   });
 });
