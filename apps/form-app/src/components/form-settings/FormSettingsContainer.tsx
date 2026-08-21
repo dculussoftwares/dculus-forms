@@ -6,7 +6,7 @@ import SubmissionLimitsSettings from './SubmissionLimitsSettings';
 import ResponseCopySettings from './ResponseCopySettings';
 import AccessControlSettings from './AccessControlSettings';
 import QuizSettings from './QuizSettings';
-import type { QuizSettings as QuizSettingsType } from '@dculus/types';
+import { requiresRespondentIdentity, type QuizSettings as QuizSettingsType } from '@dculus/types';
 
 interface FormSettingsContainerProps {
   form: any;
@@ -81,7 +81,7 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
             settings={settings.quiz} isSaving={isSaving}
             onUpdate={onUpdateQuizSettings}
             onSave={onSaveQuizSettings}
-            requiresIdentity={!!settings.accessControl?.enabled || !!settings.collectRespondentEmail}
+            requiresIdentity={requiresRespondentIdentity(settings.accessControl, settings.collectRespondentEmail)}
           />
         );
       default:

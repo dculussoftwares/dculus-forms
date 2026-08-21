@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { UPDATE_FORM } from '../graphql/mutations';
-import type { SubmissionLimitsSettings, ResponseCopySettings, AccessControlSettings, QuizSettings } from '@dculus/types';
-import { toastSuccess, toastError, toastInfo } from '@dculus/ui';
+import { requiresRespondentIdentity, type SubmissionLimitsSettings, type ResponseCopySettings, type AccessControlSettings, type QuizSettings } from '@dculus/types';
+import { toastSuccess, toastError } from '@dculus/ui';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { useTranslation } from './useTranslation';
 
@@ -213,7 +213,7 @@ export const useFormSettings = ({
     nextAccessControl: AccessControlSettings,
     nextCollectRespondentEmail: boolean
   ): FormSettingsData => {
-    const requiresIdentity = !!nextAccessControl?.enabled || !!nextCollectRespondentEmail;
+    const requiresIdentity = requiresRespondentIdentity(nextAccessControl, nextCollectRespondentEmail);
     const hasDeferredRelease =
       prev.quiz?.enabled &&
       (prev.quiz.gradeRelease === 'afterReview' || prev.quiz.gradeRelease === 'scheduled');
@@ -222,7 +222,7 @@ export const useFormSettings = ({
       return { ...prev, accessControl: nextAccessControl, collectRespondentEmail: nextCollectRespondentEmail };
     }
 
-    toastInfo(tQuiz('toasts.gradeReleaseDowngraded.title'), tQuiz('toasts.gradeReleaseDowngraded.description'));
+    toastSuccess(tQuiz('toasts.gradeReleaseDowngraded.title'), tQuiz('toasts.gradeReleaseDowngraded.description'));
     return {
       ...prev,
       accessControl: nextAccessControl,

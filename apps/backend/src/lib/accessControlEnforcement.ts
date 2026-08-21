@@ -1,30 +1,20 @@
-import type { AccessControlSettings } from '@dculus/types';
+import { requiresRespondentIdentity, type AccessControlSettings } from '@dculus/types';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import type { BetterAuthContext } from '../middleware/better-auth-middleware.js';
 
 export type FormAccessStatus = 'OPEN' | 'SIGN_IN_REQUIRED' | 'DOMAIN_REJECTED';
 
+// Re-exported so existing backend imports (`resolvers/forms.ts`,
+// `resolvers/responses.ts`) don't need to switch to importing directly from
+// `@dculus/types` — the shared predicate now lives there so form-app can use
+// it too (see @dculus/types/index.ts for the canonical definition).
+export { requiresRespondentIdentity };
+
 function emailDomainAllowed(email: string, allowedDomains: string[]): boolean {
   const domain = email.split('@')[1]?.toLowerCase();
   if (!domain) return false;
   return allowedDomains.some(allowed => allowed.toLowerCase() === domain);
-}
-
-/**
- * True when a form has SOME way to identify the respondent later — either
- * sign-in is required to respond (`accessControl.enabled`) or a verified
- * email is captured (`collectRespondentEmail`), independent of each other.
- * The single source of truth for "can this form ever key a later lookup off
- * a respondent identity" — used both to gate submission (`resolveAccessStatus`
- * below) and, per epic #289 D9, to decide whether a deferred quiz grade
- * release (`afterReview`/`scheduled`) is even reachable (Story 17, #321).
- */
-export function requiresRespondentIdentity(
-  accessControl: AccessControlSettings | undefined | null,
-  collectRespondentEmail: boolean | undefined | null
-): boolean {
-  return !!accessControl?.enabled || !!collectRespondentEmail;
 }
 
 /**
