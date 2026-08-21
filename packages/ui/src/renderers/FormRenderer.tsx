@@ -54,6 +54,14 @@ export interface FormRendererProps {
   gradeResult?: RespondentGradeView;
   /** Override the default English `QuizResultScreen` copy (e.g. a translated app). */
   quizResultLabels?: Partial<QuizResultScreenLabels>;
+  /**
+   * Native Quiz (epic #289, Story 16/#320, D9) — present only when this is an
+   * identity-gated quiz submission with a deferred grade release
+   * ('afterReview'/'scheduled'), so the respondent has somewhere to come back
+   * to. Absent for every other case, leaving existing thank-you screens
+   * byte-for-byte unaffected.
+   */
+  resultLink?: { href: string; label: string };
 }
 
 export const FormRenderer: React.FC<FormRendererProps> = ({
@@ -77,6 +85,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   const { getFormattedResponses } = useFormResponseUtils();
   const store = useFormResponseStore();
@@ -207,6 +216,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         responseCopyNotice={responseCopyNotice}
         gradeResult={gradeResult}
         quizResultLabels={quizResultLabels}
+        resultLink={resultLink}
       />
     </FormResponseContext.Provider>
   );

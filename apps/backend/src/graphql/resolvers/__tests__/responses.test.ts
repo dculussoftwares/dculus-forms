@@ -1987,4 +1987,308 @@ describe('Responses Resolvers', () => {
       expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
     });
   });
+
+  // Native Quiz (epic #289, Story 16/#320, D9): `myQuizResult` lets a
+  // respondent retrieve their OWN deferred-release grade later, keyed off
+  // `respondentUserId` rather than form permission — the opposite
+  // authorization boundary from `responseGrade` above.
+  describe('Extended Resolvers: Query.myQuizResult (issue #320)', () => {
+    const quizVisibility = {
+      totalScore: true,
+      perQuestionCorrectness: true,
+      correctAnswers: true,
+      pointValues: true,
+      feedback: true,
+      passFailBadge: true,
+    };
+
+    const quizForm = {
+      ...mockForm,
+      id: 'form-quiz',
+      settings: {
+        // Identity-gated — respondentUserId is only ever set for a form like
+        // this (see accessControlEnforcement.ts), which is the only
+        // precondition under which myQuizResult can ever match a response.
+        accessControl: { enabled: true },
+        quiz: {
+          enabled: true,
+          gradeRelease: 'afterReview',
+          respondentVisibility: quizVisibility,
+        },
+      },
+    };
+
+    const releasedGradeRow = {
+      id: 'grade-1',
+      responseId: 'response-mine',
+      formId: 'form-quiz',
+      score: 8,
+      maxScore: 10,
+      percentage: 80,
+      passed: true,
+      status: 'REVIEWED',
+      detail: [],
+    };
+
+    it('requires authentication', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockImplementation(() => {
+        throw new Error('Authentication required');
+      });
+
+      await expect(
+        extendedResponsesResolvers.Query.myQuizResult(
+          {},
+          { formId: 'form-quiz' },
+          mockContext as any
+        )
+      ).rejects.toThrow('Authentication required');
+      expect(formService.getFormById).not.toHaveBeenCalled();
+    });
+
+    it('returns null immediately for a non-quiz form — no response/grade lookup fires (additive guarantee)', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-123' },
+        mockContext as any
+      );
+
+      expect(result).toBeNull();
+      expect(responseRepository.findFirst).not.toHaveBeenCalled();
+      expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
+    });
+
+    it('returns null when the form does not exist', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(null);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'missing-form' },
+        mockContext as any
+      );
+
+      expect(result).toBeNull();
+    });
+
+    it('returns null when the caller never submitted this form (no matching respondentUserId)', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(quizForm as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue(null);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(responseRepository.findFirst).toHaveBeenCalledWith({
+        where: { formId: 'form-quiz', respondentUserId: 'user-123', deletedAt: null },
+        orderBy: { submittedAt: 'desc' },
+      });
+      expect(result).toBeNull();
+      expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
+    });
+
+    it('returns null (not accidentally matched) on an anonymous form, since respondentUserId is always null there — and short-circuits before any lookup', async () => {
+      // Belt-and-suspenders: an anonymous form's Response rows always have
+      // respondentUserId: null, so a DB lookup could never match a signed-in
+      // caller's id anyway — but the resolver now checks requiresIdentity
+      // explicitly first (mirrors submitResponse's own check) rather than
+      // relying on that implicit null-never-equals-a-real-id guarantee, and
+      // skips the doomed-to-empty lookup entirely.
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      const anonymousQuizForm = {
+        ...quizForm,
+        settings: { quiz: { ...quizForm.settings.quiz } },
+      };
+      vi.mocked(formService.getFormById).mockResolvedValue(anonymousQuizForm as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(result).toBeNull();
+      expect(responseRepository.findFirst).not.toHaveBeenCalled();
+      expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
+    });
+
+    it('proceeds to the lookup for a form gated only by collectRespondentEmail (no accessControl)', async () => {
+      // The other half of requiresIdentity — accessControl.enabled and
+      // collectRespondentEmail are independent triggers (see
+      // accessControlEnforcement.ts) and either alone must be honored.
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      const collectEmailQuizForm = {
+        ...quizForm,
+        settings: { collectRespondentEmail: true, quiz: { ...quizForm.settings.quiz } },
+      };
+      vi.mocked(formService.getFormById).mockResolvedValue(collectEmailQuizForm as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue({
+        id: 'response-mine',
+        formId: 'form-quiz',
+        respondentUserId: 'user-123',
+      } as any);
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(releasedGradeRow as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(responseRepository.findFirst).toHaveBeenCalled();
+      expect(result).toEqual({
+        released: true,
+        score: 8,
+        maxScore: 10,
+        percentage: 80,
+        passed: true,
+        questions: [],
+      });
+    });
+
+    it('returns a released grade projected through toRespondentView, using the most recent submission', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(quizForm as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue({
+        id: 'response-mine',
+        formId: 'form-quiz',
+        respondentUserId: 'user-123',
+      } as any);
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(releasedGradeRow as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(responseGradeRepository.findByResponseId).toHaveBeenCalledWith('response-mine');
+      expect(result).toEqual({
+        released: true,
+        score: 8,
+        maxScore: 10,
+        percentage: 80,
+        passed: true,
+        questions: [],
+      });
+    });
+
+    it('never leaks another respondent\'s grade — only ever matches the caller\'s own respondentUserId', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(quizForm as any);
+      // A different user's response must never surface: the repository call
+      // itself is scoped to the caller's id, so a mock that returns null
+      // here models the real query correctly filtering it out.
+      vi.mocked(responseRepository.findFirst).mockResolvedValue(null);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(responseRepository.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ respondentUserId: 'user-123' }),
+        })
+      );
+      expect(result).toBeNull();
+    });
+
+    it('returns not-released view (released: false) for a pending afterReview grade — no score leaks', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(quizForm as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue({
+        id: 'response-mine',
+        formId: 'form-quiz',
+        respondentUserId: 'user-123',
+      } as any);
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue({
+        ...releasedGradeRow,
+        status: 'AUTO_GRADED', // not yet REVIEWED — afterReview keeps this hidden
+      } as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(result).toEqual({ released: false });
+    });
+
+    it('returns not-released view for a scheduled grade whose releaseAt is still in the future', async () => {
+      const scheduledForm = {
+        ...quizForm,
+        settings: {
+          accessControl: { enabled: true },
+          quiz: {
+            enabled: true,
+            gradeRelease: 'scheduled',
+            releaseAt: new Date(Date.now() + 60_000).toISOString(),
+            respondentVisibility: quizVisibility,
+          },
+        },
+      };
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(scheduledForm as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue({
+        id: 'response-mine',
+        formId: 'form-quiz',
+        respondentUserId: 'user-123',
+      } as any);
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(releasedGradeRow as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(result).toEqual({ released: false });
+    });
+
+    it('returns the released grade for a scheduled grade whose releaseAt has already passed', async () => {
+      const scheduledForm = {
+        ...quizForm,
+        settings: {
+          accessControl: { enabled: true },
+          quiz: {
+            enabled: true,
+            gradeRelease: 'scheduled',
+            releaseAt: new Date(Date.now() - 60_000).toISOString(),
+            respondentVisibility: quizVisibility,
+          },
+        },
+      };
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(scheduledForm as any);
+      vi.mocked(responseRepository.findFirst).mockResolvedValue({
+        id: 'response-mine',
+        formId: 'form-quiz',
+        respondentUserId: 'user-123',
+      } as any);
+      vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(releasedGradeRow as any);
+
+      const result = await extendedResponsesResolvers.Query.myQuizResult(
+        {},
+        { formId: 'form-quiz' },
+        mockContext as any
+      );
+
+      expect(result).toEqual({
+        released: true,
+        score: 8,
+        maxScore: 10,
+        percentage: 80,
+        passed: true,
+        questions: [],
+      });
+    });
+  });
 });

@@ -12,7 +12,7 @@ import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics'
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
 import { buildCompletionTimeInput } from '../lib/completionTime';
 import { getFormErrorMessage, isSubmissionLimitError, isAccessControlError } from '../lib/formError';
-import { quizResultLabels } from '../locales/quizResult';
+import { quizResultLabels, quizResultLinkLabel } from '../locales/quizResult';
 import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
 import { signOut } from '../lib/auth-client';
@@ -344,6 +344,19 @@ const FormViewer: React.FC = () => {
   const form = data.formByShortUrl;
   const allowedDomains = form.settings?.accessControl?.allowedDomains;
 
+  // Native Quiz (epic #289, Story 16/#320, D9): a persistent "check back
+  // later" link only makes sense when the grade is deferred (not shown
+  // instantly here) AND there's a respondent identity to key a later lookup
+  // off (`myQuizResult` matches on `respondentUserId`, which is only ever
+  // set for identity-gated forms — see accessControlEnforcement.ts).
+  const quizSettings = form.settings?.quiz;
+  const requiresIdentity =
+    !!form.settings?.accessControl?.enabled || !!form.settings?.collectRespondentEmail;
+  const resultLink =
+    quizSettings?.enabled && quizSettings.gradeRelease !== 'immediate' && requiresIdentity
+      ? { href: `/f/${shortUrl}/result`, label: quizResultLinkLabel }
+      : undefined;
+
   // Access control is checked before the "form not ready" guard below —
   // `formSchemaPublic` is deliberately null while gated (see the backend
   // field resolver), so that guard must not fire for a legitimately-gated form.
@@ -470,6 +483,7 @@ const FormViewer: React.FC = () => {
         }
         gradeResult={thankYouData?.grade}
         quizResultLabels={quizResultLabels}
+        resultLink={resultLink}
       />
 
       {/* Re-auth overlay — token expired/revoked mid-fill. Rendered on top of

@@ -22,6 +22,7 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   // L1 Classic layout styles
   const getLayoutStyles = () => ({
@@ -320,6 +321,7 @@ export const L1ClassicLayout: React.FC<LayoutProps> = ({
                   responseCopyNotice={responseCopyNotice}
                   gradeResult={gradeResult}
                   quizResultLabels={quizResultLabels}
+                  resultLink={resultLink}
                 />
               </div>
             </div>

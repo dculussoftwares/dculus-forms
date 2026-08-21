@@ -22,6 +22,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   // L2 Modern layout styles
   const getLayoutStyles = () => ({
@@ -357,6 +358,7 @@ export const L2ModernLayout: React.FC<LayoutProps> = ({
                   responseCopyNotice={responseCopyNotice}
                   gradeResult={gradeResult}
                   quizResultLabels={quizResultLabels}
+                  resultLink={resultLink}
                 />
               </div>
             </div>
