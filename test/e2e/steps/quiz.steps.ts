@@ -455,7 +455,11 @@ Then('creating a quiz form via GraphQL with gradeRelease {string} and no respond
       `Expected createForm to reject gradeRelease "${gradeRelease}" with no respondent identity, but it succeeded: ${JSON.stringify(response)}`
     );
   }
-  expect(response.errors[0].message).toMatch(/deferred grade release/i);
+  const [firstError] = response.errors;
+  if (typeof firstError?.message !== 'string') {
+    throw new Error(`GraphQL error payload had no string message: ${JSON.stringify(response.errors)}`);
+  }
+  expect(firstError.message).toMatch(/deferred grade release/i);
 });
 
 // A form created moments ago via the createForm mutation can have its publish
