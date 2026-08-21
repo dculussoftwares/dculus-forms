@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { UPDATE_FORM } from '../graphql/mutations';
-import type { SubmissionLimitsSettings, ResponseCopySettings, AccessControlSettings, QuizSettings } from '@dculus/types';
+import { requiresRespondentIdentity, type SubmissionLimitsSettings, type ResponseCopySettings, type AccessControlSettings, type QuizSettings } from '@dculus/types';
 import { toastSuccess, toastError } from '@dculus/ui';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { useTranslation } from './useTranslation';
@@ -201,12 +201,41 @@ export const useFormSettings = ({
     }
   };
 
+  // Epic #289 D9 (Story 17, #321): a deferred grade release ('afterReview' /
+  // 'scheduled') can only ever be delivered to a respondent this form can
+  // identify later. If an identity-capture edit here would leave the form
+  // with neither accessControl.enabled nor collectRespondentEmail while
+  // quiz mode still has one of those release modes selected, auto-downgrade
+  // to 'immediate' (with a toast) rather than leaving a combination the
+  // server would reject on save.
+  const downgradeDeferredGradeReleaseIfUnreachable = (
+    prev: FormSettingsData,
+    nextAccessControl: AccessControlSettings,
+    nextCollectRespondentEmail: boolean
+  ): FormSettingsData => {
+    const requiresIdentity = requiresRespondentIdentity(nextAccessControl, nextCollectRespondentEmail);
+    const hasDeferredRelease =
+      prev.quiz?.enabled &&
+      (prev.quiz.gradeRelease === 'afterReview' || prev.quiz.gradeRelease === 'scheduled');
+
+    if (requiresIdentity || !hasDeferredRelease) {
+      return { ...prev, accessControl: nextAccessControl, collectRespondentEmail: nextCollectRespondentEmail };
+    }
+
+    toastSuccess(tQuiz('toasts.gradeReleaseDowngraded.title'), tQuiz('toasts.gradeReleaseDowngraded.description'));
+    return {
+      ...prev,
+      accessControl: nextAccessControl,
+      collectRespondentEmail: nextCollectRespondentEmail,
+      quiz: { ...prev.quiz!, gradeRelease: 'immediate', releaseAt: undefined },
+    };
+  };
+
   // Update access control
   const updateAccessControl = (accessControl: AccessControlSettings) => {
-    setSettings(prev => ({
-      ...prev,
-      accessControl,
-    }));
+    setSettings(prev =>
+      downgradeDeferredGradeReleaseIfUnreachable(prev, accessControl, prev.collectRespondentEmail)
+    );
   };
 
   // Save access control settings
@@ -226,10 +255,9 @@ export const useFormSettings = ({
 
   // Update whether respondent email is collected (independent of accessControl)
   const updateCollectRespondentEmail = (collectRespondentEmail: boolean) => {
-    setSettings(prev => ({
-      ...prev,
-      collectRespondentEmail,
-    }));
+    setSettings(prev =>
+      downgradeDeferredGradeReleaseIfUnreachable(prev, prev.accessControl, collectRespondentEmail)
+    );
   };
 
   // Update quiz settings

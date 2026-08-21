@@ -1,9 +1,15 @@
-import type { AccessControlSettings } from '@dculus/types';
+import { requiresRespondentIdentity, type AccessControlSettings } from '@dculus/types';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import type { BetterAuthContext } from '../middleware/better-auth-middleware.js';
 
 export type FormAccessStatus = 'OPEN' | 'SIGN_IN_REQUIRED' | 'DOMAIN_REJECTED';
+
+// Re-exported so existing backend imports (`resolvers/forms.ts`,
+// `resolvers/responses.ts`) don't need to switch to importing directly from
+// `@dculus/types` — the shared predicate now lives there so form-app can use
+// it too (see @dculus/types/index.ts for the canonical definition).
+export { requiresRespondentIdentity };
 
 function emailDomainAllowed(email: string, allowedDomains: string[]): boolean {
   const domain = email.split('@')[1]?.toLowerCase();
@@ -27,7 +33,7 @@ export function resolveAccessStatus(
   collectRespondentEmail: boolean | undefined,
   auth: BetterAuthContext
 ): FormAccessStatus {
-  const requiresIdentity = !!accessControl?.enabled || !!collectRespondentEmail;
+  const requiresIdentity = requiresRespondentIdentity(accessControl, collectRespondentEmail);
   if (!requiresIdentity) return 'OPEN';
 
   if (!auth.isAuthenticated || !auth.user?.email) {

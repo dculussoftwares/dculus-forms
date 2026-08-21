@@ -40,7 +40,7 @@ import { logger } from '../../lib/logger.js';
 import { audit } from '../../lib/audit.js';
 import { upsertPreviewTag, addTagToResponse } from '../../services/tagService.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
-import { enforceAccessControlForSubmission } from '../../lib/accessControlEnforcement.js';
+import { enforceAccessControlForSubmission, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
 import {
   generateFakeResponsesForForm,
   MAX_FAKE_RESPONSES_PER_REQUEST,
@@ -282,7 +282,7 @@ export const responsesResolvers = {
       // no domain restriction at all.
       const accessControl = form.settings?.accessControl;
       const collectRespondentEmail = form.settings?.collectRespondentEmail;
-      const requiresIdentity = !!accessControl?.enabled || !!collectRespondentEmail;
+      const requiresIdentity = requiresRespondentIdentity(accessControl, collectRespondentEmail);
       if (requiresIdentity && !input.isPreview) {
         enforceAccessControlForSubmission(accessControl, collectRespondentEmail, context.auth);
       }
@@ -849,8 +849,10 @@ export const extendedResponsesResolvers = {
       // form's responses, so it can never match a signed-in caller's id —
       // but makes the "anonymous forms are out of scope" guarantee explicit
       // instead of implicit, and skips a lookup that could only ever be empty.
-      const requiresIdentity =
-        !!form.settings?.accessControl?.enabled || !!form.settings?.collectRespondentEmail;
+      const requiresIdentity = requiresRespondentIdentity(
+        form.settings?.accessControl,
+        form.settings?.collectRespondentEmail
+      );
       if (!requiresIdentity) return null;
 
       // Delegates the respondent-scoped lookup + release/visibility

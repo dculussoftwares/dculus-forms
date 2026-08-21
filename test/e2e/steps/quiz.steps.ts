@@ -380,6 +380,88 @@ When('I create a quiz form via GraphQL with gradeRelease {string}', async functi
   await createQuizFormViaGraphQL(this, gradeRelease);
 });
 
+// Epic #289 D9 (Story 17, #321): 'afterReview'/'scheduled' is only reachable
+// through respondent identity, so createForm must reject it outright on a
+// form with neither accessControl.enabled nor collectRespondentEmail. Mirrors
+// createQuizFormViaGraphQL above but asserts the mutation is REJECTED instead
+// of asserting it succeeds — there is deliberately no follow-up viewer flow,
+// since this combination can never be saved in the first place.
+Then('creating a quiz form via GraphQL with gradeRelease {string} and no respondent identity should be rejected', async function (this: CustomWorld, gradeRelease: string) {
+  if (!this.page) throw new Error('Page is not initialized');
+
+  await this.page.goto(`${this.baseUrl}/dashboard`);
+  await this.page.waitForTimeout(2000);
+
+  const organizationId = await this.page.evaluate(() => {
+    const orgFromStorage = localStorage.getItem('organization_id');
+    if (orgFromStorage) return orgFromStorage;
+    const apolloClient = (
+      window as Window & { __APOLLO_CLIENT__?: { cache?: { extract: () => Record<string, unknown> } } }
+    ).__APOLLO_CLIENT__;
+    if (apolloClient?.cache) {
+      try {
+        const cacheData = apolloClient.cache.extract();
+        const orgKey = Object.keys(cacheData).find((k: string) => k.startsWith('Organization:'));
+        if (orgKey) return orgKey.split(':')[1];
+      } catch { /* ignore */ }
+    }
+    return new URL(window.location.href).searchParams.get('org');
+  });
+
+  if (!organizationId) throw new Error('Organization ID not found');
+
+  const settings = {
+    quiz: {
+      enabled: true,
+      passThresholdPercent: 60,
+      gradeRelease,
+      respondentVisibility: {
+        totalScore: true,
+        perQuestionCorrectness: true,
+        correctAnswers: false,
+        pointValues: false,
+        feedback: false,
+        passFailBadge: true,
+      },
+    },
+  };
+
+  const response = await this.page.evaluate(
+    async ({ orgId, title, formSchema, settings, backendUrl }) => {
+      const res = await fetch(backendUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          query: `mutation CreateForm($input: CreateFormInput!) {
+            createForm(input: $input) { id title shortUrl }
+          }`,
+          variables: { input: { title, formSchema, organizationId: orgId, settings } },
+        }),
+      });
+      return res.json();
+    },
+    {
+      orgId: organizationId,
+      title: `E2E Quiz Rejection Test ${Date.now()}`,
+      formSchema: quizFormSchema(),
+      settings,
+      backendUrl: this.backendUrl,
+    }
+  );
+
+  if (!response.errors?.length) {
+    throw new Error(
+      `Expected createForm to reject gradeRelease "${gradeRelease}" with no respondent identity, but it succeeded: ${JSON.stringify(response)}`
+    );
+  }
+  const [firstError] = response.errors;
+  if (typeof firstError?.message !== 'string') {
+    throw new Error(`GraphQL error payload had no string message: ${JSON.stringify(response.errors)}`);
+  }
+  expect(firstError.message).toMatch(/deferred grade release/i);
+});
+
 // A form created moments ago via the createForm mutation can have its publish
 // click race the dashboard's own GET_FORM_BY_ID fetch still settling — the
 // click lands but the status badge never flips to "Live" within the shared

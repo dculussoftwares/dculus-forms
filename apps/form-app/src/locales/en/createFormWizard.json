@@ -67,7 +67,8 @@
       "label": "Show results",
       "immediate": "Immediately",
       "afterReview": "After review",
-      "never": "Never"
+      "never": "Never",
+      "afterReviewDisabledHint": "\"After review\" needs a way to reach the respondent later — turn on sign-in or email collection from Form Settings > Access Control after creating the form to unlock it."
     },
     "continue": "Continue",
     "generating": "Generating…",

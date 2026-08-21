@@ -194,23 +194,28 @@ function extractSearchKeyword(title: string): string {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ModeChip({
-  active, onClick, icon: Icon, label, sub,
+  active, onClick, icon: Icon, label, sub, disabled, title,
 }: {
   active: boolean; onClick: () => void;
   icon: React.ElementType; label: string; sub: string;
+  disabled?: boolean; title?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      title={title}
       className={cn(
         'flex flex-col items-center gap-1 px-4 py-3 rounded-xl border-2 text-center transition-all w-full',
-        active
+        disabled
+          ? 'border-border bg-muted/40 text-muted-foreground/50 cursor-not-allowed'
+          : active
           ? 'border-primary bg-primary/5 text-primary'
           : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
       )}
     >
-      <Icon className={cn('h-4 w-4', active ? 'text-primary' : '')} />
+      <Icon className={cn('h-4 w-4', !disabled && active ? 'text-primary' : '')} />
       <span className="text-sm font-medium leading-none">{label}</span>
       <span className="text-[11px] leading-none opacity-70">{sub}</span>
     </button>
@@ -868,12 +873,16 @@ const CreateFormWizard: React.FC = () => {
                   <ModeChip
                     active={quizGradeRelease === 'afterReview'} onClick={() => setQuizGradeRelease('afterReview')}
                     icon={Clock} label={t('quiz.gradeRelease.afterReview')} sub=""
+                    disabled title={t('quiz.gradeRelease.afterReviewDisabledHint')}
                   />
                   <ModeChip
                     active={quizGradeRelease === 'never'} onClick={() => setQuizGradeRelease('never')}
                     icon={EyeOff} label={t('quiz.gradeRelease.never')} sub=""
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {t('quiz.gradeRelease.afterReviewDisabledHint')}
+                </p>
               </div>
 
               {/* Continue button */}

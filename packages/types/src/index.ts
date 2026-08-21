@@ -80,6 +80,21 @@ export interface AccessControlSettings {
   allowedDomains?: string[];
 }
 
+/**
+ * True when a form has SOME way to identify the respondent later — either
+ * sign-in is required to respond (`accessControl.enabled`) or a verified
+ * email is captured (`collectRespondentEmail`), independent of each other.
+ * Shared between backend (submission gating, `accessControlEnforcement.ts`)
+ * and form-app (Quiz Settings panel, epic #289 D9 / Story 17, #321) so
+ * server and client eligibility checks can't drift.
+ */
+export function requiresRespondentIdentity(
+  accessControl: AccessControlSettings | undefined | null,
+  collectRespondentEmail: boolean | undefined | null
+): boolean {
+  return !!accessControl?.enabled || !!collectRespondentEmail;
+}
+
 export interface FormSettings {
   submissionLimits?: SubmissionLimitsSettings;
   responseCopy?: ResponseCopySettings;

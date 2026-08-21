@@ -203,12 +203,19 @@ const quizRespondentVisibilitySchema = z.object({
 export const quizSettingsSchema = z
   .object({
     enabled: z.boolean(),
-    passThresholdPercent: z.number().min(0).max(100).optional(),
+    // `.nullish()` (not `.optional()`) because these round-trip through a
+    // GraphQL nullable scalar: a field never set on this form resolves to
+    // `null` (not an absent key) once read back from a query, and plain
+    // `.optional()` rejects `null` — every save after the first would
+    // otherwise fail this validation for any quiz form that never set
+    // these fields. Transformed to `undefined` to match the QuizSettings
+    // TS type (`?:`, no `| null`).
+    passThresholdPercent: z.number().min(0).max(100).nullish().transform(v => v ?? undefined),
     gradeRelease: z.enum(['immediate', 'afterReview', 'scheduled', 'never']),
-    releaseAt: z.iso.datetime({ offset: true }).optional(),
+    releaseAt: z.iso.datetime({ offset: true }).nullish().transform(v => v ?? undefined),
     respondentVisibility: quizRespondentVisibilitySchema,
-    resultMessagePass: z.string().optional(),
-    resultMessageFail: z.string().optional(),
+    resultMessagePass: z.string().nullish().transform(v => v ?? undefined),
+    resultMessageFail: z.string().nullish().transform(v => v ?? undefined),
   })
   // "scheduled" release without a timestamp is meaningless — never let it
   // silently drop into "release whenever nobody looks" behavior downstream.

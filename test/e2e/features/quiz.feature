@@ -37,16 +37,8 @@ Feature: Native Quiz
     And I should see a Score column in the responses table
     Then clicking the score column header should sort the responses by score
 
-  Scenario: gradeRelease afterReview withholds the score from the respondent
-    When I create a quiz form via GraphQL with gradeRelease "afterReview"
-    And I publish the quiz form
-    And I get the form short URL
-    And I navigate to the form viewer with the short URL
-    Then I should see the form in the viewer
-    When I answer the radio and checkbox questions correctly in the viewer
-    And I should be able to submit the form in viewer
-    Then I should see the quiz pending message in the viewer
-    And I should not see a quiz score or badge in the viewer
+  Scenario: gradeRelease afterReview cannot be created without respondent identity
+    Then creating a quiz form via GraphQL with gradeRelease "afterReview" and no respondent identity should be rejected
 
   Scenario: An existing non-quiz form is completely unaffected by Native Quiz
     When I create a non-quiz form via GraphQL for the regression check

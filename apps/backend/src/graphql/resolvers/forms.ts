@@ -23,7 +23,7 @@ import { sanitizeQuizSettings, type FormSettings } from '@dculus/types';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
-import { resolveAccessStatus } from '../../lib/accessControlEnforcement.js';
+import { resolveAccessStatus, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
 
 // Sibling field resolvers on `Form` only see the raw `parent` DB row, not
 // each other's resolved output, so both `accessStatus` and
@@ -345,6 +345,24 @@ export const formsResolvers = {
         }
       }
 
+      // D9 guardrail (epic #289 Story 17, #321): 'afterReview'/'scheduled'
+      // grade release can only ever be delivered to a respondent the form
+      // can identify later. Checked against the FINAL settings (after the
+      // template-carried quiz merge above), not just the raw input, since a
+      // template can supply a quiz policy without accessControl — but every
+      // shipped template defaults to 'immediate', so this never fires for
+      // the existing template flow.
+      if (
+        settings?.quiz?.enabled &&
+        (settings.quiz.gradeRelease === 'afterReview' || settings.quiz.gradeRelease === 'scheduled') &&
+        !requiresRespondentIdentity(settings?.accessControl, settings?.collectRespondentEmail)
+      ) {
+        throw createGraphQLError(
+          'Deferred grade release ("afterReview" or "scheduled") requires respondent identity — enable sign-in (access control) or respondent email collection first',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
       // Track if we need to create FormFile record after form creation
       let copiedFileInfo: any = null;
 
@@ -535,6 +553,34 @@ export const formsResolvers = {
           );
         }
         input.settings.quiz = sanitizedQuiz;
+      }
+
+      // D9 guardrail (epic #289 Story 17, #321): 'afterReview'/'scheduled'
+      // grade release can only ever be delivered to a respondent the form
+      // can identify later. `updateForm` is a partial update, so identity
+      // capture may not be part of THIS payload — fall back to the
+      // persisted value for anything this call doesn't touch, mirroring the
+      // incoming-vs-current pattern used for accessControl/collectRespondentEmail
+      // above.
+      const effectiveQuiz = input.settings?.quiz ?? (accessCheck.form.settings as any)?.quiz;
+      if (
+        effectiveQuiz?.enabled &&
+        (effectiveQuiz.gradeRelease === 'afterReview' || effectiveQuiz.gradeRelease === 'scheduled')
+      ) {
+        const effectiveAccessControl =
+          incomingAccessControl !== undefined
+            ? incomingAccessControl
+            : (accessCheck.form.settings as any)?.accessControl;
+        const effectiveCollectRespondentEmail =
+          incomingCollectEmail !== undefined
+            ? incomingCollectEmail
+            : (accessCheck.form.settings as any)?.collectRespondentEmail;
+        if (!requiresRespondentIdentity(effectiveAccessControl, effectiveCollectRespondentEmail)) {
+          throw createGraphQLError(
+            'Deferred grade release ("afterReview" or "scheduled") requires respondent identity — enable sign-in (access control) or respondent email collection first',
+            GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+          );
+        }
       }
 
       const updateData = {

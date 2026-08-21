@@ -22,6 +22,7 @@
     "scheduledDescription": "Grades are released automatically at a date and time you choose",
     "never": "Never",
     "neverDescription": "Respondents never see their grade",
+    "identityRequiredHint": "\"After manual review\" and \"At a scheduled time\" need a way to reach the respondent later. Turn on sign-in (Access Control) or respondent email collection to unlock them.",
     "releaseAt": {
       "label": "Release at",
       "required": "Choose a release date and time to save a scheduled grade release"
@@ -69,6 +70,10 @@
   "save": "Save Quiz Settings",
   "saving": "Saving...",
   "toasts": {
-    "saved": "Quiz settings saved successfully"
+    "saved": "Quiz settings saved successfully",
+    "gradeReleaseDowngraded": {
+      "title": "Grade release changed to Immediate",
+      "description": "\"After manual review\" and \"At a scheduled time\" need a way to reach the respondent later, so turning off sign-in or email collection also switched grade release back to Immediate."
+    }
   }
 }

@@ -399,6 +399,28 @@ describe('quiz.ts — sanitizeQuizSettings', () => {
     };
     expect(sanitizeQuizSettings(settings)).toEqual(settings);
   });
+
+  // These four fields are nullable GraphQL scalars (`Float`/`String`, no
+  // `!`): a field never set on a quiz form resolves to `null` (not an
+  // absent key) once read back from any query, not `undefined`. Without
+  // `.nullish()` here, every save after the first would fail this
+  // validation for any quiz form that never set these — a real regression
+  // caught while manually verifying epic #289 Story 17 (#321) end-to-end.
+  it('treats null (GraphQL-nullable-scalar round-trip) the same as absent for optional fields', () => {
+    const settings = {
+      ...DEFAULT_QUIZ_SETTINGS,
+      passThresholdPercent: null,
+      releaseAt: null,
+      resultMessagePass: null,
+      resultMessageFail: null,
+    };
+    const sanitized = sanitizeQuizSettings(settings);
+    expect(sanitized).toBeDefined();
+    expect(sanitized?.passThresholdPercent).toBeUndefined();
+    expect(sanitized?.releaseAt).toBeUndefined();
+    expect(sanitized?.resultMessagePass).toBeUndefined();
+    expect(sanitized?.resultMessageFail).toBeUndefined();
+  });
 });
 
 describe('quiz.ts — FIELD_TYPE_DEFAULT_GRADING_MODE / isGradableFieldType', () => {

@@ -10,6 +10,7 @@ import * as fileUploadService from '../../../services/fileUploadService.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
 import * as usageService from '../../../subscriptions/usageService.js';
 import { prisma } from '../../../lib/prisma.js';
+import { DEFAULT_QUIZ_SETTINGS } from '@dculus/types';
 
 // Mock all dependencies
 vi.mock('../../../services/formService.js');
@@ -1018,6 +1019,109 @@ describe('Forms Resolvers', () => {
       );
       expect(prisma.formFile.create).toHaveBeenCalled();
     });
+
+    // Story 17 / epic #289 D9 (#321): a deferred grade release is only ever
+    // reachable through respondent identity, so the create path must reject
+    // it up front rather than letting the builder save an unfulfillable quiz.
+    describe('D9 guardrail: deferred grade release requires respondent identity', () => {
+      const quizFormSchema = {
+        pages: [],
+        layout: { theme: 'light', backgroundImageKey: '' },
+      };
+
+      it('should reject gradeRelease "afterReview" with no accessControl and no collectRespondentEmail', async () => {
+        vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+
+        const input = {
+          formSchema: quizFormSchema,
+          title: 'Quiz Form',
+          organizationId: 'org-123',
+          settings: {
+            quiz: { ...DEFAULT_QUIZ_SETTINGS, gradeRelease: 'afterReview' as const },
+          },
+        };
+
+        await expect(
+          formsResolvers.Mutation.createForm({}, { input }, mockContext)
+        ).rejects.toThrow('Deferred grade release');
+        expect(formService.createForm).not.toHaveBeenCalled();
+      });
+
+      it('should reject gradeRelease "scheduled" with no identity capture', async () => {
+        vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+
+        const input = {
+          formSchema: quizFormSchema,
+          title: 'Quiz Form',
+          organizationId: 'org-123',
+          settings: {
+            quiz: {
+              ...DEFAULT_QUIZ_SETTINGS,
+              gradeRelease: 'scheduled' as const,
+              releaseAt: '2026-01-01T00:00:00Z',
+            },
+          },
+        };
+
+        await expect(
+          formsResolvers.Mutation.createForm({}, { input }, mockContext)
+        ).rejects.toThrow('Deferred grade release');
+      });
+
+      it('should allow gradeRelease "afterReview" when accessControl.enabled is true', async () => {
+        vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+        vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+        const input = {
+          formSchema: quizFormSchema,
+          title: 'Quiz Form',
+          organizationId: 'org-123',
+          settings: {
+            accessControl: { enabled: true, requireSignIn: true, allowedDomains: [] },
+            quiz: { ...DEFAULT_QUIZ_SETTINGS, gradeRelease: 'afterReview' as const },
+          },
+        };
+
+        await expect(
+          formsResolvers.Mutation.createForm({}, { input }, mockContext)
+        ).resolves.toBeDefined();
+        expect(formService.createForm).toHaveBeenCalled();
+      });
+
+      it('should allow gradeRelease "afterReview" when collectRespondentEmail is true', async () => {
+        vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+        vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+        const input = {
+          formSchema: quizFormSchema,
+          title: 'Quiz Form',
+          organizationId: 'org-123',
+          settings: {
+            collectRespondentEmail: true,
+            quiz: { ...DEFAULT_QUIZ_SETTINGS, gradeRelease: 'afterReview' as const },
+          },
+        };
+
+        await expect(
+          formsResolvers.Mutation.createForm({}, { input }, mockContext)
+        ).resolves.toBeDefined();
+      });
+
+      it('should not run this check on a non-quiz form (additive guarantee)', async () => {
+        vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+        vi.mocked(formService.createForm).mockResolvedValue(mockForm as any);
+
+        const input = {
+          formSchema: quizFormSchema,
+          title: 'Plain Form',
+          organizationId: 'org-123',
+        };
+
+        await expect(
+          formsResolvers.Mutation.createForm({}, { input }, mockContext)
+        ).resolves.toBeDefined();
+      });
+    });
   });
 
   describe('Mutation: updateForm', () => {
@@ -1150,6 +1254,133 @@ describe('Forms Resolvers', () => {
           mockContext
         )
       ).resolves.toBeDefined();
+    });
+
+    // Story 17 / epic #289 D9 (#321): same guardrail on the update path,
+    // which must also consider the FORM'S ALREADY-PERSISTED identity
+    // settings when a save only touches `settings.quiz` (partial update).
+    describe('D9 guardrail: deferred grade release requires respondent identity', () => {
+      it('should reject gradeRelease "afterReview" when the form has no identity capture', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'OWNER' as any,
+          form: mockForm as any, // settings: null → no accessControl, no collectRespondentEmail
+        });
+
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            {
+              id: 'form-123',
+              input: {
+                settings: { quiz: { ...DEFAULT_QUIZ_SETTINGS, gradeRelease: 'afterReview' } },
+              },
+            },
+            mockContext
+          )
+        ).rejects.toThrow('Deferred grade release');
+        expect(formService.updateForm).not.toHaveBeenCalled();
+      });
+
+      it('should allow gradeRelease "afterReview" when this save also enables accessControl', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'OWNER' as any,
+          form: mockForm as any,
+        });
+        vi.mocked(formService.updateForm).mockResolvedValue(mockForm as any);
+
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            {
+              id: 'form-123',
+              input: {
+                settings: {
+                  accessControl: { enabled: true, allowedDomains: [] },
+                  quiz: { ...DEFAULT_QUIZ_SETTINGS, gradeRelease: 'afterReview' },
+                },
+              },
+            },
+            mockContext
+          )
+        ).resolves.toBeDefined();
+      });
+
+      it('should allow gradeRelease "afterReview" when identity capture is already persisted and this save only touches quiz', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        const formWithIdentity = {
+          ...mockForm,
+          settings: { collectRespondentEmail: true },
+        };
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'OWNER' as any,
+          form: formWithIdentity as any,
+        });
+        vi.mocked(formService.updateForm).mockResolvedValue(formWithIdentity as any);
+
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            {
+              id: 'form-123',
+              input: {
+                settings: { quiz: { ...DEFAULT_QUIZ_SETTINGS, gradeRelease: 'afterReview' } },
+              },
+            },
+            mockContext
+          )
+        ).resolves.toBeDefined();
+      });
+
+      it('should reject when this save turns collectRespondentEmail off while gradeRelease afterReview is already persisted', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        const formWithQuiz = {
+          ...mockForm,
+          settings: {
+            collectRespondentEmail: true,
+            quiz: { ...DEFAULT_QUIZ_SETTINGS, gradeRelease: 'afterReview' },
+          },
+        };
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'OWNER' as any,
+          form: formWithQuiz as any,
+        });
+
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            {
+              id: 'form-123',
+              input: { settings: { collectRespondentEmail: false } },
+            },
+            mockContext
+          )
+        ).rejects.toThrow('Deferred grade release');
+        expect(formService.updateForm).not.toHaveBeenCalled();
+      });
+
+      it('should not run this check on a non-quiz update (additive guarantee)', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'OWNER' as any,
+          form: mockForm as any,
+        });
+        vi.mocked(formService.updateForm).mockResolvedValue(mockForm as any);
+
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            { id: 'form-123', input: { title: 'Updated title' } },
+            mockContext
+          )
+        ).resolves.toBeDefined();
+      });
     });
   });
 
