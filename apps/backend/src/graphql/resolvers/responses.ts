@@ -47,7 +47,7 @@ import {
 } from '../../services/fakeResponseService.js';
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { sendResponseCopyIfEnabled } from '../../services/responseCopyService.js';
-import { responseGradeRepository } from '../../repositories/index.js';
+import { responseGradeRepository, responseRepository } from '../../repositories/index.js';
 
 interface ResponseParent {
   id: string;
@@ -824,6 +824,40 @@ export const extendedResponsesResolvers = {
           valueChangeSize: change.valueChangeSize,
         })),
       }));
+    },
+
+    // Native Quiz (epic #289, Story 16/#320, D9): lets a respondent retrieve
+    // their OWN deferred-release grade ('afterReview'/'scheduled') outside
+    // submitResponse, the only place `grade` was previously computed.
+    // Deliberately `requireAuth` ONLY — no form-permission check. This
+    // answers "is this your own submission", not "do you manage this form",
+    // so a respondent with zero form access must still be able to call it.
+    myQuizResult: async (
+      _: any,
+      { formId }: { formId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+      const userId = context.auth.user!.id;
+
+      const form = await getFormById(formId);
+      if (!form || !form.settings?.quiz?.enabled) return null;
+
+      // v1 limitation (documented, not a bug): a form that permits
+      // resubmission can have more than one Response row for this
+      // respondent — only the most recent by submittedAt is considered.
+      const response = await responseRepository.findFirst({
+        where: { formId, respondentUserId: userId, deletedAt: null },
+        orderBy: { submittedAt: 'desc' },
+      });
+      if (!response) return null;
+
+      const gradeRow = await responseGradeRepository.findByResponseId(response.id);
+      if (!gradeRow) return null;
+
+      // Reuse the exact same release/visibility projection submitResponse
+      // uses — never hand-roll a second one (D5 precedent).
+      return toRespondentView(gradeRow, form.settings.quiz);
     },
   },
 

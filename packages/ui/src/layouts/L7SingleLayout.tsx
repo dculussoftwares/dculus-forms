@@ -22,6 +22,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   // L7 Single layout styles - using default/classic styles
   const getLayoutStyles = () => ({
@@ -327,6 +328,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
                   responseCopyNotice={responseCopyNotice}
                   gradeResult={gradeResult}
                   quizResultLabels={quizResultLabels}
+                  resultLink={resultLink}
                 />
               </div>
             </div>

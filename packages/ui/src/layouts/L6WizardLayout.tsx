@@ -22,6 +22,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   // L6 has no intro/pages toggle — content and pages stack together in one
   // continuous view. The thank-you screen is the only alternate state it needs.
@@ -149,6 +150,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
                   responseCopyNotice={responseCopyNotice}
                   gradeResult={gradeResult}
                   quizResultLabels={quizResultLabels}
+                  resultLink={resultLink}
                 />
               </div>
             ) : (

@@ -22,6 +22,7 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   // L4 Minimal layout styles
   const getLayoutStyles = () => ({
@@ -360,6 +361,7 @@ export const L4MinimalLayout: React.FC<LayoutProps> = ({
                   responseCopyNotice={responseCopyNotice}
                   gradeResult={gradeResult}
                   quizResultLabels={quizResultLabels}
+                  resultLink={resultLink}
                 />
               </div>
             </div>

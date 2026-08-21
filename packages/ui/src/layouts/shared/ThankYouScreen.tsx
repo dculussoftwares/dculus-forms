@@ -24,6 +24,13 @@ export interface ThankYouScreenProps {
    */
   gradeResult?: RespondentGradeView;
   quizResultLabels?: Partial<QuizResultScreenLabels>;
+  /**
+   * Native Quiz (epic #289, Story 16/#320, D9) — present only for an
+   * identity-gated quiz submission with a deferred grade release
+   * ('afterReview'/'scheduled'), so the respondent has somewhere to come
+   * back to once the grade releases. Absent for every other case.
+   */
+  resultLink?: { href: string; label: string };
 }
 
 const SuccessIcon: React.FC = () => (
@@ -49,6 +56,7 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempContent, setTempContent] = useState(content);
@@ -84,7 +92,18 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
   return (
     <div className="text-center p-4 sm:p-8 max-w-2xl mx-auto" data-testid="thank-you-display">
       {gradeResult ? (
-        <QuizResultScreen gradeResult={gradeResult} labels={quizResultLabels} className="mb-6" />
+        <>
+          <QuizResultScreen gradeResult={gradeResult} labels={quizResultLabels} className="mb-6" />
+          {resultLink && (
+            <a
+              href={resultLink.href}
+              className="inline-block text-sm font-medium text-primary hover:underline mb-4"
+              data-testid="thank-you-result-link"
+            >
+              {resultLink.label}
+            </a>
+          )}
+        </>
       ) : (
         <>
           <SuccessIcon />

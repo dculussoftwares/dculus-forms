@@ -21,3 +21,18 @@ export const quizResultLabels: QuizResultScreenLabels = {
   feedbackLabel: 'Feedback',
   noAnswerLabel: 'No answer given',
 };
+
+/**
+ * Copy for the "check your result later" flow (epic #289, Story 16/#320,
+ * D9) — the persistent post-submit link and the standalone results page it
+ * leads to. Same rationale as `quizResultLabels` above: form-viewer has no
+ * i18n framework, so this is the single home for this English copy.
+ */
+export const quizResultLinkLabel = 'Come back later to see your result';
+
+export const quizResultPageLabels = {
+  loading: 'Loading your result…',
+  notSubmitted: "We don't have a result for you on this form yet.",
+  notSubmittedHint: 'Make sure you sign in with the same email or account you used to submit.',
+  backToForm: 'Back to form',
+};
