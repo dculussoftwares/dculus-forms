@@ -1355,6 +1355,11 @@ export const typeDefs = gql`
       filterLogic: FilterLogic = AND
     ): PaginatedResponses!
 
+    # Native Quiz (epic #289, Story 16/#320, D9): lets a signed-in respondent
+    # retrieve their OWN deferred-release quiz grade later. Auth-only —
+    # deliberately no form-permission check; see resolver for why.
+    myQuizResult(formId: ID!): ResponseGradeView
+
     # Response Edit Tracking Queries
     responseEditHistory(responseId: ID!): [ResponseEditHistory!]!
 

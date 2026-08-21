@@ -31,6 +31,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   const commonProps: LayoutProps = {
     pages,
@@ -46,6 +47,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
     responseCopyNotice,
     gradeResult,
     quizResultLabels,
+    resultLink,
   };
 
   const renderLayout = () => {

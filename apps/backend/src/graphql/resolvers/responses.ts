@@ -28,7 +28,7 @@ import { QUIZ_GRADING_PLUGIN_TYPE } from '../../plugins/quiz/types.js';
 import { stripConditionallyHiddenValues } from '../../lib/conditionalStrip.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { gradeResponse } from '../../services/quiz/gradingEngine.js';
-import { saveGrade, toRespondentView } from '../../services/quiz/gradingService.js';
+import { saveGrade, toRespondentView, getMyQuizResult } from '../../services/quiz/gradingService.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/core/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
@@ -824,6 +824,40 @@ export const extendedResponsesResolvers = {
           valueChangeSize: change.valueChangeSize,
         })),
       }));
+    },
+
+    // Native Quiz (epic #289, Story 16/#320, D9): lets a respondent retrieve
+    // their OWN deferred-release grade ('afterReview'/'scheduled') outside
+    // submitResponse, the only place `grade` was previously computed.
+    // Deliberately `requireAuth` ONLY — no form-permission check. This
+    // answers "is this your own submission", not "do you manage this form",
+    // so a respondent with zero form access must still be able to call it.
+    myQuizResult: async (
+      _: any,
+      { formId }: { formId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+      const userId = context.auth.user!.id;
+
+      const form = await getFormById(formId);
+      if (!form || !form.settings?.quiz?.enabled) return null;
+
+      // Defense in depth (out-of-scope guarantee, epic #289 D9): mirrors the
+      // exact requiresIdentity expression submitResponse uses. Not required
+      // for correctness — respondentUserId is always null on an anonymous
+      // form's responses, so it can never match a signed-in caller's id —
+      // but makes the "anonymous forms are out of scope" guarantee explicit
+      // instead of implicit, and skips a lookup that could only ever be empty.
+      const requiresIdentity =
+        !!form.settings?.accessControl?.enabled || !!form.settings?.collectRespondentEmail;
+      if (!requiresIdentity) return null;
+
+      // Delegates the respondent-scoped lookup + release/visibility
+      // projection to gradingService — resolvers stay thin, and this reuses
+      // the exact same toRespondentView submitResponse uses rather than
+      // hand-rolling a second projection (D5 precedent).
+      return getMyQuizResult(formId, userId, form.settings.quiz);
     },
   },
 

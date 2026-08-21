@@ -21,6 +21,7 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   // L8 Image layout styles - using minimal/image-friendly styles
   const getLayoutStyles = () => ({
@@ -249,6 +250,7 @@ export const L8ImageLayout: React.FC<LayoutProps> = ({
                   responseCopyNotice={responseCopyNotice}
                   gradeResult={gradeResult}
                   quizResultLabels={quizResultLabels}
+                  resultLink={resultLink}
                 />
               </div>
             </div>

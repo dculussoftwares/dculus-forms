@@ -7,6 +7,7 @@ import Header from './components/Header';
 import Home from './pages/Home';
 import DemoPage from './components/DemoPage';
 import FormViewer from './pages/FormViewer';
+import QuizResultPage from './pages/QuizResultPage';
 import OAuthCallback from './pages/OAuthCallback';
 
 class FormViewerErrorBoundary extends React.Component<
@@ -39,9 +40,13 @@ function App() {
           <Routes>
             {/* Public form routes - no header */}
             <Route path="/f/:shortUrl" element={<FormViewerErrorBoundary><FormViewer /></FormViewerErrorBoundary>} />
+            {/* Native Quiz (epic #289, Story 16/#320, D9): "check your result
+                later" for identity-gated forms with a deferred grade release. */}
+            <Route path="/f/:shortUrl/result" element={<FormViewerErrorBoundary><QuizResultPage /></FormViewerErrorBoundary>} />
             {/* Respondent sign-in redirect target (Google + one-time-token bridge) */}
             <Route path="/auth/callback" element={<OAuthCallback />} />
             {/* Legacy URL format support (without /f/ prefix) */}
+            <Route path="/:shortUrl/result" element={<FormViewerErrorBoundary><QuizResultPage /></FormViewerErrorBoundary>} />
             <Route path="/:shortUrl" element={<FormViewerErrorBoundary><FormViewer /></FormViewerErrorBoundary>} />
 
             {/* Main app routes - with header */}

@@ -21,6 +21,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   // L9 has no intro screen — the thank-you screen is its only alternate state.
   const showThankYou = screenOverride === 'thankYou';
@@ -110,6 +111,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
                   responseCopyNotice={responseCopyNotice}
                   gradeResult={gradeResult}
                   quizResultLabels={quizResultLabels}
+                  resultLink={resultLink}
                 />
               </div>
             ) : (

@@ -232,3 +232,33 @@ export const toRespondentView = (
     ...(questions !== undefined ? { questions } : {}),
   };
 };
+
+/**
+ * Native Quiz (epic #289, Story 16/#320, D9): resolves a respondent's OWN
+ * grade for a form, keeping resolvers thin per the Resolvers → Services →
+ * Repositories → Prisma layering (CLAUDE.md) — the `myQuizResult` resolver
+ * calls this instead of touching `responseRepository`/`responseGradeRepository`
+ * directly. Caller (the resolver) is responsible for confirming the form is
+ * a quiz and for auth; this only does the respondent-scoped lookup + the
+ * same release/visibility projection every other read path uses.
+ *
+ * v1 limitation (documented, not a bug): a form that permits resubmission
+ * can have more than one Response row for this respondent — only the most
+ * recent by `submittedAt` is considered.
+ */
+export const getMyQuizResult = async (
+  formId: string,
+  respondentUserId: string,
+  quizSettings: QuizSettings
+): Promise<RespondentGradeView | null> => {
+  const response = await responseRepository.findFirst({
+    where: { formId, respondentUserId, deletedAt: null },
+    orderBy: { submittedAt: 'desc' },
+  });
+  if (!response) return null;
+
+  const gradeRow = await responseGradeRepository.findByResponseId(response.id);
+  if (!gradeRow) return null;
+
+  return toRespondentView(gradeRow, quizSettings);
+};

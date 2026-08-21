@@ -22,6 +22,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
   responseCopyNotice,
   gradeResult,
   quizResultLabels,
+  resultLink,
 }) => {
   // L3 Card layout styles
   const getLayoutStyles = () => ({
@@ -348,6 +349,7 @@ export const L3CardLayout: React.FC<LayoutProps> = ({
                   responseCopyNotice={responseCopyNotice}
                   gradeResult={gradeResult}
                   quizResultLabels={quizResultLabels}
+                  resultLink={resultLink}
                 />
               </div>
             </div>

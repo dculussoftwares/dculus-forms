@@ -33,6 +33,15 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
           requireSignIn
           allowedDomains
         }
+        collectRespondentEmail
+        # Native Quiz (epic #289, Story 16/#320, D9): lets form-viewer decide
+        # whether to offer a "check your result later" link on the post-submit
+        # screen — only relevant when the quiz defers release AND the form
+        # captures respondent identity (accessControl/collectRespondentEmail).
+        quiz {
+          enabled
+          gradeRelease
+        }
       }
       organization {
         id
@@ -71,6 +80,36 @@ export const SUBMIT_RESPONSE: TypedDocumentNode<any, any> = gql`
           correctAnswer
           feedback
         }
+      }
+    }
+  }
+`;
+
+// Native Quiz (epic #289, Story 16/#320, D9): lets a signed-in respondent
+// retrieve their OWN deferred-release grade later — the only other read path
+// (`FormResponse.responseGrade`) requires form VIEWER+ permission, which a
+// respondent never has. Returns null when the caller never submitted this
+// form, or the form isn't a quiz — QuizResultPage treats both the same way
+// (nothing to show yet).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const MY_QUIZ_RESULT: TypedDocumentNode<any, any> = gql`
+  query MyQuizResult($formId: ID!) {
+    myQuizResult(formId: $formId) {
+      released
+      score
+      maxScore
+      percentage
+      passed
+      message
+      questions {
+        fieldId
+        label
+        correct
+        pointsAwarded
+        pointValue
+        yourAnswer
+        correctAnswer
+        feedback
       }
     }
   }
