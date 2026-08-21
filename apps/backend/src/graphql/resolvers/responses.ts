@@ -843,6 +843,16 @@ export const extendedResponsesResolvers = {
       const form = await getFormById(formId);
       if (!form || !form.settings?.quiz?.enabled) return null;
 
+      // Defense in depth (out-of-scope guarantee, epic #289 D9): mirrors the
+      // exact requiresIdentity expression submitResponse uses. Not required
+      // for correctness — respondentUserId is always null on an anonymous
+      // form's responses, so it can never match a signed-in caller's id —
+      // but makes the "anonymous forms are out of scope" guarantee explicit
+      // instead of implicit, and skips a lookup that could only ever be empty.
+      const requiresIdentity =
+        !!form.settings?.accessControl?.enabled || !!form.settings?.collectRespondentEmail;
+      if (!requiresIdentity) return null;
+
       // Delegates the respondent-scoped lookup + release/visibility
       // projection to gradingService — resolvers stay thin, and this reuses
       // the exact same toRespondentView submitResponse uses rather than
