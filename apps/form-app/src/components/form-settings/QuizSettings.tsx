@@ -19,6 +19,13 @@ interface QuizSettingsProps {
   isSaving: boolean;
   onUpdate: (quiz: QuizSettingsType) => void;
   onSave: () => void;
+  // Epic #289 D9 (Story 17, #321): whether THIS form has some way to
+  // identify the respondent later (accessControl.enabled or
+  // collectRespondentEmail). Deferred grade release ('afterReview' /
+  // 'scheduled') is unfulfillable without it, so those two options are
+  // disabled — not hidden, so the feature stays discoverable — until the
+  // owner turns on sign-in or email collection in Access Control.
+  requiresIdentity: boolean;
 }
 
 // Quiz mode is off by default for a form that has never opened this panel —
@@ -48,6 +55,7 @@ const QuizSettings: React.FC<QuizSettingsProps> = ({
   isSaving,
   onUpdate,
   onSave,
+  requiresIdentity,
 }) => {
   const { t } = useTranslation('quizSettings');
   const quiz = settings ?? DISABLED_DISPLAY_DEFAULT;
@@ -159,15 +167,33 @@ const QuizSettings: React.FC<QuizSettingsProps> = ({
                 </Label>
               </div>
               <div className="flex items-start space-x-2">
-                <RadioGroupItem value="afterReview" id="quiz-release-afterReview" className="mt-1" />
-                <Label htmlFor="quiz-release-afterReview" className="font-normal cursor-pointer">
+                <RadioGroupItem
+                  value="afterReview"
+                  id="quiz-release-afterReview"
+                  className="mt-1"
+                  disabled={!requiresIdentity}
+                  data-testid="quiz-release-afterReview-radio"
+                />
+                <Label
+                  htmlFor="quiz-release-afterReview"
+                  className={requiresIdentity ? 'font-normal cursor-pointer' : 'font-normal cursor-not-allowed opacity-60'}
+                >
                   <span className="block text-sm font-medium">{t('gradeRelease.afterReview')}</span>
                   <span className="block text-xs text-muted-foreground">{t('gradeRelease.afterReviewDescription')}</span>
                 </Label>
               </div>
               <div className="flex items-start space-x-2">
-                <RadioGroupItem value="scheduled" id="quiz-release-scheduled" className="mt-1" />
-                <Label htmlFor="quiz-release-scheduled" className="font-normal cursor-pointer">
+                <RadioGroupItem
+                  value="scheduled"
+                  id="quiz-release-scheduled"
+                  className="mt-1"
+                  disabled={!requiresIdentity}
+                  data-testid="quiz-release-scheduled-radio"
+                />
+                <Label
+                  htmlFor="quiz-release-scheduled"
+                  className={requiresIdentity ? 'font-normal cursor-pointer' : 'font-normal cursor-not-allowed opacity-60'}
+                >
                   <span className="block text-sm font-medium">{t('gradeRelease.scheduled')}</span>
                   <span className="block text-xs text-muted-foreground">{t('gradeRelease.scheduledDescription')}</span>
                 </Label>
@@ -180,6 +206,17 @@ const QuizSettings: React.FC<QuizSettingsProps> = ({
                 </Label>
               </div>
             </RadioGroup>
+
+            {!requiresIdentity && (
+              <div
+                className="flex items-start gap-2 px-3 py-2 rounded-lg text-xs"
+                style={{ backgroundColor: 'var(--tf-tab-bg)', color: 'var(--tf-muted)' }}
+                data-testid="quiz-release-identity-hint"
+              >
+                <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                {t('gradeRelease.identityRequiredHint')}
+              </div>
+            )}
 
             {quiz.gradeRelease === 'scheduled' && (
               <div className="pl-6 space-y-1">

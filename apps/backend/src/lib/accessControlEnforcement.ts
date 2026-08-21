@@ -12,6 +12,22 @@ function emailDomainAllowed(email: string, allowedDomains: string[]): boolean {
 }
 
 /**
+ * True when a form has SOME way to identify the respondent later — either
+ * sign-in is required to respond (`accessControl.enabled`) or a verified
+ * email is captured (`collectRespondentEmail`), independent of each other.
+ * The single source of truth for "can this form ever key a later lookup off
+ * a respondent identity" — used both to gate submission (`resolveAccessStatus`
+ * below) and, per epic #289 D9, to decide whether a deferred quiz grade
+ * release (`afterReview`/`scheduled`) is even reachable (Story 17, #321).
+ */
+export function requiresRespondentIdentity(
+  accessControl: AccessControlSettings | undefined | null,
+  collectRespondentEmail: boolean | undefined | null
+): boolean {
+  return !!accessControl?.enabled || !!collectRespondentEmail;
+}
+
+/**
  * Pure decision function — no throw — so `formByShortUrl`'s field resolvers
  * can use it to decide what DATA to return (gate vs full form), not just
  * whether to error out. Shared with `enforceAccessControlForSubmission`
@@ -27,7 +43,7 @@ export function resolveAccessStatus(
   collectRespondentEmail: boolean | undefined,
   auth: BetterAuthContext
 ): FormAccessStatus {
-  const requiresIdentity = !!accessControl?.enabled || !!collectRespondentEmail;
+  const requiresIdentity = requiresRespondentIdentity(accessControl, collectRespondentEmail);
   if (!requiresIdentity) return 'OPEN';
 
   if (!auth.isAuthenticated || !auth.user?.email) {

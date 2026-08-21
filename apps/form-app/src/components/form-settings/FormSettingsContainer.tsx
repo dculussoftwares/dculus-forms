@@ -81,6 +81,7 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
             settings={settings.quiz} isSaving={isSaving}
             onUpdate={onUpdateQuizSettings}
             onSave={onSaveQuizSettings}
+            requiresIdentity={!!settings.accessControl?.enabled || !!settings.collectRespondentEmail}
           />
         );
       default:
