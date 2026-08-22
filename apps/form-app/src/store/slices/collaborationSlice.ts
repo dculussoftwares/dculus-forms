@@ -19,11 +19,16 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
   // Singleton CollaborationManager instance (persists across slice calls)
   let collaborationManager: CollaborationManager | null = null;
 
-  // Reconnection state — kept outside Zustand so it doesn't trigger re-renders
-  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  let reconnectAttempts = 0;
-  const MAX_RECONNECT_ATTEMPTS = 5;
-  const BASE_RECONNECT_DELAY_MS = 2_000;
+  // Disconnect watchdog — kept outside Zustand so it doesn't trigger re-renders.
+  // HocuspocusProvider already reconnects indefinitely on its own (infinite
+  // retries with jittered exponential backoff, dead-connection detection via
+  // its internal ping timeout, and a queue that holds outgoing updates while
+  // offline). We must NOT tear down the YDoc/provider ourselves on a bare
+  // `disconnect` event — that would destroy that queue and any not-yet-sent
+  // local edits, and fight the SDK's own recovery. We only surface a "still
+  // reconnecting" banner if a disconnect drags on, purely for user feedback.
+  let disconnectWatchdog: ReturnType<typeof setTimeout> | null = null;
+  const PROLONGED_DISCONNECT_MS = 45_000;
 
   // P2-17: Dirty flag — set to true whenever the YJS doc receives an update
   // so disconnectCollaboration can attempt a final sync before teardown.
@@ -61,63 +66,36 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
 
   /**
    * Callback when connection state changes.
-   * On disconnect, schedules an exponential-backoff reconnect attempt.
+   * The underlying HocuspocusProvider already reconnects on its own — we
+   * just track how long we've been disconnected to surface a banner if it
+   * drags on, without ever touching the YDoc/provider ourselves.
    */
   const connectionCallback = (isConnected: boolean) => {
     set({ isConnected });
 
+    if (disconnectWatchdog) {
+      clearTimeout(disconnectWatchdog);
+      disconnectWatchdog = null;
+    }
+
     if (isConnected) {
-      // Transport connected — clear failure flag and any pending reconnect timer.
-      // Do NOT reset reconnectAttempts here: the transport connect fires before
-      // authentication, so a failed-auth cycle would reset the counter on every
-      // attempt, creating an infinite loop. The counter resets only after a
-      // successful sync (see loadingCallback below).
       set({ isCollaborationFailed: false });
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-      }
       return;
     }
 
-    // Disconnected — attempt to reconnect unless we've exceeded the limit
-    const { formId } = get() as any;
-    if (!formId) return;
-
-    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      // All attempts exhausted — notify the user
+    // Disconnected — the provider is already retrying in the background.
+    // Only warn the user if it hasn't recovered after a while.
+    disconnectWatchdog = setTimeout(() => {
+      disconnectWatchdog = null;
       set({ isCollaborationFailed: true });
-      return;
-    }
-
-    const delay = BASE_RECONNECT_DELAY_MS * 2 ** reconnectAttempts;
-    reconnectAttempts += 1;
-    console.warn(
-      `[Collaboration] Disconnected. Reconnect attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms`
-    );
-
-    reconnectTimer = setTimeout(async () => {
-      reconnectTimer = null;
-      try {
-        if (collaborationManager) {
-          await collaborationManager.initialize(formId);
-        }
-      } catch (err) {
-        console.error('[Collaboration] Reconnect attempt failed:', err);
-      }
-    }, delay);
+    }, PROLONGED_DISCONNECT_MS);
   };
 
   /**
    * Callback when loading state changes.
-   * A transition to isLoading=false means the document successfully synced,
-   * so we can reset the reconnect backoff counter here.
    */
   const loadingCallback = (isLoading: boolean) => {
     set({ isLoading });
-    if (!isLoading) {
-      reconnectAttempts = 0;
-    }
   };
 
   return {
@@ -162,12 +140,11 @@ export const createCollaborationSlice: SliceCreator<CollaborationSlice> = (set, 
      * updates before tearing down the WebSocket.
      */
     disconnectCollaboration: () => {
-      // Cancel any pending reconnect before tearing down
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
+      // Cancel the pending "prolonged disconnect" watchdog before tearing down
+      if (disconnectWatchdog) {
+        clearTimeout(disconnectWatchdog);
+        disconnectWatchdog = null;
       }
-      reconnectAttempts = MAX_RECONNECT_ATTEMPTS; // prevent further auto-reconnect
 
       // P2-17: Attempt to flush pending changes before disconnecting.
       // Hocuspocus syncs over WebSocket automatically on every ydoc update, so the

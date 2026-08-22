@@ -186,6 +186,14 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     getSelectedField,
   } = useFormBuilderStore();
 
+  // Re-arm the sync-lost banner once reconnected, so a dismiss only silences
+  // the current disconnect episode rather than suppressing every future one.
+  useEffect(() => {
+    if (isConnected) {
+      setIsBannerDismissed(false);
+    }
+  }, [isConnected]);
+
   // Seeds the AI drawer's context line + outgoing request payload with the active tab
   // and current rail selection (intro/page/field/thank-you). `pages` is a dep (not just
   // `getSelectedField`, whose identity is stable) so a live field-label rename while
