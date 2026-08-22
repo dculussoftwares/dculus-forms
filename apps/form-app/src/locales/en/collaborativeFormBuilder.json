@@ -12,7 +12,7 @@
     "connectingCollaborationDescription": "Establishing real-time collaboration connection."
   },
   "collaboration": {
-    "syncLostBanner": "Real-time sync lost. Please reload to reconnect.",
+    "syncLostBanner": "Real-time sync interrupted — still trying to reconnect. If it doesn't recover, reload the page.",
     "syncLostReload": "Reload",
     "dismissBanner": "Dismiss"
   },

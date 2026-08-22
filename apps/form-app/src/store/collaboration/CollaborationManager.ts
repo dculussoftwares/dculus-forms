@@ -236,6 +236,8 @@ export class CollaborationManager {
   private fieldObserverCleanups: Array<() => void> = [];
   private fieldObserverMap: Map<string, Array<() => void>> = new Map();
   private updateQueued = false;
+  private visibilityListener: (() => void) | null = null;
+  private onlineListener: (() => void) | null = null;
 
   constructor(
     private readonly updateCallback: UpdateCallback,
@@ -277,6 +279,7 @@ export class CollaborationManager {
 
       this.setupConnectionHandlers();
       this.setupObservers();
+      this.setupWakeListeners();
     } catch (error) {
       console.error('Failed to initialize collaboration:', error);
       this.loadingCallback(false);
@@ -286,6 +289,8 @@ export class CollaborationManager {
   }
 
   disconnect(): void {
+    this.teardownWakeListeners();
+
     this.observerCleanups.forEach((cleanup) => cleanup());
     this.observerCleanups = [];
     this.clearPageObservers();
@@ -314,6 +319,47 @@ export class CollaborationManager {
 
   isConnected(): boolean {
     return (this.provider as any)?.status === 'connected' || false;
+  }
+
+  /**
+   * Nudges the existing provider to reconnect without destroying the YDoc
+   * or the provider's own pending-message queue. HocuspocusProvider already
+   * retries indefinitely with backoff in the background; this just tells it
+   * to try immediately (e.g. on tab refocus, where the browser may have
+   * throttled its backoff timers) rather than waiting out its own delay.
+   * Safe to call when already connected/connecting — it's a no-op then.
+   */
+  reconnectNow(): void {
+    this.provider?.connect();
+  }
+
+  // Force an immediate reconnect attempt when the tab regains focus/network,
+  // since backgrounded tabs throttle timers and can leave the provider's own
+  // backoff retry stalled for far longer than its nominal delay.
+  private setupWakeListeners(): void {
+    this.visibilityListener = () => {
+      if (document.visibilityState === 'visible' && !this.isConnected()) {
+        this.reconnectNow();
+      }
+    };
+    this.onlineListener = () => {
+      if (!this.isConnected()) {
+        this.reconnectNow();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityListener);
+    window.addEventListener('online', this.onlineListener);
+  }
+
+  private teardownWakeListeners(): void {
+    if (this.visibilityListener) {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+      this.visibilityListener = null;
+    }
+    if (this.onlineListener) {
+      window.removeEventListener('online', this.onlineListener);
+      this.onlineListener = null;
+    }
   }
 
   private setupConnectionHandlers(): void {
