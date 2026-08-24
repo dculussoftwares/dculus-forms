@@ -194,3 +194,4 @@ quiz-migration-snapshots/
 
 # Claude Code local (per-machine) settings — never commit
 .claude/settings.local.json
+.gbrain-source
