@@ -1665,6 +1665,24 @@ describe('Chargebee Service', () => {
       const enterprise = catalog.find((p) => p.id === 'enterprise')!;
       expect(enterprise.visibleOnPricingPage).toBe(false);
     });
+
+    it('treats an explicit "0" entitlement value as a real zero cap, not unlimited', async () => {
+      setupCatalogMocks();
+      mockChargebee.entitlement.list.mockResolvedValue({
+        list: [
+          { entitlement: { entity_id: 'starter-usd-monthly', feature_id: 'form_views', value: 'Unlimited' } },
+          { entitlement: { entity_id: 'starter-usd-monthly', feature_id: 'form_submissions', value: '10000' } },
+          { entitlement: { entity_id: 'starter-usd-monthly', feature_id: 'emails_sent', value: '0' } },
+          { entitlement: { entity_id: 'starter-usd-monthly', feature_id: 'ai_credits', value: '2000' } },
+        ],
+        next_offset: undefined,
+      });
+
+      const catalog = await getAdminPlanCatalog();
+
+      const starter = catalog.find((p) => p.id === 'starter')!;
+      expect(starter.limits.emails).toBe(0);
+    });
   });
 
   describe('createPlan', () => {

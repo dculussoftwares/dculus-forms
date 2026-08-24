@@ -74,7 +74,9 @@ const statusBadgeStyle = (status: string): React.CSSProperties => {
 };
 
 const UsageBar: React.FC<{ label: string; used: number; limit: number | null }> = ({ label, used, limit }) => {
-  const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+  // `limit === 0` is a valid explicit cap (fully exhausted, not unlimited) —
+  // must not fall through the `limit ?` falsy check to a 0% bar.
+  const pct = limit != null ? Math.min(100, limit === 0 ? 100 : Math.round((used / limit) * 100)) : 0;
   const barColor = pct >= 100 ? 'var(--tf-error)' : pct >= 80 ? '#d97706' : 'var(--tf-green)';
   return (
     <div className="flex-1">

@@ -24,8 +24,13 @@ const chargebee = new Chargebee({
 // case-insensitively so both are treated as "no limit".
 const isUnlimited = (v: unknown): boolean => String(v).toLowerCase() === 'unlimited';
 
-const entitlementToLimit = (v: unknown): number | null =>
-  v == null || isUnlimited(v) ? null : parseInt(String(v), 10) || null;
+const entitlementToLimit = (v: unknown): number | null => {
+  if (v == null || isUnlimited(v)) return null;
+  const parsed = parseInt(String(v), 10);
+  // `0` is a valid explicit cap (see setEnterpriseSubscription) — don't let
+  // `parsed || null` fall through to "unlimited" for a genuine zero.
+  return Number.isNaN(parsed) ? null : parsed;
+};
 
 /**
  * Returns plan limits sourced from Chargebee entitlements (via the plans cache).
