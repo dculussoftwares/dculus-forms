@@ -46,8 +46,10 @@ export const typeDefs = gql`
     status: SubscriptionStatus!
     viewsUsed: Int!
     submissionsUsed: Int!
+    emailsUsed: Int!
     viewsLimit: Int
     submissionsLimit: Int
+    emailsLimit: Int
     currentPeriodStart: String!
     currentPeriodEnd: String!
     createdAt: String!
@@ -66,6 +68,7 @@ export const typeDefs = gql`
   type SubscriptionUsage {
     views: UsageInfo!
     submissions: UsageInfo!
+    emails: UsageInfo!
   }
 
   type UsageInfo {
@@ -684,9 +687,11 @@ export const typeDefs = gql`
     status: String!
     viewsUsed: Int!
     submissionsUsed: Int!
+    emailsUsed: Int!
     aiCreditsUsed: Float!
     viewsLimit: Int
     submissionsLimit: Int
+    emailsLimit: Int
     aiCreditsLimit: Int
     currentPeriodStart: String!
     currentPeriodEnd: String!
@@ -1480,6 +1485,7 @@ export const typeDefs = gql`
   type PlanFeatures {
     views: Int
     submissions: Int
+    emails: Int
   }
 
   type AvailablePlan {
@@ -1504,6 +1510,7 @@ export const typeDefs = gql`
   type AdminPlanLimits {
     views: Int
     submissions: Int
+    emails: Int
     aiCredits: Int
   }
 
@@ -1527,6 +1534,7 @@ export const typeDefs = gql`
   input AdminPlanLimitsInput {
     views: Int
     submissions: Int
+    emails: Int
     aiCredits: Int
   }
 
@@ -1695,6 +1703,7 @@ export const typeDefs = gql`
       priceInSmallestUnit: Int!
       viewsLimit: Int
       submissionsLimit: Int
+      emailsLimit: Int
       aiCreditsLimit: Int
     ): EnterprisePlanResult!
     adminResetUsage(orgId: ID!): Boolean!

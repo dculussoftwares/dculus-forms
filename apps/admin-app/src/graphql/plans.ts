@@ -20,6 +20,7 @@ export const ADMIN_PLANS_QUERY: TypedDocumentNode<any, any> = gql`
       limits {
         views
         submissions
+        emails
         aiCredits
       }
       subscriberCount
@@ -72,6 +73,7 @@ export interface AdminPlanPrice {
 export interface AdminPlanLimits {
   views: number | null;
   submissions: number | null;
+  emails: number | null;
   aiCredits: number | null;
 }
 

@@ -4,12 +4,15 @@
 // tier's limits indefinitely).
 // Keep in sync with Chargebee entitlement config — the live values take
 // precedence once getAvailablePlans() has populated the cache.
-export const PLAN_LIMITS_FALLBACK: Record<string, { views: number | null; submissions: number | null }> = {
-  free: { views: 10000, submissions: 1000 },
-  starter: { views: null, submissions: 10000 },
-  advanced: { views: null, submissions: 100000 },
+export const PLAN_LIMITS_FALLBACK: Record<
+  string,
+  { views: number | null; submissions: number | null; emails: number | null }
+> = {
+  free: { views: 10000, submissions: 1000, emails: 100 },
+  starter: { views: null, submissions: 10000, emails: 5000 },
+  advanced: { views: null, submissions: 100000, emails: 50000 },
   // Enterprise limits are admin-set directly on the Subscription row (see
   // chargebeeService.setEnterpriseSubscription), not derived from this map — this
   // entry only guards the unlikely case that getPlanLimits('enterprise') is called.
-  enterprise: { views: null, submissions: null },
+  enterprise: { views: null, submissions: null, emails: null },
 };

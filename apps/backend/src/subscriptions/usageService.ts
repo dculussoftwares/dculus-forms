@@ -6,7 +6,7 @@ import {
   getSubscriptionEventEmitter,
 } from './events.js';
 import { SubscriptionEventType } from './types.js';
-import type { FormViewedEvent, FormSubmittedEvent } from './types.js';
+import type { FormViewedEvent, FormSubmittedEvent, EmailSentEvent } from './types.js';
 import { logger } from '../lib/logger.js';
 import { isLocalDatabase } from '../lib/prisma.js';
 import { PLAN_LIMITS_FALLBACK } from '../lib/planLimits.js';
@@ -58,6 +58,15 @@ export const initializeUsageService = (): void => {
       }
     }
   );
+
+  // Track emails sent
+  eventEmitter.on(SubscriptionEventType.EMAIL_SENT, async (event: EmailSentEvent) => {
+    try {
+      await trackEmailSent(event.organizationId, event.formId);
+    } catch (error: any) {
+      logger.error('[Usage Service] Error tracking email sent:', error);
+    }
+  });
 
   logger.info('[Usage Service] Subscription usage service initialized successfully');
 };
@@ -145,18 +154,59 @@ export const trackFormSubmission = async (
 };
 
 /**
+ * Track an email sent as a result of form-submission activity
+ * Increments the emailsUsed counter and checks limits
+ *
+ * @param organizationId - ID of the organization
+ * @param formId - ID of the form the email is associated with
+ */
+export const trackEmailSent = async (
+  organizationId: string,
+  formId: string
+): Promise<void> => {
+  // Get current subscription
+  const subscription = await prisma.subscription.findUnique({
+    where: { organizationId },
+  });
+
+  if (!subscription) {
+    logger.warn('[Usage Service] No subscription found for organization:', organizationId);
+    return;
+  }
+
+  // Increment emails counter
+  const updatedSubscription = await prisma.subscription.update({
+    where: { organizationId },
+    data: {
+      emailsUsed: {
+        increment: 1,
+      },
+    },
+  });
+
+  // Check if we need to emit warning or exceeded events
+  checkUsageLimits(
+    organizationId,
+    formId,
+    'emails',
+    updatedSubscription.emailsUsed,
+    updatedSubscription.emailsLimit
+  );
+};
+
+/**
  * Check usage against limits and emit appropriate events
  *
  * @param organizationId - ID of the organization
  * @param formId - ID of the form
- * @param usageType - Type of usage ('views' or 'submissions')
+ * @param usageType - Type of usage ('views', 'submissions', or 'emails')
  * @param current - Current usage count
  * @param limit - Usage limit (null = unlimited)
  */
 const checkUsageLimits = (
   organizationId: string,
   formId: string,
-  usageType: 'views' | 'submissions',
+  usageType: 'views' | 'submissions' | 'emails',
   current: number,
   limit: number | null
 ): void => {
@@ -192,6 +242,7 @@ export const checkUsageExceeded = async (
 ): Promise<{
   viewsExceeded: boolean;
   submissionsExceeded: boolean;
+  emailsExceeded: boolean;
 }> => {
   const subscription = await subscriptionRepository.findByOrganizationPublic(organizationId);
 
@@ -200,15 +251,16 @@ export const checkUsageExceeded = async (
     return {
       viewsExceeded: false,
       submissionsExceeded: false,
+      emailsExceeded: false,
     };
   }
 
-  // A past_due subscription means the last payment failed. Block both views and
-  // submissions until payment recovers — consistent enforcement across all usage types.
+  // A past_due subscription means the last payment failed. Block views, submissions,
+  // and emails until payment recovers — consistent enforcement across all usage types.
   const isPastDue = subscription.status === 'past_due';
 
-  // A cancelled/expired subscription keeps whatever viewsLimit/submissionsLimit it last
-  // synced from Chargebee (cancellation doesn't change which plan item was on the
+  // A cancelled/expired subscription keeps whatever viewsLimit/submissionsLimit/emailsLimit
+  // it last synced from Chargebee (cancellation doesn't change which plan item was on the
   // subscription), so without this the org would retain paid-tier limits indefinitely.
   // Fall back to the free plan's limits instead — mirrors the AI-credits enforcement in
   // aiUsageService.ts.
@@ -217,11 +269,13 @@ export const checkUsageExceeded = async (
   const submissionsLimit = isCancelledOrExpired
     ? PLAN_LIMITS_FALLBACK.free.submissions
     : subscription.submissionsLimit;
+  const emailsLimit = isCancelledOrExpired ? PLAN_LIMITS_FALLBACK.free.emails : subscription.emailsLimit;
 
   return {
     viewsExceeded: isPastDue || (viewsLimit !== null && subscription.viewsUsed >= viewsLimit),
     submissionsExceeded:
       isPastDue || (submissionsLimit !== null && subscription.submissionsUsed >= submissionsLimit),
+    emailsExceeded: isPastDue || (emailsLimit !== null && subscription.emailsUsed >= emailsLimit),
   };
 };
 
@@ -249,6 +303,11 @@ export const getUsage = async (organizationId: string) => {
       limit: subscription.submissionsLimit,
       unlimited: subscription.submissionsLimit === null,
     },
+    emails: {
+      used: subscription.emailsUsed,
+      limit: subscription.emailsLimit,
+      unlimited: subscription.emailsLimit === null,
+    },
     planId: subscription.planId,
     status: subscription.status,
   };
@@ -272,6 +331,7 @@ export const resetUsageCounters = async (
     data: {
       viewsUsed: 0,
       submissionsUsed: 0,
+      emailsUsed: 0,
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
     },

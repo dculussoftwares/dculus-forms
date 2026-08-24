@@ -23,6 +23,7 @@
   "limits": {
     "views": "Views",
     "submissions": "Submissions",
+    "emails": "Emails sent",
     "aiCredits": "AI credits",
     "unlimited": "Unlimited"
   },

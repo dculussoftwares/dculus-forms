@@ -24,8 +24,13 @@ const chargebee = new Chargebee({
 // case-insensitively so both are treated as "no limit".
 const isUnlimited = (v: unknown): boolean => String(v).toLowerCase() === 'unlimited';
 
-const entitlementToLimit = (v: unknown): number | null =>
-  v == null || isUnlimited(v) ? null : parseInt(String(v), 10) || null;
+const entitlementToLimit = (v: unknown): number | null => {
+  if (v == null || isUnlimited(v)) return null;
+  const parsed = parseInt(String(v), 10);
+  // `0` is a valid explicit cap (see setEnterpriseSubscription) — don't let
+  // `parsed || null` fall through to "unlimited" for a genuine zero.
+  return Number.isNaN(parsed) ? null : parsed;
+};
 
 /**
  * Returns plan limits sourced from Chargebee entitlements (via the plans cache).
@@ -34,7 +39,12 @@ const entitlementToLimit = (v: unknown): number | null =>
  */
 const getPlanLimits = async (
   planId: string
-): Promise<{ views: number | null; submissions: number | null; aiCredits: number | null }> => {
+): Promise<{
+  views: number | null;
+  submissions: number | null;
+  emails: number | null;
+  aiCredits: number | null;
+}> => {
   try {
     const plans = await getAvailablePlans();
     const plan = plans.find((p: any) => p.id === planId);
@@ -42,6 +52,7 @@ const getPlanLimits = async (
       return {
         views: plan.features.views ?? null,
         submissions: plan.features.submissions ?? null,
+        emails: plan.features.emails ?? null,
         aiCredits: plan.features.aiCredits ?? null,
       };
     }
@@ -56,6 +67,7 @@ const getPlanLimits = async (
   return {
     views: PLAN_LIMITS_FALLBACK[planId]?.views ?? null,
     submissions: PLAN_LIMITS_FALLBACK[planId]?.submissions ?? null,
+    emails: PLAN_LIMITS_FALLBACK[planId]?.emails ?? null,
     aiCredits: AI_CREDIT_LIMITS_FALLBACK[planId] ?? null,
   };
 };
@@ -138,8 +150,10 @@ export const createFreeSubscription = async (
       status: 'active',
       viewsUsed: 0,
       submissionsUsed: 0,
+      emailsUsed: 0,
       viewsLimit: freeLimits.views,
       submissionsLimit: freeLimits.submissions,
+      emailsLimit: freeLimits.emails,
       aiCreditsLimit: freeLimits.aiCredits,
       currentPeriodStart,
       currentPeriodEnd,
@@ -295,10 +309,19 @@ export const setEnterpriseSubscription = async (
     priceInSmallestUnit: number;
     viewsLimit: number | null;
     submissionsLimit: number | null;
+    emailsLimit: number | null;
     aiCreditsLimit: number | null;
   }
 ): Promise<{ checkoutUrl: string | null }> => {
-  const { currency, period, priceInSmallestUnit, viewsLimit, submissionsLimit, aiCreditsLimit } = params;
+  const {
+    currency,
+    period,
+    priceInSmallestUnit,
+    viewsLimit,
+    submissionsLimit,
+    emailsLimit,
+    aiCreditsLimit,
+  } = params;
 
   const subscription = await subscriptionRepository.findUnique({ where: { organizationId } });
   if (!subscription) {
@@ -341,6 +364,7 @@ export const setEnterpriseSubscription = async (
         status: 'active',
         viewsLimit,
         submissionsLimit,
+        emailsLimit,
         aiCreditsLimit,
         currentPeriodStart,
         currentPeriodEnd,
@@ -383,6 +407,7 @@ export const setEnterpriseSubscription = async (
       status: 'past_due',
       viewsLimit,
       submissionsLimit,
+      emailsLimit,
       aiCreditsLimit,
       enterpriseCurrency: currency,
       enterprisePeriod: period,
@@ -627,6 +652,7 @@ export const syncSubscriptionFromWebhook = async (
           ? {
               viewsLimit: limits.views,
               submissionsLimit: limits.submissions,
+              emailsLimit: limits.emails,
               aiCreditsLimit: limits.aiCredits,
             }
           : {}),
@@ -650,11 +676,13 @@ export const syncSubscriptionFromWebhook = async (
         status,
         viewsUsed: 0,
         submissionsUsed: 0,
+        emailsUsed: 0,
         // No existing row to preserve limits from (shouldn't normally happen for an
         // enterprise org, since every org already has a subscription from signup) —
         // default to unlimited rather than guessing at a catalog value.
         viewsLimit: limits ? limits.views : null,
         submissionsLimit: limits ? limits.submissions : null,
+        emailsLimit: limits ? limits.emails : null,
         aiCreditsLimit: limits ? limits.aiCredits : null,
         ...(isEnterprise ? { enterprisePendingActivation: false } : {}),
         currentPeriodStart: new Date(
@@ -950,6 +978,7 @@ export const getAvailablePlans = async () => {
         plansByItem[planId].features = {
           views: entitlementToLimit(features['form_views']),
           submissions: entitlementToLimit(features['form_submissions']),
+          emails: entitlementToLimit(features['emails_sent']),
           aiCredits: entitlementToLimit(features['ai_credits']),
         };
       }
@@ -991,7 +1020,12 @@ export const getAvailablePlans = async () => {
           { id: 'free-usd-monthly', currency: 'USD', amount: 0, period: 'month' },
           { id: 'free-inr-monthly', currency: 'INR', amount: 0, period: 'month' },
         ],
-        features: { views: 10000, submissions: 1000, aiCredits: AI_CREDIT_LIMITS_FALLBACK.free ?? null },
+        features: {
+          views: 10000,
+          submissions: 1000,
+          emails: PLAN_LIMITS_FALLBACK.free.emails,
+          aiCredits: AI_CREDIT_LIMITS_FALLBACK.free ?? null,
+        },
       },
       {
         id: 'starter',
@@ -1003,7 +1037,12 @@ export const getAvailablePlans = async () => {
           { id: 'starter-inr-monthly', currency: 'INR', amount: 489, period: 'month' },
           { id: 'starter-inr-yearly', currency: 'INR', amount: 5400, period: 'year' },
         ],
-        features: { views: null, submissions: 10000, aiCredits: AI_CREDIT_LIMITS_FALLBACK.starter ?? null },
+        features: {
+          views: null,
+          submissions: 10000,
+          emails: PLAN_LIMITS_FALLBACK.starter.emails,
+          aiCredits: AI_CREDIT_LIMITS_FALLBACK.starter ?? null,
+        },
       },
       {
         id: 'advanced',
@@ -1015,7 +1054,12 @@ export const getAvailablePlans = async () => {
           { id: 'advanced-inr-monthly', currency: 'INR', amount: 1289, period: 'month' },
           { id: 'advanced-inr-yearly', currency: 'INR', amount: 14268, period: 'year' },
         ],
-        features: { views: null, submissions: 100000, aiCredits: AI_CREDIT_LIMITS_FALLBACK.advanced ?? null },
+        features: {
+          views: null,
+          submissions: 100000,
+          emails: PLAN_LIMITS_FALLBACK.advanced.emails,
+          aiCredits: AI_CREDIT_LIMITS_FALLBACK.advanced ?? null,
+        },
       },
     ];
   }
@@ -1033,6 +1077,7 @@ export const getAvailablePlans = async () => {
 export interface PlanLimitsInput {
   views: number | null;
   submissions: number | null;
+  emails: number | null;
   aiCredits: number | null;
 }
 
@@ -1061,6 +1106,7 @@ export interface AdminPlanCatalogEntry {
 const PLAN_FEATURE_IDS = {
   views: 'form_views',
   submissions: 'form_submissions',
+  emails: 'emails_sent',
   aiCredits: 'ai_credits',
 } as const;
 
@@ -1104,6 +1150,12 @@ const upsertPlanEntitlements = async (
       entity_type: 'plan_price',
       feature_id: PLAN_FEATURE_IDS.submissions,
       value: limitToEntitlementValue(limits.submissions),
+    },
+    {
+      entity_id: priceId,
+      entity_type: 'plan_price',
+      feature_id: PLAN_FEATURE_IDS.emails,
+      value: limitToEntitlementValue(limits.emails),
     },
     {
       entity_id: priceId,
@@ -1179,6 +1231,7 @@ export const getAdminPlanCatalog = async (): Promise<AdminPlanCatalogEntry[]> =>
       limits: {
         views: entitlementToLimit(features[PLAN_FEATURE_IDS.views]),
         submissions: entitlementToLimit(features[PLAN_FEATURE_IDS.submissions]),
+        emails: entitlementToLimit(features[PLAN_FEATURE_IDS.emails]),
         aiCredits: entitlementToLimit(features[PLAN_FEATURE_IDS.aiCredits]),
       },
     };
@@ -1402,6 +1455,7 @@ export const applyPlanLimitsToOrganizations = async (
   const result = await subscriptionRepository.updateManyByPlan(planId, {
     viewsLimit: limits.views,
     submissionsLimit: limits.submissions,
+    emailsLimit: limits.emails,
     aiCreditsLimit: limits.aiCredits,
   });
   return result.count;
@@ -1523,6 +1577,7 @@ export const changeOrganizationPlan = async (
       status: 'active',
       viewsLimit: targetPlan.limits.views,
       submissionsLimit: targetPlan.limits.submissions,
+      emailsLimit: targetPlan.limits.emails,
       aiCreditsLimit: targetPlan.limits.aiCredits,
       currentPeriodStart,
       currentPeriodEnd,

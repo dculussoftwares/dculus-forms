@@ -48,11 +48,13 @@
   "usage": {
     "formViews": "Form Views",
     "formSubmissions": "Form Submissions",
+    "emailsSent": "Emails Sent",
     "ofThisPeriod": "of {{limit}} this period",
     "percentageUsed": "{{percentage}}% used",
     "limitExceeded": "Limit exceeded!",
     "unlimitedViews": "✓ Unlimited views",
-    "unlimitedSubmissions": "✓ Unlimited submissions"
+    "unlimitedSubmissions": "✓ Unlimited submissions",
+    "unlimitedEmails": "✓ Unlimited emails"
   },
   "billing": {
     "period": "Billing Period",

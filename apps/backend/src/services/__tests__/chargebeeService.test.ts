@@ -588,9 +588,15 @@ describe('Chargebee Service', () => {
       // The negotiated limits are admin-set — a webhook sync must never overwrite them.
       expect(updateArg).not.toHaveProperty('viewsLimit');
       expect(updateArg).not.toHaveProperty('submissionsLimit');
+      expect(updateArg).not.toHaveProperty('emailsLimit');
       expect(updateArg).not.toHaveProperty('aiCreditsLimit');
       // The create branch (no existing row) has no limits to preserve — defaults to unlimited.
-      expect(createArg).toMatchObject({ viewsLimit: null, submissionsLimit: null, aiCreditsLimit: null });
+      expect(createArg).toMatchObject({
+        viewsLimit: null,
+        submissionsLimit: null,
+        emailsLimit: null,
+        aiCreditsLimit: null,
+      });
     });
 
     it('should resolve any dynamic item_id as the planId (no hardcoded whitelist)', async () => {
@@ -1352,6 +1358,7 @@ describe('Chargebee Service', () => {
       priceInSmallestUnit: 250000,
       viewsLimit: null,
       submissionsLimit: 50000,
+      emailsLimit: null,
       aiCreditsLimit: null,
     };
 
@@ -1398,6 +1405,7 @@ describe('Chargebee Service', () => {
           status: 'past_due',
           viewsLimit: null,
           submissionsLimit: 50000,
+          emailsLimit: null,
           aiCreditsLimit: null,
           enterpriseCurrency: 'USD',
           enterprisePeriod: 'monthly',
@@ -1657,6 +1665,24 @@ describe('Chargebee Service', () => {
       const enterprise = catalog.find((p) => p.id === 'enterprise')!;
       expect(enterprise.visibleOnPricingPage).toBe(false);
     });
+
+    it('treats an explicit "0" entitlement value as a real zero cap, not unlimited', async () => {
+      setupCatalogMocks();
+      mockChargebee.entitlement.list.mockResolvedValue({
+        list: [
+          { entitlement: { entity_id: 'starter-usd-monthly', feature_id: 'form_views', value: 'Unlimited' } },
+          { entitlement: { entity_id: 'starter-usd-monthly', feature_id: 'form_submissions', value: '10000' } },
+          { entitlement: { entity_id: 'starter-usd-monthly', feature_id: 'emails_sent', value: '0' } },
+          { entitlement: { entity_id: 'starter-usd-monthly', feature_id: 'ai_credits', value: '2000' } },
+        ],
+        next_offset: undefined,
+      });
+
+      const catalog = await getAdminPlanCatalog();
+
+      const starter = catalog.find((p) => p.id === 'starter')!;
+      expect(starter.limits.emails).toBe(0);
+    });
   });
 
   describe('createPlan', () => {
@@ -1668,7 +1694,7 @@ describe('Chargebee Service', () => {
         { currency: 'USD' as const, period: 'monthly' as const, priceInSmallestUnit: 900 },
         { currency: 'INR' as const, period: 'yearly' as const, priceInSmallestUnit: 720000 },
       ],
-      limits: { views: null, submissions: 25000, aiCredits: 5000 },
+      limits: { views: null, submissions: 25000, emails: 12500, aiCredits: 5000 },
     };
 
     beforeEach(() => {
@@ -1791,7 +1817,7 @@ describe('Chargebee Service', () => {
     it('upserts entitlements for all active prices and backfills subscribed organizations when limits change', async () => {
       const result = await updatePlan({
         id: 'starter',
-        limits: { views: 50000, submissions: null, aiCredits: 4000 },
+        limits: { views: 50000, submissions: null, emails: 2500, aiCredits: 4000 },
       });
 
       const entitlementCall = mockChargebee.entitlement.create.mock.calls[0][0];
@@ -1807,6 +1833,7 @@ describe('Chargebee Service', () => {
       expect(subscriptionRepository.updateManyByPlan).toHaveBeenCalledWith('starter', {
         viewsLimit: 50000,
         submissionsLimit: null,
+        emailsLimit: 2500,
         aiCreditsLimit: 4000,
       });
       expect(result.backfilledOrganizations).toBe(3);
@@ -1880,6 +1907,7 @@ describe('Chargebee Service', () => {
       const count = await applyPlanLimitsToOrganizations('starter', {
         views: null,
         submissions: 20000,
+        emails: 10000,
         aiCredits: 3000,
       });
 
@@ -1887,13 +1915,19 @@ describe('Chargebee Service', () => {
       expect(subscriptionRepository.updateManyByPlan).toHaveBeenCalledWith('starter', {
         viewsLimit: null,
         submissionsLimit: 20000,
+        emailsLimit: 10000,
         aiCreditsLimit: 3000,
       });
     });
 
     it('refuses to run for enterprise (limits are per-org, never catalog-driven)', async () => {
       await expect(
-        applyPlanLimitsToOrganizations('enterprise', { views: null, submissions: null, aiCredits: null })
+        applyPlanLimitsToOrganizations('enterprise', {
+          views: null,
+          submissions: null,
+          emails: null,
+          aiCredits: null,
+        })
       ).rejects.toThrow('per organization');
       expect(subscriptionRepository.updateManyByPlan).not.toHaveBeenCalled();
     });

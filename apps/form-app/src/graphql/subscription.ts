@@ -21,6 +21,7 @@ export const GET_AVAILABLE_PLANS : TypedDocumentNode<any, any> = gql`
       features {
         views
         submissions
+        emails
       }
     }
   }
@@ -38,8 +39,10 @@ export const GET_SUBSCRIPTION : TypedDocumentNode<any, any> = gql`
         status
         viewsUsed
         submissionsUsed
+        emailsUsed
         viewsLimit
         submissionsLimit
+        emailsLimit
         currentPeriodStart
         currentPeriodEnd
         enterprisePendingActivation
@@ -52,6 +55,13 @@ export const GET_SUBSCRIPTION : TypedDocumentNode<any, any> = gql`
             exceeded
           }
           submissions {
+            used
+            limit
+            unlimited
+            percentage
+            exceeded
+          }
+          emails {
             used
             limit
             unlimited

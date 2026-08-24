@@ -4,6 +4,8 @@ import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 import type { EmailAttachment } from '../../services/emailService.js';
 import { resolveResponsePdfAttachment } from '../../services/pdfTemplateService.js';
+import { checkUsageExceeded } from '../../subscriptions/usageService.js';
+import { emitEmailSent } from '../../subscriptions/events.js';
 
 /**
  * Resolves the set of recipient addresses for this send: the static
@@ -98,6 +100,25 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
       return skippedResult;
     }
 
+    // Enforce the org's emails-sent usage limit before sending — mirrors the
+    // hard-block enforcement used for views/submissions.
+    const usageExceeded = await checkUsageExceeded(event.organizationId);
+    if (usageExceeded.emailsExceeded) {
+      context.logger.warn('Email skipped: organization has exceeded its email usage limit', {
+        organizationId: event.organizationId,
+        eventType: event.type,
+      });
+
+      const limitExceededResult: EmailDeliveryResult = {
+        success: false,
+        recipient: '',
+        subject: config.subject,
+        skipped: true,
+        skipReason: 'Organization has reached its email sending limit for this billing period',
+      };
+      return limitExceededResult;
+    }
+
     // Prepare email message
     let emailBody = config.message;
     const formSchema = response && response.data ? deserializeFormSchema(form.formSchema) : null;
@@ -174,6 +195,8 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
       subject: config.subject,
       attachedPdfFilename,
     });
+
+    emitEmailSent(event.organizationId, event.formId, 'plugin');
 
     const result: EmailDeliveryResult = {
       success: true,

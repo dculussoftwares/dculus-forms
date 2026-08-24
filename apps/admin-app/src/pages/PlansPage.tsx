@@ -77,6 +77,8 @@ interface PlanFormState {
   viewsUnlimited: boolean;
   submissions: string;
   submissionsUnlimited: boolean;
+  emails: string;
+  emailsUnlimited: boolean;
   aiCredits: string;
   aiCreditsUnlimited: boolean;
 }
@@ -93,6 +95,8 @@ const emptyFormState = (): PlanFormState => ({
   viewsUnlimited: true,
   submissions: '',
   submissionsUnlimited: true,
+  emails: '',
+  emailsUnlimited: true,
   aiCredits: '',
   aiCreditsUnlimited: true,
 });
@@ -116,6 +120,8 @@ const formStateFromPlan = (plan: AdminPlan): PlanFormState => {
     viewsUnlimited: plan.limits.views == null,
     submissions: plan.limits.submissions != null ? String(plan.limits.submissions) : '',
     submissionsUnlimited: plan.limits.submissions == null,
+    emails: plan.limits.emails != null ? String(plan.limits.emails) : '',
+    emailsUnlimited: plan.limits.emails == null,
     aiCredits: plan.limits.aiCredits != null ? String(plan.limits.aiCredits) : '',
     aiCreditsUnlimited: plan.limits.aiCredits == null,
   };
@@ -209,6 +215,7 @@ export default function PlansPage() {
     }) &&
     (form.viewsUnlimited || form.views !== '') &&
     (form.submissionsUnlimited || form.submissions !== '') &&
+    (form.emailsUnlimited || form.emails !== '') &&
     (form.aiCreditsUnlimited || form.aiCredits !== '');
 
   const submitForm = () => {
@@ -220,6 +227,7 @@ export default function PlansPage() {
     const limits = {
       views: form.viewsUnlimited ? null : Number(form.views),
       submissions: form.submissionsUnlimited ? null : Number(form.submissions),
+      emails: form.emailsUnlimited ? null : Number(form.emails),
       aiCredits: form.aiCreditsUnlimited ? null : Number(form.aiCredits),
     };
     if (formMode === 'create') {
@@ -355,6 +363,7 @@ export default function PlansPage() {
                         <td className="px-5 py-3.5 text-xs text-foreground">
                           <div>{t('limits.views')}: {plan.limits.views == null ? t('limits.unlimited') : plan.limits.views.toLocaleString()}</div>
                           <div>{t('limits.submissions')}: {plan.limits.submissions == null ? t('limits.unlimited') : plan.limits.submissions.toLocaleString()}</div>
+                          <div>{t('limits.emails')}: {plan.limits.emails == null ? t('limits.unlimited') : plan.limits.emails.toLocaleString()}</div>
                           <div>{t('limits.aiCredits')}: {plan.limits.aiCredits == null ? t('limits.unlimited') : plan.limits.aiCredits.toLocaleString()}</div>
                         </td>
                         <td className="px-5 py-3.5 text-sm text-foreground">{plan.subscriberCount}</td>
@@ -507,6 +516,13 @@ export default function PlansPage() {
                   unlimited={form.submissionsUnlimited}
                   onValueChange={v => setForm(f => ({ ...f, submissions: v }))}
                   onUnlimitedChange={v => setForm(f => ({ ...f, submissionsUnlimited: v }))}
+                />
+                <LimitField
+                  label={t('limits.emails')}
+                  value={form.emails}
+                  unlimited={form.emailsUnlimited}
+                  onValueChange={v => setForm(f => ({ ...f, emails: v }))}
+                  onUnlimitedChange={v => setForm(f => ({ ...f, emailsUnlimited: v }))}
                 />
                 <LimitField
                   label={t('limits.aiCredits')}
