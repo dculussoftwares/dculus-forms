@@ -238,6 +238,11 @@ export class CollaborationManager {
   private updateQueued = false;
   private visibilityListener: (() => void) | null = null;
   private onlineListener: (() => void) | null = null;
+  // HocuspocusProvider doesn't expose a `status` field of its own — it only
+  // forwards its internal websocket wrapper's status as a "status" event —
+  // so we track the latest value from that event instead of reading a
+  // nonexistent property off the provider.
+  private connectionStatus: 'connecting' | 'connected' | 'disconnected' = 'disconnected';
 
   constructor(
     private readonly updateCallback: UpdateCallback,
@@ -311,6 +316,8 @@ export class CollaborationManager {
       this.ydoc.destroy();
       this.ydoc = null;
     }
+
+    this.connectionStatus = 'disconnected';
   }
 
   getYDoc(): Y.Doc | null {
@@ -318,7 +325,7 @@ export class CollaborationManager {
   }
 
   isConnected(): boolean {
-    return (this.provider as any)?.status === 'connected' || false;
+    return this.connectionStatus === 'connected';
   }
 
   /**
@@ -335,15 +342,17 @@ export class CollaborationManager {
 
   // Force an immediate reconnect attempt when the tab regains focus/network,
   // since backgrounded tabs throttle timers and can leave the provider's own
-  // backoff retry stalled for far longer than its nominal delay.
+  // backoff retry stalled for far longer than its nominal delay. Only fires
+  // while fully `disconnected` — calling connect() while already
+  // `connecting` would cancel and restart that in-flight retry.
   private setupWakeListeners(): void {
     this.visibilityListener = () => {
-      if (document.visibilityState === 'visible' && !this.isConnected()) {
+      if (document.visibilityState === 'visible' && this.connectionStatus === 'disconnected') {
         this.reconnectNow();
       }
     };
     this.onlineListener = () => {
-      if (!this.isConnected()) {
+      if (this.connectionStatus === 'disconnected') {
         this.reconnectNow();
       }
     };
@@ -379,14 +388,20 @@ export class CollaborationManager {
       this.loadingCallback(false);
     };
 
+    const onStatus = ({ status }: { status: string }) => {
+      this.connectionStatus = status as 'connecting' | 'connected' | 'disconnected';
+    };
+
     this.provider.on('connect', onConnect);
     this.provider.on('disconnect', onDisconnect);
     this.provider.on('synced', onSynced);
+    this.provider.on('status', onStatus);
 
     this.observerCleanups.push(() => {
       this.provider?.off('connect', onConnect);
       this.provider?.off('disconnect', onDisconnect);
       this.provider?.off('synced', onSynced);
+      this.provider?.off('status', onStatus);
     });
   }
 
