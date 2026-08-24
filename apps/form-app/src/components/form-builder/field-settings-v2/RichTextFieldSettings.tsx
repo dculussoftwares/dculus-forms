@@ -108,7 +108,7 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
 
           {/* Rich Text Content Settings */}
           <RichTextSettings
-            control={control}
+            control={control as any}
             errors={formErrors}
             isConnected={isConnected}
             isReadOnly={isReadOnly}

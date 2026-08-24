@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import WorldMap from 'react-svg-worldmap';
+import WorldMap, { type ISOCode } from 'react-svg-worldmap';
 import {
   Card,
   CardContent,
@@ -129,7 +129,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
   // Prepare data for the world map (convert to 2-letter codes)
   const mapData = currentData
     .map((country) => ({
-      country: getCountryCode(country.code),
+      country: getCountryCode(country.code) as ISOCode,
       value: country.count,
     }))
     .filter((item) => item.country); // Filter out countries we couldn't map

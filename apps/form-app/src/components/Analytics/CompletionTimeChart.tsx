@@ -166,7 +166,7 @@ export const CompletionTimeChart: React.FC<CompletionTimeChartProps> = ({
                   cy="50%"
                   outerRadius={80}
                   dataKey="count"
-                  label={(props: Record<string, unknown>) => `${props.label}: ${(props.percentage as number).toFixed(1)}%`}
+                  label={(props: any) => `${props.label}: ${(props.percentage as number).toFixed(1)}%`}
                   labelLine={false}
                 >
                   {chartData.map((_, index) => (
