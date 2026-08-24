@@ -305,7 +305,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
             {/* Options Management */}
             <div className={constants.CSS_CLASSES.SECTION_SPACING}>
               <OptionsSettings
-                control={control}
+                control={control as any}
                 errors={formErrors}
                 isConnected={isConnected}
                 isReadOnly={isReadOnly}
