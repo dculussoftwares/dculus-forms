@@ -236,6 +236,13 @@ export class CollaborationManager {
   private fieldObserverCleanups: Array<() => void> = [];
   private fieldObserverMap: Map<string, Array<() => void>> = new Map();
   private updateQueued = false;
+  private visibilityListener: (() => void) | null = null;
+  private onlineListener: (() => void) | null = null;
+  // HocuspocusProvider doesn't expose a `status` field of its own — it only
+  // forwards its internal websocket wrapper's status as a "status" event —
+  // so we track the latest value from that event instead of reading a
+  // nonexistent property off the provider.
+  private connectionStatus: 'connecting' | 'connected' | 'disconnected' = 'disconnected';
 
   constructor(
     private readonly updateCallback: UpdateCallback,
@@ -277,6 +284,7 @@ export class CollaborationManager {
 
       this.setupConnectionHandlers();
       this.setupObservers();
+      this.setupWakeListeners();
     } catch (error) {
       console.error('Failed to initialize collaboration:', error);
       this.loadingCallback(false);
@@ -286,6 +294,8 @@ export class CollaborationManager {
   }
 
   disconnect(): void {
+    this.teardownWakeListeners();
+
     this.observerCleanups.forEach((cleanup) => cleanup());
     this.observerCleanups = [];
     this.clearPageObservers();
@@ -306,6 +316,8 @@ export class CollaborationManager {
       this.ydoc.destroy();
       this.ydoc = null;
     }
+
+    this.connectionStatus = 'disconnected';
   }
 
   getYDoc(): Y.Doc | null {
@@ -313,7 +325,50 @@ export class CollaborationManager {
   }
 
   isConnected(): boolean {
-    return (this.provider as any)?.status === 'connected' || false;
+    return this.connectionStatus === 'connected';
+  }
+
+  /**
+   * Nudges the existing provider to reconnect without destroying the YDoc
+   * or the provider's own pending-message queue. HocuspocusProvider already
+   * retries indefinitely with backoff in the background; this just tells it
+   * to try immediately (e.g. on tab refocus, where the browser may have
+   * throttled its backoff timers) rather than waiting out its own delay.
+   * Safe to call when already connected/connecting — it's a no-op then.
+   */
+  reconnectNow(): void {
+    this.provider?.connect();
+  }
+
+  // Force an immediate reconnect attempt when the tab regains focus/network,
+  // since backgrounded tabs throttle timers and can leave the provider's own
+  // backoff retry stalled for far longer than its nominal delay. Only fires
+  // while fully `disconnected` — calling connect() while already
+  // `connecting` would cancel and restart that in-flight retry.
+  private setupWakeListeners(): void {
+    this.visibilityListener = () => {
+      if (document.visibilityState === 'visible' && this.connectionStatus === 'disconnected') {
+        this.reconnectNow();
+      }
+    };
+    this.onlineListener = () => {
+      if (this.connectionStatus === 'disconnected') {
+        this.reconnectNow();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityListener);
+    window.addEventListener('online', this.onlineListener);
+  }
+
+  private teardownWakeListeners(): void {
+    if (this.visibilityListener) {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+      this.visibilityListener = null;
+    }
+    if (this.onlineListener) {
+      window.removeEventListener('online', this.onlineListener);
+      this.onlineListener = null;
+    }
   }
 
   private setupConnectionHandlers(): void {
@@ -333,14 +388,20 @@ export class CollaborationManager {
       this.loadingCallback(false);
     };
 
+    const onStatus = ({ status }: { status: string }) => {
+      this.connectionStatus = status as 'connecting' | 'connected' | 'disconnected';
+    };
+
     this.provider.on('connect', onConnect);
     this.provider.on('disconnect', onDisconnect);
     this.provider.on('synced', onSynced);
+    this.provider.on('status', onStatus);
 
     this.observerCleanups.push(() => {
       this.provider?.off('connect', onConnect);
       this.provider?.off('disconnect', onDisconnect);
       this.provider?.off('synced', onSynced);
+      this.provider?.off('status', onStatus);
     });
   }
 
