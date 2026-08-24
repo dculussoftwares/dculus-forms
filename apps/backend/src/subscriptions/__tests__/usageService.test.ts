@@ -457,6 +457,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
     });
 
@@ -474,6 +475,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
     });
 
@@ -491,6 +493,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: true,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
     });
 
@@ -508,6 +511,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: true,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
     });
 
@@ -525,6 +529,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: false,
         submissionsExceeded: true,
+        emailsExceeded: false,
       });
     });
 
@@ -542,6 +547,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: true,
         submissionsExceeded: true,
+        emailsExceeded: false,
       });
     });
 
@@ -559,6 +565,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
     });
 
@@ -576,6 +583,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: false,
         submissionsExceeded: true,
+        emailsExceeded: false,
       });
     });
 
@@ -594,6 +602,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: true,
         submissionsExceeded: true,
+        emailsExceeded: true,
       });
     });
 
@@ -612,6 +621,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: false, // free plan's views limit (10000) not yet reached
         submissionsExceeded: true, // free plan's submissions limit (1000) exceeded
+        emailsExceeded: false,
       });
     });
 
@@ -630,6 +640,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: true,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
     });
 
@@ -648,6 +659,7 @@ describe('usageService', () => {
       expect(result).toEqual({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
     });
   });
@@ -668,6 +680,8 @@ describe('usageService', () => {
         viewsLimit: 100,
         submissionsUsed: 30,
         submissionsLimit: 50,
+        emailsUsed: 10,
+        emailsLimit: 20,
         planId: 'plan-standard',
         status: 'active',
       });
@@ -685,6 +699,11 @@ describe('usageService', () => {
           limit: 50,
           unlimited: false,
         },
+        emails: {
+          used: 10,
+          limit: 20,
+          unlimited: false,
+        },
         planId: 'plan-standard',
         status: 'active',
       });
@@ -697,6 +716,8 @@ describe('usageService', () => {
         viewsLimit: null,
         submissionsUsed: 30,
         submissionsLimit: 50,
+        emailsUsed: 10,
+        emailsLimit: 20,
         planId: 'plan-premium',
         status: 'active',
       });
@@ -714,6 +735,11 @@ describe('usageService', () => {
           limit: 50,
           unlimited: false,
         },
+        emails: {
+          used: 10,
+          limit: 20,
+          unlimited: false,
+        },
         planId: 'plan-premium',
         status: 'active',
       });
@@ -726,6 +752,8 @@ describe('usageService', () => {
         viewsLimit: 100,
         submissionsUsed: 500,
         submissionsLimit: null,
+        emailsUsed: 10,
+        emailsLimit: 20,
         planId: 'plan-premium',
         status: 'active',
       });
@@ -743,6 +771,11 @@ describe('usageService', () => {
           limit: null,
           unlimited: true,
         },
+        emails: {
+          used: 10,
+          limit: 20,
+          unlimited: false,
+        },
         planId: 'plan-premium',
         status: 'active',
       });
@@ -755,6 +788,8 @@ describe('usageService', () => {
         viewsLimit: null,
         submissionsUsed: 2000,
         submissionsLimit: null,
+        emailsUsed: 200,
+        emailsLimit: null,
         planId: 'plan-enterprise',
         status: 'active',
       });
@@ -772,6 +807,11 @@ describe('usageService', () => {
           limit: null,
           unlimited: true,
         },
+        emails: {
+          used: 200,
+          limit: null,
+          unlimited: true,
+        },
         planId: 'plan-enterprise',
         status: 'active',
       });
@@ -784,6 +824,8 @@ describe('usageService', () => {
         viewsLimit: 100,
         submissionsUsed: 0,
         submissionsLimit: 50,
+        emailsUsed: 0,
+        emailsLimit: 20,
         planId: 'plan-free',
         status: 'active',
       });
@@ -799,6 +841,11 @@ describe('usageService', () => {
         submissions: {
           used: 0,
           limit: 50,
+          unlimited: false,
+        },
+        emails: {
+          used: 0,
+          limit: 20,
           unlimited: false,
         },
         planId: 'plan-free',
@@ -827,6 +874,7 @@ describe('usageService', () => {
         data: {
           viewsUsed: 0,
           submissionsUsed: 0,
+          emailsUsed: 0,
           currentPeriodStart: periodStart,
           currentPeriodEnd: periodEnd,
         },
@@ -880,6 +928,7 @@ describe('usageService', () => {
         data: {
           viewsUsed: 0,
           submissionsUsed: 0,
+          emailsUsed: 0,
           currentPeriodStart: periodStart,
           currentPeriodEnd: periodEnd,
         },

@@ -3,11 +3,13 @@ import { FieldType, deserializeFormSchema } from '@dculus/types';
 import { sendResponseCopyIfEnabled, buildResponseSummaryRows } from '../responseCopyService.js';
 import { sendEmail } from '../emailService.js';
 import { resolveResponsePdfAttachment } from '../pdfTemplateService.js';
+import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 
 vi.mock('../emailService.js');
 vi.mock('../pdfTemplateService.js');
 vi.mock('../../lib/prisma.js', () => ({ prisma: {} }));
+vi.mock('../../subscriptions/usageService.js', () => ({ checkUsageExceeded: vi.fn() }));
 
 const formSchemaWithEmailField = {
   pages: [
@@ -24,6 +26,7 @@ const formSchemaWithEmailField = {
 
 const baseForm = {
   id: 'form-123',
+  organizationId: 'org-123',
   title: 'Feedback Form',
   formSchema: formSchemaWithEmailField,
 };
@@ -36,6 +39,11 @@ const baseResponse = {
 describe('sendResponseCopyIfEnabled', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(checkUsageExceeded).mockResolvedValue({
+      viewsExceeded: false,
+      submissionsExceeded: false,
+      emailsExceeded: false,
+    });
   });
 
   it('does nothing when responseCopy is not enabled', async () => {

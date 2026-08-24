@@ -763,6 +763,8 @@ describe('Subscription Resolvers', () => {
         viewsLimit: 10000,
         submissionsUsed: 100,
         submissionsLimit: 1000,
+        emailsUsed: 10,
+        emailsLimit: 100,
       };
 
       const result = subscriptionResolvers.Subscription.usage(subscription as any);
@@ -782,6 +784,13 @@ describe('Subscription Resolvers', () => {
           percentage: 10,
           exceeded: false,
         },
+        emails: {
+          used: 10,
+          limit: 100,
+          unlimited: false,
+          percentage: 10,
+          exceeded: false,
+        },
       });
     });
 
@@ -791,6 +800,8 @@ describe('Subscription Resolvers', () => {
         viewsLimit: null,
         submissionsUsed: 500,
         submissionsLimit: 10000,
+        emailsUsed: 20,
+        emailsLimit: 200,
       };
 
       const result = subscriptionResolvers.Subscription.usage(subscription as any);
@@ -808,6 +819,13 @@ describe('Subscription Resolvers', () => {
           limit: 10000,
           unlimited: false,
           percentage: 5,
+          exceeded: false,
+        },
+        emails: {
+          used: 20,
+          limit: 200,
+          unlimited: false,
+          percentage: 10,
           exceeded: false,
         },
       });
@@ -849,6 +867,8 @@ describe('Subscription Resolvers', () => {
         viewsLimit: 10000,
         submissionsUsed: 0,
         submissionsLimit: 1000,
+        emailsUsed: 0,
+        emailsLimit: 100,
       };
 
       const result = subscriptionResolvers.Subscription.usage(subscription as any);
@@ -864,6 +884,13 @@ describe('Subscription Resolvers', () => {
         submissions: {
           used: 0,
           limit: 1000,
+          unlimited: false,
+          percentage: 0,
+          exceeded: false,
+        },
+        emails: {
+          used: 0,
+          limit: 100,
           unlimited: false,
           percentage: 0,
           exceeded: false,
@@ -893,6 +920,8 @@ describe('Subscription Resolvers', () => {
         viewsLimit: 10000,
         submissionsUsed: 500000,
         submissionsLimit: null,
+        emailsUsed: 50,
+        emailsLimit: 100,
       };
 
       const result = subscriptionResolvers.Subscription.usage(subscription as any);
@@ -912,6 +941,13 @@ describe('Subscription Resolvers', () => {
           percentage: null,
           exceeded: false,
         },
+        emails: {
+          used: 50,
+          limit: 100,
+          unlimited: false,
+          percentage: 50,
+          exceeded: false,
+        },
       });
     });
 
@@ -921,6 +957,8 @@ describe('Subscription Resolvers', () => {
         viewsLimit: null,
         submissionsUsed: 999999,
         submissionsLimit: null,
+        emailsUsed: 999999,
+        emailsLimit: null,
       };
 
       const result = subscriptionResolvers.Subscription.usage(subscription as any);
@@ -934,6 +972,13 @@ describe('Subscription Resolvers', () => {
           exceeded: false,
         },
         submissions: {
+          used: 999999,
+          limit: null,
+          unlimited: true,
+          percentage: null,
+          exceeded: false,
+        },
+        emails: {
           used: 999999,
           limit: null,
           unlimited: true,

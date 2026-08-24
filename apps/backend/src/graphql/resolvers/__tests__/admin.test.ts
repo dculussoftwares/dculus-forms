@@ -1258,7 +1258,7 @@ describe('Admin Resolvers', () => {
         name: 'Pro Plan',
         description: 'A new tier',
         prices: [{ currency: 'USD', period: 'monthly', priceInSmallestUnit: 900 }],
-        limits: { views: null, submissions: 25000, aiCredits: 5000 },
+        limits: { views: null, submissions: 25000, emails: null, aiCredits: 5000 },
         visibleOnPricingPage: false,
       });
       expect(result.id).toBe('pro');
@@ -1337,7 +1337,7 @@ describe('Admin Resolvers', () => {
         name: undefined,
         description: undefined,
         prices: undefined,
-        limits: { views: null, submissions: 20000, aiCredits: 2000 },
+        limits: { views: null, submissions: 20000, emails: null, aiCredits: 2000 },
         visibleOnPricingPage: undefined,
       });
       expect(result.id).toBe('starter');
@@ -1516,6 +1516,7 @@ describe('Admin Resolvers', () => {
         priceInSmallestUnit: 250000,
         viewsLimit: null,
         submissionsLimit: 50000,
+        emailsLimit: null,
         aiCreditsLimit: null,
       });
       expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith(

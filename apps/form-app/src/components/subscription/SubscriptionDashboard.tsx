@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from '@apollo/client/react';
 import { GET_SUBSCRIPTION, CREATE_PORTAL_SESSION, COMPLETE_ENTERPRISE_PAYMENT } from '../../graphql/subscription';
 import { Card, Button, Badge, Alert, AlertTitle, AlertDescription, toastSuccess, toastError } from '@dculus/ui';
-import { CreditCard, TrendingUp, Eye, FileText, Calendar, AlertTriangle, Info, ExternalLink } from 'lucide-react';
+import { CreditCard, TrendingUp, Eye, FileText, Mail, Calendar, AlertTriangle, Info, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { UpgradeModal } from './UpgradeModal';
 import { UsageChart } from './UsageChart';
@@ -144,8 +144,12 @@ export const SubscriptionDashboard = () => {
   };
 
   const daysRemaining = getDaysRemaining();
-  const showWarning = usage.views.exceeded || usage.submissions.exceeded;
-  const showAlert = !showWarning && ((usage.views.percentage && usage.views.percentage >= 80) || (usage.submissions.percentage && usage.submissions.percentage >= 80));
+  const showWarning = usage.views.exceeded || usage.submissions.exceeded || usage.emails.exceeded;
+  const showAlert =
+    !showWarning &&
+    ((usage.views.percentage && usage.views.percentage >= 80) ||
+      (usage.submissions.percentage && usage.submissions.percentage >= 80) ||
+      (usage.emails.percentage && usage.emails.percentage >= 80));
 
   return (
     <div className="space-y-6">
@@ -280,7 +284,7 @@ export const SubscriptionDashboard = () => {
         </div>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Views Card */}
           <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-blue-200 dark:border-blue-700">
             <div className="flex items-center justify-between mb-2">
@@ -335,6 +339,33 @@ export const SubscriptionDashboard = () => {
             )}
           </div>
 
+          {/* Emails Card */}
+          <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg border border-green-200 dark:border-green-700">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-green-600" />
+                <span className="font-medium text-sm">{t('usage.emailsSent')}</span>
+              </div>
+              {usage.emails.unlimited ? (
+                <Badge className="bg-primary/10 text-primary text-xs">{t('unlimited')}</Badge>
+              ) : usage.emails.exceeded ? (
+                <Badge className="bg-[var(--tf-error-bg)] text-destructive text-xs">{t('badges.exceeded')}</Badge>
+              ) : (
+                <span className="text-xs font-medium text-green-600">
+                  {usage.emails.percentage?.toFixed(0)}%
+                </span>
+              )}
+            </div>
+            <div className="text-2xl font-bold text-green-900 dark:text-green-100">
+              {usage.emails.used.toLocaleString()}
+            </div>
+            {!usage.emails.unlimited && (
+              <div className="text-sm text-green-700 dark:text-green-300">
+                {t('usage.ofThisPeriod', { values: { limit: usage.emails.limit?.toLocaleString() } })}
+              </div>
+            )}
+          </div>
+
           {/* Billing Period Card */}
           <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-700/50 rounded-lg border border-[var(--tf-border-medium)] dark:border-gray-600">
             <div className="flex items-center gap-2 mb-2">
@@ -351,7 +382,7 @@ export const SubscriptionDashboard = () => {
         </div>
 
         {/* Progress Bars */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Views Progress */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -411,6 +442,35 @@ export const SubscriptionDashboard = () => {
             )}
             {usage.submissions.unlimited && (
               <p className="text-sm text-primary">{t('usage.unlimitedSubmissions')}</p>
+            )}
+          </div>
+
+          {/* Emails Progress */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium">{t('usage.emailsSent')}</span>
+              <span className="text-foreground">
+                {formatUsage(usage.emails.used, usage.emails.limit, usage.emails.unlimited)}
+              </span>
+            </div>
+            {!usage.emails.unlimited && (
+              <div className="space-y-1">
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${getProgressColor(usage.emails.percentage)}`}
+                    style={{ width: `${Math.min(usage.emails.percentage || 0, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{t('usage.percentageUsed', { values: { percentage: usage.emails.percentage?.toFixed(1) } })}</span>
+                  {usage.emails.exceeded && (
+                    <span className="text-destructive font-medium">{t('usage.limitExceeded')}</span>
+                  )}
+                </div>
+              </div>
+            )}
+            {usage.emails.unlimited && (
+              <p className="text-sm text-primary">{t('usage.unlimitedEmails')}</p>
             )}
           </div>
         </div>

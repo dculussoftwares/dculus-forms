@@ -711,8 +711,10 @@ model Subscription {
   // Usage tracking (local cache for performance)
   viewsUsed        Int  @default(0)
   submissionsUsed  Int  @default(0)
+  emailsUsed       Int  @default(0)
   viewsLimit       Int? // null = unlimited
   submissionsLimit Int? // null = unlimited
+  emailsLimit      Int? // null = unlimited
   aiCreditsLimit   Int? // null = not yet synced from Chargebee; falls back to plan defaults (see aiUsageService)
 
   // Negotiated Enterprise deal terms — set by setEnterpriseSubscription, used to

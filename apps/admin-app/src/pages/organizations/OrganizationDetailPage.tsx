@@ -127,6 +127,8 @@ export const OrganizationDetailPage = () => {
   const [entViewsUnlimited, setEntViewsUnlimited] = useState(true);
   const [entSubmissions, setEntSubmissions] = useState('');
   const [entSubmissionsUnlimited, setEntSubmissionsUnlimited] = useState(true);
+  const [entEmails, setEntEmails] = useState('');
+  const [entEmailsUnlimited, setEntEmailsUnlimited] = useState(true);
   const [entAiCredits, setEntAiCredits] = useState('');
   const [entAiCreditsUnlimited, setEntAiCreditsUnlimited] = useState(true);
 
@@ -435,6 +437,7 @@ export const OrganizationDetailPage = () => {
                 <div className="flex flex-col sm:flex-row gap-6">
                   <UsageBar label="Form Views" used={sub.viewsUsed} limit={sub.viewsLimit} />
                   <UsageBar label="Submissions" used={sub.submissionsUsed} limit={sub.submissionsLimit} />
+                  <UsageBar label="Emails Sent" used={sub.emailsUsed} limit={sub.emailsLimit} />
                   <UsageBar label="AI Credits" used={Math.round(sub.aiCreditsUsed * 10) / 10} limit={sub.aiCreditsLimit} />
                 </div>
               </div>
@@ -459,6 +462,8 @@ export const OrganizationDetailPage = () => {
                           setEntViews(sub.viewsLimit != null ? String(sub.viewsLimit) : '');
                           setEntSubmissionsUnlimited(sub.submissionsLimit == null);
                           setEntSubmissions(sub.submissionsLimit != null ? String(sub.submissionsLimit) : '');
+                          setEntEmailsUnlimited(sub.emailsLimit == null);
+                          setEntEmails(sub.emailsLimit != null ? String(sub.emailsLimit) : '');
                           setEntAiCreditsUnlimited(sub.aiCreditsLimit == null);
                           setEntAiCredits(sub.aiCreditsLimit != null ? String(sub.aiCreditsLimit) : '');
                         }
@@ -539,6 +544,13 @@ export const OrganizationDetailPage = () => {
                         onUnlimitedChange={setEntSubmissionsUnlimited}
                       />
                       <LimitField
+                        label="Emails limit"
+                        value={entEmails}
+                        unlimited={entEmailsUnlimited}
+                        onValueChange={setEntEmails}
+                        onUnlimitedChange={setEntEmailsUnlimited}
+                      />
+                      <LimitField
                         label="AI credits limit"
                         value={entAiCredits}
                         unlimited={entAiCreditsUnlimited}
@@ -553,6 +565,7 @@ export const OrganizationDetailPage = () => {
                         Number(entPrice) < 0 ||
                         (!entViewsUnlimited && entViews === '') ||
                         (!entSubmissionsUnlimited && entSubmissions === '') ||
+                        (!entEmailsUnlimited && entEmails === '') ||
                         (!entAiCreditsUnlimited && entAiCredits === '') ||
                         settingEnterprise
                       }
@@ -670,6 +683,7 @@ export const OrganizationDetailPage = () => {
             <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
               <li>Views: {entViewsUnlimited ? 'Unlimited' : Number(entViews).toLocaleString()}</li>
               <li>Submissions: {entSubmissionsUnlimited ? 'Unlimited' : Number(entSubmissions).toLocaleString()}</li>
+              <li>Emails: {entEmailsUnlimited ? 'Unlimited' : Number(entEmails).toLocaleString()}</li>
               <li>AI credits: {entAiCreditsUnlimited ? 'Unlimited' : Number(entAiCredits).toLocaleString()}</li>
             </ul>
             <p className="text-xs text-muted-foreground">
@@ -692,6 +706,7 @@ export const OrganizationDetailPage = () => {
                     priceInSmallestUnit: Math.round(Number(entPrice || 0) * 100),
                     viewsLimit: entViewsUnlimited ? null : Number(entViews),
                     submissionsLimit: entSubmissionsUnlimited ? null : Number(entSubmissions),
+                    emailsLimit: entEmailsUnlimited ? null : Number(entEmails),
                     aiCreditsLimit: entAiCreditsUnlimited ? null : Number(entAiCredits),
                   },
                 })}

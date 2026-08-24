@@ -48,11 +48,13 @@
   "usage": {
     "formViews": "படிவக் காட்சிகள்",
     "formSubmissions": "படிவம் சமர்ப்பிப்புகள்",
+    "emailsSent": "அனுப்பப்பட்ட மின்னஞ்சல்கள்",
     "ofThisPeriod": "இந்த காலகட்டத்தில் {{limit}}",
     "percentageUsed": "{{percentage}}% பயன்படுத்தப்பட்டது",
     "limitExceeded": "வரம்பு மீறியது!",
     "unlimitedViews": "✓ வரம்பற்ற பார்வைகள்",
-    "unlimitedSubmissions": "✓ வரம்பற்ற சமர்ப்பிப்புகள்"
+    "unlimitedSubmissions": "✓ வரம்பற்ற சமர்ப்பிப்புகள்",
+    "unlimitedEmails": "✓ வரம்பற்ற மின்னஞ்சல்கள்"
   },
   "billing": {
     "period": "பில்லிங் காலம்",

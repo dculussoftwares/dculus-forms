@@ -11,10 +11,13 @@ import { logger } from '../lib/logger.js';
 import { sendEmail } from './emailService.js';
 import { resolveResponsePdfAttachment } from './pdfTemplateService.js';
 import { generateResponseCopyEmailHtml, type ResponseCopyQaRow } from '../templates/responseCopyEmail.js';
+import { checkUsageExceeded } from '../subscriptions/usageService.js';
+import { emitEmailSent } from '../subscriptions/events.js';
 
 interface SendResponseCopyParams {
   form: {
     id: string;
+    organizationId: string;
     title: string;
     formSchema: any;
     settings?: {
@@ -82,6 +85,17 @@ export async function sendResponseCopyIfEnabled({
   const recipient = response.data?.[settings.emailFieldId];
   if (typeof recipient !== 'string' || !recipient.trim()) return;
 
+  // Enforce the org's emails-sent usage limit before sending — mirrors the
+  // hard-block enforcement used for views/submissions.
+  const usageExceeded = await checkUsageExceeded(form.organizationId);
+  if (usageExceeded.emailsExceeded) {
+    logger.warn('Response copy skipped: organization has exceeded its email usage limit', {
+      formId: form.id,
+      organizationId: form.organizationId,
+    });
+    return;
+  }
+
   let attachment: { filename: string; content: Buffer; contentType: string } | undefined;
 
   if (settings.pdfTemplateId) {
@@ -122,6 +136,7 @@ export async function sendResponseCopyIfEnabled({
   });
 
   logger.info('Response copy email sent', { formId: form.id, responseId: response.id });
+  emitEmailSent(form.organizationId, form.id, 'response_copy');
 }
 
 /** Formats a single field's answer for the plain-text/HTML Q&A summary fallback. */

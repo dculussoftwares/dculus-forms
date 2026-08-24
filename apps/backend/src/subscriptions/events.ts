@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import type {
   FormViewedEvent,
   FormSubmittedEvent,
+  EmailSentEvent,
   UsageLimitReachedEvent,
   UsageLimitExceededEvent,
 } from './types.js';
@@ -54,6 +55,20 @@ export const initializeSubscriptionEvents = (): void => {
         organizationId: event.organizationId,
         formId: event.formId,
         responseId: event.data.responseId,
+      });
+
+      // Event will be processed by the subscription usage service
+    }
+  );
+
+  // Listen for email sent events
+  subscriptionEventEmitter.on(
+    SubscriptionEventType.EMAIL_SENT,
+    async (event: EmailSentEvent) => {
+      logger.info('[Subscription Events] Email sent:', {
+        organizationId: event.organizationId,
+        formId: event.formId,
+        source: event.data.source,
       });
 
       // Event will be processed by the subscription usage service
@@ -150,12 +165,39 @@ export const emitFormSubmitted = (
 };
 
 /**
+ * Emit an email sent event
+ * Triggered when an email is sent as a result of form-submission activity
+ * (Email plugin / Automations email action / Response-copy feature)
+ *
+ * @param organizationId - ID of the organization that owns the form
+ * @param formId - ID of the form the email is associated with
+ * @param source - Which feature triggered the send
+ */
+export const emitEmailSent = (
+  organizationId: string,
+  formId: string,
+  source: 'plugin' | 'response_copy'
+): void => {
+  const event: EmailSentEvent = {
+    type: SubscriptionEventType.EMAIL_SENT,
+    organizationId,
+    formId,
+    timestamp: new Date(),
+    data: {
+      source,
+    },
+  };
+
+  subscriptionEventEmitter.emit(SubscriptionEventType.EMAIL_SENT, event);
+};
+
+/**
  * Emit a usage limit reached event (warning)
  * Triggered when usage reaches a warning threshold (e.g., 80% of limit)
  *
  * @param organizationId - ID of the organization
  * @param formId - ID of the form (undefined for org-level usage types like 'ai_credits')
- * @param usageType - Type of usage ('views', 'submissions', or 'ai_credits')
+ * @param usageType - Type of usage ('views', 'submissions', 'emails', or 'ai_credits')
  * @param current - Current usage count
  * @param limit - Usage limit
  * @param percentage - Current usage as percentage of limit
@@ -163,7 +205,7 @@ export const emitFormSubmitted = (
 export const emitUsageLimitReached = (
   organizationId: string,
   formId: string | undefined,
-  usageType: 'views' | 'submissions' | 'ai_credits',
+  usageType: 'views' | 'submissions' | 'emails' | 'ai_credits',
   current: number,
   limit: number,
   percentage: number
@@ -190,14 +232,14 @@ export const emitUsageLimitReached = (
  *
  * @param organizationId - ID of the organization
  * @param formId - ID of the form (undefined for org-level usage types like 'ai_credits')
- * @param usageType - Type of usage ('views', 'submissions', or 'ai_credits')
+ * @param usageType - Type of usage ('views', 'submissions', 'emails', or 'ai_credits')
  * @param current - Current usage count
  * @param limit - Usage limit
  */
 export const emitUsageLimitExceeded = (
   organizationId: string,
   formId: string | undefined,
-  usageType: 'views' | 'submissions' | 'ai_credits',
+  usageType: 'views' | 'submissions' | 'emails' | 'ai_credits',
   current: number,
   limit: number
 ): void => {

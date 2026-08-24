@@ -328,9 +328,23 @@ export const subscriptionResolvers = {
           subscription.submissionsUsed >= subscription.submissionsLimit,
       };
 
+      // Calculate emails usage
+      const emailsInfo = {
+        used: subscription.emailsUsed,
+        limit: subscription.emailsLimit,
+        unlimited: subscription.emailsLimit === null,
+        percentage:
+          subscription.emailsLimit !== null
+            ? (subscription.emailsUsed / subscription.emailsLimit) * 100
+            : null,
+        exceeded:
+          subscription.emailsLimit !== null && subscription.emailsUsed >= subscription.emailsLimit,
+      };
+
       return {
         views: viewsInfo,
         submissions: submissionsInfo,
+        emails: emailsInfo,
       };
     },
   },

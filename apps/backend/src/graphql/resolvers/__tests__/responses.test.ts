@@ -371,6 +371,7 @@ describe('Responses Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
       vi.mocked(responseService.submitResponse).mockResolvedValue(mockResponse as any);
       vi.mocked(pluginEvents.emitFormSubmitted).mockReturnValue(undefined);
@@ -499,6 +500,7 @@ describe('Responses Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: true,
+        emailsExceeded: false,
       });
 
       await expect(
@@ -833,6 +835,7 @@ describe('Responses Resolvers', () => {
         } as any);
         vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
           submissionsExceeded: false,
+          emailsExceeded: false,
           viewsExceeded: false,
         } as any);
         vi.mocked(responseService.submitResponse).mockResolvedValue({
@@ -870,6 +873,7 @@ describe('Responses Resolvers', () => {
         } as any);
         vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
           submissionsExceeded: false,
+          emailsExceeded: false,
           viewsExceeded: false,
         } as any);
         vi.mocked(responseService.submitResponse).mockResolvedValue({
@@ -902,6 +906,7 @@ describe('Responses Resolvers', () => {
       beforeEach(() => {
         vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
           submissionsExceeded: false,
+          emailsExceeded: false,
           viewsExceeded: false,
         } as any);
         vi.mocked(responseService.submitResponse).mockResolvedValue({

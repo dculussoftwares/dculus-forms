@@ -27,9 +27,11 @@ export const ADMIN_ORGANIZATION_BY_ID_QUERY : TypedDocumentNode<any, any> = gql`
         status
         viewsUsed
         submissionsUsed
+        emailsUsed
         aiCreditsUsed
         viewsLimit
         submissionsLimit
+        emailsLimit
         aiCreditsLimit
         currentPeriodStart
         currentPeriodEnd
@@ -48,6 +50,7 @@ export const ADMIN_SET_ENTERPRISE_PLAN_MUTATION : TypedDocumentNode<any, any> = 
     $priceInSmallestUnit: Int!
     $viewsLimit: Int
     $submissionsLimit: Int
+    $emailsLimit: Int
     $aiCreditsLimit: Int
   ) {
     adminSetEnterprisePlan(
@@ -57,6 +60,7 @@ export const ADMIN_SET_ENTERPRISE_PLAN_MUTATION : TypedDocumentNode<any, any> = 
       priceInSmallestUnit: $priceInSmallestUnit
       viewsLimit: $viewsLimit
       submissionsLimit: $submissionsLimit
+      emailsLimit: $emailsLimit
       aiCreditsLimit: $aiCreditsLimit
     ) {
       requiresPayment
@@ -88,9 +92,11 @@ export interface OrgSubscription {
   status: string;
   viewsUsed: number;
   submissionsUsed: number;
+  emailsUsed: number;
   aiCreditsUsed: number;
   viewsLimit: number | null;
   submissionsLimit: number | null;
+  emailsLimit: number | null;
   aiCreditsLimit: number | null;
   currentPeriodStart: string;
   currentPeriodEnd: string;

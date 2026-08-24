@@ -17,9 +17,18 @@ vi.mock('../../../services/pdfTemplateService.js', () => ({
   resolveResponsePdfAttachment: vi.fn(),
 }));
 
+vi.mock('../../../subscriptions/usageService.js', () => ({
+  checkUsageExceeded: vi.fn(),
+}));
+
+vi.mock('../../../subscriptions/events.js', () => ({
+  emitEmailSent: vi.fn(),
+}));
+
 import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 import { resolveResponsePdfAttachment } from '../../../services/pdfTemplateService.js';
+import { checkUsageExceeded } from '../../../subscriptions/usageService.js';
 
 describe('Email Handler', () => {
   let mockContext: PluginContext;
@@ -28,6 +37,12 @@ describe('Email Handler', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    vi.mocked(checkUsageExceeded).mockResolvedValue({
+      viewsExceeded: false,
+      submissionsExceeded: false,
+      emailsExceeded: false,
+    });
 
     // Mock logger
     mockLogger = {

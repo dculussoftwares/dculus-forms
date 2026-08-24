@@ -62,6 +62,7 @@ export interface AdminPlanPriceArg {
 export interface AdminPlanLimitsArg {
   views?: number | null;
   submissions?: number | null;
+  emails?: number | null;
   aiCredits?: number | null;
 }
 
@@ -88,6 +89,7 @@ function validatePlanLimits(limits: AdminPlanLimitsArg): PlanLimitsInput {
   for (const [label, value] of [
     ['views', limits.views],
     ['submissions', limits.submissions],
+    ['emails', limits.emails],
     ['aiCredits', limits.aiCredits],
   ] as const) {
     if (value != null && (!Number.isInteger(value) || value < 0)) {
@@ -100,6 +102,7 @@ function validatePlanLimits(limits: AdminPlanLimitsArg): PlanLimitsInput {
   return {
     views: limits.views ?? null,
     submissions: limits.submissions ?? null,
+    emails: limits.emails ?? null,
     aiCredits: limits.aiCredits ?? null,
   };
 }
@@ -637,9 +640,11 @@ export const adminResolvers = {
                 status: organization.subscription.status,
                 viewsUsed: organization.subscription.viewsUsed,
                 submissionsUsed: organization.subscription.submissionsUsed,
+                emailsUsed: organization.subscription.emailsUsed,
                 aiCreditsUsed,
                 viewsLimit: organization.subscription.viewsLimit,
                 submissionsLimit: organization.subscription.submissionsLimit,
+                emailsLimit: organization.subscription.emailsLimit,
                 aiCreditsLimit: organization.subscription.aiCreditsLimit,
                 currentPeriodStart: serializeDate(organization.subscription.currentPeriodStart)!,
                 currentPeriodEnd: serializeDate(organization.subscription.currentPeriodEnd)!,
@@ -885,12 +890,22 @@ export const adminResolvers = {
         priceInSmallestUnit: number;
         viewsLimit?: number | null;
         submissionsLimit?: number | null;
+        emailsLimit?: number | null;
         aiCreditsLimit?: number | null;
       },
       context: { auth: BetterAuthContext }
     ) => {
       const admin = requireAdminRole(context);
-      const { orgId, currency, period, priceInSmallestUnit, viewsLimit, submissionsLimit, aiCreditsLimit } = args;
+      const {
+        orgId,
+        currency,
+        period,
+        priceInSmallestUnit,
+        viewsLimit,
+        submissionsLimit,
+        emailsLimit,
+        aiCreditsLimit,
+      } = args;
 
       if (!['USD', 'INR'].includes(currency)) {
         throw createGraphQLError('Invalid currency', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
@@ -904,6 +919,7 @@ export const adminResolvers = {
       for (const [label, value] of [
         ['viewsLimit', viewsLimit],
         ['submissionsLimit', submissionsLimit],
+        ['emailsLimit', emailsLimit],
         ['aiCreditsLimit', aiCreditsLimit],
       ] as const) {
         if (value != null && (!Number.isInteger(value) || value < 0)) {
@@ -927,6 +943,7 @@ export const adminResolvers = {
         priceInSmallestUnit,
         viewsLimit: viewsLimit ?? null,
         submissionsLimit: submissionsLimit ?? null,
+        emailsLimit: emailsLimit ?? null,
         aiCreditsLimit: aiCreditsLimit ?? null,
       });
 
@@ -943,6 +960,7 @@ export const adminResolvers = {
           priceInSmallestUnit,
           viewsLimit: viewsLimit ?? null,
           submissionsLimit: submissionsLimit ?? null,
+          emailsLimit: emailsLimit ?? null,
           aiCreditsLimit: aiCreditsLimit ?? null,
           requiresPayment: priceInSmallestUnit > 0,
           changedBy: admin.email,

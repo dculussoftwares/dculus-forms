@@ -139,6 +139,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       const result = await formsResolvers.Query.formByShortUrl(
@@ -174,6 +175,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: true,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       await expect(
@@ -194,6 +196,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
       vi.mocked(prisma.response.count).mockResolvedValue(100);
 
@@ -220,6 +223,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       await expect(
@@ -245,6 +249,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       await expect(
@@ -270,6 +275,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       await expect(
@@ -295,6 +301,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       await expect(
@@ -323,6 +330,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       const result = await formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' });
@@ -346,6 +354,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       await expect(
@@ -369,6 +378,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
         viewsExceeded: false,
         submissionsExceeded: false,
+        emailsExceeded: false,
       });
 
       await expect(
