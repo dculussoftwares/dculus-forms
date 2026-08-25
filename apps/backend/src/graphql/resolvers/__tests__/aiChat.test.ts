@@ -13,7 +13,13 @@ vi.mock('../../../middleware/better-auth-middleware.js', () => ({
   requireOrganizationMembership: vi.fn().mockResolvedValue({}),
 }));
 
+vi.mock('../formSharing.js', () => ({
+  checkFormAccess: vi.fn().mockResolvedValue({ hasAccess: true, permission: 'EDITOR' }),
+  PermissionLevel: { VIEWER: 'VIEWER', EDITOR: 'EDITOR', OWNER: 'OWNER' },
+}));
+
 import { getConversation, renameConversation } from '../../../services/aiChatService.js';
+import { checkFormAccess } from '../formSharing.js';
 import { aiChatResolvers } from '../aiChat.js';
 
 const mockAuth = { user: { id: 'user_1' }, session: { activeOrganizationId: 'org_1' }, isAuthenticated: true };
@@ -60,6 +66,17 @@ describe('aiChatResolvers.Mutation.createAIChatConversation', () => {
       { auth: mockAuth }
     );
     expect(result.id).toBe('conv_1');
+  });
+
+  it('throws when the caller lacks EDITOR access to the form', async () => {
+    vi.mocked(checkFormAccess).mockResolvedValueOnce({ hasAccess: false } as any);
+    await expect(
+      aiChatResolvers.Mutation.createAIChatConversation(
+        {},
+        { formId: 'form_other_org', organizationId: 'org_1' },
+        { auth: mockAuth }
+      )
+    ).rejects.toThrow();
   });
 });
 

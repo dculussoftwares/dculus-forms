@@ -17,8 +17,10 @@ export const createTag = async (formId: string, name: string, color?: string) =>
   return tagRepository.upsertTag(formId, name.trim(), color);
 };
 
-export const deleteTag = async (id: string): Promise<boolean> => {
+export const deleteTag = async (id: string, formId: string): Promise<boolean> => {
   try {
+    const tag = await tagRepository.findById(id);
+    if (!tag || tag.formId !== formId) return false;
     await tagRepository.delete({ where: { id } });
     return true;
   } catch (error) {
@@ -27,8 +29,14 @@ export const deleteTag = async (id: string): Promise<boolean> => {
   }
 };
 
-export const addTagToResponse = async (responseId: string, tagId: string): Promise<boolean> => {
+export const addTagToResponse = async (
+  responseId: string,
+  tagId: string,
+  formId: string
+): Promise<boolean> => {
   try {
+    const tag = await tagRepository.findById(tagId);
+    if (!tag || tag.formId !== formId) return false;
     await tagRepository.assignTag(responseId, tagId);
     return true;
   } catch (error) {
@@ -37,8 +45,14 @@ export const addTagToResponse = async (responseId: string, tagId: string): Promi
   }
 };
 
-export const removeTagFromResponse = async (responseId: string, tagId: string): Promise<boolean> => {
+export const removeTagFromResponse = async (
+  responseId: string,
+  tagId: string,
+  formId: string
+): Promise<boolean> => {
   try {
+    const tag = await tagRepository.findById(tagId);
+    if (!tag || tag.formId !== formId) return false;
     await tagRepository.unassignTag(responseId, tagId);
     return true;
   } catch (error) {

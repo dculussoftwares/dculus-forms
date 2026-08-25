@@ -66,6 +66,9 @@ export const createTagRepository = (context?: RepositoryContext) => {
   const findByFormAndName = async (formId: string, name: string) =>
     prisma.responseTag.findFirst({ where: { formId, name } });
 
+  const findById = async (id: string) =>
+    prisma.responseTag.findUnique({ where: { id } });
+
   const assignTag = async (responseId: string, tagId: string) =>
     prisma.responseTagAssignment.upsert({
       where: { responseId_tagId: { responseId, tagId } },
@@ -112,6 +115,7 @@ export const createTagRepository = (context?: RepositoryContext) => {
     upsertTag,
     ensureTag,
     findByFormAndName,
+    findById,
     assignTag,
     unassignTag,
     findAssignmentsByResponse,

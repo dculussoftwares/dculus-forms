@@ -3,6 +3,7 @@ import {
   requireOrganizationMembership,
   type BetterAuthContext,
 } from '../../middleware/better-auth-middleware.js';
+import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import {
   createConversation,
   listConversations,
@@ -22,6 +23,10 @@ export const aiChatResolvers = {
     ) => {
       requireAuth(context.auth);
       await requireOrganizationMembership(context.auth, organizationId);
+      const access = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
+      if (!access.hasAccess) {
+        throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
       return listConversations(formId, organizationId, context.auth.user!.id);
     },
 
@@ -46,6 +51,10 @@ export const aiChatResolvers = {
     ) => {
       requireAuth(context.auth);
       await requireOrganizationMembership(context.auth, organizationId);
+      const access = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
+      if (!access.hasAccess) {
+        throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
       const conv = await createConversation(formId, organizationId, context.auth.user!.id);
       return { ...conv, messageCount: 0, messages: [] };
     },
