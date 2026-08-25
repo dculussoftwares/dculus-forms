@@ -854,7 +854,8 @@ describe('Responses Resolvers', () => {
         expect(tagService.upsertPreviewTag).toHaveBeenCalledWith('form-123');
         expect(tagService.addTagToResponse).toHaveBeenCalledWith(
           'response-abc',
-          'preview-tag-id'
+          'preview-tag-id',
+          'form-123'
         );
       });
 

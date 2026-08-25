@@ -471,7 +471,7 @@ export const responsesResolvers = {
       if (input.isPreview) {
         try {
           const previewTag = await upsertPreviewTag(input.formId);
-          await addTagToResponse(savedResponse.id, previewTag.id);
+          await addTagToResponse(savedResponse.id, previewTag.id, input.formId);
         } catch (error) {
           logger.error('Error auto-tagging preview response:', error);
         }

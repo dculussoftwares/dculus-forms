@@ -5,6 +5,7 @@ vi.mock('../../lib/prisma.js', () => ({
     responseTag: {
       findMany: vi.fn(),
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       upsert: vi.fn(),
       delete: vi.fn(),
     },
@@ -80,43 +81,77 @@ describe('createTag', () => {
 
 describe('deleteTag', () => {
   it('returns true when deletion succeeds', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 't1', formId: 'form-1' });
     (prisma.responseTag.delete as any).mockResolvedValue({});
-    const result = await deleteTag('t1');
+    const result = await deleteTag('t1', 'form-1');
     expect(result).toBe(true);
   });
 
   it('returns false when deletion fails', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 'missing', formId: 'form-1' });
     (prisma.responseTag.delete as any).mockRejectedValue(new Error('not found'));
-    const result = await deleteTag('missing');
+    const result = await deleteTag('missing', 'form-1');
     expect(result).toBe(false);
+  });
+
+  it('returns false without deleting when tag belongs to a different form', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 't1', formId: 'other-form' });
+    const result = await deleteTag('t1', 'form-1');
+    expect(result).toBe(false);
+    expect(prisma.responseTag.delete).not.toHaveBeenCalled();
+  });
+
+  it('returns false when tag does not exist', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue(null);
+    const result = await deleteTag('missing', 'form-1');
+    expect(result).toBe(false);
+    expect(prisma.responseTag.delete).not.toHaveBeenCalled();
   });
 });
 
 describe('addTagToResponse', () => {
   it('returns true when tag is added successfully', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 't1', formId: 'form-1' });
     (prisma.responseTagAssignment.upsert as any).mockResolvedValue({});
-    const result = await addTagToResponse('r1', 't1');
+    const result = await addTagToResponse('r1', 't1', 'form-1');
     expect(result).toBe(true);
   });
 
   it('returns false when adding fails', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 't1', formId: 'form-1' });
     (prisma.responseTagAssignment.upsert as any).mockRejectedValue(new Error('db error'));
-    const result = await addTagToResponse('r1', 't1');
+    const result = await addTagToResponse('r1', 't1', 'form-1');
     expect(result).toBe(false);
+  });
+
+  it('returns false without assigning when tag belongs to a different form', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 't1', formId: 'other-form' });
+    const result = await addTagToResponse('r1', 't1', 'form-1');
+    expect(result).toBe(false);
+    expect(prisma.responseTagAssignment.upsert).not.toHaveBeenCalled();
   });
 });
 
 describe('removeTagFromResponse', () => {
   it('returns true when tag is removed', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 't1', formId: 'form-1' });
     (prisma.responseTagAssignment.delete as any).mockResolvedValue({});
-    const result = await removeTagFromResponse('r1', 't1');
+    const result = await removeTagFromResponse('r1', 't1', 'form-1');
     expect(result).toBe(true);
   });
 
   it('returns false when removal fails', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 't1', formId: 'form-1' });
     (prisma.responseTagAssignment.delete as any).mockRejectedValue(new Error('not found'));
-    const result = await removeTagFromResponse('r1', 't1');
+    const result = await removeTagFromResponse('r1', 't1', 'form-1');
     expect(result).toBe(false);
+  });
+
+  it('returns false without unassigning when tag belongs to a different form', async () => {
+    (prisma.responseTag.findUnique as any).mockResolvedValue({ id: 't1', formId: 'other-form' });
+    const result = await removeTagFromResponse('r1', 't1', 'form-1');
+    expect(result).toBe(false);
+    expect(prisma.responseTagAssignment.delete).not.toHaveBeenCalled();
   });
 });
 

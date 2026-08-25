@@ -54,7 +54,7 @@ export const tagResolvers = {
       if (!access.hasAccess) {
         throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
-      return deleteTag(id);
+      return deleteTag(id, formId);
     },
 
     addTagToResponse: async (
@@ -67,7 +67,7 @@ export const tagResolvers = {
       if (!response) throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
       const access = await checkFormAccess(context.auth.user!.id, response.formId, PermissionLevel.EDITOR);
       if (!access.hasAccess) throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
-      return addTagToResponse(responseId, tagId);
+      return addTagToResponse(responseId, tagId, response.formId);
     },
 
     removeTagFromResponse: async (
@@ -80,7 +80,7 @@ export const tagResolvers = {
       if (!response) throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
       const access = await checkFormAccess(context.auth.user!.id, response.formId, PermissionLevel.EDITOR);
       if (!access.hasAccess) throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
-      return removeTagFromResponse(responseId, tagId);
+      return removeTagFromResponse(responseId, tagId, response.formId);
     },
 
     deletePreviewResponses: async (
