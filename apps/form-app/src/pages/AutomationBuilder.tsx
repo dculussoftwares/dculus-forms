@@ -97,12 +97,22 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     try {
       const graph = getSerializableGraph();
       const result = await updateAutomation({ variables: { id: automationId, graph } });
+      // Apollo Client v4's mutate() resolves (doesn't reject) when the response contains
+      // GraphQL-level errors — only network/execution failures throw. AUTOMATION_INVALID_GRAPH
+      // (an active automation's edited graph failing re-validation) is a GraphQL error, so it
+      // must be read off the resolved result, not caught.
       if (result.error) throw result.error;
       markSaved();
       clearValidationErrors();
       toastSuccess(t('builder.header.saveSuccessTitle'), t('builder.header.saveSuccessMessage'));
     } catch (error: any) {
-      toastError(t('builder.header.saveErrorTitle'), error.message);
+      const validationErrors = extractValidationErrors(error);
+      if (validationErrors) {
+        setValidationErrors(validationErrors);
+        toastError(t('builder.header.saveErrorTitle'), t('builder.header.saveInvalidMessage'));
+      } else {
+        toastError(t('builder.header.saveErrorTitle'), error.message);
+      }
     }
   };
 

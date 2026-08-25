@@ -93,6 +93,7 @@
       "saveSuccessTitle": "தானியங்கி சேமிக்கப்பட்டது",
       "saveSuccessMessage": "உங்கள் மாற்றங்கள் சேமிக்கப்பட்டுள்ளன.",
       "saveErrorTitle": "தானியங்கியை சேமிக்க முடியவில்லை",
+      "saveInvalidMessage": "குறிப்பிடப்பட்ட படிகளை சரிசெய்து மீண்டும் முயற்சிக்கவும்.",
       "activateButton": "செயல்படுத்து",
       "pauseButton": "இடைநிறுத்து",
       "activateInvalidTitle": "தானியங்கி செயல்படுத்த தயாராக இல்லை",

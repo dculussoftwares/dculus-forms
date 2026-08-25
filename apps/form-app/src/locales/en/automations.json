@@ -93,6 +93,7 @@
       "saveSuccessTitle": "Automation saved",
       "saveSuccessMessage": "Your changes have been saved.",
       "saveErrorTitle": "Couldn't save automation",
+      "saveInvalidMessage": "Fix the highlighted steps and try again.",
       "activateButton": "Activate",
       "pauseButton": "Pause",
       "activateInvalidTitle": "Automation isn't ready to activate",
