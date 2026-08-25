@@ -269,6 +269,58 @@ interface FieldSettingsV2Props {
   onFieldSwitch?: () => void;
 }
 
+interface FieldSettingsWrapperProps {
+  children: React.ReactNode;
+  onDelete?: () => void;
+  isConnected: boolean;
+  deleteButtonLabel: string;
+}
+
+/**
+ * Wraps a field-specific settings component with the shared delete-button
+ * footer. Declared at module scope (NOT inside FieldSettingsV2's render
+ * body) so it keeps a stable component identity across renders — otherwise
+ * React would treat every FieldSettingsV2 re-render as a brand new
+ * component type at this position and fully unmount + remount whatever is
+ * inside it (losing any in-progress, unsaved react-hook-form state in the
+ * child settings component on every parent re-render). See E2E flakiness
+ * investigation: this was the root cause of several "Save button stuck
+ * disabled" / "typed value reverted to default" CI failures.
+ */
+const FieldSettingsWrapper: React.FC<FieldSettingsWrapperProps> = ({
+  children,
+  onDelete,
+  isConnected,
+  deleteButtonLabel,
+}) => (
+  <div data-testid="field-settings-panel" className="h-full flex flex-col">
+    <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+    {onDelete && isConnected && (
+      <div className="border-t border-[var(--tf-border-medium)] dark:border-gray-700 p-4">
+        <Button
+          onClick={onDelete}
+          className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center gap-2"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+          {deleteButtonLabel}
+        </Button>
+      </div>
+    )}
+  </div>
+);
+
 /**
  * Router component that renders the appropriate field-specific settings component
  * based on the field type. This replaces the monolithic FieldSettings component
@@ -301,45 +353,17 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
     );
   }
 
-  // Wrapper to add delete button to all field settings
-  const FieldSettingsWrapper: React.FC<{ children: React.ReactNode }> = ({
-    children,
-  }) => (
-    <div data-testid="field-settings-panel" className="h-full flex flex-col">
-      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-      {deleteHandler && isConnected && (
-        <div className="border-t border-[var(--tf-border-medium)] dark:border-gray-700 p-4">
-          <Button
-            onClick={deleteHandler}
-            className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center gap-2"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-            {t('deleteField.button')}
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-
   // Route to the appropriate field-specific settings component
   switch (field.type) {
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
     case FieldType.EMAIL_FIELD:
       return (
-        <FieldSettingsWrapper>
+        <FieldSettingsWrapper
+          onDelete={deleteHandler}
+          isConnected={isConnected}
+          deleteButtonLabel={t('deleteField.button')}
+        >
           <TextFieldSettings
             field={field as TextInputField | TextAreaField | EmailField}
             isConnected={isConnected}
@@ -351,7 +375,11 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
 
     case FieldType.NUMBER_FIELD:
       return (
-        <FieldSettingsWrapper>
+        <FieldSettingsWrapper
+          onDelete={deleteHandler}
+          isConnected={isConnected}
+          deleteButtonLabel={t('deleteField.button')}
+        >
           <NumberFieldSettings
             field={field as NumberField}
             isConnected={isConnected}
@@ -365,7 +393,11 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
     case FieldType.RADIO_FIELD:
     case FieldType.CHECKBOX_FIELD:
       return (
-        <FieldSettingsWrapper>
+        <FieldSettingsWrapper
+          onDelete={deleteHandler}
+          isConnected={isConnected}
+          deleteButtonLabel={t('deleteField.button')}
+        >
           <SelectionFieldSettings
             field={field as SelectField | RadioField | CheckboxField}
             isConnected={isConnected}
@@ -377,7 +409,11 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
 
     case FieldType.PHONE_NUMBER_FIELD:
       return (
-        <FieldSettingsWrapper>
+        <FieldSettingsWrapper
+          onDelete={deleteHandler}
+          isConnected={isConnected}
+          deleteButtonLabel={t('deleteField.button')}
+        >
           <PhoneNumberFieldSettings
             field={field as PhoneNumberField}
             isConnected={isConnected}
@@ -389,7 +425,11 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
 
     case FieldType.DATE_FIELD:
       return (
-        <FieldSettingsWrapper>
+        <FieldSettingsWrapper
+          onDelete={deleteHandler}
+          isConnected={isConnected}
+          deleteButtonLabel={t('deleteField.button')}
+        >
           <DateFieldSettings
             field={field as DateField}
             isConnected={isConnected}
@@ -401,7 +441,11 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
 
     case FieldType.RICH_TEXT_FIELD:
       return (
-        <FieldSettingsWrapper>
+        <FieldSettingsWrapper
+          onDelete={deleteHandler}
+          isConnected={isConnected}
+          deleteButtonLabel={t('deleteField.button')}
+        >
           <RichTextFieldSettings
             field={field as RichTextFormField}
             isConnected={isConnected}
@@ -413,7 +457,11 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
 
     case FieldType.FILE_UPLOAD_FIELD:
       return (
-        <FieldSettingsWrapper>
+        <FieldSettingsWrapper
+          onDelete={deleteHandler}
+          isConnected={isConnected}
+          deleteButtonLabel={t('deleteField.button')}
+        >
           <FileUploadFieldSettingsInner
             field={field as FileUploadField}
             isConnected={isConnected}
