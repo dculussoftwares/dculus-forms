@@ -29,6 +29,7 @@ const repoMock = vi.hoisted(() => ({
   findRunById: vi.fn(),
   cancelRunIfActive: vi.fn(),
   findById: vi.fn(),
+  updateRun: vi.fn(),
 }));
 
 vi.mock('../../../repositories/index.js', () => ({
@@ -53,6 +54,8 @@ vi.mock('@sentry/node', () => ({
 vi.mock('@dculus/utils', () => ({
   generateId: vi.fn(),
 }));
+
+vi.mock('../runOutcome.js', () => ({ recordRunOutcome: vi.fn() }));
 
 vi.mock('../engine.js', () => ({
   enqueueFirstStep: vi.fn(),
@@ -578,6 +581,22 @@ describe('triggerService', () => {
       // The worker that holds the claim decides whether to run or skip; a second SKIPPED row
       // alongside its decision would just be noise.
       expect(automationRepository.createRun).not.toHaveBeenCalled();
+    });
+
+    // A run left RUNNING with nothing queued is worse than a failed one: the overlap guard reads
+    // RUNNING as in-flight, so every future tick of this automation would be skipped indefinitely.
+    it('settles the run FAILED when the enqueue fails, so it cannot block future ticks', async () => {
+      vi.mocked(automationRepository.findById).mockResolvedValue(
+        makeAutomation({ triggerType: 'schedule', status: 'ACTIVE' }) as any
+      );
+      vi.mocked(enqueueFirstStep).mockRejectedValue(new Error('queue unavailable'));
+
+      await fireTick('automation-1');
+
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('generated-run-id', {
+        status: 'FAILED',
+        completedAt: expect.any(Date),
+      });
     });
 
     it('skips a tick when the automation was paused/deleted concurrently', async () => {

@@ -12,6 +12,7 @@ import {
   unscheduleAutomationCron,
 } from './automation/triggerService.js';
 import { isValidCronExpression, isValidTimezone } from './automation/cronValidator.js';
+import { isAutomationEngineEnabled } from './automation/boss.js';
 import { AUTOMATION_TEMPLATE_IDS, getAutomationTemplate } from './automation/templates.js';
 import { copyAutomation } from './automation/copyAutomation.js';
 import type { AutomationGraph, AutomationRunContext } from './automation/types.js';
@@ -472,6 +473,18 @@ export async function retryAutomationRun(runId: string) {
     );
   }
 
+  // Checked BEFORE the claim below, not after. With the engine off, enqueueRunStep logs a warning
+  // and returns without throwing — so a retry would flip the run to RUNNING, queue nothing, and
+  // report success. The run would then be stuck: it can never be retried again (retry requires
+  // FAILED), and on a schedule automation the overlap guard would read it as in-flight and block
+  // every future tick.
+  if (!isAutomationEngineEnabled()) {
+    throw createGraphQLError(
+      'The automation engine is not running, so this run cannot be retried right now',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
   const failedStep = await automationRepository.findLatestFailedStepRun(runId);
   if (!failedStep) {
     throw createGraphQLError(
@@ -505,7 +518,16 @@ export async function retryAutomationRun(runId: string) {
 
   // Re-read so the snapshot carries the config refresh above.
   const resumed = await automationRepository.findRunById(runId);
-  await enqueueRunStep(resumed!, failedStep.nodeId);
+
+  try {
+    await enqueueRunStep(resumed!, failedStep.nodeId);
+  } catch (error) {
+    // The status flip already committed, so a failed enqueue would otherwise leave the run
+    // RUNNING with no queued work — unretryable, and read as in-flight by the schedule overlap
+    // guard. Put it back to FAILED so the user can simply try again.
+    await automationRepository.releaseRetryClaim(runId);
+    throw error;
+  }
 
   return resumed;
 }

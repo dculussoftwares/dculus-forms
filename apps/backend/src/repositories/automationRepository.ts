@@ -160,6 +160,17 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     });
 
   /**
+   * Undoes a retry claim, putting the run back to FAILED so it can be retried again. Guarded on
+   * the run still being RUNNING so it can never overwrite an outcome the engine reached in the
+   * meantime. Returns the number of rows matched.
+   */
+  const releaseRetryClaim = async (id: string) =>
+    prisma.automationRun.updateMany({
+      where: { id, status: 'RUNNING' },
+      data: { status: 'FAILED', completedAt: new Date() },
+    });
+
+  /**
    * Marks a single run CANCELLED only if it is still RUNNING/WAITING — a TOCTOU-safe guard
    * against a run reaching a terminal state concurrently. Returns the number of rows matched.
    */
@@ -300,6 +311,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     updateRun,
     advanceDigestWatermark,
     claimFailedRunForRetry,
+    releaseRetryClaim,
     cancelRunsByIds,
     cancelRunIfActive,
 

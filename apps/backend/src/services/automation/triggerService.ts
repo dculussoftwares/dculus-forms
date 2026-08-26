@@ -8,6 +8,7 @@ import { logger } from '../../lib/logger.js';
 import { getEventEmitter } from '../../plugins/core/events.js';
 import type { PluginEvent } from '../../plugins/core/types.js';
 import { enqueueFirstStep } from './engine.js';
+import { recordRunOutcome } from './runOutcome.js';
 import { AUTOMATION_QUEUE, AUTOMATION_CRON_QUEUE, getBoss } from './boss.js';
 // Re-exported so existing importers keep their path; the implementations moved to
 // cronSchedule.ts, which the engine's settle path can import without a cycle.
@@ -251,7 +252,21 @@ async function handleScheduledTick(automationId: string): Promise<void> {
 
     // Enqueued outside the transaction: the run row must be committed and visible before a worker
     // can pick the job up, or the step handler would look up a run that does not exist yet.
-    await enqueueFirstStep(run);
+    try {
+      await enqueueFirstStep(run);
+    } catch (error) {
+      // A run left RUNNING with nothing queued is worse than a failed one: the overlap guard above
+      // reads RUNNING as in-flight, so this automation's every future tick would be skipped
+      // indefinitely. Settling it as FAILED keeps the automation ticking, and surfaces the problem
+      // through the same failure path as any other broken run.
+      logger.error(
+        `[Automation Triggers] Failed to enqueue the first step for run ${run.id} — marking it FAILED so it cannot block future ticks:`,
+        error
+      );
+      Sentry.captureException(error);
+      await automationRepository.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
+      await recordRunOutcome(automation.id, run.id, 'FAILED');
+    }
   } catch (error) {
     logger.error(`[Automation Triggers] Failed to handle scheduled tick for automation ${automationId}:`, error);
     Sentry.captureException(error);

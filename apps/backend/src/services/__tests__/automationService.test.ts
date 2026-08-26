@@ -18,6 +18,7 @@ import { automationRepository, responseRepository } from '../../repositories/ind
 import { getAvailablePluginTypes } from '../../plugins/core/registry.js';
 import { validateAutomationGraph } from '../automation/graphValidator.js';
 import { enqueueFirstStep, enqueueRunStep } from '../automation/engine.js';
+import { isAutomationEngineEnabled } from '../automation/boss.js';
 import {
   cancelRunsForAutomation,
   cancelSingleAutomationRun,
@@ -31,6 +32,7 @@ vi.mock('../../plugins/core/registry.js');
 vi.mock('../automation/graphValidator.js');
 vi.mock('../automation/engine.js');
 vi.mock('../automation/triggerService.js');
+vi.mock('../automation/boss.js', () => ({ isAutomationEngineEnabled: vi.fn(() => true) }));
 vi.mock('@dculus/utils', async () => {
   const actual = await vi.importActual<typeof import('@dculus/utils')>('@dculus/utils');
   return { ...actual, generateId: vi.fn() };
@@ -688,6 +690,7 @@ describe('automationService', () => {
         nodeId: 'action-1',
       } as any);
       vi.mocked(automationRepository.claimFailedRunForRetry).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(isAutomationEngineEnabled).mockReturnValue(true);
     });
 
     // Resuming, not re-running: the steps that already succeeded must not deliver a second time.
@@ -769,6 +772,26 @@ describe('automationService', () => {
       await retryAutomationRun('run-1');
 
       expect(enqueueRunStep).toHaveBeenCalled();
+    });
+
+    // enqueueRunStep logs and returns without throwing when the engine is off, so claiming first
+    // would flip the run to RUNNING, queue nothing, and report success — leaving it unretryable
+    // (retry needs FAILED) and, on a schedule automation, blocking every future tick.
+    it('refuses before claiming when the automation engine is not running', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(isAutomationEngineEnabled).mockReturnValue(false);
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow(/engine is not running/);
+      expect(automationRepository.claimFailedRunForRetry).not.toHaveBeenCalled();
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
+    it('puts the run back to FAILED when the enqueue fails, so it stays retryable', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(enqueueRunStep).mockRejectedValue(new Error('queue unavailable'));
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow('queue unavailable');
+      expect(automationRepository.releaseRetryClaim).toHaveBeenCalledWith('run-1');
     });
 
     it('throws when the run does not exist', async () => {
