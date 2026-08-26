@@ -1,6 +1,6 @@
 # Automations — Business Flow Gap Analysis
 
-> Review date: 2026-08-26 · **P0 items A–D fixed 2026-08-26** (see each section's Status line) · Scope: `apps/backend/src/services/automation/*`, `automationService.ts`,
+> Review date: 2026-08-26 · **P0 items A–D and P1 items E–I fixed 2026-08-26** (see each section's Status line) · Scope: `apps/backend/src/services/automation/*`, `automationService.ts`,
 > `graphql/resolvers/automations.ts`, `repositories/automationRepository.ts`,
 > `apps/form-app/src/{pages,components,store}/**/automation*`, plus the plugin handlers automations call.
 > The P1–P3 sections below are analysis only. The four P0 sections record what was found
@@ -38,11 +38,11 @@ first-run safety, failure visibility, portability, monetisation, and lifecycle.
 | B | "Test" runs send for real and corrupt the digest window | **P0** | Correctness | ✅ Fixed |
 | C | First scheduled tick can email the entire response history | **P0** | Business risk | ✅ Fixed |
 | D | Partial delivery failure is recorded as SUCCESS | **P0** | Correctness | ✅ Fixed |
-| E | Retries have no idempotency — duplicate sends | P1 | Correctness | Open |
-| F | Overlapping / replayed scheduled runs duplicate work | P1 | Correctness | Open |
-| G | Nobody is notified when an automation fails | P1 | Trust | Open |
-| H | No way to retry or replay a failed run | P1 | Recovery | Open |
-| I | Automations are per-form and non-portable (lost on duplicate) | P1 | Growth | Open |
+| E | Retries have no idempotency — duplicate sends | P1 | Correctness | ✅ Fixed |
+| F | Overlapping / replayed scheduled runs duplicate work | P1 | Correctness | ✅ Fixed |
+| G | Nobody is notified when an automation fails | P1 | Trust | ✅ Fixed |
+| H | No way to retry or replay a failed run | P1 | Recovery | ✅ Fixed |
+| I | Automations are per-form and non-portable (lost on duplicate) | P1 | Growth | ✅ Fixed |
 | J | Trigger type is immutable after creation | P2 | UX | Open |
 | K | Conditions can't read step outputs, only the trigger response | P2 | Capability | Open |
 | L | Action catalog is thin; one entry is a dead end | P2 | Capability | Open |
@@ -241,9 +241,21 @@ retry-safe:
 The engine's own doc explicitly promises "never re-derive a decision that was already recorded" —
 that principle is honoured at the graph level but not *inside* an action.
 
-**Fix.** Pass a stable idempotency key into `PluginContext` (`${runId}:${nodeId}` is already the
-synthetic plugin id — reuse it). Webhook handler sends it as `X-Dculus-Idempotency-Key`; the digest
-email loop persists per-response progress into the step output and resumes from it on retry.
+**Status: ✅ fixed.** `PluginContext.idempotencyKey` carries `runId:nodeId` for an automation
+action (both survive a retry; a different node or run gets its own) and `pluginId:responseId` for
+the standalone Plugins path. The webhook handler forwards it as `X-Dculus-Idempotency-Key`, set
+after the user's own headers so a configured header cannot shadow it.
+
+The digest-batch half turned out to have a sharper cause than "persist progress and resume":
+`resolvePerResponseRecipient` and `substituteMentions` ran *outside* the loop's try, so a throw
+there escaped mid-batch, failed the job, and the retry restarted from response #1. Moving the whole
+iteration inside the try makes the batch always run to completion and report counts, so a retry can
+only happen from a pre-loop failure where nothing has been sent — which removes the duplicate class
+outright rather than needing progress tracking to recover from it.
+
+Still open: nothing *stores* the key, so this lets a receiver dedupe but does not make our own
+retries idempotent on their own. Per-response delivery records remain the work that would let a
+PARTIAL batch retry exactly the responses that failed (see D).
 
 ### F. Overlapping and replayed scheduled runs duplicate work
 
@@ -254,10 +266,14 @@ email loop persists per-response progress into the step output and resumes from 
   (`automationRepository.ts:89`), which is right for "nothing was sent" but wrong for "300 of 500
   were sent then it failed" — the next tick re-sends those 300.
 
-**Fix.** Skip a scheduled tick when an active (`RUNNING`/`WAITING`) run exists for that automation,
-and record the skip as a visible run so the user understands the gap. Longer term, a per-response
-watermark (`digestedAt`, or a join table) removes the whole class of problem that a run-level
-timestamp creates.
+**Status: ✅ fixed (overlap).** `handleScheduledTick` declines to start a tick while an earlier run
+of the same automation is still `RUNNING`/`WAITING`, and records the skip as a run with the new
+`SKIPPED` status — a tick that produced nothing is exactly the gap someone goes looking for, and
+the run detail shows "a previous run was still in progress" in place of the step list.
+
+The failed-run replay half was already addressed by the D fix: the watermark is held only when a
+step delivered *nothing*, so a partly-delivered batch advances rather than re-sending. A
+per-response watermark is still what would let the failed subset be retried precisely.
 
 ### G. Nobody is told when an automation fails
 
@@ -266,21 +282,43 @@ on the automation card (`AutomationCard.tsx` shows status and updatedAt only), n
 the list query, and no health indicator on the form dashboard. A customer's expired Google OAuth
 token means every run fails silently until someone happens to open the runs page.
 
-**Fix.** In order of value:
-1. Add `lastRunStatus` + `failedRunCount` to `formAutomations` and badge the card in red.
-2. Email the automation owner on the first failure of an active automation (debounced), with a
-   deep link to the failed run — the deep-link route already exists (`?runId=`).
-3. Auto-pause after N consecutive failures and notify. Every mature iPaaS does this; it prevents a
-   broken automation from burning quota and retries for weeks.
+**Status: ✅ fixed — all three.**
+1. `lastRunStatus`, `lastRunAt` and `consecutiveFailureCount` are recorded on the automation as
+   each run settles and exposed on `formAutomations`, so the card badges a failure streak in red
+   and a partly-delivered last run in amber. Only unhealthy outcomes are shown: a green "last run
+   succeeded" line on every card is noise.
+2. The owner is emailed on the first failure of a streak, deep-linked straight to the failed run.
+   The counter is its own debounce — exactly two mails per streak, no separate timestamp to keep
+   in sync.
+3. Five consecutive failures auto-pause the automation (and unschedule its cron) with a second
+   mail. Five is deliberately above `ACTION_RETRY_LIMIT`, which counts attempts *within* one run —
+   this counts whole runs, so reaching it means five separate triggers each failed after
+   exhausting their own retries.
+
+`PARTIAL`, `CANCELLED` and `SKIPPED` runs are recorded but leave the streak alone: a partial
+delivered something, and pausing over it would stop the part that still works. Cron scheduling
+moved to `cronSchedule.ts` so the engine's settle path can auto-pause without an import cycle.
+
+Still open: no org-level health view, and no in-app notification — email only.
 
 ### H. No way to retry or replay a failed run
 
 `cancelAutomationRun` is the only run-level mutation. After 3 attempts against a receiver that was
 down for an hour, the run is dead forever — the only recovery is to re-submit the response.
 
-**Fix.** `retryAutomationRun(runId)` re-enqueuing the failed node against the existing frozen
-snapshot (the snapshot makes this safe and cheap), plus a **Retry** button in `AutomationRunDetail`.
-A bulk "retry all failed runs since X" is the natural follow-up for outage recovery.
+**Status: ✅ fixed.** `retryAutomationRun(runId)` resumes a `FAILED` run from the step it died on,
+with a Retry button in the run detail. Resuming rather than re-running is the point: the snapshot
+records which steps already succeeded, and starting from the trigger would deliver every one of
+them again.
+
+One thing the original sketch got wrong — replaying the *frozen* config would fail identically,
+since a retry is usually prompted by a fix (a corrected URL, a reconnected integration). The failed
+node's config is refreshed from the live graph first, using the same mechanism a handler already
+uses to write an auto-created spreadsheet id back into a running snapshot. Only that node moves;
+the rest of the snapshot stays frozen.
+
+Restricted to `FAILED` runs — a `PARTIAL` run already delivered part of its work, and there is no
+per-response idempotency to make re-sending safe. Bulk "retry all failed since X" remains open.
 
 ### I. Automations are per-form and non-portable
 
@@ -293,13 +331,19 @@ A bulk "retry all failed runs since X" is the natural follow-up for outage recov
 - Automations live only inside one form's builder tab. There is no org-level view answering
   "what automations exist across my 40 forms, and which are failing?"
 
-**Fix**, in value order:
-1. **Starter templates** in the create dialog — "Send a confirmation email", "Weekly digest to me",
-   "Notify Slack on new response", "Follow up 3 days later if no purchase". This is the cheapest
-   activation lever available and needs no engine work.
-2. Copy automations in `duplicateForm` as `DRAFT`, stripping externally-bound config
-   (`spreadsheetId`, OAuth-derived ids) so a copy can never write into the original's sheet.
-3. Duplicate / copy-to-form in the card menu; an org-level automations list.
+**Status: ✅ fixed (1–3, minus the org-level list).**
+1. Five starter templates in the create dialog — blank, confirmation email, 3-day follow-up,
+   webhook, scheduled summary — each pinning the trigger that makes sense for it, with the graph
+   built server-side so activation validates it like any other. They ship deliberately incomplete:
+   structure and copy filled in, recipients and URLs not, so the validator points at what is left.
+   The scheduled-summary template branches on `__digestCount` so a quiet week sends nothing.
+2. `duplicateForm` copies automations as `DRAFT`s, stripping spreadsheet/workbook ids and OAuth
+   tokens. Copies also start with no run health and no digest watermark, since both describe the
+   original's history.
+3. Duplicate is in the card menu, sharing the same copy path.
+
+Still open: copy-to-another-form, and the org-level "what exists across my 40 forms, and which are
+failing?" view.
 
 ---
 
@@ -428,17 +472,18 @@ against pg-boss schedules on boot.
 **~~Ship first~~ Shipped 2026-08-26 (safety)**
 ~~A (test on DRAFT) → B (dry-run + watermark) → C (first-run choice) → D (partial failure)~~ ✅
 
-**Ship next (trust)**
-G (failure notification) — the remaining half of "safe to recommend": failures are now recorded
-honestly, but still nobody is *told* about them.
+**~~Ship next~~ Shipped 2026-08-26 (reliability)**
+~~E (idempotency) → F (overlap guard) → G (failure notification) → H (retry) → I (portability)~~ ✅
 
-**Then (recovery + growth)**
-H (retry) → I (templates + duplicate) → E/F (idempotency + overlap guard) → L (Slack + one internal action)
+**Ship next (capability + business)**
+M (metering and plan gating) → L (Slack + one internal action) → N (retention) → O (engine
+visibility) → K (step-output conditions)
 
-E is now the sharpest remaining correctness gap, and it is what bounds the D fix: without
-per-response idempotency, a partly-delivered digest window has to be written off (advanced and
-reported) rather than re-covered, because re-covering would duplicate everything that did arrive.
-Per-response tracking would let a partial batch retry exactly the responses that failed.
+The one correctness thread still running through the fixed items is **per-response delivery
+records**. Without them a partly-delivered digest window has to be written off (advanced and
+reported) rather than re-covered, retry is limited to `FAILED` runs, and the idempotency key helps
+only receivers that choose to dedupe on it. That single piece of tracking would tighten D, E, F and
+H at once, and is the highest-value follow-up in the whole document.
 
 **Then (business + ops)**
 M (metering and plan gating) → N (retention) → O (engine visibility) → K (step-output conditions)
