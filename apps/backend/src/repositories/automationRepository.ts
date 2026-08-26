@@ -85,19 +85,28 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
   const createRun = async (data: Prisma.AutomationRunCreateArgs['data']) =>
     prisma.automationRun.create({ data });
 
-  /**
-   * Most recent COMPLETED run for an automation, ordered by startedAt — the window anchor for a
-   * digest node's "since last run" query (#automations-digest). Only COMPLETED counts (not
-   * FAILED/CANCELLED), so a failed tick doesn't advance the window and silently drop responses.
-   */
-  const findLastCompletedRun = async (automationId: string) =>
-    prisma.automationRun.findFirst({
-      where: { automationId, status: 'COMPLETED' },
-      orderBy: { startedAt: 'desc' },
-    });
-
   const updateRun = async (id: string, data: Prisma.AutomationRunUpdateArgs['data']) =>
     prisma.automationRun.update({ where: { id }, data });
+
+  /**
+   * Moves a schedule automation's digest watermark forward to `until` (the upper bound of the
+   * window that was just fully processed). Replaces the previous "most recent COMPLETED run"
+   * derivation, which a test run or a partially-delivered batch could advance past responses
+   * nothing had actually handled.
+   *
+   * `updateMany` with the lt/null guard rather than `update`: two runs of the same automation can
+   * settle out of order (a retried step finishing after a later tick), and the watermark must
+   * never move backwards — a backwards move would re-process, and re-deliver, an already-sent
+   * window. A no-op when the stored value is already at or past `until`.
+   */
+  const advanceDigestWatermark = async (automationId: string, until: Date) =>
+    prisma.automation.updateMany({
+      where: {
+        id: automationId,
+        OR: [{ lastDigestedAt: null }, { lastDigestedAt: { lt: until } }],
+      },
+      data: { lastDigestedAt: until },
+    });
 
   /** Marks the given run ids CANCELLED unconditionally (caller has already snapshotted them). */
   const cancelRunsByIds = async (ids: string[]) =>
@@ -126,8 +135,33 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
   const createStepRun = async (data: Prisma.AutomationStepRunCreateArgs['data']) =>
     prisma.automationStepRun.create({ data });
 
-  const findSuccessStepRun = async (runId: string, nodeId: string) =>
-    prisma.automationStepRun.findFirst({ where: { runId, nodeId, status: 'SUCCESS' } });
+  /**
+   * A step run for this node that already ran to a non-retryable conclusion — the redelivery
+   * guard in engine.ts's executeAutomationStep. Deliberately broader than SUCCESS: a PARTIAL
+   * (some deliveries in a batch failed) or SKIPPED (nothing to deliver, or the org's email quota
+   * was reached) step also already executed its handler, and re-running it on a redelivered job
+   * would re-send to everyone the first attempt reached. FAILED is excluded — that is precisely
+   * the case retries exist for.
+   */
+  const findExecutedStepRun = async (runId: string, nodeId: string) =>
+    prisma.automationStepRun.findFirst({
+      where: { runId, nodeId, status: { in: ['SUCCESS', 'PARTIAL', 'SKIPPED'] } },
+    });
+
+  /**
+   * Every step row in a run, as `(nodeId, nodeType, status)`.
+   *
+   * Deliberately returns *all* rows, including successes: a retried node has one row per attempt,
+   * so the failed first attempt of a node that later succeeded is only distinguishable from a
+   * genuine failure by seeing both rows. A run has a handful of steps, so one small query beats
+   * encoding that reasoning in SQL — the engine resolves each node to a single outcome in
+   * completeRun.
+   */
+  const listStepOutcomes = async (runId: string) =>
+    prisma.automationStepRun.findMany({
+      where: { runId },
+      select: { nodeId: true, nodeType: true, status: true },
+    });
 
   const findStepRunByNode = async (runId: string, nodeId: string) =>
     prisma.automationStepRun.findFirst({ where: { runId, nodeId } });
@@ -208,15 +242,16 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     listRunsByAutomation,
     listActiveRunsByAutomation,
     createRun,
-    findLastCompletedRun,
     updateRun,
+    advanceDigestWatermark,
     cancelRunsByIds,
     cancelRunIfActive,
 
     // Domain helpers (AutomationStepRun)
     listStepRunsByRun,
     createStepRun,
-    findSuccessStepRun,
+    findExecutedStepRun,
+    listStepOutcomes,
     findStepRunByNode,
 
     // Transaction-participating raw writes (see engine.ts updateAutomationNodeConfig)

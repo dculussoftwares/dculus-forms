@@ -21,10 +21,21 @@ export function formatDuration(startedAt: string, endedAt: string | null | undef
   return t('runs.duration.minutesSeconds', { values: { minutes, seconds } });
 }
 
+// Amber, shared by the run- and step-level PARTIAL badge: the work ran but did not fully deliver
+// (some emails in a batch failed, or a send was skipped for quota). Deliberately neither the green
+// of COMPLETED nor the red of FAILED — reading it as either one is the thing this status exists to
+// prevent.
+const PARTIAL_STATUS_STYLE: React.CSSProperties = {
+  backgroundColor: 'rgba(190,153,58,0.08)',
+  color: '#9c7818',
+  border: '1px solid rgba(190,153,58,0.16)',
+};
+
 const RUN_STATUS_STYLE: Record<string, React.CSSProperties> = {
   RUNNING: { backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' },
   WAITING: { backgroundColor: 'rgba(190,153,58,0.08)', color: '#9c7818', border: '1px solid rgba(190,153,58,0.16)' },
   COMPLETED: { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' },
+  PARTIAL: PARTIAL_STATUS_STYLE,
   FAILED: { backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' },
   CANCELLED: { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' },
 };
@@ -34,6 +45,7 @@ export const runStatusStyle = (status: string): React.CSSProperties =>
 
 const STEP_STATUS_STYLE: Record<string, React.CSSProperties> = {
   SUCCESS: { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' },
+  PARTIAL: PARTIAL_STATUS_STYLE,
   FAILED: { backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' },
   SKIPPED: { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' },
 };

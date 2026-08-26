@@ -24,7 +24,7 @@ import {
   toastSuccess,
   toastError,
 } from '@dculus/ui';
-import { CheckCircle2, XCircle, SkipForward, ChevronDown, Loader2, FlaskConical, Ban } from 'lucide-react';
+import { CheckCircle2, XCircle, SkipForward, AlertTriangle, ChevronDown, Loader2, FlaskConical, Ban } from 'lucide-react';
 import { GET_AUTOMATION_RUN, GET_AUTOMATION_RUNS, CANCEL_AUTOMATION_RUN } from '../../../graphql/automations';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
@@ -112,6 +112,8 @@ export const AutomationRunDetail: React.FC<AutomationRunDetailProps> = ({
         return <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--tf-green)' }} />;
       case 'FAILED':
         return <XCircle className="h-4 w-4 text-destructive" />;
+      case 'PARTIAL':
+        return <AlertTriangle className="h-4 w-4" style={{ color: '#9c7818' }} />;
       default:
         return <SkipForward className="h-4 w-4 text-muted-foreground" />;
     }
@@ -225,8 +227,19 @@ export const AutomationRunDetail: React.FC<AutomationRunDetailProps> = ({
                               </div>
                               <p className="text-xs text-muted-foreground">{formatTimestamp(step.startedAt)}</p>
 
-                              {step.status === 'FAILED' && step.errorMessage && (
-                                <div className="mt-2 text-sm text-destructive bg-[var(--tf-error-bg)] px-3 py-2 rounded">
+                              {/* PARTIAL and SKIPPED carry a reason too ("400 of 500 emails
+                                  failed", "reached its email sending limit") — surfacing it inline
+                                  like a failure is the whole point of distinguishing them from
+                                  SUCCESS, so it must not stay hidden in the collapsed output. */}
+                              {step.errorMessage && step.status !== 'SUCCESS' && (
+                                <div
+                                  className="mt-2 text-sm px-3 py-2 rounded"
+                                  style={
+                                    step.status === 'FAILED'
+                                      ? { color: 'var(--tf-error)', backgroundColor: 'var(--tf-error-bg)' }
+                                      : { color: '#9c7818', backgroundColor: 'rgba(190,153,58,0.08)' }
+                                  }
+                                >
                                   {step.errorMessage}
                                 </div>
                               )}

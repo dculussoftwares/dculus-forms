@@ -203,7 +203,9 @@ export const automationsResolvers = {
         'Access denied: You need EDITOR access to test this automation'
       );
 
-      return automationService.testAutomation(automation, responseId);
+      // Every email action in a test run is redirected to whoever pressed Test, so a rehearsal can
+      // never reach a real respondent — the engine skips the send outright if this is missing.
+      return automationService.testAutomation(automation, responseId, context.auth.user!.email);
     },
 
     cancelAutomationRun: async (
@@ -228,6 +230,7 @@ export const automationsResolvers = {
   Automation: {
     createdAt: (parent: { createdAt: Date | string }) => toISOString(parent.createdAt),
     updatedAt: (parent: { updatedAt: Date | string }) => toISOString(parent.updatedAt),
+    lastDigestedAt: (parent: { lastDigestedAt: Date | string | null }) => toISOString(parent.lastDigestedAt),
   },
 
   AutomationRun: {

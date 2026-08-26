@@ -5,6 +5,7 @@ import {
   executeAutomationStep,
   enqueueFirstStep,
   registerAutomationWorker,
+  classifyHandlerResult,
   ACTION_RETRY_LIMIT,
 } from '../engine.js';
 import { automationRepository } from '../../../repositories/index.js';
@@ -30,12 +31,13 @@ const txRepoMock = vi.hoisted(() => ({
 
 vi.mock('../../../repositories/index.js', () => ({
   automationRepository: {
-    findSuccessStepRun: vi.fn(),
+    findExecutedStepRun: vi.fn(),
     findRunByIdWithAutomation: vi.fn(),
     createStepRun: vi.fn().mockResolvedValue({}),
     updateRun: vi.fn().mockResolvedValue({}),
     findStepRunByNode: vi.fn(),
-    findLastCompletedRun: vi.fn().mockResolvedValue(null),
+    listStepOutcomes: vi.fn().mockResolvedValue([]),
+    advanceDigestWatermark: vi.fn().mockResolvedValue({ count: 1 }),
   },
   createAutomationRepository: vi.fn(() => txRepoMock),
 }));
@@ -129,7 +131,8 @@ describe('automation engine', () => {
     txRepoMock.setNodeConfigInRunSnapshot.mockResolvedValue(1);
     txRepoMock.createStepRun.mockResolvedValue({});
     txRepoMock.updateRun.mockResolvedValue({});
-    vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue(null);
+    vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([] as any);
+    vi.mocked(automationRepository.advanceDigestWatermark).mockResolvedValue({ count: 1 } as any);
   });
 
   describe('redelivery reconciliation (existing SUCCESS step found)', () => {
@@ -143,7 +146,7 @@ describe('automation engine', () => {
       };
       const delayUntil = new Date('2026-01-01T02:00:00.000Z');
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue({
         output: { delayUntil: delayUntil.toISOString(), capped: false },
       } as any);
       vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
@@ -174,7 +177,7 @@ describe('automation engine', () => {
         ],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue({
         output: { result: true, branch: 'true' },
       } as any);
       vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
@@ -198,7 +201,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue({
         output: { delayUntil: new Date().toISOString(), capped: false },
       } as any);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
@@ -223,7 +226,7 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'action-1', target: 'end-1' }],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue({
         output: { delivered: true },
       } as any);
       vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
@@ -253,7 +256,7 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'delay-1', target: 'action-1' }],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue({
         output: { delayUntil: new Date().toISOString(), capped: false },
       } as any);
       // The successor already ran (or is itself further along).
@@ -274,7 +277,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue({
         output: { delivered: true },
       } as any);
       vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
@@ -301,7 +304,7 @@ describe('automation engine', () => {
 
   describe('run lookup guards', () => {
     it('drops the job when the run no longer exists', async () => {
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(null);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'node-1' }));
@@ -311,7 +314,7 @@ describe('automation engine', () => {
     });
 
     it('skips execution when the run is already in a terminal state', async () => {
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ status: 'COMPLETED', graphSnapshot: { nodes: [], edges: [] } }) as any
       );
@@ -325,7 +328,7 @@ describe('automation engine', () => {
 
   describe('unhandleable node failures', () => {
     it('records a FAILED step run and reports to Sentry when the node is missing from the graph snapshot', async () => {
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: { nodes: [], edges: [] } }) as any
       );
@@ -357,7 +360,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -396,7 +399,7 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'delay-1', target: 'action-1' }],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -447,7 +450,7 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'delay-1', target: 'end-1' }],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -471,7 +474,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -486,6 +489,30 @@ describe('automation engine', () => {
     });
   });
 
+  describe('classifyHandlerResult', () => {
+    it('treats a plain result with no failure signals as a success', () => {
+      expect(classifyHandlerResult({ delivered: true })).toBe('SUCCESS');
+      expect(classifyHandlerResult({ success: true, statusCode: 200 })).toBe('SUCCESS');
+      expect(classifyHandlerResult(undefined)).toBe('SUCCESS');
+      expect(classifyHandlerResult(null)).toBe('SUCCESS');
+    });
+
+    it('reads a batch result by its counts, not its coarse success boolean', () => {
+      // A batch sets success: false if ANY item failed, so the counts are what distinguish
+      // "mostly delivered" from "delivered nothing".
+      expect(classifyHandlerResult({ success: false, sentCount: 100, failedCount: 400 })).toBe('PARTIAL');
+      expect(classifyHandlerResult({ success: false, sentCount: 0, failedCount: 500 })).toBe('FAILED');
+      expect(classifyHandlerResult({ success: false, sentCount: 0, skippedCount: 500 })).toBe('SKIPPED');
+      expect(classifyHandlerResult({ success: false, sentCount: 10, skippedCount: 5 })).toBe('PARTIAL');
+      expect(classifyHandlerResult({ success: true, sentCount: 500, failedCount: 0, skippedCount: 0 })).toBe('SUCCESS');
+    });
+
+    it('distinguishes a deliberate skip from a failure', () => {
+      expect(classifyHandlerResult({ success: false, skipped: true, skipReason: 'no recipient' })).toBe('SKIPPED');
+      expect(classifyHandlerResult({ success: false, statusCode: 500 })).toBe('FAILED');
+    });
+  });
+
   describe('action node', () => {
     it('executes the plugin handler and enqueues the next node on success', async () => {
       const graph: AutomationGraph = {
@@ -496,7 +523,7 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'action-1', target: 'end-1' }],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, context: { triggerData: { email: 'a@b.com' } } }) as any
       );
@@ -549,7 +576,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, context: { triggerData: { name: 'Ada' } } }) as any
       );
@@ -580,7 +607,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({
           graphSnapshot: graph,
@@ -621,7 +648,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({
           graphSnapshot: graph,
@@ -645,7 +672,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, automation: { status: 'PAUSED', formId: 'f', organizationId: 'o', triggerType: 'form.submitted' } }) as any
       );
@@ -663,13 +690,206 @@ describe('automation engine', () => {
       expect(mockBoss.send).not.toHaveBeenCalled();
     });
 
+    // Every automation starts as DRAFT, so gating test runs on ACTIVE meant "build it, test it,
+    // then switch it on" died at the first action — the only way to see an automation work was to
+    // point it at real respondents first.
+    it('runs actions on a test run even though the automation is still a DRAFT', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'webhook', config: { url: 'https://x' } } }],
+        edges: [],
+      };
+
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({
+          graphSnapshot: graph,
+          context: { test: true, testUserEmail: 'tester@example.com' },
+          automation: { id: 'automation-1', status: 'DRAFT', formId: 'f', organizationId: 'o', triggerType: 'form.submitted' },
+        }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({ success: true });
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(handler).toHaveBeenCalled();
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'SUCCESS' })
+      );
+      expect(automationRepository.updateRun).not.toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ status: 'CANCELLED' })
+      );
+    });
+
+    it('redirects a test run\'s email to the tester and marks the subject, instead of the configured recipient', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          {
+            id: 'action-1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: { recipientEmail: 'respondent@example.com', subject: 'Your receipt', message: 'Hi' },
+            },
+          },
+        ],
+        edges: [],
+      };
+
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({ graphSnapshot: graph, context: { test: true, testUserEmail: 'tester@example.com' } }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({ success: true });
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: expect.objectContaining({
+            recipientEmail: 'tester@example.com',
+            subject: '[Test] Your receipt',
+          }),
+        }),
+        expect.objectContaining({ data: expect.objectContaining({ __isTest: true }) }),
+        expect.any(Object)
+      );
+    });
+
+    it('skips a test run\'s email rather than falling back to the real recipient when there is no address to redirect to', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          {
+            id: 'action-1',
+            type: 'action',
+            data: { actionType: 'email', config: { recipientEmail: 'respondent@example.com', subject: 'S', message: 'M' } },
+          },
+        ],
+        edges: [],
+      };
+
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({ graphSnapshot: graph, context: { test: true } }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({ success: true });
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'SKIPPED' })
+      );
+    });
+
+    // Handlers report failure two ways — by throwing, and by returning a result that says so.
+    // The webhook handler returns { success: false } for any non-2xx; recording that as SUCCESS
+    // is what made a failed delivery show a green tick and skip its retries entirely.
+    it('treats a handler that returns success: false as a failure, with retries, not as a success', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'webhook', config: { url: 'https://x' } } }],
+        edges: [],
+      };
+
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({ graphSnapshot: graph }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({ success: false, statusCode: 500, error: 'HTTP 500' });
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      await expect(
+        executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT))
+      ).rejects.toThrow('HTTP 500');
+
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'FAILED', errorMessage: 'HTTP 500' })
+      );
+      expect(mockBoss.send).not.toHaveBeenCalled();
+    });
+
+    it('records a partially-delivered batch as PARTIAL and still continues the flow', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 'action-1', type: 'action', data: { actionType: 'email', config: { subject: 'S', message: 'M' } } },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [{ id: 'e1', source: 'action-1', target: 'end-1' }],
+      };
+
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({ graphSnapshot: graph }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({
+        success: false,
+        sentCount: 100,
+        failedCount: 400,
+        skippedCount: 0,
+        error: '400 of 500 emails failed to send. Last error: SMTP timeout',
+      });
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'PARTIAL',
+          errorMessage: expect.stringContaining('400 of 500'),
+        })
+      );
+      // Retrying has no per-response idempotency, so a partial batch is not retried — it is
+      // reported. The rest of the flow still runs.
+      expect(mockBoss.send).toHaveBeenCalledWith(
+        AUTOMATION_QUEUE,
+        { runId: 'run-1', nodeId: 'end-1' },
+        expect.anything()
+      );
+    });
+
+    it('records an email skipped for quota as SKIPPED rather than SUCCESS', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'email', config: { subject: 'S', message: 'M' } } }],
+        edges: [],
+      };
+
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({ graphSnapshot: graph }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({
+        success: false,
+        skipped: true,
+        skipReason: 'Organization has reached its email sending limit for this billing period',
+      });
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'SKIPPED',
+          errorMessage: expect.stringContaining('email sending limit'),
+        })
+      );
+    });
+
     it('rethrows on failure while retries remain, recording a FAILED step but leaving the run RUNNING', async () => {
       const graph: AutomationGraph = {
         nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'webhook', config: {} } }],
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -697,7 +917,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -709,10 +929,14 @@ describe('automation engine', () => {
         executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, ACTION_RETRY_LIMIT, ACTION_RETRY_LIMIT))
       ).resolves.toBeUndefined();
 
-      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+      // The final attempt writes the FAILED step and the terminal run status in ONE transaction,
+      // so a crash between them can't leave the run non-terminal — FAILED is deliberately not a
+      // redelivery guard, so a redelivered job would call the handler again and deliver twice.
+      // Both writes therefore land on the tx-scoped repo, not the singleton.
+      expect(txRepoMock.createStepRun).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'FAILED', attempt: ACTION_RETRY_LIMIT + 1 })
       );
-      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+      expect(txRepoMock.updateRun).toHaveBeenCalledWith('run-1', {
         status: 'FAILED',
         completedAt: expect.any(Date),
       });
@@ -724,7 +948,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -741,7 +965,7 @@ describe('automation engine', () => {
         edges: [],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -801,9 +1025,8 @@ describe('automation engine', () => {
     }
 
     it('merges an empty result (count 0) into triggerData and enqueues the next node — a run with nothing new still succeeds', async () => {
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(scheduleRun() as any);
-      vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue(null);
       vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
@@ -844,16 +1067,17 @@ describe('automation engine', () => {
       );
     });
 
-    it('has no lower bound on the very first tick (no prior completed run) — matches everything currently satisfying the filters, not just responses after automation.createdAt', async () => {
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+    it('falls back to the epoch only when no watermark was seeded — the opted-in backfill case', async () => {
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(scheduleRun() as any);
-      vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue(null);
       vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
 
-      // 1970-01-01 (epoch) — not automation.createdAt (2025-12-01 in scheduleRun()'s fixture) —
-      // so pre-existing responses submitted before the automation was even created still match.
+      // 1970-01-01 (epoch), reached only because this fixture has no lastDigestedAt — i.e. the
+      // node opted into includeExistingResponses. Activation normally seeds the watermark, so a
+      // default automation's first tick starts at activation time, not at the form's first ever
+      // response (see automationService.resolveActivationDigestWatermark).
       expect(getResponsesByFormId).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
@@ -878,11 +1102,10 @@ describe('automation engine', () => {
         ],
         edges: [{ id: 'e1', source: 'digest-1', target: 'end-1' }],
       };
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         scheduleRun({ graphSnapshot: filteredGraph }) as any
       );
-      vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue(null);
       vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
@@ -901,22 +1124,28 @@ describe('automation engine', () => {
       );
     });
 
-    it('anchors the window on the last COMPLETED run startedAt, not the epoch fallback, once a prior run exists', async () => {
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+    it('anchors the window on the automation lastDigestedAt watermark, not the epoch fallback', async () => {
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
-        // startedAt must be chronologically after the last completed run's startedAt below —
-        // this run's own startedAt becomes the DATE_BEFORE upper bound, so it must not precede
-        // the DATE_AFTER lower bound or the (mandatory) window would be empty/inverted.
-        scheduleRun({ startedAt: new Date('2026-01-15T00:00:00.000Z') }) as any
+        // startedAt must be chronologically after the watermark below — this run's own startedAt
+        // becomes the DATE_BEFORE upper bound, so it must not precede the DATE_AFTER lower bound
+        // or the (mandatory) window would be empty/inverted.
+        scheduleRun({
+          startedAt: new Date('2026-01-15T00:00:00.000Z'),
+          automation: {
+            id: 'automation-1',
+            status: 'ACTIVE',
+            formId: 'form-1',
+            organizationId: 'org-1',
+            triggerType: 'schedule',
+            lastDigestedAt: new Date('2026-01-10T09:00:00.000Z'),
+          },
+        }) as any
       );
-      vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue({
-        startedAt: new Date('2026-01-10T09:00:00.000Z'),
-      } as any);
       vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
 
-      expect(automationRepository.findLastCompletedRun).toHaveBeenCalledWith('automation-1');
       expect(getResponsesByFormId).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
@@ -930,12 +1159,184 @@ describe('automation engine', () => {
       );
     });
 
+    it('advances the watermark to the window upper bound once the run completes cleanly', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'digest-1', type: 'digest', data: {} }],
+        edges: [],
+      };
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: graph }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.advanceDigestWatermark).toHaveBeenCalledWith(
+        'automation-1',
+        new Date('2026-01-01T00:00:00.000Z')
+      );
+    });
+
+    it('leaves the watermark alone when a step did not fully succeed — the window stays open for a retry', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'digest-1', type: 'digest', data: {} }],
+        edges: [],
+      };
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: graph }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+      // An upstream email action that delivered nothing at all (quota reached). Nothing went
+      // out, so re-covering the window next tick cannot duplicate anything.
+      vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([
+        { nodeId: 'action-1', nodeType: 'action:email', status: 'SKIPPED' },
+      ] as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.advanceDigestWatermark).not.toHaveBeenCalled();
+      expect(automationRepository.updateRun).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ status: 'PARTIAL' })
+      );
+    });
+
+    // The other half of the rule: a PARTIAL step DID deliver to some of the batch, so holding the
+    // window would send that part again on the next tick — there is no per-response idempotency to
+    // retry against. The shortfall is reported (run PARTIAL) rather than silently re-blasted.
+    it('still advances the watermark when a step partly delivered, to avoid re-sending to everyone it reached', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'digest-1', type: 'digest', data: {} }],
+        edges: [],
+      };
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: graph }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+      vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([
+        { nodeId: 'action-1', nodeType: 'action:email', status: 'PARTIAL' },
+      ] as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.updateRun).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ status: 'PARTIAL' })
+      );
+      expect(automationRepository.advanceDigestWatermark).toHaveBeenCalled();
+    });
+
+    // A retried action leaves a FAILED row from the attempt that failed AND a SUCCESS row from
+    // the one that worked. Only the final attempt counts — reading every row would file the run
+    // as PARTIAL because of a failure the retry already made good.
+    it('ignores a FAILED attempt when the same node later succeeded on retry', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'digest-1', type: 'digest', data: {} }],
+        edges: [],
+      };
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: graph }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+      vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([
+        { nodeId: 'action-1', nodeType: 'action:webhook', status: 'FAILED' },
+        { nodeId: 'action-1', nodeType: 'action:webhook', status: 'SUCCESS' },
+      ] as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.updateRun).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ status: 'COMPLETED' })
+      );
+      expect(automationRepository.advanceDigestWatermark).toHaveBeenCalled();
+    });
+
+    // A fast-forwarded delay is recorded SKIPPED, which must not be read as a failed delivery.
+    it('treats a fast-forwarded delay as clean, not as a partly-delivered run', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'digest-1', type: 'digest', data: {} }],
+        edges: [],
+      };
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: graph }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+      vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([
+        { nodeId: 'delay-1', nodeType: 'delay', status: 'SKIPPED' },
+      ] as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.updateRun).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ status: 'COMPLETED' })
+      );
+    });
+
+    it('never advances the watermark for a test run, so a rehearsal cannot skip pending responses', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'digest-1', type: 'digest', data: {} }],
+        edges: [],
+      };
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: graph, context: { test: true } }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.advanceDigestWatermark).not.toHaveBeenCalled();
+    });
+
+    it('samples the most recent responses on a test run instead of draining the pending window', async () => {
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({
+          context: { test: true },
+          automation: {
+            id: 'automation-1',
+            status: 'ACTIVE',
+            formId: 'form-1',
+            organizationId: 'org-1',
+            triggerType: 'schedule',
+            lastDigestedAt: new Date('2026-01-10T09:00:00.000Z'),
+          },
+        }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      // Newest-first and ignoring the watermark: a test should show recent, realistic data rather
+      // than whatever happens to be pending (or nothing at all, on an up-to-date automation).
+      expect(getResponsesByFormId).toHaveBeenCalledWith(
+        'form-1',
+        1,
+        100,
+        'submittedAt',
+        'desc',
+        expect.arrayContaining([
+          expect.objectContaining({ operator: 'DATE_AFTER', value: '1970-01-01T00:00:00.000Z' }),
+        ])
+      );
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({ nodeType: 'digest', output: expect.objectContaining({ sampled: true }) })
+      );
+    });
+
     it('bounds embedded responses at maxResponses while reporting the accurate uncapped total (truncated)', async () => {
       const smallGraph: AutomationGraph = {
         nodes: [{ id: 'digest-1', type: 'digest', data: { maxResponses: 2 } }],
         edges: [],
       };
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         scheduleRun({ graphSnapshot: smallGraph }) as any
       );
@@ -976,7 +1377,7 @@ describe('automation engine', () => {
         responses: [{ id: 'r1', submittedAt: '2025-12-15T00:00:00.000Z', data: {} }],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({ output: existingOutput } as any);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue({ output: existingOutput } as any);
       vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         scheduleRun({ context: {} }) as any
@@ -1012,7 +1413,7 @@ describe('automation engine', () => {
         edges: [{ id: 'e1', source: 'digest-1', target: 'action-1' }],
       };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         scheduleRun({ graphSnapshot: chainGraph }) as any
       );
@@ -1053,7 +1454,7 @@ describe('automation engine', () => {
     };
 
     it('follows the true edge when evaluateCondition returns true', async () => {
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, context: { triggerData: {} } }) as any
       );
@@ -1070,7 +1471,7 @@ describe('automation engine', () => {
     });
 
     it('jumps to end (completes the run) when the matching branch has no outgoing edge', async () => {
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph, context: { triggerData: {} } }) as any
       );
@@ -1090,7 +1491,7 @@ describe('automation engine', () => {
     it('logs a SUCCESS step and marks the run COMPLETED', async () => {
       const graph: AutomationGraph = { nodes: [{ id: 'end-1', type: 'end' }], edges: [] };
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
         makeRun({ graphSnapshot: graph }) as any
       );
@@ -1165,14 +1566,14 @@ describe('automation engine', () => {
       };
       await registerAutomationWorker(boss as any);
 
-      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({ status: 'SUCCESS' } as any);
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue({ status: 'SUCCESS' } as any);
 
       await handler([
         makeJob({ runId: 'r1', nodeId: 'n1' }),
         makeJob({ runId: 'r2', nodeId: 'n2' }),
       ]);
 
-      expect(automationRepository.findSuccessStepRun).toHaveBeenCalledTimes(2);
+      expect(automationRepository.findExecutedStepRun).toHaveBeenCalledTimes(2);
     });
   });
 });

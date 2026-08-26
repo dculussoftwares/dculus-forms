@@ -230,14 +230,17 @@
         "hint": "The next step runs after this delay has passed."
       },
       "digest": {
-        "hint": "The first run matches every response satisfying your filters below, no matter when it was submitted. Every run after that only picks up responses submitted since the last run, so nothing gets emailed or processed twice. Add a Condition step next to skip the rest when there's nothing new — check \"New responses count\".",
+        "hint": "Each run picks up only the responses no earlier run has processed yet, so nothing gets emailed or processed twice. Add a Condition step next to skip the rest when there's nothing new — check \"New responses count\".",
         "countFieldLabel": "New responses count",
         "filtersLabel": "Only include responses matching",
-        "noFiltersHint": "No filters — every response is included (see the hint below for how the schedule stays incremental). Add a filter to narrow it down (e.g. only a specific tag or score range).",
+        "noFiltersHint": "No filters — every new response is included. Add a filter to narrow it down (e.g. only a specific tag or score range).",
         "addFilter": "Add filter",
         "matchCountLoading": "Checking match count…",
         "matchCountError": "Couldn't check the match count",
-        "matchCount": "{{count}} responses currently match these filters"
+        "matchCount": "{{count}} responses currently match these filters",
+        "includeExistingLabel": "Also include responses submitted before this automation is switched on",
+        "includeExistingHint": "Off by default: the first run starts from the moment you activate this automation, so existing responses are left alone.",
+        "includeExistingWarning": "The first run will process every response that matches your filters above — including ones submitted long before this automation existed. If a step below emails each response, every one of those people will be emailed on the first run."
       },
       "condition": {
         "rulesLabel": "Rules",
@@ -274,6 +277,7 @@
       "RUNNING": "Running",
       "WAITING": "Waiting",
       "COMPLETED": "Completed",
+      "PARTIAL": "Partly delivered",
       "FAILED": "Failed",
       "CANCELLED": "Cancelled"
     },
@@ -299,6 +303,7 @@
       "noSteps": "No steps recorded yet.",
       "stepStatuses": {
         "SUCCESS": "Success",
+        "PARTIAL": "Partly delivered",
         "FAILED": "Failed",
         "SKIPPED": "Skipped"
       },
