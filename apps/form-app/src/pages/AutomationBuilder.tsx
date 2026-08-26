@@ -87,7 +87,9 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const [renameAutomation, { loading: isRenaming }] = useMutation(UPDATE_AUTOMATION);
   const [setStatus, { loading: isActivating }] = useMutation(SET_AUTOMATION_STATUS);
   const { runTest: handleTest, isTesting } = useTestAutomation(formId, automationId);
-  const hasResponses = (form.responseCount ?? 0) > 0;
+  // A schedule automation has no triggering response — its data comes from its Filter Responses
+  // step — so it is testable even on a form that has never been submitted.
+  const canTest = (form.responseCount ?? 0) > 0 || automation.triggerType === 'schedule';
 
   const handleCommitName = async () => {
     setIsEditingName(false);
@@ -245,7 +247,7 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
           </Button>
 
           {canEdit && (
-            hasResponses ? (
+            canTest ? (
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleTest()} disabled={isTesting}>
                 {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
                 {t('builder.header.testButton')}

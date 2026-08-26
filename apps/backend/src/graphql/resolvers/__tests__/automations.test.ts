@@ -304,7 +304,13 @@ describe('Automations Resolvers', () => {
         mockContext
       );
 
-      expect(automationService.testAutomation).toHaveBeenCalledWith(mockAutomation, 'response-1');
+      // The caller's own address goes with it: every email action in a test run is redirected
+      // there, so a rehearsal can never reach a real respondent.
+      expect(automationService.testAutomation).toHaveBeenCalledWith(
+        mockAutomation,
+        'response-1',
+        'test@example.com'
+      );
       expect(result).toEqual(createdRun);
     });
 

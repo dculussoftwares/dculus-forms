@@ -623,6 +623,14 @@ model Automation {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  // Upper bound of the last window a "Filter Responses" (digest) node successfully processed —
+  // the explicit watermark schedule automations read instead of deriving one from run history.
+  // Seeded at activation (to "now", unless the node opts into including pre-existing responses)
+  // and advanced ONLY by a non-test run that finished with every step SUCCESS, so a test run or
+  // a partially-delivered batch can never skip responses forward. See
+  // services/automation/engine.ts advanceDigestWatermark().
+  lastDigestedAt DateTime?
+
   // Relations
   form Form              @relation(fields: [formId], references: [id], onDelete: Cascade)
   runs AutomationRun[]

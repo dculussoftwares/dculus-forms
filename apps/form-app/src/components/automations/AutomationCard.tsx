@@ -88,6 +88,10 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
   const [deleteAutomation] = useMutation(DELETE_AUTOMATION);
   const { runTest, isTesting } = useTestAutomation(automation.formId, automation.id);
 
+  // A schedule automation has no triggering response — its data comes from its Filter Responses
+  // step — so it is testable even on a form that has never been submitted.
+  const canTest = hasResponses || automation.triggerType === 'schedule';
+
   const openBuilder = () => navigate(`/dashboard/form/${automation.formId}/builder/automations/${automation.id}`);
   const openRuns = () => navigate(`/dashboard/form/${automation.formId}/builder/automations/${automation.id}/runs`);
 
@@ -183,7 +187,7 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
 
         <div className="shrink-0 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           {canEdit && (
-            hasResponses ? (
+            canTest ? (
               <Button
                 variant="ghost"
                 size="sm"

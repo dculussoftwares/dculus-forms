@@ -1187,6 +1187,12 @@ export const typeDefs = gql`
     createdBy: String!
     createdAt: String!
     updatedAt: String!
+    """
+    Digest watermark for schedule automations: responses submitted after this point are what the
+    next scheduled run will pick up. Seeded at activation, null before that (and on automations
+    whose digest node opted into covering the form's existing responses).
+    """
+    lastDigestedAt: String
   }
 
   type AutomationStepRun {

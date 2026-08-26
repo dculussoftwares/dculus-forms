@@ -185,8 +185,43 @@ export async function updateAutomation(
   return updated;
 }
 
+/**
+ * Watermark seeded into `Automation.lastDigestedAt` when a schedule automation with a digest node
+ * is activated for the first time.
+ *
+ * Without this, a digest node's first tick has no lower bound and matches the form's entire
+ * history — so switching on a "weekly digest" against a form with thousands of existing responses
+ * processes all of them at once, and with a per-response email action emails every one of those
+ * respondents. Defaulting the window to "from activation onwards" makes the first run mean what
+ * users read it to mean; a node that genuinely wants the backfill opts in via
+ * `includeExistingResponses`, which leaves the watermark unset.
+ *
+ * Only ever seeds a watermark that is still null, so pausing and reactivating never rewinds or
+ * skips the window an already-running automation was working through.
+ */
+function resolveActivationDigestWatermark(automation: {
+  triggerType: string;
+  graph: unknown;
+  lastDigestedAt?: Date | null;
+}): Date | null {
+  if (automation.triggerType !== 'schedule' || automation.lastDigestedAt) return null;
+
+  const nodes = (automation.graph as { nodes?: Array<{ type?: string; data?: any }> })?.nodes ?? [];
+  const digestNode = nodes.find((node) => node?.type === 'digest');
+  if (!digestNode) return null;
+  if (digestNode.data?.includeExistingResponses === true) return null;
+
+  return new Date();
+}
+
 export async function setAutomationStatus(
-  automation: { id: string; triggerType: string; graph: unknown; triggerConfig: unknown },
+  automation: {
+    id: string;
+    triggerType: string;
+    graph: unknown;
+    triggerConfig: unknown;
+    lastDigestedAt?: Date | null;
+  },
   status: string
 ) {
   if (!AUTOMATION_STATUSES.includes(status as (typeof AUTOMATION_STATUSES)[number])) {
@@ -213,9 +248,12 @@ export async function setAutomationStatus(
     }
   }
 
+  const digestWatermark = status === 'ACTIVE' ? resolveActivationDigestWatermark(automation) : null;
+
   const updated = await automationRepository.updateAutomation(automation.id, {
     status,
     updatedAt: new Date(),
+    ...(digestWatermark ? { lastDigestedAt: digestWatermark } : {}),
   });
 
   // Schedule/unschedule lifecycle (#201) — boss.schedule upserts, boss.unschedule is a
@@ -241,12 +279,55 @@ export async function deleteAutomation(automation: { id: string; triggerType: st
   return true;
 }
 
-export async function testAutomation(automation: {
-  id: string;
-  formId: string;
-  version: number;
-  graph: unknown;
-}, responseId?: string) {
+/**
+ * Starts a test run: a real run through the real graph, made safe rather than simulated. The
+ * engine fast-forwards delays, executes actions regardless of the automation's DRAFT/PAUSED
+ * status (so an automation can be rehearsed before it ever goes live), redirects email deliveries
+ * to `testUserEmail` instead of real respondents, samples rather than drains a digest node's
+ * window, and never advances the digest watermark.
+ *
+ * `testUserEmail` is where every email action in this run is redirected. It is threaded through
+ * the run context rather than resolved in the engine because only the resolver knows who pressed
+ * the button; without it the engine skips email deliveries instead of guessing.
+ */
+export async function testAutomation(
+  automation: {
+    id: string;
+    formId: string;
+    version: number;
+    graph: unknown;
+    triggerType: string;
+  },
+  responseId?: string,
+  testUserEmail?: string
+) {
+  // A schedule automation has no triggering response by design — its digest node is what supplies
+  // data, and graphValidator rejects response-dependent steps on it. Demanding a response here
+  // made schedule automations untestable on a form that had none, and injected response data into
+  // a triggerData that every downstream step is validated to treat as empty.
+  if (automation.triggerType === 'schedule') {
+    const context: AutomationRunContext = {
+      test: true,
+      testUserEmail,
+      triggerData: {},
+      trigger: { scheduledAt: new Date().toISOString() },
+    };
+
+    const run = await automationRepository.createRun({
+      id: generateId(),
+      automationId: automation.id,
+      responseId: null,
+      automationVersion: automation.version,
+      graphSnapshot: automation.graph as any,
+      status: 'RUNNING',
+      context: context as any,
+    });
+
+    await enqueueFirstStep(run);
+
+    return run;
+  }
+
   const response = responseId
     ? await responseRepository.findFirst({
         where: { id: responseId, formId: automation.formId, deletedAt: null },
@@ -265,6 +346,7 @@ export async function testAutomation(automation: {
 
   const context: AutomationRunContext = {
     test: true,
+    testUserEmail,
     triggerData: {
       ...(response.data as Record<string, any>),
       responseId: response.id,

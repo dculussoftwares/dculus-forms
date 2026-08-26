@@ -348,6 +348,72 @@ describe('automationService', () => {
       expect(result.status).toBe('ACTIVE');
     });
 
+    // Without this the digest node's first tick has no lower bound and matches the form's entire
+    // history — switching on a weekly digest against an established form would process, and with a
+    // per-response email action email, every response ever submitted.
+    describe('digest watermark seeding on activation', () => {
+      const scheduleAutomation = {
+        id: 'automation-1',
+        triggerType: 'schedule',
+        graph: { nodes: [{ id: 'd1', type: 'digest', data: {} }], edges: [] },
+        triggerConfig: { cron: '0 9 * * 1' },
+        lastDigestedAt: null,
+      };
+
+      beforeEach(() => {
+        vi.mocked(validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
+        vi.mocked(automationRepository.updateAutomation).mockResolvedValue({
+          ...scheduleAutomation,
+          status: 'ACTIVE',
+        } as any);
+      });
+
+      it('seeds the watermark to now so the first run covers only responses submitted after activation', async () => {
+        await setAutomationStatus(scheduleAutomation, 'ACTIVE');
+
+        expect(automationRepository.updateAutomation).toHaveBeenCalledWith(
+          'automation-1',
+          expect.objectContaining({ status: 'ACTIVE', lastDigestedAt: expect.any(Date) })
+        );
+      });
+
+      it('leaves the watermark unset when the node opts into including existing responses', async () => {
+        await setAutomationStatus(
+          {
+            ...scheduleAutomation,
+            graph: { nodes: [{ id: 'd1', type: 'digest', data: { includeExistingResponses: true } }], edges: [] },
+          },
+          'ACTIVE'
+        );
+
+        expect(automationRepository.updateAutomation).toHaveBeenCalledWith(
+          'automation-1',
+          expect.not.objectContaining({ lastDigestedAt: expect.anything() })
+        );
+      });
+
+      it('never re-seeds an automation that already has a watermark, so pause/reactivate cannot skip a window', async () => {
+        await setAutomationStatus(
+          { ...scheduleAutomation, lastDigestedAt: new Date('2026-02-01T00:00:00.000Z') },
+          'ACTIVE'
+        );
+
+        expect(automationRepository.updateAutomation).toHaveBeenCalledWith(
+          'automation-1',
+          expect.not.objectContaining({ lastDigestedAt: expect.anything() })
+        );
+      });
+
+      it('does not seed a watermark on a schedule automation with no digest node', async () => {
+        await setAutomationStatus({ ...scheduleAutomation, graph: { nodes: [], edges: [] } }, 'ACTIVE');
+
+        expect(automationRepository.updateAutomation).toHaveBeenCalledWith(
+          'automation-1',
+          expect.not.objectContaining({ lastDigestedAt: expect.anything() })
+        );
+      });
+    });
+
     it('does not validate the graph when pausing', async () => {
       vi.mocked(automationRepository.updateAutomation).mockResolvedValue({
         ...automation,
@@ -437,6 +503,7 @@ describe('automationService', () => {
       formId: 'form-1',
       version: 2,
       graph: { nodes: [], edges: [] },
+      triggerType: 'form.submitted',
     };
     const mockResponse = {
       id: 'response-1',
@@ -490,6 +557,42 @@ describe('automationService', () => {
 
       await expect(testAutomation(automation)).rejects.toThrow(/No response available/);
       expect(automationRepository.createRun).not.toHaveBeenCalled();
+    });
+
+    it('threads the tester\'s address into the run context so email actions can be redirected', async () => {
+      vi.mocked(responseRepository.findFirst).mockResolvedValue(mockResponse as any);
+      vi.mocked(automationRepository.createRun).mockResolvedValue({ id: 'run-1' } as any);
+      vi.mocked(enqueueFirstStep).mockResolvedValue(undefined as any);
+
+      await testAutomation(automation, undefined, 'tester@example.com');
+
+      expect(automationRepository.createRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          context: expect.objectContaining({ test: true, testUserEmail: 'tester@example.com' }),
+        })
+      );
+    });
+
+    // A schedule automation's data comes from its digest node, and graphValidator rejects
+    // response-dependent steps on it — so requiring a response made schedule automations
+    // untestable on a form that had none, and fed data downstream steps are validated to ignore.
+    it('tests a schedule automation with no triggering response at all', async () => {
+      vi.mocked(automationRepository.createRun).mockResolvedValue({ id: 'run-1' } as any);
+      vi.mocked(enqueueFirstStep).mockResolvedValue(undefined as any);
+
+      await testAutomation({ ...automation, triggerType: 'schedule' }, undefined, 'tester@example.com');
+
+      expect(responseRepository.findFirst).not.toHaveBeenCalled();
+      expect(automationRepository.createRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          responseId: null,
+          context: expect.objectContaining({
+            test: true,
+            testUserEmail: 'tester@example.com',
+            triggerData: {},
+          }),
+        })
+      );
     });
   });
 

@@ -47,14 +47,18 @@ export interface AutomationActionNodeData {
   [key: string]: unknown;
 }
 
-/** Schedule-trigger-only node: queries responses since the automation's last completed run. */
+/** Schedule-trigger-only node: queries responses submitted since the automation's digest watermark. */
 export interface AutomationDigestNodeData {
   /** Max responses to embed (default 50, hard cap 1000 — enforced server-side by graphValidator). */
   maxResponses?: number;
-  /** Additional narrowing filters ANDed with the mandatory since-last-run window. Only AND is
+  /** Additional narrowing filters ANDed with the mandatory window filter. Only AND is
    * supported — the app's filter model has no nested AND/OR grouping, so a filterLogic toggle
-   * here would be misleading given the since-filter is always ANDed in regardless. */
+   * here would be misleading given the window filter is always ANDed in regardless. */
   filters?: ConditionRule[];
+  /** Opt-in backfill. Activation normally seeds the watermark to "now", so the first run only
+   * picks up responses submitted after the automation went live; true makes the first run cover
+   * the form's existing responses too. See backend automationService.setAutomationStatus. */
+  includeExistingResponses?: boolean;
   [key: string]: unknown;
 }
 

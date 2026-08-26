@@ -9,6 +9,7 @@ const prismaMock = vi.hoisted(() => ({
     update: vi.fn().mockResolvedValue({}),
     delete: vi.fn().mockResolvedValue({}),
     count: vi.fn().mockResolvedValue(0),
+    updateMany: vi.fn().mockResolvedValue({ count: 0 }),
   },
   automationRun: {
     findMany: vi.fn().mockResolvedValue([]),
@@ -22,6 +23,7 @@ const prismaMock = vi.hoisted(() => ({
     findMany: vi.fn().mockResolvedValue([]),
     findFirst: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({}),
+    count: vi.fn().mockResolvedValue(0),
   },
   $executeRaw: vi.fn().mockResolvedValue(1),
 }));
@@ -189,12 +191,16 @@ describe('automationRepository', () => {
       });
     });
 
-    it('findLastCompletedRun scopes to COMPLETED status and orders by startedAt desc', async () => {
+    it('advanceDigestWatermark only moves the watermark forward, never backwards', async () => {
       const repo = createAutomationRepository();
-      await repo.findLastCompletedRun('automation-1');
-      expect(prismaMock.automationRun.findFirst).toHaveBeenCalledWith({
-        where: { automationId: 'automation-1', status: 'COMPLETED' },
-        orderBy: { startedAt: 'desc' },
+      const until = new Date('2026-03-01T00:00:00.000Z');
+      await repo.advanceDigestWatermark('automation-1', until);
+      expect(prismaMock.automation.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'automation-1',
+          OR: [{ lastDigestedAt: null }, { lastDigestedAt: { lt: until } }],
+        },
+        data: { lastDigestedAt: until },
       });
     });
   });
@@ -215,11 +221,22 @@ describe('automationRepository', () => {
       expect(prismaMock.automationStepRun.create).toHaveBeenCalledWith({ data: { id: 'step-1' } });
     });
 
-    it('findSuccessStepRun scopes to SUCCESS status', async () => {
+    // PARTIAL/SKIPPED count as executed: the handler already ran, so a redelivered job must
+    // reconcile rather than re-send. FAILED is excluded — that is what retries are for.
+    it('findExecutedStepRun matches every non-retryable outcome, not just SUCCESS', async () => {
       const repo = createAutomationRepository();
-      await repo.findSuccessStepRun('run-1', 'node-1');
+      await repo.findExecutedStepRun('run-1', 'node-1');
       expect(prismaMock.automationStepRun.findFirst).toHaveBeenCalledWith({
-        where: { runId: 'run-1', nodeId: 'node-1', status: 'SUCCESS' },
+        where: { runId: 'run-1', nodeId: 'node-1', status: { in: ['SUCCESS', 'PARTIAL', 'SKIPPED'] } },
+      });
+    });
+
+    it('listUnsuccessfulStepRuns returns the status and nodeType of every non-SUCCESS step', async () => {
+      const repo = createAutomationRepository();
+      await repo.listUnsuccessfulStepRuns('run-1');
+      expect(prismaMock.automationStepRun.findMany).toHaveBeenCalledWith({
+        where: { runId: 'run-1', status: { not: 'SUCCESS' } },
+        select: { status: true, nodeType: true },
       });
     });
 

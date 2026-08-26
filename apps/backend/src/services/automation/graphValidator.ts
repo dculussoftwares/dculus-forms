@@ -121,13 +121,15 @@ export const DIGEST_RESPONSE_SAFETY_CEILING = 5000;
 
 const DigestDataSchema = z.object({
   maxResponses: z.number().int().positive().max(DIGEST_RESPONSE_SAFETY_CEILING).optional(),
-  // Same ConditionRule shape as condition nodes — ANDed with the since-last-run filter at
-  // execution time (engine.ts) on every run EXCEPT the automation's very first tick, which has
-  // no "last run" to be incremental against and instead matches everything currently satisfying
-  // these filters (see engine.ts's handleDigestNode for the exact first-run semantics). No
-  // filterLogic here: only AND is supported, matching that since-filter (see AutomationDigestNode's
-  // data doc comment in types.ts).
+  // Same ConditionRule shape as condition nodes — ANDed at execution time (engine.ts) with the
+  // window filter derived from Automation.lastDigestedAt. No filterLogic here: only AND is
+  // supported, matching that since-filter (see AutomationDigestNode's data doc comment in
+  // types.ts).
   filters: z.array(ConditionRuleSchema).optional(),
+  // Opt-in backfill: activation seeds the watermark to "now" unless this is true, so the default
+  // first tick covers only responses submitted after the automation went live rather than the
+  // form's entire history (see automationService.setAutomationStatus).
+  includeExistingResponses: z.boolean().optional(),
 });
 
 /**

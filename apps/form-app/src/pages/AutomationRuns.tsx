@@ -26,8 +26,8 @@ const RunsContent: React.FC<{
   formId: string;
   automationId: string;
   automationName: string;
-  hasResponses: boolean;
-}> = ({ formId, automationId, automationName, hasResponses }) => {
+  canTest: boolean;
+}> = ({ formId, automationId, automationName, canTest }) => {
   const { t, locale } = useTranslation('automations');
   const { canEdit } = useFormPermissions();
   const navigate = useNavigate();
@@ -114,7 +114,7 @@ const RunsContent: React.FC<{
         </div>
 
         {canEdit && (
-          hasResponses ? (
+          canTest ? (
             <Button onClick={handleTest} disabled={isTesting} data-testid="test-automation-button">
               {isTesting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FlaskConical className="mr-1.5 h-4 w-4" />}
               {t('builder.header.testButton')}
@@ -300,7 +300,9 @@ const AutomationRuns: React.FC = () => {
           formId={formId!}
           automationId={automationId!}
           automationName={automation.name}
-          hasResponses={(form.responseCount ?? 0) > 0}
+          // A schedule automation has no triggering response — its data comes from its Filter
+          // Responses step — so it is testable even on a form that has never been submitted.
+          canTest={(form.responseCount ?? 0) > 0 || automation.triggerType === 'schedule'}
         />
       </FormPermissionProvider>
     </div>

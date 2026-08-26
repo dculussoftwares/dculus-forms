@@ -111,7 +111,7 @@ restarts because it lives in the database as a scheduled job.
 
 Test runs (the `testAutomation` mutation) fast-forward instead: the step is
 recorded `SKIPPED` with `fastForwarded: true` so the user sees end-to-end results
-immediately.
+immediately. See **Test runs** below for what else test mode changes.
 
 **Condition** — `handleConditionNode`
 
@@ -119,16 +119,71 @@ Evaluates the rules against `context.triggerData` and follows the edge whose
 `sourceHandle` is `'true'` or `'false'`. The branch taken is written into the
 step's `output`, which matters for crash recovery below.
 
+**Digest / "Filter Responses"** — `handleDigestNode`
+
+Queries responses in the window `(Automation.lastDigestedAt, run.startedAt]` and
+merges a bounded summary into `context.triggerData` under reserved `__digest*`
+keys.
+
+`lastDigestedAt` is an explicit watermark, not something derived from run history:
+
+- **Seeded at activation** to the moment the automation is switched on, so a first
+  tick covers only what arrives afterwards. Without this, activating a weekly
+  digest on an established form processes — and with a per-response email action,
+  emails — every response the form has ever received. A node can opt out via
+  `includeExistingResponses`, which leaves it unset so the first run covers
+  everything.
+- **Held whenever a step delivered nothing** (a `SKIPPED` action — no recipient
+  resolvable, email quota reached) and on every test run, so the next tick
+  re-covers the window. Nothing went out, so nothing can go out twice.
+- **Advanced on a `PARTIAL` step**, because part of that batch *did* reach people
+  and re-covering the window would send it to all of them again — there is no
+  per-response idempotency to retry against. The shortfall is reported on the run
+  instead of being silently re-blasted.
+
+On a test run the node ignores the watermark entirely and takes the ten most
+recent responses instead, flagged `sampled: true`.
+
 **Action** — `handleActionNode`
 
 1. Refuses to run if the automation is no longer `ACTIVE`, marking the step
    `SKIPPED` and the run `CANCELLED`. A paused automation stops mid-flight.
-2. Substitutes field mentions in the config against the trigger data, so
+   **Test runs are exempt** — every automation starts as `DRAFT`, so gating them
+   here would make it impossible to rehearse a flow before switching it on.
+2. Rewrites the config for test mode (`applyTestModeConfig`), redirecting email
+   to whoever pressed Test.
+3. Substitutes field mentions in the config against the trigger data, so
    `Hi @{name}` becomes the respondent's actual answer.
-3. Looks up `getPluginHandler(actionType)` and calls it with a synthetic plugin
+4. Looks up `getPluginHandler(actionType)` and calls it with a synthetic plugin
    id of `runId:nodeId` — there is no `FormPlugin` row behind an action node.
-4. Records `SUCCESS` with the handler's result, merges that result into
+5. Classifies the result (`classifyHandlerResult`) and records the step as
+   `SUCCESS`, `PARTIAL`, `SKIPPED`, or `FAILED`, merges the result into
    `context.stepOutputs`, and enqueues the successor.
+
+**Handlers report failure two ways.** Some throw; some *return* a result saying
+so — the webhook handler returns `{ success: false, statusCode }` for any non-2xx,
+and the email handler returns `{ skipped: true, skipReason }` or per-response
+`{ sentCount, skippedCount, failedCount }`. Both paths converge on the same step
+statuses, so a failed delivery can never be filed as a success. A returned
+`FAILED` retries exactly like a thrown one; `PARTIAL` does not, because there is
+no per-response idempotency to retry against.
+
+### Test runs
+
+`testAutomation` starts a real run through the real graph, made safe rather than
+simulated. Test mode is carried on the run context (`test: true`, plus the
+initiating user's `testUserEmail`) and changes five things:
+
+| | |
+|---|---|
+| Delay nodes | Fast-forwarded, recorded `SKIPPED` with `fastForwarded: true` |
+| The `ACTIVE` gate | Waived, so a `DRAFT` automation can be rehearsed before going live |
+| Email actions | Redirected to `testUserEmail`, subject prefixed `[Test]`, per-response batches collapsed to one message. No address means the send is `SKIPPED`, never sent to the configured recipient |
+| Other actions | Executed normally against the customer's own endpoint/spreadsheet, with `__isTest: true` on `event.data` so a receiver can tell |
+| Digest nodes | Sample the ten most recent responses; the watermark is never advanced |
+
+A schedule automation is tested with no triggering response at all, matching what
+a real cron tick does — so it is testable on a form that has never been submitted.
 
 ### Where an action's config gets written back
 
@@ -177,7 +232,14 @@ If the successor has no step run of its own, it gets re-enqueued;
 - **Only action nodes retry.** Delays and conditions are deterministic; retrying
   them buys nothing and risks duplicate step rows.
 - **A paused automation stops mid-flight.** The `status !== 'ACTIVE'` check sits
-  inside the action handler, not just at trigger time.
+  inside the action handler, not just at trigger time — except for test runs,
+  which are allowed to execute a `DRAFT` automation's actions.
+- **A test run can never reach a real respondent.** Email actions are redirected
+  to the tester, the digest node samples instead of draining its window, and the
+  watermark is never advanced.
+- **A window is never marked processed when nothing was delivered.** The digest
+  watermark is held on a test run and on any step that delivered nothing; it
+  advances on a partial delivery, which is reported rather than retried.
 - **The engine degrades to off, not to broken.** With no `DIRECT_URL`, pg-boss
   never starts and every enqueue logs a warning instead of throwing.
 
@@ -206,7 +268,7 @@ What this depends on:
 
 | Model | Access |
 |---|---|
-| `Automation` | RW — read at trigger, written by `updatePluginConfig` |
+| `Automation` | RW — read at trigger, written by `updatePluginConfig` and the digest watermark |
 | `AutomationRun` | RW |
 | `AutomationStepRun` | W |
 | `pgboss.*` schema | RW |
@@ -216,6 +278,9 @@ What this depends on:
 | Situation | What happens |
 |---|---|
 | Action handler throws, attempts remain | `FAILED` step recorded, error rethrown so pg-boss retries with backoff |
+| Action handler *returns* a failure (non-2xx webhook, batch that delivered nothing) | Same as throwing: `FAILED` step, retried |
+| Action handler returns a partial batch (some sent, some failed) | `PARTIAL` step, run settles `PARTIAL`, not retried, watermark advances |
+| Action handler returns `skipped` (no recipient, email quota reached) | `SKIPPED` step, run settles `PARTIAL`, watermark held for the next tick |
 | Action handler throws on the final attempt | `FAILED` step recorded, run marked `FAILED`, no rethrow |
 | Node id missing from the snapshot | `FAILED` step + `FAILED` run, written in one transaction so redelivery can't duplicate it |
 | Automation no longer `ACTIVE` | Step `SKIPPED`, run `CANCELLED` |
@@ -230,6 +295,8 @@ What this depends on:
 | `ACTION_RETRY_LIMIT = 3` | `engine.ts` | Retries per action node |
 | `MAX_DELAY_MS` = 30 days | `engine.ts` | Per-delay cap |
 | `MAX_DELAY_DAYS = 30` | `graphValidator.ts` | Cap on total delay along any path |
+| `DIGEST_TEST_SAMPLE_SIZE = 10` | `engine.ts` | Responses a digest node samples on a test run |
+| `includeExistingResponses` | Per digest node | Opt in to covering responses that predate activation |
 | Automation `status` | Per automation | `DRAFT` / `ACTIVE` / `PAUSED` |
 
 ## Related pages

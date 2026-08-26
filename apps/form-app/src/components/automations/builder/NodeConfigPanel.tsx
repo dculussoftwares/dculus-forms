@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   Button,
+  Checkbox,
   Input,
   Label,
   Select,
@@ -80,6 +81,8 @@ const DigestEditor: React.FC<{
   const { t } = useTranslation('automations');
   const updateNodeData = useAutomationBuilderStore((s) => s.updateNodeData);
 
+  const includeExisting = data.includeExistingResponses === true;
+
   return (
     <fieldset disabled={disabled} className="space-y-4">
       <DigestFiltersEditor
@@ -91,6 +94,30 @@ const DigestEditor: React.FC<{
       />
 
       <p className="text-xs text-muted-foreground">{t('builder.panel.digest.hint')}</p>
+
+      {/* Opt-in backfill. The default (unchecked) is what makes activating a digest on an
+          established form safe: without it the first run covers every response the form has ever
+          received, which a per-response email action turns into a message to each of them. */}
+      <div className="space-y-2 pt-1">
+        <div className="flex items-start gap-2.5">
+          <Checkbox
+            id="digest-include-existing"
+            checked={includeExisting}
+            disabled={disabled}
+            onCheckedChange={(checked) =>
+              updateNodeData(nodeId, { includeExistingResponses: checked === true })
+            }
+          />
+          <Label htmlFor="digest-include-existing" className="text-sm font-normal leading-snug cursor-pointer">
+            {t('builder.panel.digest.includeExistingLabel')}
+          </Label>
+        </div>
+        <p className="text-xs text-muted-foreground pl-[26px]">
+          {includeExisting
+            ? t('builder.panel.digest.includeExistingWarning')
+            : t('builder.panel.digest.includeExistingHint')}
+        </p>
+      </div>
     </fieldset>
   );
 };
