@@ -19,6 +19,12 @@ import { CombinedGraphQLErrors } from '@apollo/client';
 function getErrorMessage(error: unknown): string {
   if (CombinedGraphQLErrors.is(error)) return error.message;
   if (error instanceof Error) return error.message;
+  // Covers error-like values that aren't real Error instances — e.g. a plain object crossing a
+  // serialization boundary ({ name: 'NetworkError', message: '...' }) — so its message isn't
+  // lost behind a useless "[object Object]" from the String(error) fallback below.
+  if (error && typeof error === 'object' && 'message' in error && typeof (error as { message: unknown }).message === 'string') {
+    return (error as { message: string }).message;
+  }
   return String(error);
 }
 

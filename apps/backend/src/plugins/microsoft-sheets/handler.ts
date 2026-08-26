@@ -369,14 +369,26 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       }
     }
 
-    const sampleResponseData: Record<string, any> =
-      (singleResponse?.data as Record<string, any>) ?? digestResponses?.[0]?.data ?? {};
-
-    // Fixed key order derived ONCE from the sample above and reused by every row (buildRowValues)
-    // to stay aligned with the headers (buildHeaders) — see buildRowValues's no-schema comment.
+    // Fixed key order for buildHeaders()'s no-schema fallback, derived ONCE as the union of keys
+    // across EVERY response in this batch (not just the first) and reused by every row
+    // (buildRowValues) — see buildRowValues's no-schema comment. Deriving from only the first
+    // response would silently drop a column for any optional field a later digest response has
+    // but the first one lacks.
     const fallbackKeys: string[] = (() => {
       const skipKeys = new Set(['responseId', 'submittedAt']);
-      return Object.keys(sampleResponseData).filter((key) => !skipKeys.has(key));
+      const allResponseData: Record<string, any>[] = digestResponses
+        ? digestResponses.map((r) => r.data ?? {})
+        : [(singleResponse?.data as Record<string, any>) ?? {}];
+      const seen = new Set<string>();
+      const keys: string[] = [];
+      for (const data of allResponseData) {
+        for (const key of Object.keys(data)) {
+          if (skipKeys.has(key) || seen.has(key)) continue;
+          seen.add(key);
+          keys.push(key);
+        }
+      }
+      return keys;
     })();
 
     // 4. Auto-create workbook on first ever submission (or recreate if deleted)
@@ -462,10 +474,36 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     // sequential requests to stay under Graph's request-body limit. Each chunk re-derives the
     // next empty row from the workbook's used range, so later chunks correctly append after the
     // rows the previous chunk just wrote.
+    //
+    // Recreation-on-delete must restart the WHOLE batch, not just the chunk that hit the 404: if
+    // the workbook is deleted mid-batch (e.g. after chunk 2 of 5 has already been written) and
+    // only the failed chunk were retried against the freshly recreated workbook, chunks 1-2 would
+    // be silently lost — they were written to the now-gone workbook, and the new one would start
+    // from chunk 3 onward. So the per-chunk loop runs OUTSIDE any recovery: a 404 anywhere in it
+    // aborts the whole loop, the workbook is recreated once, and every chunk is re-appended from
+    // the start against the new (empty) workbook.
     const appendAllRowsChunked = async (rows: string[][]): Promise<void> => {
-      for (let i = 0; i < rows.length; i += MAX_ROWS_PER_APPEND_REQUEST) {
-        const chunk = rows.slice(i, i + MAX_ROWS_PER_APPEND_REQUEST);
-        await appendRowsWithRecovery(chunk);
+      const writeAllChunks = async (): Promise<void> => {
+        for (let i = 0; i < rows.length; i += MAX_ROWS_PER_APPEND_REQUEST) {
+          const chunk = rows.slice(i, i + MAX_ROWS_PER_APPEND_REQUEST);
+          await appendDataRows(workbookId!, worksheetName, chunk, accessToken);
+        }
+      };
+
+      try {
+        await writeAllChunks();
+      } catch (err) {
+        if (err instanceof WorkbookNotFoundError) {
+          context.logger.warn(
+            'Microsoft Sheets: workbook was deleted mid-digest-write — recreating and restarting the full batch',
+            { pluginId: plugin.id }
+          );
+          const recreated = await initWorkbook();
+          workbookId = recreated.workbookId;
+          await writeAllChunks();
+        } else {
+          throw err;
+        }
       }
     };
 

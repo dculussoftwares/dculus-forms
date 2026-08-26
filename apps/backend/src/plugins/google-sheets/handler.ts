@@ -321,16 +321,26 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       }
     }
 
-    // Sample data for buildHeaders()'s no-schema fallback (Object.keys) — the single response's
-    // data, or the first digest response's, whichever path is active.
-    const sampleResponseData: Record<string, any> =
-      (singleResponse?.data as Record<string, any>) ?? digestResponses?.[0]?.data ?? {};
-
-    // Fixed key order derived ONCE from the sample above and reused by every row (buildRowValues)
-    // to stay aligned with the headers (buildHeaders) — see buildRowValues's no-schema comment.
+    // Fixed key order for buildHeaders()'s no-schema fallback, derived ONCE as the union of keys
+    // across EVERY response in this batch (not just the first) and reused by every row
+    // (buildRowValues) — see buildRowValues's no-schema comment. Deriving from only the first
+    // response would silently drop a column for any optional field a later digest response has
+    // but the first one lacks.
     const fallbackKeys: string[] = (() => {
       const skipKeys = new Set(['responseId', 'submittedAt']);
-      return Object.keys(sampleResponseData).filter((key) => !skipKeys.has(key));
+      const allResponseData: Record<string, any>[] = digestResponses
+        ? digestResponses.map((r) => r.data ?? {})
+        : [(singleResponse?.data as Record<string, any>) ?? {}];
+      const seen = new Set<string>();
+      const keys: string[] = [];
+      for (const data of allResponseData) {
+        for (const key of Object.keys(data)) {
+          if (skipKeys.has(key) || seen.has(key)) continue;
+          seen.add(key);
+          keys.push(key);
+        }
+      }
+      return keys;
     })();
 
     // 3. Auto-create spreadsheet on first ever submission (or recreate if deleted)
@@ -415,15 +425,41 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     // large batches are chunked into sequential requests. The digest path only reports a total
     // rowsAppended count, so the per-chunk row numbers aren't needed there; only the first
     // chunk's result is surfaced, matching the single-row path's existing rowNumber semantics.
+    //
+    // Recreation-on-delete must restart the WHOLE batch, not just the chunk that hit the 404: if
+    // the spreadsheet is deleted mid-batch (e.g. after chunk 2 of 5 has already been written) and
+    // only the failed chunk were retried against the freshly recreated spreadsheet, chunks 1-2
+    // would be silently lost — they were written to the now-gone spreadsheet, and the new one
+    // would start from chunk 3 onward. So the per-chunk loop runs OUTSIDE any recovery: a 404
+    // anywhere in it aborts the whole loop, the spreadsheet is recreated once, and every chunk is
+    // re-appended from the start against the new (empty) spreadsheet.
     const appendAllRowsChunked = async (rows: string[][]): Promise<number | undefined> => {
       if (rows.length === 0) return undefined;
-      let firstRowNumber: number | undefined;
-      for (let i = 0; i < rows.length; i += MAX_ROWS_PER_APPEND_REQUEST) {
-        const chunk = rows.slice(i, i + MAX_ROWS_PER_APPEND_REQUEST);
-        const result = await appendRowsWithRecovery(chunk);
-        if (i === 0) firstRowNumber = result;
+
+      const writeAllChunks = async (): Promise<number | undefined> => {
+        let firstRowNumber: number | undefined;
+        for (let i = 0; i < rows.length; i += MAX_ROWS_PER_APPEND_REQUEST) {
+          const chunk = rows.slice(i, i + MAX_ROWS_PER_APPEND_REQUEST);
+          const result = await appendDataRows(spreadsheetId!, chunk, accessToken);
+          if (i === 0) firstRowNumber = result;
+        }
+        return firstRowNumber;
+      };
+
+      try {
+        return await writeAllChunks();
+      } catch (err) {
+        if (err instanceof SpreadsheetNotFoundError) {
+          context.logger.warn(
+            'Google Sheets: spreadsheet was deleted mid-digest-write — recreating and restarting the full batch',
+            { pluginId: plugin.id }
+          );
+          const recreated = await initSpreadsheet();
+          spreadsheetId = recreated.spreadsheetId;
+          return writeAllChunks();
+        }
+        throw err;
       }
-      return firstRowNumber;
     };
 
     if (digestResponses) {

@@ -69,11 +69,23 @@ function buildDigestResponseTable(
     }
   }
 
-  // Fallback key order is fixed ONCE from the first response and reused for every row below —
-  // Object.keys/Object.values on each row's own `data` independently would misalign columns
-  // whenever responses have differing key sets or insertion order (e.g. an optional field present
-  // on some submissions but not others).
-  const fallbackKeys = Object.keys(responses[0]?.data ?? {});
+  // Fallback key order is fixed ONCE — as the union of keys across EVERY response in this batch,
+  // not just the first — and reused for every row below. Object.keys/Object.values on each row's
+  // own `data` independently would misalign columns whenever responses have differing key sets or
+  // insertion order, and deriving from only the first response would silently drop a column for
+  // any optional field a later response has but the first one lacks.
+  const fallbackKeys: string[] = (() => {
+    const seen = new Set<string>();
+    const keys: string[] = [];
+    for (const r of responses) {
+      for (const key of Object.keys(r.data ?? {})) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+        keys.push(key);
+      }
+    }
+    return keys;
+  })();
   const columnLabels = fieldEntries.length > 0 ? fieldEntries.map((f) => f.label) : fallbackKeys;
   const headers = [...columnLabels, 'Submitted At'];
 
