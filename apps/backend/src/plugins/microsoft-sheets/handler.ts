@@ -14,6 +14,24 @@ interface DigestResponseEntry {
   data: Record<string, any>;
 }
 
+/**
+ * `event.data` is a plain `Record<string, any>` — `__digestResponses` reaches this handler via
+ * that generic channel with no compile-time guarantee of its shape, so a bare `as
+ * DigestResponseEntry[]` cast could let a malformed entry (e.g. a bug upstream in engine.ts's
+ * triggerData merge) crash deep inside row-building logic with a cryptic error instead of failing
+ * predictably here.
+ */
+function isValidDigestResponseEntry(entry: unknown): entry is DigestResponseEntry {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    typeof (entry as Record<string, unknown>).id === 'string' &&
+    typeof (entry as Record<string, unknown>).submittedAt === 'string' &&
+    typeof (entry as Record<string, unknown>).data === 'object' &&
+    (entry as Record<string, unknown>).data !== null
+  );
+}
+
 const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';
 const MS_TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
 
@@ -346,7 +364,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     // upstream digest node, #automations-digest) carries zero-to-many responses in
     // event.data.__digestResponses instead of exactly one event.data.responseId.
     const digestResponses = Array.isArray((event.data as Record<string, any>).__digestResponses)
-      ? ((event.data as Record<string, any>).__digestResponses as DigestResponseEntry[])
+      ? ((event.data as Record<string, any>).__digestResponses as unknown[]).filter(isValidDigestResponseEntry)
       : null;
 
     let singleResponse: Awaited<ReturnType<typeof context.getResponseById>> | null = null;

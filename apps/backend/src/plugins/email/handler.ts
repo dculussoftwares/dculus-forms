@@ -14,6 +14,24 @@ interface DigestResponseEntry {
   data: Record<string, any>;
 }
 
+/**
+ * `event.data` is a plain `Record<string, any>` — `__digestResponses` reaches this handler via
+ * that generic channel with no compile-time guarantee of its shape, so a bare `as
+ * DigestResponseEntry[]` cast could let a malformed entry (e.g. a bug upstream in engine.ts's
+ * triggerData merge) crash deep inside per-response send/table-rendering logic with a cryptic
+ * error instead of failing predictably here.
+ */
+function isValidDigestResponseEntry(entry: unknown): entry is DigestResponseEntry {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    typeof (entry as Record<string, unknown>).id === 'string' &&
+    typeof (entry as Record<string, unknown>).submittedAt === 'string' &&
+    typeof (entry as Record<string, unknown>).data === 'object' &&
+    (entry as Record<string, unknown>).data !== null
+  );
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -311,7 +329,9 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
     // per-response digest send branch immediately following).
     const formSchema = deserializeFormSchema(form.formSchema);
 
-    const digestResponses = event.data.__digestResponses as DigestResponseEntry[] | undefined;
+    const digestResponses = Array.isArray(event.data.__digestResponses)
+      ? (event.data.__digestResponses as unknown[]).filter(isValidDigestResponseEntry)
+      : undefined;
     if (config.recipientFieldId && Array.isArray(digestResponses)) {
       return await sendPerResponseDigestEmails(config, formSchema, digestResponses, event, context);
     }
