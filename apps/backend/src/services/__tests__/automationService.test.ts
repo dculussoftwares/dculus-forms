@@ -11,12 +11,13 @@ import {
   listAutomationRuns,
   getAutomationRunWithAutomation,
   cancelAutomationRun,
+  retryAutomationRun,
   listStepRuns,
 } from '../automationService.js';
 import { automationRepository, responseRepository } from '../../repositories/index.js';
 import { getAvailablePluginTypes } from '../../plugins/core/registry.js';
 import { validateAutomationGraph } from '../automation/graphValidator.js';
-import { enqueueFirstStep } from '../automation/engine.js';
+import { enqueueFirstStep, enqueueRunStep } from '../automation/engine.js';
 import {
   cancelRunsForAutomation,
   cancelSingleAutomationRun,
@@ -593,6 +594,114 @@ describe('automationService', () => {
           }),
         })
       );
+    });
+  });
+
+  describe('retryAutomationRun', () => {
+    const failedRun = (overrides: Record<string, any> = {}) => ({
+      id: 'run-1',
+      status: 'FAILED',
+      context: {},
+      graphSnapshot: { nodes: [], edges: [] },
+      automation: {
+        id: 'automation-1',
+        status: 'ACTIVE',
+        formId: 'form-1',
+        graph: {
+          nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'webhook', config: { url: 'https://fixed' } } }],
+          edges: [],
+        },
+      },
+      ...overrides,
+    });
+
+    beforeEach(() => {
+      vi.mocked(enqueueRunStep).mockResolvedValue(undefined as any);
+      vi.mocked(automationRepository.findRunById).mockResolvedValue({ id: 'run-1' } as any);
+      vi.mocked(automationRepository.findLatestFailedStepRun).mockResolvedValue({
+        nodeId: 'action-1',
+      } as any);
+    });
+
+    // Resuming, not re-running: the steps that already succeeded must not deliver a second time.
+    it('resumes from the failed step rather than the start of the graph', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+
+      await retryAutomationRun('run-1');
+
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+        status: 'RUNNING',
+        completedAt: null,
+        currentNodeId: 'action-1',
+      });
+      expect(enqueueRunStep).toHaveBeenCalledWith({ id: 'run-1' }, 'action-1');
+      expect(enqueueFirstStep).not.toHaveBeenCalled();
+    });
+
+    // A retry is usually prompted by a fix, so replaying the frozen config would fail identically.
+    it('refreshes the failed action\'s config from the live graph before resuming', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+
+      await retryAutomationRun('run-1');
+
+      expect(automationRepository.setNodeConfigInRunSnapshot).toHaveBeenCalledWith(
+        'run-1',
+        'action-1',
+        { url: 'https://fixed' }
+      );
+    });
+
+    it('leaves the snapshot alone when the failed node is no longer in the live graph', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        failedRun({
+          automation: { id: 'automation-1', status: 'ACTIVE', formId: 'form-1', graph: { nodes: [], edges: [] } },
+        }) as any
+      );
+
+      await retryAutomationRun('run-1');
+
+      expect(automationRepository.setNodeConfigInRunSnapshot).not.toHaveBeenCalled();
+      expect(enqueueRunStep).toHaveBeenCalled();
+    });
+
+    it('refuses to retry a run that is not FAILED', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        failedRun({ status: 'PARTIAL' }) as any
+      );
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow(/Only failed runs/);
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
+    // Retrying a paused automation would just cancel at the first action node — say so up front.
+    it('refuses to retry while the automation is not ACTIVE', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        failedRun({
+          automation: { id: 'automation-1', status: 'PAUSED', formId: 'form-1', graph: { nodes: [], edges: [] } },
+        }) as any
+      );
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow(/Activate this automation/);
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
+    it('allows retrying a test run on a DRAFT automation, matching what test runs are allowed to do', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        failedRun({
+          context: { test: true },
+          automation: { id: 'automation-1', status: 'DRAFT', formId: 'form-1', graph: { nodes: [], edges: [] } },
+        }) as any
+      );
+
+      await retryAutomationRun('run-1');
+
+      expect(enqueueRunStep).toHaveBeenCalled();
+    });
+
+    it('throws when the run does not exist', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(null);
+
+      await expect(retryAutomationRun('missing')).rejects.toThrow('Automation run not found');
     });
   });
 

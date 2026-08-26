@@ -1669,6 +1669,12 @@ export const typeDefs = gql`
     deleteAutomation(id: ID!): Boolean!
     testAutomation(id: ID!, responseId: ID): AutomationRun!
     cancelAutomationRun(runId: ID!): AutomationRun!
+    """
+    Resumes a FAILED run from the step it died on, refreshing that step's config from the
+    automation's live graph first so a fix takes effect. Steps that already succeeded are not
+    re-run.
+    """
+    retryAutomationRun(runId: ID!): AutomationRun!
 
     # PDF Template Mutations
     createPdfTemplate(input: CreatePdfTemplateInput!): PdfTemplate!

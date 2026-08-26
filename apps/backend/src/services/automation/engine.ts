@@ -217,6 +217,18 @@ async function enqueueStep(
   );
 }
 
+/**
+ * Re-enqueues one specific node of an existing run — the retry entry point (gap H). Unlike
+ * `enqueueFirstStep` this resumes mid-graph, so steps that already succeeded are not re-run and
+ * cannot deliver twice.
+ */
+export async function enqueueRunStep(
+  run: { id: string; graphSnapshot: unknown },
+  nodeId: string
+): Promise<void> {
+  await enqueueStep(run.id, nodeId, run.graphSnapshot as unknown as AutomationGraph);
+}
+
 /** Trigger service (#194) entry point — enqueues the node reachable from the graph's trigger node. */
 export async function enqueueFirstStep(run: { id: string; graphSnapshot: unknown }): Promise<void> {
   const graph = run.graphSnapshot as unknown as AutomationGraph;

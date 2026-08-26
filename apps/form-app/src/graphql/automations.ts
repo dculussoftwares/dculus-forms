@@ -167,3 +167,13 @@ export const CANCEL_AUTOMATION_RUN: TypedDocumentNode<any, any> = gql`
     }
   }
 `;
+
+export const RETRY_AUTOMATION_RUN: TypedDocumentNode<any, any> = gql`
+  mutation RetryAutomationRun($runId: ID!) {
+    retryAutomationRun(runId: $runId) {
+      id
+      status
+      completedAt
+    }
+  }
+`;

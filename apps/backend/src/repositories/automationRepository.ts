@@ -167,6 +167,16 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     prisma.automationStepRun.findFirst({ where: { runId, nodeId } });
 
   /**
+   * The step a FAILED run died on — where a retry (gap H) resumes from. Newest first, because a
+   * retried run accumulates one row per attempt and the last failure is the one still outstanding.
+   */
+  const findLatestFailedStepRun = async (runId: string) =>
+    prisma.automationStepRun.findFirst({
+      where: { runId, status: 'FAILED' },
+      orderBy: { startedAt: 'desc' },
+    });
+
+  /**
    * Atomically replaces one node's `data.config` inside a `{ nodes: [...], edges: [...] }`
    * JSON column, leaving every other node untouched. `SET column = jsonb_set(column, ...)`
    * re-reads the row's latest *committed* value at execution time, so concurrent writes
@@ -253,6 +263,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     findExecutedStepRun,
     listStepOutcomes,
     findStepRunByNode,
+    findLatestFailedStepRun,
 
     // Transaction-participating raw writes (see engine.ts updateAutomationNodeConfig)
     setNodeConfigInGraph,

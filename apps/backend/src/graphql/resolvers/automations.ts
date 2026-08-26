@@ -225,6 +225,24 @@ export const automationsResolvers = {
 
       return automationService.cancelAutomationRun(runId);
     },
+
+    retryAutomationRun: async (
+      _: any,
+      { runId }: { runId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+      const run = await automationService.getAutomationRunWithAutomation(runId);
+
+      await assertFormAccess(
+        context,
+        run.automation.formId,
+        PermissionLevel.EDITOR,
+        'Access denied: You need EDITOR access to retry this automation run'
+      );
+
+      return automationService.retryAutomationRun(runId);
+    },
   },
 
   Automation: {

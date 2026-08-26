@@ -287,6 +287,7 @@
     "responseLink": "View response",
     "noResponse": "—",
     "cancelButton": "Cancel run",
+    "retryButton": "Retry",
     "cancelConfirm": {
       "title": "Cancel this run?",
       "description": "This stops the run at its current step. Steps that already completed aren't undone.",
@@ -320,6 +321,9 @@
       "testErrorTitle": "Couldn't start test run",
       "cancelledTitle": "Run cancelled",
       "cancelledMessage": "The run has been cancelled.",
+      "retriedTitle": "Retrying run",
+      "retriedMessage": "Picking up from the step that failed.",
+      "retryErrorTitle": "Couldn't retry this run",
       "cancelErrorTitle": "Couldn't cancel run"
     }
   }
