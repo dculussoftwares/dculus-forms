@@ -101,10 +101,17 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
    * because a unique index on active runs would wrongly forbid the concurrent runs that
    * form.submitted automations create legitimately, one per submission. The lock releases with the
    * transaction, so a crashed worker cannot wedge an automation.
+   *
+   * `hashtextextended` (64-bit), NOT `hashtext` (32-bit): the advisory lock namespace is global
+   * across every automation in the database, and two ids colliding would make one automation's
+   * tick see the other's lock and skip. That skip is silent by design — a worker that loses the
+   * claim records nothing, since the winner is expected to decide — so a collision would drop
+   * ticks with no trace at all. 32 bits puts the birthday bound around 65k automations, which is a
+   * reachable number; 64 bits moves it past 4 billion.
    */
   const tryLockScheduledTick = async (automationId: string): Promise<boolean> => {
     const rows = await prisma.$queryRaw<Array<{ locked: boolean }>>(
-      Prisma.sql`SELECT pg_try_advisory_xact_lock(hashtext(${`automation-tick:${automationId}`})) AS locked`
+      Prisma.sql`SELECT pg_try_advisory_xact_lock(hashtextextended(${`automation-tick:${automationId}`}, 0)) AS locked`
     );
     return rows[0]?.locked === true;
   };
