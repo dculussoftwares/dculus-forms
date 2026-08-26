@@ -30,11 +30,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@dculus/ui';
-import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, FlaskConical, AlertTriangle } from 'lucide-react';
+import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, FlaskConical, AlertTriangle, Copy } from 'lucide-react';
 import {
   UPDATE_AUTOMATION,
   SET_AUTOMATION_STATUS,
   DELETE_AUTOMATION,
+  DUPLICATE_AUTOMATION,
   GET_FORM_AUTOMATIONS,
 } from '../../graphql/automations';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -90,6 +91,8 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
   const [updateAutomation] = useMutation(UPDATE_AUTOMATION);
   const [setAutomationStatus] = useMutation(SET_AUTOMATION_STATUS);
   const [deleteAutomation] = useMutation(DELETE_AUTOMATION);
+  const [duplicateAutomation] = useMutation(DUPLICATE_AUTOMATION);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const { runTest, isTesting } = useTestAutomation(automation.formId, automation.id);
 
   // A schedule automation has no triggering response — its data comes from its Filter Responses
@@ -120,6 +123,22 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
       toastError(t('toasts.statusErrorTitle'), error.message);
     } finally {
       setIsTogglingStatus(false);
+    }
+  };
+
+  const handleDuplicate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDuplicating(true);
+    try {
+      const { data } = await duplicateAutomation({ variables: { id: automation.id }, refetchQueries });
+      toastSuccess(
+        t('toasts.duplicatedTitle'),
+        t('toasts.duplicatedMessage', { values: { name: data.duplicateAutomation.name } })
+      );
+    } catch (error: any) {
+      toastError(t('toasts.duplicateErrorTitle'), error.message);
+    } finally {
+      setIsDuplicating(false);
     }
   };
 
@@ -264,6 +283,12 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
                   >
                     <PencilLine className="mr-2 h-4 w-4" />
                     {t('card.actions.rename')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDuplicate} disabled={isDuplicating}>
+                    {isDuplicating
+                      ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      : <Copy className="mr-2 h-4 w-4" />}
+                    {t('card.actions.duplicate')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

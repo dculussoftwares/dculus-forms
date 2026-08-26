@@ -1668,7 +1668,10 @@ export const typeDefs = gql`
     cancelPluginBackfill(jobId: ID!): PluginBackfillJob!
 
     # Automation Mutations
-    createAutomation(formId: ID!, name: String!, triggerType: String!): Automation!
+    """The template arg selects a starter graph and pins its own triggerType (see automation/templates.ts)."""
+    createAutomation(formId: ID!, name: String!, triggerType: String!, template: String): Automation!
+    """Copies an automation within its form as a DRAFT, with integration bindings stripped."""
+    duplicateAutomation(id: ID!): Automation!
     updateAutomation(id: ID!, name: String, graph: JSON, triggerConfig: JSON): Automation!
     setAutomationStatus(id: ID!, status: String!): Automation!
     deleteAutomation(id: ID!): Boolean!

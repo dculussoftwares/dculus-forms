@@ -93,8 +93,8 @@ export const GET_AUTOMATION_RUN: TypedDocumentNode<any, any> = gql`
 // ============================================================================
 
 export const CREATE_AUTOMATION: TypedDocumentNode<any, any> = gql`
-  mutation CreateAutomation($formId: ID!, $name: String!, $triggerType: String!) {
-    createAutomation(formId: $formId, name: $name, triggerType: $triggerType) {
+  mutation CreateAutomation($formId: ID!, $name: String!, $triggerType: String!, $template: String) {
+    createAutomation(formId: $formId, name: $name, triggerType: $triggerType, template: $template) {
       id
       formId
       name
@@ -142,6 +142,16 @@ export const SET_AUTOMATION_STATUS: TypedDocumentNode<any, any> = gql`
 export const DELETE_AUTOMATION: TypedDocumentNode<any, any> = gql`
   mutation DeleteAutomation($id: ID!) {
     deleteAutomation(id: $id)
+  }
+`;
+
+export const DUPLICATE_AUTOMATION: TypedDocumentNode<any, any> = gql`
+  mutation DuplicateAutomation($id: ID!) {
+    duplicateAutomation(id: $id) {
+      id
+      name
+      status
+    }
   }
 `;
 

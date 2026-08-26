@@ -44,7 +44,8 @@
       "activate": "Activate",
       "pause": "Pause",
       "rename": "Rename",
-      "delete": "Delete"
+      "delete": "Delete",
+      "duplicate": "Duplicate"
     }
   },
   "createDialog": {
@@ -55,7 +56,31 @@
     "triggerLabel": "Trigger",
     "cancel": "Cancel",
     "create": "Create",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "templateLabel": "Start from",
+    "templateTriggerNote": "This template runs on: {{trigger}}",
+    "templates": {
+      "blank": {
+        "name": "Start from scratch",
+        "description": "An empty flow you build step by step."
+      },
+      "confirmation-email": {
+        "name": "Send a confirmation email",
+        "description": "Email the respondent as soon as they submit."
+      },
+      "follow-up-email": {
+        "name": "Follow up after 3 days",
+        "description": "Wait three days after a submission, then email."
+      },
+      "notify-webhook": {
+        "name": "Post to a webhook",
+        "description": "Send each submission to a URL of your choice."
+      },
+      "weekly-digest": {
+        "name": "Scheduled summary email",
+        "description": "On a schedule, email a summary of new responses — and skip it when there are none."
+      }
+    }
   },
   "renameDialog": {
     "title": "Rename automation",
@@ -86,7 +111,10 @@
     "statusErrorTitle": "Couldn't update automation status",
     "deletedTitle": "Automation deleted",
     "deletedMessage": "\"{{name}}\" has been deleted",
-    "deleteErrorTitle": "Couldn't delete automation"
+    "deleteErrorTitle": "Couldn't delete automation",
+    "duplicatedTitle": "Automation duplicated",
+    "duplicatedMessage": "\"{{name}}\" was created as a draft",
+    "duplicateErrorTitle": "Couldn't duplicate automation"
   },
   "builder": {
     "comingSoon": "The visual builder is coming soon. You'll be able to design trigger → rules → actions flows here.",

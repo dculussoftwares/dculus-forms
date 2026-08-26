@@ -12,6 +12,8 @@ import {
   unscheduleAutomationCron,
 } from './automation/triggerService.js';
 import { isValidCronExpression, isValidTimezone } from './automation/cronValidator.js';
+import { AUTOMATION_TEMPLATE_IDS, getAutomationTemplate } from './automation/templates.js';
+import { copyAutomation } from './automation/copyAutomation.js';
 import type { AutomationGraph, AutomationRunContext } from './automation/types.js';
 
 /**
@@ -105,12 +107,26 @@ export async function createAutomation(params: {
   name: string;
   triggerType: string;
   createdBy: string;
+  /** Starter graph to begin from (gap I). Its own triggerType wins over the `triggerType` arg. */
+  template?: string;
 }) {
-  const { formId, organizationId, name, triggerType, createdBy } = params;
+  const { formId, organizationId, name, createdBy } = params;
 
   if (!name || name.trim().length === 0) {
     throw createGraphQLError('Automation name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
   }
+
+  // A template dictates its own trigger — a follow-up email only makes sense on a submission, a
+  // digest only on a schedule — so it takes precedence over whatever the dialog last had selected.
+  const template = params.template ? getAutomationTemplate(params.template) : undefined;
+  if (params.template && !template) {
+    throw createGraphQLError(
+      `Unknown automation template: ${params.template}. Available: ${AUTOMATION_TEMPLATE_IDS.join(', ')}`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  const triggerType = template?.triggerType ?? params.triggerType;
   if (!TRIGGER_TYPES.includes(triggerType as (typeof TRIGGER_TYPES)[number])) {
     throw createGraphQLError(
       `Invalid trigger type: ${triggerType}. Supported types: ${TRIGGER_TYPES.join(', ')}`,
@@ -125,10 +141,30 @@ export async function createAutomation(params: {
     name,
     status: 'DRAFT',
     triggerType,
-    graph: buildDefaultGraph(triggerType) as any,
+    graph: (template ? template.buildGraph() : buildDefaultGraph(triggerType)) as any,
     version: 1,
     createdBy,
   });
+}
+
+/**
+ * Duplicates one automation within its own form (gap I) — the cheapest way to build a variant of a
+ * flow that already works. Always lands as a DRAFT with integration bindings stripped, so it can
+ * never start double-delivering alongside the original the moment it is created.
+ */
+export async function duplicateAutomation(
+  automation: {
+    id: string;
+    name: string;
+    formId: string;
+    organizationId: string;
+    triggerType: string;
+    triggerConfig: unknown;
+    graph: unknown;
+  },
+  createdBy: string
+) {
+  return copyAutomation(automation, automation.formId, createdBy, `${automation.name} (Copy)`);
 }
 
 /**

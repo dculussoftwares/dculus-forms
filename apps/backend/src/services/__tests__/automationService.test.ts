@@ -310,6 +310,72 @@ describe('automationService', () => {
     });
   });
 
+  describe('createAutomation with a template', () => {
+    beforeEach(() => {
+      vi.mocked(automationRepository.createAutomation).mockResolvedValue({ id: 'automation-1' } as any);
+    });
+
+    // A follow-up email only makes sense on a submission and a digest only on a schedule, so the
+    // template's trigger must win over whatever the dialog last had selected.
+    it('pins the trigger from the template, overriding the argument', async () => {
+      await createAutomation({
+        formId: 'form-1',
+        organizationId: 'org-1',
+        name: 'Weekly summary',
+        triggerType: 'form.submitted',
+        template: 'weekly-digest',
+        createdBy: 'user-1',
+      });
+
+      expect(automationRepository.createAutomation).toHaveBeenCalledWith(
+        expect.objectContaining({ triggerType: 'schedule' })
+      );
+    });
+
+    it('builds the template graph rather than the empty default', async () => {
+      await createAutomation({
+        formId: 'form-1',
+        organizationId: 'org-1',
+        name: 'Confirmation',
+        triggerType: 'form.submitted',
+        template: 'confirmation-email',
+        createdBy: 'user-1',
+      });
+
+      const [data] = vi.mocked(automationRepository.createAutomation).mock.calls[0];
+      const nodes = (data as any).graph.nodes;
+      expect(nodes.some((n: any) => n.type === 'action' && n.data.actionType === 'email')).toBe(true);
+    });
+
+    it('rejects an unknown template id instead of silently falling back to blank', async () => {
+      await expect(
+        createAutomation({
+          formId: 'form-1',
+          organizationId: 'org-1',
+          name: 'X',
+          triggerType: 'form.submitted',
+          template: 'not-a-template',
+          createdBy: 'user-1',
+        })
+      ).rejects.toThrow(/Unknown automation template/);
+      expect(automationRepository.createAutomation).not.toHaveBeenCalled();
+    });
+
+    it('still honours the triggerType argument with no template', async () => {
+      await createAutomation({
+        formId: 'form-1',
+        organizationId: 'org-1',
+        name: 'Blank',
+        triggerType: 'response.edited',
+        createdBy: 'user-1',
+      });
+
+      expect(automationRepository.createAutomation).toHaveBeenCalledWith(
+        expect.objectContaining({ triggerType: 'response.edited' })
+      );
+    });
+  });
+
   describe('setAutomationStatus', () => {
     const automation = {
       id: 'automation-1',
