@@ -230,7 +230,7 @@
         "hint": "The next step runs after this delay has passed."
       },
       "digest": {
-        "hint": "Each run picks up only the responses submitted since the last successful run, so nothing gets emailed or processed twice. Add a Condition step next to skip the rest when there's nothing new — check \"New responses count\".",
+        "hint": "Each run picks up only the responses no earlier run has processed yet, so nothing gets emailed or processed twice. Add a Condition step next to skip the rest when there's nothing new — check \"New responses count\".",
         "countFieldLabel": "New responses count",
         "filtersLabel": "Only include responses matching",
         "noFiltersHint": "No filters — every new response is included. Add a filter to narrow it down (e.g. only a specific tag or score range).",

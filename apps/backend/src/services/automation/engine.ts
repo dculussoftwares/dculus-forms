@@ -104,13 +104,7 @@ function findNextNodeId(
  * retried — which is the honest trade until per-response tracking exists.
  */
 async function completeRun(run: SettleableRun): Promise<void> {
-  const imperfectSteps = await automationRepository.listUnsuccessfulStepRuns(run.id);
-
-  const isActionStep = (nodeType: string) => nodeType.startsWith('action:');
-  const blemishes = imperfectSteps.filter(
-    (step) => step.status !== 'SKIPPED' || isActionStep(step.nodeType)
-  );
-  const undelivered = blemishes.filter((step) => step.status === 'SKIPPED');
+  const { blemishes, undelivered } = await summarizeRunOutcome(run.id);
 
   const status = blemishes.length > 0 ? 'PARTIAL' : 'COMPLETED';
   await automationRepository.updateRun(run.id, { status, completedAt: new Date() });
@@ -129,6 +123,49 @@ async function completeRun(run: SettleableRun): Promise<void> {
   }
 
   await advanceDigestWatermark(run);
+}
+
+/**
+ * Resolves a run's step rows down to one outcome per node, then splits those into the two sets
+ * `completeRun` needs: nodes that fell short of a clean success, and nodes that delivered nothing.
+ *
+ * **One outcome per node, not per row.** A retried action writes a row per attempt, so a node that
+ * failed once and succeeded on the retry has both a `FAILED` and a `SUCCESS` row. Only the final
+ * attempt counts — reading every row would file a run as `PARTIAL` because of a failure the retry
+ * already made good. A node stops executing the moment it reaches a non-`FAILED` conclusion
+ * (`findExecutedStepRun` is the redelivery guard), so "the non-`FAILED` row if there is one,
+ * otherwise `FAILED`" is exactly the final attempt.
+ *
+ * A `SKIPPED` delay is excluded from both sets: that is a test run fast-forwarding the wait, not a
+ * step falling short. Only an action has a delivery it can skip.
+ */
+async function summarizeRunOutcome(
+  runId: string
+): Promise<{ blemishes: string[]; undelivered: string[] }> {
+  const stepRows = await automationRepository.listStepOutcomes(runId);
+
+  const finalOutcomeByNode = new Map<string, { nodeType: string; status: string }>();
+  for (const row of stepRows) {
+    const recorded = finalOutcomeByNode.get(row.nodeId);
+    if (!recorded || recorded.status === 'FAILED') {
+      finalOutcomeByNode.set(row.nodeId, { nodeType: row.nodeType, status: row.status });
+    }
+  }
+
+  const blemishes: string[] = [];
+  const undelivered: string[] = [];
+
+  for (const [nodeId, { nodeType, status }] of finalOutcomeByNode) {
+    if (status === 'SUCCESS') continue;
+    if (status === 'SKIPPED' && !nodeType.startsWith('action:')) continue;
+
+    blemishes.push(nodeId);
+    // FAILED and SKIPPED both mean this step put nothing out the door; PARTIAL means some of it
+    // did, which is what makes re-covering the window unsafe.
+    if (status !== 'PARTIAL') undelivered.push(nodeId);
+  }
+
+  return { blemishes, undelivered };
 }
 
 /**
@@ -828,7 +865,7 @@ async function failActionStep(
   /** The original error, when the handler threw — rethrown as-is so its stack survives the retry. */
   cause?: unknown
 ): Promise<void> {
-  await automationRepository.createStepRun({
+  const stepRun = {
     id: generateId(),
     runId: run.id,
     nodeId: node.id,
@@ -838,13 +875,23 @@ async function failActionStep(
     ...(output === undefined ? {} : { output: output as any }),
     attempt,
     finishedAt: new Date(),
-  });
+  };
 
   const isFinalAttempt = job.retryLimit <= job.retryCount;
   if (isFinalAttempt) {
-    await automationRepository.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
+    // One transaction, for the same reason recordUnhandleableStepFailure uses one: a crash
+    // between these two writes leaves the run non-terminal, and since FAILED is deliberately not
+    // a redelivery guard (`findExecutedStepRun` excludes it, so retries can re-run the node), the
+    // redelivered job would call the handler again — delivering the same email or webhook twice.
+    await prisma.$transaction(async (tx) => {
+      const txRepo = createAutomationRepository(withPrisma(tx as any));
+      await txRepo.createStepRun(stepRun);
+      await txRepo.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
+    });
     return;
   }
+
+  await automationRepository.createStepRun(stepRun);
 
   // Throw so pg-boss schedules the retry per the job's retryLimit/retryBackoff.
   throw cause ?? new Error(message);

@@ -95,9 +95,10 @@ const DigestEditor: React.FC<{
 
       <p className="text-xs text-muted-foreground">{t('builder.panel.digest.hint')}</p>
 
-      {/* Opt-in backfill. The default (unchecked) is what makes activating a digest on an
-          established form safe: without it the first run covers every response the form has ever
-          received, which a per-response email action turns into a message to each of them. */}
+      {/* Opt-in backfill, and unchecked is the safe default. Unchecked sends
+          `includeExistingResponses: false`, so activation anchors the first run at that moment.
+          Checking it sends `true`, which makes the first run cover every response the form has
+          ever received — a per-response email action then messages every one of those people. */}
       <div className="space-y-2 pt-1">
         <div className="flex items-start gap-2.5">
           <Checkbox

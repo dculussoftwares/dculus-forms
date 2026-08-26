@@ -25,7 +25,7 @@ The gaps below are almost entirely **above** the engine: the product flow around
 first-run safety, failure visibility, portability, monetisation, and lifecycle.
 
 **Current surface**: 3 triggers (`form.submitted`, `response.edited`, `schedule`) ·
-5 node types (trigger, delay, condition, digest/"Filter Responses", action, end) ·
+6 node types (trigger, delay, condition, digest/"Filter Responses", action, end) ·
 5 action types offered, 4 of which actually work (Slack has no handler).
 
 ---
@@ -122,8 +122,9 @@ pending batch *and* erases the window it came from.
   own endpoint or spreadsheet, exactly as the standalone Plugins "Test" button already does) but
   now carry `__isTest: true` on `event.data` so a receiver can tell.
 - **B2**: the run-derived anchor is gone. `Automation.lastDigestedAt` is an explicit watermark
-  advanced only by a clean, non-test `COMPLETED` run, so a test can no longer move it. A test run
-  also samples the ten most recent responses rather than draining the pending window.
+  that a test run never advances, whatever the run's outcome — so a rehearsal can no longer move
+  it. (What advances it on a *real* run depends on whether anything was delivered; see D.) A test
+  run also samples the ten most recent responses rather than draining the pending window.
 - Migration `20260826120000_add_automation_digest_watermark` backfills the column from each
   automation's last completed run, so live automations keep their current window.
 
@@ -414,7 +415,8 @@ against pg-boss schedules on boot.
    email"* has to work backwards by timestamp.
 7. **Test always uses the latest response.** The `testAutomation` mutation accepts a `responseId`,
    but `useTestAutomation` never passes one. Add a response picker — and a synthetic sample response
-   so a brand-new form can be tested at all (today Test is hard-disabled at zero responses).
+   so a brand-new form can be tested at all (Test is still hard-disabled at zero responses for
+   *response-triggered* automations; schedule automations no longer need one).
 8. **A digest automation with no matches still runs the whole flow.** With no `__digestCount > 0`
    condition, the weekly email goes out empty. Either default the generated graph to include that
    condition, or short-circuit a zero-count digest to `COMPLETED` with a clear "nothing to send" step.
@@ -456,5 +458,7 @@ Called out so a refactor doesn't undo them:
 - `updateAutomationNodeConfig` writing to both the run snapshot and the live graph in one
   transaction, so an auto-created spreadsheet is never duplicated on retry.
 - The digest query's half-open `(since, until]` window with `until` fixed at run-creation time —
-  correctly closes both the duplicate-send race and the offset-pagination shift hazard.
+  it makes the result set immutable for the paginated loop, closing the offset-pagination shift
+  hazard, and stops a response submitted mid-query from landing in both this window and the next.
+  (It does *not* address two overlapping runs sharing a watermark — that is gap F.)
 - Validation error copy written in plain language with no internal identifiers, i18n'd across en/ta.

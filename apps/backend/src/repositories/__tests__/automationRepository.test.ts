@@ -231,12 +231,15 @@ describe('automationRepository', () => {
       });
     });
 
-    it('listUnsuccessfulStepRuns returns the status and nodeType of every non-SUCCESS step', async () => {
+    // Every row, successes included: a retried node has one row per attempt, and the failed
+    // first attempt of a node that later succeeded is only distinguishable from a genuine
+    // failure by seeing both.
+    it('listStepOutcomes returns nodeId/nodeType/status for every step row in the run', async () => {
       const repo = createAutomationRepository();
-      await repo.listUnsuccessfulStepRuns('run-1');
+      await repo.listStepOutcomes('run-1');
       expect(prismaMock.automationStepRun.findMany).toHaveBeenCalledWith({
-        where: { runId: 'run-1', status: { not: 'SUCCESS' } },
-        select: { status: true, nodeType: true },
+        where: { runId: 'run-1' },
+        select: { nodeId: true, nodeType: true, status: true },
       });
     });
 

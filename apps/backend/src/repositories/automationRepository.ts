@@ -149,15 +149,18 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     });
 
   /**
-   * The status/nodeType of every step in a run that did not cleanly succeed. A run has a handful
-   * of steps, so this is cheaper than several counting queries — and it lets the engine apply the
-   * two rules it needs (what the run's terminal status is, and whether the digest watermark may
-   * advance) in one readable place rather than encoding both in SQL. See engine.ts's completeRun.
+   * Every step row in a run, as `(nodeId, nodeType, status)`.
+   *
+   * Deliberately returns *all* rows, including successes: a retried node has one row per attempt,
+   * so the failed first attempt of a node that later succeeded is only distinguishable from a
+   * genuine failure by seeing both rows. A run has a handful of steps, so one small query beats
+   * encoding that reasoning in SQL — the engine resolves each node to a single outcome in
+   * completeRun.
    */
-  const listUnsuccessfulStepRuns = async (runId: string) =>
+  const listStepOutcomes = async (runId: string) =>
     prisma.automationStepRun.findMany({
-      where: { runId, status: { not: 'SUCCESS' } },
-      select: { status: true, nodeType: true },
+      where: { runId },
+      select: { nodeId: true, nodeType: true, status: true },
     });
 
   const findStepRunByNode = async (runId: string, nodeId: string) =>
@@ -248,7 +251,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     listStepRunsByRun,
     createStepRun,
     findExecutedStepRun,
-    listUnsuccessfulStepRuns,
+    listStepOutcomes,
     findStepRunByNode,
 
     // Transaction-participating raw writes (see engine.ts updateAutomationNodeConfig)

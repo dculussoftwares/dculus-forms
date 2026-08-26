@@ -36,7 +36,7 @@ vi.mock('../../../repositories/index.js', () => ({
     createStepRun: vi.fn().mockResolvedValue({}),
     updateRun: vi.fn().mockResolvedValue({}),
     findStepRunByNode: vi.fn(),
-    listUnsuccessfulStepRuns: vi.fn().mockResolvedValue([]),
+    listStepOutcomes: vi.fn().mockResolvedValue([]),
     advanceDigestWatermark: vi.fn().mockResolvedValue({ count: 1 }),
   },
   createAutomationRepository: vi.fn(() => txRepoMock),
@@ -131,7 +131,7 @@ describe('automation engine', () => {
     txRepoMock.setNodeConfigInRunSnapshot.mockResolvedValue(1);
     txRepoMock.createStepRun.mockResolvedValue({});
     txRepoMock.updateRun.mockResolvedValue({});
-    vi.mocked(automationRepository.listUnsuccessfulStepRuns).mockResolvedValue([] as any);
+    vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([] as any);
     vi.mocked(automationRepository.advanceDigestWatermark).mockResolvedValue({ count: 1 } as any);
   });
 
@@ -929,10 +929,14 @@ describe('automation engine', () => {
         executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, ACTION_RETRY_LIMIT, ACTION_RETRY_LIMIT))
       ).resolves.toBeUndefined();
 
-      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+      // The final attempt writes the FAILED step and the terminal run status in ONE transaction,
+      // so a crash between them can't leave the run non-terminal — FAILED is deliberately not a
+      // redelivery guard, so a redelivered job would call the handler again and deliver twice.
+      // Both writes therefore land on the tx-scoped repo, not the singleton.
+      expect(txRepoMock.createStepRun).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'FAILED', attempt: ACTION_RETRY_LIMIT + 1 })
       );
-      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
+      expect(txRepoMock.updateRun).toHaveBeenCalledWith('run-1', {
         status: 'FAILED',
         completedAt: expect.any(Date),
       });
@@ -1186,8 +1190,8 @@ describe('automation engine', () => {
       vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
       // An upstream email action that delivered nothing at all (quota reached). Nothing went
       // out, so re-covering the window next tick cannot duplicate anything.
-      vi.mocked(automationRepository.listUnsuccessfulStepRuns).mockResolvedValue([
-        { status: 'SKIPPED', nodeType: 'action:email' },
+      vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([
+        { nodeId: 'action-1', nodeType: 'action:email', status: 'SKIPPED' },
       ] as any);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
@@ -1212,8 +1216,8 @@ describe('automation engine', () => {
         scheduleRun({ graphSnapshot: graph }) as any
       );
       vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
-      vi.mocked(automationRepository.listUnsuccessfulStepRuns).mockResolvedValue([
-        { status: 'PARTIAL', nodeType: 'action:email' },
+      vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([
+        { nodeId: 'action-1', nodeType: 'action:email', status: 'PARTIAL' },
       ] as any);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
@@ -1221,6 +1225,33 @@ describe('automation engine', () => {
       expect(automationRepository.updateRun).toHaveBeenCalledWith(
         'run-1',
         expect.objectContaining({ status: 'PARTIAL' })
+      );
+      expect(automationRepository.advanceDigestWatermark).toHaveBeenCalled();
+    });
+
+    // A retried action leaves a FAILED row from the attempt that failed AND a SUCCESS row from
+    // the one that worked. Only the final attempt counts — reading every row would file the run
+    // as PARTIAL because of a failure the retry already made good.
+    it('ignores a FAILED attempt when the same node later succeeded on retry', async () => {
+      const graph: AutomationGraph = {
+        nodes: [{ id: 'digest-1', type: 'digest', data: {} }],
+        edges: [],
+      };
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: graph }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+      vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([
+        { nodeId: 'action-1', nodeType: 'action:webhook', status: 'FAILED' },
+        { nodeId: 'action-1', nodeType: 'action:webhook', status: 'SUCCESS' },
+      ] as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.updateRun).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({ status: 'COMPLETED' })
       );
       expect(automationRepository.advanceDigestWatermark).toHaveBeenCalled();
     });
@@ -1236,8 +1267,8 @@ describe('automation engine', () => {
         scheduleRun({ graphSnapshot: graph }) as any
       );
       vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
-      vi.mocked(automationRepository.listUnsuccessfulStepRuns).mockResolvedValue([
-        { status: 'SKIPPED', nodeType: 'delay' },
+      vi.mocked(automationRepository.listStepOutcomes).mockResolvedValue([
+        { nodeId: 'delay-1', nodeType: 'delay', status: 'SKIPPED' },
       ] as any);
 
       await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
