@@ -12,6 +12,7 @@ import { getPluginHandler } from '../../../plugins/core/registry.js';
 import { createPluginContext } from '../../../plugins/core/context.js';
 import { evaluateCondition } from '../conditionEvaluator.js';
 import { getBoss, AUTOMATION_QUEUE } from '../boss.js';
+import { getResponsesByFormId } from '../../responseService.js';
 import type { AutomationGraph } from '../types.js';
 
 // The tx-scoped repository created inside `prisma.$transaction(async (tx) => ...)` calls
@@ -34,8 +35,13 @@ vi.mock('../../../repositories/index.js', () => ({
     createStepRun: vi.fn().mockResolvedValue({}),
     updateRun: vi.fn().mockResolvedValue({}),
     findStepRunByNode: vi.fn(),
+    findLastCompletedRun: vi.fn().mockResolvedValue(null),
   },
   createAutomationRepository: vi.fn(() => txRepoMock),
+}));
+
+vi.mock('../../responseService.js', () => ({
+  getResponsesByFormId: vi.fn(),
 }));
 
 vi.mock('../../../repositories/baseRepository.js', () => ({
@@ -96,6 +102,7 @@ function makeRun(overrides: Record<string, any> = {}) {
       formId: 'form-1',
       organizationId: 'org-1',
       triggerType: 'form.submitted',
+      createdAt: new Date('2025-12-01T00:00:00.000Z'),
     },
     ...overrides,
   };
@@ -122,6 +129,7 @@ describe('automation engine', () => {
     txRepoMock.setNodeConfigInRunSnapshot.mockResolvedValue(1);
     txRepoMock.createStepRun.mockResolvedValue({});
     txRepoMock.updateRun.mockResolvedValue({});
+    vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue(null);
   });
 
   describe('redelivery reconciliation (existing SUCCESS step found)', () => {
@@ -560,6 +568,77 @@ describe('automation engine', () => {
       );
     });
 
+    it('skips pre-substitution for a per-response digest email action (recipientFieldId + __digestResponses present), passing the RAW config through so the handler can substitute per response (#automations-digest-per-response)', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          {
+            id: 'action-1',
+            type: 'action',
+            data: { actionType: 'email', config: { recipientFieldId: 'email-field', subject: 'Hi', message: 'Hello {{name}}' } },
+          },
+        ],
+        edges: [],
+      };
+
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({
+          graphSnapshot: graph,
+          context: { triggerData: { __digestResponses: [{ id: 'r1', submittedAt: '2026-01-01T00:00:00.000Z', data: { name: 'Ada' } }] } },
+          automation: { id: 'automation-1', status: 'ACTIVE', formId: 'form-1', organizationId: 'org-1', triggerType: 'schedule' },
+        }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({});
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      // The pre-substitution pass must NOT run for this action — it would replace {{name}}
+      // with a "[label]" fallback (packages/utils/src/mentionSubstitution.ts's behavior for an
+      // unmatched key) against the aggregate triggerData, destroying the placeholder before the
+      // handler's own per-response loop ever gets a chance to fill it in with each response's
+      // real name.
+      expect(substituteMentions).not.toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          config: { recipientFieldId: 'email-field', subject: 'Hi', message: 'Hello {{name}}' },
+        }),
+        expect.anything(),
+        expect.anything()
+      );
+    });
+
+    it('does NOT skip pre-substitution for a webhook action downstream of a digest node — only the specific email+recipientFieldId case is exempted', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          {
+            id: 'action-1',
+            type: 'action',
+            data: { actionType: 'webhook', config: { url: 'https://example.com', headers: { 'X-Count': '{{__digestCount}}' } } },
+          },
+        ],
+        edges: [],
+      };
+
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({
+          graphSnapshot: graph,
+          context: { triggerData: { __digestCount: 5, __digestResponses: [] } },
+          automation: { id: 'automation-1', status: 'ACTIVE', formId: 'form-1', organizationId: 'org-1', triggerType: 'schedule' },
+        }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({});
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+      vi.mocked(substituteMentions).mockImplementation((value: string) => value.replace('{{__digestCount}}', '5'));
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(substituteMentions).toHaveBeenCalledWith('{{__digestCount}}', { __digestCount: 5, __digestResponses: [] });
+    });
+
     it('skips execution and cancels the run when the automation is no longer ACTIVE', async () => {
       const graph: AutomationGraph = {
         nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'webhook', config: {} } }],
@@ -693,6 +772,260 @@ describe('automation engine', () => {
       // graphSnapshot permanently diverged.
       expect(txRepoMock.setNodeConfigInGraph).toHaveBeenCalledWith('automation-1', 'action-1', newConfig);
       expect(txRepoMock.setNodeConfigInRunSnapshot).toHaveBeenCalledWith('run-1', 'action-1', newConfig);
+    });
+  });
+
+  describe('digest node', () => {
+    const graph: AutomationGraph = {
+      nodes: [
+        { id: 'digest-1', type: 'digest', data: { maxResponses: 50 } },
+        { id: 'end-1', type: 'end' },
+      ],
+      edges: [{ id: 'e1', source: 'digest-1', target: 'end-1' }],
+    };
+
+    function scheduleRun(overrides: Record<string, any> = {}) {
+      return makeRun({
+        graphSnapshot: graph,
+        context: {},
+        automation: {
+          id: 'automation-1',
+          status: 'ACTIVE',
+          formId: 'form-1',
+          organizationId: 'org-1',
+          triggerType: 'schedule',
+          createdAt: new Date('2025-12-01T00:00:00.000Z'),
+        },
+        ...overrides,
+      });
+    }
+
+    it('merges an empty result (count 0) into triggerData and enqueues the next node — a run with nothing new still succeeds', async () => {
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(scheduleRun() as any);
+      vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue(null);
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(getResponsesByFormId).toHaveBeenCalledWith(
+        'form-1',
+        1,
+        100,
+        'submittedAt',
+        'asc',
+        [{ fieldId: '__submittedAt', operator: 'DATE_AFTER', value: '1970-01-01T00:00:00.000Z' }]
+      );
+
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nodeType: 'digest',
+          status: 'SUCCESS',
+          output: expect.objectContaining({ count: 0, truncated: false, responses: [] }),
+        })
+      );
+
+      expect(automationRepository.updateRun).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({
+          context: expect.objectContaining({
+            triggerData: expect.objectContaining({ __digestCount: 0, __digestTruncated: false, __digestResponses: [] }),
+          }),
+        })
+      );
+
+      expect(mockBoss.send).toHaveBeenCalledWith(
+        AUTOMATION_QUEUE,
+        { runId: 'run-1', nodeId: 'end-1' },
+        expect.anything()
+      );
+    });
+
+    it('has no lower bound on the very first tick (no prior completed run) — matches everything currently satisfying the filters, not just responses after automation.createdAt', async () => {
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(scheduleRun() as any);
+      vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue(null);
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      // 1970-01-01 (epoch) — not automation.createdAt (2025-12-01 in scheduleRun()'s fixture) —
+      // so pre-existing responses submitted before the automation was even created still match.
+      expect(getResponsesByFormId).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        [expect.objectContaining({ value: '1970-01-01T00:00:00.000Z' })]
+      );
+    });
+
+    it('ANDs the digest node\'s own configured filters onto the mandatory since-last-run filter', async () => {
+      const filteredGraph: AutomationGraph = {
+        nodes: [
+          {
+            id: 'digest-1',
+            type: 'digest',
+            data: { maxResponses: 50, filters: [{ fieldId: 'score', operator: 'GREATER_THAN', value: '80' }] },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [{ id: 'e1', source: 'digest-1', target: 'end-1' }],
+      };
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: filteredGraph }) as any
+      );
+      vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue(null);
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(getResponsesByFormId).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        [
+          { fieldId: '__submittedAt', operator: 'DATE_AFTER', value: '1970-01-01T00:00:00.000Z' },
+          { fieldId: 'score', operator: 'GREATER_THAN', value: '80' },
+        ]
+      );
+    });
+
+    it('anchors the window on the last COMPLETED run startedAt, not the epoch fallback, once a prior run exists', async () => {
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(scheduleRun() as any);
+      vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue({
+        startedAt: new Date('2026-01-10T09:00:00.000Z'),
+      } as any);
+      vi.mocked(getResponsesByFormId).mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, totalPages: 0 } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(automationRepository.findLastCompletedRun).toHaveBeenCalledWith('automation-1');
+      expect(getResponsesByFormId).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        [expect.objectContaining({ value: '2026-01-10T09:00:00.000Z' })]
+      );
+    });
+
+    it('bounds embedded responses at maxResponses while reporting the accurate uncapped total (truncated)', async () => {
+      const smallGraph: AutomationGraph = {
+        nodes: [{ id: 'digest-1', type: 'digest', data: { maxResponses: 2 } }],
+        edges: [],
+      };
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: smallGraph }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({
+        data: [
+          { id: 'r1', submittedAt: new Date('2026-01-02T00:00:00.000Z'), data: { a: 1 } },
+          { id: 'r2', submittedAt: new Date('2026-01-03T00:00:00.000Z'), data: { a: 2 } },
+        ],
+        total: 5,
+        page: 1,
+        limit: 100,
+        totalPages: 1,
+      } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      expect(getResponsesByFormId).toHaveBeenCalledTimes(1);
+      expect(automationRepository.createStepRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          output: expect.objectContaining({
+            count: 5,
+            truncated: true,
+            responses: [
+              { id: 'r1', submittedAt: '2026-01-02T00:00:00.000Z', data: { a: 1 } },
+              { id: 'r2', submittedAt: '2026-01-03T00:00:00.000Z', data: { a: 2 } },
+            ],
+          }),
+        })
+      );
+    });
+
+    it('marks the run FAILED without re-querying when redelivered after an already-recorded SUCCESS (crash recovery)', async () => {
+      const existingOutput = {
+        count: 3,
+        since: '2025-12-01T00:00:00.000Z',
+        until: '2026-01-01T00:00:00.000Z',
+        truncated: false,
+        responses: [{ id: 'r1', submittedAt: '2025-12-15T00:00:00.000Z', data: {} }],
+      };
+
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue({ output: existingOutput } as any);
+      vi.mocked(automationRepository.findStepRunByNode).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ context: {} }) as any
+      );
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }));
+
+      // Redelivery must reconstruct purely from the persisted step output — never re-query,
+      // since a redelivered digest query could return a DIFFERENT response set (new
+      // submissions since the crash) than the one that actually ran.
+      expect(getResponsesByFormId).not.toHaveBeenCalled();
+      expect(automationRepository.updateRun).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({
+          context: expect.objectContaining({
+            triggerData: expect.objectContaining({ __digestCount: 3 }),
+          }),
+        })
+      );
+      expect(mockBoss.send).toHaveBeenCalledWith(
+        AUTOMATION_QUEUE,
+        { runId: 'run-1', nodeId: 'end-1' },
+        expect.anything()
+      );
+    });
+
+    it('a downstream action node sees __digestResponses via buildPluginEvent (single triggerData channel)', async () => {
+      const chainGraph: AutomationGraph = {
+        nodes: [
+          { id: 'digest-1', type: 'digest', data: {} },
+          { id: 'action-1', type: 'action', data: { actionType: 'webhook', config: { url: 'https://x' } } },
+        ],
+        edges: [{ id: 'e1', source: 'digest-1', target: 'action-1' }],
+      };
+
+      vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        scheduleRun({ graphSnapshot: chainGraph }) as any
+      );
+      vi.mocked(getResponsesByFormId).mockResolvedValue({
+        data: [{ id: 'r1', submittedAt: new Date('2026-01-02T00:00:00.000Z'), data: { a: 1 } }],
+        total: 1,
+        page: 1,
+        limit: 100,
+        totalPages: 1,
+      } as any);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'digest-1' }, 0, ACTION_RETRY_LIMIT));
+
+      // The digest step's own updateRun call is the one that must carry __digestResponses —
+      // the next executeAutomationStep call (processing action-1) would read it back via
+      // findRunByIdWithAutomation, which this test doesn't re-simulate; asserting the merge
+      // itself is what proves the single-channel wiring is correct.
+      expect(automationRepository.updateRun).toHaveBeenCalledWith(
+        'run-1',
+        expect.objectContaining({
+          context: expect.objectContaining({
+            triggerData: expect.objectContaining({
+              __digestResponses: [{ id: 'r1', submittedAt: '2026-01-02T00:00:00.000Z', data: { a: 1 } }],
+            }),
+          }),
+        })
+      );
     });
   });
 

@@ -7,7 +7,7 @@ import {
   type EdgeProps,
 } from '@xyflow/react';
 import { Popover, PopoverContent, PopoverTrigger, Badge } from '@dculus/ui';
-import { Plus, Clock, GitBranch, Webhook, type LucideIcon } from 'lucide-react';
+import { Plus, Clock, GitBranch, Webhook, Filter, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { useAutomationBuilderStore } from '../../../../store/useAutomationBuilderStore';
 import { automationActionManifests, ACTION_ICON_MAP } from '../actionCatalog';
@@ -85,6 +85,7 @@ function buildCurvedPath(
 
 export const AddStepEdge: React.FC<EdgeProps> = ({
   id,
+  source,
   sourceX,
   sourceY,
   targetX,
@@ -99,6 +100,18 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
   const [open, setOpen] = useState(false);
   const isReadOnly = useAutomationBuilderStore((s) => s.isReadOnly);
   const insertStepOnEdge = useAutomationBuilderStore((s) => s.insertStepOnEdge);
+  const nodes = useAutomationBuilderStore((s) => s.nodes);
+  const triggerType = useAutomationBuilderStore((s) => s.triggerType);
+
+  // A digest step only makes sense as the trigger's own immediate successor on a schedule
+  // automation (graphValidator enforces this server-side too — DIGEST_MUST_FOLLOW_TRIGGER /
+  // DIGEST_REQUIRES_SCHEDULE_TRIGGER) and there can only be one per graph (MULTIPLE_DIGEST_NODES)
+  // — gating the catalog entry here means it only ever appears on the one edge where adding it
+  // would actually validate, rather than surfacing it everywhere and letting the save fail.
+  const showDigestOption =
+    triggerType === 'schedule' &&
+    nodes.find((n) => n.id === source)?.type === 'trigger' &&
+    !nodes.some((n) => n.type === 'digest');
 
   const bendPoints = (data?.bendPoints as { x: number; y: number }[] | undefined) ?? [];
   const pathPoints = [{ x: sourceX, y: sourceY }, ...bendPoints, { x: targetX, y: targetY }];
@@ -124,6 +137,11 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
 
   const handleAddAction = (actionType: string) => {
     insertStepOnEdge(id, 'action', { actionType, config: {} });
+    setOpen(false);
+  };
+
+  const handleAddDigest = () => {
+    insertStepOnEdge(id, 'digest', {});
     setOpen(false);
   };
 
@@ -172,6 +190,23 @@ export const AddStepEdge: React.FC<EdgeProps> = ({
                 </button>
               </PopoverTrigger>
               <PopoverContent align="center" className="w-64 p-2">
+                {showDigestOption && (
+                  <>
+                    <div className="mb-1.5 px-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--tf-light-muted)' }}>
+                        {t('builder.addStep.digestHeading')}
+                      </p>
+                    </div>
+                    <CatalogItem
+                      icon={<Filter className="h-3.5 w-3.5" style={{ color: '#0e7490' }} />}
+                      iconBg="#cffafe"
+                      label={t('builder.addStep.digest')}
+                      onClick={handleAddDigest}
+                    />
+                    <div className="my-2 border-t" style={{ borderColor: 'var(--tf-border-light)' }} />
+                  </>
+                )}
+
                 <div className="mb-1.5 px-1.5">
                   <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--tf-light-muted)' }}>
                     {t('builder.addStep.rulesHeading')}

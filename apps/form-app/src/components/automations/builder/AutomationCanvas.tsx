@@ -17,6 +17,7 @@ import { TriggerNode } from './nodes/TriggerNode';
 import { DelayNode } from './nodes/DelayNode';
 import { ConditionNode } from './nodes/ConditionNode';
 import { ActionNode } from './nodes/ActionNode';
+import { DigestNode } from './nodes/DigestNode';
 import { EndNode } from './nodes/EndNode';
 import { AddStepEdge } from './edges/AddStepEdge';
 import { NodeConfigPanel } from './NodeConfigPanel';
@@ -26,6 +27,7 @@ const nodeTypes = {
   delay: DelayNode,
   condition: ConditionNode,
   action: ActionNode,
+  digest: DigestNode,
   end: EndNode,
 };
 

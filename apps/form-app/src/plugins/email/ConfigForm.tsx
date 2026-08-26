@@ -48,6 +48,20 @@ const extractMentionFields = (form: any) => {
   }
 };
 
+/**
+ * The four __digest* scalar pseudo-fields a digest node merges into triggerData — safe to
+ * offer as mentions here per graphValidator's DIGEST_SCALAR_MENTION_KEYS allow-list.
+ * __digestResponses (the full response array) is deliberately excluded: substituteMentions()
+ * does a flat scalar lookup, so a mention referencing it would silently stringify to garbage
+ * rather than error — the response table toggle below is the supported way to list them.
+ */
+const digestMentionFields = (t: (key: string) => string) => [
+  { fieldId: '__digestCount', label: t('digest.mentions.count') },
+  { fieldId: '__digestSince', label: t('digest.mentions.since') },
+  { fieldId: '__digestUntil', label: t('digest.mentions.until') },
+  { fieldId: '__digestTruncated', label: t('digest.mentions.truncated') },
+];
+
 const extractEmailFields = (form: any): EmailFieldInfo[] => {
   if (!form?.formSchema) return [];
   try {
@@ -67,6 +81,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
   hideEventsSection,
   readOnly,
   submitLabelOverride,
+  digestContext,
 }) => {
   const { t } = useTranslation('emailPluginConfig');
   const [message, setMessage] = useState(initialData?.config?.message || '');
@@ -78,6 +93,9 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
   );
   const [attachPdfTemplateId, setAttachPdfTemplateId] = useState<string>(
     initialData?.config?.attachPdfTemplateId || NO_PDF_TEMPLATE
+  );
+  const [includeDigestTable, setIncludeDigestTable] = useState<boolean>(
+    Boolean(initialData?.config?.includeDigestTable)
   );
 
   const { data: pdfTemplatesData } = useQuery(GET_PDF_TEMPLATES, {
@@ -99,7 +117,10 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
     },
   });
 
-  const mentionFields = useMemo(() => extractMentionFields(form), [form]);
+  const mentionFields = useMemo(() => {
+    const formFieldMentions = extractMentionFields(form);
+    return digestContext?.available ? [...formFieldMentions, ...digestMentionFields(t)] : formFieldMentions;
+  }, [form, digestContext?.available, t]);
   const emailFields = useMemo(() => extractEmailFields(form), [form]);
   const selectedEmailField = emailFields.find((f) => f.id === recipientFieldId);
 
@@ -114,6 +135,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       setSelectedEvents(initialData.events);
       setRecipientFieldId(initialData.config.recipientFieldId || NO_RECIPIENT_FIELD);
       setAttachPdfTemplateId(initialData.config.attachPdfTemplateId || NO_PDF_TEMPLATE);
+      setIncludeDigestTable(Boolean(initialData.config.includeDigestTable));
     }
   }, [initialData, reset]);
 
@@ -159,6 +181,7 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
         attachPdfTemplateName: hasPdfAttachment
           ? (selectedPdfTemplate?.name ?? fallbackPdfTemplateName)
           : undefined,
+        includeDigestTable: digestContext?.available ? includeDigestTable : undefined,
       },
       events: selectedEvents,
     });
@@ -306,6 +329,22 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
               )}
             </p>
           </div>
+
+          {digestContext?.available && (
+            <div className="flex items-start space-x-3 p-3 rounded-lg border" style={{ borderColor: 'var(--tf-border-light)' }}>
+              <Checkbox
+                id="includeDigestTable"
+                checked={includeDigestTable}
+                onCheckedChange={(checked) => setIncludeDigestTable(checked === true)}
+              />
+              <div className="flex-1">
+                <Label htmlFor="includeDigestTable" className="font-medium cursor-pointer">
+                  {t('digest.includeTable.label')}
+                </Label>
+                <p className="text-sm text-muted-foreground">{t('digest.includeTable.description')}</p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

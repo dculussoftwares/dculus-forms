@@ -8,9 +8,20 @@ import { logger } from '../../lib/logger.js';
 import { getPluginHandler } from '../../plugins/core/registry.js';
 import { createPluginContext } from '../../plugins/core/context.js';
 import type { PluginConfig, PluginEvent } from '../../plugins/core/types.js';
+import { getResponsesByFormId } from '../responseService.js';
+import type { ResponseFilter } from '../responseFilterService.js';
 import { AUTOMATION_QUEUE, getBoss, startAutomationBoss, stopAutomationBoss } from './boss.js';
 import { evaluateCondition } from './conditionEvaluator.js';
-import type { AutomationEdge, AutomationGraph, AutomationNode, AutomationRunContext } from './types.js';
+import { DIGEST_RESPONSE_SAFETY_CEILING } from './graphValidator.js';
+import type {
+  AutomationEdge,
+  AutomationGraph,
+  AutomationNode,
+  AutomationRunContext,
+  ConditionRule,
+  DigestNodeOutput,
+  DigestResponseSummary,
+} from './types.js';
 
 const DELAY_UNIT_MS: Record<string, number> = {
   minutes: 60_000,
@@ -20,6 +31,18 @@ const DELAY_UNIT_MS: Record<string, number> = {
 
 const MAX_DELAY_MS = 30 * DELAY_UNIT_MS.days;
 export const ACTION_RETRY_LIMIT = 3;
+
+const DIGEST_PAGE_SIZE = 100;
+// A digest node's very first tick has no prior completed run to be incremental against. Rather
+// than defaulting to automation.createdAt (which excludes every response that existed before the
+// automation itself was created — the common case, since automations are normally built against
+// forms that already have data), the first run has no lower bound at all: it matches everything
+// currently satisfying the node's filters, exactly once. Every run after that IS anchored on the
+// previous completed run's startedAt (see handleDigestNode below), so it stays incremental and
+// never reprocesses the same response twice.
+const DIGEST_EPOCH_START = new Date(0);
+/** Node types whose job gets pg-boss retries — both make a DB/network call that can transiently fail. */
+const RETRYABLE_NODE_TYPES = new Set(['action', 'digest']);
 
 type AutomationStepJobData = { runId: string; nodeId: string };
 
@@ -55,7 +78,7 @@ async function enqueueStep(
     return;
   }
 
-  const isAction = findNode(graph, nodeId)?.type === 'action';
+  const isRetryable = RETRYABLE_NODE_TYPES.has(findNode(graph, nodeId)?.type ?? '');
 
   await boss.send(
     AUTOMATION_QUEUE,
@@ -63,7 +86,7 @@ async function enqueueStep(
     {
       singletonKey: `${runId}:${nodeId}`,
       ...(startAfter ? { startAfter } : {}),
-      ...(isAction ? { retryLimit: ACTION_RETRY_LIMIT, retryBackoff: true } : {}),
+      ...(isRetryable ? { retryLimit: ACTION_RETRY_LIMIT, retryBackoff: true } : {}),
     }
   );
 }
@@ -88,9 +111,9 @@ function buildPluginEvent(
 ): PluginEvent {
   const context = (run.context as AutomationRunContext) ?? {};
   return {
-    // Trigger types beyond 'form.submitted' (response.edited, schedule — #194/#201) aren't
-    // real PluginEvent variants yet; this cast preserves the "PluginEvent-shaped event"
-    // contract from the issue without prematurely widening PluginEvent's own union.
+    // automation.triggerType is a plain `string` at the DB/type level (Automation.triggerType),
+    // while PluginEvent['type'] is the closed union of values it's actually allowed to hold —
+    // the cast just bridges that, it's not widening anything at runtime.
     type: automation.triggerType as PluginEvent['type'],
     formId: automation.formId,
     organizationId: automation.organizationId,
@@ -120,6 +143,80 @@ function mergeStepOutput(context: unknown, nodeId: string, output: any): Automat
     ...ctx,
     stepOutputs: { ...(ctx.stepOutputs ?? {}), [nodeId]: output ?? null },
   };
+}
+
+/**
+ * Merges a digest node's output into `context.triggerData` under reserved `__digest*` keys —
+ * the ONLY channel `buildPluginEvent` forwards to downstream action handlers as `event.data`
+ * (it never reads `context.stepOutputs`). `__digestCount`/`__digestSince`/`__digestUntil`/
+ * `__digestTruncated` are flat scalars, safe for both `{{mention}}` substitution and
+ * condition-rule comparisons (both do plain `record[key]` lookups). `__digestResponses` is a
+ * bounded array — never exposed as a mention token (graphValidator enforces this), only read
+ * programmatically by the webhook/email-table/sheets-batch handlers.
+ */
+function mergeDigestIntoTriggerData(
+  context: unknown,
+  output: DigestNodeOutput
+): AutomationRunContext {
+  const ctx = (context && typeof context === 'object' ? context : {}) as AutomationRunContext;
+  return {
+    ...ctx,
+    triggerData: {
+      ...(ctx.triggerData ?? {}),
+      __digestCount: output.count,
+      __digestSince: output.since,
+      __digestUntil: output.until,
+      __digestTruncated: output.truncated,
+      __digestResponses: output.responses,
+    },
+  };
+}
+
+/**
+ * Pages through `getResponsesByFormId` (reusing the existing __submittedAt/DATE_AFTER filter —
+ * indexed via Response's @@index([formId, submittedAt]), zero new SQL) to collect up to
+ * `maxResponses` responses submitted since `since` AND matching every rule in `extraFilters`
+ * (ANDed — see AutomationDigestNode's data doc comment in types.ts for why only AND is
+ * supported), oldest-first. Uses a fixed page size across calls (required for correct
+ * skip/page-number math) and slices the final page down to `maxResponses` rather than shrinking
+ * the page size, which would break pagination. `total` comes from the first page's DB-computed
+ * count — accurate even when the result is truncated, so no separate COUNT query is needed.
+ */
+async function fetchDigestResponses(
+  formId: string,
+  since: Date,
+  maxResponses: number,
+  extraFilters: ConditionRule[] = []
+): Promise<{ responses: DigestResponseSummary[]; total: number }> {
+  const responses: DigestResponseSummary[] = [];
+  let total = 0;
+  let page = 1;
+  const filters: ResponseFilter[] = [
+    { fieldId: '__submittedAt', operator: 'DATE_AFTER', value: since.toISOString() },
+    ...extraFilters,
+  ];
+
+  while (responses.length < maxResponses) {
+    const pageResult = await getResponsesByFormId(
+      formId,
+      page,
+      DIGEST_PAGE_SIZE,
+      'submittedAt',
+      'asc',
+      filters
+    );
+    total = pageResult.total;
+
+    const remaining = maxResponses - responses.length;
+    for (const r of pageResult.data.slice(0, remaining)) {
+      responses.push({ id: r.id, submittedAt: r.submittedAt.toISOString(), data: r.data });
+    }
+
+    if (pageResult.data.length < DIGEST_PAGE_SIZE || page >= pageResult.totalPages) break;
+    page += 1;
+  }
+
+  return { responses, total };
 }
 
 /**
@@ -242,6 +339,98 @@ async function handleConditionNode(
   await enqueueStep(run.id, nextNodeId, graph);
 }
 
+/**
+ * Filter Responses node: queries responses matching this node's filters — since the automation's
+ * last COMPLETED run on every tick after the first (graphValidator guarantees this node is the
+ * trigger's sole successor on a schedule-triggerType automation — see that file for the "must
+ * follow trigger directly" rule), or with no lower bound at all on the very first tick (see
+ * DIGEST_EPOCH_START above) — and merges a bounded summary into context for downstream
+ * condition/action nodes. Gets pg-boss retries like action nodes (RETRYABLE_NODE_TYPES) since
+ * the query is a real DB call that can transiently fail.
+ */
+async function handleDigestNode(
+  run: {
+    id: string;
+    context: unknown;
+    automation: { id: string; formId: string };
+  },
+  node: Extract<AutomationNode, { type: 'digest' }>,
+  graph: AutomationGraph,
+  job: JobWithMetadata<AutomationStepJobData>
+): Promise<void> {
+  const maxResponses = Math.min(
+    node.data.maxResponses ?? DIGEST_RESPONSE_SAFETY_CEILING,
+    DIGEST_RESPONSE_SAFETY_CEILING
+  );
+  const attempt = job.retryCount + 1;
+
+  try {
+    const lastCompletedRun = await automationRepository.findLastCompletedRun(run.automation.id);
+    const since = lastCompletedRun?.startedAt ?? DIGEST_EPOCH_START;
+    const until = new Date();
+
+    const { responses, total } = await fetchDigestResponses(
+      run.automation.formId,
+      since,
+      maxResponses,
+      node.data.filters ?? []
+    );
+
+    const output: DigestNodeOutput = {
+      count: total,
+      since: since.toISOString(),
+      until: until.toISOString(),
+      truncated: total > responses.length,
+      responses,
+    };
+
+    await automationRepository.createStepRun({
+      id: generateId(),
+      runId: run.id,
+      nodeId: node.id,
+      nodeType: 'digest',
+      status: 'SUCCESS',
+      output: output as any,
+      attempt,
+      finishedAt: new Date(),
+    });
+
+    await automationRepository.updateRun(run.id, {
+      context: mergeStepOutput(mergeDigestIntoTriggerData(run.context, output), node.id, output),
+    });
+
+    const nextNodeId = findNextNodeId(graph, node.id);
+    if (!nextNodeId) {
+      await completeRun(run.id);
+      return;
+    }
+    await enqueueStep(run.id, nextNodeId, graph);
+  } catch (error: any) {
+    Sentry.captureException(error);
+    logger.error(`[Automation Engine] Digest step failed: run=${run.id} node=${node.id}`, error);
+
+    await automationRepository.createStepRun({
+      id: generateId(),
+      runId: run.id,
+      nodeId: node.id,
+      nodeType: 'digest',
+      status: 'FAILED',
+      errorMessage: error?.message || 'Unknown error',
+      attempt,
+      finishedAt: new Date(),
+    });
+
+    const isFinalAttempt = job.retryLimit <= job.retryCount;
+    if (isFinalAttempt) {
+      await automationRepository.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
+      return;
+    }
+
+    // Rethrow so pg-boss schedules the retry per enqueueStep's retryLimit/retryBackoff.
+    throw error;
+  }
+}
+
 async function handleEndNode(
   run: { id: string },
   node: Extract<AutomationNode, { type: 'end' }>
@@ -291,7 +480,17 @@ async function handleActionNode(
   await automationRepository.updateRun(run.id, { status: 'RUNNING', currentNodeId: node.id });
 
   const event = buildPluginEvent(run.automation, run);
-  const substitutedConfig = substituteConfigMentions(config, event.data) as PluginConfig;
+  // A digest-downstream email action with recipientFieldId set sends once PER matched response
+  // (email/handler.ts's per-response loop), each substituting {{field}} mentions against that
+  // response's own data — substituteMentions() replaces any UNMATCHED key with a "[label]"
+  // fallback (packages/utils/src/mentionSubstitution.ts), so pre-substituting here against the
+  // aggregate event.data (which has no real field values, only __digest* scalars) would destroy
+  // the {{field}} placeholders before the handler ever gets a chance to fill them in per response.
+  const isPerResponseEmailAction =
+    actionType === 'email' && Boolean(config.recipientFieldId) && Array.isArray(event.data.__digestResponses);
+  const substitutedConfig = isPerResponseEmailAction
+    ? (config as PluginConfig)
+    : (substituteConfigMentions(config, event.data) as PluginConfig);
 
   try {
     const handler = getPluginHandler(actionType);
@@ -420,6 +619,21 @@ async function reconcileSuccessStep(
       await reconcileSuccessor(run, findNextNodeId(graph, node.id), graph);
       return;
     }
+    case 'digest': {
+      // Same gap as 'action': if the triggerData/stepOutputs merge was lost to the crash window,
+      // replay it from the persisted step output — never re-query, since a redelivered digest
+      // query could return a different response set (new submissions since the crash) than the
+      // one that actually ran, breaking idempotency.
+      const context = (run.context as AutomationRunContext) ?? {};
+      const output = existingSuccess.output as DigestNodeOutput | null;
+      if (output && context.triggerData?.__digestCount === undefined) {
+        await automationRepository.updateRun(run.id, {
+          context: mergeStepOutput(mergeDigestIntoTriggerData(run.context, output), node.id, output),
+        });
+      }
+      await reconcileSuccessor(run, findNextNodeId(graph, node.id), graph);
+      return;
+    }
     case 'end':
       if (run.status !== 'COMPLETED') {
         await completeRun(run.id);
@@ -502,6 +716,8 @@ export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJ
       return handleConditionNode(run, node, graph);
     case 'action':
       return handleActionNode(run, node, graph, job);
+    case 'digest':
+      return handleDigestNode(run, node, graph, job);
     case 'end':
       return handleEndNode(run, node);
     default:

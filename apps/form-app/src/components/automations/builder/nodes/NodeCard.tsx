@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Badge, Tooltip, TooltipContent, TooltipTrigger } from '@dculus/ui';
-import { AlertTriangle, X } from 'lucide-react';
+import { Badge, Button, Popover, PopoverContent, PopoverTrigger } from '@dculus/ui';
+import { AlertTriangle, Check, Copy, X } from 'lucide-react';
+import { useTranslation } from '../../../../hooks/useTranslation';
 
 interface NodeCardProps {
   selected?: boolean;
   hasError?: boolean;
-  errorMessage?: string;
+  /** One entry per validation error on this node — shown as separate wrapped lines, not just the first. */
+  errorMessages?: string[];
   showTargetHandle?: boolean;
   showSourceHandle?: boolean;
   icon: React.ReactNode;
@@ -30,7 +32,7 @@ interface NodeCardProps {
 export const NodeCard: React.FC<NodeCardProps> = ({
   selected,
   hasError,
-  errorMessage,
+  errorMessages,
   showTargetHandle = true,
   showSourceHandle = true,
   icon,
@@ -44,6 +46,22 @@ export const NodeCard: React.FC<NodeCardProps> = ({
   width = 280,
   children,
 }) => {
+  const { t } = useTranslation('automations');
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyErrors = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!errorMessages?.length) return;
+    try {
+      await navigator.clipboard.writeText(errorMessages.join('\n\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable (e.g. insecure context) — the text is still visible and
+      // selectable in the popover itself, so this failure is silent rather than a toast.
+    }
+  };
+
   const cardBorder = hasError
     ? '1px solid var(--tf-error)'
     : selected
@@ -98,7 +116,50 @@ export const NodeCard: React.FC<NodeCardProps> = ({
             </p>
           )}
         </div>
-        {hasError && <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: 'var(--tf-error)' }} />}
+        {hasError &&
+          (errorMessages?.length ? (
+            // A click-to-open popover, not a hover tooltip — a tooltip closes the instant the
+            // pointer leaves the trigger, so a long validation message can never be read in full
+            // or selected/copied before it vanishes. This stays open until dismissed, wraps
+            // every error onto its own line, and offers a one-click copy of the full text.
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 rounded-full"
+                  aria-label={t('builder.nodes.errorDetails')}
+                  data-testid="automation-node-error-trigger"
+                >
+                  <AlertTriangle className="h-4 w-4" style={{ color: 'var(--tf-error)' }} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="right"
+                align="start"
+                className="w-80 space-y-2 p-3"
+                data-testid="automation-node-error-popover"
+              >
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {errorMessages.map((message, i) => (
+                    <p
+                      key={i}
+                      className="text-xs whitespace-normal break-words leading-relaxed"
+                      style={{ color: 'var(--tf-error)' }}
+                    >
+                      {message}
+                    </p>
+                  ))}
+                </div>
+                <Button type="button" variant="outline" size="sm" className="w-full gap-1.5" onClick={handleCopyErrors}>
+                  {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? t('builder.nodes.errorCopied') : t('builder.nodes.copyError')}
+                </Button>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: 'var(--tf-error)' }} />
+          ))}
       </div>
 
       {children}
@@ -116,15 +177,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
       {showSourceHandle && <Handle type="source" position={Position.Right} className="!bg-[var(--tf-light-muted)]" />}
     </div>
   );
-
-  if (hasError && errorMessage) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>{card}</TooltipTrigger>
-        <TooltipContent side="right">{errorMessage}</TooltipContent>
-      </Tooltip>
-    );
-  }
 
   return card;
 };

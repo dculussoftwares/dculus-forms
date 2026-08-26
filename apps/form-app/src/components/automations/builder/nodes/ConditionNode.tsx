@@ -30,7 +30,7 @@ export const ConditionNode: React.FC<NodeProps<AutomationNode>> = ({ id, data, s
     <NodeCard
       selected={selected}
       hasError={Boolean(errors?.length)}
-      errorMessage={errors?.[0]?.message}
+      errorMessages={errors?.map((e) => e.message)}
       showSourceHandle={false}
       icon={<GitBranch className="h-4 w-4" style={{ color: '#5e35b1' }} />}
       iconBg="#ede7f6"

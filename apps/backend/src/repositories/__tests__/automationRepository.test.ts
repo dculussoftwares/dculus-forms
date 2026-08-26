@@ -13,6 +13,7 @@ const prismaMock = vi.hoisted(() => ({
   automationRun: {
     findMany: vi.fn().mockResolvedValue([]),
     findUnique: vi.fn().mockResolvedValue(null),
+    findFirst: vi.fn().mockResolvedValue(null),
     create: vi.fn().mockResolvedValue({}),
     update: vi.fn().mockResolvedValue({}),
     updateMany: vi.fn().mockResolvedValue({ count: 0 }),
@@ -47,6 +48,7 @@ describe('automationRepository', () => {
     prismaMock.automation.count.mockResolvedValue(0);
     prismaMock.automationRun.findMany.mockResolvedValue([]);
     prismaMock.automationRun.findUnique.mockResolvedValue(null);
+    prismaMock.automationRun.findFirst.mockResolvedValue(null);
     prismaMock.automationRun.create.mockResolvedValue({});
     prismaMock.automationRun.update.mockResolvedValue({});
     prismaMock.automationRun.updateMany.mockResolvedValue({ count: 0 });
@@ -184,6 +186,15 @@ describe('automationRepository', () => {
       expect(prismaMock.automationRun.updateMany).toHaveBeenCalledWith({
         where: { id: 'run-1', status: { in: ['RUNNING', 'WAITING'] } },
         data: { status: 'CANCELLED', completedAt: expect.any(Date) },
+      });
+    });
+
+    it('findLastCompletedRun scopes to COMPLETED status and orders by startedAt desc', async () => {
+      const repo = createAutomationRepository();
+      await repo.findLastCompletedRun('automation-1');
+      expect(prismaMock.automationRun.findFirst).toHaveBeenCalledWith({
+        where: { automationId: 'automation-1', status: 'COMPLETED' },
+        orderBy: { startedAt: 'desc' },
       });
     });
   });

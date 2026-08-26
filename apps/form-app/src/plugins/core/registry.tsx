@@ -48,6 +48,14 @@ export interface ConfigFormProps {
    * Plugins page, where each ConfigForm mount is dedicated to one plugin).
    */
   instanceKey?: string;
+  /**
+   * Set by the automation builder's NodeConfigPanel when this action node sits downstream of a
+   * digest node on a schedule automation (#automations-digest) — the four __digest* scalar
+   * pseudo-fields (count/since/until/truncated) are safe to offer as mentions here, and the
+   * email ConfigForm also uses this to show its "include response table" toggle. Omitted (or
+   * `{ available: false }`) everywhere else — plugin types other than email currently ignore it.
+   */
+  digestContext?: { available: boolean };
 }
 
 export interface ResponseCellProps {

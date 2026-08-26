@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Flag, GitBranch, Loader2, Webhook, Zap, type LucideIcon } from 'lucide-react';
+import { Clock, Filter, Flag, GitBranch, Loader2, Webhook, Zap, type LucideIcon } from 'lucide-react';
 import { ACTION_ICON_MAP, getActionManifest } from '../builder/actionCatalog';
 
 export const ACTIVE_RUN_STATUSES = ['RUNNING', 'WAITING'];
@@ -50,6 +50,7 @@ export function getStepIcon(nodeType: string): LucideIcon {
   if (nodeType === 'trigger') return Zap;
   if (nodeType === 'delay') return Clock;
   if (nodeType === 'condition') return GitBranch;
+  if (nodeType === 'digest') return Filter;
   if (nodeType === 'end') return Flag;
   if (nodeType.startsWith('action:')) {
     const actionType = nodeType.slice('action:'.length);

@@ -18,6 +18,8 @@ export interface GoogleSheetsResult {
   success: boolean;
   spreadsheetId?: string;
   rowNumber?: number;
+  /** Set instead of rowNumber for a digest batch write (schedule automation, #automations-digest) — one row per response in event.data.__digestResponses. */
+  rowsAppended?: number;
   syncedAt: string;
   error?: string;
 }

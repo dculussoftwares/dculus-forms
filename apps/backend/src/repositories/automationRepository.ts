@@ -85,6 +85,17 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
   const createRun = async (data: Prisma.AutomationRunCreateArgs['data']) =>
     prisma.automationRun.create({ data });
 
+  /**
+   * Most recent COMPLETED run for an automation, ordered by startedAt — the window anchor for a
+   * digest node's "since last run" query (#automations-digest). Only COMPLETED counts (not
+   * FAILED/CANCELLED), so a failed tick doesn't advance the window and silently drop responses.
+   */
+  const findLastCompletedRun = async (automationId: string) =>
+    prisma.automationRun.findFirst({
+      where: { automationId, status: 'COMPLETED' },
+      orderBy: { startedAt: 'desc' },
+    });
+
   const updateRun = async (id: string, data: Prisma.AutomationRunUpdateArgs['data']) =>
     prisma.automationRun.update({ where: { id }, data });
 
@@ -197,6 +208,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     listRunsByAutomation,
     listActiveRunsByAutomation,
     createRun,
+    findLastCompletedRun,
     updateRun,
     cancelRunsByIds,
     cancelRunIfActive,

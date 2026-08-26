@@ -12,6 +12,7 @@ const DEFAULT_DIMENSIONS: Record<AutomationNodeType, { width: number; height: nu
   delay: { width: 260, height: 76 },
   condition: { width: 300, height: 116 },
   action: { width: 280, height: 92 },
+  digest: { width: 260, height: 76 },
   end: { width: 180, height: 56 },
 };
 

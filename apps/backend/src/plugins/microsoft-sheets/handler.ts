@@ -7,6 +7,13 @@ import type {
   MicrosoftToken,
 } from './types.js';
 
+/** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
+interface DigestResponseEntry {
+  id: string;
+  submittedAt: string;
+  data: Record<string, any>;
+}
+
 const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';
 const MS_TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
 
@@ -151,13 +158,17 @@ const writeHeaderRow = async (
 };
 
 /**
- * Appends a data row by finding the next empty row after the used range and
- * writing to it. Returns true on success.
+ * Appends one or more data rows by finding the next empty row after the used range and writing
+ * the whole batch there in a SINGLE range PATCH (the Graph API accepts a rectangular block of
+ * rows in one `values` array — a digest batch of up to 1000 responses, #automations-digest,
+ * writes as one used-range lookup + one PATCH here, not one round-trip pair per response, which
+ * would otherwise make a large digest slow and prone to Graph API throttling). Returns true on
+ * success.
  */
-const appendDataRow = async (
+const appendDataRows = async (
   workbookId: string,
   worksheetName: string,
-  rowValues: string[],
+  rows: string[][],
   accessToken: string
 ): Promise<boolean> => {
   // 1. Get the used range to determine the next empty row
@@ -176,17 +187,18 @@ const appendDataRow = async (
     nextRow = rowCount + 1;
   }
 
-  // 2. Write the new row at nextRow
-  const columnCount = rowValues.length;
+  // 2. Write the whole batch starting at nextRow, one row per rows[] entry
+  const columnCount = rows[0]?.length ?? 0;
   const lastCol = columnIndexToLetter(columnCount - 1);
-  const range = `A${nextRow}:${lastCol}${nextRow}`;
+  const lastRow = nextRow + rows.length - 1;
+  const range = `A${nextRow}:${lastCol}${lastRow}`;
   const url = `${GRAPH_BASE}/me/drive/items/${workbookId}/workbook/worksheets('${encodeURIComponent(worksheetName)}')/range(address='${range}')`;
 
   const response = await fetch(url, {
     method: 'PATCH',
     headers: authHeaders(accessToken),
     body: JSON.stringify({
-      values: [rowValues],
+      values: rows,
     }),
   });
 
@@ -257,6 +269,40 @@ const resolveFieldValue = (field: any, rawValue: any): string => {
   return String(rawValue);
 };
 
+/**
+ * Builds one worksheet row's values for a single response, in the same field order as
+ * `buildHeaders()`'s column headers. Shared by both the single-response path (form.submitted /
+ * response.edited) and the digest batch path (schedule automation, #automations-digest).
+ */
+const buildRowValues = (
+  responseData: Record<string, any>,
+  formSchema: ReturnType<typeof deserializeFormSchema> | null,
+  responseId: string,
+  submittedAt: string
+): string[] => {
+  const rowValues: string[] = [];
+
+  if (formSchema?.pages) {
+    for (const page of formSchema.pages) {
+      for (const field of page.fields ?? []) {
+        if (!field?.id) continue;
+        const raw = responseData[field.id];
+        rowValues.push(resolveFieldValue(field, raw));
+      }
+    }
+  } else {
+    const skipKeys = new Set(['responseId', 'submittedAt']);
+    for (const [key, value] of Object.entries(responseData)) {
+      if (skipKeys.has(key)) continue;
+      rowValues.push(String(value ?? ''));
+    }
+  }
+
+  rowValues.push(submittedAt);
+  rowValues.push(responseId);
+  return rowValues;
+};
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export const microsoftSheetsHandler: PluginHandler = async (plugin, event, context) => {
@@ -289,25 +335,35 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
 
     const accessToken = freshToken.accessToken;
 
-    // 3. Fetch the response record
-    if (!event.data.responseId) {
-      return {
-        success: false,
-        error: 'No responseId in event data',
-        syncedAt,
-      } satisfies MicrosoftSheetsResult;
+    // 3. Fetch the response(s) to build row values. A digest batch (schedule automation with an
+    // upstream digest node, #automations-digest) carries zero-to-many responses in
+    // event.data.__digestResponses instead of exactly one event.data.responseId.
+    const digestResponses = Array.isArray((event.data as Record<string, any>).__digestResponses)
+      ? ((event.data as Record<string, any>).__digestResponses as DigestResponseEntry[])
+      : null;
+
+    let singleResponse: Awaited<ReturnType<typeof context.getResponseById>> | null = null;
+    if (!digestResponses) {
+      if (!event.data.responseId) {
+        return {
+          success: false,
+          error: 'No responseId in event data',
+          syncedAt,
+        } satisfies MicrosoftSheetsResult;
+      }
+
+      singleResponse = await context.getResponseById(event.data.responseId);
+      if (!singleResponse) {
+        return {
+          success: false,
+          error: `Response not found: ${event.data.responseId}`,
+          syncedAt,
+        } satisfies MicrosoftSheetsResult;
+      }
     }
 
-    const response = await context.getResponseById(event.data.responseId);
-    if (!response) {
-      return {
-        success: false,
-        error: `Response not found: ${event.data.responseId}`,
-        syncedAt,
-      } satisfies MicrosoftSheetsResult;
-    }
-
-    const responseData = (response.data as Record<string, any>) ?? {};
+    const sampleResponseData: Record<string, any> =
+      (singleResponse?.data as Record<string, any>) ?? digestResponses?.[0]?.data ?? {};
 
     // 4. Auto-create workbook on first ever submission (or recreate if deleted)
     let workbookId = config.workbookId;
@@ -325,7 +381,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
         }
       } else {
         const skipKeys = new Set(['responseId', 'submittedAt']);
-        for (const key of Object.keys(responseData)) {
+        for (const key of Object.keys(sampleResponseData)) {
           if (!skipKeys.has(key)) fieldHeaders.push(key);
         }
       }
@@ -374,44 +430,51 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       workbookId = created.workbookId;
     }
 
-    // 5. Build and append the data row
-    const rowValues: string[] = [];
-
-    if (formSchema?.pages) {
-      for (const page of formSchema.pages) {
-        for (const field of page.fields ?? []) {
-          if (!field?.id) continue;
-          const raw = responseData[field.id];
-          rowValues.push(resolveFieldValue(field, raw));
+    // 5. Build and append the data row(s), recreating the workbook once (and retrying) if it
+    // was deleted out from under this plugin.
+    const appendRowsWithRecovery = async (rows: string[][]): Promise<void> => {
+      try {
+        await appendDataRows(workbookId!, worksheetName, rows, accessToken);
+      } catch (err) {
+        if (err instanceof WorkbookNotFoundError) {
+          context.logger.warn('Microsoft Sheets: workbook was deleted — recreating', { pluginId: plugin.id });
+          const recreated = await initWorkbook();
+          workbookId = recreated.workbookId;
+          await appendDataRows(workbookId, worksheetName, rows, accessToken);
+        } else {
+          throw err;
         }
       }
-    } else {
-      const skipKeys = new Set(['responseId', 'submittedAt']);
-      for (const [key, value] of Object.entries(responseData)) {
-        if (skipKeys.has(key)) continue;
-        rowValues.push(String(value ?? ''));
-      }
+    };
+
+    if (digestResponses) {
+      const rows = digestResponses.map((digestResponse) =>
+        buildRowValues(digestResponse.data ?? {}, formSchema, digestResponse.id, digestResponse.submittedAt)
+      );
+      // One used-range lookup + one PATCH for the whole batch, not one pair per response.
+      if (rows.length > 0) await appendRowsWithRecovery(rows);
+      const rowsAppended = rows.length;
+
+      context.logger.info('Microsoft Sheets: digest rows appended', {
+        pluginId: plugin.id,
+        workbookId,
+        rowsAppended,
+      });
+
+      return {
+        success: true,
+        workbookId,
+        rowsAppended,
+        syncedAt,
+      } satisfies MicrosoftSheetsResult;
     }
 
-    const submittedAt =
-      responseData.submittedAt ??
-      (response as any).createdAt?.toISOString?.() ??
-      new Date().toISOString();
-    rowValues.push(String(submittedAt));
-    rowValues.push(event.data.responseId);
-
-    try {
-      await appendDataRow(workbookId, worksheetName, rowValues, accessToken);
-    } catch (err) {
-      if (err instanceof WorkbookNotFoundError) {
-        context.logger.warn('Microsoft Sheets: workbook was deleted — recreating', { pluginId: plugin.id });
-        const recreated = await initWorkbook();
-        workbookId = recreated.workbookId;
-        await appendDataRow(workbookId, worksheetName, rowValues, accessToken);
-      } else {
-        throw err;
-      }
-    }
+    const responseData = (singleResponse!.data as Record<string, any>) ?? {};
+    const submittedAt = String(
+      responseData.submittedAt ?? (singleResponse as any).createdAt?.toISOString?.() ?? new Date().toISOString()
+    );
+    const rowValues = buildRowValues(responseData, formSchema, event.data.responseId, submittedAt);
+    await appendRowsWithRecovery([rowValues]);
 
     context.logger.info('Microsoft Sheets: row appended', {
       pluginId: plugin.id,

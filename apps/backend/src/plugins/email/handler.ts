@@ -1,11 +1,101 @@
-import type { PluginHandler } from '../core/types.js';
+import type { PluginHandler, PluginEvent, PluginContext } from '../core/types.js';
 import type { ValidatedEmailConfig, EmailDeliveryResult } from './types.js';
-import { deserializeFormSchema } from '@dculus/types';
+import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 import type { EmailAttachment } from '../../services/emailService.js';
 import { resolveResponsePdfAttachment } from '../../services/pdfTemplateService.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { emitEmailSent } from '../../subscriptions/events.js';
+
+/** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
+interface DigestResponseEntry {
+  id: string;
+  submittedAt: string;
+  data: Record<string, any>;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function formatDigestCellValue(value: any): string {
+  if (value === null || value === undefined) return '';
+  if (Array.isArray(value)) return value.join(', ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+// Gmail (and most providers) clip a message around ~102KB, showing "[Message clipped]" past
+// that point — independent of whatever cap the digest node itself was configured with (up to
+// 1000 responses). A wide form with a few hundred rows can blow past this well before "all
+// responses" is reached, so the email table caps itself here regardless of how many the digest
+// node fetched, rather than inheriting its cap.
+const EMAIL_DIGEST_TABLE_ROW_CAP = 100;
+
+/**
+ * Renders an HTML table (one row per digest response, capped at EMAIL_DIGEST_TABLE_ROW_CAP) for
+ * the email action's "include response table" toggle. Column order/labels come from the form's
+ * field schema when available (same pattern as google-sheets/handler.ts's buildHeaders), falling
+ * back to the first response's raw data keys for a form whose schema couldn't be loaded.
+ */
+function buildDigestResponseTable(
+  allResponses: DigestResponseEntry[],
+  formSchema: FormSchema | null
+): string {
+  if (allResponses.length === 0) return '';
+  const responses = allResponses.slice(0, EMAIL_DIGEST_TABLE_ROW_CAP);
+  const omitted = allResponses.length - responses.length;
+
+  const fieldEntries: Array<{ id: string; label: string }> = [];
+  if (formSchema?.pages) {
+    for (const page of formSchema.pages) {
+      for (const field of page.fields ?? []) {
+        if (field instanceof FillableFormField && field.label) {
+          fieldEntries.push({ id: field.id, label: field.label });
+        }
+      }
+    }
+  }
+
+  const columnLabels =
+    fieldEntries.length > 0 ? fieldEntries.map((f) => f.label) : Object.keys(responses[0]?.data ?? {});
+  const headers = [...columnLabels, 'Submitted At'];
+
+  const headerRow = headers
+    .map(
+      (h) =>
+        `<th style="text-align:left;padding:6px 10px;border-bottom:2px solid #e5e7eb;">${escapeHtml(h)}</th>`
+    )
+    .join('');
+
+  const bodyRows = responses
+    .map((r) => {
+      const values =
+        fieldEntries.length > 0
+          ? fieldEntries.map((f) => r.data?.[f.id])
+          : Object.values(r.data ?? {});
+      const cells = values.map(
+        (v) =>
+          `<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;">${escapeHtml(formatDigestCellValue(v))}</td>`
+      );
+      cells.push(
+        `<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;">${escapeHtml(new Date(r.submittedAt).toLocaleString())}</td>`
+      );
+      return `<tr>${cells.join('')}</tr>`;
+    })
+    .join('');
+
+  const table = `<table style="border-collapse:collapse;width:100%;margin-top:16px;font-size:13px;"><thead><tr>${headerRow}</tr></thead><tbody>${bodyRows}</tbody></table>`;
+  const truncationNote =
+    omitted > 0
+      ? `<p style="font-size:12px;color:#6b7280;margin-top:8px;">Showing the first ${responses.length} of ${allResponses.length} responses.</p>`
+      : '';
+  return table + truncationNote;
+}
 
 /**
  * Resolves the set of recipient addresses for this send: the static
@@ -48,6 +138,104 @@ function resolveRecipients(
 }
 
 /**
+ * Per-response digest send (#automations-digest-per-response): recipientFieldId set on a
+ * schedule automation with an upstream digest node means "send once per matched response, to
+ * that response's own field value" rather than one summary email for the whole batch —
+ * engine.ts's handleActionNode skips its usual pre-substitution pass for exactly this
+ * combination (recipientFieldId + __digestResponses present) so config.message still has its
+ * raw {{field}} placeholders when it reaches us here; each iteration below substitutes them
+ * against that ONE response's own data, mirroring what the single-response path does with
+ * `response.data`.
+ *
+ * Failures on individual responses are caught and counted, never thrown — throwing would fail
+ * the whole pg-boss job and trigger a full-step retry, which has no per-response idempotency
+ * tracking and would re-send to everyone who already succeeded. The usage limit is checked once
+ * for the whole batch (matching the single-send path's existing all-or-nothing gate) rather
+ * than per email. PDF attachment is intentionally not supported in this mode (out of scope —
+ * would mean up to `maxResponses` PDF generations per tick); attachPdfTemplateId is ignored here.
+ */
+async function sendPerResponseDigestEmails(
+  config: ValidatedEmailConfig,
+  formSchema: FormSchema | null,
+  digestResponses: DigestResponseEntry[],
+  event: PluginEvent,
+  context: PluginContext
+): Promise<EmailDeliveryResult> {
+  if (digestResponses.length === 0) {
+    return { success: true, recipient: '', subject: config.subject, sentCount: 0, skippedCount: 0, failedCount: 0 };
+  }
+
+  const usageExceeded = await checkUsageExceeded(event.organizationId);
+  if (usageExceeded.emailsExceeded) {
+    context.logger.warn('Digest email batch skipped: organization has exceeded its email usage limit', {
+      organizationId: event.organizationId,
+    });
+    return {
+      success: false,
+      recipient: '',
+      subject: config.subject,
+      skipped: true,
+      skipReason: 'Organization has reached its email sending limit for this billing period',
+      sentCount: 0,
+      skippedCount: digestResponses.length,
+      failedCount: 0,
+    };
+  }
+
+  const fieldLabels = formSchema ? createFieldLabelsMap(formSchema) : undefined;
+  let sentCount = 0;
+  let skippedCount = 0;
+  let failedCount = 0;
+  let lastError: string | undefined;
+
+  for (const digestResponse of digestResponses) {
+    const responseData = digestResponse.data ?? {};
+    const { recipients, skipReason } = resolveRecipients(config, responseData, true);
+
+    if (recipients.length === 0) {
+      skippedCount += 1;
+      context.logger.warn('Digest email skipped for one response: no recipient could be resolved', {
+        responseId: digestResponse.id,
+        reason: skipReason,
+      });
+      continue;
+    }
+
+    const emailBody = substituteMentions(config.message, responseData, fieldLabels);
+
+    try {
+      await context.sendEmail({ to: recipients.join(', '), subject: config.subject, html: emailBody });
+      emitEmailSent(event.organizationId, event.formId, 'plugin');
+      sentCount += 1;
+    } catch (err: any) {
+      failedCount += 1;
+      lastError = err?.message || 'Unknown error';
+      context.logger.error('Digest email failed for one response', {
+        responseId: digestResponse.id,
+        error: lastError,
+      });
+    }
+  }
+
+  context.logger.info('Digest per-response emails complete', {
+    total: digestResponses.length,
+    sentCount,
+    skippedCount,
+    failedCount,
+  });
+
+  return {
+    success: failedCount === 0,
+    recipient: `${sentCount} recipient(s)`,
+    subject: config.subject,
+    sentCount,
+    skippedCount,
+    failedCount,
+    error: failedCount > 0 ? `${failedCount} of ${digestResponses.length} emails failed to send. Last error: ${lastError}` : undefined,
+  };
+}
+
+/**
  * Email Plugin Handler
  * Sends email notifications with custom messages (supports mentions)
  *
@@ -70,6 +258,15 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
     const form = await context.getFormById(event.formId);
     if (!form) {
       throw new Error(`Form not found: ${event.formId}`);
+    }
+    // Deserialized unconditionally, right after the form is fetched — needed by every path
+    // below (single-response mention substitution, the digest response table, AND the
+    // per-response digest send branch immediately following).
+    const formSchema = deserializeFormSchema(form.formSchema);
+
+    const digestResponses = event.data.__digestResponses as DigestResponseEntry[] | undefined;
+    if (config.recipientFieldId && Array.isArray(digestResponses)) {
+      return await sendPerResponseDigestEmails(config, formSchema, digestResponses, event, context);
     }
 
     // Fetch the response once — used for both mention substitution and
@@ -121,7 +318,6 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
 
     // Prepare email message
     let emailBody = config.message;
-    const formSchema = response && response.data ? deserializeFormSchema(form.formSchema) : null;
 
     // If this is a form submission (not a test), substitute mentions
     if (response && response.data && formSchema) {
@@ -134,12 +330,26 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
         originalLength: config.message.length,
         substitutedLength: emailBody.length,
       });
-    } else if (!event.data.responseId) {
-      // For test events, add a note at the top
+    } else if (event.type === 'plugin.test') {
+      // Only a genuine standalone plugin test-fire (no response, event.type === 'plugin.test')
+      // gets this banner. A real schedule-triggered run also has no single response
+      // (event.data.responseId absent by design — triggerService.ts's handleScheduledTick
+      // sets triggerData: {}) but event.type is 'schedule' there, not 'plugin.test' — checking
+      // `!event.data.responseId` alone previously mislabeled every real schedule-automation
+      // email as a test send.
       emailBody = `<div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 16px;">
         <strong>🧪 Test Email</strong><br>
         This is a test email from your plugin. Actual form submissions will include real data.
       </div>${config.message}`;
+    }
+
+    // Digest response table (schedule automations with an upstream digest node, #automations-digest).
+    // __digestResponses/{{__digest*}} scalars are already substituted into config.message by the
+    // engine's substituteConfigMentions() before this handler runs — this only appends the
+    // per-response table, which the flat mention-substitution model can't express. (digestResponses
+    // itself was already declared above, right after formSchema, for the per-response-send check.)
+    if (config.includeDigestTable && Array.isArray(digestResponses) && digestResponses.length > 0) {
+      emailBody += buildDigestResponseTable(digestResponses, formSchema);
     }
 
     // Optionally render a PDF from a configured template and attach it — a

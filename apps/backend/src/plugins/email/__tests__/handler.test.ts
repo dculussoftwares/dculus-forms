@@ -3,10 +3,16 @@ import { emailHandler } from '../handler.js';
 import type { PluginEvent, PluginContext } from '../../core/types.js';
 import type { ValidatedEmailConfig } from '../types.js';
 
-// Mock dependencies
-vi.mock('@dculus/types', () => ({
-  deserializeFormSchema: vi.fn(),
-}));
+// Mock dependencies. FillableFormField/TextInputField are kept REAL (via importOriginal) — the
+// handler's digest-table builder does `field instanceof FillableFormField`, which needs the
+// genuine class, not a mock stub.
+vi.mock('@dculus/types', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@dculus/types')>();
+  return {
+    ...actual,
+    deserializeFormSchema: vi.fn(),
+  };
+});
 
 vi.mock('@dculus/utils', () => ({
   substituteMentions: vi.fn(),
@@ -300,6 +306,359 @@ describe('Email Handler', () => {
           html: expect.stringContaining('<p>Name: @name</p>'),
         })
       );
+    });
+  });
+
+  describe('Schedule automation digest (#automations-digest)', () => {
+    it('does NOT show the test banner on a real schedule-triggered run with no responseId — regression for the bug where every schedule email was mislabeled as a test send', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'admin@example.com',
+        subject: 'Weekly digest',
+        message: '<p>You have {{__digestCount}} new responses.</p>',
+      };
+
+      // A real schedule automation run: event.type is 'schedule' (not 'plugin.test'), and
+      // event.data.responseId is absent by design (triggerService.ts's handleScheduledTick)
+      // — {{__digestCount}} has already been substituted by the engine's
+      // substituteConfigMentions() before this handler runs, so config.message arrives with
+      // the real number, not the placeholder.
+      const scheduleEvent: PluginEvent = {
+        type: 'schedule',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2026-01-01T09:00:00Z'),
+        data: { __digestCount: 3, __digestSince: '2025-12-25T00:00:00Z', __digestUntil: '2026-01-01T09:00:00Z' },
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      await emailHandler(
+        { id: 'test-plugin', config: { ...config, message: '<p>You have 3 new responses.</p>' } },
+        scheduleEvent,
+        mockContext
+      );
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ html: expect.not.stringContaining('🧪 Test Email') })
+      );
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ html: expect.stringContaining('<p>You have 3 new responses.</p>') })
+      );
+    });
+
+    it('appends a response table when includeDigestTable is true and __digestResponses is present', async () => {
+      const { TextInputField, TextFieldValidation } = await vi.importActual<typeof import('@dculus/types')>(
+        '@dculus/types'
+      );
+
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'admin@example.com',
+        subject: 'Weekly digest',
+        message: '<p>New responses below.</p>',
+        includeDigestTable: true,
+      };
+
+      const nameField = new TextInputField(
+        'field-name',
+        'Full Name',
+        '',
+        '',
+        '',
+        '',
+        new TextFieldValidation(false)
+      );
+
+      const scheduleEvent: PluginEvent = {
+        type: 'schedule',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2026-01-01T09:00:00Z'),
+        data: {
+          __digestResponses: [
+            { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { 'field-name': 'Ada Lovelace' } },
+            { id: 'r2', submittedAt: '2025-12-27T11:00:00.000Z', data: { 'field-name': 'Grace Hopper' } },
+          ],
+        },
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [{ fields: [nameField] }] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [nameField] }] } as any);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      await emailHandler({ id: 'test-plugin', config }, scheduleEvent, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          html: expect.stringContaining('<table'),
+        })
+      );
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ html: expect.stringContaining('Ada Lovelace') })
+      );
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ html: expect.stringContaining('Grace Hopper') })
+      );
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ html: expect.stringContaining('Full Name') })
+      );
+    });
+
+    it('caps the email table at 100 rows and adds a truncation note, independent of the digest node\'s own (up to 1000) cap', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'admin@example.com',
+        subject: 'Weekly digest',
+        message: '<p>New responses below.</p>',
+        includeDigestTable: true,
+      };
+
+      const manyResponses = Array.from({ length: 150 }, (_, i) => ({
+        id: `r${i}`,
+        submittedAt: '2025-12-26T10:00:00.000Z',
+        data: { name: `Person ${i}` },
+      }));
+
+      const scheduleEvent: PluginEvent = {
+        type: 'schedule',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2026-01-01T09:00:00Z'),
+        data: { __digestResponses: manyResponses },
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      await emailHandler({ id: 'test-plugin', config }, scheduleEvent, mockContext);
+
+      const sentHtml = vi.mocked(mockContext.sendEmail).mock.calls[0][0].html;
+      expect((sentHtml.match(/Person \d+/g) ?? []).length).toBe(100);
+      expect(sentHtml).toContain('Showing the first 100 of 150 responses.');
+    });
+
+    it('does NOT append a response table when includeDigestTable is false, even with __digestResponses present', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'admin@example.com',
+        subject: 'Weekly digest',
+        message: '<p>New responses below.</p>',
+        includeDigestTable: false,
+      };
+
+      const scheduleEvent: PluginEvent = {
+        type: 'schedule',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2026-01-01T09:00:00Z'),
+        data: {
+          __digestResponses: [{ id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { name: 'Ada' } }],
+        },
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      await emailHandler({ id: 'test-plugin', config }, scheduleEvent, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ html: expect.not.stringContaining('<table') })
+      );
+    });
+
+    it('does not crash and omits the table when includeDigestTable is true but __digestResponses is absent', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'admin@example.com',
+        subject: 'Reminder',
+        message: '<p>Please fill out the form.</p>',
+        includeDigestTable: true,
+      };
+
+      const scheduleEvent: PluginEvent = {
+        type: 'schedule',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2026-01-01T09:00:00Z'),
+        data: {},
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, scheduleEvent, mockContext);
+
+      expect(result.success).toBe(true);
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ html: expect.not.stringContaining('<table') })
+      );
+    });
+  });
+
+  describe('Per-response digest send (#automations-digest-per-response)', () => {
+    const scheduleEventWithDigest = (digestResponses: any[]): PluginEvent => ({
+      type: 'schedule',
+      formId: 'form-123',
+      organizationId: 'org-123',
+      timestamp: new Date('2026-01-01T09:00:00Z'),
+      data: { __digestResponses: digestResponses },
+    });
+
+    beforeEach(() => {
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+    });
+
+    it('sends one email per response, each to that response\'s own recipientFieldId value with substituted content', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        recipientFieldLabel: 'Email',
+        subject: 'Reminder',
+        message: 'Hi {{name}}, thanks for submitting!',
+      };
+
+      vi.mocked(substituteMentions).mockImplementation((msg: string, data: Record<string, any>) =>
+        msg.replace('{{name}}', data.name ?? '')
+      );
+
+      const event = scheduleEventWithDigest([
+        { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { name: 'Ada', 'email-field': 'ada@example.com' } },
+        { id: 'r2', submittedAt: '2025-12-27T11:00:00.000Z', data: { name: 'Grace', 'email-field': 'grace@example.com' } },
+      ]);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledTimes(2);
+      expect(mockContext.sendEmail).toHaveBeenNthCalledWith(1, expect.objectContaining({
+        to: 'ada@example.com',
+        html: 'Hi Ada, thanks for submitting!',
+      }));
+      expect(mockContext.sendEmail).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        to: 'grace@example.com',
+        html: 'Hi Grace, thanks for submitting!',
+      }));
+      expect(result.success).toBe(true);
+      expect(result.sentCount).toBe(2);
+      expect(result.skippedCount).toBe(0);
+      expect(result.failedCount).toBe(0);
+    });
+
+    it('skips (not fails) a response whose recipient field is empty, and still sends to the rest', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        subject: 'Reminder',
+        message: 'Hi',
+      };
+      vi.mocked(substituteMentions).mockImplementation((msg: string) => msg);
+
+      const event = scheduleEventWithDigest([
+        { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { 'email-field': '' } },
+        { id: 'r2', submittedAt: '2025-12-27T11:00:00.000Z', data: { 'email-field': 'grace@example.com' } },
+      ]);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledTimes(1);
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'grace@example.com' }));
+      expect(result.sentCount).toBe(1);
+      expect(result.skippedCount).toBe(1);
+    });
+
+    it('counts (not throws on) a per-response send failure, continuing with the remaining responses', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        subject: 'Reminder',
+        message: 'Hi',
+      };
+      vi.mocked(substituteMentions).mockImplementation((msg: string) => msg);
+      vi.mocked(mockContext.sendEmail)
+        .mockRejectedValueOnce(new Error('SMTP timeout'))
+        .mockResolvedValueOnce(undefined);
+
+      const event = scheduleEventWithDigest([
+        { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { 'email-field': 'ada@example.com' } },
+        { id: 'r2', submittedAt: '2025-12-27T11:00:00.000Z', data: { 'email-field': 'grace@example.com' } },
+      ]);
+
+      // Must not throw — a thrown error here would fail the whole pg-boss job and retry the
+      // entire step, re-sending to responses that already succeeded (no per-response idempotency).
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledTimes(2);
+      expect(result.success).toBe(false);
+      expect(result.sentCount).toBe(1);
+      expect(result.failedCount).toBe(1);
+      expect(result.error).toContain('SMTP timeout');
+    });
+
+    it('skips the entire batch (zero sends) when the org has exceeded its email usage limit', async () => {
+      vi.mocked(checkUsageExceeded).mockResolvedValue({ viewsExceeded: false, submissionsExceeded: false, emailsExceeded: true });
+
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        subject: 'Reminder',
+        message: 'Hi',
+      };
+      const event = scheduleEventWithDigest([
+        { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { 'email-field': 'ada@example.com' } },
+      ]);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      expect(mockContext.sendEmail).not.toHaveBeenCalled();
+      expect(result.skipped).toBe(true);
+      expect(result.skippedCount).toBe(1);
+    });
+
+    it('succeeds with sentCount 0 when the digest batch is empty (nothing new to send to)', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        subject: 'Reminder',
+        message: 'Hi',
+      };
+      const event = scheduleEventWithDigest([]);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      expect(mockContext.sendEmail).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.sentCount).toBe(0);
+    });
+
+    it('does NOT use the per-response path when recipientFieldId is absent (aggregate/static mode, unaffected)', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'ops@example.com',
+        subject: 'Digest',
+        message: '3 new responses',
+      };
+      const event = scheduleEventWithDigest([
+        { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { name: 'Ada' } },
+      ]);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      // Aggregate path: exactly one send, to the static address, not one per digest response.
+      expect(mockContext.sendEmail).toHaveBeenCalledTimes(1);
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'ops@example.com' }));
+      expect(result.sentCount).toBeUndefined();
     });
   });
 
