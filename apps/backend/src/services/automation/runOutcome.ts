@@ -25,10 +25,14 @@ export const AUTO_PAUSE_AFTER_FAILURES = 5;
 /** Outcomes that count against the failure streak, vs. reset it, vs. leave it alone. */
 function classifyForStreak(status: string): 'failure' | 'success' | 'neutral' {
   if (status === 'FAILED') return 'failure';
-  if (status === 'COMPLETED') return 'success';
-  // PARTIAL delivered something, so it is worth badging but not worth pausing an automation over
-  // — pausing would stop the part that still works. CANCELLED and SKIPPED are user-initiated or
-  // benign, and must not push an otherwise-healthy automation towards auto-pause.
+  // COMPLETED and PARTIAL both BREAK the streak. The counter means "failures in a row", so a run
+  // that delivered something has to reset it — leaving PARTIAL neutral would let
+  // FAILED,FAILED,FAILED,PARTIAL,FAILED,FAILED reach five and auto-pause an automation that never
+  // failed five times consecutively. PARTIAL is still badged via lastRunStatus; it just is not a
+  // total failure, and pausing over it would stop the part that still works.
+  if (status === 'COMPLETED' || status === 'PARTIAL') return 'success';
+  // CANCELLED and SKIPPED are user-initiated or benign: neither evidence of health nor of
+  // breakage, so they leave the streak exactly where it was.
   return 'neutral';
 }
 

@@ -19,9 +19,24 @@ export interface AutomationFailureEmailData {
   consecutiveFailures: number;
 }
 
+/**
+ * Escapes a value before it goes into the HTML body. `automationName` is set by any EDITOR on the
+ * form, so it reaches this template as arbitrary user input — unescaped, a name containing markup
+ * would inject it into the recipient's inbox.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function generateAutomationFailureEmailHtml(data: AutomationFailureEmailData): string {
-  const { automationName, runUrl, reason, consecutiveFailures } = data;
+  const { runUrl, reason, consecutiveFailures } = data;
   const isPaused = reason === 'auto-paused';
+  const automationName = escapeHtml(data.automationName);
 
   const subtitle = isPaused
     ? `<strong style="color:${EMAIL_THEME.body};">${automationName}</strong> has been paused after failing ${consecutiveFailures} times in a row.`

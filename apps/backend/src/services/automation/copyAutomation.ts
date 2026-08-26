@@ -25,10 +25,18 @@ import type { AutomationGraph } from './types.js';
  * — the honest state for a copy that genuinely needs a decision before it can run.
  */
 const EXTERNALLY_BOUND_CONFIG_KEYS = [
+  // Documents the action created and now owns — see the doc comment above.
   'spreadsheetId',
   'spreadsheetUrl',
   'workbookId',
+  'workbookUrl',
   'worksheetId',
+  // The OAuth connection itself. Both sheets plugins nest their tokens in an object
+  // (GoogleSheetsPluginConfig.googleToken, MicrosoftSheetsPluginConfig.microsoftToken) rather than
+  // at the top level, so dropping bare accessToken/refreshToken would miss every real credential.
+  // The bare keys stay listed for any handler that stores them flat.
+  'googleToken',
+  'microsoftToken',
   'accessToken',
   'refreshToken',
 ] as const;
@@ -48,10 +56,15 @@ function stripExternalBindings(config: Record<string, any>): Record<string, any>
  * nothing here.
  */
 export function copyAutomationGraph(source: unknown): AutomationGraph {
-  const graph = (source as AutomationGraph) ?? { nodes: [], edges: [] };
+  // `graph` is a JSON column, so its shape is only as good as whatever last wrote it. A malformed
+  // one must not take out an unrelated form duplication, so anything that is not an array is
+  // treated as absent rather than mapped over.
+  const graph = (source ?? {}) as Partial<AutomationGraph>;
+  const sourceNodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+  const sourceEdges = Array.isArray(graph.edges) ? graph.edges : [];
   const nodeIdMap = new Map<string, string>();
 
-  const nodes = (graph.nodes ?? []).map((node) => {
+  const nodes = sourceNodes.map((node) => {
     const newId = generateId();
     nodeIdMap.set(node.id, newId);
     const data = (node as { data?: Record<string, any> }).data;
@@ -64,7 +77,7 @@ export function copyAutomationGraph(source: unknown): AutomationGraph {
     };
   }) as AutomationGraph['nodes'];
 
-  const edges = (graph.edges ?? []).map((edge) => ({
+  const edges = sourceEdges.map((edge) => ({
     ...edge,
     id: generateId(),
     source: nodeIdMap.get(edge.source) ?? edge.source,

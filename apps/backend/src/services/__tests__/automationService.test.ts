@@ -687,6 +687,7 @@ describe('automationService', () => {
       vi.mocked(automationRepository.findLatestFailedStepRun).mockResolvedValue({
         nodeId: 'action-1',
       } as any);
+      vi.mocked(automationRepository.claimFailedRunForRetry).mockResolvedValue({ count: 1 } as any);
     });
 
     // Resuming, not re-running: the steps that already succeeded must not deliver a second time.
@@ -695,13 +696,19 @@ describe('automationService', () => {
 
       await retryAutomationRun('run-1');
 
-      expect(automationRepository.updateRun).toHaveBeenCalledWith('run-1', {
-        status: 'RUNNING',
-        completedAt: null,
-        currentNodeId: 'action-1',
-      });
+      expect(automationRepository.claimFailedRunForRetry).toHaveBeenCalledWith('run-1', 'action-1');
       expect(enqueueRunStep).toHaveBeenCalledWith({ id: 'run-1' }, 'action-1');
       expect(enqueueFirstStep).not.toHaveBeenCalled();
+    });
+
+    // Both callers read FAILED before either writes, so the read-then-write check cannot separate
+    // them — only the conditional transition can. Losing the claim must not enqueue.
+    it('refuses a second concurrent retry that lost the claim, rather than enqueueing twice', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(automationRepository.claimFailedRunForRetry).mockResolvedValue({ count: 0 } as any);
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow(/already being retried/);
+      expect(enqueueRunStep).not.toHaveBeenCalled();
     });
 
     // A retry is usually prompted by a fix, so replaying the frozen config would fail identically.

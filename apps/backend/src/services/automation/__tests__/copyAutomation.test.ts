@@ -94,9 +94,57 @@ describe('copyAutomationGraph', () => {
     expect((copy.nodes[0] as any).data).toEqual({ amount: 3, unit: 'days' });
   });
 
+  // The sheets plugins nest their OAuth tokens rather than storing them flat, so a shallow strip
+  // of accessToken/refreshToken keeps the source connection alive in the copy.
+  it('strips nested OAuth token objects, not just top-level token keys', () => {
+    const copy = copyAutomationGraph({
+      nodes: [
+        {
+          id: 'g',
+          type: 'action',
+          data: {
+            actionType: 'google-sheets',
+            config: {
+              type: 'google-sheets',
+              googleToken: { accessToken: 'a', refreshToken: 'r', expiresAt: 'x', email: 'e' },
+              sheetName: 'Responses',
+            },
+          },
+        },
+        {
+          id: 'm',
+          type: 'action',
+          data: {
+            actionType: 'microsoft-sheets',
+            config: {
+              type: 'microsoft-sheets',
+              microsoftToken: { accessToken: 'a', refreshToken: 'r' },
+              workbookUrl: 'https://onedrive/x',
+              worksheetName: 'Sheet1',
+            },
+          },
+        },
+      ],
+      edges: [],
+    });
+
+    const google = (copy.nodes[0] as any).data.config;
+    expect(google).not.toHaveProperty('googleToken');
+    expect(google.sheetName).toBe('Responses');
+
+    const microsoft = (copy.nodes[1] as any).data.config;
+    expect(microsoft).not.toHaveProperty('microsoftToken');
+    expect(microsoft).not.toHaveProperty('workbookUrl');
+    expect(microsoft.worksheetName).toBe('Sheet1');
+  });
+
+  // graph is a JSON column: a malformed one must not take out an unrelated form duplication.
   it('tolerates a missing or malformed graph', () => {
     expect(copyAutomationGraph(undefined)).toEqual({ nodes: [], edges: [] });
     expect(copyAutomationGraph({})).toEqual({ nodes: [], edges: [] });
+    expect(copyAutomationGraph({ nodes: {}, edges: [] })).toEqual({ nodes: [], edges: [] });
+    expect(copyAutomationGraph({ nodes: [], edges: 'nope' })).toEqual({ nodes: [], edges: [] });
+    expect(copyAutomationGraph(null)).toEqual({ nodes: [], edges: [] });
   });
 });
 

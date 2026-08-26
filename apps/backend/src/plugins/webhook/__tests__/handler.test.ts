@@ -496,12 +496,19 @@ describe('Webhook Handler', () => {
     });
 
     // The key is the receiver's only way to tell a retry from a new delivery, so a configured
-    // header must not be able to shadow it.
-    it('is not overridable by a configured header of the same name', async () => {
+    // header must not be able to shadow it — in ANY casing. fetch lowercases header names and
+    // combines duplicates, so a surviving case-variant would arrive appended to ours rather than
+    // replaced, and the receiver would see a value that is not the stable key.
+    it.each([
+      'X-Dculus-Idempotency-Key',
+      'x-dculus-idempotency-key',
+      'X-DCULUS-IDEMPOTENCY-KEY',
+      'x-Dculus-IDEMPOTENCY-key',
+    ])('is not overridable by a configured %s header', async (headerName) => {
       const config: ValidatedWebhookConfig = {
         type: 'webhook',
         url: 'https://example.com/webhook',
-        headers: { 'X-Dculus-Idempotency-Key': 'attacker-supplied' },
+        headers: { [headerName]: 'attacker-supplied' },
       };
       mockFetch.mockResolvedValue(okResponse());
 
@@ -511,7 +518,10 @@ describe('Webhook Handler', () => {
       });
 
       const headers = mockFetch.mock.calls[0][1].headers;
-      expect(headers['X-Dculus-Idempotency-Key']).toBe('run-1:action-1');
+      const sent = Object.entries(headers).filter(
+        ([name]) => name.toLowerCase() === 'x-dculus-idempotency-key'
+      );
+      expect(sent).toEqual([['X-Dculus-Idempotency-Key', 'run-1:action-1']]);
     });
   });
 

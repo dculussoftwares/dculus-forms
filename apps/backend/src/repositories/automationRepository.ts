@@ -85,6 +85,30 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
   const createRun = async (data: Prisma.AutomationRunCreateArgs['data']) =>
     prisma.automationRun.create({ data });
 
+  /**
+   * Takes a transaction-scoped advisory lock naming this automation's scheduled tick, returning
+   * false when another worker already holds it.
+   *
+   * The overlap guard in triggerService checks for an in-flight run and then creates one; without
+   * a lock, two workers can both pass that check before either writes, and both start processing
+   * the same digest window. pg-boss makes that rare — one job per tick, claimed with SKIP LOCKED —
+   * but not impossible: a batch that outlives the job's visibility timeout is redelivered while
+   * the first worker is still going, which is precisely the long-running case this guard exists
+   * for.
+   *
+   * `pg_try_advisory_xact_lock` rather than a row lock or unique index because the thing being
+   * serialised is "processing a tick for this automation", which has no single row to lock — and
+   * because a unique index on active runs would wrongly forbid the concurrent runs that
+   * form.submitted automations create legitimately, one per submission. The lock releases with the
+   * transaction, so a crashed worker cannot wedge an automation.
+   */
+  const tryLockScheduledTick = async (automationId: string): Promise<boolean> => {
+    const rows = await prisma.$queryRaw<Array<{ locked: boolean }>>(
+      Prisma.sql`SELECT pg_try_advisory_xact_lock(hashtext(${`automation-tick:${automationId}`})) AS locked`
+    );
+    return rows[0]?.locked === true;
+  };
+
   const updateRun = async (id: string, data: Prisma.AutomationRunUpdateArgs['data']) =>
     prisma.automationRun.update({ where: { id }, data });
 
@@ -113,6 +137,19 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     prisma.automationRun.updateMany({
       where: { id: { in: ids } },
       data: { status: 'CANCELLED', completedAt: new Date() },
+    });
+
+  /**
+   * Claims a FAILED run for a retry by flipping it to RUNNING, but only while it is still FAILED —
+   * the same TOCTOU-safe shape as cancelRunIfActive below, and for the same reason. Two retry
+   * requests arriving together would otherwise both read FAILED, both pass the check, and both
+   * enqueue the failed node, executing the action twice. Making the transition itself the guard
+   * means exactly one caller can win. Returns the number of rows matched.
+   */
+  const claimFailedRunForRetry = async (id: string, nodeId: string) =>
+    prisma.automationRun.updateMany({
+      where: { id, status: 'FAILED' },
+      data: { status: 'RUNNING', completedAt: null, currentNodeId: nodeId },
     });
 
   /**
@@ -252,8 +289,10 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     listRunsByAutomation,
     listActiveRunsByAutomation,
     createRun,
+    tryLockScheduledTick,
     updateRun,
     advanceDigestWatermark,
+    claimFailedRunForRetry,
     cancelRunsByIds,
     cancelRunIfActive,
 

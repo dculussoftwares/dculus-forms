@@ -133,7 +133,12 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
       const { data } = await duplicateAutomation({ variables: { id: automation.id }, refetchQueries });
       toastSuccess(
         t('toasts.duplicatedTitle'),
-        t('toasts.duplicatedMessage', { values: { name: data.duplicateAutomation.name } })
+        // Apollo can resolve with `data` undefined (a partial GraphQL error, say). Reading through
+        // it unguarded would throw inside the try and show the "couldn't duplicate" toast over a
+        // copy that was in fact created.
+        t('toasts.duplicatedMessage', {
+          values: { name: data?.duplicateAutomation?.name ?? automation.name },
+        })
       );
     } catch (error: any) {
       toastError(t('toasts.duplicateErrorTitle'), error.message);

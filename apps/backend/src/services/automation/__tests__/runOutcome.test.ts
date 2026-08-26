@@ -129,9 +129,8 @@ describe('recordRunOutcome', () => {
     );
   });
 
-  // PARTIAL delivered something and CANCELLED/SKIPPED are benign — neither should push an
-  // otherwise-healthy automation towards auto-pause.
-  it.each(['PARTIAL', 'CANCELLED', 'SKIPPED'])(
+  // CANCELLED and SKIPPED are user-initiated or benign — neither evidence of health nor breakage.
+  it.each(['CANCELLED', 'SKIPPED'])(
     'records %s without touching the failure streak',
     async (status) => {
       vi.mocked(automationRepository.updateAutomation).mockResolvedValue(updatedAutomation() as any);
@@ -143,6 +142,22 @@ describe('recordRunOutcome', () => {
       expect(sendAutomationFailureEmail).not.toHaveBeenCalled();
     }
   );
+
+  // The counter means "failures IN A ROW". Leaving PARTIAL neutral would let
+  // FAILED,FAILED,FAILED,PARTIAL,FAILED,FAILED reach five and auto-pause an automation that never
+  // failed five times consecutively.
+  it('breaks the failure streak on a partly-delivered run', async () => {
+    vi.mocked(automationRepository.updateAutomation).mockResolvedValue(updatedAutomation() as any);
+
+    await recordRunOutcome('automation-1', 'run-1', 'PARTIAL');
+
+    expect(automationRepository.updateAutomation).toHaveBeenCalledWith(
+      'automation-1',
+      expect.objectContaining({ lastRunStatus: 'PARTIAL', consecutiveFailureCount: 0 })
+    );
+    // Still not worth mailing about: something did get delivered.
+    expect(sendAutomationFailureEmail).not.toHaveBeenCalled();
+  });
 
   // Bookkeeping must never be able to fail the run that triggered it.
   it('swallows its own errors rather than failing the run', async () => {

@@ -485,9 +485,6 @@ reported) rather than re-covered, retry is limited to `FAILED` runs, and the ide
 only receivers that choose to dedupe on it. That single piece of tracking would tighten D, E, F and
 H at once, and is the highest-value follow-up in the whole document.
 
-**Then (business + ops)**
-M (metering and plan gating) → N (retention) → O (engine visibility) → K (step-output conditions)
-
 **Backlog**
 J, P1–P8, and the strategy doc's own Phase 4 items (approvals / human-in-the-loop, parallel branches).
 

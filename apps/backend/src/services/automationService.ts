@@ -491,11 +491,17 @@ export async function retryAutomationRun(runId: string) {
     );
   }
 
-  await automationRepository.updateRun(runId, {
-    status: 'RUNNING',
-    completedAt: null,
-    currentNodeId: failedStep.nodeId,
-  });
+  // The FAILED -> RUNNING transition IS the guard. Two retry requests arriving together would
+  // otherwise both have read FAILED above, both pass that check, and both enqueue the same node —
+  // executing the action twice. The idempotency key does not save us here: both enqueued steps
+  // carry the same `runId:nodeId`, and nothing on our side stores it.
+  const { count } = await automationRepository.claimFailedRunForRetry(runId, failedStep.nodeId);
+  if (count === 0) {
+    throw createGraphQLError(
+      'This run is already being retried',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
 
   // Re-read so the snapshot carries the config refresh above.
   const resumed = await automationRepository.findRunById(runId);
