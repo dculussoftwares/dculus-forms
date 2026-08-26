@@ -14,6 +14,19 @@ import { useFormPermissions } from '../hooks/useFormPermissions';
 import { useTestAutomation } from '../hooks/useTestAutomation';
 import { extractValidationErrors } from '../components/automations/builder/validation';
 import { isIntentionalNavigationPending } from '../lib/intentionalNavigation';
+import { CombinedGraphQLErrors } from '@apollo/client';
+
+function getErrorMessage(error: unknown): string {
+  if (CombinedGraphQLErrors.is(error)) return error.message;
+  if (error instanceof Error) return error.message;
+  // Covers error-like values that aren't real Error instances — e.g. a plain object crossing a
+  // serialization boundary ({ name: 'NetworkError', message: '...' }) — so its message isn't
+  // lost behind a useless "[object Object]" from the String(error) fallback below.
+  if (error && typeof error === 'object' && 'message' in error && typeof (error as { message: unknown }).message === 'string') {
+    return (error as { message: string }).message;
+  }
+  return String(error);
+}
 
 const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ form, automation }) => {
   const { t } = useTranslation('automations');
@@ -87,9 +100,9 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
       const result = await renameAutomation({ variables: { id: automationId, name: trimmed } });
       if (result.error) throw result.error;
       toastSuccess(t('toasts.renamedTitle'), t('toasts.renamedMessage', { values: { name: trimmed } }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       setNameDraft(automation.name);
-      toastError(t('toasts.renameErrorTitle'), error.message);
+      toastError(t('toasts.renameErrorTitle'), getErrorMessage(error));
     }
   };
 
@@ -97,12 +110,22 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     try {
       const graph = getSerializableGraph();
       const result = await updateAutomation({ variables: { id: automationId, graph } });
+      // Apollo Client v4's mutate() resolves (doesn't reject) when the response contains
+      // GraphQL-level errors — only network/execution failures throw. AUTOMATION_INVALID_GRAPH
+      // (an active automation's edited graph failing re-validation) is a GraphQL error, so it
+      // must be read off the resolved result, not caught.
       if (result.error) throw result.error;
       markSaved();
       clearValidationErrors();
       toastSuccess(t('builder.header.saveSuccessTitle'), t('builder.header.saveSuccessMessage'));
-    } catch (error: any) {
-      toastError(t('builder.header.saveErrorTitle'), error.message);
+    } catch (error: unknown) {
+      const validationErrors = CombinedGraphQLErrors.is(error) ? extractValidationErrors(error) : undefined;
+      if (validationErrors) {
+        setValidationErrors(validationErrors);
+        toastError(t('builder.header.saveErrorTitle'), t('builder.header.saveInvalidMessage'));
+      } else {
+        toastError(t('builder.header.saveErrorTitle'), getErrorMessage(error));
+      }
     }
   };
 
@@ -121,13 +144,13 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
           ? t('toasts.activatedMessage', { values: { name: automation.name } })
           : t('toasts.pausedMessage', { values: { name: automation.name } })
       );
-    } catch (error: any) {
-      const validationErrors = extractValidationErrors(error);
+    } catch (error: unknown) {
+      const validationErrors = CombinedGraphQLErrors.is(error) ? extractValidationErrors(error) : undefined;
       if (validationErrors) {
         setValidationErrors(validationErrors);
         toastError(t('builder.header.activateInvalidTitle'), t('builder.header.activateInvalidMessage'));
       } else {
-        toastError(t('toasts.statusErrorTitle'), error.message);
+        toastError(t('toasts.statusErrorTitle'), getErrorMessage(error));
       }
     }
   };

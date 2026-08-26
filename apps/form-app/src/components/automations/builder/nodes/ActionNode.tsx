@@ -25,7 +25,7 @@ export const ActionNode: React.FC<NodeProps<AutomationNode>> = ({ id, data, sele
     <NodeCard
       selected={selected}
       hasError={hasServerError}
-      errorMessage={errors?.[0]?.message}
+      errorMessages={errors?.map((e) => e.message)}
       icon={<Icon className="h-4 w-4" style={{ color: manifest?.iconColor ?? 'var(--tf-dark)' }} />}
       iconBg={manifest?.iconBgColor ?? 'var(--tf-icon-gray)'}
       title={actionData.name || manifest?.name || actionData.actionType}

@@ -40,6 +40,11 @@ export const GRAPH_ERROR_CODES = {
   UNKNOWN_ACTION_TYPE: 'UNKNOWN_ACTION_TYPE',
   INVALID_ACTION_CONFIG: 'INVALID_ACTION_CONFIG',
   RESPONSE_DEPENDENT_ON_SCHEDULE: 'RESPONSE_DEPENDENT_ON_SCHEDULE',
+  INVALID_DIGEST_CONFIG: 'INVALID_DIGEST_CONFIG',
+  MULTIPLE_DIGEST_NODES: 'MULTIPLE_DIGEST_NODES',
+  DIGEST_REQUIRES_SCHEDULE_TRIGGER: 'DIGEST_REQUIRES_SCHEDULE_TRIGGER',
+  DIGEST_MUST_FOLLOW_TRIGGER: 'DIGEST_MUST_FOLLOW_TRIGGER',
+  RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST: 'RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST',
 } as const;
 
 // Mirrors the 22-operator FilterOperator enum in graphql/schema.ts / responseFilterService.ts.
@@ -60,7 +65,7 @@ const DELAY_UNIT_TO_MINUTES: Record<DelayUnit, number> = {
 
 const RawNodeSchema = z.object({
   id: z.string().min(1),
-  type: z.enum(['trigger', 'delay', 'condition', 'action', 'end']),
+  type: z.enum(['trigger', 'delay', 'condition', 'action', 'digest', 'end']),
   data: z.record(z.string(), z.any()).default({}),
 });
 
@@ -104,6 +109,41 @@ const ActionDataSchema = z.object({
   actionType: z.string().min(1),
   config: z.record(z.string(), z.any()),
 });
+
+// Internal safety ceiling, not user-configurable — the "Filter Responses" node no longer
+// exposes a "max responses" input (removed in favor of always processing everything that
+// matches). This exists purely to bound a single execution's Postgres JSON payload / per-tick
+// work, not as a feature users tune. Kept as a named constant (not just a literal inside
+// DigestDataSchema) since engine.ts's fetchDigestResponses also needs it when clamping
+// node.data.maxResponses, which now only matters for a manually-constructed graph (e.g. a
+// direct API caller) — the builder UI never sets it.
+export const DIGEST_RESPONSE_SAFETY_CEILING = 5000;
+
+const DigestDataSchema = z.object({
+  maxResponses: z.number().int().positive().max(DIGEST_RESPONSE_SAFETY_CEILING).optional(),
+  // Same ConditionRule shape as condition nodes — ANDed with the since-last-run filter at
+  // execution time (engine.ts) on every run EXCEPT the automation's very first tick, which has
+  // no "last run" to be incremental against and instead matches everything currently satisfying
+  // these filters (see engine.ts's handleDigestNode for the exact first-run semantics). No
+  // filterLogic here: only AND is supported, matching that since-filter (see AutomationDigestNode's
+  // data doc comment in types.ts).
+  filters: z.array(ConditionRuleSchema).optional(),
+});
+
+/**
+ * Reserved __digest* scalar keys a digest node merges into triggerData (see engine.ts
+ * mergeDigestIntoTriggerData) — the only fields a schedule automation's condition rules /
+ * mention placeholders may reference downstream of a digest node. __digestResponses is
+ * deliberately excluded: it's an array, and substituteMentions()/evaluateCondition() both do
+ * flat scalar lookups, so exposing it as a mention would silently stringify to garbage rather
+ * than error.
+ */
+const DIGEST_SCALAR_MENTION_KEYS = new Set([
+  '__digestCount',
+  '__digestSince',
+  '__digestUntil',
+  '__digestTruncated',
+]);
 
 // Per-type action config schemas — mirror what plugins/*/handler.ts reads from plugin.config.
 // Types without a dedicated schema here (quiz-grading, google-sheets, ai-tagger, …) still get
@@ -151,24 +191,69 @@ const ACTION_CONFIG_SCHEMAS: Record<string, z.ZodTypeAny> = {
 // one is response-dependent regardless of action type.
 const MENTION_PLACEHOLDER_REGEX = /\{\{[^}]{1,500}\}\}/;
 
+/** Extracts every `{{key}}` mention key referenced in a string, e.g. "Hi {{name}}" -> ["name"]. */
+function extractMentionKeys(value: string): string[] {
+  const regex = /\{\{([^}]{1,500})\}\}/g;
+  const keys: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(value)) !== null) {
+    keys.push(match[1].trim());
+  }
+  return keys;
+}
+
+type ResponseDependency = 'recipientField' | 'sendToSubmitter' | 'mention' | null;
+
 /**
  * Detects whether an action node's config references response data — either via a
  * `{{field-id}}` mention placeholder anywhere in its (possibly nested) values, or via the
- * email action's response-sourced recipient fields (recipientFieldId / sendToSubmitter),
- * which have no placeholder syntax of their own.
+ * email action's response-sourced recipient fields (recipientFieldId / sendToSubmitter). Returns
+ * WHICH kind of dependency was found (or null) so the caller can pick the right error code/copy.
+ *
+ * `recipientFieldId` on a schedule automation with an upstream digest node is a special case
+ * for the EMAIL action specifically: it signals PER-RESPONSE send mode (engine.ts's
+ * handleActionNode + email/handler.ts's per-response loop) — the email action sends once for
+ * EACH matched response, using that response's own field value as the recipient, rather than
+ * once for the whole batch. In that mode a real `{{field-id}}` mention is also legitimate (each
+ * send genuinely has one bound response to substitute against), so ALL mentions are allowed, not
+ * just DIGEST_SCALAR_MENTION_KEYS. `actionType` is checked here to mirror engine.ts's own gate
+ * exactly (`actionType === 'email' && config.recipientFieldId && ...`) — webhook/slack configs
+ * don't declare a `recipientFieldId` field in their schemas, but ActionDataSchema's `config` is
+ * an open `z.record()` that doesn't strip unknown keys, so without this check a stray
+ * `recipientFieldId` on a non-email action's raw config would incorrectly pass validation as
+ * "per-response mode" while the engine (which DOES check actionType) would never treat it that
+ * way — a validator/runtime mismatch, not just a cosmetic gap.
+ *
+ * Without `recipientFieldId` (the static/aggregate case — one summary email for the whole
+ * batch), only the four __digest* scalar keys are legitimate mentions, matching the plain
+ * "no per-response context" semantics. `sendToSubmitter` has no handler implementation at all
+ * (dead config field) and stays unconditionally flagged — there's no per-response mode for it
+ * to enable. `allowDigestMentions` false (no digest node at all) keeps every prior behavior:
+ * recipientFieldId, sendToSubmitter, and any mention are all response-dependent.
  */
-function configReferencesResponseData(config: Record<string, any>): boolean {
-  if (config.recipientFieldId) return true;
-  if (config.sendToSubmitter) return true;
+function findResponseDependency(
+  actionType: string,
+  config: Record<string, any>,
+  allowDigestMentions: boolean
+): ResponseDependency {
+  const isPerResponseMode = allowDigestMentions && actionType === 'email' && Boolean(config.recipientFieldId);
+
+  if (config.recipientFieldId) return isPerResponseMode ? null : 'recipientField';
+  if (config.sendToSubmitter) return 'sendToSubmitter';
 
   const scan = (value: any): boolean => {
-    if (typeof value === 'string') return MENTION_PLACEHOLDER_REGEX.test(value);
+    if (typeof value === 'string') {
+      if (!MENTION_PLACEHOLDER_REGEX.test(value)) return false;
+      if (isPerResponseMode) return false;
+      if (!allowDigestMentions) return true;
+      return extractMentionKeys(value).some((key) => !DIGEST_SCALAR_MENTION_KEYS.has(key));
+    }
     if (Array.isArray(value)) return value.some(scan);
     if (value && typeof value === 'object') return Object.values(value).some(scan);
     return false;
   };
 
-  return scan(config);
+  return scan(config) ? 'mention' : null;
 }
 
 // Friendly labels for the trigger/delay/condition/action-config field names referenced by the
@@ -191,6 +276,7 @@ const FIELD_LABELS: Record<string, string> = {
   url: 'Webhook URL',
   webhookUrl: 'Slack webhook URL',
   channel: 'Slack channel',
+  maxResponses: 'Max responses',
 };
 
 function fieldLabel(path: PropertyKey[]): string | null {
@@ -368,6 +454,8 @@ export function validateAutomationGraph(
   const delayNodes = nodes.filter((n) => n.type === 'delay');
   const conditionNodes = nodes.filter((n) => n.type === 'condition');
   const actionNodes = nodes.filter((n) => n.type === 'action');
+  const digestNodes = nodes.filter((n) => n.type === 'digest');
+  const hasDigestNode = digestNodes.length > 0;
 
   if (triggerNodes.length === 0) {
     errors.push({
@@ -415,17 +503,27 @@ export function validateAutomationGraph(
     }
 
     // Condition rules always evaluate a response field (ConditionDataSchema requires >=1 rule
-    // with a fieldId) — a schedule trigger has no response, so any condition node is invalid.
+    // with a fieldId) — a schedule trigger has no single response, so a condition node is only
+    // valid there when a digest node exists upstream AND every rule reads one of the digest's
+    // own scalar pseudo-fields (__digestCount etc.) rather than a real form field.
     if (options.triggerType === 'schedule') {
-      errors.push({
-        nodeId: node.id,
-        code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE,
-        // Mirrors the plain-language phrasing already used in the builder UI's schedule-trigger
-        // hint (automations.json "builder.panel.trigger.descriptionSchedule") — no node IDs or
-        // internal field names (fieldId, cron), since the tooltip is already anchored to this
-        // exact node on the canvas.
-        message: `This step checks an answer from a submission, but this automation doesn't have a triggering response — it runs on a schedule, so steps can't reference response data.`,
-      });
+      if (!hasDigestNode) {
+        errors.push({
+          nodeId: node.id,
+          code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE,
+          // Mirrors the plain-language phrasing already used in the builder UI's schedule-trigger
+          // hint (automations.json "builder.panel.trigger.descriptionSchedule") — no node IDs or
+          // internal field names (fieldId, cron), since the tooltip is already anchored to this
+          // exact node on the canvas.
+          message: `This step checks an answer from a submission, but this automation doesn't have a triggering response — it runs on a schedule, so steps can't reference response data.`,
+        });
+      } else if (result.data.rules.some((rule) => !DIGEST_SCALAR_MENTION_KEYS.has(rule.fieldId))) {
+        errors.push({
+          nodeId: node.id,
+          code: GRAPH_ERROR_CODES.RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST,
+          message: `This step checks a specific submission's field, but this schedule automation only has a batch of new responses (from the Digest step), not a single one — check the digest summary instead (like the number of new responses).`,
+        });
+      }
     }
   }
 
@@ -462,12 +560,64 @@ export function validateAutomationGraph(
       }
     }
 
-    if (options.triggerType === 'schedule' && configReferencesResponseData(config)) {
+    if (options.triggerType === 'schedule') {
+      const dependency = findResponseDependency(actionType, config, hasDigestNode);
+      if (dependency === 'mention' && hasDigestNode) {
+        errors.push({
+          nodeId: node.id,
+          code: GRAPH_ERROR_CODES.RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST,
+          message: `This step references a specific submission's field, but this schedule automation only has a batch of new responses (from the Digest step), not a single one — reference the digest summary instead (like the number of new responses).`,
+        });
+      } else if (dependency) {
+        errors.push({
+          nodeId: node.id,
+          code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE,
+          message: `This step is set up to use an answer from a submission (e.g. a recipient pulled from a field, or "send to submitter"), but this automation doesn't have a triggering response — it runs on a schedule, so steps can't reference response data.`,
+        });
+      }
+    }
+  }
+
+  if (digestNodes.length > 1) {
+    errors.push({
+      code: GRAPH_ERROR_CODES.MULTIPLE_DIGEST_NODES,
+      message: 'This automation has more than one Digest step — only one is allowed. Remove the extra one(s).',
+    });
+  }
+
+  for (const node of digestNodes) {
+    const result = DigestDataSchema.safeParse(node.data);
+    if (!result.success) {
       errors.push({
         nodeId: node.id,
-        code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE,
-        message: `This step is set up to use an answer from a submission (e.g. a recipient pulled from a field, or "send to submitter"), but this automation doesn't have a triggering response — it runs on a schedule, so steps can't reference response data.`,
+        code: GRAPH_ERROR_CODES.INVALID_DIGEST_CONFIG,
+        message: `This digest step's settings aren't valid: ${formatZodError(result.error)}`,
       });
+      continue;
+    }
+
+    if (options.triggerType !== 'schedule') {
+      errors.push({
+        nodeId: node.id,
+        code: GRAPH_ERROR_CODES.DIGEST_REQUIRES_SCHEDULE_TRIGGER,
+        message: `A digest step only makes sense on a schedule trigger — it collects responses since the last scheduled run, which has no meaning on this trigger type.`,
+      });
+    }
+
+    // "Since last run" only has one unambiguous meaning if nothing can execute between the
+    // schedule tick firing and the digest querying — enforced by requiring the digest to be the
+    // trigger's sole, immediate successor (a delay node before it is out of scope for v1).
+    if (triggerNodes.length === 1) {
+      const triggerOutgoing = edges.filter((e) => e.source === triggerNodes[0].id);
+      const isImmediateSuccessor =
+        triggerOutgoing.length === 1 && triggerOutgoing[0].target === node.id;
+      if (!isImmediateSuccessor) {
+        errors.push({
+          nodeId: node.id,
+          code: GRAPH_ERROR_CODES.DIGEST_MUST_FOLLOW_TRIGGER,
+          message: `A digest step must come directly after the trigger, with nothing else in between — this keeps "since last run" accurate.`,
+        });
+      }
     }
   }
 

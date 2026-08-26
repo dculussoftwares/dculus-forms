@@ -47,16 +47,38 @@ export interface AutomationActionNodeData {
   [key: string]: unknown;
 }
 
+/** Schedule-trigger-only node: queries responses since the automation's last completed run. */
+export interface AutomationDigestNodeData {
+  /** Max responses to embed (default 50, hard cap 1000 — enforced server-side by graphValidator). */
+  maxResponses?: number;
+  /** Additional narrowing filters ANDed with the mandatory since-last-run window. Only AND is
+   * supported — the app's filter model has no nested AND/OR grouping, so a filterLogic toggle
+   * here would be misleading given the since-filter is always ANDed in regardless. */
+  filters?: ConditionRule[];
+  [key: string]: unknown;
+}
+
 export type AutomationEndNodeData = Record<string, never>;
 
-export type AutomationNodeType = 'trigger' | 'delay' | 'condition' | 'action' | 'end';
+export type AutomationNodeType = 'trigger' | 'delay' | 'condition' | 'action' | 'digest' | 'end';
 
 export type AutomationNodeData =
   | AutomationTriggerNodeData
   | AutomationDelayNodeData
   | AutomationConditionNodeData
   | AutomationActionNodeData
+  | AutomationDigestNodeData
   | AutomationEndNodeData;
+
+/** Reserved __digest* scalar keys a digest node merges into triggerData — see backend
+ * graphValidator.ts DIGEST_SCALAR_MENTION_KEYS. The only fields a schedule automation's
+ * condition rules / mention placeholders may reference downstream of a digest node. */
+export const DIGEST_SCALAR_MENTION_KEYS = [
+  '__digestCount',
+  '__digestSince',
+  '__digestUntil',
+  '__digestTruncated',
+] as const;
 
 export interface AutomationEdgeData {
   [key: string]: unknown;

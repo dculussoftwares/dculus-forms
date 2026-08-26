@@ -564,4 +564,324 @@ describe('validateAutomationGraph', () => {
       expect(result.valid).toBe(true);
     });
   });
+
+  describe('Digest node (#automations-digest)', () => {
+    function validateSchedule(graph: unknown) {
+      return validateAutomationGraph(graph, { pluginTypes: PLUGIN_TYPES, triggerType: 'schedule' });
+    }
+
+    it('accepts a digest node immediately after a schedule trigger, with a downstream action mentioning __digestCount', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: { maxResponses: 50 } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: { recipientEmail: 'ops@example.com', subject: 'Digest', message: '{{__digestCount}} new responses' },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'a1' },
+          { id: 'e3', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.valid).toBe(true);
+    });
+
+    it('DIGEST_REQUIRES_SCHEDULE_TRIGGER: rejects a digest node on a form.submitted automation', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'form.submitted' } },
+          { id: 'd1', type: 'digest', data: {} },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'end-1' },
+        ],
+      };
+      const result = validate(graph);
+      expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.DIGEST_REQUIRES_SCHEDULE_TRIGGER);
+    });
+
+    it('MULTIPLE_DIGEST_NODES: rejects a graph with more than one digest node', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: {} },
+          { id: 'd2', type: 'digest', data: {} },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'd2' },
+          { id: 'e3', source: 'd2', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.MULTIPLE_DIGEST_NODES);
+    });
+
+    it("DIGEST_MUST_FOLLOW_TRIGGER: rejects a digest node that isn't the trigger's immediate successor", () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'delay-1', type: 'delay', data: { amount: 1, unit: 'hours' } },
+          { id: 'd1', type: 'digest', data: {} },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'delay-1' },
+          { id: 'e2', source: 'delay-1', target: 'd1' },
+          { id: 'e3', source: 'd1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.DIGEST_MUST_FOLLOW_TRIGGER);
+    });
+
+    it('INVALID_DIGEST_CONFIG: rejects maxResponses above the 5000 safety ceiling', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: { maxResponses: 10000 } },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.INVALID_DIGEST_CONFIG);
+    });
+
+    it('accepts a digest node with additional narrowing filters (ANDed with the mandatory since-last-run window at execution time)', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          {
+            id: 'd1',
+            type: 'digest',
+            data: {
+              maxResponses: 200,
+              filters: [{ fieldId: 'score', operator: 'GREATER_THAN', value: '80' }],
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.valid).toBe(true);
+    });
+
+    it('accepts a condition rule on __digestCount when a digest node exists', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: {} },
+          {
+            id: 'c1',
+            type: 'condition',
+            data: { rules: [{ fieldId: '__digestCount', operator: 'GREATER_THAN', value: '0' }], combinator: 'AND' },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'c1' },
+          { id: 'e3', source: 'c1', target: 'end-1', sourceHandle: 'true' },
+          { id: 'e4', source: 'c1', target: 'end-1', sourceHandle: 'false' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.valid).toBe(true);
+    });
+
+    it('RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST: rejects a condition rule on a real field even when a digest node exists', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: {} },
+          {
+            id: 'c1',
+            type: 'condition',
+            data: { rules: [{ fieldId: 'age', operator: 'GREATER_THAN', value: '18' }], combinator: 'AND' },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'c1' },
+          { id: 'e3', source: 'c1', target: 'end-1', sourceHandle: 'true' },
+          { id: 'e4', source: 'c1', target: 'end-1', sourceHandle: 'false' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({ nodeId: 'c1', code: GRAPH_ERROR_CODES.RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST })
+      );
+    });
+
+    it('RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST: rejects an action mentioning __digestResponses (the array) even when a digest node exists', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: {} },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: { recipientEmail: 'ops@example.com', subject: 'Digest', message: '{{__digestResponses}}' },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'a1' },
+          { id: 'e3', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({ nodeId: 'a1', code: GRAPH_ERROR_CODES.RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST })
+      );
+    });
+
+    it('RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST: rejects an action mentioning a real form field even when a digest node exists', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: {} },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: { recipientEmail: 'ops@example.com', subject: 'Digest', message: 'Hi {{full-name}}' },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'a1' },
+          { id: 'e3', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({ nodeId: 'a1', code: GRAPH_ERROR_CODES.RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST })
+      );
+    });
+
+    it('still rejects recipientFieldId on a schedule automation with NO digest node (nothing to send per-response)', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: { actionType: 'email', config: { recipientFieldId: 'email-field', subject: 'Digest', message: 'Hi' } },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'a1' },
+          { id: 'e2', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({ nodeId: 'a1', code: GRAPH_ERROR_CODES.RESPONSE_DEPENDENT_ON_SCHEDULE })
+      );
+    });
+
+    it('accepts recipientFieldId on a schedule automation WITH a digest node — per-response send mode (#automations-digest-per-response)', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: {} },
+          {
+            id: 'a1',
+            type: 'action',
+            data: { actionType: 'email', config: { recipientFieldId: 'email-field', subject: 'Digest', message: 'Hi' } },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'a1' },
+          { id: 'e3', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.valid).toBe(true);
+    });
+
+    it('accepts a real form-field mention in the message when recipientFieldId + a digest node are both present (per-response mode allows real fields, not just __digest* scalars)', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: {} },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: { recipientFieldId: 'email-field', subject: 'Reminder', message: 'Hi {{full-name}}, thanks for your submission!' },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'a1' },
+          { id: 'e3', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.valid).toBe(true);
+    });
+
+    it('a real field mention WITHOUT recipientFieldId is still rejected even with a digest node (static/aggregate mode has no bound response)', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'schedule' } },
+          { id: 'd1', type: 'digest', data: {} },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: { recipientEmail: 'ops@example.com', subject: 'Digest', message: 'Hi {{full-name}}' },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'd1' },
+          { id: 'e2', source: 'd1', target: 'a1' },
+          { id: 'e3', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validateSchedule(graph);
+      expect(result.errors).toContainEqual(
+        expect.objectContaining({ nodeId: 'a1', code: GRAPH_ERROR_CODES.RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST })
+      );
+    });
+  });
 });

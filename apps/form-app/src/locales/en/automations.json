@@ -93,6 +93,7 @@
       "saveSuccessTitle": "Automation saved",
       "saveSuccessMessage": "Your changes have been saved.",
       "saveErrorTitle": "Couldn't save automation",
+      "saveInvalidMessage": "Fix the highlighted steps and try again.",
       "activateButton": "Activate",
       "pauseButton": "Pause",
       "activateInvalidTitle": "Automation isn't ready to activate",
@@ -106,6 +107,9 @@
     },
     "nodes": {
       "removeStep": "Remove step",
+      "errorDetails": "Show error details",
+      "copyError": "Copy error",
+      "errorCopied": "Copied",
       "trigger": {
         "title": "Form submission",
         "subtitle": "Start automation when {{form}} is Completed",
@@ -153,12 +157,19 @@
         "trueLabel": "Yes",
         "falseLabel": "No"
       },
+      "digest": {
+        "title": "Filter Responses",
+        "subtitleNoFilters": "All new responses",
+        "subtitleWithFilters": "{{count}} filter(s) applied"
+      },
       "end": {
         "title": "End automation"
       }
     },
     "addStep": {
       "buttonLabel": "Add a step",
+      "digestHeading": "Filter",
+      "digest": "Filter Responses",
       "rulesHeading": "Rules",
       "actionsHeading": "Actions",
       "timeDelay": "Time delay",
@@ -172,6 +183,7 @@
         "delay": "Time delay",
         "condition": "Condition",
         "action": "Configure action",
+        "digest": "Filter Responses",
         "end": "End automation"
       },
       "trigger": {
@@ -214,6 +226,16 @@
         "amountLabel": "Amount",
         "unitLabel": "Unit",
         "hint": "The next step runs after this delay has passed."
+      },
+      "digest": {
+        "hint": "The first run matches every response satisfying your filters below, no matter when it was submitted. Every run after that only picks up responses submitted since the last run, so nothing gets emailed or processed twice. Add a Condition step next to skip the rest when there's nothing new — check \"New responses count\".",
+        "countFieldLabel": "New responses count",
+        "filtersLabel": "Only include responses matching",
+        "noFiltersHint": "No filters — every response is included (see the hint below for how the schedule stays incremental). Add a filter to narrow it down (e.g. only a specific tag or score range).",
+        "addFilter": "Add filter",
+        "matchCountLoading": "Checking match count…",
+        "matchCountError": "Couldn't check the match count",
+        "matchCount": "{{count}} responses currently match these filters"
       },
       "condition": {
         "rulesLabel": "Rules",

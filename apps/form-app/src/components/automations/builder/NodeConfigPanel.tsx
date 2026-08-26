@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Button,
   Input,
@@ -10,13 +10,21 @@ import {
   SelectValue,
 } from '@dculus/ui';
 import { X } from 'lucide-react';
+import { NumberField, FillableFormFieldValidation, type FillableFormField } from '@dculus/types';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useAutomationBuilderStore } from '../../../store/useAutomationBuilderStore';
 import { getFrontendPlugin } from '../../../plugins/core/registry';
 import '../../../plugins/index';
-import type { AutomationActionNodeData, AutomationConditionNodeData, AutomationDelayNodeData, DelayUnit } from './types';
+import type {
+  AutomationActionNodeData,
+  AutomationConditionNodeData,
+  AutomationDelayNodeData,
+  AutomationDigestNodeData,
+  DelayUnit,
+} from './types';
 import { getActionManifest } from './actionCatalog';
 import { ConditionRulesEditor } from './ConditionRulesEditor';
+import { DigestFiltersEditor } from './DigestFiltersEditor';
 import { ScheduleTriggerEditor } from './ScheduleTriggerEditor';
 import { triggerTypeI18nKey } from '../triggerTypes';
 
@@ -62,6 +70,31 @@ const DelayEditor: React.FC<{ nodeId: string; data: AutomationDelayNodeData; dis
   );
 };
 
+const DigestEditor: React.FC<{
+  nodeId: string;
+  data: AutomationDigestNodeData;
+  fields: FillableFormField[];
+  formId?: string;
+  disabled: boolean;
+}> = ({ nodeId, data, fields, formId, disabled }) => {
+  const { t } = useTranslation('automations');
+  const updateNodeData = useAutomationBuilderStore((s) => s.updateNodeData);
+
+  return (
+    <fieldset disabled={disabled} className="space-y-4">
+      <DigestFiltersEditor
+        filters={data.filters ?? []}
+        fields={fields}
+        formId={formId}
+        disabled={disabled}
+        onChange={(filters) => updateNodeData(nodeId, { filters })}
+      />
+
+      <p className="text-xs text-muted-foreground">{t('builder.panel.digest.hint')}</p>
+    </fieldset>
+  );
+};
+
 export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   const { t } = useTranslation('automations');
   const selectedNodeId = useAutomationBuilderStore((s) => s.selectedNodeId);
@@ -74,6 +107,38 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   const automationId = useAutomationBuilderStore((s) => s.automationId);
 
   const node = nodes.find((n) => n.id === selectedNodeId);
+
+  // A digest node, when present, is always the trigger's sole immediate successor
+  // (graphValidator's DIGEST_MUST_FOLLOW_TRIGGER rule) — so its mere existence in the graph
+  // means it's upstream of every other node, no graph walk needed to determine "downstream of
+  // digest" for a given action node.
+  const hasDigestNode = nodes.some((n) => n.type === 'digest');
+
+  // On a schedule automation with a digest node, condition rules can gate on the digest's own
+  // __digestCount pseudo-field (e.g. "only continue if count > 0") — graphValidator's
+  // RESPONSE_FIELD_NOT_AVAILABLE_IN_DIGEST rule accepts any of the four __digest* scalar keys
+  // as a condition fieldId, but only __digestCount is exposed in the picker: since/until/
+  // truncated aren't meaningful things to *compare against* in a condition (they're fixed
+  // per-run context, not a value that varies in a useful way to branch on).
+  //
+  // Computed unconditionally, ABOVE the `if (!node) return null` guard below — every hook in
+  // this component (including this useMemo) must run on every render regardless of whether a
+  // node is selected, or React throws "Rendered more hooks than during the previous render"
+  // the moment a node goes from selected to unselected (fewer hooks that render) or vice versa.
+  const conditionFields = useMemo(() => {
+    if (triggerType !== 'schedule' || !hasDigestNode) return formFields;
+    const digestCountField = new NumberField(
+      '__digestCount',
+      t('builder.panel.digest.countFieldLabel'),
+      '',
+      '',
+      '',
+      '',
+      new FillableFormFieldValidation(false)
+    );
+    return [...formFields, digestCountField];
+  }, [formFields, triggerType, hasDigestNode, t]);
+
   if (!node) return null;
 
   const close = () => setSelectedNodeId(null);
@@ -83,6 +148,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
     delay: t('builder.panel.titles.delay'),
     condition: t('builder.panel.titles.condition'),
     action: t('builder.panel.titles.action'),
+    digest: t('builder.panel.titles.digest'),
     end: t('builder.panel.titles.end'),
   };
 
@@ -105,12 +171,22 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
     body = <p className="text-sm text-muted-foreground">{t('builder.panel.end.description')}</p>;
   } else if (node.type === 'delay') {
     body = <DelayEditor nodeId={node.id} data={node.data as AutomationDelayNodeData} disabled={isReadOnly} />;
+  } else if (node.type === 'digest') {
+    body = (
+      <DigestEditor
+        nodeId={node.id}
+        data={node.data as AutomationDigestNodeData}
+        fields={formFields}
+        formId={form?.id}
+        disabled={isReadOnly}
+      />
+    );
   } else if (node.type === 'condition') {
     body = (
       <ConditionRulesEditor
         nodeId={node.id}
         data={node.data as AutomationConditionNodeData}
-        fields={formFields}
+        fields={conditionFields}
         disabled={isReadOnly}
       />
     );
@@ -137,6 +213,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
             isSaving={false}
             hideEventsSection
             readOnly={isReadOnly}
+            digestContext={{ available: hasDigestNode }}
             submitLabelOverride={t('builder.panel.action.saveButton')}
             onSave={async (result: { name: string; config: Record<string, any> }) => {
               updateNodeData(node.id, { name: result.name, config: result.config });

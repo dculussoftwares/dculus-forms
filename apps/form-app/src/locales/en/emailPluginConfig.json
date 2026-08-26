@@ -47,6 +47,18 @@
     "hintWithoutFields_prefix": "Use rich formatting including",
     "hintWithoutFields_suffix": "headings, lists, quotes, and links. Add some fields to your form to enable @ mentions for personalizing messages."
   },
+  "digest": {
+    "mentions": {
+      "count": "New responses count",
+      "since": "Digest window start",
+      "until": "Digest window end",
+      "truncated": "Digest was truncated"
+    },
+    "includeTable": {
+      "label": "Include a table of the new responses",
+      "description": "Appends a table listing each new response's answers to the end of this email."
+    }
+  },
   "pdfAttachment": {
     "title": "PDF Attachment",
     "description": "Optionally attach a generated PDF to this email, filled in with the response's data",

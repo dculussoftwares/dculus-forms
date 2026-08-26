@@ -2,6 +2,31 @@ import { deserializeFormSchema } from '@dculus/types';
 import type { PluginHandler } from '../core/types.js';
 import type { GoogleSheetsPluginConfig, GoogleSheetsResult, GoogleToken } from './types.js';
 
+/** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
+interface DigestResponseEntry {
+  id: string;
+  submittedAt: string;
+  data: Record<string, any>;
+}
+
+/**
+ * `event.data` is a plain `Record<string, any>` — `__digestResponses` reaches this handler via
+ * that generic channel with no compile-time guarantee of its shape, so a bare `as
+ * DigestResponseEntry[]` cast could let a malformed entry (e.g. a bug upstream in engine.ts's
+ * triggerData merge) crash deep inside row-building logic with a cryptic error instead of failing
+ * predictably here.
+ */
+function isValidDigestResponseEntry(entry: unknown): entry is DigestResponseEntry {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    typeof (entry as Record<string, unknown>).id === 'string' &&
+    typeof (entry as Record<string, unknown>).submittedAt === 'string' &&
+    typeof (entry as Record<string, unknown>).data === 'object' &&
+    (entry as Record<string, unknown>).data !== null
+  );
+}
+
 const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4';
 const TOKEN_REFRESH_URL = 'https://oauth2.googleapis.com/token';
 
@@ -130,12 +155,20 @@ const writeHeaderRow = async (
 };
 
 /**
- * Appends a data row to the spreadsheet and returns the row number from the
- * updatedRange in the API response (e.g. "Sheet1!A5:Z5" → 5).
+ * Appends one or more data rows to the spreadsheet in a SINGLE API call (the Sheets
+ * `values.append` endpoint natively accepts multiple rows in one `values` array — a digest
+ * batch of up to 1000 responses (#automations-digest) writes as one request here, not one
+ * request per response, avoiding both per-minute write-quota exhaustion and a slow, serially
+ * awaited loop). Returns the first written row's number, parsed from the updatedRange in the
+ * API response (e.g. "Sheet1!A5:Z20" for a 16-row batch starting at row 5 → 5).
  */
-const appendDataRow = async (
+// Keeps a single values.append request comfortably under Google's ~2MB request-body limit for a
+// digest batch of up to 5000 rows with wide forms (many fields per row).
+const MAX_ROWS_PER_APPEND_REQUEST = 500;
+
+const appendDataRows = async (
   spreadsheetId: string,
-  rowValues: string[],
+  rows: string[][],
   accessToken: string
 ): Promise<number | undefined> => {
   const url =
@@ -145,22 +178,22 @@ const appendDataRow = async (
   const response = await fetch(url, {
     method: 'POST',
     headers: authHeaders(accessToken),
-    body: JSON.stringify({ values: [rowValues] }),
+    body: JSON.stringify({ values: rows }),
   });
 
   if (response.status === 404) throw new SpreadsheetNotFoundError();
 
   if (!response.ok) {
     const body = await response.text();
-    throw new Error(`Failed to append data row: ${response.status} ${body}`);
+    throw new Error(`Failed to append data row(s): ${response.status} ${body}`);
   }
 
   const data = await response.json() as any;
 
-  // Parse row number from updatedRange, e.g. "Sheet1!A5:Z5" → 5
+  // Parse the first row number from updatedRange, e.g. "Sheet1!A5:Z20" → 5
   const updatedRange: string | undefined = data.updates?.updatedRange;
   if (updatedRange) {
-    const match = updatedRange.match(/:(?:[A-Z]+)(\d+)$/);
+    const match = updatedRange.match(/![A-Z]+(\d+):/);
     if (match) return parseInt(match[1], 10);
   }
 
@@ -212,6 +245,44 @@ const resolveFieldValue = (field: any, rawValue: any): string => {
   return String(rawValue);
 };
 
+/**
+ * Builds one spreadsheet row's values for a single response, in the same field order as
+ * `buildHeaders()`'s column headers. Shared by both the single-response path (form.submitted /
+ * response.edited) and the digest batch path (schedule automation, #automations-digest) so a
+ * row always lines up with its headers regardless of which path produced it.
+ */
+const buildRowValues = (
+  responseData: Record<string, any>,
+  formSchema: ReturnType<typeof deserializeFormSchema> | null,
+  responseId: string,
+  submittedAt: string,
+  fallbackKeys: string[] = []
+): string[] => {
+  const rowValues: string[] = [];
+
+  if (formSchema?.pages) {
+    for (const page of formSchema.pages) {
+      for (const field of page.fields ?? []) {
+        if (!field?.id) continue;
+        const raw = responseData[field.id];
+        rowValues.push(resolveFieldValue(field, raw));
+      }
+    }
+  } else {
+    // `fallbackKeys` is derived ONCE (from a sample response) and reused for every row, matching
+    // buildHeaders()'s no-schema column order. Iterating `Object.entries(responseData)` per row
+    // instead would misalign columns whenever a digest batch's responses have differing key sets
+    // or insertion order (e.g. an optional field present on some submissions but not others).
+    for (const key of fallbackKeys) {
+      rowValues.push(String(responseData[key] ?? ''));
+    }
+  }
+
+  rowValues.push(submittedAt);
+  rowValues.push(responseId);
+  return rowValues;
+};
+
 export const googleSheetsHandler: PluginHandler = async (plugin, event, context) => {
   const syncedAt = new Date().toISOString();
   const config = plugin.config as GoogleSheetsPluginConfig;
@@ -241,25 +312,62 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
 
     const accessToken = freshToken.accessToken;
 
-    // Fetch the response to build row values
-    if (!event.data.responseId) {
-      return {
-        success: false,
-        error: 'No responseId in event data',
-        syncedAt,
-      } satisfies GoogleSheetsResult;
+    // Fetch the response(s) to build row values. A digest batch (schedule automation with an
+    // upstream digest node, #automations-digest) carries zero-to-many responses in
+    // event.data.__digestResponses instead of exactly one event.data.responseId.
+    const rawDigestResponses = (event.data as Record<string, any>).__digestResponses;
+    const digestResponses = Array.isArray(rawDigestResponses)
+      ? (rawDigestResponses as unknown[]).filter(isValidDigestResponseEntry)
+      : null;
+    if (Array.isArray(rawDigestResponses) && digestResponses!.length < rawDigestResponses.length) {
+      context.logger.warn('Digest batch contained malformed response entries — they were dropped, not appended', {
+        totalEntries: rawDigestResponses.length,
+        validEntries: digestResponses!.length,
+        formId: event.formId,
+      });
     }
 
-    const response = await context.getResponseById(event.data.responseId);
-    if (!response) {
-      return {
-        success: false,
-        error: `Response not found: ${event.data.responseId}`,
-        syncedAt,
-      } satisfies GoogleSheetsResult;
+    let singleResponse: Awaited<ReturnType<typeof context.getResponseById>> | null = null;
+    if (!digestResponses) {
+      if (!event.data.responseId) {
+        return {
+          success: false,
+          error: 'No responseId in event data',
+          syncedAt,
+        } satisfies GoogleSheetsResult;
+      }
+
+      singleResponse = await context.getResponseById(event.data.responseId);
+      if (!singleResponse) {
+        return {
+          success: false,
+          error: `Response not found: ${event.data.responseId}`,
+          syncedAt,
+        } satisfies GoogleSheetsResult;
+      }
     }
 
-    const responseData = (response.data as Record<string, any>) ?? {};
+    // Fixed key order for buildHeaders()'s no-schema fallback, derived ONCE as the union of keys
+    // across EVERY response in this batch (not just the first) and reused by every row
+    // (buildRowValues) — see buildRowValues's no-schema comment. Deriving from only the first
+    // response would silently drop a column for any optional field a later digest response has
+    // but the first one lacks.
+    const fallbackKeys: string[] = (() => {
+      const skipKeys = new Set(['responseId', 'submittedAt']);
+      const allResponseData: Record<string, any>[] = digestResponses
+        ? digestResponses.map((r) => r.data ?? {})
+        : [(singleResponse?.data as Record<string, any>) ?? {}];
+      const seen = new Set<string>();
+      const keys: string[] = [];
+      for (const data of allResponseData) {
+        for (const key of Object.keys(data)) {
+          if (skipKeys.has(key) || seen.has(key)) continue;
+          seen.add(key);
+          keys.push(key);
+        }
+      }
+      return keys;
+    })();
 
     // 3. Auto-create spreadsheet on first ever submission (or recreate if deleted)
     let spreadsheetId = config.spreadsheetId;
@@ -276,10 +384,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
           }
         }
       } else {
-        const skipKeys = new Set(['responseId', 'submittedAt']);
-        for (const key of Object.keys(responseData)) {
-          if (!skipKeys.has(key)) fieldHeaders.push(key);
-        }
+        fieldHeaders.push(...fallbackKeys);
       }
       return [...fieldHeaders, 'Submitted At', 'Response ID'];
     };
@@ -325,45 +430,94 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       spreadsheetId = created.spreadsheetId;
     }
 
-    const rowValues: string[] = [];
-
-    if (formSchema?.pages) {
-      for (const page of formSchema.pages) {
-        for (const field of page.fields ?? []) {
-          if (!field?.id) continue;
-          const raw = responseData[field.id];
-          rowValues.push(resolveFieldValue(field, raw));
+    // Appends row(s), recreating the spreadsheet once (and retrying) if it was deleted out from
+    // under this plugin — same recovery the single-response path always had.
+    const appendRowsWithRecovery = async (rows: string[][]): Promise<number | undefined> => {
+      try {
+        return await appendDataRows(spreadsheetId!, rows, accessToken);
+      } catch (err) {
+        if (err instanceof SpreadsheetNotFoundError) {
+          context.logger.warn('Google Sheets: spreadsheet was deleted — recreating', { pluginId: plugin.id });
+          const recreated = await initSpreadsheet();
+          spreadsheetId = recreated.spreadsheetId;
+          return appendDataRows(spreadsheetId, rows, accessToken);
         }
-      }
-    } else {
-      const skipKeys = new Set(['responseId', 'submittedAt']);
-      for (const [key, value] of Object.entries(responseData)) {
-        if (skipKeys.has(key)) continue;
-        rowValues.push(String(value ?? ''));
-      }
-    }
-
-    // Append metadata columns (must match header order)
-    const submittedAt =
-      responseData.submittedAt ??
-      (response as any).createdAt?.toISOString?.() ??
-      new Date().toISOString();
-    rowValues.push(String(submittedAt));
-    rowValues.push(event.data.responseId);
-
-    let rowNumber: number | undefined;
-    try {
-      rowNumber = await appendDataRow(spreadsheetId, rowValues, accessToken);
-    } catch (err) {
-      if (err instanceof SpreadsheetNotFoundError) {
-        context.logger.warn('Google Sheets: spreadsheet was deleted — recreating', { pluginId: plugin.id });
-        const recreated = await initSpreadsheet();
-        spreadsheetId = recreated.spreadsheetId;
-        rowNumber = await appendDataRow(spreadsheetId, rowValues, accessToken);
-      } else {
         throw err;
       }
+    };
+
+    // A digest batch can carry up to DIGEST_RESPONSE_SAFETY_CEILING (5000) rows — a single
+    // values.append request that large risks exceeding Google's ~2MB request-body limit, so
+    // large batches are chunked into sequential requests. The digest path only reports a total
+    // rowsAppended count, so the per-chunk row numbers aren't needed there; only the first
+    // chunk's result is surfaced, matching the single-row path's existing rowNumber semantics.
+    //
+    // Recreation-on-delete must restart the WHOLE batch, not just the chunk that hit the 404: if
+    // the spreadsheet is deleted mid-batch (e.g. after chunk 2 of 5 has already been written) and
+    // only the failed chunk were retried against the freshly recreated spreadsheet, chunks 1-2
+    // would be silently lost — they were written to the now-gone spreadsheet, and the new one
+    // would start from chunk 3 onward. So the per-chunk loop runs OUTSIDE any recovery: a 404
+    // anywhere in it aborts the whole loop, the spreadsheet is recreated once, and every chunk is
+    // re-appended from the start against the new (empty) spreadsheet.
+    const appendAllRowsChunked = async (rows: string[][]): Promise<number | undefined> => {
+      if (rows.length === 0) return undefined;
+
+      const writeAllChunks = async (): Promise<number | undefined> => {
+        let firstRowNumber: number | undefined;
+        for (let i = 0; i < rows.length; i += MAX_ROWS_PER_APPEND_REQUEST) {
+          const chunk = rows.slice(i, i + MAX_ROWS_PER_APPEND_REQUEST);
+          const result = await appendDataRows(spreadsheetId!, chunk, accessToken);
+          if (i === 0) firstRowNumber = result;
+        }
+        return firstRowNumber;
+      };
+
+      try {
+        return await writeAllChunks();
+      } catch (err) {
+        if (err instanceof SpreadsheetNotFoundError) {
+          context.logger.warn(
+            'Google Sheets: spreadsheet was deleted mid-digest-write — recreating and restarting the full batch',
+            { pluginId: plugin.id }
+          );
+          const recreated = await initSpreadsheet();
+          spreadsheetId = recreated.spreadsheetId;
+          return writeAllChunks();
+        }
+        throw err;
+      }
+    };
+
+    if (digestResponses) {
+      const rows = digestResponses.map((digestResponse) =>
+        buildRowValues(digestResponse.data ?? {}, formSchema, digestResponse.id, digestResponse.submittedAt, fallbackKeys)
+      );
+      // Chunked into MAX_ROWS_PER_APPEND_REQUEST-row requests (not one call per response) — a
+      // 1000-response digest would otherwise be 1000 sequential HTTP calls, risking the Sheets
+      // API's per-minute write quota and a step that never finishes within a reasonable time.
+      if (rows.length > 0) await appendAllRowsChunked(rows);
+      const rowsAppended = rows.length;
+
+      context.logger.info('Google Sheets: digest rows appended', {
+        pluginId: plugin.id,
+        spreadsheetId,
+        rowsAppended,
+      });
+
+      return {
+        success: true,
+        spreadsheetId,
+        rowsAppended,
+        syncedAt,
+      } satisfies GoogleSheetsResult;
     }
+
+    const responseData = (singleResponse!.data as Record<string, any>) ?? {};
+    const submittedAt = String(
+      responseData.submittedAt ?? (singleResponse as any).createdAt?.toISOString?.() ?? new Date().toISOString()
+    );
+    const rowValues = buildRowValues(responseData, formSchema, event.data.responseId, submittedAt, fallbackKeys);
+    const rowNumber = await appendRowsWithRecovery([rowValues]);
 
     context.logger.info('Google Sheets: row appended', {
       pluginId: plugin.id,

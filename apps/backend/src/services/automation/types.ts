@@ -38,6 +38,23 @@ export interface AutomationActionNode {
   data: { actionType: string; config: Record<string, any> };
 }
 
+/** Schedule-trigger-only node: queries responses since the automation's last completed run. */
+export interface AutomationDigestNode {
+  id: string;
+  type: 'digest';
+  data: {
+    /** How many full response records to embed (default 50, hard cap 1000 — enforced by graphValidator). */
+    maxResponses?: number;
+    /**
+     * Additional narrowing filters ANDed with the mandatory "since last completed run" window —
+     * same ResponseFilter shape/engine the Responses page and condition nodes use. Only AND is
+     * supported (matching the always-ANDed since-filter); the app's filter model has no nested
+     * AND/OR grouping anywhere, so a filterLogic toggle here would be misleading.
+     */
+    filters?: ConditionRule[];
+  };
+}
+
 export interface AutomationEndNode {
   id: string;
   type: 'end';
@@ -48,7 +65,28 @@ export type AutomationNode =
   | AutomationDelayNode
   | AutomationConditionNode
   | AutomationActionNode
+  | AutomationDigestNode
   | AutomationEndNode;
+
+/** One response embedded in a digest node's output — a bounded subset of the full Response row. */
+export interface DigestResponseSummary {
+  id: string;
+  submittedAt: string;
+  data: Record<string, any>;
+}
+
+/**
+ * Digest node output — written to AutomationStepRun.output and merged into both
+ * AutomationRunContext.triggerData (reserved __digest* keys, the only channel buildPluginEvent
+ * forwards to action handlers) and .stepOutputs[nodeId] (run-history UI parity only).
+ */
+export interface DigestNodeOutput {
+  count: number;
+  since: string;
+  until: string;
+  truncated: boolean;
+  responses: DigestResponseSummary[];
+}
 
 export interface AutomationEdge {
   id: string;

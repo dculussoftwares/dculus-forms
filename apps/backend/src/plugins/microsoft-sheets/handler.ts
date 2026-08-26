@@ -7,6 +7,31 @@ import type {
   MicrosoftToken,
 } from './types.js';
 
+/** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
+interface DigestResponseEntry {
+  id: string;
+  submittedAt: string;
+  data: Record<string, any>;
+}
+
+/**
+ * `event.data` is a plain `Record<string, any>` — `__digestResponses` reaches this handler via
+ * that generic channel with no compile-time guarantee of its shape, so a bare `as
+ * DigestResponseEntry[]` cast could let a malformed entry (e.g. a bug upstream in engine.ts's
+ * triggerData merge) crash deep inside row-building logic with a cryptic error instead of failing
+ * predictably here.
+ */
+function isValidDigestResponseEntry(entry: unknown): entry is DigestResponseEntry {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    typeof (entry as Record<string, unknown>).id === 'string' &&
+    typeof (entry as Record<string, unknown>).submittedAt === 'string' &&
+    typeof (entry as Record<string, unknown>).data === 'object' &&
+    (entry as Record<string, unknown>).data !== null
+  );
+}
+
 const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';
 const MS_TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
 
@@ -151,13 +176,21 @@ const writeHeaderRow = async (
 };
 
 /**
- * Appends a data row by finding the next empty row after the used range and
- * writing to it. Returns true on success.
+ * Appends one or more data rows by finding the next empty row after the used range and writing
+ * the whole batch there in a SINGLE range PATCH (the Graph API accepts a rectangular block of
+ * rows in one `values` array — a digest batch of up to 1000 responses, #automations-digest,
+ * writes as one used-range lookup + one PATCH here, not one round-trip pair per response, which
+ * would otherwise make a large digest slow and prone to Graph API throttling). Returns true on
+ * success.
  */
-const appendDataRow = async (
+// Keeps a single range PATCH comfortably under Microsoft Graph's ~4MB request-body limit for a
+// digest batch of up to 5000 rows with wide forms (many fields per row).
+const MAX_ROWS_PER_APPEND_REQUEST = 500;
+
+const appendDataRows = async (
   workbookId: string,
   worksheetName: string,
-  rowValues: string[],
+  rows: string[][],
   accessToken: string
 ): Promise<boolean> => {
   // 1. Get the used range to determine the next empty row
@@ -176,17 +209,18 @@ const appendDataRow = async (
     nextRow = rowCount + 1;
   }
 
-  // 2. Write the new row at nextRow
-  const columnCount = rowValues.length;
+  // 2. Write the whole batch starting at nextRow, one row per rows[] entry
+  const columnCount = rows[0]?.length ?? 0;
   const lastCol = columnIndexToLetter(columnCount - 1);
-  const range = `A${nextRow}:${lastCol}${nextRow}`;
+  const lastRow = nextRow + rows.length - 1;
+  const range = `A${nextRow}:${lastCol}${lastRow}`;
   const url = `${GRAPH_BASE}/me/drive/items/${workbookId}/workbook/worksheets('${encodeURIComponent(worksheetName)}')/range(address='${range}')`;
 
   const response = await fetch(url, {
     method: 'PATCH',
     headers: authHeaders(accessToken),
     body: JSON.stringify({
-      values: [rowValues],
+      values: rows,
     }),
   });
 
@@ -257,6 +291,43 @@ const resolveFieldValue = (field: any, rawValue: any): string => {
   return String(rawValue);
 };
 
+/**
+ * Builds one worksheet row's values for a single response, in the same field order as
+ * `buildHeaders()`'s column headers. Shared by both the single-response path (form.submitted /
+ * response.edited) and the digest batch path (schedule automation, #automations-digest).
+ */
+const buildRowValues = (
+  responseData: Record<string, any>,
+  formSchema: ReturnType<typeof deserializeFormSchema> | null,
+  responseId: string,
+  submittedAt: string,
+  fallbackKeys: string[] = []
+): string[] => {
+  const rowValues: string[] = [];
+
+  if (formSchema?.pages) {
+    for (const page of formSchema.pages) {
+      for (const field of page.fields ?? []) {
+        if (!field?.id) continue;
+        const raw = responseData[field.id];
+        rowValues.push(resolveFieldValue(field, raw));
+      }
+    }
+  } else {
+    // `fallbackKeys` is derived ONCE (from a sample response) and reused for every row, matching
+    // buildHeaders()'s no-schema column order. Iterating `Object.entries(responseData)` per row
+    // instead would misalign columns whenever a digest batch's responses have differing key sets
+    // or insertion order (e.g. an optional field present on some submissions but not others).
+    for (const key of fallbackKeys) {
+      rowValues.push(String(responseData[key] ?? ''));
+    }
+  }
+
+  rowValues.push(submittedAt);
+  rowValues.push(responseId);
+  return rowValues;
+};
+
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export const microsoftSheetsHandler: PluginHandler = async (plugin, event, context) => {
@@ -289,25 +360,62 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
 
     const accessToken = freshToken.accessToken;
 
-    // 3. Fetch the response record
-    if (!event.data.responseId) {
-      return {
-        success: false,
-        error: 'No responseId in event data',
-        syncedAt,
-      } satisfies MicrosoftSheetsResult;
+    // 3. Fetch the response(s) to build row values. A digest batch (schedule automation with an
+    // upstream digest node, #automations-digest) carries zero-to-many responses in
+    // event.data.__digestResponses instead of exactly one event.data.responseId.
+    const rawDigestResponses = (event.data as Record<string, any>).__digestResponses;
+    const digestResponses = Array.isArray(rawDigestResponses)
+      ? (rawDigestResponses as unknown[]).filter(isValidDigestResponseEntry)
+      : null;
+    if (Array.isArray(rawDigestResponses) && digestResponses!.length < rawDigestResponses.length) {
+      context.logger.warn('Digest batch contained malformed response entries — they were dropped, not appended', {
+        totalEntries: rawDigestResponses.length,
+        validEntries: digestResponses!.length,
+        formId: event.formId,
+      });
     }
 
-    const response = await context.getResponseById(event.data.responseId);
-    if (!response) {
-      return {
-        success: false,
-        error: `Response not found: ${event.data.responseId}`,
-        syncedAt,
-      } satisfies MicrosoftSheetsResult;
+    let singleResponse: Awaited<ReturnType<typeof context.getResponseById>> | null = null;
+    if (!digestResponses) {
+      if (!event.data.responseId) {
+        return {
+          success: false,
+          error: 'No responseId in event data',
+          syncedAt,
+        } satisfies MicrosoftSheetsResult;
+      }
+
+      singleResponse = await context.getResponseById(event.data.responseId);
+      if (!singleResponse) {
+        return {
+          success: false,
+          error: `Response not found: ${event.data.responseId}`,
+          syncedAt,
+        } satisfies MicrosoftSheetsResult;
+      }
     }
 
-    const responseData = (response.data as Record<string, any>) ?? {};
+    // Fixed key order for buildHeaders()'s no-schema fallback, derived ONCE as the union of keys
+    // across EVERY response in this batch (not just the first) and reused by every row
+    // (buildRowValues) — see buildRowValues's no-schema comment. Deriving from only the first
+    // response would silently drop a column for any optional field a later digest response has
+    // but the first one lacks.
+    const fallbackKeys: string[] = (() => {
+      const skipKeys = new Set(['responseId', 'submittedAt']);
+      const allResponseData: Record<string, any>[] = digestResponses
+        ? digestResponses.map((r) => r.data ?? {})
+        : [(singleResponse?.data as Record<string, any>) ?? {}];
+      const seen = new Set<string>();
+      const keys: string[] = [];
+      for (const data of allResponseData) {
+        for (const key of Object.keys(data)) {
+          if (skipKeys.has(key) || seen.has(key)) continue;
+          seen.add(key);
+          keys.push(key);
+        }
+      }
+      return keys;
+    })();
 
     // 4. Auto-create workbook on first ever submission (or recreate if deleted)
     let workbookId = config.workbookId;
@@ -324,10 +432,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
           }
         }
       } else {
-        const skipKeys = new Set(['responseId', 'submittedAt']);
-        for (const key of Object.keys(responseData)) {
-          if (!skipKeys.has(key)) fieldHeaders.push(key);
-        }
+        fieldHeaders.push(...fallbackKeys);
       }
       return [...fieldHeaders, 'Submitted At', 'Response ID'];
     };
@@ -374,44 +479,89 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       workbookId = created.workbookId;
     }
 
-    // 5. Build and append the data row
-    const rowValues: string[] = [];
-
-    if (formSchema?.pages) {
-      for (const page of formSchema.pages) {
-        for (const field of page.fields ?? []) {
-          if (!field?.id) continue;
-          const raw = responseData[field.id];
-          rowValues.push(resolveFieldValue(field, raw));
+    // 5. Build and append the data row(s), recreating the workbook once (and retrying) if it
+    // was deleted out from under this plugin.
+    const appendRowsWithRecovery = async (rows: string[][]): Promise<void> => {
+      try {
+        await appendDataRows(workbookId!, worksheetName, rows, accessToken);
+      } catch (err) {
+        if (err instanceof WorkbookNotFoundError) {
+          context.logger.warn('Microsoft Sheets: workbook was deleted — recreating', { pluginId: plugin.id });
+          const recreated = await initWorkbook();
+          workbookId = recreated.workbookId;
+          await appendDataRows(workbookId, worksheetName, rows, accessToken);
+        } else {
+          throw err;
         }
       }
-    } else {
-      const skipKeys = new Set(['responseId', 'submittedAt']);
-      for (const [key, value] of Object.entries(responseData)) {
-        if (skipKeys.has(key)) continue;
-        rowValues.push(String(value ?? ''));
+    };
+
+    // A digest batch can carry up to DIGEST_RESPONSE_SAFETY_CEILING (5000) rows — chunked into
+    // sequential requests to stay under Graph's request-body limit. Each chunk re-derives the
+    // next empty row from the workbook's used range, so later chunks correctly append after the
+    // rows the previous chunk just wrote.
+    //
+    // Recreation-on-delete must restart the WHOLE batch, not just the chunk that hit the 404: if
+    // the workbook is deleted mid-batch (e.g. after chunk 2 of 5 has already been written) and
+    // only the failed chunk were retried against the freshly recreated workbook, chunks 1-2 would
+    // be silently lost — they were written to the now-gone workbook, and the new one would start
+    // from chunk 3 onward. So the per-chunk loop runs OUTSIDE any recovery: a 404 anywhere in it
+    // aborts the whole loop, the workbook is recreated once, and every chunk is re-appended from
+    // the start against the new (empty) workbook.
+    const appendAllRowsChunked = async (rows: string[][]): Promise<void> => {
+      const writeAllChunks = async (): Promise<void> => {
+        for (let i = 0; i < rows.length; i += MAX_ROWS_PER_APPEND_REQUEST) {
+          const chunk = rows.slice(i, i + MAX_ROWS_PER_APPEND_REQUEST);
+          await appendDataRows(workbookId!, worksheetName, chunk, accessToken);
+        }
+      };
+
+      try {
+        await writeAllChunks();
+      } catch (err) {
+        if (err instanceof WorkbookNotFoundError) {
+          context.logger.warn(
+            'Microsoft Sheets: workbook was deleted mid-digest-write — recreating and restarting the full batch',
+            { pluginId: plugin.id }
+          );
+          const recreated = await initWorkbook();
+          workbookId = recreated.workbookId;
+          await writeAllChunks();
+        } else {
+          throw err;
+        }
       }
+    };
+
+    if (digestResponses) {
+      const rows = digestResponses.map((digestResponse) =>
+        buildRowValues(digestResponse.data ?? {}, formSchema, digestResponse.id, digestResponse.submittedAt, fallbackKeys)
+      );
+      // Chunked into MAX_ROWS_PER_APPEND_REQUEST-row used-range-lookup+PATCH pairs, not one
+      // pair per response.
+      if (rows.length > 0) await appendAllRowsChunked(rows);
+      const rowsAppended = rows.length;
+
+      context.logger.info('Microsoft Sheets: digest rows appended', {
+        pluginId: plugin.id,
+        workbookId,
+        rowsAppended,
+      });
+
+      return {
+        success: true,
+        workbookId,
+        rowsAppended,
+        syncedAt,
+      } satisfies MicrosoftSheetsResult;
     }
 
-    const submittedAt =
-      responseData.submittedAt ??
-      (response as any).createdAt?.toISOString?.() ??
-      new Date().toISOString();
-    rowValues.push(String(submittedAt));
-    rowValues.push(event.data.responseId);
-
-    try {
-      await appendDataRow(workbookId, worksheetName, rowValues, accessToken);
-    } catch (err) {
-      if (err instanceof WorkbookNotFoundError) {
-        context.logger.warn('Microsoft Sheets: workbook was deleted — recreating', { pluginId: plugin.id });
-        const recreated = await initWorkbook();
-        workbookId = recreated.workbookId;
-        await appendDataRow(workbookId, worksheetName, rowValues, accessToken);
-      } else {
-        throw err;
-      }
-    }
+    const responseData = (singleResponse!.data as Record<string, any>) ?? {};
+    const submittedAt = String(
+      responseData.submittedAt ?? (singleResponse as any).createdAt?.toISOString?.() ?? new Date().toISOString()
+    );
+    const rowValues = buildRowValues(responseData, formSchema, event.data.responseId, submittedAt, fallbackKeys);
+    await appendRowsWithRecovery([rowValues]);
 
     context.logger.info('Microsoft Sheets: row appended', {
       pluginId: plugin.id,

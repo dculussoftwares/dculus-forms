@@ -15,6 +15,8 @@ export interface EmailPluginConfig extends PluginConfig {
   attachPdfTemplateId?: string;
   /** Denormalized name of attachPdfTemplateId, cached at save time for display (same pattern as recipientFieldLabel). */
   attachPdfTemplateName?: string;
+  /** When true and event.data.__digestResponses is present (schedule automation w/ a digest node), appends an HTML table listing each new response's answers to the end of the email body. Ignored outside a digest context. */
+  includeDigestTable?: boolean;
 }
 
 export const EMAIL_PLUGIN_TYPE = 'email' as const;
@@ -34,4 +36,13 @@ export interface EmailDeliveryResult {
   attachedPdfFilename?: string;
   /** Set when attachPdfTemplateId was configured but the PDF could not be generated — the email is still sent without the attachment. */
   attachmentError?: string;
+  /**
+   * Set instead of the single-send fields above for a per-response digest batch send
+   * (#automations-digest-per-response) — recipientFieldId on a schedule automation with an
+   * upstream digest node sends once per matched response, each to that response's own field
+   * value, rather than once for the whole batch.
+   */
+  sentCount?: number;
+  skippedCount?: number;
+  failedCount?: number;
 }
