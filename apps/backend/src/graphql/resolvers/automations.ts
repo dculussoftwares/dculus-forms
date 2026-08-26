@@ -249,6 +249,7 @@ export const automationsResolvers = {
     createdAt: (parent: { createdAt: Date | string }) => toISOString(parent.createdAt),
     updatedAt: (parent: { updatedAt: Date | string }) => toISOString(parent.updatedAt),
     lastDigestedAt: (parent: { lastDigestedAt: Date | string | null }) => toISOString(parent.lastDigestedAt),
+    lastRunAt: (parent: { lastRunAt: Date | string | null }) => toISOString(parent.lastRunAt),
   },
 
   AutomationRun: {

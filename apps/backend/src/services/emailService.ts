@@ -5,6 +5,10 @@ import { generateOTPEmailHtml, generateOTPEmailText, type OTPEmailData } from '.
 import { generateResetPasswordEmailHtml, generateResetPasswordEmailText, type ResetPasswordEmailData } from '../templates/resetPasswordEmail.js';
 import { generateInvitationEmailHtml, generateInvitationEmailText, type InvitationEmailData } from '../templates/invitationEmail.js';
 import { generateMagicLinkEmailHtml, generateMagicLinkEmailText } from '../templates/magicLinkEmail.js';
+import {
+  generateAutomationFailureEmailHtml,
+  generateAutomationFailureEmailText,
+} from '../templates/automationFailureEmail.js';
 import { logger } from '../lib/logger.js';
 
 export interface EmailAttachment {
@@ -210,4 +214,43 @@ export async function sendMagicLinkEmail(options: SendMagicLinkEmailOptions): Pr
   });
 
   logger.info(`Magic link email sent successfully to: ${to}`);
+}
+export interface SendAutomationFailureEmailOptions {
+  to: string;
+  ownerName: string;
+  automationName: string;
+  automationId: string;
+  formId: string;
+  runId: string;
+  reason: 'first-failure' | 'auto-paused';
+  consecutiveFailures: number;
+}
+
+/**
+ * Tells an automation's owner that it is failing (gap G). Deep-links straight to the failed run —
+ * the runs view already supports a `?runId=` param — because "an automation failed" is useless
+ * without the step and error behind it.
+ */
+export async function sendAutomationFailureEmail(
+  options: SendAutomationFailureEmailOptions
+): Promise<void> {
+  const { to, ownerName, automationName, automationId, formId, runId, reason, consecutiveFailures } =
+    options;
+
+  const baseUrl = process.env.FORM_APP_URL || 'http://localhost:3000';
+  const runUrl = `${baseUrl}/dashboard/form/${formId}/builder/automations/${automationId}/runs?runId=${runId}`;
+
+  const data = { ownerName, automationName, runUrl, reason, consecutiveFailures };
+
+  await sendEmail({
+    to,
+    subject:
+      reason === 'auto-paused'
+        ? `\u26a0\ufe0f "${automationName}" has been paused after repeated failures`
+        : `\u26a0\ufe0f A run of "${automationName}" failed`,
+    html: generateAutomationFailureEmailHtml(data),
+    text: generateAutomationFailureEmailText(data),
+  });
+
+  logger.info(`Automation failure email sent to ${to} (automation: ${automationId}, reason: ${reason})`);
 }

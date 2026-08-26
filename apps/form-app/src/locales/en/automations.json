@@ -33,6 +33,10 @@
   "card": {
     "updatedAt": "Updated {{date}}",
     "version": "v{{version}}",
+    "health": {
+      "failing": "Last {{count}} run(s) failed",
+      "partial": "Last run only partly delivered"
+    },
     "actions": {
       "open": "Open builder",
       "runHistory": "Run history",

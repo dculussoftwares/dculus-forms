@@ -1193,6 +1193,11 @@ export const typeDefs = gql`
     whose digest node opted into covering the form's existing responses).
     """
     lastDigestedAt: String
+    """Outcome of the most recent run — lets the list badge a broken automation without loading its history."""
+    lastRunStatus: String
+    lastRunAt: String
+    """Failed runs since the last clean one. Reaching 5 auto-pauses the automation."""
+    consecutiveFailureCount: Int!
   }
 
   type AutomationStepRun {

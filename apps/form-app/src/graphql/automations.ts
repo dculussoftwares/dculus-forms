@@ -21,6 +21,9 @@ export const GET_FORM_AUTOMATIONS: TypedDocumentNode<any, any> = gql`
       version
       createdAt
       updatedAt
+      lastRunStatus
+      lastRunAt
+      consecutiveFailureCount
     }
   }
 `;

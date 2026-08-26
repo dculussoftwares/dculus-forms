@@ -7,6 +7,9 @@ import { getEventEmitter } from '../../plugins/core/events.js';
 import type { PluginEvent } from '../../plugins/core/types.js';
 import { enqueueFirstStep } from './engine.js';
 import { AUTOMATION_QUEUE, AUTOMATION_CRON_QUEUE, getBoss } from './boss.js';
+// Re-exported so existing importers keep their path; the implementations moved to
+// cronSchedule.ts, which the engine's settle path can import without a cycle.
+export { scheduleAutomationCron, unscheduleAutomationCron } from './cronSchedule.js';
 import type { AutomationRunContext } from './types.js';
 
 type ScheduledJobData = { automationId: string };
@@ -158,40 +161,6 @@ export async function cancelSingleAutomationRun(runId: string) {
     );
   }
   return automationRepository.findRunById(runId);
-}
-
-/**
- * Registers/updates the pg-boss cron schedule for a `schedule`-triggerType automation (#201).
- * Uses a single shared queue (AUTOMATION_CRON_QUEUE) with `key: automationId` to distinguish
- * automations rather than a per-automation queue name — `boss.schedule` upserts by
- * (queue, key), which is idempotent across multi-instance deploys and requires no per-automation
- * queue/worker registration. No-op (with a warning) when the engine is disabled.
- */
-export async function scheduleAutomationCron(
-  automationId: string,
-  cron: string,
-  timezone?: string
-): Promise<void> {
-  const boss = getBoss();
-  if (!boss) {
-    logger.warn(`[Automation Triggers] Cannot schedule cron for automation ${automationId} — engine disabled`);
-    return;
-  }
-
-  const options: { key: string; tz?: string } = { key: automationId };
-  if (timezone) options.tz = timezone;
-
-  await boss.schedule(AUTOMATION_CRON_QUEUE, cron, { automationId } satisfies ScheduledJobData, options);
-  logger.info(`[Automation Triggers] Scheduled cron for automation ${automationId}: ${cron}`);
-}
-
-/** Removes the pg-boss cron schedule for an automation (pause/delete, #201). Idempotent. */
-export async function unscheduleAutomationCron(automationId: string): Promise<void> {
-  const boss = getBoss();
-  if (!boss) return;
-
-  await boss.unschedule(AUTOMATION_CRON_QUEUE, automationId);
-  logger.info(`[Automation Triggers] Unscheduled cron for automation ${automationId}`);
 }
 
 /**

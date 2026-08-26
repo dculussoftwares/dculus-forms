@@ -30,7 +30,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@dculus/ui';
-import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, FlaskConical } from 'lucide-react';
+import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, FlaskConical, AlertTriangle } from 'lucide-react';
 import {
   UPDATE_AUTOMATION,
   SET_AUTOMATION_STATUS,
@@ -51,6 +51,10 @@ export interface Automation {
   version: number;
   createdAt: string;
   updatedAt: string;
+  /** Outcome of the most recent run — null until this automation has run at all. */
+  lastRunStatus?: string | null;
+  lastRunAt?: string | null;
+  consecutiveFailureCount?: number;
 }
 
 interface AutomationCardProps {
@@ -150,6 +154,17 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
     }
   };
 
+  // Only unhealthy outcomes are surfaced: a green "last run succeeded" line on every card is
+  // noise, whereas a failure that nobody sees is the entire problem this solves.
+  const failures = automation.consecutiveFailureCount ?? 0;
+  const healthLabel =
+    failures >= 1
+      ? t('card.health.failing', { values: { count: failures } })
+      : automation.lastRunStatus === 'PARTIAL'
+        ? t('card.health.partial')
+        : null;
+  const healthColor = failures >= 1 ? 'var(--tf-error)' : '#9c7818';
+
   const updatedAtLabel = new Date(automation.updatedAt).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
@@ -183,6 +198,15 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
             {' · '}
             {t('card.updatedAt', { values: { date: updatedAtLabel } })}
           </p>
+
+          {/* Health of the last run. Without this an automation whose integration expired looks
+              identical to a healthy one until someone opens its run history. */}
+          {healthLabel && (
+            <p className="text-xs mt-1 flex items-center gap-1" style={{ color: healthColor }}>
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              {healthLabel}
+            </p>
+          )}
         </div>
 
         <div className="shrink-0 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>

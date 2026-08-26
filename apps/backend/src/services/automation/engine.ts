@@ -13,6 +13,7 @@ import type { ResponseFilter } from '../responseFilterService.js';
 import { AUTOMATION_QUEUE, getBoss, startAutomationBoss, stopAutomationBoss } from './boss.js';
 import { evaluateCondition } from './conditionEvaluator.js';
 import { DIGEST_RESPONSE_SAFETY_CEILING } from './graphValidator.js';
+import { recordRunOutcome } from './runOutcome.js';
 import type {
   AutomationEdge,
   AutomationGraph,
@@ -109,6 +110,7 @@ async function completeRun(run: SettleableRun): Promise<void> {
 
   const status = blemishes.length > 0 ? 'PARTIAL' : 'COMPLETED';
   await automationRepository.updateRun(run.id, { status, completedAt: new Date() });
+  await recordRunOutcome(run.automation.id, run.id, status);
 
   if (blemishes.length > 0) {
     logger.warn(
@@ -695,6 +697,7 @@ async function handleDigestNode(
     const isFinalAttempt = job.retryLimit <= job.retryCount;
     if (isFinalAttempt) {
       await automationRepository.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
+      await recordRunOutcome(run.automation.id, run.id, 'FAILED');
       return;
     }
 
@@ -754,6 +757,7 @@ async function handleActionNode(
       finishedAt: new Date(),
     });
     await automationRepository.updateRun(run.id, { status: 'CANCELLED', completedAt: new Date() });
+    await recordRunOutcome(run.automation.id, run.id, 'CANCELLED');
     return;
   }
 
@@ -872,7 +876,7 @@ async function handleActionNode(
  * webhook genuinely wants and never used to get.
  */
 async function failActionStep(
-  run: { id: string },
+  run: { id: string; automation: { id: string } },
   node: AutomationNode,
   nodeType: string,
   attempt: number,
@@ -905,6 +909,7 @@ async function failActionStep(
       await txRepo.createStepRun(stepRun);
       await txRepo.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
     });
+    await recordRunOutcome(run.automation.id, run.id, 'FAILED');
     return;
   }
 
@@ -1014,6 +1019,7 @@ async function reconcileSuccessStep(
 }
 
 async function recordUnhandleableStepFailure(
+  automationId: string,
   runId: string,
   nodeId: string,
   nodeType: string,
@@ -1039,6 +1045,7 @@ async function recordUnhandleableStepFailure(
     });
     await txRepo.updateRun(runId, { status: 'FAILED', completedAt: new Date() });
   });
+  await recordRunOutcome(automationId, runId, 'FAILED');
 }
 
 export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJobData>): Promise<void> {
@@ -1061,6 +1068,7 @@ export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJ
   const node = findNode(graph, nodeId);
   if (!node) {
     await recordUnhandleableStepFailure(
+      run.automation.id,
       runId,
       nodeId,
       'unknown',
@@ -1090,6 +1098,7 @@ export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJ
       return handleEndNode(run, node);
     default:
       return recordUnhandleableStepFailure(
+        run.automation.id,
         runId,
         nodeId,
         node.type,
