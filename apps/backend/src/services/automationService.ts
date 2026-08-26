@@ -52,10 +52,32 @@ function assertValidScheduleTriggerConfig(
   }
 }
 
-/** DRAFT default graph for a brand-new automation: a single trigger wired to a single end. */
+/**
+ * DRAFT default graph for a brand-new automation: a single trigger wired to a single end.
+ * A `schedule` trigger fires with no triggering response, so an empty graph (`trigger → end`)
+ * would run on its cron and do nothing — the `end` handler is a pure no-op. To avoid shipping
+ * a schedule that silently never sends anything, default it to `trigger → digest → end`, with
+ * the digest ("Filter Responses") node pre-inserted exactly as `AddStepEdge` would insert it.
+ */
 function buildDefaultGraph(triggerType: string): AutomationGraph {
   const triggerId = generateId();
   const endId = generateId();
+
+  if (triggerType === 'schedule') {
+    const digestId = generateId();
+    return {
+      nodes: [
+        { id: triggerId, type: 'trigger', data: { triggerType } },
+        { id: digestId, type: 'digest', data: {} },
+        { id: endId, type: 'end' },
+      ],
+      edges: [
+        { id: generateId(), source: triggerId, target: digestId },
+        { id: generateId(), source: digestId, target: endId },
+      ],
+    };
+  }
+
   return {
     nodes: [
       { id: triggerId, type: 'trigger', data: { triggerType } },

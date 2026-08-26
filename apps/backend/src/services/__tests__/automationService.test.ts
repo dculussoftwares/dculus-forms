@@ -132,6 +132,32 @@ describe('automationService', () => {
       );
       expect(result).toEqual({ id: 'automation-1' });
     });
+
+    it('creates a DRAFT schedule automation with a default trigger->digest->end graph', async () => {
+      vi.mocked(automationRepository.createAutomation).mockResolvedValue({ id: 'automation-2' } as any);
+
+      await createAutomation({
+        formId: 'form-1',
+        organizationId: 'org-1',
+        name: 'Weekly digest',
+        triggerType: 'schedule',
+        createdBy: 'user-1',
+      });
+
+      expect(automationRepository.createAutomation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          triggerType: 'schedule',
+          graph: expect.objectContaining({
+            nodes: [
+              expect.objectContaining({ type: 'trigger', data: { triggerType: 'schedule' } }),
+              expect.objectContaining({ type: 'digest', data: {} }),
+              expect.objectContaining({ type: 'end' }),
+            ],
+            edges: expect.any(Array),
+          }),
+        })
+      );
+    });
   });
 
   describe('updateAutomation', () => {
