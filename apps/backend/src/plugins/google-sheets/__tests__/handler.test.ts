@@ -168,7 +168,10 @@ describe('Google Sheets Handler', () => {
       config.googleToken!.expiresAt = new Date(Date.now() + 60_000).toISOString(); // <5min left
 
       global.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes('oauth2.googleapis.com')) {
+        // Exact hostname match, not a substring check — a substring match on a URL is an
+        // incomplete-sanitization anti-pattern CodeQL flags even in test mocks (a URL like
+        // "https://evil.com/oauth2.googleapis.com" would also satisfy .includes()).
+        if (new URL(url).hostname === 'oauth2.googleapis.com') {
           return Promise.resolve({
             ok: true,
             status: 200,

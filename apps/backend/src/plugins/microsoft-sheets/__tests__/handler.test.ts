@@ -168,7 +168,10 @@ describe('Microsoft Sheets Handler', () => {
       config.microsoftToken!.expiresAt = new Date(Date.now() + 60_000).toISOString(); // <5min left
 
       global.fetch = vi.fn().mockImplementation((url: string) => {
-        if (url.includes('login.microsoftonline.com')) {
+        // Exact hostname match, not a substring check — a substring match on a URL is an
+        // incomplete-sanitization anti-pattern CodeQL flags even in test mocks (a URL like
+        // "https://evil.com/login.microsoftonline.com" would also satisfy .includes()).
+        if (new URL(url).hostname === 'login.microsoftonline.com') {
           return Promise.resolve({
             ok: true,
             status: 200,

@@ -173,18 +173,31 @@ function mergeDigestIntoTriggerData(
 }
 
 /**
- * Pages through `getResponsesByFormId` (reusing the existing __submittedAt/DATE_AFTER filter —
- * indexed via Response's @@index([formId, submittedAt]), zero new SQL) to collect up to
- * `maxResponses` responses submitted since `since` AND matching every rule in `extraFilters`
- * (ANDed — see AutomationDigestNode's data doc comment in types.ts for why only AND is
- * supported), oldest-first. Uses a fixed page size across calls (required for correct
- * skip/page-number math) and slices the final page down to `maxResponses` rather than shrinking
- * the page size, which would break pagination. `total` comes from the first page's DB-computed
- * count — accurate even when the result is truncated, so no separate COUNT query is needed.
+ * Pages through `getResponsesByFormId` (reusing the existing __submittedAt/DATE_AFTER +
+ * DATE_BEFORE filters — indexed via Response's @@index([formId, submittedAt]), zero new SQL) to
+ * collect up to `maxResponses` responses submitted in the HALF-OPEN window `(since, until]`
+ * matching every rule in `extraFilters` (ANDed — see AutomationDigestNode's data doc comment in
+ * types.ts for why only AND is supported), oldest-first.
+ *
+ * The `until` upper bound is load-bearing, not optional polish — it's `run.startedAt`, a
+ * timestamp fixed BEFORE this query (or any of its pages) ever runs. Two problems it closes at
+ * once: (1) without it, a response submitted while THIS run's query is still executing would
+ * satisfy `submittedAt > since` on BOTH this run and the next (since the next run's `since` is
+ * this run's `startedAt`, which is earlier than that response's submittedAt) — a duplicate
+ * send/row. (2) it also makes the underlying result set for this call immutable for the whole
+ * paginated loop below: Postgres timestamps only move forward, so no row with
+ * `submittedAt <= until` can be inserted AFTER this query starts — the classic "new rows shift
+ * offset-pagination pages" hazard can't occur when the page boundary is provably static.
+ *
+ * Uses a fixed page size across calls (required for correct skip/page-number math) and slices
+ * the final page down to `maxResponses` rather than shrinking the page size, which would break
+ * pagination. `total` comes from the first page's DB-computed count — accurate even when the
+ * result is truncated, so no separate COUNT query is needed.
  */
 async function fetchDigestResponses(
   formId: string,
   since: Date,
+  until: Date,
   maxResponses: number,
   extraFilters: ConditionRule[] = []
 ): Promise<{ responses: DigestResponseSummary[]; total: number }> {
@@ -193,6 +206,7 @@ async function fetchDigestResponses(
   let page = 1;
   const filters: ResponseFilter[] = [
     { fieldId: '__submittedAt', operator: 'DATE_AFTER', value: since.toISOString() },
+    { fieldId: '__submittedAt', operator: 'DATE_BEFORE', value: until.toISOString() },
     ...extraFilters,
   ];
 
@@ -352,6 +366,7 @@ async function handleDigestNode(
   run: {
     id: string;
     context: unknown;
+    startedAt: Date;
     automation: { id: string; formId: string };
   },
   node: Extract<AutomationNode, { type: 'digest' }>,
@@ -367,11 +382,16 @@ async function handleDigestNode(
   try {
     const lastCompletedRun = await automationRepository.findLastCompletedRun(run.automation.id);
     const since = lastCompletedRun?.startedAt ?? DIGEST_EPOCH_START;
-    const until = new Date();
+    // Fixed at run-creation time, BEFORE this query (or any of its pages) runs — see
+    // fetchDigestResponses's doc comment for why this must be a stable timestamp captured
+    // before querying, not `new Date()` evaluated here (which would race against responses
+    // submitted while the query itself is still executing).
+    const until = run.startedAt;
 
     const { responses, total } = await fetchDigestResponses(
       run.automation.formId,
       since,
+      until,
       maxResponses,
       node.data.filters ?? []
     );

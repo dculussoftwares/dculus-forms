@@ -14,6 +14,13 @@ import { useFormPermissions } from '../hooks/useFormPermissions';
 import { useTestAutomation } from '../hooks/useTestAutomation';
 import { extractValidationErrors } from '../components/automations/builder/validation';
 import { isIntentionalNavigationPending } from '../lib/intentionalNavigation';
+import { CombinedGraphQLErrors } from '@apollo/client';
+
+function getErrorMessage(error: unknown): string {
+  if (CombinedGraphQLErrors.is(error)) return error.message;
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
 
 const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ form, automation }) => {
   const { t } = useTranslation('automations');
@@ -87,9 +94,9 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
       const result = await renameAutomation({ variables: { id: automationId, name: trimmed } });
       if (result.error) throw result.error;
       toastSuccess(t('toasts.renamedTitle'), t('toasts.renamedMessage', { values: { name: trimmed } }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       setNameDraft(automation.name);
-      toastError(t('toasts.renameErrorTitle'), error.message);
+      toastError(t('toasts.renameErrorTitle'), getErrorMessage(error));
     }
   };
 
@@ -105,13 +112,13 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
       markSaved();
       clearValidationErrors();
       toastSuccess(t('builder.header.saveSuccessTitle'), t('builder.header.saveSuccessMessage'));
-    } catch (error: any) {
-      const validationErrors = extractValidationErrors(error);
+    } catch (error: unknown) {
+      const validationErrors = CombinedGraphQLErrors.is(error) ? extractValidationErrors(error) : undefined;
       if (validationErrors) {
         setValidationErrors(validationErrors);
         toastError(t('builder.header.saveErrorTitle'), t('builder.header.saveInvalidMessage'));
       } else {
-        toastError(t('builder.header.saveErrorTitle'), error.message);
+        toastError(t('builder.header.saveErrorTitle'), getErrorMessage(error));
       }
     }
   };
@@ -131,13 +138,13 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
           ? t('toasts.activatedMessage', { values: { name: automation.name } })
           : t('toasts.pausedMessage', { values: { name: automation.name } })
       );
-    } catch (error: any) {
-      const validationErrors = extractValidationErrors(error);
+    } catch (error: unknown) {
+      const validationErrors = CombinedGraphQLErrors.is(error) ? extractValidationErrors(error) : undefined;
       if (validationErrors) {
         setValidationErrors(validationErrors);
         toastError(t('builder.header.activateInvalidTitle'), t('builder.header.activateInvalidMessage'));
       } else {
-        toastError(t('toasts.statusErrorTitle'), error.message);
+        toastError(t('toasts.statusErrorTitle'), getErrorMessage(error));
       }
     }
   };

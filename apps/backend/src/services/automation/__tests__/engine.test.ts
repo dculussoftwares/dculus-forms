@@ -814,7 +814,10 @@ describe('automation engine', () => {
         100,
         'submittedAt',
         'asc',
-        [{ fieldId: '__submittedAt', operator: 'DATE_AFTER', value: '1970-01-01T00:00:00.000Z' }]
+        [
+          { fieldId: '__submittedAt', operator: 'DATE_AFTER', value: '1970-01-01T00:00:00.000Z' },
+          { fieldId: '__submittedAt', operator: 'DATE_BEFORE', value: '2026-01-01T00:00:00.000Z' },
+        ]
       );
 
       expect(automationRepository.createStepRun).toHaveBeenCalledWith(
@@ -857,7 +860,9 @@ describe('automation engine', () => {
         expect.anything(),
         expect.anything(),
         expect.anything(),
-        [expect.objectContaining({ value: '1970-01-01T00:00:00.000Z' })]
+        expect.arrayContaining([
+          expect.objectContaining({ operator: 'DATE_AFTER', value: '1970-01-01T00:00:00.000Z' }),
+        ])
       );
     });
 
@@ -890,6 +895,7 @@ describe('automation engine', () => {
         expect.anything(),
         [
           { fieldId: '__submittedAt', operator: 'DATE_AFTER', value: '1970-01-01T00:00:00.000Z' },
+          { fieldId: '__submittedAt', operator: 'DATE_BEFORE', value: '2026-01-01T00:00:00.000Z' },
           { fieldId: 'score', operator: 'GREATER_THAN', value: '80' },
         ]
       );
@@ -897,7 +903,12 @@ describe('automation engine', () => {
 
     it('anchors the window on the last COMPLETED run startedAt, not the epoch fallback, once a prior run exists', async () => {
       vi.mocked(automationRepository.findSuccessStepRun).mockResolvedValue(null);
-      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(scheduleRun() as any);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        // startedAt must be chronologically after the last completed run's startedAt below —
+        // this run's own startedAt becomes the DATE_BEFORE upper bound, so it must not precede
+        // the DATE_AFTER lower bound or the (mandatory) window would be empty/inverted.
+        scheduleRun({ startedAt: new Date('2026-01-15T00:00:00.000Z') }) as any
+      );
       vi.mocked(automationRepository.findLastCompletedRun).mockResolvedValue({
         startedAt: new Date('2026-01-10T09:00:00.000Z'),
       } as any);
@@ -912,7 +923,10 @@ describe('automation engine', () => {
         expect.anything(),
         expect.anything(),
         expect.anything(),
-        [expect.objectContaining({ value: '2026-01-10T09:00:00.000Z' })]
+        [
+          { fieldId: '__submittedAt', operator: 'DATE_AFTER', value: '2026-01-10T09:00:00.000Z' },
+          { fieldId: '__submittedAt', operator: 'DATE_BEFORE', value: '2026-01-15T00:00:00.000Z' },
+        ]
       );
     });
 
@@ -953,7 +967,7 @@ describe('automation engine', () => {
       );
     });
 
-    it('marks the run FAILED without re-querying when redelivered after an already-recorded SUCCESS (crash recovery)', async () => {
+    it('replays the persisted output and advances downstream without re-querying when redelivered after an already-recorded SUCCESS (crash recovery)', async () => {
       const existingOutput = {
         count: 3,
         since: '2025-12-01T00:00:00.000Z',

@@ -29,6 +29,14 @@ function formatDigestCellValue(value: any): string {
   return String(value);
 }
 
+// `Date.prototype.toLocaleString()` renders using the SERVER's locale/timezone, not the
+// recipient's — a digest table generated on a US-locale server vs. an EU-locale one would show
+// the same submission at different-looking timestamps. Format explicitly in UTC instead so the
+// table is stable regardless of where the backend process happens to run.
+function formatDigestTimestamp(isoString: string): string {
+  return `${new Date(isoString).toISOString().replace('T', ' ').slice(0, 16)} UTC`;
+}
+
 // Gmail (and most providers) clip a message around ~102KB, showing "[Message clipped]" past
 // that point — independent of whatever cap the digest node itself was configured with (up to
 // 1000 responses). A wide form with a few hundred rows can blow past this well before "all
@@ -61,8 +69,12 @@ function buildDigestResponseTable(
     }
   }
 
-  const columnLabels =
-    fieldEntries.length > 0 ? fieldEntries.map((f) => f.label) : Object.keys(responses[0]?.data ?? {});
+  // Fallback key order is fixed ONCE from the first response and reused for every row below —
+  // Object.keys/Object.values on each row's own `data` independently would misalign columns
+  // whenever responses have differing key sets or insertion order (e.g. an optional field present
+  // on some submissions but not others).
+  const fallbackKeys = Object.keys(responses[0]?.data ?? {});
+  const columnLabels = fieldEntries.length > 0 ? fieldEntries.map((f) => f.label) : fallbackKeys;
   const headers = [...columnLabels, 'Submitted At'];
 
   const headerRow = headers
@@ -77,13 +89,13 @@ function buildDigestResponseTable(
       const values =
         fieldEntries.length > 0
           ? fieldEntries.map((f) => r.data?.[f.id])
-          : Object.values(r.data ?? {});
+          : fallbackKeys.map((key) => r.data?.[key]);
       const cells = values.map(
         (v) =>
           `<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;">${escapeHtml(formatDigestCellValue(v))}</td>`
       );
       cells.push(
-        `<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;">${escapeHtml(new Date(r.submittedAt).toLocaleString())}</td>`
+        `<td style="padding:6px 10px;border-bottom:1px solid #f1f5f9;">${escapeHtml(formatDigestTimestamp(r.submittedAt))}</td>`
       );
       return `<tr>${cells.join('')}</tr>`;
     })
@@ -135,6 +147,29 @@ function resolveRecipients(
   }
 
   return { recipients, skipReason: recipients.length === 0 ? skipReason : undefined };
+}
+
+/**
+ * Resolves the recipient for ONE response in per-response digest send mode
+ * (#automations-digest-per-response) — deliberately does NOT include `config.recipientEmail`.
+ * `resolveRecipients` (above) always includes the static address when set, which is correct for
+ * a single-response send but wrong here: calling it once per matched response would re-add the
+ * same static address on every iteration, sending it one email per response instead of one email
+ * total. A user who wants both a static summary AND per-response sends should configure two
+ * separate email action nodes (one aggregate, one per-response) — this function only ever
+ * resolves the per-response field value.
+ */
+function resolvePerResponseRecipient(
+  config: ValidatedEmailConfig,
+  responseData: Record<string, any>
+): { recipient?: string; skipReason?: string } {
+  const fieldValue = responseData[config.recipientFieldId!];
+  if (typeof fieldValue === 'string' && fieldValue.trim()) {
+    return { recipient: fieldValue.trim() };
+  }
+  return {
+    skipReason: `Recipient field "${config.recipientFieldLabel || config.recipientFieldId}" was empty for this submission`,
+  };
 }
 
 /**
@@ -190,9 +225,9 @@ async function sendPerResponseDigestEmails(
 
   for (const digestResponse of digestResponses) {
     const responseData = digestResponse.data ?? {};
-    const { recipients, skipReason } = resolveRecipients(config, responseData, true);
+    const { recipient, skipReason } = resolvePerResponseRecipient(config, responseData);
 
-    if (recipients.length === 0) {
+    if (!recipient) {
       skippedCount += 1;
       context.logger.warn('Digest email skipped for one response: no recipient could be resolved', {
         responseId: digestResponse.id,
@@ -204,7 +239,7 @@ async function sendPerResponseDigestEmails(
     const emailBody = substituteMentions(config.message, responseData, fieldLabels);
 
     try {
-      await context.sendEmail({ to: recipients.join(', '), subject: config.subject, html: emailBody });
+      await context.sendEmail({ to: recipient, subject: config.subject, html: emailBody });
       emitEmailSent(event.organizationId, event.formId, 'plugin');
       sentCount += 1;
     } catch (err: any) {

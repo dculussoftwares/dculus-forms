@@ -210,12 +210,19 @@ type ResponseDependency = 'recipientField' | 'sendToSubmitter' | 'mention' | nul
  * email action's response-sourced recipient fields (recipientFieldId / sendToSubmitter). Returns
  * WHICH kind of dependency was found (or null) so the caller can pick the right error code/copy.
  *
- * `recipientFieldId` on a schedule automation with an upstream digest node is a special case:
- * it signals PER-RESPONSE send mode (engine.ts's handleActionNode + email/handler.ts's
- * per-response loop) — the email action sends once for EACH matched response, using that
- * response's own field value as the recipient, rather than once for the whole batch. In that
- * mode a real `{{field-id}}` mention is also legitimate (each send genuinely has one bound
- * response to substitute against), so ALL mentions are allowed, not just DIGEST_SCALAR_MENTION_KEYS.
+ * `recipientFieldId` on a schedule automation with an upstream digest node is a special case
+ * for the EMAIL action specifically: it signals PER-RESPONSE send mode (engine.ts's
+ * handleActionNode + email/handler.ts's per-response loop) — the email action sends once for
+ * EACH matched response, using that response's own field value as the recipient, rather than
+ * once for the whole batch. In that mode a real `{{field-id}}` mention is also legitimate (each
+ * send genuinely has one bound response to substitute against), so ALL mentions are allowed, not
+ * just DIGEST_SCALAR_MENTION_KEYS. `actionType` is checked here to mirror engine.ts's own gate
+ * exactly (`actionType === 'email' && config.recipientFieldId && ...`) — webhook/slack configs
+ * don't declare a `recipientFieldId` field in their schemas, but ActionDataSchema's `config` is
+ * an open `z.record()` that doesn't strip unknown keys, so without this check a stray
+ * `recipientFieldId` on a non-email action's raw config would incorrectly pass validation as
+ * "per-response mode" while the engine (which DOES check actionType) would never treat it that
+ * way — a validator/runtime mismatch, not just a cosmetic gap.
  *
  * Without `recipientFieldId` (the static/aggregate case — one summary email for the whole
  * batch), only the four __digest* scalar keys are legitimate mentions, matching the plain
@@ -225,10 +232,11 @@ type ResponseDependency = 'recipientField' | 'sendToSubmitter' | 'mention' | nul
  * recipientFieldId, sendToSubmitter, and any mention are all response-dependent.
  */
 function findResponseDependency(
+  actionType: string,
   config: Record<string, any>,
   allowDigestMentions: boolean
 ): ResponseDependency {
-  const isPerResponseMode = allowDigestMentions && Boolean(config.recipientFieldId);
+  const isPerResponseMode = allowDigestMentions && actionType === 'email' && Boolean(config.recipientFieldId);
 
   if (config.recipientFieldId) return isPerResponseMode ? null : 'recipientField';
   if (config.sendToSubmitter) return 'sendToSubmitter';
@@ -553,7 +561,7 @@ export function validateAutomationGraph(
     }
 
     if (options.triggerType === 'schedule') {
-      const dependency = findResponseDependency(config, hasDigestNode);
+      const dependency = findResponseDependency(actionType, config, hasDigestNode);
       if (dependency === 'mention' && hasDigestNode) {
         errors.push({
           nodeId: node.id,

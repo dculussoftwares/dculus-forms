@@ -165,6 +165,10 @@ const writeHeaderRow = async (
  * would otherwise make a large digest slow and prone to Graph API throttling). Returns true on
  * success.
  */
+// Keeps a single range PATCH comfortably under Microsoft Graph's ~4MB request-body limit for a
+// digest batch of up to 5000 rows with wide forms (many fields per row).
+const MAX_ROWS_PER_APPEND_REQUEST = 500;
+
 const appendDataRows = async (
   workbookId: string,
   worksheetName: string,
@@ -278,7 +282,8 @@ const buildRowValues = (
   responseData: Record<string, any>,
   formSchema: ReturnType<typeof deserializeFormSchema> | null,
   responseId: string,
-  submittedAt: string
+  submittedAt: string,
+  fallbackKeys: string[] = []
 ): string[] => {
   const rowValues: string[] = [];
 
@@ -291,10 +296,12 @@ const buildRowValues = (
       }
     }
   } else {
-    const skipKeys = new Set(['responseId', 'submittedAt']);
-    for (const [key, value] of Object.entries(responseData)) {
-      if (skipKeys.has(key)) continue;
-      rowValues.push(String(value ?? ''));
+    // `fallbackKeys` is derived ONCE (from a sample response) and reused for every row, matching
+    // buildHeaders()'s no-schema column order. Iterating `Object.entries(responseData)` per row
+    // instead would misalign columns whenever a digest batch's responses have differing key sets
+    // or insertion order (e.g. an optional field present on some submissions but not others).
+    for (const key of fallbackKeys) {
+      rowValues.push(String(responseData[key] ?? ''));
     }
   }
 
@@ -365,6 +372,13 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     const sampleResponseData: Record<string, any> =
       (singleResponse?.data as Record<string, any>) ?? digestResponses?.[0]?.data ?? {};
 
+    // Fixed key order derived ONCE from the sample above and reused by every row (buildRowValues)
+    // to stay aligned with the headers (buildHeaders) — see buildRowValues's no-schema comment.
+    const fallbackKeys: string[] = (() => {
+      const skipKeys = new Set(['responseId', 'submittedAt']);
+      return Object.keys(sampleResponseData).filter((key) => !skipKeys.has(key));
+    })();
+
     // 4. Auto-create workbook on first ever submission (or recreate if deleted)
     let workbookId = config.workbookId;
 
@@ -380,10 +394,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
           }
         }
       } else {
-        const skipKeys = new Set(['responseId', 'submittedAt']);
-        for (const key of Object.keys(sampleResponseData)) {
-          if (!skipKeys.has(key)) fieldHeaders.push(key);
-        }
+        fieldHeaders.push(...fallbackKeys);
       }
       return [...fieldHeaders, 'Submitted At', 'Response ID'];
     };
@@ -447,12 +458,24 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       }
     };
 
+    // A digest batch can carry up to DIGEST_RESPONSE_SAFETY_CEILING (5000) rows — chunked into
+    // sequential requests to stay under Graph's request-body limit. Each chunk re-derives the
+    // next empty row from the workbook's used range, so later chunks correctly append after the
+    // rows the previous chunk just wrote.
+    const appendAllRowsChunked = async (rows: string[][]): Promise<void> => {
+      for (let i = 0; i < rows.length; i += MAX_ROWS_PER_APPEND_REQUEST) {
+        const chunk = rows.slice(i, i + MAX_ROWS_PER_APPEND_REQUEST);
+        await appendRowsWithRecovery(chunk);
+      }
+    };
+
     if (digestResponses) {
       const rows = digestResponses.map((digestResponse) =>
-        buildRowValues(digestResponse.data ?? {}, formSchema, digestResponse.id, digestResponse.submittedAt)
+        buildRowValues(digestResponse.data ?? {}, formSchema, digestResponse.id, digestResponse.submittedAt, fallbackKeys)
       );
-      // One used-range lookup + one PATCH for the whole batch, not one pair per response.
-      if (rows.length > 0) await appendRowsWithRecovery(rows);
+      // Chunked into MAX_ROWS_PER_APPEND_REQUEST-row used-range-lookup+PATCH pairs, not one
+      // pair per response.
+      if (rows.length > 0) await appendAllRowsChunked(rows);
       const rowsAppended = rows.length;
 
       context.logger.info('Microsoft Sheets: digest rows appended', {
@@ -473,7 +496,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     const submittedAt = String(
       responseData.submittedAt ?? (singleResponse as any).createdAt?.toISOString?.() ?? new Date().toISOString()
     );
-    const rowValues = buildRowValues(responseData, formSchema, event.data.responseId, submittedAt);
+    const rowValues = buildRowValues(responseData, formSchema, event.data.responseId, submittedAt, fallbackKeys);
     await appendRowsWithRecovery([rowValues]);
 
     context.logger.info('Microsoft Sheets: row appended', {
