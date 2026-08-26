@@ -9,13 +9,68 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
+import { cn } from '@dculus/utils';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useAutomationBuilderStore } from '../../../store/useAutomationBuilderStore';
 import { UPDATE_AUTOMATION } from '../../../graphql/automations';
 import { isValidCronExpression, isValidTimezone } from './scheduleCronValidation';
+
+/** IANA timezone identifiers, with a hand-rolled fallback for runtimes without Intl.supportedValuesOf. */
+function getAllTimezones(): string[] {
+  const supportedValuesOf = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] })
+    .supportedValuesOf;
+  if (typeof supportedValuesOf === 'function') {
+    try {
+      return supportedValuesOf('timeZone');
+    } catch {
+      // fall through to fallback list below
+    }
+  }
+  return [
+    'UTC',
+    'America/New_York',
+    'America/Chicago',
+    'America/Denver',
+    'America/Los_Angeles',
+    'America/Sao_Paulo',
+    'Europe/London',
+    'Europe/Paris',
+    'Europe/Berlin',
+    'Europe/Moscow',
+    'Asia/Kolkata',
+    'Asia/Dubai',
+    'Asia/Shanghai',
+    'Asia/Tokyo',
+    'Asia/Singapore',
+    'Australia/Sydney',
+    'Pacific/Auckland',
+  ];
+}
+
+function getTimezoneOffsetLabel(timezone: string): string {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'shortOffset',
+    }).formatToParts(new Date());
+    return parts.find((part) => part.type === 'timeZoneName')?.value ?? '';
+  } catch {
+    return '';
+  }
+}
 
 type Preset = 'daily' | 'weekly' | 'monthly' | 'custom';
 
@@ -84,6 +139,14 @@ export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ au
   const [timezone, setTimezone] = useState<string>(
     triggerConfig?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
   );
+  const [timezonePopoverOpen, setTimezonePopoverOpen] = useState(false);
+
+  const timezoneOptions = useMemo(() => {
+    const zones = getAllTimezones();
+    return zones
+      .map((zone) => ({ zone, offset: getTimezoneOffsetLabel(zone) }))
+      .sort((a, b) => a.zone.localeCompare(b.zone));
+  }, []);
 
   const builtCron = buildCron(preset, time, weekday, dayOfMonth, customCron);
   const cronValid = isValidCronExpression(builtCron);
@@ -187,12 +250,45 @@ export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ au
 
       <div className="space-y-2">
         <Label htmlFor="schedule-timezone">{t('builder.panel.schedule.timezoneLabel')}</Label>
-        <Input
-          id="schedule-timezone"
-          value={timezone}
-          onChange={(e) => setTimezone(e.target.value)}
-          placeholder={t('builder.panel.schedule.timezonePlaceholder')}
-        />
+        <Popover open={timezonePopoverOpen} onOpenChange={setTimezonePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              id="schedule-timezone"
+              variant="outline"
+              role="combobox"
+              aria-expanded={timezonePopoverOpen}
+              className="w-full justify-between font-normal"
+            >
+              {timezone || t('builder.panel.schedule.timezonePlaceholder')}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+            <Command>
+              <CommandInput placeholder={t('builder.panel.schedule.timezoneSearchPlaceholder')} />
+              <CommandList>
+                <CommandEmpty>{t('builder.panel.schedule.timezoneNoResults')}</CommandEmpty>
+                <CommandGroup>
+                  {timezoneOptions.map(({ zone, offset }) => (
+                    <CommandItem
+                      key={zone}
+                      value={zone}
+                      onSelect={(value) => {
+                        setTimezone(value);
+                        setTimezonePopoverOpen(false);
+                      }}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Check className={cn('h-3.5 w-3.5 flex-shrink-0', timezone === zone ? 'opacity-100' : 'opacity-0')} />
+                      <span className="flex-1 text-sm">{zone}</span>
+                      {offset && <span className="text-xs text-muted-foreground">{offset}</span>}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
         {!timezoneValid && (
           <p className="text-xs" style={{ color: 'var(--tf-error)' }}>
             {t('builder.panel.schedule.invalidTimezone')}

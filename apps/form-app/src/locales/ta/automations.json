@@ -206,6 +206,8 @@
         "customCronPlaceholder": "0 9 * * *",
         "timezoneLabel": "நேர மண்டலம்",
         "timezonePlaceholder": "America/Chicago",
+        "timezoneSearchPlaceholder": "நேர மண்டலத்தைத் தேடுங்கள்...",
+        "timezoneNoResults": "நேர மண்டலம் எதுவும் கிடைக்கவில்லை.",
         "invalidCron": "சரியான 5-புல cron வெளிப்பாட்டை உள்ளிடவும், எ.கா. \"0 9 * * *\".",
         "invalidTimezone": "சரியான IANA நேர மண்டலத்தை உள்ளிடவும், எ.கா. \"America/Chicago\".",
         "hint": "மேலே உள்ள நேர மண்டலத்தில் நேரங்கள் மதிப்பிடப்படும் (காலியாக இருந்தால் UTC பயன்படுத்தப்படும்).",
