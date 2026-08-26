@@ -266,21 +266,28 @@ async function sendPerResponseDigestEmails(
       continue;
     }
 
-    const responseData = digestResponse.data ?? {};
-    const { recipient, skipReason } = resolvePerResponseRecipient(config, responseData);
-
-    if (!recipient) {
-      skippedCount += 1;
-      context.logger.warn('Digest email skipped for one response: no recipient could be resolved', {
-        responseId: digestResponse.id,
-        reason: skipReason,
-      });
-      continue;
-    }
-
-    const emailBody = substituteMentions(config.message, responseData, fieldLabels);
-
+    // INVARIANT: nothing in this loop body may throw. The whole iteration — recipient
+    // resolution and mention substitution included, not just the send — sits inside the try for
+    // that reason. There is no per-response delivery record, so a throw escaping mid-batch fails
+    // the pg-boss job, and the retry restarts from the FIRST response: everyone already emailed
+    // gets a second copy. Isolating every failure to its own response means the batch always runs
+    // to completion and reports counts, so a retry can only ever happen from a pre-loop failure,
+    // where nothing has been sent yet.
     try {
+      const responseData = digestResponse.data ?? {};
+      const { recipient, skipReason } = resolvePerResponseRecipient(config, responseData);
+
+      if (!recipient) {
+        skippedCount += 1;
+        context.logger.warn('Digest email skipped for one response: no recipient could be resolved', {
+          responseId: digestResponse.id,
+          reason: skipReason,
+        });
+        continue;
+      }
+
+      const emailBody = substituteMentions(config.message, responseData, fieldLabels);
+
       await context.sendEmail({ to: recipient, subject: config.subject, html: emailBody });
       emitEmailSent(event.organizationId, event.formId, 'plugin');
       sentCount += 1;

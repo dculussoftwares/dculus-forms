@@ -798,8 +798,12 @@ async function handleActionNode(
     result = await handler(
       { id: `${run.id}:${node.id}`, config: substitutedConfig },
       event,
-      createPluginContext((newConfig) =>
-        updateAutomationNodeConfig(run.automation.id, run.id, node.id, newConfig)
+      createPluginContext(
+        (newConfig) => updateAutomationNodeConfig(run.automation.id, run.id, node.id, newConfig),
+        // Same value as the synthetic plugin id above, and stable for the same reason: `runId`
+        // and `nodeId` both survive a retry, so every attempt at this delivery carries one key
+        // while a different node or run gets its own.
+        `${run.id}:${node.id}`
       )
     );
   } catch (error: any) {

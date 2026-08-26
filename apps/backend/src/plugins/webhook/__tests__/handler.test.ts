@@ -464,6 +464,57 @@ describe('Webhook Handler', () => {
     });
   });
 
+  describe('Idempotency key', () => {
+    const okResponse = () => ({
+      status: 200,
+      statusText: 'OK',
+      headers: new Map(),
+      text: async () => 'OK',
+    });
+
+    it('forwards the context idempotency key so a receiver can recognise a retried delivery', async () => {
+      const config: ValidatedWebhookConfig = { type: 'webhook', url: 'https://example.com/webhook' };
+      mockFetch.mockResolvedValue(okResponse());
+
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, {
+        ...mockContext,
+        idempotencyKey: 'run-1:action-1',
+      });
+
+      const headers = mockFetch.mock.calls[0][1].headers;
+      expect(headers['X-Dculus-Idempotency-Key']).toBe('run-1:action-1');
+    });
+
+    it('omits the header when the caller has no stable key to offer', async () => {
+      const config: ValidatedWebhookConfig = { type: 'webhook', url: 'https://example.com/webhook' };
+      mockFetch.mockResolvedValue(okResponse());
+
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      const headers = mockFetch.mock.calls[0][1].headers;
+      expect(headers).not.toHaveProperty('X-Dculus-Idempotency-Key');
+    });
+
+    // The key is the receiver's only way to tell a retry from a new delivery, so a configured
+    // header must not be able to shadow it.
+    it('is not overridable by a configured header of the same name', async () => {
+      const config: ValidatedWebhookConfig = {
+        type: 'webhook',
+        url: 'https://example.com/webhook',
+        headers: { 'X-Dculus-Idempotency-Key': 'attacker-supplied' },
+      };
+      mockFetch.mockResolvedValue(okResponse());
+
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, {
+        ...mockContext,
+        idempotencyKey: 'run-1:action-1',
+      });
+
+      const headers = mockFetch.mock.calls[0][1].headers;
+      expect(headers['X-Dculus-Idempotency-Key']).toBe('run-1:action-1');
+    });
+  });
+
   describe('Custom headers', () => {
     it('should merge custom headers with default headers', async () => {
       const config: ValidatedWebhookConfig = {

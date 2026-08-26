@@ -32,6 +32,20 @@ export interface PluginContext {
    * `services/automation/engine.ts`).
    */
   updatePluginConfig: (config: PluginConfig) => Promise<void>;
+  /**
+   * A key identifying *this delivery* that stays the same across every retry of it, for handlers
+   * that talk to a system able to deduplicate on one.
+   *
+   * Action nodes retry (3× with backoff) on any error, and an error is not proof the far side did
+   * nothing: a webhook that timed out after the receiver committed its work is retried, and the
+   * receiver sees the same submission twice. Forwarding a stable key lets it recognise the repeat.
+   * It is deliberately per-delivery, not per-run — the same run retrying the same node must reuse
+   * the key, while a different node or a different run must not.
+   *
+   * Undefined when the caller has no stable identity to offer, so handlers must treat it as
+   * optional rather than assume it is always present.
+   */
+  idempotencyKey?: string;
   logger: {
     info: (message: string, meta?: any) => void;
     error: (message: string, error?: any) => void;
@@ -44,7 +58,8 @@ export const createPluginContext = (
     throw new Error(
       'updatePluginConfig was not configured for this PluginContext — the caller of createPluginContext() must supply a persistence strategy before invoking a handler that calls it'
     );
-  }
+  },
+  idempotencyKey?: string
 ): PluginContext => ({
   prisma,
   getFormById,
@@ -63,6 +78,8 @@ export const createPluginContext = (
   sendEmail,
 
   updatePluginConfig,
+
+  idempotencyKey,
 
   logger: {
     info: (message, meta?) => logger.info(`[Plugin] ${message}`, meta ?? ''),
