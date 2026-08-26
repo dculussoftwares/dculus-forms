@@ -278,6 +278,7 @@
       "WAITING": "Waiting",
       "COMPLETED": "Completed",
       "PARTIAL": "Partly delivered",
+      "SKIPPED": "Skipped",
       "FAILED": "Failed",
       "CANCELLED": "Cancelled"
     },
@@ -301,6 +302,7 @@
       "description": "Step-by-step execution log for this run.",
       "errorTitle": "Couldn't load run",
       "noSteps": "No steps recorded yet.",
+      "skippedNoReason": "This scheduled run was skipped because a previous run was still in progress.",
       "stepStatuses": {
         "SUCCESS": "Success",
         "PARTIAL": "Partly delivered",

@@ -182,7 +182,13 @@ export const AutomationRunDetail: React.FC<AutomationRunDetailProps> = ({
 
             {run && (!run.stepRuns || run.stepRuns.length === 0) && (
               <Card className="p-8 text-center">
-                <p className="text-foreground">{t('runs.detail.noSteps')}</p>
+                {/* A SKIPPED run has no steps by definition — it never started. "No steps recorded
+                    yet" would read as though it were still coming, so say why it was skipped. */}
+                <p className="text-foreground">
+                  {run.status === 'SKIPPED'
+                    ? run.context?.skipReason || t('runs.detail.skippedNoReason')
+                    : t('runs.detail.noSteps')}
+                </p>
               </Card>
             )}
 

@@ -219,6 +219,36 @@ async function handleScheduledTick(automationId: string): Promise<void> {
       trigger: { scheduledAt: scheduledAt.toISOString() },
     };
 
+    // Never let two ticks of the same automation overlap. A digest node's window is
+    // `(lastDigestedAt, startedAt]`, and the watermark only moves when a run finishes — so a tick
+    // firing while the previous one is still working resolves the same lower bound and processes
+    // the same responses a second time. A 3,000-email batch easily outlives a 15-minute cron.
+    //
+    // Recorded as a SKIPPED run rather than dropped silently: a tick that produced nothing is
+    // exactly the kind of gap someone goes looking for in the run history, and "the previous run
+    // was still going" is the answer they need.
+    const activeRuns = await automationRepository.listActiveRunsByAutomation(automation.id);
+    if (activeRuns.length > 0) {
+      logger.warn(
+        `[Automation Triggers] Skipping scheduled tick for ${automationId} — ${activeRuns.length} run(s) still in flight`
+      );
+      await automationRepository.createRun({
+        id: generateId(),
+        automationId: automation.id,
+        responseId: null,
+        automationVersion: automation.version,
+        graphSnapshot: automation.graph as Prisma.InputJsonValue,
+        status: 'SKIPPED',
+        completedAt: scheduledAt,
+        context: {
+          ...context,
+          skipReason: 'A previous run of this automation was still in progress.',
+          blockedByRunIds: activeRuns.map((run) => run.id),
+        } as Prisma.InputJsonValue,
+      });
+      return;
+    }
+
     const run = await automationRepository.createRun({
       id: generateId(),
       automationId: automation.id,

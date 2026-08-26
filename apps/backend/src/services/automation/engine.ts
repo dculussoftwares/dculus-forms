@@ -52,9 +52,10 @@ const DIGEST_TEST_SAMPLE_SIZE = 10;
 const RETRYABLE_NODE_TYPES = new Set(['action', 'digest']);
 /**
  * Run statuses no further step may execute from. PARTIAL is terminal like COMPLETED — every step
- * ran, but at least one did not fully deliver (see classifyHandlerResult).
+ * ran, but at least one did not fully deliver (see classifyHandlerResult). SKIPPED is a scheduled
+ * tick that never started, because the previous run was still in flight (see triggerService).
  */
-const TERMINAL_RUN_STATUSES = new Set(['COMPLETED', 'PARTIAL', 'FAILED', 'CANCELLED']);
+const TERMINAL_RUN_STATUSES = new Set(['COMPLETED', 'PARTIAL', 'FAILED', 'CANCELLED', 'SKIPPED']);
 
 type AutomationStepJobData = { runId: string; nodeId: string };
 

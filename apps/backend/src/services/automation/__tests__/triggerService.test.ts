@@ -87,6 +87,8 @@ describe('triggerService', () => {
     getEventEmitter().removeAllListeners('plugin:event');
     vi.mocked(generateId).mockReturnValue('generated-run-id');
     vi.mocked(automationRepository.createRun).mockResolvedValue({ id: 'generated-run-id' } as any);
+    // Default: nothing of this automation is in flight, so a scheduled tick may proceed.
+    vi.mocked(automationRepository.listActiveRunsByAutomation).mockResolvedValue([] as any);
   });
 
   afterEach(() => {
@@ -516,6 +518,33 @@ describe('triggerService', () => {
         }),
       });
       expect(enqueueFirstStep).toHaveBeenCalledWith({ id: 'generated-run-id' });
+    });
+
+    // A digest window is (lastDigestedAt, startedAt] and the watermark only moves when a run
+    // finishes, so a tick firing while the previous one is still working resolves the same lower
+    // bound and re-processes the same responses.
+    it('skips a tick while a previous run of the same automation is still in flight', async () => {
+      vi.mocked(automationRepository.findById).mockResolvedValue(
+        makeAutomation({ triggerType: 'schedule', status: 'ACTIVE' }) as any
+      );
+      vi.mocked(automationRepository.listActiveRunsByAutomation).mockResolvedValue([
+        { id: 'run-in-flight' },
+      ] as any);
+
+      await fireTick('automation-1');
+
+      expect(enqueueFirstStep).not.toHaveBeenCalled();
+      // Recorded rather than dropped silently, so the gap in the run history is explained.
+      expect(automationRepository.createRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'SKIPPED',
+          completedAt: expect.any(Date),
+          context: expect.objectContaining({
+            skipReason: expect.stringContaining('still in progress'),
+            blockedByRunIds: ['run-in-flight'],
+          }),
+        })
+      );
     });
 
     it('skips a tick when the automation was paused/deleted concurrently', async () => {
