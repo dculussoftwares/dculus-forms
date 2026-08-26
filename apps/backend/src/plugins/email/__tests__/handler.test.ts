@@ -508,7 +508,7 @@ describe('Email Handler', () => {
   });
 
   describe('Per-response digest send (#automations-digest-per-response)', () => {
-    const scheduleEventWithDigest = (digestResponses: any[]): PluginEvent => ({
+    const scheduleEventWithDigest = (digestResponses: unknown[]): PluginEvent => ({
       type: 'schedule',
       formId: 'form-123',
       organizationId: 'org-123',
