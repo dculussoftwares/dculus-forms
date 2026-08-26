@@ -363,9 +363,17 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     // 3. Fetch the response(s) to build row values. A digest batch (schedule automation with an
     // upstream digest node, #automations-digest) carries zero-to-many responses in
     // event.data.__digestResponses instead of exactly one event.data.responseId.
-    const digestResponses = Array.isArray((event.data as Record<string, any>).__digestResponses)
-      ? ((event.data as Record<string, any>).__digestResponses as unknown[]).filter(isValidDigestResponseEntry)
+    const rawDigestResponses = (event.data as Record<string, any>).__digestResponses;
+    const digestResponses = Array.isArray(rawDigestResponses)
+      ? (rawDigestResponses as unknown[]).filter(isValidDigestResponseEntry)
       : null;
+    if (Array.isArray(rawDigestResponses) && digestResponses!.length < rawDigestResponses.length) {
+      context.logger.warn('Digest batch contained malformed response entries — they were dropped, not appended', {
+        totalEntries: rawDigestResponses.length,
+        validEntries: digestResponses!.length,
+        formId: event.formId,
+      });
+    }
 
     let singleResponse: Awaited<ReturnType<typeof context.getResponseById>> | null = null;
     if (!digestResponses) {

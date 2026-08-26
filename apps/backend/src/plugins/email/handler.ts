@@ -4,7 +4,7 @@ import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dcul
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 import type { EmailAttachment } from '../../services/emailService.js';
 import { resolveResponsePdfAttachment } from '../../services/pdfTemplateService.js';
-import { checkUsageExceeded } from '../../subscriptions/usageService.js';
+import { checkUsageExceeded, getRemainingEmailQuota } from '../../subscriptions/usageService.js';
 import { emitEmailSent } from '../../subscriptions/events.js';
 
 /** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
@@ -214,10 +214,14 @@ function resolvePerResponseRecipient(
  *
  * Failures on individual responses are caught and counted, never thrown — throwing would fail
  * the whole pg-boss job and trigger a full-step retry, which has no per-response idempotency
- * tracking and would re-send to everyone who already succeeded. The usage limit is checked once
- * for the whole batch (matching the single-send path's existing all-or-nothing gate) rather
- * than per email. PDF attachment is intentionally not supported in this mode (out of scope —
- * would mean up to `maxResponses` PDF generations per tick); attachPdfTemplateId is ignored here.
+ * tracking and would re-send to everyone who already succeeded. The usage limit is RESERVED for
+ * the whole batch upfront (via getRemainingEmailQuota, not checkUsageExceeded's point-in-time
+ * boolean) rather than re-checked per email — emitEmailSent only fires an async event that
+ * updates the DB counter out of band, so nothing inside the loop itself would otherwise stop a
+ * large batch from sailing past the plan's limit if the org was already close to it going in.
+ * Responses beyond the reserved quota are counted as skipped, not sent. PDF attachment is
+ * intentionally not supported in this mode (out of scope — would mean up to `maxResponses` PDF
+ * generations per tick); attachPdfTemplateId is ignored here.
  */
 async function sendPerResponseDigestEmails(
   config: ValidatedEmailConfig,
@@ -230,8 +234,8 @@ async function sendPerResponseDigestEmails(
     return { success: true, recipient: '', subject: config.subject, sentCount: 0, skippedCount: 0, failedCount: 0 };
   }
 
-  const usageExceeded = await checkUsageExceeded(event.organizationId);
-  if (usageExceeded.emailsExceeded) {
+  const quota = await getRemainingEmailQuota(event.organizationId);
+  if (quota.exceeded) {
     context.logger.warn('Digest email batch skipped: organization has exceeded its email usage limit', {
       organizationId: event.organizationId,
     });
@@ -246,14 +250,22 @@ async function sendPerResponseDigestEmails(
       failedCount: 0,
     };
   }
+  const remainingQuota = quota.remaining ?? Infinity;
 
   const fieldLabels = formSchema ? createFieldLabelsMap(formSchema) : undefined;
   let sentCount = 0;
   let skippedCount = 0;
   let failedCount = 0;
   let lastError: string | undefined;
+  let quotaExhausted = false;
 
   for (const digestResponse of digestResponses) {
+    if (sentCount >= remainingQuota) {
+      quotaExhausted = true;
+      skippedCount += 1;
+      continue;
+    }
+
     const responseData = digestResponse.data ?? {};
     const { recipient, skipReason } = resolvePerResponseRecipient(config, responseData);
 
@@ -280,6 +292,15 @@ async function sendPerResponseDigestEmails(
         error: lastError,
       });
     }
+  }
+
+  if (quotaExhausted) {
+    context.logger.warn('Digest email batch partially skipped: organization reached its email usage limit mid-batch', {
+      organizationId: event.organizationId,
+      sentCount,
+      remainingQuota,
+      totalResponses: digestResponses.length,
+    });
   }
 
   context.logger.info('Digest per-response emails complete', {
@@ -329,9 +350,17 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
     // per-response digest send branch immediately following).
     const formSchema = deserializeFormSchema(form.formSchema);
 
-    const digestResponses = Array.isArray(event.data.__digestResponses)
-      ? (event.data.__digestResponses as unknown[]).filter(isValidDigestResponseEntry)
+    const rawDigestResponses = event.data.__digestResponses;
+    const digestResponses = Array.isArray(rawDigestResponses)
+      ? (rawDigestResponses as unknown[]).filter(isValidDigestResponseEntry)
       : undefined;
+    if (Array.isArray(rawDigestResponses) && digestResponses!.length < rawDigestResponses.length) {
+      context.logger.warn('Digest batch contained malformed response entries — they were dropped, not delivered', {
+        totalEntries: rawDigestResponses.length,
+        validEntries: digestResponses!.length,
+        formId: event.formId,
+      });
+    }
     if (config.recipientFieldId && Array.isArray(digestResponses)) {
       return await sendPerResponseDigestEmails(config, formSchema, digestResponses, event, context);
     }

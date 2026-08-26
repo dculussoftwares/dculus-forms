@@ -25,6 +25,7 @@ vi.mock('../../../services/pdfTemplateService.js', () => ({
 
 vi.mock('../../../subscriptions/usageService.js', () => ({
   checkUsageExceeded: vi.fn(),
+  getRemainingEmailQuota: vi.fn(),
 }));
 
 vi.mock('../../../subscriptions/events.js', () => ({
@@ -34,7 +35,7 @@ vi.mock('../../../subscriptions/events.js', () => ({
 import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 import { resolveResponsePdfAttachment } from '../../../services/pdfTemplateService.js';
-import { checkUsageExceeded } from '../../../subscriptions/usageService.js';
+import { checkUsageExceeded, getRemainingEmailQuota } from '../../../subscriptions/usageService.js';
 
 describe('Email Handler', () => {
   let mockContext: PluginContext;
@@ -49,6 +50,7 @@ describe('Email Handler', () => {
       submissionsExceeded: false,
       emailsExceeded: false,
     });
+    vi.mocked(getRemainingEmailQuota).mockResolvedValue({ remaining: null, exceeded: false });
 
     // Mock logger
     mockLogger = {
@@ -607,7 +609,7 @@ describe('Email Handler', () => {
     });
 
     it('skips the entire batch (zero sends) when the org has exceeded its email usage limit', async () => {
-      vi.mocked(checkUsageExceeded).mockResolvedValue({ viewsExceeded: false, submissionsExceeded: false, emailsExceeded: true });
+      vi.mocked(getRemainingEmailQuota).mockResolvedValue({ remaining: 0, exceeded: true });
 
       const config: ValidatedEmailConfig = {
         type: 'email',
@@ -624,6 +626,28 @@ describe('Email Handler', () => {
       expect(mockContext.sendEmail).not.toHaveBeenCalled();
       expect(result.skipped).toBe(true);
       expect(result.skippedCount).toBe(1);
+    });
+
+    it('caps sends at the reserved quota mid-batch and skips the rest, instead of overshooting the plan limit', async () => {
+      vi.mocked(getRemainingEmailQuota).mockResolvedValue({ remaining: 1, exceeded: false });
+
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        subject: 'Reminder',
+        message: 'Hi',
+      };
+      const event = scheduleEventWithDigest([
+        { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { 'email-field': 'ada@example.com' } },
+        { id: 'r2', submittedAt: '2025-12-27T11:00:00.000Z', data: { 'email-field': 'grace@example.com' } },
+        { id: 'r3', submittedAt: '2025-12-28T12:00:00.000Z', data: { 'email-field': 'alan@example.com' } },
+      ]);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledTimes(1);
+      expect(result.sentCount).toBe(1);
+      expect(result.skippedCount).toBe(2);
     });
 
     it('succeeds with sentCount 0 when the digest batch is empty (nothing new to send to)', async () => {

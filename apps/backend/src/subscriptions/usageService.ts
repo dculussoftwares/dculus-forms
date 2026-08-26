@@ -280,6 +280,43 @@ export const checkUsageExceeded = async (
 };
 
 /**
+ * How many emails an organization can still send this billing period. Unlike
+ * `checkUsageExceeded`'s `emailsExceeded` (a point-in-time "have we already hit the limit?"
+ * check, meant for gating a single send), this is for callers that need to send a WHOLE BATCH in
+ * one go — e.g. a schedule automation's per-response digest send, which can email one response at
+ * a time inside a loop with no per-send DB round-trip to re-check remaining quota. Reserving the
+ * batch length against this upfront (rather than only checking "have we already exceeded?" once
+ * before the loop) prevents a batch from blowing well past the plan's limit when the org was
+ * close to it going in.
+ *
+ * Reuses the exact same past-due/cancelled-plan fallback semantics as `checkUsageExceeded` so the
+ * two never silently disagree about whether an org's emails are blocked.
+ */
+export const getRemainingEmailQuota = async (
+  organizationId: string
+): Promise<{ remaining: number | null; exceeded: boolean }> => {
+  const subscription = await subscriptionRepository.findByOrganizationPublic(organizationId);
+
+  if (!subscription) {
+    return { remaining: null, exceeded: false };
+  }
+
+  const isPastDue = subscription.status === 'past_due';
+  if (isPastDue) {
+    return { remaining: 0, exceeded: true };
+  }
+
+  const isCancelledOrExpired = subscription.status === 'cancelled' || subscription.status === 'expired';
+  const emailsLimit = isCancelledOrExpired ? PLAN_LIMITS_FALLBACK.free.emails : subscription.emailsLimit;
+  if (emailsLimit === null) {
+    return { remaining: null, exceeded: false };
+  }
+
+  const remaining = Math.max(0, emailsLimit - subscription.emailsUsed);
+  return { remaining, exceeded: remaining === 0 };
+};
+
+/**
  * Get current usage for an organization
  *
  * @param organizationId - ID of the organization

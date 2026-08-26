@@ -4,6 +4,7 @@ import {
   trackFormView,
   trackFormSubmission,
   checkUsageExceeded,
+  getRemainingEmailQuota,
   getUsage,
   resetUsageCounters,
 } from '../usageService.js';
@@ -661,6 +662,81 @@ describe('usageService', () => {
         submissionsExceeded: false,
         emailsExceeded: false,
       });
+    });
+  });
+
+  describe('getRemainingEmailQuota', () => {
+    it('should return unlimited remaining when no subscription exists', async () => {
+      mockSubscription.findUnique.mockResolvedValue(null);
+
+      const result = await getRemainingEmailQuota('org-1');
+
+      expect(result).toEqual({ remaining: null, exceeded: false });
+    });
+
+    it('should return the remaining count when under the limit', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        emailsUsed: 4990,
+        emailsLimit: 5000,
+        status: 'active',
+      });
+
+      const result = await getRemainingEmailQuota('org-1');
+
+      expect(result).toEqual({ remaining: 10, exceeded: false });
+    });
+
+    it('should return remaining 0 and exceeded true when already at the limit', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        emailsUsed: 5000,
+        emailsLimit: 5000,
+        status: 'active',
+      });
+
+      const result = await getRemainingEmailQuota('org-1');
+
+      expect(result).toEqual({ remaining: 0, exceeded: true });
+    });
+
+    it('should return unlimited remaining when emailsLimit is null', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        emailsUsed: 999999,
+        emailsLimit: null,
+        status: 'active',
+      });
+
+      const result = await getRemainingEmailQuota('org-1');
+
+      expect(result).toEqual({ remaining: null, exceeded: false });
+    });
+
+    it('should block a past_due org entirely regardless of usage', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        emailsUsed: 0,
+        emailsLimit: null,
+        status: 'past_due',
+      });
+
+      const result = await getRemainingEmailQuota('org-1');
+
+      expect(result).toEqual({ remaining: 0, exceeded: true });
+    });
+
+    it('should fall back to the free plan email limit for a cancelled org instead of its retained paid limit', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        emailsUsed: 150, // over the free plan's 100 emails allowance
+        emailsLimit: 5000, // retained paid-tier limit from before cancellation
+        status: 'cancelled',
+      });
+
+      const result = await getRemainingEmailQuota('org-1');
+
+      expect(result).toEqual({ remaining: 0, exceeded: true });
     });
   });
 
