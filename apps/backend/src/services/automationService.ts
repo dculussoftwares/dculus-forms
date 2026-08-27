@@ -516,18 +516,22 @@ export async function retryAutomationRun(runId: string) {
     );
   }
 
-  // Re-read so the snapshot carries the config refresh above.
-  const resumed = await automationRepository.findRunById(runId);
-
+  // Everything after the claim is inside the rollback, the re-read included. The status flip has
+  // already committed, so ANY failure from here on would otherwise leave the run RUNNING with no
+  // queued work — unretryable (retry needs FAILED), and read as in-flight by the schedule overlap
+  // guard. Putting it back to FAILED means the user can simply try again.
   try {
-    await enqueueRunStep(resumed!, failedStep.nodeId);
+    // Re-read so the snapshot carries the config refresh above.
+    const resumed = await automationRepository.findRunById(runId);
+    if (!resumed) {
+      throw createGraphQLError('Automation run not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+    }
+
+    await enqueueRunStep(resumed, failedStep.nodeId);
+
+    return resumed;
   } catch (error) {
-    // The status flip already committed, so a failed enqueue would otherwise leave the run
-    // RUNNING with no queued work — unretryable, and read as in-flight by the schedule overlap
-    // guard. Put it back to FAILED so the user can simply try again.
     await automationRepository.releaseRetryClaim(runId);
     throw error;
   }
-
-  return resumed;
 }

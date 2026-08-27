@@ -794,6 +794,25 @@ describe('automationService', () => {
       expect(automationRepository.releaseRetryClaim).toHaveBeenCalledWith('run-1');
     });
 
+    // The claim has already committed by this point, so *any* later failure — not just the
+    // enqueue — has to roll it back, or the run is stranded RUNNING just the same.
+    it('rolls the claim back when the post-claim re-read fails', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(automationRepository.findRunById).mockRejectedValue(new Error('connection reset'));
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow('connection reset');
+      expect(automationRepository.releaseRetryClaim).toHaveBeenCalledWith('run-1');
+    });
+
+    it('rolls the claim back when the run vanishes between the claim and the re-read', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(automationRepository.findRunById).mockResolvedValue(null as any);
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow('Automation run not found');
+      expect(automationRepository.releaseRetryClaim).toHaveBeenCalledWith('run-1');
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
     it('throws when the run does not exist', async () => {
       vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(null);
 
