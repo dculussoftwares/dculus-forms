@@ -21,6 +21,9 @@ export const GET_FORM_AUTOMATIONS: TypedDocumentNode<any, any> = gql`
       version
       createdAt
       updatedAt
+      lastRunStatus
+      lastRunAt
+      consecutiveFailureCount
     }
   }
 `;
@@ -90,8 +93,8 @@ export const GET_AUTOMATION_RUN: TypedDocumentNode<any, any> = gql`
 // ============================================================================
 
 export const CREATE_AUTOMATION: TypedDocumentNode<any, any> = gql`
-  mutation CreateAutomation($formId: ID!, $name: String!, $triggerType: String!) {
-    createAutomation(formId: $formId, name: $name, triggerType: $triggerType) {
+  mutation CreateAutomation($formId: ID!, $name: String!, $triggerType: String!, $template: String) {
+    createAutomation(formId: $formId, name: $name, triggerType: $triggerType, template: $template) {
       id
       formId
       name
@@ -142,6 +145,16 @@ export const DELETE_AUTOMATION: TypedDocumentNode<any, any> = gql`
   }
 `;
 
+export const DUPLICATE_AUTOMATION: TypedDocumentNode<any, any> = gql`
+  mutation DuplicateAutomation($id: ID!) {
+    duplicateAutomation(id: $id) {
+      id
+      name
+      status
+    }
+  }
+`;
+
 export const TEST_AUTOMATION: TypedDocumentNode<any, any> = gql`
   mutation TestAutomation($id: ID!, $responseId: ID) {
     testAutomation(id: $id, responseId: $responseId) {
@@ -161,6 +174,16 @@ export const TEST_AUTOMATION: TypedDocumentNode<any, any> = gql`
 export const CANCEL_AUTOMATION_RUN: TypedDocumentNode<any, any> = gql`
   mutation CancelAutomationRun($runId: ID!) {
     cancelAutomationRun(runId: $runId) {
+      id
+      status
+      completedAt
+    }
+  }
+`;
+
+export const RETRY_AUTOMATION_RUN: TypedDocumentNode<any, any> = gql`
+  mutation RetryAutomationRun($runId: ID!) {
+    retryAutomationRun(runId: $runId) {
       id
       status
       completedAt

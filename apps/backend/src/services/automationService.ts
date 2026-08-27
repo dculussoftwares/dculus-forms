@@ -4,7 +4,7 @@ import { generateId } from '@dculus/utils';
 import { automationRepository, responseRepository } from '../repositories/index.js';
 import { getAvailablePluginTypes } from '../plugins/core/registry.js';
 import { validateAutomationGraph } from './automation/graphValidator.js';
-import { enqueueFirstStep } from './automation/engine.js';
+import { enqueueFirstStep, enqueueRunStep } from './automation/engine.js';
 import {
   cancelRunsForAutomation,
   cancelSingleAutomationRun,
@@ -12,6 +12,9 @@ import {
   unscheduleAutomationCron,
 } from './automation/triggerService.js';
 import { isValidCronExpression, isValidTimezone } from './automation/cronValidator.js';
+import { isAutomationEngineEnabled } from './automation/boss.js';
+import { AUTOMATION_TEMPLATE_IDS, getAutomationTemplate } from './automation/templates.js';
+import { copyAutomation } from './automation/copyAutomation.js';
 import type { AutomationGraph, AutomationRunContext } from './automation/types.js';
 
 /**
@@ -105,12 +108,26 @@ export async function createAutomation(params: {
   name: string;
   triggerType: string;
   createdBy: string;
+  /** Starter graph to begin from (gap I). Its own triggerType wins over the `triggerType` arg. */
+  template?: string;
 }) {
-  const { formId, organizationId, name, triggerType, createdBy } = params;
+  const { formId, organizationId, name, createdBy } = params;
 
   if (!name || name.trim().length === 0) {
     throw createGraphQLError('Automation name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
   }
+
+  // A template dictates its own trigger — a follow-up email only makes sense on a submission, a
+  // digest only on a schedule — so it takes precedence over whatever the dialog last had selected.
+  const template = params.template ? getAutomationTemplate(params.template) : undefined;
+  if (params.template && !template) {
+    throw createGraphQLError(
+      `Unknown automation template: ${params.template}. Available: ${AUTOMATION_TEMPLATE_IDS.join(', ')}`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  const triggerType = template?.triggerType ?? params.triggerType;
   if (!TRIGGER_TYPES.includes(triggerType as (typeof TRIGGER_TYPES)[number])) {
     throw createGraphQLError(
       `Invalid trigger type: ${triggerType}. Supported types: ${TRIGGER_TYPES.join(', ')}`,
@@ -125,10 +142,30 @@ export async function createAutomation(params: {
     name,
     status: 'DRAFT',
     triggerType,
-    graph: buildDefaultGraph(triggerType) as any,
+    graph: (template ? template.buildGraph() : buildDefaultGraph(triggerType)) as any,
     version: 1,
     createdBy,
   });
+}
+
+/**
+ * Duplicates one automation within its own form (gap I) — the cheapest way to build a variant of a
+ * flow that already works. Always lands as a DRAFT with integration bindings stripped, so it can
+ * never start double-delivering alongside the original the moment it is created.
+ */
+export async function duplicateAutomation(
+  automation: {
+    id: string;
+    name: string;
+    formId: string;
+    organizationId: string;
+    triggerType: string;
+    triggerConfig: unknown;
+    graph: unknown;
+  },
+  createdBy: string
+) {
+  return copyAutomation(automation, automation.formId, createdBy, `${automation.name} (Copy)`);
 }
 
 /**
@@ -396,4 +433,105 @@ export async function cancelAutomationRun(runId: string) {
 
 export async function listStepRuns(runId: string) {
   return automationRepository.listStepRunsByRun(runId);
+}
+
+/**
+ * Resumes a FAILED run from the step it died on (gap H).
+ *
+ * Resumes rather than re-runs: the graph snapshot records exactly which steps already succeeded,
+ * and re-running from the trigger would deliver every one of them a second time. Only the failed
+ * node is re-enqueued, and the redelivery guard treats the surviving SUCCESS rows as done.
+ *
+ * Before re-enqueueing, the failed node's config is refreshed from the automation's live graph.
+ * Retries are most often triggered by a fix — a corrected webhook URL, a reconnected integration —
+ * and replaying the frozen config would fail again for the same reason. Only that one node's
+ * config moves; the rest of the snapshot stays frozen, so the graph this run executes is still the
+ * one it started with. (`setNodeConfigInRunSnapshot` is the same mechanism a handler already uses
+ * to persist an auto-created spreadsheet id back into a running snapshot.)
+ */
+export async function retryAutomationRun(runId: string) {
+  const run = await automationRepository.findRunByIdWithAutomation(runId);
+  if (!run) {
+    throw createGraphQLError('Automation run not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+  }
+
+  if (run.status !== 'FAILED') {
+    throw createGraphQLError(
+      `Only failed runs can be retried — this run is ${run.status}`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  const isTest = ((run.context as AutomationRunContext) ?? {}).test === true;
+  // A real run's action nodes refuse to execute unless the automation is ACTIVE, so retrying a
+  // paused automation would just cancel the run at the first action. Say so up front instead of
+  // letting the user discover it from a second dead run.
+  if (!isTest && run.automation.status !== 'ACTIVE') {
+    throw createGraphQLError(
+      `Activate this automation before retrying — it is currently ${run.automation.status}`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  // Checked BEFORE the claim below, not after. With the engine off, enqueueRunStep logs a warning
+  // and returns without throwing — so a retry would flip the run to RUNNING, queue nothing, and
+  // report success. The run would then be stuck: it can never be retried again (retry requires
+  // FAILED), and on a schedule automation the overlap guard would read it as in-flight and block
+  // every future tick.
+  if (!isAutomationEngineEnabled()) {
+    throw createGraphQLError(
+      'The automation engine is not running, so this run cannot be retried right now',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  const failedStep = await automationRepository.findLatestFailedStepRun(runId);
+  if (!failedStep) {
+    throw createGraphQLError(
+      'This run has no failed step to retry from',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  const liveNode = ((run.automation.graph as unknown as AutomationGraph)?.nodes ?? []).find(
+    (node) => node.id === failedStep.nodeId
+  );
+  if (liveNode?.type === 'action') {
+    await automationRepository.setNodeConfigInRunSnapshot(
+      runId,
+      failedStep.nodeId,
+      (liveNode.data?.config ?? {}) as any
+    );
+  }
+
+  // The FAILED -> RUNNING transition IS the guard. Two retry requests arriving together would
+  // otherwise both have read FAILED above, both pass that check, and both enqueue the same node —
+  // executing the action twice. The idempotency key does not save us here: both enqueued steps
+  // carry the same `runId:nodeId`, and nothing on our side stores it.
+  const { count } = await automationRepository.claimFailedRunForRetry(runId, failedStep.nodeId);
+  if (count === 0) {
+    throw createGraphQLError(
+      'This run is already being retried',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  // Everything after the claim is inside the rollback, the re-read included. The status flip has
+  // already committed, so ANY failure from here on would otherwise leave the run RUNNING with no
+  // queued work — unretryable (retry needs FAILED), and read as in-flight by the schedule overlap
+  // guard. Putting it back to FAILED means the user can simply try again.
+  try {
+    // Re-read so the snapshot carries the config refresh above.
+    const resumed = await automationRepository.findRunById(runId);
+    if (!resumed) {
+      throw createGraphQLError('Automation run not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
+    }
+
+    await enqueueRunStep(resumed, failedStep.nodeId);
+
+    return resumed;
+  } catch (error) {
+    await automationRepository.releaseRetryClaim(runId);
+    throw error;
+  }
 }

@@ -37,6 +37,9 @@ const RUN_STATUS_STYLE: Record<string, React.CSSProperties> = {
   COMPLETED: { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' },
   PARTIAL: PARTIAL_STATUS_STYLE,
   FAILED: { backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' },
+  // A scheduled tick that never started because the previous run was still going. Muted like
+  // CANCELLED — nothing ran and nothing is wrong, it is here so the gap in the history is explained.
+  SKIPPED: { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' },
   CANCELLED: { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' },
 };
 

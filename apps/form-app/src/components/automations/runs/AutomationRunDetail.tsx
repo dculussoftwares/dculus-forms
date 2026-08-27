@@ -24,8 +24,8 @@ import {
   toastSuccess,
   toastError,
 } from '@dculus/ui';
-import { CheckCircle2, XCircle, SkipForward, AlertTriangle, ChevronDown, Loader2, FlaskConical, Ban } from 'lucide-react';
-import { GET_AUTOMATION_RUN, GET_AUTOMATION_RUNS, CANCEL_AUTOMATION_RUN } from '../../../graphql/automations';
+import { CheckCircle2, XCircle, SkipForward, AlertTriangle, ChevronDown, Loader2, FlaskConical, Ban, RotateCcw } from 'lucide-react';
+import { GET_AUTOMATION_RUN, GET_AUTOMATION_RUNS, CANCEL_AUTOMATION_RUN, RETRY_AUTOMATION_RUN } from '../../../graphql/automations';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import {
@@ -101,8 +101,27 @@ export const AutomationRunDetail: React.FC<AutomationRunDetailProps> = ({
     }
   };
 
+  const [retryRun, { loading: isRetrying }] = useMutation(RETRY_AUTOMATION_RUN, {
+    refetchQueries: [{ query: GET_AUTOMATION_RUNS, variables: { automationId } }],
+  });
+
+  const handleRetry = async () => {
+    if (!runId) return;
+    try {
+      const result = await retryRun({ variables: { runId } });
+      if (result.error) throw result.error;
+      toastSuccess(t('runs.toasts.retriedTitle'), t('runs.toasts.retriedMessage'));
+      refetch();
+    } catch (err: any) {
+      toastError(t('runs.toasts.retryErrorTitle'), err.message);
+    }
+  };
+
   const isTest = !!run?.context?.test;
   const canCancel = canEdit && isRunActive(run?.status);
+  // Only a FAILED run can resume: it stopped at a step that delivered nothing, so re-running that
+  // step cannot duplicate anything. A PARTIAL run already delivered part of its work.
+  const canRetry = canEdit && run?.status === 'FAILED';
 
   const formatTimestamp = (timestamp: string) => new Date(timestamp).toLocaleString(locale);
 
@@ -150,18 +169,33 @@ export const AutomationRunDetail: React.FC<AutomationRunDetailProps> = ({
             <DialogDescription>{t('runs.detail.description')}</DialogDescription>
           </DialogHeader>
 
-          {canCancel && (
-            <div className="flex justify-end -mt-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 text-destructive hover:text-destructive"
-                onClick={() => setShowCancelConfirm(true)}
-                disabled={isCancelling}
-              >
-                {isCancelling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Ban className="h-3.5 w-3.5" />}
-                {t('runs.cancelButton')}
-              </Button>
+          {(canCancel || canRetry) && (
+            <div className="flex justify-end -mt-2 gap-2">
+              {canRetry && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={handleRetry}
+                  disabled={isRetrying}
+                  data-testid="retry-automation-run"
+                >
+                  {isRetrying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                  {t('runs.retryButton')}
+                </Button>
+              )}
+              {canCancel && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-destructive hover:text-destructive"
+                  onClick={() => setShowCancelConfirm(true)}
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Ban className="h-3.5 w-3.5" />}
+                  {t('runs.cancelButton')}
+                </Button>
+              )}
             </div>
           )}
 
@@ -182,7 +216,13 @@ export const AutomationRunDetail: React.FC<AutomationRunDetailProps> = ({
 
             {run && (!run.stepRuns || run.stepRuns.length === 0) && (
               <Card className="p-8 text-center">
-                <p className="text-foreground">{t('runs.detail.noSteps')}</p>
+                {/* A SKIPPED run has no steps by definition — it never started. "No steps recorded
+                    yet" would read as though it were still coming, so say why it was skipped. */}
+                <p className="text-foreground">
+                  {run.status === 'SKIPPED'
+                    ? run.context?.skipReason || t('runs.detail.skippedNoReason')
+                    : t('runs.detail.noSteps')}
+                </p>
               </Card>
             )}
 

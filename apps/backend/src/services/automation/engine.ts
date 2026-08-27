@@ -13,6 +13,7 @@ import type { ResponseFilter } from '../responseFilterService.js';
 import { AUTOMATION_QUEUE, getBoss, startAutomationBoss, stopAutomationBoss } from './boss.js';
 import { evaluateCondition } from './conditionEvaluator.js';
 import { DIGEST_RESPONSE_SAFETY_CEILING } from './graphValidator.js';
+import { recordRunOutcome } from './runOutcome.js';
 import type {
   AutomationEdge,
   AutomationGraph,
@@ -52,9 +53,10 @@ const DIGEST_TEST_SAMPLE_SIZE = 10;
 const RETRYABLE_NODE_TYPES = new Set(['action', 'digest']);
 /**
  * Run statuses no further step may execute from. PARTIAL is terminal like COMPLETED — every step
- * ran, but at least one did not fully deliver (see classifyHandlerResult).
+ * ran, but at least one did not fully deliver (see classifyHandlerResult). SKIPPED is a scheduled
+ * tick that never started, because the previous run was still in flight (see triggerService).
  */
-const TERMINAL_RUN_STATUSES = new Set(['COMPLETED', 'PARTIAL', 'FAILED', 'CANCELLED']);
+const TERMINAL_RUN_STATUSES = new Set(['COMPLETED', 'PARTIAL', 'FAILED', 'CANCELLED', 'SKIPPED']);
 
 type AutomationStepJobData = { runId: string; nodeId: string };
 
@@ -108,6 +110,7 @@ async function completeRun(run: SettleableRun): Promise<void> {
 
   const status = blemishes.length > 0 ? 'PARTIAL' : 'COMPLETED';
   await automationRepository.updateRun(run.id, { status, completedAt: new Date() });
+  await recordRunOutcome(run.automation.id, run.id, status);
 
   if (blemishes.length > 0) {
     logger.warn(
@@ -214,6 +217,18 @@ async function enqueueStep(
       ...(isRetryable ? { retryLimit: ACTION_RETRY_LIMIT, retryBackoff: true } : {}),
     }
   );
+}
+
+/**
+ * Re-enqueues one specific node of an existing run — the retry entry point (gap H). Unlike
+ * `enqueueFirstStep` this resumes mid-graph, so steps that already succeeded are not re-run and
+ * cannot deliver twice.
+ */
+export async function enqueueRunStep(
+  run: { id: string; graphSnapshot: unknown },
+  nodeId: string
+): Promise<void> {
+  await enqueueStep(run.id, nodeId, run.graphSnapshot as unknown as AutomationGraph);
 }
 
 /** Trigger service (#194) entry point — enqueues the node reachable from the graph's trigger node. */
@@ -682,6 +697,7 @@ async function handleDigestNode(
     const isFinalAttempt = job.retryLimit <= job.retryCount;
     if (isFinalAttempt) {
       await automationRepository.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
+      await recordRunOutcome(run.automation.id, run.id, 'FAILED');
       return;
     }
 
@@ -741,6 +757,7 @@ async function handleActionNode(
       finishedAt: new Date(),
     });
     await automationRepository.updateRun(run.id, { status: 'CANCELLED', completedAt: new Date() });
+    await recordRunOutcome(run.automation.id, run.id, 'CANCELLED');
     return;
   }
 
@@ -798,8 +815,12 @@ async function handleActionNode(
     result = await handler(
       { id: `${run.id}:${node.id}`, config: substitutedConfig },
       event,
-      createPluginContext((newConfig) =>
-        updateAutomationNodeConfig(run.automation.id, run.id, node.id, newConfig)
+      createPluginContext(
+        (newConfig) => updateAutomationNodeConfig(run.automation.id, run.id, node.id, newConfig),
+        // Same value as the synthetic plugin id above, and stable for the same reason: `runId`
+        // and `nodeId` both survive a retry, so every attempt at this delivery carries one key
+        // while a different node or run gets its own.
+        `${run.id}:${node.id}`
       )
     );
   } catch (error: any) {
@@ -855,7 +876,7 @@ async function handleActionNode(
  * webhook genuinely wants and never used to get.
  */
 async function failActionStep(
-  run: { id: string },
+  run: { id: string; automation: { id: string } },
   node: AutomationNode,
   nodeType: string,
   attempt: number,
@@ -888,6 +909,7 @@ async function failActionStep(
       await txRepo.createStepRun(stepRun);
       await txRepo.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
     });
+    await recordRunOutcome(run.automation.id, run.id, 'FAILED');
     return;
   }
 
@@ -997,6 +1019,7 @@ async function reconcileSuccessStep(
 }
 
 async function recordUnhandleableStepFailure(
+  automationId: string,
   runId: string,
   nodeId: string,
   nodeType: string,
@@ -1022,6 +1045,7 @@ async function recordUnhandleableStepFailure(
     });
     await txRepo.updateRun(runId, { status: 'FAILED', completedAt: new Date() });
   });
+  await recordRunOutcome(automationId, runId, 'FAILED');
 }
 
 export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJobData>): Promise<void> {
@@ -1044,6 +1068,7 @@ export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJ
   const node = findNode(graph, nodeId);
   if (!node) {
     await recordUnhandleableStepFailure(
+      run.automation.id,
       runId,
       nodeId,
       'unknown',
@@ -1073,6 +1098,7 @@ export async function executeAutomationStep(job: JobWithMetadata<AutomationStepJ
       return handleEndNode(run, node);
     default:
       return recordUnhandleableStepFailure(
+        run.automation.id,
         runId,
         nodeId,
         node.type,

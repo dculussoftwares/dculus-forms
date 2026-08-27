@@ -242,6 +242,40 @@ If the successor has no step run of its own, it gets re-enqueued;
   advances on a partial delivery, which is reported rather than retried.
 - **The engine degrades to off, not to broken.** With no `DIRECT_URL`, pg-boss
   never starts and every enqueue logs a warning instead of throwing.
+- **Two ticks of one schedule never overlap.** A digest window is derived from a
+  watermark that only moves when a run finishes, so a second concurrent tick would
+  re-process the same responses.
+- **Health bookkeeping can never fail a run.** `recordRunOutcome` swallows its own
+  errors — a notification outage must not become a delivery outage.
+- **A copied automation is always a DRAFT with its integration bindings stripped.**
+  Otherwise a duplicated form would start double-delivering, into the original
+  form's spreadsheet.
+
+## Run health, notification, and retry
+
+Every terminal run transition calls `runOutcome.ts:recordRunOutcome`, which denormalises the
+outcome onto the automation (`lastRunStatus`, `lastRunAt`, `consecutiveFailureCount`) so the
+automations list can badge a broken one without loading its history.
+
+The failure streak drives two escalations, and doubles as their debounce — exactly two mails per
+streak, with no separate "last notified" timestamp to keep in sync:
+
+| Streak | What happens |
+|---|---|
+| 1 | Owner emailed, deep-linked to the failed run |
+| 2–4 | Recorded, silent |
+| 5 (`AUTO_PAUSE_AFTER_FAILURES`) | Automation paused, cron unscheduled, owner emailed |
+
+`PARTIAL`, `CANCELLED` and `SKIPPED` outcomes are recorded but leave the streak alone: a partial
+delivered something, and pausing over it would stop the part that still works.
+
+`retryAutomationRun` resumes a `FAILED` run from the step it died on rather than re-running it —
+the snapshot records which steps already succeeded. That step's config is refreshed from the live
+graph first, since a retry is usually prompted by a fix; the rest of the snapshot stays frozen.
+
+Cron registration lives in `cronSchedule.ts` rather than `triggerService.ts` precisely so this
+path can auto-pause: `triggerService` imports the engine, so anything the engine's settle path
+needs cannot live there without a cycle.
 
 ## Shared surfaces
 
@@ -284,6 +318,10 @@ What this depends on:
 | Action handler throws on the final attempt | `FAILED` step recorded, run marked `FAILED`, no rethrow |
 | Node id missing from the snapshot | `FAILED` step + `FAILED` run, written in one transaction so redelivery can't duplicate it |
 | Automation no longer `ACTIVE` | Step `SKIPPED`, run `CANCELLED` |
+| A scheduled tick fires while the previous run is still going | No run started; a `SKIPPED` run records why |
+| A run fails | Recorded on the automation; owner emailed on the first failure of a streak |
+| Five consecutive failures | Automation auto-pauses itself, cron unscheduled, owner emailed |
+| A failed run is retried | Resumes from the failed step with that step's config refreshed from the live graph |
 | Run already terminal | Job returns immediately |
 | Process crashed mid-step | Redelivery reconciles from persisted step output |
 
@@ -293,6 +331,7 @@ What this depends on:
 |---|---|---|
 | `DIRECT_URL` | Environment | Unset disables the whole engine |
 | `ACTION_RETRY_LIMIT = 3` | `engine.ts` | Retries per action node |
+| `AUTO_PAUSE_AFTER_FAILURES = 5` | `runOutcome.ts` | Consecutive failed *runs* before auto-pause |
 | `MAX_DELAY_MS` = 30 days | `engine.ts` | Per-delay cap |
 | `MAX_DELAY_DAYS = 30` | `graphValidator.ts` | Cap on total delay along any path |
 | `DIGEST_TEST_SAMPLE_SIZE = 10` | `engine.ts` | Responses a digest node samples on a test run |

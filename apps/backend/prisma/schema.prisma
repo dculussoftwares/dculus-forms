@@ -631,6 +631,15 @@ model Automation {
   // services/automation/engine.ts advanceDigestWatermark().
   lastDigestedAt DateTime?
 
+  // Health of the most recent run, denormalised onto the automation so the list can badge a
+  // broken automation without a per-row scan of its run history. Written whenever a run settles.
+  lastRunStatus String? // COMPLETED | PARTIAL | FAILED | CANCELLED | SKIPPED
+  lastRunAt     DateTime?
+  /// Failures since the last clean run. Drives the "first failure" notification (sent when this
+  /// reaches 1) and auto-pause (when it reaches AUTO_PAUSE_AFTER_FAILURES); reset to 0 by any
+  /// COMPLETED run.
+  consecutiveFailureCount Int @default(0)
+
   // Relations
   form Form              @relation(fields: [formId], references: [id], onDelete: Cascade)
   runs AutomationRun[]

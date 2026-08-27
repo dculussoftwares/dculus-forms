@@ -11,12 +11,14 @@ import {
   listAutomationRuns,
   getAutomationRunWithAutomation,
   cancelAutomationRun,
+  retryAutomationRun,
   listStepRuns,
 } from '../automationService.js';
 import { automationRepository, responseRepository } from '../../repositories/index.js';
 import { getAvailablePluginTypes } from '../../plugins/core/registry.js';
 import { validateAutomationGraph } from '../automation/graphValidator.js';
-import { enqueueFirstStep } from '../automation/engine.js';
+import { enqueueFirstStep, enqueueRunStep } from '../automation/engine.js';
+import { isAutomationEngineEnabled } from '../automation/boss.js';
 import {
   cancelRunsForAutomation,
   cancelSingleAutomationRun,
@@ -30,6 +32,7 @@ vi.mock('../../plugins/core/registry.js');
 vi.mock('../automation/graphValidator.js');
 vi.mock('../automation/engine.js');
 vi.mock('../automation/triggerService.js');
+vi.mock('../automation/boss.js', () => ({ isAutomationEngineEnabled: vi.fn(() => true) }));
 vi.mock('@dculus/utils', async () => {
   const actual = await vi.importActual<typeof import('@dculus/utils')>('@dculus/utils');
   return { ...actual, generateId: vi.fn() };
@@ -306,6 +309,72 @@ describe('automationService', () => {
       await updateAutomation(activeSchedule, { name: 'Renamed' });
 
       expect(scheduleAutomationCron).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createAutomation with a template', () => {
+    beforeEach(() => {
+      vi.mocked(automationRepository.createAutomation).mockResolvedValue({ id: 'automation-1' } as any);
+    });
+
+    // A follow-up email only makes sense on a submission and a digest only on a schedule, so the
+    // template's trigger must win over whatever the dialog last had selected.
+    it('pins the trigger from the template, overriding the argument', async () => {
+      await createAutomation({
+        formId: 'form-1',
+        organizationId: 'org-1',
+        name: 'Weekly summary',
+        triggerType: 'form.submitted',
+        template: 'weekly-digest',
+        createdBy: 'user-1',
+      });
+
+      expect(automationRepository.createAutomation).toHaveBeenCalledWith(
+        expect.objectContaining({ triggerType: 'schedule' })
+      );
+    });
+
+    it('builds the template graph rather than the empty default', async () => {
+      await createAutomation({
+        formId: 'form-1',
+        organizationId: 'org-1',
+        name: 'Confirmation',
+        triggerType: 'form.submitted',
+        template: 'confirmation-email',
+        createdBy: 'user-1',
+      });
+
+      const [data] = vi.mocked(automationRepository.createAutomation).mock.calls[0];
+      const nodes = (data as any).graph.nodes;
+      expect(nodes.some((n: any) => n.type === 'action' && n.data.actionType === 'email')).toBe(true);
+    });
+
+    it('rejects an unknown template id instead of silently falling back to blank', async () => {
+      await expect(
+        createAutomation({
+          formId: 'form-1',
+          organizationId: 'org-1',
+          name: 'X',
+          triggerType: 'form.submitted',
+          template: 'not-a-template',
+          createdBy: 'user-1',
+        })
+      ).rejects.toThrow(/Unknown automation template/);
+      expect(automationRepository.createAutomation).not.toHaveBeenCalled();
+    });
+
+    it('still honours the triggerType argument with no template', async () => {
+      await createAutomation({
+        formId: 'form-1',
+        organizationId: 'org-1',
+        name: 'Blank',
+        triggerType: 'response.edited',
+        createdBy: 'user-1',
+      });
+
+      expect(automationRepository.createAutomation).toHaveBeenCalledWith(
+        expect.objectContaining({ triggerType: 'response.edited' })
+      );
     });
   });
 
@@ -593,6 +662,161 @@ describe('automationService', () => {
           }),
         })
       );
+    });
+  });
+
+  describe('retryAutomationRun', () => {
+    const failedRun = (overrides: Record<string, any> = {}) => ({
+      id: 'run-1',
+      status: 'FAILED',
+      context: {},
+      graphSnapshot: { nodes: [], edges: [] },
+      automation: {
+        id: 'automation-1',
+        status: 'ACTIVE',
+        formId: 'form-1',
+        graph: {
+          nodes: [{ id: 'action-1', type: 'action', data: { actionType: 'webhook', config: { url: 'https://fixed' } } }],
+          edges: [],
+        },
+      },
+      ...overrides,
+    });
+
+    beforeEach(() => {
+      vi.mocked(enqueueRunStep).mockResolvedValue(undefined as any);
+      vi.mocked(automationRepository.findRunById).mockResolvedValue({ id: 'run-1' } as any);
+      vi.mocked(automationRepository.findLatestFailedStepRun).mockResolvedValue({
+        nodeId: 'action-1',
+      } as any);
+      vi.mocked(automationRepository.claimFailedRunForRetry).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(isAutomationEngineEnabled).mockReturnValue(true);
+    });
+
+    // Resuming, not re-running: the steps that already succeeded must not deliver a second time.
+    it('resumes from the failed step rather than the start of the graph', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+
+      await retryAutomationRun('run-1');
+
+      expect(automationRepository.claimFailedRunForRetry).toHaveBeenCalledWith('run-1', 'action-1');
+      expect(enqueueRunStep).toHaveBeenCalledWith({ id: 'run-1' }, 'action-1');
+      expect(enqueueFirstStep).not.toHaveBeenCalled();
+    });
+
+    // Both callers read FAILED before either writes, so the read-then-write check cannot separate
+    // them — only the conditional transition can. Losing the claim must not enqueue.
+    it('refuses a second concurrent retry that lost the claim, rather than enqueueing twice', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(automationRepository.claimFailedRunForRetry).mockResolvedValue({ count: 0 } as any);
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow(/already being retried/);
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
+    // A retry is usually prompted by a fix, so replaying the frozen config would fail identically.
+    it('refreshes the failed action\'s config from the live graph before resuming', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+
+      await retryAutomationRun('run-1');
+
+      expect(automationRepository.setNodeConfigInRunSnapshot).toHaveBeenCalledWith(
+        'run-1',
+        'action-1',
+        { url: 'https://fixed' }
+      );
+    });
+
+    it('leaves the snapshot alone when the failed node is no longer in the live graph', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        failedRun({
+          automation: { id: 'automation-1', status: 'ACTIVE', formId: 'form-1', graph: { nodes: [], edges: [] } },
+        }) as any
+      );
+
+      await retryAutomationRun('run-1');
+
+      expect(automationRepository.setNodeConfigInRunSnapshot).not.toHaveBeenCalled();
+      expect(enqueueRunStep).toHaveBeenCalled();
+    });
+
+    it('refuses to retry a run that is not FAILED', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        failedRun({ status: 'PARTIAL' }) as any
+      );
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow(/Only failed runs/);
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
+    // Retrying a paused automation would just cancel at the first action node — say so up front.
+    it('refuses to retry while the automation is not ACTIVE', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        failedRun({
+          automation: { id: 'automation-1', status: 'PAUSED', formId: 'form-1', graph: { nodes: [], edges: [] } },
+        }) as any
+      );
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow(/Activate this automation/);
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
+    it('allows retrying a test run on a DRAFT automation, matching what test runs are allowed to do', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        failedRun({
+          context: { test: true },
+          automation: { id: 'automation-1', status: 'DRAFT', formId: 'form-1', graph: { nodes: [], edges: [] } },
+        }) as any
+      );
+
+      await retryAutomationRun('run-1');
+
+      expect(enqueueRunStep).toHaveBeenCalled();
+    });
+
+    // enqueueRunStep logs and returns without throwing when the engine is off, so claiming first
+    // would flip the run to RUNNING, queue nothing, and report success — leaving it unretryable
+    // (retry needs FAILED) and, on a schedule automation, blocking every future tick.
+    it('refuses before claiming when the automation engine is not running', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(isAutomationEngineEnabled).mockReturnValue(false);
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow(/engine is not running/);
+      expect(automationRepository.claimFailedRunForRetry).not.toHaveBeenCalled();
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
+    it('puts the run back to FAILED when the enqueue fails, so it stays retryable', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(enqueueRunStep).mockRejectedValue(new Error('queue unavailable'));
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow('queue unavailable');
+      expect(automationRepository.releaseRetryClaim).toHaveBeenCalledWith('run-1');
+    });
+
+    // The claim has already committed by this point, so *any* later failure — not just the
+    // enqueue — has to roll it back, or the run is stranded RUNNING just the same.
+    it('rolls the claim back when the post-claim re-read fails', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(automationRepository.findRunById).mockRejectedValue(new Error('connection reset'));
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow('connection reset');
+      expect(automationRepository.releaseRetryClaim).toHaveBeenCalledWith('run-1');
+    });
+
+    it('rolls the claim back when the run vanishes between the claim and the re-read', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(failedRun() as any);
+      vi.mocked(automationRepository.findRunById).mockResolvedValue(null as any);
+
+      await expect(retryAutomationRun('run-1')).rejects.toThrow('Automation run not found');
+      expect(automationRepository.releaseRetryClaim).toHaveBeenCalledWith('run-1');
+      expect(enqueueRunStep).not.toHaveBeenCalled();
+    });
+
+    it('throws when the run does not exist', async () => {
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(null);
+
+      await expect(retryAutomationRun('missing')).rejects.toThrow('Automation run not found');
     });
   });
 

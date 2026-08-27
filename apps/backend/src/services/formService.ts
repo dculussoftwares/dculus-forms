@@ -22,6 +22,7 @@ import { withPrisma } from '../repositories/baseRepository.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { audit } from '../lib/audit.js';
+import { copyAutomationsToForm } from './automation/copyAutomation.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
@@ -281,6 +282,12 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
       logger.error(`❌ Failed to create FormFile record for duplicated form ${newFormId}:`, error);
     }
   }
+
+  // Automations were silently dropped by form duplication until now — a customer who built a
+  // multi-step flow and cloned the form for next quarter lost all of it with no warning. Copies
+  // land as DRAFTs with integration bindings stripped, so a clone can never start delivering
+  // alongside the original on its own.
+  await copyAutomationsToForm(formId, newFormId, userId);
 
   return {
     ...newForm,

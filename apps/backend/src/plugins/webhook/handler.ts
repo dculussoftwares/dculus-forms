@@ -2,6 +2,9 @@ import crypto from 'crypto';
 import type { PluginHandler } from '../core/types.js';
 import type { WebhookPayload, WebhookDeliveryResult, ValidatedWebhookConfig } from './types.js';
 
+/** Header carrying the per-delivery idempotency key. Receivers dedupe retries on this. */
+const IDEMPOTENCY_HEADER = 'X-Dculus-Idempotency-Key';
+
 const generateSignature = (payload: string, secret: string): string =>
   crypto.createHmac('sha256', secret).update(payload).digest('hex');
 
@@ -9,7 +12,8 @@ const sendWebhook = async (
   url: string,
   payload: WebhookPayload,
   headers: Record<string, string> = {},
-  secret?: string
+  secret?: string,
+  idempotencyKey?: string
 ): Promise<WebhookDeliveryResult> => {
   const startTime = Date.now();
 
@@ -24,6 +28,22 @@ const sendWebhook = async (
     if (secret) {
       requestHeaders['X-Webhook-Signature'] = generateSignature(payloadString, secret);
       requestHeaders['X-Webhook-Signature-Algorithm'] = 'sha256';
+    }
+
+    // Set last, after the user's own `headers`, so a configured header can never shadow it —
+    // this is the receiver's only way to tell a retry of one delivery from a genuinely new one.
+    // An automation action retries up to 3× on any error, and a timeout is not proof the receiver
+    // did nothing: it may have committed its work and lost the response on the way back.
+    //
+    // Assigning over the key is not enough: `fetch` lowercases header names and *combines*
+    // duplicates, so a configured `x-dculus-idempotency-key` would arrive appended to ours
+    // ("configured, generated") rather than replaced — leaving the receiver with a value that is
+    // not the stable key at all. Every case-variant has to go first.
+    if (idempotencyKey) {
+      for (const name of Object.keys(requestHeaders)) {
+        if (name.toLowerCase() === IDEMPOTENCY_HEADER.toLowerCase()) delete requestHeaders[name];
+      }
+      requestHeaders[IDEMPOTENCY_HEADER] = idempotencyKey;
     }
 
     const response = await fetch(url, {
@@ -79,7 +99,13 @@ export const webhookHandler: PluginHandler = async (plugin, event, context) => {
 
   if (event.data.responseId) payload.responseId = event.data.responseId;
 
-  const result = await sendWebhook(config.url, payload, config.headers, config.secret);
+  const result = await sendWebhook(
+    config.url,
+    payload,
+    config.headers,
+    config.secret,
+    context.idempotencyKey
+  );
 
   if (result.success) {
     context.logger.info('Webhook delivered successfully', {

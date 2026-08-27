@@ -30,11 +30,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@dculus/ui';
-import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, FlaskConical } from 'lucide-react';
+import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, FlaskConical, AlertTriangle, Copy } from 'lucide-react';
 import {
   UPDATE_AUTOMATION,
   SET_AUTOMATION_STATUS,
   DELETE_AUTOMATION,
+  DUPLICATE_AUTOMATION,
   GET_FORM_AUTOMATIONS,
 } from '../../graphql/automations';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -51,6 +52,10 @@ export interface Automation {
   version: number;
   createdAt: string;
   updatedAt: string;
+  /** Outcome of the most recent run — null until this automation has run at all. */
+  lastRunStatus?: string | null;
+  lastRunAt?: string | null;
+  consecutiveFailureCount?: number;
 }
 
 interface AutomationCardProps {
@@ -86,6 +91,8 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
   const [updateAutomation] = useMutation(UPDATE_AUTOMATION);
   const [setAutomationStatus] = useMutation(SET_AUTOMATION_STATUS);
   const [deleteAutomation] = useMutation(DELETE_AUTOMATION);
+  const [duplicateAutomation] = useMutation(DUPLICATE_AUTOMATION);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const { runTest, isTesting } = useTestAutomation(automation.formId, automation.id);
 
   // A schedule automation has no triggering response — its data comes from its Filter Responses
@@ -116,6 +123,27 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
       toastError(t('toasts.statusErrorTitle'), error.message);
     } finally {
       setIsTogglingStatus(false);
+    }
+  };
+
+  const handleDuplicate = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDuplicating(true);
+    try {
+      const { data } = await duplicateAutomation({ variables: { id: automation.id }, refetchQueries });
+      toastSuccess(
+        t('toasts.duplicatedTitle'),
+        // Apollo can resolve with `data` undefined (a partial GraphQL error, say). Reading through
+        // it unguarded would throw inside the try and show the "couldn't duplicate" toast over a
+        // copy that was in fact created.
+        t('toasts.duplicatedMessage', {
+          values: { name: data?.duplicateAutomation?.name ?? automation.name },
+        })
+      );
+    } catch (error: any) {
+      toastError(t('toasts.duplicateErrorTitle'), error.message);
+    } finally {
+      setIsDuplicating(false);
     }
   };
 
@@ -150,6 +178,17 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
     }
   };
 
+  // Only unhealthy outcomes are surfaced: a green "last run succeeded" line on every card is
+  // noise, whereas a failure that nobody sees is the entire problem this solves.
+  const failures = automation.consecutiveFailureCount ?? 0;
+  const healthLabel =
+    failures >= 1
+      ? t('card.health.failing', { values: { count: failures } })
+      : automation.lastRunStatus === 'PARTIAL'
+        ? t('card.health.partial')
+        : null;
+  const healthColor = failures >= 1 ? 'var(--tf-error)' : '#9c7818';
+
   const updatedAtLabel = new Date(automation.updatedAt).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'short',
@@ -183,6 +222,15 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
             {' · '}
             {t('card.updatedAt', { values: { date: updatedAtLabel } })}
           </p>
+
+          {/* Health of the last run. Without this an automation whose integration expired looks
+              identical to a healthy one until someone opens its run history. */}
+          {healthLabel && (
+            <p className="text-xs mt-1 flex items-center gap-1" style={{ color: healthColor }}>
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              {healthLabel}
+            </p>
+          )}
         </div>
 
         <div className="shrink-0 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -240,6 +288,12 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
                   >
                     <PencilLine className="mr-2 h-4 w-4" />
                     {t('card.actions.rename')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleDuplicate} disabled={isDuplicating}>
+                    {isDuplicating
+                      ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      : <Copy className="mr-2 h-4 w-4" />}
+                    {t('card.actions.duplicate')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

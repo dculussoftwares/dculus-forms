@@ -85,6 +85,37 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
   const createRun = async (data: Prisma.AutomationRunCreateArgs['data']) =>
     prisma.automationRun.create({ data });
 
+  /**
+   * Takes a transaction-scoped advisory lock naming this automation's scheduled tick, returning
+   * false when another worker already holds it.
+   *
+   * The overlap guard in triggerService checks for an in-flight run and then creates one; without
+   * a lock, two workers can both pass that check before either writes, and both start processing
+   * the same digest window. pg-boss makes that rare — one job per tick, claimed with SKIP LOCKED —
+   * but not impossible: a batch that outlives the job's visibility timeout is redelivered while
+   * the first worker is still going, which is precisely the long-running case this guard exists
+   * for.
+   *
+   * `pg_try_advisory_xact_lock` rather than a row lock or unique index because the thing being
+   * serialised is "processing a tick for this automation", which has no single row to lock — and
+   * because a unique index on active runs would wrongly forbid the concurrent runs that
+   * form.submitted automations create legitimately, one per submission. The lock releases with the
+   * transaction, so a crashed worker cannot wedge an automation.
+   *
+   * `hashtextextended` (64-bit), NOT `hashtext` (32-bit): the advisory lock namespace is global
+   * across every automation in the database, and two ids colliding would make one automation's
+   * tick see the other's lock and skip. That skip is silent by design — a worker that loses the
+   * claim records nothing, since the winner is expected to decide — so a collision would drop
+   * ticks with no trace at all. 32 bits puts the birthday bound around 65k automations, which is a
+   * reachable number; 64 bits moves it past 4 billion.
+   */
+  const tryLockScheduledTick = async (automationId: string): Promise<boolean> => {
+    const rows = await prisma.$queryRaw<Array<{ locked: boolean }>>(
+      Prisma.sql`SELECT pg_try_advisory_xact_lock(hashtextextended(${`automation-tick:${automationId}`}, 0)) AS locked`
+    );
+    return rows[0]?.locked === true;
+  };
+
   const updateRun = async (id: string, data: Prisma.AutomationRunUpdateArgs['data']) =>
     prisma.automationRun.update({ where: { id }, data });
 
@@ -113,6 +144,30 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     prisma.automationRun.updateMany({
       where: { id: { in: ids } },
       data: { status: 'CANCELLED', completedAt: new Date() },
+    });
+
+  /**
+   * Claims a FAILED run for a retry by flipping it to RUNNING, but only while it is still FAILED —
+   * the same TOCTOU-safe shape as cancelRunIfActive below, and for the same reason. Two retry
+   * requests arriving together would otherwise both read FAILED, both pass the check, and both
+   * enqueue the failed node, executing the action twice. Making the transition itself the guard
+   * means exactly one caller can win. Returns the number of rows matched.
+   */
+  const claimFailedRunForRetry = async (id: string, nodeId: string) =>
+    prisma.automationRun.updateMany({
+      where: { id, status: 'FAILED' },
+      data: { status: 'RUNNING', completedAt: null, currentNodeId: nodeId },
+    });
+
+  /**
+   * Undoes a retry claim, putting the run back to FAILED so it can be retried again. Guarded on
+   * the run still being RUNNING so it can never overwrite an outcome the engine reached in the
+   * meantime. Returns the number of rows matched.
+   */
+  const releaseRetryClaim = async (id: string) =>
+    prisma.automationRun.updateMany({
+      where: { id, status: 'RUNNING' },
+      data: { status: 'FAILED', completedAt: new Date() },
     });
 
   /**
@@ -165,6 +220,16 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
 
   const findStepRunByNode = async (runId: string, nodeId: string) =>
     prisma.automationStepRun.findFirst({ where: { runId, nodeId } });
+
+  /**
+   * The step a FAILED run died on — where a retry (gap H) resumes from. Newest first, because a
+   * retried run accumulates one row per attempt and the last failure is the one still outstanding.
+   */
+  const findLatestFailedStepRun = async (runId: string) =>
+    prisma.automationStepRun.findFirst({
+      where: { runId, status: 'FAILED' },
+      orderBy: { startedAt: 'desc' },
+    });
 
   /**
    * Atomically replaces one node's `data.config` inside a `{ nodes: [...], edges: [...] }`
@@ -242,8 +307,11 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     listRunsByAutomation,
     listActiveRunsByAutomation,
     createRun,
+    tryLockScheduledTick,
     updateRun,
     advanceDigestWatermark,
+    claimFailedRunForRetry,
+    releaseRetryClaim,
     cancelRunsByIds,
     cancelRunIfActive,
 
@@ -253,6 +321,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     findExecutedStepRun,
     listStepOutcomes,
     findStepRunByNode,
+    findLatestFailedStepRun,
 
     // Transaction-participating raw writes (see engine.ts updateAutomationNodeConfig)
     setNodeConfigInGraph,

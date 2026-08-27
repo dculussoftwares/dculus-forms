@@ -1,12 +1,18 @@
 import * as Sentry from '@sentry/node';
 import type { Prisma } from '#prisma-client';
 import { generateId } from '@dculus/utils';
-import { automationRepository } from '../../repositories/index.js';
+import { automationRepository, createAutomationRepository } from '../../repositories/index.js';
+import { withPrisma } from '../../repositories/baseRepository.js';
+import { prisma } from '../../lib/prisma.js';
 import { logger } from '../../lib/logger.js';
 import { getEventEmitter } from '../../plugins/core/events.js';
 import type { PluginEvent } from '../../plugins/core/types.js';
 import { enqueueFirstStep } from './engine.js';
+import { recordRunOutcome } from './runOutcome.js';
 import { AUTOMATION_QUEUE, AUTOMATION_CRON_QUEUE, getBoss } from './boss.js';
+// Re-exported so existing importers keep their path; the implementations moved to
+// cronSchedule.ts, which the engine's settle path can import without a cycle.
+export { scheduleAutomationCron, unscheduleAutomationCron } from './cronSchedule.js';
 import type { AutomationRunContext } from './types.js';
 
 type ScheduledJobData = { automationId: string };
@@ -161,40 +167,6 @@ export async function cancelSingleAutomationRun(runId: string) {
 }
 
 /**
- * Registers/updates the pg-boss cron schedule for a `schedule`-triggerType automation (#201).
- * Uses a single shared queue (AUTOMATION_CRON_QUEUE) with `key: automationId` to distinguish
- * automations rather than a per-automation queue name — `boss.schedule` upserts by
- * (queue, key), which is idempotent across multi-instance deploys and requires no per-automation
- * queue/worker registration. No-op (with a warning) when the engine is disabled.
- */
-export async function scheduleAutomationCron(
-  automationId: string,
-  cron: string,
-  timezone?: string
-): Promise<void> {
-  const boss = getBoss();
-  if (!boss) {
-    logger.warn(`[Automation Triggers] Cannot schedule cron for automation ${automationId} — engine disabled`);
-    return;
-  }
-
-  const options: { key: string; tz?: string } = { key: automationId };
-  if (timezone) options.tz = timezone;
-
-  await boss.schedule(AUTOMATION_CRON_QUEUE, cron, { automationId } satisfies ScheduledJobData, options);
-  logger.info(`[Automation Triggers] Scheduled cron for automation ${automationId}: ${cron}`);
-}
-
-/** Removes the pg-boss cron schedule for an automation (pause/delete, #201). Idempotent. */
-export async function unscheduleAutomationCron(automationId: string): Promise<void> {
-  const boss = getBoss();
-  if (!boss) return;
-
-  await boss.unschedule(AUTOMATION_CRON_QUEUE, automationId);
-  logger.info(`[Automation Triggers] Unscheduled cron for automation ${automationId}`);
-}
-
-/**
  * Handles a single scheduled tick: re-checks the automation is still ACTIVE (a schedule can
  * fire in the narrow window between a pause/delete and its unschedule call landing) and, if so,
  * creates a run with responseId: null and no trigger response data — graphValidator (#201)
@@ -219,17 +191,82 @@ async function handleScheduledTick(automationId: string): Promise<void> {
       trigger: { scheduledAt: scheduledAt.toISOString() },
     };
 
-    const run = await automationRepository.createRun({
-      id: generateId(),
-      automationId: automation.id,
-      responseId: null,
-      automationVersion: automation.version,
-      graphSnapshot: automation.graph as Prisma.InputJsonValue,
-      status: 'RUNNING',
-      context: context as Prisma.InputJsonValue,
+    // Never let two ticks of the same automation overlap. A digest node's window is
+    // `(lastDigestedAt, startedAt]`, and the watermark only moves when a run finishes — so a tick
+    // firing while the previous one is still working resolves the same lower bound and processes
+    // the same responses a second time. A 3,000-email batch easily outlives a 15-minute cron.
+    //
+    // The check and the run creation share one transaction, under an advisory lock naming this
+    // automation's tick: checking and then writing without one lets two workers both see an empty
+    // result and both start. The lock is what makes the claim atomic; the check is what decides
+    // whether there is anything to claim.
+    const run = await prisma.$transaction(async (tx) => {
+      const txRepo = createAutomationRepository(withPrisma(tx as any));
+
+      // Another worker is mid-claim for this same tick — it will decide whether to run or skip,
+      // and recording our own SKIPPED row alongside its decision would just be noise.
+      if (!(await txRepo.tryLockScheduledTick(automation.id))) {
+        logger.warn(
+          `[Automation Triggers] Skipping scheduled tick for ${automationId} — another worker is already claiming this tick`
+        );
+        return null;
+      }
+
+      const activeRuns = await txRepo.listActiveRunsByAutomation(automation.id);
+      if (activeRuns.length > 0) {
+        logger.warn(
+          `[Automation Triggers] Skipping scheduled tick for ${automationId} — ${activeRuns.length} run(s) still in flight`
+        );
+        // Recorded as a SKIPPED run rather than dropped silently: a tick that produced nothing is
+        // exactly the kind of gap someone goes looking for in the run history, and "the previous
+        // run was still going" is the answer they need.
+        await txRepo.createRun({
+          id: generateId(),
+          automationId: automation.id,
+          responseId: null,
+          automationVersion: automation.version,
+          graphSnapshot: automation.graph as Prisma.InputJsonValue,
+          status: 'SKIPPED',
+          completedAt: scheduledAt,
+          context: {
+            ...context,
+            skipReason: 'A previous run of this automation was still in progress.',
+            blockedByRunIds: activeRuns.map((activeRun) => activeRun.id),
+          } as Prisma.InputJsonValue,
+        });
+        return null;
+      }
+
+      return txRepo.createRun({
+        id: generateId(),
+        automationId: automation.id,
+        responseId: null,
+        automationVersion: automation.version,
+        graphSnapshot: automation.graph as Prisma.InputJsonValue,
+        status: 'RUNNING',
+        context: context as Prisma.InputJsonValue,
+      });
     });
 
-    await enqueueFirstStep(run);
+    if (!run) return;
+
+    // Enqueued outside the transaction: the run row must be committed and visible before a worker
+    // can pick the job up, or the step handler would look up a run that does not exist yet.
+    try {
+      await enqueueFirstStep(run);
+    } catch (error) {
+      // A run left RUNNING with nothing queued is worse than a failed one: the overlap guard above
+      // reads RUNNING as in-flight, so this automation's every future tick would be skipped
+      // indefinitely. Settling it as FAILED keeps the automation ticking, and surfaces the problem
+      // through the same failure path as any other broken run.
+      logger.error(
+        `[Automation Triggers] Failed to enqueue the first step for run ${run.id} — marking it FAILED so it cannot block future ticks:`,
+        error
+      );
+      Sentry.captureException(error);
+      await automationRepository.updateRun(run.id, { status: 'FAILED', completedAt: new Date() });
+      await recordRunOutcome(automation.id, run.id, 'FAILED');
+    }
   } catch (error) {
     logger.error(`[Automation Triggers] Failed to handle scheduled tick for automation ${automationId}:`, error);
     Sentry.captureException(error);

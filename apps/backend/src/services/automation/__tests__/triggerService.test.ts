@@ -16,16 +16,31 @@ import { automationRepository } from '../../../repositories/index.js';
 import { logger } from '../../../lib/logger.js';
 import type { PluginEvent } from '../../../plugins/core/types.js';
 
+// The scheduled-tick claim runs inside `prisma.$transaction`, whose tx-scoped repository is a
+// SECOND instance built via createAutomationRepository(withPrisma(tx)) — not the singleton. The
+// factory is mocked to hand back the same spy-bearing object so assertions can inspect calls made
+// through either, exactly as engine.test.ts does.
+const repoMock = vi.hoisted(() => ({
+  listActiveByFormAndTrigger: vi.fn(),
+  createRun: vi.fn(),
+  tryLockScheduledTick: vi.fn(),
+  listActiveRunsByAutomation: vi.fn(),
+  cancelRunsByIds: vi.fn(),
+  findRunById: vi.fn(),
+  cancelRunIfActive: vi.fn(),
+  findById: vi.fn(),
+  updateRun: vi.fn(),
+}));
+
 vi.mock('../../../repositories/index.js', () => ({
-  automationRepository: {
-    listActiveByFormAndTrigger: vi.fn(),
-    createRun: vi.fn(),
-    listActiveRunsByAutomation: vi.fn(),
-    cancelRunsByIds: vi.fn(),
-    findRunById: vi.fn(),
-    cancelRunIfActive: vi.fn(),
-    findById: vi.fn(),
-  },
+  automationRepository: repoMock,
+  createAutomationRepository: vi.fn(() => repoMock),
+}));
+
+vi.mock('../../../lib/prisma.js', () => ({
+  // Callback-style $transaction: invoke the callback with a stub tx client — the repo methods
+  // called inside are routed back to repoMock by the factory mock above.
+  prisma: { $transaction: vi.fn((cb: (tx: unknown) => Promise<unknown>) => cb({})) },
 }));
 
 vi.mock('../../../lib/logger.js', () => ({
@@ -39,6 +54,8 @@ vi.mock('@sentry/node', () => ({
 vi.mock('@dculus/utils', () => ({
   generateId: vi.fn(),
 }));
+
+vi.mock('../runOutcome.js', () => ({ recordRunOutcome: vi.fn() }));
 
 vi.mock('../engine.js', () => ({
   enqueueFirstStep: vi.fn(),
@@ -87,6 +104,10 @@ describe('triggerService', () => {
     getEventEmitter().removeAllListeners('plugin:event');
     vi.mocked(generateId).mockReturnValue('generated-run-id');
     vi.mocked(automationRepository.createRun).mockResolvedValue({ id: 'generated-run-id' } as any);
+    // Default: this worker wins the tick claim and nothing of this automation is in flight, so a
+    // scheduled tick may proceed.
+    vi.mocked(automationRepository.tryLockScheduledTick).mockResolvedValue(true);
+    vi.mocked(automationRepository.listActiveRunsByAutomation).mockResolvedValue([] as any);
   });
 
   afterEach(() => {
@@ -516,6 +537,66 @@ describe('triggerService', () => {
         }),
       });
       expect(enqueueFirstStep).toHaveBeenCalledWith({ id: 'generated-run-id' });
+    });
+
+    // A digest window is (lastDigestedAt, startedAt] and the watermark only moves when a run
+    // finishes, so a tick firing while the previous one is still working resolves the same lower
+    // bound and re-processes the same responses.
+    it('skips a tick while a previous run of the same automation is still in flight', async () => {
+      vi.mocked(automationRepository.findById).mockResolvedValue(
+        makeAutomation({ triggerType: 'schedule', status: 'ACTIVE' }) as any
+      );
+      vi.mocked(automationRepository.listActiveRunsByAutomation).mockResolvedValue([
+        { id: 'run-in-flight' },
+      ] as any);
+
+      await fireTick('automation-1');
+
+      expect(enqueueFirstStep).not.toHaveBeenCalled();
+      // Recorded rather than dropped silently, so the gap in the run history is explained.
+      expect(automationRepository.createRun).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'SKIPPED',
+          completedAt: expect.any(Date),
+          context: expect.objectContaining({
+            skipReason: expect.stringContaining('still in progress'),
+            blockedByRunIds: ['run-in-flight'],
+          }),
+        })
+      );
+    });
+
+    // Checking for an in-flight run and then creating one is not atomic on its own: two workers
+    // can both see an empty result before either writes. The lock is what makes the claim atomic.
+    it('skips a tick without recording anything when another worker holds the claim', async () => {
+      vi.mocked(automationRepository.findById).mockResolvedValue(
+        makeAutomation({ triggerType: 'schedule', status: 'ACTIVE' }) as any
+      );
+      vi.mocked(automationRepository.tryLockScheduledTick).mockResolvedValue(false);
+
+      await fireTick('automation-1');
+
+      expect(automationRepository.listActiveRunsByAutomation).not.toHaveBeenCalled();
+      expect(enqueueFirstStep).not.toHaveBeenCalled();
+      // The worker that holds the claim decides whether to run or skip; a second SKIPPED row
+      // alongside its decision would just be noise.
+      expect(automationRepository.createRun).not.toHaveBeenCalled();
+    });
+
+    // A run left RUNNING with nothing queued is worse than a failed one: the overlap guard reads
+    // RUNNING as in-flight, so every future tick of this automation would be skipped indefinitely.
+    it('settles the run FAILED when the enqueue fails, so it cannot block future ticks', async () => {
+      vi.mocked(automationRepository.findById).mockResolvedValue(
+        makeAutomation({ triggerType: 'schedule', status: 'ACTIVE' }) as any
+      );
+      vi.mocked(enqueueFirstStep).mockRejectedValue(new Error('queue unavailable'));
+
+      await fireTick('automation-1');
+
+      expect(automationRepository.updateRun).toHaveBeenCalledWith('generated-run-id', {
+        status: 'FAILED',
+        completedAt: expect.any(Date),
+      });
     });
 
     it('skips a tick when the automation was paused/deleted concurrently', async () => {

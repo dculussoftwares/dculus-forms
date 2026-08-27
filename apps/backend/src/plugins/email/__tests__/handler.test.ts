@@ -523,6 +523,41 @@ describe('Email Handler', () => {
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
     });
 
+    // The batch has no per-response delivery record, so a throw escaping mid-loop fails the
+    // pg-boss job and the retry restarts from the FIRST response — everyone already emailed gets
+    // a second copy. Every failure must therefore stay isolated to its own response, including
+    // ones raised before the send (mention substitution, recipient resolution).
+    it('isolates a mid-batch throw to its own response instead of failing the whole batch', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        recipientFieldLabel: 'Email',
+        subject: 'Reminder',
+        message: 'Hi {{name}}',
+      };
+
+      // Throwing from substituteMentions, which runs *before* sendEmail — the send's own
+      // try/catch would never see it.
+      vi.mocked(substituteMentions).mockImplementation((_msg: string, data: Record<string, any>) => {
+        if (data.name === 'Grace') throw new Error('malformed response data');
+        return `Hi ${data.name}`;
+      });
+
+      const event = scheduleEventWithDigest([
+        { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { name: 'Ada', 'email-field': 'ada@example.com' } },
+        { id: 'r2', submittedAt: '2025-12-27T11:00:00.000Z', data: { name: 'Grace', 'email-field': 'grace@example.com' } },
+        { id: 'r3', submittedAt: '2025-12-28T11:00:00.000Z', data: { name: 'Alan', 'email-field': 'alan@example.com' } },
+      ]);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      // The batch ran to completion: the one bad response is counted, the others still delivered.
+      expect(result.sentCount).toBe(2);
+      expect(result.failedCount).toBe(1);
+      expect(mockContext.sendEmail).toHaveBeenCalledTimes(2);
+      expect(mockContext.sendEmail).toHaveBeenNthCalledWith(2, expect.objectContaining({ to: 'alan@example.com' }));
+    });
+
     it('sends one email per response, each to that response\'s own recipientFieldId value with substituted content', async () => {
       const config: ValidatedEmailConfig = {
         type: 'email',

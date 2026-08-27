@@ -12,9 +12,15 @@ export const executePlugin = async (
   // The legacy Plugins system backs every plugin with a real FormPlugin row, so a handler's
   // context.updatePluginConfig(...) call (e.g. persisting a refreshed OAuth token) just
   // writes straight back to that row.
+  // The standalone Plugins path is fire-and-forget — it has no retries of its own — but the far
+  // side can still see the same submission twice if a respondent's request is retried upstream,
+  // so it gets a key too, scoped to (plugin, response). Falls back to the event timestamp for
+  // events with no response behind them, which is the best stable identity available there.
+  const idempotencyKey = `${pluginId}:${event.data?.responseId ?? event.timestamp.toISOString()}`;
+
   const context = createPluginContext(async (config) => {
     await prisma.formPlugin.update({ where: { id: pluginId }, data: { config: config as any } });
-  });
+  }, idempotencyKey);
 
   try {
     const plugin = await prisma.formPlugin.findUnique({ where: { id: pluginId } });

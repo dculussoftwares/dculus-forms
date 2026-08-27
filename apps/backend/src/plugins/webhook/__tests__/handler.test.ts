@@ -464,6 +464,67 @@ describe('Webhook Handler', () => {
     });
   });
 
+  describe('Idempotency key', () => {
+    const okResponse = () => ({
+      status: 200,
+      statusText: 'OK',
+      headers: new Map(),
+      text: async () => 'OK',
+    });
+
+    it('forwards the context idempotency key so a receiver can recognise a retried delivery', async () => {
+      const config: ValidatedWebhookConfig = { type: 'webhook', url: 'https://example.com/webhook' };
+      mockFetch.mockResolvedValue(okResponse());
+
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, {
+        ...mockContext,
+        idempotencyKey: 'run-1:action-1',
+      });
+
+      const headers = mockFetch.mock.calls[0][1].headers;
+      expect(headers['X-Dculus-Idempotency-Key']).toBe('run-1:action-1');
+    });
+
+    it('omits the header when the caller has no stable key to offer', async () => {
+      const config: ValidatedWebhookConfig = { type: 'webhook', url: 'https://example.com/webhook' };
+      mockFetch.mockResolvedValue(okResponse());
+
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      const headers = mockFetch.mock.calls[0][1].headers;
+      expect(headers).not.toHaveProperty('X-Dculus-Idempotency-Key');
+    });
+
+    // The key is the receiver's only way to tell a retry from a new delivery, so a configured
+    // header must not be able to shadow it — in ANY casing. fetch lowercases header names and
+    // combines duplicates, so a surviving case-variant would arrive appended to ours rather than
+    // replaced, and the receiver would see a value that is not the stable key.
+    it.each([
+      'X-Dculus-Idempotency-Key',
+      'x-dculus-idempotency-key',
+      'X-DCULUS-IDEMPOTENCY-KEY',
+      'x-Dculus-IDEMPOTENCY-key',
+    ])('is not overridable by a configured %s header', async (headerName) => {
+      const config: ValidatedWebhookConfig = {
+        type: 'webhook',
+        url: 'https://example.com/webhook',
+        headers: { [headerName]: 'attacker-supplied' },
+      };
+      mockFetch.mockResolvedValue(okResponse());
+
+      await webhookHandler({ id: 'test-plugin', config }, mockEvent, {
+        ...mockContext,
+        idempotencyKey: 'run-1:action-1',
+      });
+
+      const headers = mockFetch.mock.calls[0][1].headers;
+      const sent = Object.entries(headers).filter(
+        ([name]) => name.toLowerCase() === 'x-dculus-idempotency-key'
+      );
+      expect(sent).toEqual([['X-Dculus-Idempotency-Key', 'run-1:action-1']]);
+    });
+  });
+
   describe('Custom headers', () => {
     it('should merge custom headers with default headers', async () => {
       const config: ValidatedWebhookConfig = {

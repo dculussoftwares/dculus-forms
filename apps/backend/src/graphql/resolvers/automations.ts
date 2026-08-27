@@ -114,7 +114,12 @@ export const automationsResolvers = {
   Mutation: {
     createAutomation: async (
       _: any,
-      { formId, name, triggerType }: { formId: string; name: string; triggerType: string },
+      {
+        formId,
+        name,
+        triggerType,
+        template,
+      }: { formId: string; name: string; triggerType: string; template?: string },
       context: { auth: BetterAuthContext }
     ) => {
       const accessCheck = await assertFormAccess(
@@ -129,8 +134,26 @@ export const automationsResolvers = {
         organizationId: accessCheck.form.organizationId,
         name,
         triggerType,
+        template,
         createdBy: context.auth.user!.id,
       });
+    },
+
+    duplicateAutomation: async (
+      _: any,
+      { id }: { id: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+      const automation = await automationService.getAutomationById(id);
+      await assertFormAccess(
+        context,
+        automation.formId,
+        PermissionLevel.EDITOR,
+        'Access denied: You need EDITOR access to duplicate this automation'
+      );
+
+      return automationService.duplicateAutomation(automation, context.auth.user!.id);
     },
 
     updateAutomation: async (
@@ -225,12 +248,31 @@ export const automationsResolvers = {
 
       return automationService.cancelAutomationRun(runId);
     },
+
+    retryAutomationRun: async (
+      _: any,
+      { runId }: { runId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+      const run = await automationService.getAutomationRunWithAutomation(runId);
+
+      await assertFormAccess(
+        context,
+        run.automation.formId,
+        PermissionLevel.EDITOR,
+        'Access denied: You need EDITOR access to retry this automation run'
+      );
+
+      return automationService.retryAutomationRun(runId);
+    },
   },
 
   Automation: {
     createdAt: (parent: { createdAt: Date | string }) => toISOString(parent.createdAt),
     updatedAt: (parent: { updatedAt: Date | string }) => toISOString(parent.updatedAt),
     lastDigestedAt: (parent: { lastDigestedAt: Date | string | null }) => toISOString(parent.lastDigestedAt),
+    lastRunAt: (parent: { lastRunAt: Date | string | null }) => toISOString(parent.lastRunAt),
   },
 
   AutomationRun: {

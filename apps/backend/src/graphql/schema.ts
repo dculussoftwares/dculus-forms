@@ -1193,6 +1193,11 @@ export const typeDefs = gql`
     whose digest node opted into covering the form's existing responses).
     """
     lastDigestedAt: String
+    """Outcome of the most recent run — lets the list badge a broken automation without loading its history."""
+    lastRunStatus: String
+    lastRunAt: String
+    """Failed runs since the last clean one. Reaching 5 auto-pauses the automation."""
+    consecutiveFailureCount: Int!
   }
 
   type AutomationStepRun {
@@ -1663,12 +1668,21 @@ export const typeDefs = gql`
     cancelPluginBackfill(jobId: ID!): PluginBackfillJob!
 
     # Automation Mutations
-    createAutomation(formId: ID!, name: String!, triggerType: String!): Automation!
+    """The template arg selects a starter graph and pins its own triggerType (see automation/templates.ts)."""
+    createAutomation(formId: ID!, name: String!, triggerType: String!, template: String): Automation!
+    """Copies an automation within its form as a DRAFT, with integration bindings stripped."""
+    duplicateAutomation(id: ID!): Automation!
     updateAutomation(id: ID!, name: String, graph: JSON, triggerConfig: JSON): Automation!
     setAutomationStatus(id: ID!, status: String!): Automation!
     deleteAutomation(id: ID!): Boolean!
     testAutomation(id: ID!, responseId: ID): AutomationRun!
     cancelAutomationRun(runId: ID!): AutomationRun!
+    """
+    Resumes a FAILED run from the step it died on, refreshing that step's config from the
+    automation's live graph first so a fix takes effect. Steps that already succeeded are not
+    re-run.
+    """
+    retryAutomationRun(runId: ID!): AutomationRun!
 
     # PDF Template Mutations
     createPdfTemplate(input: CreatePdfTemplateInput!): PdfTemplate!
