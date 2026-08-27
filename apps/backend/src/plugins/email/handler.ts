@@ -1,7 +1,7 @@
 import type { PluginHandler, PluginEvent, PluginContext } from '../core/types.js';
 import type { ValidatedEmailConfig, EmailDeliveryResult } from './types.js';
 import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dculus/types';
-import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
+import { substituteMentions, createFieldLabelsMap, parseEmailList } from '@dculus/utils';
 import type { EmailAttachment } from '../../services/emailService.js';
 import { resolveResponsePdfAttachment } from '../../services/pdfTemplateService.js';
 import { checkUsageExceeded, getRemainingEmailQuota } from '../../subscriptions/usageService.js';
@@ -141,23 +141,19 @@ function buildDigestResponseTable(
 
 /**
  * Resolves the set of recipient addresses for this send: the static
- * recipientEmail (if set) plus the current value of the recipientFieldId
- * field (if set and populated on this response). Returns an empty array
- * (with a reason) when nothing could be resolved, e.g. a field-only
- * recipient left blank by the respondent, or a plugin.test event where no
- * response data exists at all.
+ * recipientEmail (if set — now a comma/semicolon/whitespace-separated list, so a scheduled
+ * summary can reach several people) plus the current value of the recipientFieldId field
+ * (if set and populated on this response). Returns an empty array (with a reason) when
+ * nothing could be resolved, e.g. a field-only recipient left blank by the respondent, or a
+ * plugin.test event where no response data exists at all.
  */
 function resolveRecipients(
   config: ValidatedEmailConfig,
   responseData: Record<string, any> | null | undefined,
   hasResponse: boolean
 ): { recipients: string[]; skipReason?: string } {
-  const recipients: string[] = [];
-
-  const staticEmail = config.recipientEmail?.trim();
-  if (staticEmail) {
-    recipients.push(staticEmail);
-  }
+  // parseEmailList already trims, drops empties, and de-dupes the static list case-insensitively.
+  const recipients: string[] = parseEmailList(config.recipientEmail);
 
   let skipReason: string | undefined;
   if (config.recipientFieldId) {
@@ -167,7 +163,7 @@ function resolveRecipients(
       const fieldValue = responseData?.[config.recipientFieldId];
       if (typeof fieldValue === 'string' && fieldValue.trim()) {
         const dynamicEmail = fieldValue.trim();
-        if (!recipients.includes(dynamicEmail)) {
+        if (!recipients.some((r) => r.toLowerCase() === dynamicEmail.toLowerCase())) {
           recipients.push(dynamicEmail);
         }
       } else {

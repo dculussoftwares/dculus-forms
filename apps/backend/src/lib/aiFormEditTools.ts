@@ -1,7 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { conditionalRuleSchema, sanitizeConditions, type ConditionOperator, type ConditionalRule } from '@dculus/types';
-import { generateRandomString } from '@dculus/utils';
+import { generateRandomString, parseEmailList, validateEmailList } from '@dculus/utils';
 import { countResponsesPerField, countResponsesReferencingAnyField } from '../services/responseService.js';
 import { prisma } from './prisma.js';
 
@@ -92,7 +92,6 @@ export type ToolTier = 'full' | 'core' | 'minimal';
 // quiz-grading is deprecated (native quiz mode replaces it — see Form Settings → Quiz) and is
 // deliberately excluded so the AI stops proposing a plugin type the API no longer accepts.
 const AI_PLUGIN_TYPES = ['webhook', 'email'] as const;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function createFormEditTools(
   schema: { pages: any[] },
@@ -581,7 +580,7 @@ export function createFormEditTools(
           secret: z.string().nullable().optional().describe('Optional signing secret'),
         }).optional(),
         email: z.object({
-          recipientEmail: z.string().nullable().optional().describe('Static recipient address'),
+          recipientEmail: z.string().nullable().optional().describe('Static recipient address(es), comma-separated for more than one'),
           recipientField: z.string().nullable().optional().describe('Email field (label or id) whose answer becomes a recipient'),
           subject: z.string().min(1),
           message: z.string().min(1),
@@ -604,11 +603,14 @@ export function createFormEditTools(
           if (!email.recipientEmail && !email.recipientField) {
             return { error: 'Email integrations need recipientEmail, recipientField, or both.' };
           }
-          if (email.recipientEmail && !EMAIL_REGEX.test(email.recipientEmail)) {
-            return { error: `"${email.recipientEmail}" is not a valid email address.` };
+          if (email.recipientEmail) {
+            const { valid, invalid } = validateEmailList(email.recipientEmail);
+            if (invalid.length > 0 || valid.length === 0) {
+              return { error: `"${email.recipientEmail}" is not a valid email address.` };
+            }
           }
           config = { type: 'email', subject: email.subject, message: email.message };
-          if (email.recipientEmail) config.recipientEmail = email.recipientEmail;
+          if (email.recipientEmail) config.recipientEmail = parseEmailList(email.recipientEmail).join(', ');
           if (email.sendToSubmitter !== undefined) config.sendToSubmitter = email.sendToSubmitter;
           if (email.recipientField) {
             const field = resolveField(workingSchema, email.recipientField);
