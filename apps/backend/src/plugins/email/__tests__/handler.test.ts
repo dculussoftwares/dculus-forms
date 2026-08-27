@@ -14,10 +14,15 @@ vi.mock('@dculus/types', async (importOriginal) => {
   };
 });
 
-vi.mock('@dculus/utils', () => ({
-  substituteMentions: vi.fn(),
-  createFieldLabelsMap: vi.fn(),
-}));
+vi.mock('@dculus/utils', async (importOriginal) => {
+  // parseEmailList is pure and the handler depends on its real behavior — keep the actual impl.
+  const actual = await importOriginal<typeof import('@dculus/utils')>();
+  return {
+    ...actual,
+    substituteMentions: vi.fn(),
+    createFieldLabelsMap: vi.fn(),
+  };
+});
 
 vi.mock('../../../services/pdfTemplateService.js', () => ({
   resolveResponsePdfAttachment: vi.fn(),
@@ -988,6 +993,62 @@ describe('Email Handler', () => {
         expect.objectContaining({ to: 'same@example.com' })
       );
       expect(result.recipient).toBe('same@example.com');
+    });
+
+    it('should send to every address in a comma-separated static recipient list', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'ops@example.com, lead@example.com; owner@example.com',
+        subject: 'Weekly summary',
+        message: '<p>Here is this week\'s digest.</p>',
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      const mockResponse = { id: 'response-123', data: {} };
+
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(createFieldLabelsMap).mockReturnValue({});
+      vi.mocked(substituteMentions).mockReturnValue(config.message);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'ops@example.com, lead@example.com, owner@example.com' })
+      );
+      expect(result.recipient).toBe('ops@example.com, lead@example.com, owner@example.com');
+    });
+
+    it('should de-dupe a static list against the field recipient case-insensitively', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'ops@example.com, lead@example.com',
+        recipientFieldId: 'email-field',
+        subject: 'New Form Submission',
+        message: '<p>Hi</p>',
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      const mockResponse = {
+        id: 'response-123',
+        data: { 'email-field': 'Lead@Example.com' },
+      };
+
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(createFieldLabelsMap).mockReturnValue({});
+      vi.mocked(substituteMentions).mockReturnValue(config.message);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(mockContext.sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'ops@example.com, lead@example.com' })
+      );
+      expect(result.recipient).toBe('ops@example.com, lead@example.com');
     });
 
     it('should skip sending (not throw) when the field-based recipient is empty on this submission', async () => {

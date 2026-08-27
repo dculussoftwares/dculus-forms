@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateEmailList } from '@dculus/utils';
 import type { DelayUnit } from './types.js';
 
 export interface GraphValidationError {
@@ -155,7 +156,19 @@ const DIGEST_SCALAR_MENTION_KEYS = new Set([
 // practice; the schema is left generic rather than adding dedicated validation for it.
 const EmailActionConfigSchema = z
   .object({
-    recipientEmail: z.email().optional(),
+    // A comma/semicolon/whitespace-separated list of fixed addresses (one is the common case) —
+    // lets a scheduled summary go to several people. Every token must be a valid address.
+    recipientEmail: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (!val || !val.trim()) return true; // "no recipient at all" is caught by the .refine below
+          const { valid, invalid } = validateEmailList(val);
+          return invalid.length === 0 && valid.length > 0;
+        },
+        { message: 'Enter one or more valid email addresses, separated by commas' }
+      ),
     recipientFieldId: z.string().optional(),
     recipientFieldLabel: z.string().optional(),
     subject: z.string().min(1),

@@ -23,6 +23,7 @@ import {
 } from '@dculus/ui';
 import { Mail, Loader2, Save, X, AlertTriangle, FileText, ExternalLink } from 'lucide-react';
 import { deserializeFormSchema, FillableFormField, extractEmailFields as extractEmailFieldsFromSchema, type EmailFieldInfo } from '@dculus/types';
+import { parseEmailList, validateEmailList } from '@dculus/utils';
 import { useTranslation } from '../../hooks/useTranslation';
 import { GET_PDF_TEMPLATES } from '../../graphql/pdfTemplates';
 import type { ConfigFormProps } from '../core/registry';
@@ -154,7 +155,9 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
       toastError(t('toasts.validationErrorTitle'), t('validation.noMessage'));
       return;
     }
-    const staticEmail = data.recipientEmail?.trim();
+    // Normalize the fixed-address list on save (trim, de-dupe, single ", " separator) so it
+    // reads cleanly next time the form is opened.
+    const staticEmail = parseEmailList(data.recipientEmail).join(', ');
     const hasFieldRecipient = recipientFieldId !== NO_RECIPIENT_FIELD;
     if (!staticEmail && !hasFieldRecipient) {
       toastError(t('toasts.validationErrorTitle'), t('validation.noRecipient'));
@@ -228,13 +231,20 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
             <Input
               id="recipientEmail"
               type="email"
+              multiple
               autoComplete="off"
               placeholder={t('basicInformation.recipientEmail.placeholder')}
               {...register('recipientEmail', {
-                validate: (value) =>
-                  !value ||
-                  /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value) ||
-                  t('basicInformation.recipientEmail.invalid'),
+                validate: (value) => {
+                  if (!value || !value.trim()) return true;
+                  const { valid, invalid } = validateEmailList(value);
+                  if (invalid.length > 0) {
+                    return t('basicInformation.recipientEmail.invalidList', {
+                      values: { emails: invalid.join(', ') },
+                    });
+                  }
+                  return valid.length > 0 || t('basicInformation.recipientEmail.invalid');
+                },
               })}
             />
             {errors.recipientEmail && (

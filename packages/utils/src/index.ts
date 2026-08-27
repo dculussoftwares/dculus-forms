@@ -284,3 +284,6 @@ export * from './fieldTypeUtils.js';
 
 // Re-export field value formatters
 export * from './fieldValueFormatters.js';
+
+// Re-export email recipient-list helpers
+export * from './emailList.js';

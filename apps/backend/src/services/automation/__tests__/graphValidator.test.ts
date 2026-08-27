@@ -348,6 +348,56 @@ describe('validateAutomationGraph', () => {
       expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG);
     });
 
+    it('accepts an email action whose recipientEmail is a comma-separated list', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'form.submitted' } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: {
+                recipientEmail: 'ops@example.com, lead@example.com',
+                subject: 'Hi',
+                message: 'Hello',
+              },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'a1' },
+          { id: 'e2', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validate(graph);
+      expect(codesOf(result)).not.toContain(GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG);
+    });
+
+    it('rejects an email action whose recipientEmail list has an invalid address', () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'form.submitted' } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'email',
+              config: { recipientEmail: 'ops@example.com, not-an-email', subject: 'Hi', message: 'Hello' },
+            },
+          },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'a1' },
+          { id: 'e2', source: 'a1', target: 'end-1' },
+        ],
+      };
+      const result = validate(graph);
+      expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG);
+    });
+
     it('rejects a webhook action with a non-URL url', () => {
       const graph: AutomationGraph = {
         nodes: [
