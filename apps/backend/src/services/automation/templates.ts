@@ -126,7 +126,11 @@ const TEMPLATES: AutomationTemplate[] = [
           config: {
             type: 'email',
             subject: 'Your form summary',
-            message: '<p>You have {{__digestCount}} new responses since the last summary.</p>',
+            // Seeded as a real beautiful-mentions span (not a raw `{{__digestCount}}` string) so the
+            // Message Content editor renders it as a mention chip on load instead of literal braces —
+            // see LexicalRichTextEditor's importDOM, which only recognizes this span shape.
+            message:
+              '<p>You have <span data-lexical-beautiful-mention="true" data-lexical-beautiful-mention-trigger="@" data-lexical-beautiful-mention-value="__digestCount" data-lexical-beautiful-mention-data=\'{"label":"New responses count"}\'>@__digestCount</span> new responses since the last summary.</p>',
             includeDigestTable: true,
           },
         },

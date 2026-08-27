@@ -619,6 +619,11 @@ export const LexicalRichTextEditor: React.FC<LexicalRichTextEditorProps> = ({
               searchDelay={0}
               menuComponent={CustomMentionMenu}
               menuItemComponent={CustomMentionMenuItem}
+              // The library defaults to showing only the first 5 matches. handleMentionSearch
+              // already does the filtering/ranking, and the menu itself scrolls (max-height
+              // below), so cap-less here means every match is reachable — otherwise fields
+              // appended later (e.g. digest mentions) silently vanish off forms with 5+ fields.
+              menuItemLimit={false}
             />
           </>
         )}
