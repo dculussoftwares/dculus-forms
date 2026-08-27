@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Dialog,
@@ -14,8 +15,6 @@ import {
   SelectValue,
   Label,
   Badge,
-  Card,
-  CardContent,
   UserAvatar,
   Separator,
   toastSuccess,
@@ -24,6 +23,7 @@ import {
 import { useTranslation } from '../../hooks/useTranslation';
 import {
   Users,
+  Link as LinkIcon,
   X,
   UserPlus,
   Copy,
@@ -67,11 +67,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   currentUserId
 }) => {
   const { t } = useTranslation('sharing');
+  const navigate = useNavigate();
   const [sharingScope, setSharingScope] = useState<SharingScope>(SharingScope.PRIVATE);
   const [defaultPermission, setDefaultPermission] = useState<PermissionLevel>(PermissionLevel.VIEWER);
   const [selectedUsers, setSelectedUsers] = useState<Map<string, PermissionLevel>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
-  const [linkCopied, setLinkCopied] = useState(false);
+  const [internalLinkCopied, setInternalLinkCopied] = useState(false);
 
   // GraphQL queries and mutations
   const { data: permissionsData, refetch: refetchPermissions } = useQuery(
@@ -189,18 +190,29 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     setSelectedUsers(new Map());
   };
 
-  // Copy link functionality
-  const handleCopyLink = async () => {
-    const formUrl = `${window.location.origin}/dashboard/form/${formId}`;
+  // Copies the INTERNAL form-app URL (this form's dashboard), not the public
+  // respondent link. Opening it requires a form-app sign-in plus a FormPermission
+  // row, so it is only ever useful to teammates. The public link respondents
+  // should receive is `getFormViewerUrl(shortUrl)`, surfaced by "Get Link" on the
+  // form dashboard — see the hint under this card.
+  const handleCopyInternalLink = async () => {
+    const internalUrl = `${window.location.origin}/dashboard/form/${formId}`;
     try {
-      await navigator.clipboard.writeText(formUrl);
-      setLinkCopied(true);
-      toastSuccess(t('toast.success.linkCopied'));
-      setTimeout(() => setLinkCopied(false), 2000);
+      await navigator.clipboard.writeText(internalUrl);
+      setInternalLinkCopied(true);
+      toastSuccess(t('toast.success.internalLinkCopied'));
+      setTimeout(() => setInternalLinkCopied(false), 2000);
     } catch (error) {
-      console.error('Failed to copy share link', error);
+      console.error('Failed to copy internal link', error);
       toastError(t('toast.error.copyFailed'), t('toast.error.clipboardUnavailable'));
     }
+  };
+
+  // Respondent-facing access (sign-in requirement, allowed email domains) lives
+  // in Form Settings, not here — this modal only governs who can EDIT the form.
+  const handleGoToAccessControl = () => {
+    onClose();
+    navigate(`/dashboard/form/${formId}/settings?section=access-control`);
   };
 
   // Permission level icons and labels
@@ -234,39 +246,77 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            {t('modal.title', { values: { formTitle } })}
-          </DialogTitle>
+          <div className="flex items-start gap-3">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+              style={{ backgroundColor: 'var(--tf-icon-lavender)' }}
+            >
+              <Users className="h-4 w-4" style={{ color: '#5c2e6b' }} />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle className="text-base font-semibold text-primary text-left">
+                {t('modal.title', { values: { formTitle } })}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground mt-0.5 text-left">
+                {t('modal.subtitle')}
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Copy Link Section */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <Label className="text-sm font-medium">{t('modal.copyLink.label')}</Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {t('modal.copyLink.description')}
+          {/* Internal (form-app) link — explicitly NOT the respondent link */}
+          <div
+            className="rounded-xl bg-white dark:bg-card"
+            style={{
+              border: '1px solid var(--tf-border-medium)',
+              boxShadow: '0 1px 4px var(--tf-overlay)',
+            }}
+          >
+            <div className="p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: 'var(--tf-icon-gray)' }}
+                >
+                  <LinkIcon className="h-4 w-4" style={{ color: 'var(--tf-dark)' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <Label className="text-sm font-medium text-primary">{t('modal.internalLink.label')}</Label>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {t('modal.internalLink.description')}
                   </p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleCopyLink}
+                  onClick={handleCopyInternalLink}
                   className="ml-4"
                 >
-                  {linkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  {linkCopied ? t('modal.copyLink.copiedButton') : t('modal.copyLink.copyButton')}
+                  {internalLinkCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {internalLinkCopied
+                    ? t('modal.internalLink.copiedButton')
+                    : t('modal.internalLink.copyButton')}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+              <p
+                className="text-xs text-muted-foreground mt-3 pt-3"
+                style={{ borderTop: '1px solid var(--tf-border-light)' }}
+              >
+                {t('modal.internalLink.publicLinkHint')}
+              </p>
+            </div>
+          </div>
 
-          {/* Sharing Scope */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">{t('modal.scope.label')}</Label>
+          {/* Editor access scope — governs the form BUILDER, not who may respond */}
+          <div
+            className="rounded-xl bg-white dark:bg-card p-4 space-y-3"
+            style={{
+              border: '1px solid var(--tf-border-medium)',
+              boxShadow: '0 1px 4px var(--tf-overlay)',
+            }}
+          >
+            <Label className="text-sm font-medium text-primary">{t('modal.scope.label')}</Label>
             <Select value={sharingScope} onValueChange={(value) => setSharingScope(value as SharingScope)}>
               <SelectTrigger>
                 <SelectValue />
@@ -292,6 +342,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 </SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              {t('modal.scope.respondentHint')}{' '}
+              <button
+                type="button"
+                onClick={handleGoToAccessControl}
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {t('modal.scope.respondentHintLink')}
+              </button>
+            </p>
           </div>
 
           {/* Default Permission for Organization Members */}
@@ -331,7 +391,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                       if (!user) return null;
                       
                       return (
-                        <div key={userId} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                        <div key={userId} className="flex items-center justify-between p-2 rounded-lg"
+                          style={{ backgroundColor: 'var(--tf-tab-bg)' }}>
                           <div className="flex items-center gap-3">
                             <UserAvatar name={user.name} email={user.email} image={user.image} size="md" />
                             <div>
@@ -402,7 +463,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               <Label className="text-sm font-medium">{t('modal.currentPermissions.label')}</Label>
               <div className="space-y-2">
                 {currentPermissions.map((permission: FormPermission) => (
-                  <div key={permission.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div
+                    key={permission.id}
+                    className="flex items-center justify-between p-3 rounded-xl"
+                    style={{ border: '1px solid var(--tf-border-medium)' }}
+                  >
                     <div className="flex items-center gap-3">
                       <UserAvatar name={permission.user.name} email={permission.user.email} image={permission.user.image} size="md" />
                       <div>

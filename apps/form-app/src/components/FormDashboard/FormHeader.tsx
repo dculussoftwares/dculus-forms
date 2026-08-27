@@ -132,12 +132,11 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
             <>
               <Button
                 data-testid="get-form-link-button"
-                variant="outline"
                 onClick={onCollectResponses}
                 className="h-8 px-3 text-sm"
               >
                 <Link className="mr-1.5 h-3.5 w-3.5" />
-                {t('header.actions.getLink')}
+                {t('header.actions.collectResponses')}
               </Button>
               {onUnpublish && (
                 <Button
@@ -233,7 +232,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
             className="gap-1.5 text-xs h-8 text-muted-foreground"
           >
             <Share2 className="h-3.5 w-3.5" />
-            {t('header.actions.share')}
+            {t('header.actions.collaborate')}
           </Button>
         )}
 

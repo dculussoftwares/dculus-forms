@@ -1,0 +1,49 @@
+{
+  "title": "Collect responses",
+  "subtitle": "Share this form with the people you want to hear from.",
+  "draft": {
+    "title": "This form is a draft",
+    "description": "Visitors opening the link will see “form not found”. Publish it to start collecting responses.",
+    "publish": "Publish now",
+    "publishing": "Publishing..."
+  },
+  "whoCanRespond": {
+    "label": "Who can respond",
+    "options": {
+      "anyone": {
+        "label": "Anyone with the link",
+        "hint": "No sign-in. Responses are anonymous unless you ask for an email in the form."
+      },
+      "anyoneWithEmail": {
+        "label": "Anyone with the link — record their email",
+        "hint": "Respondents sign in so their verified email is saved with the response."
+      },
+      "signIn": {
+        "label": "Only people who sign in",
+        "hint": "Respondents must sign in. Optionally limit them to specific email domains."
+      }
+    },
+    "domains": {
+      "label": "Limit to these email domains (optional)",
+      "placeholder": "example.com, partner.org",
+      "help": "Comma-separated. Leave empty to allow any signed-in respondent.",
+      "invalid": "Invalid domain",
+      "invalidMessage": "“{{domain}}” is not a valid domain (expected e.g. example.com)."
+    },
+    "ownerOnly": "Only the form owner can change who can respond.",
+    "moreOptions": "More options",
+    "saved": "Updated who can respond",
+    "saveFailed": "Couldn't update who can respond"
+  },
+  "link": {
+    "label": "Form link",
+    "help": "Anyone allowed by the setting above can open this link and submit the form.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copiedToast": "Form link copied to clipboard",
+    "copyFailed": "Failed to copy link",
+    "clipboardUnavailable": "Unable to access clipboard",
+    "open": "Open form"
+  },
+  "close": "Close"
+}

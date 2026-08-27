@@ -19,8 +19,9 @@ import { FormHeader } from '../components/FormDashboard/FormHeader';
 import { StatsGrid } from '../components/FormDashboard/StatsGrid';
 import { QuickActions } from '../components/FormDashboard/QuickActions';
 import { BuilderNudgeBanner } from '../components/FormDashboard/BuilderNudgeBanner';
-import { DeleteDialog, UnpublishDialog, CollectResponsesDialog } from '../components/FormDashboard/Dialogs';
+import { DeleteDialog, UnpublishDialog } from '../components/FormDashboard/Dialogs';
 import { ShareModal } from '../components/sharing/ShareModal';
+import { CollectResponsesPanel } from '../components/sharing/CollectResponsesPanel';
 import { PublishSuccessAnimation } from '../components/FormDashboard/PublishSuccessAnimation';
 import { useFormDashboard } from '../hooks/useFormDashboard';
 import { useAuth } from '../contexts/AuthContext';
@@ -276,13 +277,20 @@ const FormDashboard: React.FC = () => {
           loading={updateLoading}
         />
 
-        <CollectResponsesDialog
+        {/* Respondent-facing distribution. The teammate-facing counterpart is
+            ShareModal ("Collaborate") below — deliberately two surfaces, see
+            docs/form-embed-v1-spec.md §2. */}
+        <CollectResponsesPanel
           open={showCollectResponsesDialog}
           onOpenChange={setShowCollectResponsesDialog}
-          formUrl={formViewerUrl}
+          formId={form.id}
           formTitle={form.title}
-          onCopyLink={handleCopyLink}
-          onOpenForm={handleOpenFormViewer}
+          formUrl={formViewerUrl}
+          isPublished={form.isPublished}
+          settings={form.settings}
+          userPermission={form.userPermission}
+          onPublish={handlePublish}
+          publishLoading={updateLoading}
         />
 
         <AlertDialog open={showDuplicateDialog} onOpenChange={handleDuplicateDialogClose}>
@@ -318,7 +326,7 @@ const FormDashboard: React.FC = () => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Share Modal */}
+        {/* Collaborate — teammate-facing permissions */}
         {showShareModal && organizationId && user && (
           <ShareModal
             isOpen={showShareModal}
