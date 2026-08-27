@@ -49,7 +49,7 @@ function App() {
                 later" for identity-gated forms with a deferred grade release. */}
             <Route path="/f/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={null}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
             {/* Respondent sign-in redirect target (Google + one-time-token bridge) */}
-            <Route path="/auth/callback" element={<Suspense fallback={null}><OAuthCallback /></Suspense>} />
+            <Route path="/auth/callback" element={<FormViewerErrorBoundary><Suspense fallback={null}><OAuthCallback /></Suspense></FormViewerErrorBoundary>} />
             {/* Legacy URL format support (without /f/ prefix) */}
             <Route path="/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={null}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
             <Route path="/:shortUrl" element={<FormViewerErrorBoundary><FormViewer /></FormViewerErrorBoundary>} />
@@ -58,15 +58,17 @@ function App() {
             <Route
               path="/*"
               element={
-                <Suspense fallback={null}>
-                  <Header />
-                  <main className="container mx-auto px-4 py-8">
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/demo" element={<DemoPage />} />
-                    </Routes>
-                  </main>
-                </Suspense>
+                <FormViewerErrorBoundary>
+                  <Suspense fallback={null}>
+                    <Header />
+                    <main className="container mx-auto px-4 py-8">
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/demo" element={<DemoPage />} />
+                      </Routes>
+                    </main>
+                  </Suspense>
+                </FormViewerErrorBoundary>
               }
             />
           </Routes>
