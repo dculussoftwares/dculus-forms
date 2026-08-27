@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router';
 import { ApolloProvider } from '@apollo/client/react';
-import { Button } from '@dculus/ui';
+import { Button, LoadingSpinner } from '@dculus/ui';
 import { client } from './services/apolloClient';
 // FormViewer stays a static import — it's the critical path for nearly every
 // visit (deep link to /f/:shortUrl) and lazy-loading it would only add an
@@ -37,6 +37,12 @@ class FormViewerErrorBoundary extends React.Component<
   }
 }
 
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <LoadingSpinner />
+  </div>
+);
+
 function App() {
   return (
     <ApolloProvider client={client}>
@@ -47,11 +53,11 @@ function App() {
             <Route path="/f/:shortUrl" element={<FormViewerErrorBoundary><FormViewer /></FormViewerErrorBoundary>} />
             {/* Native Quiz (epic #289, Story 16/#320, D9): "check your result
                 later" for identity-gated forms with a deferred grade release. */}
-            <Route path="/f/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={null}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
+            <Route path="/f/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
             {/* Respondent sign-in redirect target (Google + one-time-token bridge) */}
-            <Route path="/auth/callback" element={<FormViewerErrorBoundary><Suspense fallback={null}><OAuthCallback /></Suspense></FormViewerErrorBoundary>} />
+            <Route path="/auth/callback" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><OAuthCallback /></Suspense></FormViewerErrorBoundary>} />
             {/* Legacy URL format support (without /f/ prefix) */}
-            <Route path="/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={null}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
+            <Route path="/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
             <Route path="/:shortUrl" element={<FormViewerErrorBoundary><FormViewer /></FormViewerErrorBoundary>} />
 
             {/* Main app routes - with header */}
@@ -59,7 +65,7 @@ function App() {
               path="/*"
               element={
                 <FormViewerErrorBoundary>
-                  <Suspense fallback={null}>
+                  <Suspense fallback={<PageFallback />}>
                     <Header />
                     <main className="container mx-auto px-4 py-8">
                       <Routes>
