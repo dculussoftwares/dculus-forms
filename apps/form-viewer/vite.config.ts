@@ -24,4 +24,16 @@ export default defineConfig({
       },
     ],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('@apollo') || id.includes('/graphql/')) return 'vendor-apollo';
+          if (id.includes('@sentry')) return 'vendor-sentry';
+          if (id.includes('better-auth')) return 'vendor-auth';
+        },
+      },
+    },
+  },
 })
