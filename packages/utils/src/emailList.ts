@@ -1,10 +1,28 @@
 /**
  * Single email address check — intentionally permissive (not full RFC 5322), matching the
- * lightweight checks already used across the app (backend aiFormEditTools `EMAIL_REGEX`, the
- * email plugin ConfigForm's inline regex). Good enough to catch typos and stray separators;
- * the SMTP server is the real authority on deliverability.
+ * lightweight checks already used across the app. Good enough to catch typos and stray
+ * separators; the SMTP server is the real authority on deliverability.
+ *
+ * Implemented with string ops rather than one regex on purpose: the obvious pattern
+ * (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`) backtracks polynomially on adversarial input like
+ * `"!@!.!.!.!."` because `.` isn't excluded from the char classes around `\.`. This runs in
+ * linear time on any input.
  */
-export const EMAIL_ADDRESS_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export function isEmailAddress(value: string): boolean {
+  if (!value || /\s/.test(value)) return false;
+
+  const at = value.indexOf('@');
+  // Exactly one '@', with a non-empty local part before it.
+  if (at <= 0 || at !== value.lastIndexOf('@')) return false;
+
+  const domain = value.slice(at + 1);
+  if (!domain) return false;
+
+  // Domain must contain a dot that is neither the first nor the last character
+  // (so "a@b.c" passes, "a@.com" / "a@com." / "a@com" do not).
+  const dot = domain.lastIndexOf('.');
+  return dot > 0 && dot < domain.length - 1;
+}
 
 /**
  * Splits a free-text recipient string into individual addresses. Accepts comma, semicolon,
@@ -31,7 +49,7 @@ export function parseEmailList(raw: string | null | undefined): string[] {
 
 /**
  * Parses `raw` with {@link parseEmailList} and partitions the addresses into valid / invalid
- * (per {@link EMAIL_ADDRESS_REGEX}). Both arrays are empty for an empty input — callers decide
+ * (per {@link isEmailAddress}). Both arrays are empty for an empty input — callers decide
  * whether "no addresses at all" is itself an error for their context.
  */
 export function validateEmailList(raw: string | null | undefined): {
@@ -41,7 +59,7 @@ export function validateEmailList(raw: string | null | undefined): {
   const valid: string[] = [];
   const invalid: string[] = [];
   for (const addr of parseEmailList(raw)) {
-    (EMAIL_ADDRESS_REGEX.test(addr) ? valid : invalid).push(addr);
+    (isEmailAddress(addr) ? valid : invalid).push(addr);
   }
   return { valid, invalid };
 }

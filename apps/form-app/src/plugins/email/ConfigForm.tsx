@@ -228,10 +228,14 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
 
           <div className="space-y-2">
             <Label htmlFor="recipientEmail">{t('basicInformation.recipientEmail.label')}</Label>
+            {/* type="text" (not "email multiple"): native constraint validation for
+                `<input type="email" multiple>` only accepts comma separators and would reject
+                the semicolon/whitespace-separated lists parseEmailList also supports, before
+                our own validate() runs. inputMode keeps the email keyboard on mobile. */}
             <Input
               id="recipientEmail"
-              type="email"
-              multiple
+              type="text"
+              inputMode="email"
               autoComplete="off"
               placeholder={t('basicInformation.recipientEmail.placeholder')}
               {...register('recipientEmail', {

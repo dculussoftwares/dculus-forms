@@ -18,7 +18,7 @@
       "required": "Recipient email is required",
       "invalid": "Invalid email address",
       "invalidList": "Not a valid email address: {{emails}}",
-      "hint": "Separate multiple addresses with commas. Optional if you select a form email field below — you can use both at once."
+      "hint": "Separate multiple addresses with commas, semicolons, or spaces. Optional if you select a form email field below — you can use both at once."
     },
     "recipientField": {
       "label": "Or send to a form's email field",

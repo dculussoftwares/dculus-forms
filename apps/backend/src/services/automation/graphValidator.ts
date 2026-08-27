@@ -167,7 +167,7 @@ const EmailActionConfigSchema = z
           const { valid, invalid } = validateEmailList(val);
           return invalid.length === 0 && valid.length > 0;
         },
-        { message: 'Enter one or more valid email addresses, separated by commas' }
+        { message: 'Enter one or more valid email addresses, separated by commas, semicolons, or spaces' }
       ),
     recipientFieldId: z.string().optional(),
     recipientFieldLabel: z.string().optional(),
