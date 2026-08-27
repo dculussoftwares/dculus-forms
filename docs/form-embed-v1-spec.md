@@ -252,7 +252,7 @@ Host page loads
    │
    ├─ embed.js runs, finds every [data-dculus-form]
    │     └─ builds <iframe src="/embed/aB3xY9?mode=inline&bg=transparent&h=auto">
-   │        width:100%  height:150px (placeholder)  border:0  loading="lazy"
+   │        width:100%  height:400px (placeholder)  border:0  loading="lazy"
    │
    ├─ iframe loads  →  FormViewer (embedded={true})
    │     └─ postMessage → host   { dculus:ready, formId }
@@ -283,7 +283,7 @@ Host page loads
 | `embed.js` blocked (ad blocker, CSP) | The `<div>` stays empty. **Mitigation:** the snippet includes a `<noscript>` fallback link to `/f/:shortUrl`. |
 | Form unpublished / deleted | Iframe renders the existing "Form Not Found" card (`FormViewer.tsx:331`) at a compact height. |
 | `embed.enabled === false` | `/embed/*` renders "This form isn't available for embedding" — never the form. |
-| Resize message never arrives (old cached script) | Iframe keeps the 150 px placeholder → visibly broken. **Mitigation:** the placeholder is `min-height:400px`, so the worst case is a usable-but-scrolling frame. |
+| Resize message never arrives (old cached script) | Iframe keeps the 400 px placeholder. **Mitigation:** 400 px is the single placeholder value used everywhere (flow, CSS, fallback), chosen so the worst case is a usable-but-scrolling frame rather than a sliver. |
 
 ---
 
@@ -348,7 +348,7 @@ https://forms.dculus.com/f/aB3xY9
 
 **3. Standard iframe**
 ```html
-<iframe src="https://forms.dculus.com/embed/aB3xY9?mode=inline&bg=transparent"
+<iframe src="https://forms.dculus.com/embed/aB3xY9?mode=iframe&h=600&bg=transparent"
         style="width:100%;height:600px;border:0" loading="lazy"
         title="Customer feedback"></iframe>
 ```
@@ -410,13 +410,16 @@ https://forms.dculus.com/f/aB3xY9
 { type:'dculus:resize',   v:1, formId, instanceId, height }
 { type:'dculus:submit',   v:1, formId, instanceId }   // no answers
 { type:'dculus:scroll',   v:1, formId, instanceId }
-{ type:'dculus:close',    v:1, formId, instanceId }   // lightbox self-close after submit
+{ type:'dculus:closeself',v:1, formId, instanceId }   // "dismiss my overlay" — lightbox auto-close after submit
 
 // host → iframe
-{ type:'dculus:host',     v:1, hostname, viewportWidth }
+{ type:'dculus:host',     v:1, instanceId, hostname, viewportWidth }
+{ type:'dculus:close',    v:1, instanceId }           // host dismisses the lightbox
 ```
 
-**Origin checks, both directions.** The host validates `event.origin === VIEWER_ORIGIN` (baked in at build time); the iframe validates against the hostname it was handed and posts to that origin, never `'*'`. **No response data ever crosses this boundary** — a host page that wants answers uses a webhook or an automation.
+`dculus:close` is host→iframe only; the iframe asking to be dismissed is `dculus:closeself`. Same contract as the strategy doc — one name must not mean two directions.
+
+**Origin checks, both directions.** The host validates `event.origin === VIEWER_ORIGIN` (baked in at build time) **and** `event.source === iframe.contentWindow`; the iframe validates `event.source === window.parent` and matches the **full** parent origin (scheme + host + port), then posts back to that exact origin — never `'*'`, and never a hostname match, which would accept `http://` and odd ports. The bare hostname is for analytics attribution only, never a trust decision. **No response data ever crosses this boundary** — a host page that wants answers uses a webhook or an automation.
 
 ---
 
@@ -426,9 +429,9 @@ New route in `apps/form-viewer/src/App.tsx`, rendering the existing `FormViewer`
 
 | Query param | Values | Effect |
 |---|---|---|
-| `mode` | `inline` \| `lightbox` | recorded as `embedContext` |
+| `mode` | `inline` \| `lightbox` \| `iframe` | recorded as `embedContext`; `iframe` is the no-JS snippet (fixed height, no resize messages) |
 | `bg` | `transparent` \| `white` | shell background |
-| `h` | `auto` \| px | `auto` enables the `ResizeObserver` + resize messages |
+| `h` | `auto` \| px | `auto` enables the `ResizeObserver` + resize messages. `mode=iframe` always passes an explicit px value |
 
 Guards, in order: `embed.enabled !== false` → published → the existing access-control/time-window/limit guards (all already server-side, all unchanged).
 

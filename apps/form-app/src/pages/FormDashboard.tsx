@@ -289,7 +289,11 @@ const FormDashboard: React.FC = () => {
           isPublished={form.isPublished}
           settings={form.settings}
           userPermission={form.userPermission}
-          onPublish={handlePublish}
+          onPublish={
+            form.userPermission === 'OWNER' || form.userPermission === 'EDITOR'
+              ? handlePublish
+              : undefined
+          }
           publishLoading={updateLoading}
         />
 

@@ -14,6 +14,7 @@ import {
 import { Copy, Check, ExternalLink, AlertTriangle, Send } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFormSettings } from '../../hooks/useFormSettings';
+import type { FormSettings } from '@dculus/types';
 import { WhoCanRespondSelect, type AudienceSettings } from './WhoCanRespondSelect';
 
 interface CollectResponsesPanelProps {
@@ -24,8 +25,8 @@ interface CollectResponsesPanelProps {
   /** Public respondent URL, already built with getFormViewerUrl(). */
   formUrl: string;
   isPublished: boolean;
-  /** `form.settings` straight from GET_FORM_BY_ID. */
-  settings?: any;
+  /** `form.settings` straight from GET_FORM_BY_ID — null for a form that has never saved settings. */
+  settings?: FormSettings | null;
   /** OWNER / EDITOR / VIEWER — access control is OWNER-gated server-side. */
   userPermission?: string | null;
   onPublish?: () => void;

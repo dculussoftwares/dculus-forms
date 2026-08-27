@@ -196,13 +196,29 @@ A "Powered by dculus" chip in the embed's bottom-right is the standard growth lo
 
 `FormSettings` is a `Json?` column (`apps/backend/prisma/schema.prisma:148`), typed in `packages/types/src/index.ts:98` and mirrored in GraphQL at `apps/backend/src/graphql/schema.ts:151`. Adding `embed` is purely additive — absent means "defaults", byte-for-byte unchanged behaviour for existing forms.
 
+> **Canonical shape lives in [`form-embed-v1-spec.md`](./form-embed-v1-spec.md) §10.**
+> What follows is the **Phase 2+ superset** — the same persisted
+> `FormSettings.embed` column and GraphQL type, widened. Where the two differ,
+> the v1 spec wins, because it is what ships first and what the migration is
+> written against. Concretely: v1 persists `type`
+> (`link|button|iframe|inline|lightbox`); the extra rendering modes below
+> (`drawer`, `fullPage`) are added to that same union in Phase 2 — they are not
+> a second field. **`lightbox` is the canonical name for the modal mode**;
+> "popup" appears in this document only as prose, never as a stored value.
+
 ```typescript
-export type EmbedMode = 'inline' | 'popup' | 'drawer' | 'fullPage';
+// Phase 2+ superset — see the v1 spec for what actually ships first.
+export type EmbedType =
+  | 'link' | 'button' | 'iframe' | 'inline' | 'lightbox'   // v1
+  | 'drawer' | 'fullPage';                                  // Phase 2
 
 export interface EmbedSettings {
-  /** Absent/false = the form is not embeddable; frame-ancestors stays 'none'. */
+  /**
+   * Absent = embeddable (new forms default to true, v1 spec §14 decision 4).
+   * Only an explicit `false` disables it and tightens frame-ancestors.
+   */
   enabled: boolean;
-  mode: EmbedMode;
+  type: EmbedType;
   /** CSS width, e.g. "100%" | "640px". Default "100%". */
   width?: string;
   /** 'auto' = post-message resize; number = fixed px. Default 'auto'. */
@@ -212,7 +228,7 @@ export interface EmbedSettings {
   hideBranding?: boolean;
   /** Empty/absent = any origin may frame it. Hostnames, no scheme. */
   allowedDomains?: string[];
-  /** popup/drawer only. */
+  /** lightbox/drawer only. */
   trigger?: { label: string; position?: 'right' | 'left'; openOnLoadDelayMs?: number };
   /** Host-page URL to navigate to after submit (postMessage → host). */
   redirectAfterSubmitUrl?: string;
@@ -227,7 +243,9 @@ Mirror as `EmbedSettings` / `EmbedSettingsInput` in the GraphQL schema alongside
 ```prisma
 model FormViewAnalytics {
   // … existing …
-  embedContext  String?   // 'direct' | 'inline' | 'popup' | 'drawer' | 'fullPage'
+  // Same value set as EmbedType above, plus 'direct' for a non-embedded view.
+  // v1 writes: 'direct' | 'inline' | 'lightbox' | 'iframe'. Phase 2 adds 'drawer' | 'fullPage'.
+  embedContext  String?
   embedHost     String?   // parent page hostname only — never the full URL/query
   @@index([formId, embedHost])
 }
@@ -298,22 +316,38 @@ Script budget: **< 5 KB gzipped, zero dependencies, no framework.** It must not 
 
 Namespaced, versioned, origin-checked in both directions. Never `postMessage(..., '*')` for anything carrying a token.
 
+Every message carries `formId` **and** `instanceId` — the same page may embed the
+same form twice, and without an instance discriminator a resize meant for one
+frame resizes the other (see risk 10).
+
 ```typescript
 // iframe → host
-{ type: 'dculus:ready',    v: 1, formId }
-{ type: 'dculus:resize',   v: 1, formId, height: number }
-{ type: 'dculus:page',     v: 1, formId, pageIndex, pageCount }
-{ type: 'dculus:submit',   v: 1, formId }            // no response data — never leak answers to the host
-{ type: 'dculus:redirect', v: 1, formId, url }
-{ type: 'dculus:scroll',   v: 1, formId }            // "my top is off-screen, please scroll"
+{ type: 'dculus:ready',     v: 1, formId, instanceId }
+{ type: 'dculus:resize',    v: 1, formId, instanceId, height: number }
+{ type: 'dculus:page',      v: 1, formId, instanceId, pageIndex, pageCount }
+{ type: 'dculus:submit',    v: 1, formId, instanceId }   // no response data — never leak answers to the host
+{ type: 'dculus:redirect',  v: 1, formId, instanceId, url }
+{ type: 'dculus:scroll',    v: 1, formId, instanceId }   // "my top is off-screen, please scroll"
+{ type: 'dculus:closeself', v: 1, formId, instanceId }   // "dismiss my overlay" (post-submit auto-close)
 
 // host → iframe
-{ type: 'dculus:host',     v: 1, hostname, viewportWidth }
-{ type: 'dculus:close',    v: 1 }                    // popup/drawer dismissal
+{ type: 'dculus:host',      v: 1, instanceId, hostname, viewportWidth }
+{ type: 'dculus:close',     v: 1, instanceId }           // host dismisses the popup/drawer
 ```
 
+**`dculus:close` is host→iframe only.** The iframe asking to be dismissed is
+`dculus:closeself`. One name for two directions is how a loader ends up
+dismissing the wrong thing.
+
 Rules:
-- The iframe validates `event.origin` against the `hostname` it was told, and the host validates against the viewer origin baked into `embed.js` at build time.
+- **Origin binding — one contract, used by both directions.** The host bakes the
+  viewer origin in at build time and checks `event.origin === VIEWER_ORIGIN`
+  *and* `event.source === iframe.contentWindow`. The iframe checks
+  `event.source === window.parent` and matches `event.origin` against the **full
+  parent origin** (scheme + host + port), then uses that exact origin as
+  `targetOrigin` — never `'*'`, and never a hostname comparison, which would
+  accept `http://` and a non-default port. The bare hostname is kept only for
+  analytics attribution (`embedHost`), never for a trust decision.
 - **`dculus:submit` carries no answer data.** A host page that wants the response should use a webhook/automation. Posting answers to the parent frame is a data-exfiltration path dressed up as a convenience.
 - Resize is emitted from a `ResizeObserver` on the layout root, **debounced (~100 ms) and dead-banded (ignore deltas < 4 px)** — this is what prevents the jitter loop where a resize changes wrapping which changes height which triggers a resize.
 
@@ -332,6 +366,13 @@ iframe stores token via setRespondentToken() ─┘ then refetch() — the exact
                                                 call the existing SignInGate makes.
 ```
 
+- **Origin binding for the popup.** The iframe generates a one-time `state` value,
+  stores it, and passes `state` + `returnOrigin` on the `window.open` URL. The
+  callback echoes `state` back and posts the token **only** to that exact
+  `returnOrigin` (full origin, not hostname), and only if `returnOrigin` is one
+  the form is permitted to be embedded on. The opener rejects any message whose
+  `state` doesn't match the one it generated. Without both halves, a mismatched
+  or attacker-supplied origin can receive a respondent token.
 - `SignInGate` gains an `embedded` prop that swaps the redirect for `window.open`. The OTP path could stay inline (it is our own UI, no third-party frame busting) — but keeping **both** paths in the popup is simpler to reason about and to test.
 - Popup blockers: the `window.open` must be called **synchronously in the click handler**, never after an `await`.
 - The iframe needs `allow-popups` and `allow-popups-to-escape-sandbox` if a `sandbox` attribute is used at all.
@@ -352,11 +393,17 @@ Cloudflare Pages serves the viewer statically, so a per-form `frame-ancestors` h
 ```
 /embed/*
   Content-Security-Policy: frame-ancestors *;
-  X-Frame-Options:
+  ! X-Frame-Options
 /*
   Content-Security-Policy: frame-ancestors 'self';
   X-Frame-Options: SAMEORIGIN
 ```
+
+The `!` prefix is Cloudflare Pages' *remove-header* syntax. An empty
+`X-Frame-Options:` value does not unset an inherited header — it sends an empty
+one, which some browsers still treat as a deny. `/embed/*` must have no
+`X-Frame-Options` at all, since the header has no allowlist form and would
+override the permissive `frame-ancestors` above it.
 
 This closes the current gap in §3.4: only `/embed/*` is framable, and the hosted form page stops being silently embeddable by anyone.
 
@@ -394,7 +441,7 @@ This closes the current gap in §3.4: only `/embed/*` is framable, and the hoste
 | 9 | Autofocus scroll-jacks the host page | Low | `autoFocusFirstField` defaults **false** when embedded |
 | 10 | Multiple embeds of the same form on one page | Low | Per-instance IDs in the loader; `postMessage` messages carry `formId` + instance |
 | 11 | Print / PDF of the host page cuts the form | Low | `@media print` rules in the embedded layout |
-| 12 | Dark-mode mismatch with the host site | Low | Transparent background default + an explicit `theme=light|dark|auto` param |
+| 12 | Dark-mode mismatch with the host site | Low | Transparent background default + an explicit `theme=light\|dark\|auto` param |
 
 ---
 
