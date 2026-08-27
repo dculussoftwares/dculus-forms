@@ -24,8 +24,8 @@
       "publishing": "Publishing...",
       "unpublish": "Unpublish",
       "unpublishing": "Unpublishing...",
-      "getLink": "Get Link",
-      "share": "Share",
+      "collectResponses": "Collect responses",
+      "collaborate": "Collaborate",
       "preview": "Preview",
       "analytics": "Analytics",
       "editForm": "Edit Form",
@@ -112,12 +112,6 @@
       "cancel": "Cancel",
       "confirm": "Unpublish Form",
       "confirming": "Unpublishing..."
-    },
-    "collectResponses": {
-      "title": "Collect Responses",
-      "description": "Share this link to collect responses for \"{{formTitle}}\"",
-      "close": "Close",
-      "openForm": "Open Form"
     }
   },
   "publishSuccess": {

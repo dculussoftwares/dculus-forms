@@ -1,20 +1,24 @@
 {
   "modal": {
-    "title": "Share \"{{formTitle}}\"",
-    "copyLink": {
-      "label": "Form Link",
-      "description": "Anyone with this link can view the form",
-      "copyButton": "Copy link",
-      "copiedButton": "Copied"
+    "title": "Collaborate on \"{{formTitle}}\"",
+    "subtitle": "Give teammates access to view or edit this form.",
+    "internalLink": {
+      "label": "Internal link",
+      "description": "Opens this form's dashboard in Dculus. Only teammates you give access to below can open it.",
+      "copyButton": "Copy internal link",
+      "copiedButton": "Copied",
+      "publicLinkHint": "Need the link to send to respondents? Use “Collect responses” on the form dashboard — this one won't work for them."
     },
     "scope": {
-      "label": "Sharing Scope",
+      "label": "Who can edit this form",
       "private": "Private - Only specific people",
       "specificMembers": "Specific members",
-      "allOrgMembers": "All organization members"
+      "allOrgMembers": "All organization members",
+      "respondentHint": "Looking for who can fill in this form?",
+      "respondentHintLink": "Go to Access control"
     },
     "defaultPermission": {
-      "label": "Default Permission for Organization Members",
+      "label": "Default permission for organization members",
       "viewer": "Viewer - Can view form",
       "editor": "Editor - Can edit form"
     },
@@ -35,8 +39,8 @@
     },
     "actions": {
       "cancel": "Cancel",
-      "share": "Share",
-      "sharing": "Sharing..."
+      "share": "Save",
+      "sharing": "Saving..."
     }
   },
   "toast": {
@@ -44,7 +48,7 @@
       "settingsUpdated": "Form sharing settings updated successfully",
       "permissionUpdated": "User permission updated successfully",
       "accessRemoved": "User access removed successfully",
-      "linkCopied": "Form link copied to clipboard"
+      "internalLinkCopied": "Internal link copied to clipboard"
     },
     "error": {
       "settingsUpdateFailed": "Failed to update sharing settings",
