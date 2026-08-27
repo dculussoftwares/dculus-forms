@@ -12,6 +12,18 @@ export default defineConfig({
       '@dculus/types': path.resolve(__dirname, '../../packages/types/src/index'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('@apollo') || id.includes('/graphql/')) return 'vendor-apollo';
+          if (id.includes('better-auth')) return 'vendor-auth';
+          if (id.includes('@radix-ui')) return 'vendor-radix';
+        },
+      },
+    },
+  },
   server: {
     port: 3002,
     proxy: {

@@ -25,13 +25,28 @@ export default defineConfig({
     ],
   },
   build: {
+    // The pdfme designer (@pdfme/ui, @pdfme/schemas) is lazy-loaded via
+    // React.lazy() in App.tsx and never lands in the initial page load, so
+    // its large chunk size doesn't affect load performance — raise the limit
+    // to stop Rollup warning about it.
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         // P2-20: Split heavy third-party libraries into named chunks to improve
         // caching and reduce initial bundle size.
-        manualChunks: {
-          'vendor-yjs': ['yjs'],
-          'vendor-recharts': ['recharts'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('yjs')) return 'vendor-yjs';
+          if (id.includes('recharts')) return 'vendor-recharts';
+          if (id.includes('@apollo') || id.includes('/graphql/')) return 'vendor-apollo';
+          if (id.includes('@sentry')) return 'vendor-sentry';
+          if (id.includes('better-auth')) return 'vendor-auth';
+          if (id.includes('@dnd-kit')) return 'vendor-dnd-kit';
+          if (id.includes('@radix-ui')) return 'vendor-radix';
+          if (id.includes('@pdfme')) return 'vendor-pdfme';
+          if (id.includes('@xyflow') || id.includes('@dagrejs')) return 'vendor-flow';
+          if (id.includes('@ai-sdk') || id.match(/[\\/]ai[\\/]/)) return 'vendor-ai';
+          if (id.includes('react-markdown') || id.includes('remark') || id.includes('mdast') || id.includes('micromark') || id.includes('unified') || id.includes('hast')) return 'vendor-markdown';
         },
       },
     },

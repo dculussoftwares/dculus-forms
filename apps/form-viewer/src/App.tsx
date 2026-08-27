@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router';
 import { ApolloProvider } from '@apollo/client/react';
-import { Button } from '@dculus/ui';
+import { Button, LoadingSpinner } from '@dculus/ui';
 import { client } from './services/apolloClient';
-import Header from './components/Header';
-import Home from './pages/Home';
-import DemoPage from './components/DemoPage';
+// FormViewer stays a static import — it's the critical path for nearly every
+// visit (deep link to /f/:shortUrl) and lazy-loading it would only add an
+// extra network round-trip with no benefit. The secondary routes below are
+// lazy so they don't bloat that critical bundle.
 import FormViewer from './pages/FormViewer';
-import QuizResultPage from './pages/QuizResultPage';
-import OAuthCallback from './pages/OAuthCallback';
+
+const Header = lazy(() => import('./components/Header'));
+const Home = lazy(() => import('./pages/Home'));
+const DemoPage = lazy(() => import('./components/DemoPage'));
+const QuizResultPage = lazy(() => import('./pages/QuizResultPage'));
+const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
 class FormViewerErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -32,6 +37,12 @@ class FormViewerErrorBoundary extends React.Component<
   }
 }
 
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <LoadingSpinner />
+  </div>
+);
+
 function App() {
   return (
     <ApolloProvider client={client}>
@@ -42,26 +53,28 @@ function App() {
             <Route path="/f/:shortUrl" element={<FormViewerErrorBoundary><FormViewer /></FormViewerErrorBoundary>} />
             {/* Native Quiz (epic #289, Story 16/#320, D9): "check your result
                 later" for identity-gated forms with a deferred grade release. */}
-            <Route path="/f/:shortUrl/result" element={<FormViewerErrorBoundary><QuizResultPage /></FormViewerErrorBoundary>} />
+            <Route path="/f/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
             {/* Respondent sign-in redirect target (Google + one-time-token bridge) */}
-            <Route path="/auth/callback" element={<OAuthCallback />} />
+            <Route path="/auth/callback" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><OAuthCallback /></Suspense></FormViewerErrorBoundary>} />
             {/* Legacy URL format support (without /f/ prefix) */}
-            <Route path="/:shortUrl/result" element={<FormViewerErrorBoundary><QuizResultPage /></FormViewerErrorBoundary>} />
+            <Route path="/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
             <Route path="/:shortUrl" element={<FormViewerErrorBoundary><FormViewer /></FormViewerErrorBoundary>} />
 
             {/* Main app routes - with header */}
             <Route
               path="/*"
               element={
-                <>
-                  <Header />
-                  <main className="container mx-auto px-4 py-8">
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/demo" element={<DemoPage />} />
-                    </Routes>
-                  </main>
-                </>
+                <FormViewerErrorBoundary>
+                  <Suspense fallback={<PageFallback />}>
+                    <Header />
+                    <main className="container mx-auto px-4 py-8">
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/demo" element={<DemoPage />} />
+                      </Routes>
+                    </main>
+                  </Suspense>
+                </FormViewerErrorBoundary>
               }
             />
           </Routes>

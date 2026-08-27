@@ -1,17 +1,30 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router';
 import { useAuth } from './hooks/useAuth';
 import AdminLayout from './components/AdminLayout';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import OrganizationsPage from './pages/OrganizationsPage';
-import { OrganizationDetailPage } from './pages/organizations/OrganizationDetailPage';
-import { UsersPage } from './pages/users/UsersPage';
-import { UserDetailPage } from './pages/users/UserDetailPage';
-import TemplatesPage from './pages/TemplatesPage';
-import PlansPage from './pages/PlansPage';
-import EmailPreviewsPage from './pages/EmailPreviewsPage';
 import { LoadingSpinner } from '@dculus/ui';
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const OrganizationsPage = lazy(() => import('./pages/OrganizationsPage'));
+const OrganizationDetailPage = lazy(() =>
+  import('./pages/organizations/OrganizationDetailPage').then(m => ({ default: m.OrganizationDetailPage }))
+);
+const UsersPage = lazy(() =>
+  import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage }))
+);
+const UserDetailPage = lazy(() =>
+  import('./pages/users/UserDetailPage').then(m => ({ default: m.UserDetailPage }))
+);
+const TemplatesPage = lazy(() => import('./pages/TemplatesPage'));
+const PlansPage = lazy(() => import('./pages/PlansPage'));
+const EmailPreviewsPage = lazy(() => import('./pages/EmailPreviewsPage'));
+
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <LoadingSpinner />
+  </div>
+);
 
 class AdminErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -54,18 +67,20 @@ function App() {
 
   return (
     <AdminLayout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/organizations" element={<OrganizationsPage />} />
-        <Route path="/organizations/:orgId" element={<OrganizationDetailPage />} />
-        <Route path="/users" element={<UsersPage />} />
-        <Route path="/users/:userId" element={<UserDetailPage />} />
-        <Route path="/templates" element={<TemplatesPage />} />
-        <Route path="/plans" element={<PlansPage />} />
-        <Route path="/email-previews" element={<EmailPreviewsPage />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Routes>
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/organizations" element={<OrganizationsPage />} />
+          <Route path="/organizations/:orgId" element={<OrganizationDetailPage />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/users/:userId" element={<UserDetailPage />} />
+          <Route path="/templates" element={<TemplatesPage />} />
+          <Route path="/plans" element={<PlansPage />} />
+          <Route path="/email-previews" element={<EmailPreviewsPage />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Suspense>
     </AdminLayout>
   );
 }
