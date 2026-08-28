@@ -145,7 +145,7 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
   }, [initialRule, seed]);
 
   const triggerOptions = useMemo(() => getTriggerFieldOptions(pages), [pages]);
-  const targetOptions = useMemo(() => getTargetFieldOptions(pages), [pages]);
+  const targetOptions = useMemo(() => getTargetFieldOptions(pages, t('chip.untitledField')), [pages, t]);
   const logicIndex = useMemo(() => buildLogicIndex(pages), [pages]);
 
   const fieldById = useMemo(

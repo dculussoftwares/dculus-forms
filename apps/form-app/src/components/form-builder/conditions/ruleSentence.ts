@@ -20,7 +20,7 @@ export type TranslateFn = (
 ) => string;
 
 const termSentence = (term: ConditionTerm, index: LogicIndex, t: TranslateFn): string => {
-  const reference = resolveFieldRef(index, term.fieldId, t('card.deletedField'));
+  const reference = resolveFieldRef(index, term.fieldId, t('card.deletedField'), t('chip.untitledField'));
   const operator = t(`operators.${term.operator}`);
   // isEmpty/isFilled carry no value; everything else reads "<field> <operator> "<value>"".
   if (term.value === undefined || term.value === null || term.value === '') {
@@ -41,7 +41,7 @@ const actionSentence = (action: ConditionAction, index: LogicIndex, t: Translate
   // concatenation here.
   if ('fieldIds' in action) {
     const labels = action.fieldIds.map(
-      (fieldId) => resolveFieldRef(index, fieldId, t('card.deletedField')).label
+      (fieldId) => resolveFieldRef(index, fieldId, t('card.deletedField'), t('chip.untitledField')).label
     );
     return t('sentence.actionClause', { values: { verb, targets: labels.join(', ') } });
   }

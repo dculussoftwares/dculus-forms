@@ -2,7 +2,10 @@ import { renderHook } from '@testing-library/react';
 import { ConditionalRule, FieldType, FormPage } from '@dculus/types';
 import { cleanupRuleReferences, useLogicHealth } from '../useLogicHealth';
 
-const makePage = (id: string, fields: Array<{ id: string; type: FieldType }>): FormPage =>
+const makePage = (
+  id: string,
+  fields: Array<{ id: string; type: FieldType; deleted?: boolean }>
+): FormPage =>
   ({ id, title: id, order: 0, fields } as unknown as FormPage);
 
 const makeRule = (overrides: Partial<ConditionalRule>): ConditionalRule => ({
@@ -76,6 +79,42 @@ describe('useLogicHealth — unreachable fields', () => {
     );
     expect(result.current.disabledCount).toBe(1);
     expect(result.current.enabledCount).toBe(0);
+  });
+});
+
+describe('useLogicHealth — soft-deleted fields', () => {
+  // evaluateConditions skips `field.deleted`, so a rule pointing at one can
+  // never match. Health must report it as dangling, exactly like a hard delete.
+  const pagesWithDeleted = [
+    makePage('page-1', [
+      { id: 'trigger', type: FieldType.RADIO_FIELD },
+      { id: 'target', type: FieldType.TEXT_INPUT_FIELD },
+      { id: 'gone-soft', type: FieldType.TEXT_INPUT_FIELD, deleted: true },
+    ]),
+  ];
+
+  it('flags a rule whose term references a soft-deleted field', () => {
+    const rules = [
+      makeRule({
+        terms: [{ fieldId: 'gone-soft', operator: 'isFilled' }],
+        actions: [{ type: 'showField', fieldIds: ['target'] }],
+      }),
+    ];
+
+    const { result } = renderHook(() => useLogicHealth(rules, pagesWithDeleted));
+
+    expect(result.current.ruleIdsWithIssues.has('rule-1')).toBe(true);
+  });
+
+  it('strips a soft-deleted action target during cleanup', () => {
+    const rule = makeRule({
+      terms: [{ fieldId: 'trigger', operator: 'isFilled' }],
+      actions: [{ type: 'hideField', fieldIds: ['gone-soft', 'target'] }],
+    });
+
+    const { rule: cleaned } = cleanupRuleReferences(rule, pagesWithDeleted);
+
+    expect(cleaned.actions).toEqual([{ type: 'hideField', fieldIds: ['target'] }]);
   });
 });
 

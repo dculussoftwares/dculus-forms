@@ -79,7 +79,11 @@ export const cleanupRuleReferences = (
   const livePageIds = new Set<string>();
   pages.forEach((page) => {
     livePageIds.add(page.id);
-    page.fields.forEach((field) => liveFieldIds.add(field.id));
+    // `deleted` fields are skipped by the evaluator (conditions.ts), so a rule
+    // pointing at one can never match — it is dangling, not live.
+    page.fields.forEach((field) => {
+      if (!field.deleted) liveFieldIds.add(field.id);
+    });
   });
 
   const terms = rule.terms.filter((term) => liveFieldIds.has(term.fieldId));
@@ -105,7 +109,11 @@ export const useLogicHealth = (
 ): LogicHealth => {
   return useMemo(() => {
     const liveFieldIds = new Set<string>();
-    pages.forEach((page) => page.fields.forEach((field) => liveFieldIds.add(field.id)));
+    pages.forEach((page) =>
+    page.fields.forEach((field) => {
+      if (!field.deleted) liveFieldIds.add(field.id);
+    })
+  );
 
     const issues: LogicIssue[] = [];
 

@@ -95,8 +95,12 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
       field.type === FieldType.CHECKBOX_FIELD
     ) {
       return (
+        // Checkbox answers are stored as string[] to match the evaluator's
+        // contains/notContains semantics, so the trigger has to read the array
+        // back out — otherwise the control falls back to its placeholder the
+        // moment you pick something.
         <Select
-          value={typeof value === 'string' ? value : ''}
+          value={Array.isArray(value) ? (value[0] ?? '') : typeof value === 'string' ? value : ''}
           onValueChange={(next) =>
             setAnswer(field.id, field.type === FieldType.CHECKBOX_FIELD ? [next] : next)
           }
@@ -203,7 +207,7 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
                   >
                     <visual.Icon className="h-3 w-3" />
                   </span>
-                  <span className="min-w-0 truncate">{fieldDisplayLabel(field)}</span>
+                  <span className="min-w-0 truncate">{fieldDisplayLabel(field, t('chip.untitledField'))}</span>
                 </div>
                 {renderAnswerInput(field)}
               </div>
@@ -238,7 +242,7 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
                   {hiddenFields.map((fieldId) => (
                     <FieldRefChip
                       key={fieldId}
-                      reference={resolveFieldRef(index, fieldId, t('card.deletedField'))}
+                      reference={resolveFieldRef(index, fieldId, t('card.deletedField'), t('chip.untitledField'))}
                       showPage={pages.length > 1}
                     />
                   ))}
@@ -275,7 +279,7 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
                   {requiredNow.map((fieldId) => (
                     <FieldRefChip
                       key={fieldId}
-                      reference={resolveFieldRef(index, fieldId, t('card.deletedField'))}
+                      reference={resolveFieldRef(index, fieldId, t('card.deletedField'), t('chip.untitledField'))}
                       showPage={pages.length > 1}
                     />
                   ))}

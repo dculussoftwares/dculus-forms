@@ -152,13 +152,16 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
   };
 
   const handleDuplicate = (rule: ConditionalRule) => {
-    // Structured-clone the arrays so the copy never shares term/action objects
-    // with the original — they are pushed straight into the Y.js document.
+    // Deep-copy terms and actions, including each action's nested fieldIds
+    // array — a spread alone leaves the copy sharing that array with the
+    // original, and both rules are written straight into the Y.js document.
     addCondition({
       ...rule,
       id: generateId(),
       terms: rule.terms.map((term) => ({ ...term })),
-      actions: rule.actions.map((action) => ({ ...action })),
+      actions: rule.actions.map((action) =>
+        'fieldIds' in action ? { ...action, fieldIds: [...action.fieldIds] } : { ...action }
+      ),
     });
     toastSuccess(t('toast.ruleDuplicated'));
   };
@@ -251,7 +254,7 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
         fieldFilterLabel={
           filterFieldId
             ? filterField
-              ? fieldDisplayLabel(filterField)
+              ? fieldDisplayLabel(filterField, t('chip.untitledField'))
               : t('fieldFilter.unknownField')
             : null
         }

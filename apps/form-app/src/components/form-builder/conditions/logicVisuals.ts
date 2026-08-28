@@ -65,7 +65,8 @@ export const buildLogicIndex = (pages: FormPage[]): LogicIndex => {
 export const resolveFieldRef = (
   index: LogicIndex,
   fieldId: string,
-  missingLabel: string
+  missingLabel: string,
+  untitledLabel: string
 ): FieldRef => {
   const entry = index.fieldById.get(fieldId);
   if (!entry) {
@@ -75,7 +76,7 @@ export const resolveFieldRef = (
     kind: 'field',
     id: fieldId,
     missing: false,
-    label: fieldDisplayLabel(entry.field),
+    label: fieldDisplayLabel(entry.field, untitledLabel),
     pageNumber: entry.pageNumber,
     field: entry.field,
   };

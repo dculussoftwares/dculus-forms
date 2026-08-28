@@ -22,6 +22,7 @@ const index = buildLogicIndex(pages);
  */
 const dictionary: Record<string, string> = {
   'card.deletedField': 'deleted field',
+  'chip.untitledField': 'Untitled field',
   'card.deletedPage': 'deleted page',
   'sentence.and': 'and',
   'sentence.or': 'or',

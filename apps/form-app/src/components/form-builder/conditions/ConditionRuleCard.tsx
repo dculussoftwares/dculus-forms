@@ -84,7 +84,7 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
         </span>
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-1.5">
           {rule.terms.map((term, termIndex) => {
-            const reference = resolveFieldRef(index, term.fieldId, t('card.deletedField'));
+            const reference = resolveFieldRef(index, term.fieldId, t('card.deletedField'), t('chip.untitledField'));
             const hasValue =
               term.value !== undefined && term.value !== null && term.value !== '';
             return (
@@ -183,7 +183,7 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
                 ? action.fieldIds.map((fieldId) => (
                     <FieldRefChip
                       key={fieldId}
-                      reference={resolveFieldRef(index, fieldId, t('card.deletedField'))}
+                      reference={resolveFieldRef(index, fieldId, t('card.deletedField'), t('chip.untitledField'))}
                       showPage={showPageNumbers}
                     />
                   ))

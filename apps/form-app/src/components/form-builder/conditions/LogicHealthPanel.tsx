@@ -65,7 +65,7 @@ export const LogicHealthPanel: React.FC<LogicHealthPanelProps> = ({
           parts.push(t('health.missingPages', { values: { count: pageIds.length } }));
         }
         for (const entry of stale) {
-          const reference = resolveFieldRef(index, entry.fieldId, missingLabel);
+          const reference = resolveFieldRef(index, entry.fieldId, missingLabel, t('chip.untitledField'));
           parts.push(
             t('health.staleOption', { values: { value: entry.value, field: reference.label } })
           );
@@ -77,7 +77,7 @@ export const LogicHealthPanel: React.FC<LogicHealthPanelProps> = ({
       case 'backwardReference':
         return t('card.backwardReferenceHint');
       case 'unreachableField': {
-        const reference = resolveFieldRef(index, issue.detail.fieldId ?? '', missingLabel);
+        const reference = resolveFieldRef(index, issue.detail.fieldId ?? '', missingLabel, t('chip.untitledField'));
         return t('health.unreachableDetail', { values: { field: reference.label } });
       }
     }

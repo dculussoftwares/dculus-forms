@@ -65,9 +65,13 @@ export const FieldRefChip: React.FC<FieldRefChipProps> = ({
     className
   );
 
+  // `typeLabel` from getFieldTypeConfig is an English literal used for styling
+  // lookups; the tooltip renders the translated name instead.
   const title = reference.missing
     ? t('chip.missingFieldHint')
-    : `${reference.label} · ${typeLabel}`;
+    : `${reference.label} · ${
+        reference.field ? t(`fieldTypeNames.${reference.field.type}`) : typeLabel
+      }`;
 
   if (!onClick) {
     return (
@@ -106,7 +110,7 @@ export const PageRefChip: React.FC<PageRefChipProps> = ({ reference, className }
           'flex h-5 w-5 shrink-0 items-center justify-center rounded-md',
           reference.missing
             ? 'bg-[var(--tf-error-bg-md)] text-[var(--tf-error)] dark:bg-red-950/50 dark:text-red-300'
-            : 'bg-[var(--tf-icon-teal)] text-[var(--tf-green)]'
+            : 'bg-[var(--tf-icon-teal)] text-[var(--tf-green)] dark:bg-[rgba(201,236,227,0.16)] dark:text-[#a8e2d3]'
         )}
       >
         {reference.missing ? <AlertTriangle className="h-3 w-3" /> : <FileStack className="h-3 w-3" />}

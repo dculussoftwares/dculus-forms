@@ -47,7 +47,8 @@
   "chip": {
     "pageShort": "P{{number}}",
     "missingFieldHint": "This field was deleted. The rule will not match until you fix it.",
-    "missingPageHint": "This page was deleted. The rule will not match until you fix it."
+    "missingPageHint": "This page was deleted. The rule will not match until you fix it.",
+    "untitledField": "Untitled field"
   },
   "sentence": {
     "and": "and",
@@ -203,5 +204,18 @@
     "clear": "Clear field filter",
     "emptyTitle": "No rules match",
     "emptyDescription": "No condition rule matches the current search and filters."
+  },
+  "fieldTypeNames": {
+    "text_input_field": "Short Text",
+    "text_area_field": "Long Text",
+    "email_field": "Email",
+    "number_field": "Number",
+    "select_field": "Dropdown",
+    "radio_field": "Multiple Choice",
+    "checkbox_field": "Checkboxes",
+    "date_field": "Date",
+    "phone_number_field": "Phone Number",
+    "rich_text_field": "Rich Text",
+    "file_upload_field": "File Upload"
   }
 }

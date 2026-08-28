@@ -89,7 +89,7 @@ export const FieldPicker: React.FC<FieldPickerProps> = ({
               >
                 <selectedVisual.Icon className="h-3 w-3" />
               </span>
-              <span className="min-w-0 truncate text-sm">{fieldDisplayLabel(selected.field)}</span>
+              <span className="min-w-0 truncate text-sm">{fieldDisplayLabel(selected.field, t('chip.untitledField'))}</span>
             </span>
           ) : (
             <span className="truncate text-sm text-muted-foreground">{t('editor.selectField')}</span>
@@ -111,7 +111,7 @@ export const FieldPicker: React.FC<FieldPickerProps> = ({
               >
                 {group.options.map(({ field }) => {
                   const visual = fieldVisual(field);
-                  const label = fieldDisplayLabel(field);
+                  const label = fieldDisplayLabel(field, t('chip.untitledField'));
                   return (
                     <CommandItem
                       key={field.id}

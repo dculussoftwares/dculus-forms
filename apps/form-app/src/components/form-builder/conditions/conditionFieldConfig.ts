@@ -16,7 +16,6 @@ import {
   FormPage,
   RichTextFormField,
 } from '@dculus/types';
-import { getFieldTypeConfig } from '../shared/fieldTypeVisuals';
 
 export const TRIGGER_OPERATORS: Partial<Record<FieldType, ConditionOperator[]>> = {
   [FieldType.TEXT_INPUT_FIELD]: [
@@ -106,7 +105,12 @@ export interface TargetFieldOption {
   pageIndex: number;
 }
 
-export const fieldDisplayLabel = (field: FormField): string => {
+/**
+ * `untitledLabel` is injected rather than built here: this module is pure and
+ * has no `t`, and the field library already renders type names through i18n,
+ * so an English literal would be the one untranslated field name in the UI.
+ */
+export const fieldDisplayLabel = (field: FormField, untitledLabel: string): string => {
   const labelled = field as { label?: string };
   if (labelled.label && labelled.label.trim() !== '') return labelled.label;
   if (field instanceof RichTextFormField) {
@@ -114,20 +118,19 @@ export const fieldDisplayLabel = (field: FormField): string => {
     if (text) return text.length > 40 ? `${text.slice(0, 40)}…` : text;
   }
   // An unlabelled field used to surface its raw nanoid in rule cards and pickers,
-  // which reads as gibberish and is impossible to match against the canvas. The
-  // field's type at least tells the author what they're pointing at. Deliberately
-  // not translated: field-type names are the same English labels the field
-  // library and canvas cards show, so a translated variant here would name the
-  // same field differently in two places.
-  return `Untitled ${getFieldTypeConfig(field.type).label}`;
+  // which reads as gibberish and is impossible to match against the canvas.
+  return untitledLabel;
 };
 
 /** Every field targetable on the DO side — including RichText info blocks. */
-export const getTargetFieldOptions = (pages: FormPage[]): TargetFieldOption[] => {
+export const getTargetFieldOptions = (
+  pages: FormPage[],
+  untitledLabel: string
+): TargetFieldOption[] => {
   const options: TargetFieldOption[] = [];
   pages.forEach((page, pageIndex) => {
     page.fields.forEach((field) => {
-      options.push({ field, label: fieldDisplayLabel(field), page, pageIndex });
+      options.push({ field, label: fieldDisplayLabel(field, untitledLabel), page, pageIndex });
     });
   });
   return options;
