@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "libphonenumber-js": "^1.13.11",
-    "react-hook-form": "7.85.0",
+    "react-hook-form": "7.86.0",
     "zod": "^4.4.3"
   }
 }
