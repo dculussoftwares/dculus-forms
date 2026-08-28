@@ -153,6 +153,19 @@ describe('EmbedTab — the gated-form boundary', () => {
     expect(screen.getByTestId('embed-type-inline')).toBeDisabled();
   });
 
+  it('falls back to Button when the audience is gated while the tab is open', async () => {
+    // WhoCanRespondSelect sits above these tabs in the same panel, so this is a
+    // live prop change, not a remount: the owner would otherwise be left with a
+    // disabled framed card still selected and copy a snippet that cannot render.
+    const { rerender } = render(<EmbedTab {...baseProps} onPersist={jest.fn()} />);
+    expect(screen.getByTestId('embed-type-inline')).toHaveAttribute('aria-checked', 'true');
+
+    rerender(<EmbedTab {...baseProps} accessControlEnabled onPersist={jest.fn()} />);
+    await waitFor(() =>
+      expect(screen.getByTestId('embed-type-button')).toHaveAttribute('aria-checked', 'true')
+    );
+  });
+
   it('leaves every type available for an ungated form', () => {
     render(<EmbedTab {...baseProps} onPersist={jest.fn()} />);
     for (const type of ['inline', 'lightbox', 'iframe', 'button']) {

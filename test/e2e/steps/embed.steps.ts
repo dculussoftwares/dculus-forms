@@ -18,11 +18,14 @@
 import { createServer, type Server } from 'http';
 import { AddressInfo } from 'net';
 import { When, Then, After } from '@cucumber/cucumber';
-import { expect } from '@playwright/test';
+import { expect, type BrowserContext } from '@playwright/test';
 import { CustomWorld } from '../support/world';
 
 /** Host pages started by a scenario, torn down in the After hook. */
 const hostServers = new Map<CustomWorld, Server>();
+
+/** Browser contexts opened for those host pages, torn down alongside them. */
+const hostContexts = new Map<CustomWorld, BrowserContext>();
 
 interface EmbedWorld extends CustomWorld {
   embedSnippet?: string;
@@ -91,6 +94,7 @@ async function openHostPage(world: EmbedWorld, snippet: string): Promise<void> {
   world.hostPageUrl = url;
 
   const context = await world.browser.newContext({ viewport: { width: 1280, height: 900 } });
+  hostContexts.set(world, context);
   world.viewerPage = await context.newPage();
   await world.viewerPage.goto(url);
   await world.viewerPage.waitForLoadState('networkidle');
@@ -175,21 +179,27 @@ When('I copy the embed snippet', async function (this: EmbedWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   this.embedSnippet = await this.page.getByTestId('embed-snippet').innerText();
   await this.page.getByTestId('embed-copy-snippet').click();
-  // Copy is also what persists settings.embed, so give the mutation a moment
-  // before the next step reads it back.
-  await this.page.waitForTimeout(1500);
 });
 
 Then(
   "the form's saved embed type should be {string}",
   async function (this: EmbedWorld, expected: string) {
     if (!this.currentFormId) throw new Error('No current form id');
-    const data = await graphql(
-      this,
-      `query GetEmbed($id: ID!) { form(id: $id) { id settings { embed { enabled type } } } }`,
-      { id: this.currentFormId }
-    );
-    expect(data.form.settings?.embed?.type).toBe(expected);
+    // Copy is also what persists settings.embed, so poll for the mutation
+    // rather than betting a fixed wait against CI's slowest run.
+    await expect
+      .poll(
+        async () => {
+          const data = await graphql(
+            this,
+            `query GetEmbed($id: ID!) { form(id: $id) { id settings { embed { enabled type } } } }`,
+            { id: this.currentFormId }
+          );
+          return data.form.settings?.embed?.type ?? null;
+        },
+        { timeout: 15_000 }
+      )
+      .toBe(expected);
   }
 );
 
@@ -438,10 +448,19 @@ Then('focus should return to the lightbox trigger', async function (this: EmbedW
   expect(activeText).toBe('Give feedback');
 });
 
-After(function (this: EmbedWorld) {
+After(async function (this: EmbedWorld) {
+  // The context has to go first: its open page holds a keep-alive connection
+  // to the fixture server, which would otherwise keep the handle open.
+  const context = hostContexts.get(this);
+  if (context) {
+    await context.close();
+    hostContexts.delete(this);
+  }
+
   const server = hostServers.get(this);
   if (server) {
-    server.close();
+    server.closeAllConnections?.();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
     hostServers.delete(this);
   }
 });

@@ -292,8 +292,14 @@ const FormViewer: React.FC<FormViewerProps> = ({
         grade: grade ?? undefined,
       });
       // Ids only — the host page learns *that* a submission happened, never
-      // what was submitted.
-      onSubmitted?.();
+      // what was submitted. Guarded separately: the response is already
+      // stored, so a throwing notification must not fall into the catch below
+      // and re-enable submit on a form that has already been submitted.
+      try {
+        onSubmitted?.();
+      } catch (notifyError) {
+        console.warn('onSubmitted callback failed:', notifyError);
+      }
       // Leave isSubmittingRef true on success — form is done, no re-submit needed
     } catch (err: unknown) {
       console.error('Form submission error:', err);

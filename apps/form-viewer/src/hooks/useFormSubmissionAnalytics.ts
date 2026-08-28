@@ -1,21 +1,19 @@
 import { useCallback } from 'react';
 import { getOrCreateSessionId } from '../lib/sessionId';
-import { embedAttribution } from '../lib/embedBridge';
+import { embedAttribution, type EmbedAttribution } from '../lib/embedBridge';
 
 interface UseFormSubmissionAnalyticsOptions {
   formId: string;
   enabled?: boolean;
 }
 
-interface SubmissionAnalyticsData {
+/** Form Embed v1 — extends `EmbedAttribution` so `embedContext` keeps its
+ *  narrow `EmbedMode | 'direct'` type rather than widening to `string`. */
+interface SubmissionAnalyticsData extends EmbedAttribution {
   sessionId: string;
   userAgent: string;
   timezone: string;
   language: string;
-  /** Form Embed v1 — 'direct' for the hosted page, otherwise the embed mode. */
-  embedContext: string;
-  /** Host page hostname, or null when unknown / not embedded. */
-  embedHost: string | null;
 }
 
 export const useFormSubmissionAnalytics = ({ formId, enabled = true }: UseFormSubmissionAnalyticsOptions) => {

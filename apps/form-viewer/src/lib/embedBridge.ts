@@ -357,8 +357,19 @@ export function createEmbedBridge(options: EmbedBridgeOptions): EmbedBridge {
 /**
  * Seeds attribution from the URL and the referrer, before any handshake.
  * Exported for the route to call on mount.
+ *
+ * `/embed/:shortUrl` can also be opened as an ordinary top-level page — someone
+ * saves the iframe's `src`, or follows it from a link. That is a direct visit,
+ * whatever `mode` the URL still carries, and `document.referrer` there is the
+ * *linking* page rather than a host page. Counting it as embedded traffic would
+ * inflate the embed stats and credit a hostname that never embedded anything,
+ * so attribution is only taken from the URL when we really are in a frame.
  */
 export function seedEmbedAttribution(params: EmbedParams): void {
+  if (window.parent === window) {
+    embedAttribution.set('direct', null);
+    return;
+  }
   embedAttribution.set(params.mode, hostnameFromReferrer());
 }
 

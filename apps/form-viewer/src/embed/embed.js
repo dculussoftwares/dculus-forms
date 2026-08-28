@@ -371,6 +371,18 @@
 
   function mountAll() {
     injectKeyframes();
+    // Drop records whose container the host has since removed. `refresh()`
+    // exists for SPA hosts that replace the container on a route change, and
+    // the replacement carries no `data-dculus-mounted` marker — so without
+    // this, every navigation would leave behind a record still holding a
+    // detached iframe (and, for a lightbox, an overlay parented to <body>).
+    for (var id in instances) {
+      var stale = instances[id];
+      if (document.contains(stale.config.el)) continue;
+      if (stale.close) stale.close();
+      delete instances[id];
+    }
+
     var nodes = document.querySelectorAll('[data-dculus-form]');
     for (var i = 0; i < nodes.length; i++) {
       var el = nodes[i];

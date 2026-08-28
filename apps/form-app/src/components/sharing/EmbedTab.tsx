@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Input,
@@ -86,6 +86,14 @@ export const EmbedTab: React.FC<EmbedTabProps> = ({
   const [closeOnSubmit, setCloseOnSubmit] = useState(stored.closeOnSubmit);
   const [platform, setPlatform] = useState<SnippetPlatform>('html');
   const [copied, setCopied] = useState(false);
+
+  // The audience selector sits above these tabs in the same panel, so framing
+  // can be revoked while this tab is open. Without this the framed card stays
+  // selected after it is disabled, and the owner copies a snippet that
+  // `/embed/:shortUrl` will refuse to render.
+  useEffect(() => {
+    if (!framingAllowed && isFramedEmbedType(type)) setType('button');
+  }, [framingAllowed, type]);
 
   const settings = useMemo(
     () =>

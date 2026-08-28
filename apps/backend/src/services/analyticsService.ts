@@ -12,6 +12,23 @@ import {
 import { EdgeVisitorLocation } from '../middleware/edge-geolocation.js';
 import { sanitizeEmbedAttribution } from '../lib/embedAttribution.js';
 
+/**
+ * Shapes of the two embed group-by results.
+ *
+ * The repository's `groupBy` is deliberately loosely typed (Prisma's overloads
+ * need a non-optional `orderBy` that `GroupByArgs` does not carry), so the
+ * result is narrowed here at the point of use rather than left as `any`.
+ */
+interface EmbedContextGroup {
+  embedContext: string | null;
+  _count: { _all: number };
+}
+
+interface EmbedHostGroup {
+  embedHost: string | null;
+  _count: { embedHost: number };
+}
+
 // Create require for CommonJS modules in ES module context
 const require = createRequire(import.meta.url);
 
@@ -569,7 +586,7 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
     // view of the hosted page, whether it was recorded before this feature
     // existed or simply wasn't embedded.
     const contextCounts = new Map<string, number>();
-    for (const stat of embedContextStats as any[]) {
+    for (const stat of embedContextStats as EmbedContextGroup[]) {
       const key = stat.embedContext ?? 'direct';
       contextCounts.set(key, (contextCounts.get(key) ?? 0) + stat._count._all);
     }
@@ -581,7 +598,7 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       }))
       .sort((a, b) => b.count - a.count);
 
-    const topEmbedHosts = (embedHostStats as any[]).map((stat) => ({
+    const topEmbedHosts = (embedHostStats as EmbedHostGroup[]).map((stat) => ({
       host: stat.embedHost,
       count: stat._count.embedHost,
       percentage: totalViews > 0 ? (stat._count.embedHost / totalViews) * 100 : 0,

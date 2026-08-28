@@ -17,6 +17,15 @@ const ctx = (overrides: Partial<SnippetContext['settings']> = {}): SnippetContex
 });
 
 describe('resolveEmbedSettings', () => {
+  test('clamps a fixed height into the range the input advertises', () => {
+    // `min`/`max` on a number input only style the spinner; a typed or pasted
+    // value still lands in state, and from there in the saved snippet.
+    expect(resolveEmbedSettings({ heightPx: 4 }).heightPx).toBe(200);
+    expect(resolveEmbedSettings({ heightPx: 99999 }).heightPx).toBe(4000);
+    expect(resolveEmbedSettings({ heightPx: 850 }).heightPx).toBe(850);
+    expect(resolveEmbedSettings({ heightPx: Number.NaN }).heightPx).toBe(600);
+  });
+
   test('an absent embed config resolves to the documented defaults', () => {
     expect(resolveEmbedSettings(undefined)).toEqual({
       type: 'inline',

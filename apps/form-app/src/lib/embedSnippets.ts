@@ -40,6 +40,22 @@ export type ResolvedEmbedSettings = Required<
 export const DEFAULT_BUTTON_LABEL = 'Open the form';
 
 /**
+ * Bounds for a pinned frame height, matching the number input's `min`/`max`.
+ * Those attributes only style the spinner — they do not stop a typed or pasted
+ * value — so the range is enforced here, where every persisted setting and
+ * every generated snippet passes through.
+ */
+export const MIN_EMBED_HEIGHT_PX = 200;
+export const MAX_EMBED_HEIGHT_PX = 4000;
+
+function clampHeight(value: number | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return DEFAULT_EMBED_SETTINGS.heightPx;
+  }
+  return Math.min(MAX_EMBED_HEIGHT_PX, Math.max(MIN_EMBED_HEIGHT_PX, Math.round(value)));
+}
+
+/**
  * Fills in every field from {@link DEFAULT_EMBED_SETTINGS}, so the rest of this
  * module never has to reason about `undefined`. An absent `settings.embed`
  * (every form that predates the feature) resolves to the same thing a freshly
@@ -50,7 +66,7 @@ export function resolveEmbedSettings(settings?: EmbedSettings | null): ResolvedE
     type: settings?.type ?? DEFAULT_EMBED_SETTINGS.type,
     width: settings?.width ?? DEFAULT_EMBED_SETTINGS.width,
     heightMode: settings?.heightMode ?? DEFAULT_EMBED_SETTINGS.heightMode,
-    heightPx: settings?.heightPx ?? DEFAULT_EMBED_SETTINGS.heightPx,
+    heightPx: clampHeight(settings?.heightPx),
     transparentBackground:
       settings?.transparentBackground ?? DEFAULT_EMBED_SETTINGS.transparentBackground,
     closeOnSubmit: settings?.closeOnSubmit ?? DEFAULT_EMBED_SETTINGS.closeOnSubmit,
