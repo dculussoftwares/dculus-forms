@@ -16,6 +16,7 @@ import {
   FormPage,
   RichTextFormField,
 } from '@dculus/types';
+import { getFieldTypeConfig } from '../shared/fieldTypeVisuals';
 
 export const TRIGGER_OPERATORS: Partial<Record<FieldType, ConditionOperator[]>> = {
   [FieldType.TEXT_INPUT_FIELD]: [
@@ -112,7 +113,13 @@ export const fieldDisplayLabel = (field: FormField): string => {
     const text = field.content.replace(/<[^>]*>/g, ' ').trim();
     if (text) return text.length > 40 ? `${text.slice(0, 40)}…` : text;
   }
-  return field.id;
+  // An unlabelled field used to surface its raw nanoid in rule cards and pickers,
+  // which reads as gibberish and is impossible to match against the canvas. The
+  // field's type at least tells the author what they're pointing at. Deliberately
+  // not translated: field-type names are the same English labels the field
+  // library and canvas cards show, so a translated variant here would name the
+  // same field differently in two places.
+  return `Untitled ${getFieldTypeConfig(field.type).label}`;
 };
 
 /** Every field targetable on the DO side — including RichText info blocks. */

@@ -290,7 +290,16 @@ jest.mock('@dculus/types', () => {
     }),
   };
 
+  // The conditional-logic evaluator, cycle detector and their helpers are pure
+  // functions with no DOM or network dependencies, so tests run the REAL
+  // implementations — a stubbed `detectConditionCycles`/`evaluateConditions`
+  // would make logic-health and simulator tests assert against fiction. Required
+  // by file path because this factory is replacing the '@dculus/types' module
+  // name itself. Spread first so the explicit keys below still win.
+  const actualConditions = jest.requireActual('../../../packages/types/src/conditions');
+
   return {
+    ...actualConditions,
     FieldType,
     TextFieldValidation,
     FillableFormFieldValidation,

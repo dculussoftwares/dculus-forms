@@ -20,17 +20,6 @@ import {
   Copy,
   ArrowUp,
   ArrowDown,
-  Type,
-  FileText,
-  Mail,
-  Hash,
-  ChevronDown,
-  Circle,
-  CheckSquare,
-  Calendar,
-  FileCode,
-  Upload,
-  Phone,
   Link2,
   AlertTriangle,
 } from 'lucide-react';
@@ -40,56 +29,13 @@ import { PageActionsSelector } from '../PageActionsSelector';
 // Field Type Configuration
 // =============================================================================
 
-/**
- * Helper to get field type icon and category for display
- */
-export const getFieldTypeConfig = (
-  type: string
-): { icon: React.ElementType; category: string; label: string } => {
-  const configs: Record<
-    string,
-    { icon: React.ElementType; category: string; label: string }
-  > = {
-    text_input_field: { icon: Type, category: 'input', label: 'Short Text' },
-    text_area_field: { icon: FileText, category: 'input', label: 'Long Text' },
-    email_field: { icon: Mail, category: 'input', label: 'Email' },
-    number_field: { icon: Hash, category: 'input', label: 'Number' },
-    select_field: { icon: ChevronDown, category: 'choice', label: 'Dropdown' },
-    radio_field: { icon: Circle, category: 'choice', label: 'Multiple Choice' },
-    checkbox_field: {
-      icon: CheckSquare,
-      category: 'choice',
-      label: 'Checkboxes',
-    },
-    date_field: { icon: Calendar, category: 'input', label: 'Date' },
-    phone_number_field: { icon: Phone, category: 'input', label: 'Phone Number' },
-    rich_text_field: {
-      icon: FileCode,
-      category: 'content',
-      label: 'Rich Text',
-    },
-    file_upload_field: {
-      icon: Upload,
-      category: 'advanced',
-      label: 'File Upload',
-    },
-  };
-  return configs[type] || { icon: Type, category: 'input', label: 'Unknown' };
-};
+// Icon/colour mapping moved to shared/fieldTypeVisuals so pure consumers (and
+// their tests) can use it without pulling in this component's dependency graph.
+// Re-exported here because the rail, field library and Logic tab import it from
+// this module today.
+import { getFieldTypeConfig, getCategoryColor } from '../shared/fieldTypeVisuals';
 
-export const getCategoryColor = (category: string) => {
-  /* Typeform field-icon palette (exact extracted colors) */
-  switch (category) {
-    case 'input':
-      return 'bg-[var(--tf-icon-salmon)] text-primary';      /* salmon */
-    case 'choice':
-      return 'bg-[var(--tf-icon-lavender)] text-[#5c2e6b]';      /* lavender */
-    case 'content':
-      return 'bg-[var(--tf-icon-teal)] text-[var(--tf-green)]';      /* teal */
-    default:
-      return 'bg-[var(--tf-icon-gray)] text-foreground';      /* neutral gray */
-  }
-};
+export { getFieldTypeConfig, getCategoryColor };
 
 // =============================================================================
 // FieldCard

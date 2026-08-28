@@ -14,6 +14,96 @@
     "title": "No conditions yet",
     "description": "Create rules like \"if the answer is Yes, show the details field\" to make your form dynamic."
   },
+  "recipes": {
+    "title": "Start from a pattern",
+    "showFieldOnChoice": {
+      "title": "Show a field when a choice is selected",
+      "description": "Reveal a follow-up question only for people who pick a particular option."
+    },
+    "hideFieldOnChoice": {
+      "title": "Hide a field when a choice is selected",
+      "description": "Remove a question that doesn't apply based on an earlier answer."
+    },
+    "requireWhenFilled": {
+      "title": "Require a field when another is filled",
+      "description": "Make a follow-up mandatory once the respondent has answered the first question."
+    },
+    "skipPageOnAnswer": {
+      "title": "Skip a page based on an answer",
+      "description": "Jump respondents past a section that isn't relevant to them."
+    }
+  },
+  "rail": {
+    "searchPlaceholder": "Search rules…",
+    "all": "All rules",
+    "issues": "Needs attention",
+    "disabled": "Turned off",
+    "byAction": "By action",
+    "byPage": "By page",
+    "clearFilters": "Clear filters",
+    "turnAllOff": "Turn all {{count}} off",
+    "turnAllOn": "Turn all {{count}} on"
+  },
+  "chip": {
+    "pageShort": "P{{number}}",
+    "missingFieldHint": "This field was deleted. The rule will not match until you fix it.",
+    "missingPageHint": "This page was deleted. The rule will not match until you fix it."
+  },
+  "sentence": {
+    "and": "and",
+    "or": "or",
+    "actionJoin": ", and ",
+    "termWithValue": "{{field}} {{operator}} \"{{value}}\"",
+    "full": "When {{condition}}, {{effect}}.",
+    "verbs": {
+      "showField": "show",
+      "hideField": "hide",
+      "requireField": "require",
+      "unrequireField": "stop requiring",
+      "hidePage": "hide the page",
+      "showPage": "show the page",
+      "skipToPage": "skip ahead to"
+    },
+    "actionClause": "{{verb}} {{targets}}"
+  },
+  "health": {
+    "title": "Logic health",
+    "subtitle": "Problems that would surprise a respondent.",
+    "activeRules": "{{count}} active",
+    "disabledRules": "{{count}} turned off",
+    "allClearTitle": "No problems found",
+    "allClearBody": "Every rule points at fields and pages that still exist.",
+    "noRulesTitle": "No rules yet",
+    "noRulesBody": "Add a rule to make this form respond to what people answer.",
+    "kind": {
+      "brokenReference": "Broken reference",
+      "circular": "Rules contradict each other",
+      "backwardReference": "Depends on a later page",
+      "unreachableField": "Field can never be shown"
+    },
+    "missingFields": "{{count}} deleted field(s) referenced",
+    "missingPages": "{{count}} deleted page(s) referenced",
+    "staleOption": "\"{{value}}\" is no longer an option on {{field}}",
+    "circularDetail": "{{count}} rules form a loop; fields caught in it stay visible.",
+    "unreachableDetail": "{{field}} is hidden by default, and no working rule ever shows it.",
+    "cleanup": "Remove the broken parts"
+  },
+  "simulator": {
+    "title": "Try it",
+    "subtitle": "Set answers to see what a respondent would get.",
+    "reset": "Reset",
+    "noAnswer": "No answer",
+    "noTriggers": "No rule triggers on a field yet.",
+    "outcome": "Result",
+    "everythingVisible": "Every field and page is visible.",
+    "hiddenFields": "{{count}} field(s) hidden",
+    "hiddenPages": "{{count}} page(s) hidden",
+    "requiredFields": "{{count}} field(s) required"
+  },
+  "deleteDialog": {
+    "title": "Delete this condition?",
+    "message": "This rule will be removed for everyone editing this form."
+  },
   "card": {
     "if": "IF",
     "then": "THEN",
@@ -22,7 +112,10 @@
       "all": "all of the following match"
     },
     "enabled": "Rule enabled",
+    "enableRule": "Turn on rule: {{rule}}",
+    "disableRule": "Turn off rule: {{rule}}",
     "edit": "Edit rule",
+    "duplicate": "Duplicate rule",
     "delete": "Delete rule",
     "brokenReference": "Broken reference",
     "brokenReferenceHint": "This rule references a deleted field, a deleted page, or an option that no longer exists. It will not match until fixed.",
@@ -43,18 +136,33 @@
     "addAction": "Add action",
     "removeAction": "Remove action",
     "selectField": "Select a field",
+    "searchFields": "Search fields…",
+    "noFieldsFound": "No fields match",
     "selectOperator": "Select an operator",
     "selectOption": "Select an option",
     "staleOptionValue": "{{value}} (no longer an option)",
     "selectPage": "Select a page",
+    "selectPage_all": "Select all",
+    "deselectPage": "Clear",
+    "removeTarget": "Remove {{field}}",
     "valuePlaceholder": "Value",
     "numberPlaceholder": "Enter a number",
     "pickDate": "Pick a date",
     "combinatorLabel": "Match",
-    "combinatorAny": "Any condition",
-    "combinatorAll": "All conditions",
+    "combinatorAny": "Any condition must match — click to require all",
+    "combinatorAll": "All conditions must match — click to require any",
     "targetFields": "Target fields",
     "noTargetsSelected": "Select at least one field",
+    "previewTitle": "This rule says",
+    "previewEmpty": "Pick a field and an action to see the rule in plain English.",
+    "errors": {
+      "selectField": "Choose a field for this condition.",
+      "selectOperator": "Choose how to compare this field.",
+      "enterValue": "Enter a value to compare against.",
+      "enterNumber": "Enter a number to compare against.",
+      "selectPage": "Choose a page for this action.",
+      "selectTarget": "Choose at least one field for this action."
+    },
     "page": "Page {{number}}",
     "pageWithTitle": "Page {{number}} — {{title}}",
     "save": "Save rule",
@@ -85,13 +193,15 @@
   },
   "toast": {
     "ruleSaved": "Condition saved",
-    "ruleDeleted": "Condition deleted"
+    "ruleDuplicated": "Condition duplicated",
+    "ruleDeleted": "Condition deleted",
+    "ruleCleaned": "Broken references removed"
   },
   "fieldFilter": {
     "label": "Field: {{field}}",
     "unknownField": "Unknown field",
     "clear": "Clear field filter",
-    "emptyTitle": "No rules for this field",
-    "emptyDescription": "No condition rule currently references this field as a trigger or an action target."
+    "emptyTitle": "No rules match",
+    "emptyDescription": "No condition rule matches the current search and filters."
   }
 }

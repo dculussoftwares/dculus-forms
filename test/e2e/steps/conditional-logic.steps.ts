@@ -1227,6 +1227,8 @@ When(
     await expect(card).toBeVisible({ timeout: 10_000 });
     const deleteBtn = card.locator('[data-testid^="condition-delete-"]');
     await deleteBtn.click();
+    // Deleting now asks for confirmation, showing the rule's plain-English summary.
+    await this.page.getByTestId('confirmation-dialog-confirm').click();
     await this.page.waitForTimeout(500);
   }
 );

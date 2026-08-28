@@ -196,6 +196,8 @@ When(
     await expect(card).toBeVisible({ timeout: 10_000 });
     const deleteBtn = card.locator('[data-testid^="condition-delete-"]');
     await deleteBtn.click();
+    // Deleting now asks for confirmation, showing the rule's plain-English summary.
+    await page.getByTestId('confirmation-dialog-confirm').click();
     await page.waitForTimeout(1000);
   }
 );
@@ -346,7 +348,7 @@ Then(
     const cardA = pageA.locator('[data-testid^="condition-card-"]').first();
     const cardB = pageB.locator('[data-testid^="condition-card-"]').first();
 
-    const expectedB = 'IF Show bonus field? is not equal to "Yes" THEN Show field(s) Bonus Field';
+    const expectedB = 'IF Show bonus field? P1 is not equal to Yes THEN Show field(s) Bonus Field P1';
     const normalize = (str: string) => str.replace(/[\u201c\u201d]/g, '"').replace(/\s+/g, '').trim();
     const normExpected = normalize(expectedB);
 

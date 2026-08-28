@@ -116,22 +116,32 @@ export const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig
   },
 ];
 
+// Dark variants are explicit here for the same reason as in
+// shared/fieldTypeVisuals: these are hardcoded light pastels, and form-app's
+// `.dark` block defines no `--tf-*` overrides, so without them a dark-mode tile
+// stays a light pastel carrying a near-black glyph. Dimming the tile and
+// brightening the glyph keeps the field library consistent with the journey rail
+// and the Logic tab, which use `getCategoryColor`.
 export const getCategoriesConfig = (t: (key: string) => string) => ({
   input: {
     label: t('categories.input'),
-    color: 'bg-[#f8cdd8] text-[#3c323e] border-[rgba(248,205,216,0.6)]',
+    color:
+      'bg-[#f8cdd8] text-[#3c323e] border-[rgba(248,205,216,0.6)] dark:bg-[rgba(248,205,216,0.16)] dark:text-[#f5bccd] dark:border-[rgba(248,205,216,0.28)]',
   },
   choice: {
     label: t('categories.choice'),
-    color: 'bg-[#ddd6fa] text-[#5c2e6b] border-[rgba(221,214,250,0.6)]',
+    color:
+      'bg-[#ddd6fa] text-[#5c2e6b] border-[rgba(221,214,250,0.6)] dark:bg-[rgba(221,214,250,0.16)] dark:text-[#cfc4f8] dark:border-[rgba(221,214,250,0.28)]',
   },
   content: {
     label: t('categories.content'),
-    color: 'bg-[#c9ece3] text-[#177767] border-[rgba(23,119,103,0.25)]',
+    color:
+      'bg-[#c9ece3] text-[#177767] border-[rgba(23,119,103,0.25)] dark:bg-[rgba(201,236,227,0.16)] dark:text-[#a8e2d3] dark:border-[rgba(201,236,227,0.28)]',
   },
   advanced: {
     label: t('categories.advanced'),
-    color: 'bg-[#fbe19d] text-[#8b6a18] border-[rgba(251,225,157,0.6)]',
+    color:
+      'bg-[#fbe19d] text-[#8b6a18] border-[rgba(251,225,157,0.6)] dark:bg-[rgba(251,225,157,0.16)] dark:text-[#f3d489] dark:border-[rgba(251,225,157,0.28)]',
   },
 });
 
@@ -170,7 +180,7 @@ const FieldTypeDisplay: React.FC<FieldTypeDisplayProps> = ({
           className={cn(
             'p-1.5 rounded-lg flex-shrink-0',
             isOverlay
-              ? 'bg-[var(--tf-icon-lavender)] text-[#5c2e6b]'
+              ? 'bg-[var(--tf-icon-lavender)] text-[#5c2e6b] dark:bg-[rgba(221,214,250,0.16)] dark:text-[#cfc4f8]'
               : cn(
                   categories?.[fieldType.category as keyof typeof categories]?.color || 'bg-[var(--tf-icon-gray)] text-foreground',
                   isDragging

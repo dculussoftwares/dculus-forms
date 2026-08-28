@@ -90,12 +90,12 @@ Feature: Conditional Logic (show/hide fields and pages)
     Then I should see the conditions empty state
     When I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
     Then I should see a condition rule card for "Show bonus field?"
-    And the condition card for "Show bonus field?" should show "IF Show bonus field? is equal to “Yes” THEN Show field(s) Bonus Field" in its summary
+    And the condition card for "Show bonus field?" should show "IF Show bonus field? P1 is equal to Yes THEN Show field(s) Bonus Field P1" in its summary
     When I edit the condition rule for "Show bonus field?"
     And I update the rule terms at index 0 to field "Skip details page?", operator "notEquals", value "No"
     And I update the rule action at index 0 to type "hideField" and target field "cond-bonus"
     And I save the condition rule
-    Then the condition card for "Skip details page?" should show "IF Skip details page? is not equal to “No” THEN Hide field(s) Bonus Field" in its summary
+    Then the condition card for "Skip details page?" should show "IF Skip details page? P1 is not equal to No THEN Hide field(s) Bonus Field P1" in its summary
     When I toggle the condition rule for "Skip details page?"
     And I open the preview tab
     Then the preview field "Bonus Field" should be visible
