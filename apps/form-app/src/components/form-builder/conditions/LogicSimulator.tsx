@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Eye, EyeOff, PlayCircle, RotateCcw, Asterisk } from 'lucide-react';
 import {
   Button,
+  Checkbox,
   DatePicker,
   Input,
   Select,
@@ -81,6 +82,16 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
         .map(([fieldId]) => fieldId),
     [result, index]
   );
+  // `requiredOverrides` carries false entries too — an unrequireField action.
+  // Dropping them meant an unrequire rule could fire and the panel would still
+  // report that nothing had changed.
+  const unrequiredNow = useMemo(
+    () =>
+      Array.from(result.requiredOverrides.entries())
+        .filter(([fieldId, required]) => !required && index.fieldById.has(fieldId))
+        .map(([fieldId]) => fieldId),
+    [result, index]
+  );
 
   const setAnswer = (fieldId: string, value: unknown) =>
     setAnswers((current) => ({ ...current, [fieldId]: value }));
@@ -89,21 +100,44 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
     const value = answers[field.id];
     const options = (field as { options?: string[] }).options ?? [];
 
-    if (
-      field.type === FieldType.SELECT_FIELD ||
-      field.type === FieldType.RADIO_FIELD ||
-      field.type === FieldType.CHECKBOX_FIELD
-    ) {
+    // Checkbox responses are genuinely multi-select, and contains/notContains
+    // rules are written against several values at once — a single-value Select
+    // cannot express that, so checkboxes get toggles.
+    if (field.type === FieldType.CHECKBOX_FIELD) {
+      const selected = Array.isArray(value) ? (value as string[]) : [];
       return (
-        // Checkbox answers are stored as string[] to match the evaluator's
-        // contains/notContains semantics, so the trigger has to read the array
-        // back out — otherwise the control falls back to its placeholder the
-        // moment you pick something.
+        <div className="space-y-1 rounded-lg bg-[var(--tf-faint)] p-2 dark:bg-gray-800/40">
+          {options.length === 0 && (
+            <p className="px-1 text-xs text-muted-foreground">{t('simulator.noAnswer')}</p>
+          )}
+          {options.map((option) => (
+            <label
+              key={option}
+              className="flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-xs"
+            >
+              <Checkbox
+                checked={selected.includes(option)}
+                onCheckedChange={(checked) =>
+                  setAnswer(
+                    field.id,
+                    checked === true
+                      ? [...selected, option]
+                      : selected.filter((entry) => entry !== option)
+                  )
+                }
+              />
+              <span className="min-w-0 flex-1 truncate">{option}</span>
+            </label>
+          ))}
+        </div>
+      );
+    }
+
+    if (field.type === FieldType.SELECT_FIELD || field.type === FieldType.RADIO_FIELD) {
+      return (
         <Select
-          value={Array.isArray(value) ? (value[0] ?? '') : typeof value === 'string' ? value : ''}
-          onValueChange={(next) =>
-            setAnswer(field.id, field.type === FieldType.CHECKBOX_FIELD ? [next] : next)
-          }
+          value={typeof value === 'string' ? value : ''}
+          onValueChange={(next) => setAnswer(field.id, next)}
         >
           <SelectTrigger className="h-10 text-sm">
             <SelectValue placeholder={t('simulator.noAnswer')} />
@@ -222,7 +256,10 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
           {t('simulator.outcome')}
         </p>
 
-        {hiddenFields.length === 0 && hiddenPages.length === 0 && requiredNow.length === 0 ? (
+        {hiddenFields.length === 0 &&
+        hiddenPages.length === 0 &&
+        requiredNow.length === 0 &&
+        unrequiredNow.length === 0 ? (
           <p
             className="flex items-center gap-1.5 text-sm text-[var(--tf-muted)] dark:text-gray-400"
             data-testid="logic-simulator-outcome-empty"
@@ -277,6 +314,24 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {requiredNow.map((fieldId) => (
+                    <FieldRefChip
+                      key={fieldId}
+                      reference={resolveFieldRef(index, fieldId, t('card.deletedField'), t('chip.untitledField'))}
+                      showPage={pages.length > 1}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {unrequiredNow.length > 0 && (
+              <div className="space-y-1">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-[var(--tf-muted)] dark:text-gray-400">
+                  <Asterisk className="h-3 w-3" />
+                  {t('simulator.unrequiredFields', { values: { count: unrequiredNow.length } })}
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {unrequiredNow.map((fieldId) => (
                     <FieldRefChip
                       key={fieldId}
                       reference={resolveFieldRef(index, fieldId, t('card.deletedField'), t('chip.untitledField'))}

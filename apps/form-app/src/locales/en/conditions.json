@@ -99,7 +99,8 @@
     "everythingVisible": "Every field and page is visible.",
     "hiddenFields": "{{count}} field(s) hidden",
     "hiddenPages": "{{count}} page(s) hidden",
-    "requiredFields": "{{count}} field(s) required"
+    "requiredFields": "{{count}} field(s) required",
+    "unrequiredFields": "{{count}} field(s) no longer required"
   },
   "deleteDialog": {
     "title": "Delete this condition?",

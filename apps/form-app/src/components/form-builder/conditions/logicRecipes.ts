@@ -12,6 +12,7 @@
  */
 
 import { ConditionOperator, FieldType, FormPage } from '@dculus/types';
+import { TRIGGER_OPERATORS } from './conditionFieldConfig';
 
 export type RecipeId =
   | 'showFieldOnChoice'
@@ -104,16 +105,40 @@ export const suggestTriggerFieldId = (
  * The draft seed a recipe produces. `isFilled`/`isEmpty` carry no value, matching
  * the evaluator's operator table.
  */
-export const recipeToSeed = (recipe: LogicRecipe, pages: FormPage[]) => ({
-  combinator: 'all' as const,
-  terms: [
-    {
-      fieldId: suggestTriggerFieldId(recipe, pages) ?? '',
-      operator: recipe.operator,
-      ...(recipe.operator === 'isFilled' || recipe.operator === 'isEmpty'
-        ? {}
-        : { value: undefined }),
-    },
-  ],
-  actions: [{ type: recipe.actionType, fieldIds: [] as string[], pageId: '' }],
-});
+/**
+ * The recipe's operator, or the field's nearest supported one.
+ *
+ * A recipe declares a single operator, but the field it lands on may not accept
+ * it — a Checkbox trigger supports only contains/notContains, so seeding
+ * `equals` would open a draft the author cannot save until they work out which
+ * dropdown is wrong.
+ */
+const operatorForField = (
+  recipe: LogicRecipe,
+  pages: FormPage[],
+  fieldId: string | undefined
+): ConditionOperator => {
+  if (!fieldId) return recipe.operator;
+  const field = pages.flatMap((page) => page.fields).find((candidate) => candidate.id === fieldId);
+  const supported = field ? (TRIGGER_OPERATORS[field.type] ?? []) : [];
+  if (supported.length === 0 || supported.includes(recipe.operator)) return recipe.operator;
+  // `equals` has no checkbox equivalent other than `contains`; otherwise fall
+  // back to whatever the field does support.
+  return supported.includes('contains') ? 'contains' : supported[0];
+};
+
+export const recipeToSeed = (recipe: LogicRecipe, pages: FormPage[]) => {
+  const fieldId = suggestTriggerFieldId(recipe, pages);
+  const operator = operatorForField(recipe, pages, fieldId);
+  return {
+    combinator: 'all' as const,
+    terms: [
+      {
+        fieldId: fieldId ?? '',
+        operator,
+        ...(operator === 'isFilled' || operator === 'isEmpty' ? {} : { value: undefined }),
+      },
+    ],
+    actions: [{ type: recipe.actionType, fieldIds: [] as string[], pageId: '' }],
+  };
+};

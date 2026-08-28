@@ -171,7 +171,15 @@ export const LogicHealthPanel: React.FC<LogicHealthPanelProps> = ({
                 {/* A dangling reference is the one issue with a mechanical repair:
                     drop the parts that point at nothing. Everything else needs a
                     judgement call, so those rows only navigate to the rule. */}
-                {issue.kind === 'brokenReference' && canEdit && issue.ruleIds[0] && (
+                {/* Only offer cleanup for dangling ids. `cleanupRuleReferences`
+                    strips missing field/page references; it cannot repair a
+                    stale option value, so offering it there would save an
+                    unchanged rule and report success while the issue remains. */}
+                {issue.kind === 'brokenReference' &&
+                  canEdit &&
+                  issue.ruleIds[0] &&
+                  ((issue.detail.missingFieldIds?.length ?? 0) > 0 ||
+                    (issue.detail.missingPageIds?.length ?? 0) > 0) && (
                   <button
                     type="button"
                     onClick={() => onCleanupRule(issue.ruleIds[0])}

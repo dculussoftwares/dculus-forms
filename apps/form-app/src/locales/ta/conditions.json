@@ -99,7 +99,8 @@
     "everythingVisible": "அனைத்துப் புலங்களும் பக்கங்களும் தெரிகின்றன.",
     "hiddenFields": "{{count}} புலம்(கள்) மறைக்கப்பட்டுள்ளன",
     "hiddenPages": "{{count}} பக்கம்(கள்) மறைக்கப்பட்டுள்ளன",
-    "requiredFields": "{{count}} புலம்(கள்) கட்டாயம்"
+    "requiredFields": "{{count}} புலம்(கள்) கட்டாயம்",
+    "unrequiredFields": "{{count}} புலம்(கள்) இனி கட்டாயமில்லை"
   },
   "deleteDialog": {
     "title": "இந்த நிபந்தனையை நீக்கவா?",
