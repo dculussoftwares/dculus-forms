@@ -2,7 +2,7 @@
 
 > The buildable v1. Five ways to put a dculus form in front of respondents — **link, button, plain iframe, inline JS (auto-resize), lightbox popup** — configured from one panel with a live preview, and attributed in analytics.
 
-- **Status**: Spec, ready to build. Nothing implemented.
+- **Status**: **Built.** All five types ship. See §15 for what was decided differently from this spec while building it, and what is still open.
 - **Companion doc**: [`form-embed-strategy.md`](./form-embed-strategy.md) — competitive analysis, architectural constraints, phased roadmap. This doc is the narrow, concrete v1 cut of it.
 - **Est.**: 9–12 dev-days (+0.5 for the §2 prerequisite fix, which can ship first and alone).
 
@@ -592,3 +592,80 @@ CORS (iframe calls originate from the viewer origin — already allowlisted) · 
 6. **Lightbox creates its iframe on click**, not on page load — an embed a visitor never opens should cost them nothing.
 7. **The word "Share" is retired**; surfaces are named by audience — *Collect responses* / *Collaborate* (§2.4). Following Microsoft Forms' separation, but **not** its demotion of collaboration into ⋯: co-editing is a headline feature here, unlike in MS Forms.
 8. **"Who can respond" is mirrored into the Collect panel** rather than left only in Settings → Access control — set the audience where the link is made, and the embed limitation becomes visible at the moment of choosing.
+
+---
+
+## 15. Build notes — where the implementation diverges from this spec
+
+Everything in §1's scope shipped: link, button, plain iframe, inline (JS,
+auto-resize) and lightbox, configured from the Collect panel with a live
+preview and a device toggle, QR download, platform snippet variants,
+traffic-source attribution, and the host-page `onSubmit` callback.
+
+Five things were decided differently while building, each because the spec's
+version did not survive contact with the code.
+
+### 15.1 `height` is two fields, not one
+
+The spec's `height?: 'auto' | number` has no GraphQL representation — there is
+no union of scalars — and smuggling a number through a `String` field would put
+a parse at every read. It is `heightMode: 'auto' | 'fixed'` plus
+`heightPx: number` instead, which is also the shape the panel's
+"Fit content / Fixed [600] px" radio actually needs.
+
+### 15.2 Embedded intro screens keep a definite height
+
+The spec says "content-height variant of the shell" for all nine layouts. That
+is right for the pages and thank-you screens, and meaningless for the intro
+screens: they are full-bleed heroes whose white paper card is absolutely
+positioned with percentage insets, and L8's intro has no in-flow content at all.
+Asking them to fit their content collapses them.
+
+Embedded intros are therefore a definite `560px` box, inside which the existing
+absolute arrangement works untouched; the pages and thank-you screens get true
+content height. The frame animates between the two on the CTA, which the resize
+protocol already handles. See `packages/ui/src/layouts/shared/embedShell.ts`.
+
+### 15.3 The embed types live in a leaf module
+
+`@dculus/types`' index re-exports `conditions`, `validation` and
+`formHookUtils`, each of which imports back from the index. Under a CommonJS
+test runner that cycle leaves the barrel partially initialised, and a runtime
+constant read through it comes back `undefined` — which is why
+`DEFAULT_EMBED_SETTINGS` is defined in `packages/types/src/embed.ts`, a module
+with no imports at all, reachable as `@dculus/types/embed.js` (the same subpath
+pattern `graphql.js` already uses).
+
+This is a workaround, not a fix. The underlying cycle predates this work and
+still affects any runtime value read from the barrel in form-app's jest tests.
+
+### 15.4 Escape is forwarded from the iframe
+
+§5 says "Esc closes" the lightbox, and the host cannot implement that: keyboard
+events raised inside a cross-origin iframe never reach the parent, and the
+respondent is focused inside the form within a second of it opening. The iframe
+listens for Escape and posts `dculus:closeself`; the host acts on that. Without
+this, "press Esc" was true only before the respondent touched anything —
+verified failing, then verified fixed.
+
+### 15.5 The preview is untracked and inert
+
+Not in the spec, and it should have been: the Embed tab renders the real
+`/embed/:shortUrl` route, so opening it recorded a form view — inflating the
+owner's own analytics and, because a view emits `FORM_VIEWED`, spending their
+plan's view quota every time. The preview now passes `preview=1`, which
+suppresses view and submission tracking, and the frame is `pointer-events:
+none` so an owner cannot file a real response from inside their own settings
+panel.
+
+### What is still open
+
+- **§7's platform variants**: WordPress and Webflow emit identical HTML to the
+  HTML tab, with the "where to paste it" guidance as a note beside the snippet —
+  that guidance was always the actual support question, not the markup.
+- **`embed.enabled`** is honoured by `/embed/*` and defaults to on, but nothing
+  in the UI turns it off yet. The switch belongs with the v2 domain allowlist.
+- **Gated forms** remain unembeddable (§1), and a form that becomes gated after
+  its snippet was pasted now renders an explanatory card with a link to the
+  hosted page rather than a sign-in that cannot complete inside a frame.
+- **The "Powered by dculus" chip** (decision 5) is not implemented.

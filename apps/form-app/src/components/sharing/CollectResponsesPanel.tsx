@@ -8,6 +8,10 @@ import {
   DialogTitle,
   Button,
   Separator,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
@@ -15,7 +19,13 @@ import { Copy, Check, ExternalLink, AlertTriangle, Send } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFormSettings } from '../../hooks/useFormSettings';
 import type { FormSettings } from '@dculus/types';
+import type { EmbedSettings } from '@dculus/types/embed.js';
+import { getFormViewerBaseUrl } from '../../lib/config';
 import { WhoCanRespondSelect, type AudienceSettings } from './WhoCanRespondSelect';
+import { EmbedTab } from './EmbedTab';
+import { QrTab } from './QrTab';
+
+export type CollectTab = 'link' | 'qr' | 'embed';
 
 interface CollectResponsesPanelProps {
   open: boolean;
@@ -31,6 +41,12 @@ interface CollectResponsesPanelProps {
   userPermission?: string | null;
   onPublish?: () => void;
   publishLoading?: boolean;
+  /** Short URL of the form — the embed snippets and QR are built from it. */
+  shortUrl: string;
+  /** Drives the "fixed height on a multi-page form" warning in the Embed tab. */
+  pageCount?: number;
+  /** Which tab to open on. The header's Embed shortcut lands straight on 'embed'. */
+  initialTab?: CollectTab;
 }
 
 /**
@@ -54,13 +70,29 @@ export const CollectResponsesPanel: React.FC<CollectResponsesPanelProps> = ({
   userPermission,
   onPublish,
   publishLoading = false,
+  shortUrl,
+  pageCount = 1,
+  initialTab = 'link',
 }) => {
   const { t } = useTranslation('collectResponses');
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
 
-  const { settings, isSaving, updateAccessControl, updateCollectRespondentEmail, saveSettings } =
-    useFormSettings({ formId, initialSettings });
+  const {
+    settings,
+    isSaving,
+    updateAccessControl,
+    updateCollectRespondentEmail,
+    saveSettings,
+    saveEmbedSettings,
+  } = useFormSettings({ formId, initialSettings });
+  const [tab, setTab] = useState<CollectTab>(initialTab);
+
+  // Reopening from a different entry point must land on that entry point's
+  // tab, not on whichever tab was left selected last time.
+  useEffect(() => {
+    if (open) setTab(initialTab);
+  }, [open, initialTab]);
 
   // The audience presets change `accessControl` and `collectRespondentEmail`
   // together, but both updaters are functional setState calls — so the save has
@@ -105,6 +137,10 @@ export const CollectResponsesPanel: React.FC<CollectResponsesPanelProps> = ({
     }
   };
 
+  const handlePersistEmbed = async (embed: EmbedSettings) => {
+    await saveEmbedSettings(embed);
+  };
+
   const handleMoreOptions = () => {
     onOpenChange(false);
     navigate(`/dashboard/form/${formId}/settings?section=access-control`);
@@ -112,7 +148,17 @@ export const CollectResponsesPanel: React.FC<CollectResponsesPanelProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg" data-testid="collect-responses-panel">
+      <DialogContent
+        // One size for the whole panel, never a per-tab size. Sizing the dialog
+        // from the selected tab made it jump width on every tab switch, which
+        // reads as the panel reloading rather than as a tab changing.
+        //
+        // The width is the one the Embed tab needs; Link and QR centre inside
+        // it. The scroll container is likewise unconditional, so the tallest
+        // tab doesn't introduce a scrollbar that shifts the others' layout.
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        data-testid="collect-responses-panel"
+      >
         <DialogHeader>
           <div className="flex items-start gap-3">
             <div
@@ -171,47 +217,82 @@ export const CollectResponsesPanel: React.FC<CollectResponsesPanelProps> = ({
 
           <Separator />
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-primary">{t('link.label')}</p>
-            <div
-              className="flex items-center gap-2 rounded-xl bg-white dark:bg-card p-2"
-              style={{
-                border: '1px solid var(--tf-border-medium)',
-                boxShadow: '0 1px 4px var(--tf-overlay)',
-              }}
-            >
-              <p className="flex-1 min-w-0 truncate text-sm font-mono text-foreground" title={formUrl}>
-                {formUrl}
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleCopy}
-                data-testid="collect-responses-copy-link"
-                className="shrink-0"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                <span className="ml-1.5">{copied ? t('link.copied') : t('link.copy')}</span>
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">{t('link.help')}</p>
-          </div>
+          <Tabs value={tab} onValueChange={(value) => setTab(value as CollectTab)}>
+            <TabsList className="w-full justify-start" data-testid="collect-responses-tabs">
+              <TabsTrigger value="link" data-testid="collect-tab-link">
+                {t('tabs.link')}
+              </TabsTrigger>
+              <TabsTrigger value="qr" data-testid="collect-tab-qr">
+                {t('tabs.qr')}
+              </TabsTrigger>
+              <TabsTrigger value="embed" data-testid="collect-tab-embed">
+                {t('tabs.embed')}
+              </TabsTrigger>
+            </TabsList>
 
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t('close')}
-            </Button>
-            <Button onClick={() => window.open(formUrl, '_blank', 'noopener')}>
-              <ExternalLink className="mr-2 h-4 w-4" />
-              {t('link.open')}
-            </Button>
-          </div>
+            <TabsContent value="link" className="mt-4 space-y-2">
+              <p className="text-sm font-medium text-primary">{t('link.label')}</p>
+              <div
+                className="flex items-center gap-2 rounded-xl bg-white dark:bg-card p-2"
+                style={{
+                  border: '1px solid var(--tf-border-medium)',
+                  boxShadow: '0 1px 4px var(--tf-overlay)',
+                }}
+              >
+                <p className="flex-1 min-w-0 truncate text-sm font-mono text-foreground" title={formUrl}>
+                  {formUrl}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopy}
+                  data-testid="collect-responses-copy-link"
+                  className="shrink-0"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  <span className="ml-1.5">{copied ? t('link.copied') : t('link.copy')}</span>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{t('link.help')}</p>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  {t('close')}
+                </Button>
+                <Button onClick={() => window.open(formUrl, '_blank', 'noopener')}>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  {t('link.open')}
+                </Button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="qr" className="mt-4">
+              {/* Mounted only while selected: rendering a canvas nobody is
+                  looking at costs a paint on every panel open. */}
+              {tab === 'qr' && <QrTab formUrl={formUrl} formTitle={formTitle} />}
+            </TabsContent>
+
+            <TabsContent value="embed" className="mt-4">
+              {/* Same reason, and more so — the Embed tab mounts a live iframe
+                  of the form. */}
+              {tab === 'embed' && (
+                <EmbedTab
+                  viewerOrigin={getFormViewerBaseUrl()}
+                  shortUrl={shortUrl}
+                  formTitle={formTitle}
+                  isPublished={isPublished}
+                  pageCount={pageCount}
+                  embed={settings.embed}
+                  accessControlEnabled={!!settings.accessControl?.enabled}
+                  collectRespondentEmail={!!settings.collectRespondentEmail}
+                  canEdit={userPermission === 'OWNER' || userPermission === 'EDITOR'}
+                  onPersist={handlePersistEmbed}
+                />
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
 
-        {/* formTitle is intentionally unused in the body — the dialog title is
-            generic so the panel reads the same from every entry point. Kept in
-            the props for the Embed tab's snippet `title` attribute. */}
-        <span className="sr-only">{formTitle}</span>
       </DialogContent>
     </Dialog>
   );

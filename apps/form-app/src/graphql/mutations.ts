@@ -99,6 +99,20 @@ export const UPDATE_FORM : TypedDocumentNode<any, any> = gql`
           resultMessagePass
           resultMessageFail
         }
+        # Form Embed v1 — must be selected everywhere the settings column is
+        # read or written, because saves replace the whole JSON column: a
+        # settings save that omits these fields would silently wipe the
+        # owner's embed configuration.
+        embed {
+          enabled
+          type
+          width
+          heightMode
+          heightPx
+          transparentBackground
+          buttonLabel
+          closeOnSubmit
+        }
       }
       isPublished
       organization {

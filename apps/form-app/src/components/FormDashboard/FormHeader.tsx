@@ -19,6 +19,7 @@ import {
   Copy,
   FileText,
   PencilLine,
+  Code2,
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -36,6 +37,8 @@ interface FormHeaderProps {
   onUnpublish?: () => void;
   onDelete?: () => void;
   onCollectResponses: () => void;
+  /** Same panel as onCollectResponses, opened straight on the Embed tab. */
+  onEmbed?: () => void;
   onPreview: () => void;
   onViewAnalytics: () => void;
   onShare?: () => void;
@@ -52,6 +55,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
   onUnpublish,
   onDelete,
   onCollectResponses,
+  onEmbed,
   onPreview,
   onViewAnalytics,
   onShare,
@@ -187,6 +191,15 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
+              {/* A shortcut into the Collect panel, not a separate surface —
+                  embedding is discoverable here as well as behind the primary
+                  button, without becoming a second place to configure it. */}
+              {onEmbed && (
+                <DropdownMenuItem onClick={onEmbed} data-testid="embed-form-menu-item">
+                  <Code2 className="mr-2 h-4 w-4" />
+                  {t('header.actions.embed')}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={onDuplicate} disabled={duplicateLoading}>
                 <Copy className="mr-2 h-4 w-4" />
                 {duplicateLoading ? t('header.actions.duplicating') : t('header.actions.duplicate')}

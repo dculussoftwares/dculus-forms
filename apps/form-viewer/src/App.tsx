@@ -14,6 +14,9 @@ const Home = lazy(() => import('./pages/Home'));
 const DemoPage = lazy(() => import('./components/DemoPage'));
 const QuizResultPage = lazy(() => import('./pages/QuizResultPage'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
+// Form Embed v1 — lazy because it is never on the critical path for a direct
+// visit, and the bridge/ResizeObserver code has no business in that bundle.
+const EmbedFormViewer = lazy(() => import('./pages/EmbedFormViewer'));
 
 class FormViewerErrorBoundary extends React.Component<
   { children: React.ReactNode },
@@ -54,6 +57,11 @@ function App() {
             {/* Native Quiz (epic #289, Story 16/#320, D9): "check your result
                 later" for identity-gated forms with a deferred grade release. */}
             <Route path="/f/:shortUrl/result" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><QuizResultPage /></Suspense></FormViewerErrorBoundary>} />
+            {/* Form Embed v1 — the form inside someone else's page. Separate
+                from /f/:shortUrl because the two are framed differently:
+                `frame-ancestors` allows any site here and only 'self' there
+                (see public/_headers). */}
+            <Route path="/embed/:shortUrl" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><EmbedFormViewer /></Suspense></FormViewerErrorBoundary>} />
             {/* Respondent sign-in redirect target (Google + one-time-token bridge) */}
             <Route path="/auth/callback" element={<FormViewerErrorBoundary><Suspense fallback={<PageFallback />}><OAuthCallback /></Suspense></FormViewerErrorBoundary>} />
             {/* Legacy URL format support (without /f/ prefix) */}

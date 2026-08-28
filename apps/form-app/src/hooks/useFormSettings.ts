@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { UPDATE_FORM } from '../graphql/mutations';
 import { requiresRespondentIdentity, type SubmissionLimitsSettings, type ResponseCopySettings, type AccessControlSettings, type QuizSettings } from '@dculus/types';
+import type { EmbedSettings } from '@dculus/types/embed.js';
 import { toastSuccess, toastError } from '@dculus/ui';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { useTranslation } from './useTranslation';
@@ -15,6 +16,10 @@ interface FormSettingsData {
   // the additive guarantee in epic #289: an unrelated settings save must not
   // introduce a `quiz` key for a form that was never a quiz.
   quiz?: QuizSettings;
+  // Same contract as `quiz`: absent for a form that has never opened the Embed
+  // tab. It is held in state purely so that saving an unrelated section does
+  // not drop it — saves replace the whole JSON column.
+  embed?: EmbedSettings;
 }
 
 interface UseFormSettingsProps {
@@ -90,6 +95,10 @@ export const useFormSettings = ({
         // normalize both to `undefined` so a non-quiz form's state never
         // carries a `quiz` key into the next unrelated settings save.
         quiz: initialSettings.quiz ?? undefined,
+        // Same normalisation as `quiz` above — null (absent in the DB) and
+        // undefined both have to become undefined, or an unrelated save would
+        // start writing an `embed: null` key onto forms that never had one.
+        embed: initialSettings.embed ?? undefined,
       }));
     }
   }, [initialSettings]);
@@ -281,9 +290,23 @@ export const useFormSettings = ({
     }
   };
 
+  /**
+   * Persist `settings.embed` (Form Embed v1).
+   *
+   * Unlike the other savers, this one takes its payload as an argument rather
+   * than reading it out of `settings`: the Embed tab holds its options in its
+   * own local state so the live preview updates with no round trip, and only
+   * commits them when the owner copies the snippet.
+   */
+  const saveEmbedSettings = async (embed: EmbedSettings) => {
+    setSettings(prev => ({ ...prev, embed }));
+    await saveSettings({ embed });
+  };
+
   return {
     settings,
     isSaving,
+    saveEmbedSettings,
     updateSetting,
     saveSettings,
     updateSubmissionLimits,

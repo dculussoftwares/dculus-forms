@@ -6,6 +6,7 @@ import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { extractMentionFields } from '../utils/mentionFields';
 import { ThankYouScreen } from './shared/ThankYouScreen';
 import { LayoutProps } from '../types';
+import { layoutShell } from './shared/embedShell';
 
 export const L9PagesLayout: React.FC<LayoutProps> = ({
   pages,
@@ -22,6 +23,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
   gradeResult,
   quizResultLabels,
   resultLink,
+  embedded,
 }) => {
   // L9 has no intro screen — the thank-you screen is its only alternate state.
   const showThankYou = screenOverride === 'thankYou';
@@ -62,13 +64,15 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
         transition: 'background 0.5s ease-in-out'
       };
 
+  const shell = layoutShell(embedded);
+
   return (
-    <div className={`w-full h-full bg-white dark:bg-gray-900 flex flex-col ${className}`}>
+    <div className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}>
       {/* Content - Pages Only */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={shell.scroll}>
         {/* Pages Section - Direct display without intro */}
         <div
-          className="h-full relative"
+          className={`${shell.screen} relative`}
           style={outerBackgroundStyle}
         >
           {/* Video background layer - fills the outer area, no blur (unlike images) */}
@@ -99,7 +103,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
           )}
 
           {/* Pages content with white background container */}
-          <div className="h-full relative z-10 p-3 sm:p-8 overflow-y-auto">
+          <div className={`${shell.screenPane} relative z-10 p-3 sm:p-8`}>
             {showThankYou ? (
               <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                 <ThankYouScreen

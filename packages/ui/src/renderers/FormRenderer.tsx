@@ -62,6 +62,12 @@ export interface FormRendererProps {
    * byte-for-byte unaffected.
    */
   resultLink?: { href: string; label: string };
+  /**
+   * Form Embed v1 — switches every layout to its content-height shell so the
+   * host page can size the iframe from the content. Set only by
+   * `/embed/:shortUrl`; undefined everywhere else.
+   */
+  embedded?: boolean;
 }
 
 export const FormRenderer: React.FC<FormRendererProps> = ({
@@ -86,6 +92,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   gradeResult,
   quizResultLabels,
   resultLink,
+  embedded,
 }) => {
   const { getFormattedResponses } = useFormResponseUtils();
   const store = useFormResponseStore();
@@ -217,6 +224,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         gradeResult={gradeResult}
         quizResultLabels={quizResultLabels}
         resultLink={resultLink}
+        embedded={embedded}
       />
     </FormResponseContext.Provider>
   );

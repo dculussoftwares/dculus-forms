@@ -83,7 +83,31 @@ async function uploadFormResponseFile(
   return data.key;
 }
 
-const FormViewer: React.FC = () => {
+export interface FormViewerProps {
+  /**
+   * Form Embed v1 — render for a host page's iframe instead of a full window:
+   * the shell hugs its content (so the host can size the frame), overlays are
+   * contained rather than viewport-fixed, and every state renders compact.
+   * Set only by `EmbedFormViewer`; `/f/:shortUrl` leaves it undefined.
+   */
+  embedded?: boolean;
+  /**
+   * Called after a successful submission so an embedded host can be notified.
+   * Deliberately given no arguments — no answer data may cross the frame.
+   */
+  onSubmitted?: () => void;
+  /**
+   * Set false to render the form without recording a view or a start time.
+   * Only the owner's own embed preview does this — see EmbedPreview.
+   */
+  trackAnalytics?: boolean;
+}
+
+const FormViewer: React.FC<FormViewerProps> = ({
+  embedded = false,
+  onSubmitted,
+  trackAnalytics = true,
+}) => {
   const { shortUrl } = useParams<{ shortUrl: string }>();
   const cdnEndpoint = getCdnEndpoint();
   // Ref-based guard prevents double-submit even if React batches state updates slowly
@@ -116,13 +140,13 @@ const FormViewer: React.FC = () => {
   // Track form analytics when form is loaded
   const { trackFormStartTime } = useFormAnalytics({
     formId: data?.formByShortUrl?.id || '',
-    enabled: !!data?.formByShortUrl?.id,
+    enabled: trackAnalytics && !!data?.formByShortUrl?.id,
   });
 
   // Hook for gathering submission analytics data
   const { getSubmissionAnalyticsData } = useFormSubmissionAnalytics({
     formId: data?.formByShortUrl?.id || '',
-    enabled: !!data?.formByShortUrl?.id,
+    enabled: trackAnalytics && !!data?.formByShortUrl?.id,
   });
 
   // Memoized deserialization — placed here (before any early returns) to satisfy Rules of Hooks
@@ -242,6 +266,8 @@ const FormViewer: React.FC = () => {
                 userAgent: analyticsData.userAgent,
                 timezone: analyticsData.timezone,
                 language: analyticsData.language,
+                embedContext: analyticsData.embedContext,
+                embedHost: analyticsData.embedHost,
                 ...buildCompletionTimeInput(completionTimeSeconds),
               }),
             },
@@ -265,6 +291,9 @@ const FormViewer: React.FC = () => {
         // server graded this submission synchronously (epic #289, D3).
         grade: grade ?? undefined,
       });
+      // Ids only — the host page learns *that* a submission happened, never
+      // what was submitted.
+      onSubmitted?.();
       // Leave isSubmittingRef true on success — form is done, no re-submit needed
     } catch (err: unknown) {
       console.error('Form submission error:', err);
@@ -294,10 +323,10 @@ const FormViewer: React.FC = () => {
   if (loading) {
     return (
       <div
-        className="h-screen w-full"
+        className={embedded ? 'w-full min-h-[240px] flex items-center justify-center' : 'h-screen w-full'}
         data-testid="form-viewer-loading"
       >
-        <LoadingSpinner fullScreen size="md" />
+        <LoadingSpinner fullScreen={!embedded} size="md" />
       </div>
     );
   }
@@ -308,7 +337,7 @@ const FormViewer: React.FC = () => {
 
     return (
       <div
-        className="h-screen w-full flex items-center justify-center"
+        className={`w-full flex items-center justify-center ${embedded ? 'min-h-[240px]' : 'h-screen'}`}
         data-testid="form-viewer-error"
       >
         <div className="text-center p-4 sm:p-8">
@@ -328,7 +357,7 @@ const FormViewer: React.FC = () => {
 
   if (!data?.formByShortUrl) {
     return (
-      <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
+      <div className={`w-full flex items-center justify-center ${embedded ? 'min-h-[240px]' : 'h-screen'}`} data-testid="form-viewer-error">
         <div className="text-center p-4 sm:p-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Form Not Found
@@ -382,7 +411,7 @@ const FormViewer: React.FC = () => {
   // Check if form schema exists
   if (!form.formSchemaPublic) {
     return (
-      <div className="h-screen w-full flex items-center justify-center" data-testid="form-viewer-error">
+      <div className={`w-full flex items-center justify-center ${embedded ? 'min-h-[240px]' : 'h-screen'}`} data-testid="form-viewer-error">
         <div className="text-center p-4 sm:p-8">
           <h1 className="text-2xl font-bold text-foreground mb-2">
             Form Not Ready
@@ -418,7 +447,7 @@ const FormViewer: React.FC = () => {
   // stays mounted rather than being swapped for a separate component, so the
   // thank-you screen inherits the same layout's theme/spacing/background.
   return (
-    <div className="h-screen w-full" data-testid="form-viewer-renderer">
+    <div className={embedded ? 'w-full relative' : 'h-screen w-full'} data-testid="form-viewer-renderer">
       {/* Submission error message */}
       {submissionState === 'error' && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 m-4">
@@ -467,7 +496,8 @@ const FormViewer: React.FC = () => {
         cdnEndpoint={cdnEndpoint}
         formSchema={formSchema!}
         mode={RendererMode.SUBMISSION}
-        className="h-full w-full"
+        className={embedded ? 'w-full' : 'h-full w-full'}
+        embedded={embedded}
         formId={form.id}
         onFormSubmit={handleFormSubmit}
         onResponseChange={handleFirstFormInteraction}
@@ -490,7 +520,7 @@ const FormViewer: React.FC = () => {
           the still-mounted FormRenderer (not an early return) so in-progress
           answers in useFormResponseStore survive. */}
       {needsReauth && (
-        <div className="fixed inset-0 bg-background z-50">
+        <div className={`${embedded ? 'absolute' : 'fixed'} inset-0 bg-background z-50`}>
           <SignInGate
             formTitle={form.title}
             allowedDomains={allowedDomains}
@@ -501,7 +531,7 @@ const FormViewer: React.FC = () => {
 
       {/* Loading overlay during submission */}
       {submissionState === 'submitting' && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className={`${embedded ? 'absolute' : 'fixed'} inset-0 bg-black/50 flex items-center justify-center z-50`}>
           <div className="bg-card rounded-lg p-6 max-w-sm mx-4">
             <div className="flex items-center gap-3">
               <LoadingSpinner fullScreen={false} size="sm" />

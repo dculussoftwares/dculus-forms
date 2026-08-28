@@ -40,6 +40,7 @@
 
 import { sanitizeConditions, type ConditionalRule } from './conditions.js';
 import { sanitizeFieldGrading, type FieldGrading, type QuizSettings } from './quiz.js';
+import type { EmbedSettings } from './embed.js';
 
 // Form Settings types
 export interface MaxResponsesSettings {
@@ -106,6 +107,8 @@ export interface FormSettings {
   // Absent or enabled: false = byte-for-byte identical to a non-quiz form
   // (see docs/native-quiz-strategy.md and GitHub issue #289's additive guarantee).
   quiz?: QuizSettings;
+  // Absent = DEFAULT_EMBED_SETTINGS. Purely additive; no migration.
+  embed?: EmbedSettings;
 }
 
 // Form related types
@@ -1064,6 +1067,13 @@ export * from './formHookUtils.js';
 
 // Re-export plugin types
 export * from './plugins.js';
+
+// Re-export Form Embed v1 types, defaults and predicates. These live in their
+// own leaf module (no imports at all) so that consumers which only need embed
+// constants can import './embed.js' directly and avoid this barrel — several
+// modules here import back from index.ts, and that cycle leaves the barrel
+// partially initialised under CommonJS test runners.
+export * from './embed.js';
 
 /**
  * 📋 INTEGRATION CHECKLIST - When adding new field types or properties:

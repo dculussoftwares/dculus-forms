@@ -17,6 +17,10 @@
     "./ai.js": {
       "types": "./dist/ai.d.ts",
       "import": "./dist/ai.js"
+    },
+    "./embed.js": {
+      "types": "./dist/embed.d.ts",
+      "import": "./dist/embed.js"
     }
   },
   "scripts": {

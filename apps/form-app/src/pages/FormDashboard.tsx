@@ -21,7 +21,7 @@ import { QuickActions } from '../components/FormDashboard/QuickActions';
 import { BuilderNudgeBanner } from '../components/FormDashboard/BuilderNudgeBanner';
 import { DeleteDialog, UnpublishDialog } from '../components/FormDashboard/Dialogs';
 import { ShareModal } from '../components/sharing/ShareModal';
-import { CollectResponsesPanel } from '../components/sharing/CollectResponsesPanel';
+import { CollectResponsesPanel, type CollectTab } from '../components/sharing/CollectResponsesPanel';
 import { PublishSuccessAnimation } from '../components/FormDashboard/PublishSuccessAnimation';
 import { useFormDashboard } from '../hooks/useFormDashboard';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,6 +38,8 @@ const FormDashboard: React.FC = () => {
   const { user } = useAuth();
   const { organizationId } = useAppConfig();
   const [showShareModal, setShowShareModal] = useState(false);
+  // Which tab the Collect panel opens on — set by whichever entry point was used.
+  const [collectTab, setCollectTab] = useState<CollectTab>('link');
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [duplicateProgress, setDuplicateProgress] = useState(0);
   const { t } = useTranslation('formDashboard');
@@ -221,7 +223,14 @@ const FormDashboard: React.FC = () => {
             onPublish={form.userPermission === 'OWNER' || form.userPermission === 'EDITOR' ? handlePublish : undefined}
             onUnpublish={form.userPermission === 'OWNER' || form.userPermission === 'EDITOR' ? () => setShowUnpublishDialog(true) : undefined}
             onDelete={form.userPermission === 'OWNER' ? () => setShowDeleteDialog(true) : undefined}
-            onCollectResponses={handleCollectResponses}
+            onCollectResponses={() => {
+              setCollectTab('link');
+              handleCollectResponses();
+            }}
+            onEmbed={() => {
+              setCollectTab('embed');
+              handleCollectResponses();
+            }}
             onPreview={() => {
               window.open(formViewerUrl, '_blank');
             }}
@@ -286,6 +295,9 @@ const FormDashboard: React.FC = () => {
           formId={form.id}
           formTitle={form.title}
           formUrl={formViewerUrl}
+          shortUrl={form.shortUrl}
+          pageCount={form.formSchema?.pages?.length ?? 1}
+          initialTab={collectTab}
           isPublished={form.isPublished}
           settings={form.settings}
           userPermission={form.userPermission}

@@ -501,6 +501,8 @@ export const responsesResolvers = {
               timezone: input.timezone,
               language: input.language,
               completionTimeSeconds: input.completionTimeSeconds,
+              embedContext: input.embedContext,
+              embedHost: input.embedHost,
               visitorGeo,
             },
             clientIP

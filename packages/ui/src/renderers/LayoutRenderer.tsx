@@ -32,6 +32,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
   gradeResult,
   quizResultLabels,
   resultLink,
+  embedded,
 }) => {
   const commonProps: LayoutProps = {
     pages,
@@ -48,6 +49,7 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
     gradeResult,
     quizResultLabels,
     resultLink,
+    embedded,
   };
 
   const renderLayout = () => {
@@ -75,8 +77,10 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
     }
   };
 
+  // Embedded: the wrapper must not impose a height either, or the layout's
+  // content-height shell is clipped back to its (auto = 0) parent.
   return (
-    <div className="w-full h-full">
+    <div className={embedded ? 'w-full' : 'w-full h-full'}>
       {renderLayout()}
     </div>
   );

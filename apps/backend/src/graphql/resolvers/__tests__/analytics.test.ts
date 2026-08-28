@@ -534,6 +534,12 @@ describe('Analytics Resolvers', () => {
         { name: 'Firefox', count: 400, percentage: 26.7 },
         { name: 'Safari', count: 200, percentage: 13.3 },
       ],
+      // Form Embed v1 — 'direct' absorbs the rows with no embed context.
+      trafficSources: [
+        { context: 'direct', count: 1200, percentage: 80 },
+        { context: 'inline', count: 300, percentage: 20 },
+      ],
+      topEmbedHosts: [{ host: 'example.com', count: 300, percentage: 20 }],
       viewsOverTime: [
         { date: '2024-01-01', views: 100, sessions: 80 },
         { date: '2024-01-02', views: 150, sessions: 120 },

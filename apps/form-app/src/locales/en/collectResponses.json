@@ -35,6 +35,11 @@
     "saved": "Updated who can respond",
     "saveFailed": "Couldn't update who can respond"
   },
+  "tabs": {
+    "link": "Link",
+    "qr": "QR code",
+    "embed": "Embed"
+  },
   "link": {
     "label": "Form link",
     "help": "Anyone allowed by the setting above can open this link and submit the form.",
