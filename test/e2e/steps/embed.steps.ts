@@ -449,18 +449,29 @@ Then('focus should return to the lightbox trigger', async function (this: EmbedW
 });
 
 After(async function (this: EmbedWorld) {
-  // The context has to go first: its open page holds a keep-alive connection
-  // to the fixture server, which would otherwise keep the handle open.
+  // The context goes first: its open page holds a keep-alive connection to the
+  // fixture server, which would otherwise keep that handle open. Both halves
+  // run whatever happens to the other — a context that fails to close must not
+  // leave a server listening and the runner unable to exit.
   const context = hostContexts.get(this);
-  if (context) {
-    await context.close();
-    hostContexts.delete(this);
-  }
-
   const server = hostServers.get(this);
-  if (server) {
-    server.closeAllConnections?.();
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    hostServers.delete(this);
+
+  try {
+    if (context) {
+      try {
+        await context.close();
+      } finally {
+        hostContexts.delete(this);
+      }
+    }
+  } finally {
+    if (server) {
+      try {
+        server.closeAllConnections?.();
+        await new Promise<void>((resolve) => server.close(() => resolve()));
+      } finally {
+        hostServers.delete(this);
+      }
+    }
   }
 });

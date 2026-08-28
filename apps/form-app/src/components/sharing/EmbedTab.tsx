@@ -139,16 +139,10 @@ export const EmbedTab: React.FC<EmbedTabProps> = ({
     // panel had remembered their choices.
     if (canEdit) {
       try {
-        await onPersist({
-          enabled: embed?.enabled ?? true,
-          type,
-          width,
-          heightMode,
-          heightPx,
-          transparentBackground: transparent,
-          buttonLabel,
-          closeOnSubmit,
-        });
+        // The normalized `settings`, not the raw fields: it is what the copied
+        // snippet was built from, so a height typed outside the input's range
+        // cannot be stored as something the snippet never used.
+        await onPersist({ enabled: embed?.enabled ?? true, ...settings });
       } catch {
         // onPersist surfaces its own error toast.
       }

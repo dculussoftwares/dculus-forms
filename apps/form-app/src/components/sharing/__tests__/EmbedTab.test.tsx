@@ -120,6 +120,21 @@ describe('EmbedTab — copy persists the configuration', () => {
     await waitFor(() => expect(onPersist).toHaveBeenCalledTimes(1));
   });
 
+  it('saves the height the snippet actually used, not the raw input', async () => {
+    // `min`/`max` on the input do not stop a typed value, so an out-of-range
+    // height would otherwise be stored while the copied snippet carries the
+    // clamped one.
+    setClipboard(jest.fn().mockResolvedValue(undefined));
+    const onPersist = jest.fn().mockResolvedValue(undefined);
+
+    render(<EmbedTab {...baseProps} onPersist={onPersist} />);
+    fireEvent.change(screen.getByTestId('embed-height-px'), { target: { value: '99999' } });
+    fireEvent.click(screen.getByTestId('embed-copy-snippet'));
+
+    await waitFor(() => expect(onPersist).toHaveBeenCalledTimes(1));
+    expect(onPersist).toHaveBeenCalledWith(expect.objectContaining({ heightPx: 4000 }));
+  });
+
   it('does not save for someone who cannot edit the form', async () => {
     setClipboard(jest.fn().mockResolvedValue(undefined));
     const onPersist = jest.fn().mockResolvedValue(undefined);
