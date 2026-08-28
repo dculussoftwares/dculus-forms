@@ -46,6 +46,48 @@ describe('useLogicHealth — unreachable fields', () => {
     expect(unreachable[0].detail.fieldId).toBe('target');
   });
 
+  // An `all` rule is evaluated with `every(termMatches)`, and termMatches is
+  // false for an unknown field — so one dangling term kills the whole rule,
+  // leaving its showField target permanently hidden.
+  it('flags a field shown only by an all-rule that has one dangling term', () => {
+    const rules = [
+      makeRule({
+        combinator: 'all',
+        terms: [
+          { fieldId: 'trigger', operator: 'equals', value: 'Yes' },
+          { fieldId: 'deleted-trigger', operator: 'isFilled' },
+        ],
+        actions: [{ type: 'showField', fieldIds: ['target'] }],
+      }),
+    ];
+
+    const { result } = renderHook(() => useLogicHealth(rules, pages));
+
+    const unreachable = result.current.issues.filter((issue) => issue.kind === 'unreachableField');
+    expect(unreachable).toHaveLength(1);
+    expect(unreachable[0].detail.fieldId).toBe('target');
+  });
+
+  // An `any` rule still matches through its surviving term.
+  it('does not flag a field shown by an any-rule with one live term', () => {
+    const rules = [
+      makeRule({
+        combinator: 'any',
+        terms: [
+          { fieldId: 'trigger', operator: 'equals', value: 'Yes' },
+          { fieldId: 'deleted-trigger', operator: 'isFilled' },
+        ],
+        actions: [{ type: 'showField', fieldIds: ['target'] }],
+      }),
+    ];
+
+    const { result } = renderHook(() => useLogicHealth(rules, pages));
+
+    expect(result.current.issues.filter((issue) => issue.kind === 'unreachableField')).toHaveLength(
+      0
+    );
+  });
+
   it('does not flag a field a working rule can show', () => {
     const rules = [
       makeRule({

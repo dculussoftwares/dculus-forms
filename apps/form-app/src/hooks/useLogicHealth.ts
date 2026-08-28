@@ -46,12 +46,16 @@ export interface LogicHealth {
 }
 
 /**
- * A rule can never match when every one of its terms points at a field that no
- * longer exists — `termMatches` in the evaluator returns false for an unknown
- * fieldId, and `all`/`any` over an all-unknown term set is false either way.
+ * Whether a rule can never match, mirroring the evaluator's combinator handling:
+ * `termMatches` returns false for an unknown fieldId, so an `all` rule is dead
+ * as soon as ONE term is dangling (`every` over a false is false), while an
+ * `any` rule survives until every term is dangling.
  */
-const ruleCanNeverMatch = (rule: ConditionalRule, liveFieldIds: Set<string>): boolean =>
-  rule.terms.length > 0 && rule.terms.every((term) => !liveFieldIds.has(term.fieldId));
+const ruleCanNeverMatch = (rule: ConditionalRule, liveFieldIds: Set<string>): boolean => {
+  if (rule.terms.length === 0) return false;
+  const dangling = (term: { fieldId: string }) => !liveFieldIds.has(term.fieldId);
+  return rule.combinator === 'all' ? rule.terms.some(dangling) : rule.terms.every(dangling);
+};
 
 export interface RuleCleanup {
   /** The rule with every dangling term and action target stripped out. */

@@ -54,6 +54,11 @@ const ACTION_TYPES: EditorActionType[] = [
   'skipToPage',
 ];
 
+/** A stored number, or a numeric string the editor is willing to coerce. */
+const isFiniteNumeric = (value: unknown): boolean =>
+  (typeof value === 'number' && Number.isFinite(value)) ||
+  (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)));
+
 const emptyTerm = (): ConditionTerm => ({ fieldId: '', operator: 'equals' });
 const emptyAction = (): EditorAction => ({ type: 'showField', fieldIds: [], pageId: '' });
 
@@ -176,10 +181,10 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
       return t('editor.errors.selectOperator');
     const kind = getValueInputKind(field.type, term.operator);
     if (kind === 'none') return null;
-    if (kind === 'number')
-      return typeof term.value === 'number' && Number.isFinite(term.value)
-        ? null
-        : t('editor.errors.enterNumber');
+    // Accept the same shapes the number input renders — it tolerates a numeric
+    // string (e.g. an AI-authored rule), so rejecting one here would show
+    // "enter a number" against a field already displaying one.
+    if (kind === 'number') return isFiniteNumeric(term.value) ? null : t('editor.errors.enterNumber');
     return typeof term.value === 'string' && term.value.trim() !== ''
       ? null
       : t('editor.errors.enterValue');
@@ -279,8 +284,14 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
         return (
           <DatePicker
             date={isIsoDate ? parseCalendarDate(term.value as string) : undefined}
+            disabled={!canEdit}
             onDateChange={(date?: Date) =>
-              updateTerm(index, { value: date ? formatCalendarDate(date) : undefined })
+              updateTerm(index, {
+                // An unparseable Date would format to garbage and be stored as
+                // the term's value; treat it as clearing the field instead.
+                value:
+                  date && !Number.isNaN(date.getTime()) ? formatCalendarDate(date) : undefined,
+              })
             }
             placeholder={t('editor.pickDate')}
           />
