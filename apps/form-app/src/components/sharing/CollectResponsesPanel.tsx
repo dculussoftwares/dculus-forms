@@ -132,7 +132,7 @@ export const CollectResponsesPanel: React.FC<CollectResponsesPanelProps> = ({
           </div>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="space-y-5 min-w-0">
           {!isPublished && (
             <div
               className="flex items-start gap-3 rounded-xl p-3"
