@@ -10,6 +10,24 @@ import {
   formSubmissionAnalyticsRepository,
 } from '../repositories/index.js';
 import { EdgeVisitorLocation } from '../middleware/edge-geolocation.js';
+import { sanitizeEmbedAttribution } from '../lib/embedAttribution.js';
+
+/**
+ * Shapes of the two embed group-by results.
+ *
+ * The repository's `groupBy` is deliberately loosely typed (Prisma's overloads
+ * need a non-optional `orderBy` that `GroupByArgs` does not carry), so the
+ * result is narrowed here at the point of use rather than left as `any`.
+ */
+interface EmbedContextGroup {
+  embedContext: string | null;
+  _count: { _all: number };
+}
+
+interface EmbedHostGroup {
+  embedHost: string | null;
+  _count: { embedHost: number };
+}
 
 // Create require for CommonJS modules in ES module context
 const require = createRequire(import.meta.url);
@@ -33,6 +51,10 @@ interface AnalyticsData {
   timezone?: string;
   language?: string;
   visitorGeo?: EdgeVisitorLocation;
+  // Form Embed v1 — client-supplied, so both go through
+  // sanitizeEmbedAttribution() before they reach the database.
+  embedContext?: string;
+  embedHost?: string;
 }
 
 interface SubmissionAnalyticsData extends AnalyticsData {
@@ -289,6 +311,7 @@ const trackFormView = async (
       timezone: data.timezone,
       language: data.language,
       viewedAt: new Date(),
+      ...sanitizeEmbedAttribution(data),
     });
     
     logger.info(`Analytics tracked for form ${data.formId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
@@ -350,6 +373,7 @@ const trackFormSubmission = async (
       language: data.language,
       submittedAt: new Date(),
       completionTimeSeconds: data.completionTimeSeconds ?? null,
+      ...sanitizeEmbedAttribution(data),
     });
     
     logger.info(`Submission analytics tracked for form ${data.formId}, response ${data.responseId}, session ${data.sessionId}, country: ${countryCode || 'unknown'}`);
@@ -449,6 +473,8 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       cityStats,
       osStats,
       browserStats,
+      embedContextStats,
+      embedHostStats,
       rawDailyViews,
     ] = await Promise.all([
       formViewAnalyticsRepository.count({ where: whereClause }),
@@ -495,6 +521,24 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
         take: 10
       }),
       
+      // Form Embed v1 traffic sources. NULL embedContext is every row that
+      // predates the feature plus every non-embedded view, and both mean the
+      // same thing — so the null bucket is folded into 'direct' below rather
+      // than being backfilled or shown as its own category.
+      formViewAnalyticsRepository.groupBy({
+        by: ['embedContext'],
+        where: whereClause,
+        _count: { _all: true },
+      }),
+
+      formViewAnalyticsRepository.groupBy({
+        by: ['embedHost'],
+        where: { ...whereClause, embedHost: { not: null } },
+        _count: { embedHost: true },
+        orderBy: { _count: { embedHost: 'desc' } },
+        take: 10,
+      }),
+
       formViewAnalyticsRepository.getDailyViewStats(formId, timeRange),
     ]);
 
@@ -538,6 +582,28 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       percentage: totalViews > 0 ? (stat._count.browser / totalViews) * 100 : 0
     }));
     
+    // Fold the null bucket into 'direct': a view with no embed context is a
+    // view of the hosted page, whether it was recorded before this feature
+    // existed or simply wasn't embedded.
+    const contextCounts = new Map<string, number>();
+    for (const stat of embedContextStats as EmbedContextGroup[]) {
+      const key = stat.embedContext ?? 'direct';
+      contextCounts.set(key, (contextCounts.get(key) ?? 0) + stat._count._all);
+    }
+    const trafficSources = Array.from(contextCounts.entries())
+      .map(([context, count]) => ({
+        context,
+        count,
+        percentage: totalViews > 0 ? (count / totalViews) * 100 : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    const topEmbedHosts = (embedHostStats as EmbedHostGroup[]).map((stat) => ({
+      host: stat.embedHost,
+      count: stat._count.embedHost,
+      percentage: totalViews > 0 ? (stat._count.embedHost / totalViews) * 100 : 0,
+    }));
+
     // Fill in missing dates with zero values if timeRange is specified
     let viewsOverTime = rawDailyViews;
     if (timeRange && rawDailyViews.length > 0) {
@@ -556,6 +622,8 @@ const getFormAnalytics = async (formId: string, timeRange?: { start: Date; end: 
       topCities,
       topOperatingSystems,
       topBrowsers,
+      trafficSources,
+      topEmbedHosts,
       viewsOverTime
     };
   } catch (error) {

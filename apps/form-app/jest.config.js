@@ -20,6 +20,9 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@shared/(.*)$': '<rootDir>/../../packages/shared/src/$1',
+    // Before the generic @dculus/* rule: `@dculus/types/embed` is a leaf module
+    // inside the types package, not a package of its own.
+    '^@dculus/types/embed(\\.js)?$': '<rootDir>/../../packages/types/src/embed',
     '^@dculus/(.*)$': '<rootDir>/../../packages/$1/src',
     '^@dculus/type$': '<rootDir>/../../packages/types/src/index',
     '^(\\.{1,2}/.*)\\.js$': '$1',

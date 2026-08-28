@@ -57,7 +57,7 @@
         "unknown": "Unknown"
       },
       "topSubmissionCountry": {
-        "title": "Top Submission Country", 
+        "title": "Top Submission Country",
         "subtitle": "{{count}} submissions ({{percentage}}%)",
         "noData": "No submission data available",
         "unknown": "Unknown"
@@ -73,6 +73,16 @@
         "formatHours": "{{hours}}h",
         "notAvailable": "N/A"
       }
+    }
+  },
+  "trafficSources": {
+    "title": "Traffic sources",
+    "topHosts": "Top embedding sites",
+    "context": {
+      "direct": "Direct link",
+      "inline": "Inline embed",
+      "lightbox": "Popup embed",
+      "iframe": "Basic iframe"
     }
   }
 }

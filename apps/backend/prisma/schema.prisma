@@ -351,11 +351,15 @@ model FormViewAnalytics {
   language        String? // Browser locale (e.g., "en-US", "fr-CA")
   viewedAt        DateTime  @default(now())
   startedAt       DateTime? // When user first interacted with form (for completion time calculation)
+  // Form Embed v1 — where this view came from.
+  embedContext    String? // 'direct' | 'inline' | 'lightbox' | 'iframe'
+  embedHost       String? // Host page's hostname ONLY, never the full URL (a query string can carry PII)
 
   form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
 
   @@index([formId, viewedAt])
   @@index([formId, sessionId])
+  @@index([formId, embedHost])
   @@map("form_view_analytics")
 }
 
@@ -379,12 +383,16 @@ model FormSubmissionAnalytics {
   language              String? // Browser locale (e.g., "en-US", "fr-CA")
   submittedAt           DateTime @default(now())
   completionTimeSeconds Int? // Time taken to complete form in seconds
+  // Form Embed v1 — where this submission came from.
+  embedContext          String? // 'direct' | 'inline' | 'lightbox' | 'iframe'
+  embedHost             String? // Host page's hostname ONLY, never the full URL
 
   form     Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
   response Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
 
   @@index([formId, submittedAt])
   @@index([formId, sessionId])
+  @@index([formId, embedHost])
   @@map("form_submission_analytics")
 }
 

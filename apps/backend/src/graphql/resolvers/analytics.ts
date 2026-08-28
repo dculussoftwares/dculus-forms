@@ -65,6 +65,8 @@ export const analyticsResolvers = {
           userAgent: input.userAgent,
           timezone: input.timezone,
           language: input.language,
+          embedContext: input.embedContext,
+          embedHost: input.embedHost,
           visitorGeo
         }, clientIP);
 
@@ -177,6 +179,8 @@ export const analyticsResolvers = {
           timezone: input.timezone,
           language: input.language,
           completionTimeSeconds: input.completionTimeSeconds,
+          embedContext: input.embedContext,
+          embedHost: input.embedHost,
           visitorGeo
         }, clientIP);
 
@@ -283,6 +287,9 @@ export interface TrackFormViewInput {
   userAgent: string;
   timezone?: string;
   language?: string;
+  // Form Embed v1 — sanitised in analyticsService before storage.
+  embedContext?: string;
+  embedHost?: string;
 }
 
 export interface UpdateFormStartTimeInput {
@@ -299,6 +306,8 @@ export interface TrackFormSubmissionInput {
   timezone?: string;
   language?: string;
   completionTimeSeconds?: number;
+  embedContext?: string;
+  embedHost?: string;
 }
 
 export interface TimeRangeInput {

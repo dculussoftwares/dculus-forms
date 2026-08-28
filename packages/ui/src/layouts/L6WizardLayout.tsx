@@ -7,6 +7,7 @@ import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { extractMentionFields } from '../utils/mentionFields';
 import { ThankYouScreen } from './shared/ThankYouScreen';
 import { LayoutProps } from '../types';
+import { layoutShell } from './shared/embedShell';
 
 export const L6WizardLayout: React.FC<LayoutProps> = ({
   pages,
@@ -23,6 +24,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
   gradeResult,
   quizResultLabels,
   resultLink,
+  embedded,
 }) => {
   // L6 has no intro/pages toggle — content and pages stack together in one
   // continuous view. The thank-you screen is the only alternate state it needs.
@@ -102,11 +104,13 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
         transition: 'background 0.5s ease-in-out'
       };
 
+  const shell = layoutShell(embedded);
+
   return (
-    <div className={`w-full h-full bg-white dark:bg-gray-900 flex flex-col ${className}`}>
-      <div className="flex-1 overflow-y-auto">
+    <div className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}>
+      <div className={shell.scroll}>
         <div
-          className="h-full relative"
+          className={`${shell.screen} relative`}
           style={outerBackgroundStyle}
         >
           {/* Video background layer - fills the outer area, no blur (unlike images) */}
@@ -137,8 +141,8 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
           )}
 
           {/* Central Content Area with vertical layout - scrollable */}
-          <div className="h-full relative z-10 overflow-y-auto px-4 py-4 sm:px-[10%] sm:py-[5%]">
-            <div className="w-full max-w-4xl mx-auto flex flex-col space-y-3 sm:space-y-6 min-h-full">
+          <div className={`${shell.screenPane} relative z-10 px-4 py-4 sm:px-[10%] sm:py-[5%]`}>
+            <div className={`w-full max-w-4xl mx-auto flex flex-col space-y-3 sm:space-y-6 ${shell.minHFull}`}>
             {showThankYou ? (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                 <ThankYouScreen

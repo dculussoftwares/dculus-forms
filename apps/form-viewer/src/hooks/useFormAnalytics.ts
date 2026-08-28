@@ -3,6 +3,7 @@ import { gql } from '@apollo/client';
 import type { TypedDocumentNode } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { getOrCreateSessionId } from '../lib/sessionId';
+import { embedAttribution } from '../lib/embedBridge';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TRACK_FORM_VIEW: TypedDocumentNode<any, any> = gql`
@@ -47,13 +48,18 @@ export const useFormAnalytics = ({ formId, enabled = true }: UseFormAnalyticsOpt
     try {
       const sessionId = generateSessionId();
 
-      // Gather analytics data
+      // Gather analytics data. The embed attribution is read at send time
+      // rather than captured in a closure, so a `dculus:host` handshake that
+      // landed after mount is still reflected here.
+      const { embedContext, embedHost } = embedAttribution.get();
       const analyticsData = {
         formId,
         sessionId,
         userAgent: navigator.userAgent,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        language: navigator.language
+        language: navigator.language,
+        embedContext,
+        embedHost
       };
 
       // Track the form view

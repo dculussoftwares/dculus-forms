@@ -299,6 +299,10 @@ describe('Analytics Service', () => {
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
         .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        // Form Embed v1 — getFormAnalytics also groups by embedContext and
+        // then embedHost, so the ordered chain has two more calls.
+        .mockResolvedValueOnce([{ embedContext: null, _count: { _all: 1 } }] as any)
         .mockResolvedValueOnce([] as any);
 
       // getCountryNameFromCode catches errors internally — analytics still returns successfully
@@ -459,7 +463,11 @@ describe('Analytics Service', () => {
         .mockResolvedValueOnce([{ region: 'California', regionCode: 'CA', countryAlpha2: 'US', _count: { region: 1 } }] as any)
         .mockResolvedValueOnce([{ city: 'San Francisco', region: 'California', countryAlpha2: 'US', _count: { city: 1 } }] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
-        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any)
+        // Form Embed v1 — getFormAnalytics also groups by embedContext and
+        // then embedHost, so the ordered chain has two more calls.
+        .mockResolvedValueOnce([{ embedContext: null, _count: { _all: 1 } }] as any)
+        .mockResolvedValueOnce([] as any);
 
       const result = await analyticsService.getFormAnalytics('form-123');
 
@@ -482,7 +490,11 @@ describe('Analytics Service', () => {
         .mockResolvedValueOnce([{ region: 'California', regionCode: 'CA', countryAlpha2: 'US', _count: { region: 1 } }] as any)
         .mockResolvedValueOnce([{ city: 'San Francisco', region: 'California', countryAlpha2: 'US', _count: { city: 1 } }] as any)
         .mockResolvedValueOnce([{ operatingSystem: 'Windows', _count: { operatingSystem: 1 } }] as any)
-        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any);
+        .mockResolvedValueOnce([{ browser: 'Chrome', _count: { browser: 1 } }] as any)
+        // Form Embed v1 — getFormAnalytics also groups by embedContext and
+        // then embedHost, so the ordered chain has two more calls.
+        .mockResolvedValueOnce([{ embedContext: null, _count: { _all: 1 } }] as any)
+        .mockResolvedValueOnce([] as any);
 
       const timeRange = {
         start: new Date('2024-01-01'),
@@ -493,6 +505,40 @@ describe('Analytics Service', () => {
 
       expect(result.totalViews).toBe(5);
       expect(result.viewsOverTime).toBeDefined();
+    });
+
+    it('folds views with no embed context into "direct" and reports embedding hosts', async () => {
+      vi.mocked(formViewAnalyticsRepository.count).mockResolvedValue(10);
+      vi.mocked(formViewAnalyticsRepository.countDistinctSessions).mockResolvedValue(10);
+      vi.mocked(formViewAnalyticsRepository.getDailyViewStats).mockResolvedValue([]);
+
+      vi.mocked(formViewAnalyticsRepository.groupBy)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        .mockResolvedValueOnce([] as any)
+        // NULL is every row recorded before this feature existed, plus every
+        // non-embedded view. Both mean "the hosted page", so they must land in
+        // the same bucket as an explicit 'direct' rather than a second one.
+        .mockResolvedValueOnce([
+          { embedContext: null, _count: { _all: 6 } },
+          { embedContext: 'direct', _count: { _all: 1 } },
+          { embedContext: 'inline', _count: { _all: 3 } },
+        ] as any)
+        .mockResolvedValueOnce([
+          { embedHost: 'example.com', _count: { embedHost: 3 } },
+        ] as any);
+
+      const result = await analyticsService.getFormAnalytics('form-123');
+
+      expect(result.trafficSources).toEqual([
+        { context: 'direct', count: 7, percentage: 70 },
+        { context: 'inline', count: 3, percentage: 30 },
+      ]);
+      expect(result.topEmbedHosts).toEqual([
+        { host: 'example.com', count: 3, percentage: 30 },
+      ]);
     });
 
     it('should handle errors gracefully', async () => {

@@ -42,6 +42,13 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
           enabled
           gradeRelease
         }
+        # Form Embed v1: the /embed/:shortUrl route refuses to render when the
+        # owner has turned embedding off. Absent settings mean "never
+        # configured", which is embeddable — a closed default would break every
+        # form that predates the feature.
+        embed {
+          enabled
+        }
       }
       organization {
         id

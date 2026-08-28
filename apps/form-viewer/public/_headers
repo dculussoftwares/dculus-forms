@@ -1,0 +1,33 @@
+# Cloudflare Pages header rules for form-viewer.
+# Deployed by .github/workflows/multi-cloud-deployment.yml (wrangler pages deploy).
+# Rules are matched most-specific-first, so /embed/* wins over /*.
+#
+# Framing policy, in short: only /embed/* may be put in someone else's page.
+# Everything else — including the hosted form at /f/* — is same-origin only.
+# Before Form Embed v1 there was no policy at all, so /f/* going from
+# "anyone may frame this" to "nobody but us" is a tightening, not a loosening.
+#
+# See docs/form-embed-v1-spec.md §11.
+
+/embed/*
+  # The whole point of this route: any site may frame it.
+  Content-Security-Policy: frame-ancestors *
+  # Legacy header, kept off deliberately — X-Frame-Options has no "any origin"
+  # value, and setting it to anything would contradict the CSP above in the
+  # browsers that honour both.
+  X-Content-Type-Options: nosniff
+  # A hosted form's own page must not be indexed under the host's SEO, and an
+  # embed frame is not a page anyone should land on from search.
+  X-Robots-Tag: noindex
+
+/embed.js
+  # Fetched cross-origin by every host page, and changes rarely. Kept short
+  # enough that a protocol fix reaches host pages within the day.
+  Cache-Control: public, max-age=3600, must-revalidate
+  Content-Type: application/javascript; charset=utf-8
+  X-Content-Type-Options: nosniff
+
+/*
+  Content-Security-Policy: frame-ancestors 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

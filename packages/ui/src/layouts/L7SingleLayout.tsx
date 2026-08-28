@@ -7,6 +7,7 @@ import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { extractMentionFields } from '../utils/mentionFields';
 import { ThankYouScreen } from './shared/ThankYouScreen';
 import { LayoutProps, LayoutScreen } from '../types';
+import { layoutShell } from './shared/embedShell';
 
 export const L7SingleLayout: React.FC<LayoutProps> = ({
   pages,
@@ -23,6 +24,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
   gradeResult,
   quizResultLabels,
   resultLink,
+  embedded,
 }) => {
   // L7 Single layout styles - using default/classic styles
   const getLayoutStyles = () => ({
@@ -102,14 +104,16 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
         transition: 'background 0.5s ease-in-out'
       };
 
+  const shell = layoutShell(embedded);
+
   return (
-    <div className={`w-full h-full bg-white dark:bg-gray-900 flex flex-col ${className}`}>
+    <div className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}>
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={shell.scroll}>
         {screen === 'intro' ? (
           /* Intro Section - Full view with background image */
           <div 
-            className="h-full relative"
+            className={`${shell.introScreen} relative`}
             style={outerBackgroundStyle}
           >
             {/* Video background layer - fills the outer area, no blur (unlike images) */}
@@ -238,7 +242,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
         ) : screen === 'pages' ? (
           /* Pages Section - Full height without center background */
           <div
-            className="h-full relative"
+            className={`${shell.screen} relative`}
             style={outerBackgroundStyle}
           >
             {/* Video background layer - fills the outer area, no blur (unlike images) */}
@@ -269,7 +273,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
             )}
 
             {/* Pages content with white background container */}
-            <div className="h-full relative z-10 p-3 sm:p-8 overflow-y-auto">
+            <div className={`${shell.screenPane} relative z-10 p-3 sm:p-8`}>
               <div className="max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-8">
                 {/* Back button */}
                 <button
@@ -293,7 +297,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
           </div>
         ) : (
           /* Thank You Section */
-          <div className="h-full relative" style={outerBackgroundStyle}>
+          <div className={`${shell.screen} relative`} style={outerBackgroundStyle}>
             {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && (
               <video
                 key={videoUrl}
@@ -317,7 +321,7 @@ export const L7SingleLayout: React.FC<LayoutProps> = ({
                 }}
               ></div>
             )}
-            <div className="h-full relative z-10 flex items-center justify-center p-3 sm:p-8 overflow-y-auto">
+            <div className={`${shell.screenPane} relative z-10 flex items-center justify-center p-3 sm:p-8`}>
               <div className="max-w-2xl w-full mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                 <ThankYouScreen
                   content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}

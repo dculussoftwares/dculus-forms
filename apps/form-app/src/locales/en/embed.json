@@ -1,0 +1,75 @@
+{
+  "type": {
+    "label": "How it appears",
+    "options": {
+      "inline": {
+        "label": "Inline",
+        "hint": "Sits in your page and grows to fit the form. Best for most pages."
+      },
+      "lightbox": {
+        "label": "Popup",
+        "hint": "A button that opens the form over your page."
+      },
+      "iframe": {
+        "label": "Basic iframe",
+        "hint": "No script needed. Fixed height. For sites that strip scripts."
+      },
+      "button": {
+        "label": "Button",
+        "hint": "A link styled as a button. Opens the form in a new tab."
+      }
+    }
+  },
+  "options": {
+    "width": "Width",
+    "height": "Height",
+    "heightAuto": "Fit content",
+    "heightFixed": "Fixed height",
+    "heightFixedNote": "A basic iframe can't resize itself — pick a height that fits your longest page.",
+    "transparent": "Transparent background",
+    "transparentHint": "Let your page's own background show through around the form.",
+    "buttonLabel": "Button text",
+    "closeOnSubmit": "Close after submitting",
+    "closeOnSubmitHint": "Dismiss the popup a few seconds after the respondent submits."
+  },
+  "preview": {
+    "label": "Preview",
+    "desktop": "Desktop preview",
+    "mobile": "Mobile preview",
+    "frameTitle": "Preview of {{title}}",
+    "noteAutoHeight": "On your page the height follows the form's content as the respondent moves through it.",
+    "noteFixedHeight": "The frame stays at this height. Content taller than it will scroll inside the frame.",
+    "noteLightbox": "On your page this opens over your content when the button is clicked."
+  },
+  "snippet": {
+    "label": "Paste this into your site",
+    "copy": "Copy code",
+    "copied": "Copied",
+    "copiedToast": "Embed code copied to clipboard",
+    "copyFailed": "Failed to copy embed code",
+    "clipboardUnavailable": "Unable to access clipboard"
+  },
+  "platform": {
+    "html": "HTML",
+    "wordpress": "WordPress",
+    "react": "React",
+    "webflow": "Webflow"
+  },
+  "platformNote": {
+    "wordpress": "Paste into a Custom HTML block, not the visual editor.",
+    "react": "Renders the form once the component mounts. Safe to use more than once on a page.",
+    "webflow": "Use an Embed element — script tags are allowed there."
+  },
+  "warnings": {
+    "draft": "This form is a draft. Visitors will see “form not found” until you publish it, but you can copy the code now.",
+    "gated": "Forms that ask respondents to sign in can't be embedded yet — signing in doesn't work inside a frame. Share a link or a button instead.",
+    "fixedHeightMultiPage": "This form has more than one page. With a fixed height, longer pages will scroll inside the frame — “Fit content” is usually better."
+  },
+  "qr": {
+    "help": "Scanning this opens the form link.",
+    "download": "Download PNG",
+    "downloadFailed": "Couldn't download the QR code",
+    "renderFailed": "Couldn't generate a QR code for this link.",
+    "alt": "QR code for {{title}}"
+  }
+}

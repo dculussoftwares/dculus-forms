@@ -11,6 +11,7 @@ import { TimeRangeSelector } from '../components/Analytics/TimeRangeSelector';
 import { AnalyticsOverview } from '../components/Analytics/AnalyticsOverview';
 import { GeographicChart } from '../components/Analytics/GeographicChart';
 import { BrowserOSCharts } from '../components/Analytics/BrowserOSCharts';
+import { TrafficSourceChart } from '../components/Analytics/TrafficSourceChart';
 import { ViewsOverTimeChart } from '../components/Analytics/ViewsOverTimeChart';
 import { CompletionTimeChart } from '../components/Analytics/CompletionTimeChart';
 import { CompletionTimePercentiles } from '../components/Analytics/CompletionTimePercentiles';
@@ -242,6 +243,11 @@ const FormAnalytics: React.FC = () => {
                   citySubmissionData={submissionAnalyticsData?.topCities || []}
                   totalViews={analyticsData?.totalViews || 0}
                   totalSubmissions={submissionAnalyticsData?.totalSubmissions || 0}
+                  loading={analyticsLoading}
+                />
+                <TrafficSourceChart
+                  sources={analyticsData?.trafficSources || []}
+                  hosts={analyticsData?.topEmbedHosts || []}
                   loading={analyticsLoading}
                 />
                 <BrowserOSCharts

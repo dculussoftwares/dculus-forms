@@ -55,6 +55,20 @@ export interface SubmissionsOverTimeData {
   sessions: number;
 }
 
+/** Form Embed v1 — 'direct' | 'inline' | 'lightbox' | 'iframe'. */
+export interface TrafficSourceStats {
+  context: string;
+  count: number;
+  percentage: number;
+}
+
+/** Hostname of a site embedding this form. Never a full URL. */
+export interface EmbedHostStats {
+  host: string;
+  count: number;
+  percentage: number;
+}
+
 export interface FormAnalyticsData {
   totalViews: number;
   uniqueSessions: number;
@@ -63,6 +77,8 @@ export interface FormAnalyticsData {
   topCities: CityStats[];
   topOperatingSystems: OSStats[];
   topBrowsers: BrowserStats[];
+  trafficSources: TrafficSourceStats[];
+  topEmbedHosts: EmbedHostStats[];
   viewsOverTime: ViewsOverTimeData[];
 }
 

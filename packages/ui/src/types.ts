@@ -38,4 +38,13 @@ export interface LayoutProps {
    * byte-for-byte unaffected.
    */
   resultLink?: { href: string; label: string };
+  /**
+   * Form Embed v1 — render the content-height shell instead of the viewport
+   * shell, so a host page's iframe can be sized from the content. Only
+   * `/embed/:shortUrl` sets this; every other surface leaves it undefined and
+   * gets today's `h-full` layout byte-for-byte.
+   *
+   * @see layouts/shared/embedShell.ts
+   */
+  embedded?: boolean;
 }

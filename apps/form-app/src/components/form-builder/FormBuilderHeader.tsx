@@ -308,14 +308,18 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                         </Button>
                     )}
 
-                    {/* Share */}
+                    {/* Collaborate — teammate access, not respondent
+                        distribution. Named for its audience: "Share" used to
+                        mean both, which is how a builder URL shipped under the
+                        label "anyone with this link can view the form". See
+                        docs/form-embed-v1-spec.md §2. */}
                     {permissions.canShareForm() && (
                         <Button
                             variant="ghost"
                             onClick={() => setShowShareModal(true)}
                             disabled={!organizationId || !currentUserId || !formShortUrl}
                             className="h-8 w-8 flex items-center justify-center rounded-lg p-0 disabled:opacity-40"
-                            title={t('buttons.share')}
+                            title={t('buttons.collaborate')}
                         >
                             <Share2 className="w-4 h-4" />
                         </Button>

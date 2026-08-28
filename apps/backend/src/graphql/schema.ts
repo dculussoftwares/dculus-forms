@@ -148,12 +148,26 @@ export const typeDefs = gql`
     resultMessageFail: String
   }
 
+  # Form Embed v1 — how the owner last configured this form's embed snippet.
+  # Absent for every form that has never opened the Embed tab.
+  type EmbedSettings {
+    enabled: Boolean
+    type: String
+    width: String
+    heightMode: String
+    heightPx: Int
+    transparentBackground: Boolean
+    buttonLabel: String
+    closeOnSubmit: Boolean
+  }
+
   type FormSettings {
     submissionLimits: SubmissionLimitsSettings
     responseCopy: ResponseCopySettings
     accessControl: AccessControlSettings
     collectRespondentEmail: Boolean
     quiz: QuizSettings
+    embed: EmbedSettings
   }
 
   # Whether the current requester can see the form's real content.
@@ -481,12 +495,24 @@ export const typeDefs = gql`
     resultMessageFail: String
   }
 
+  input EmbedSettingsInput {
+    enabled: Boolean
+    type: String
+    width: String
+    heightMode: String
+    heightPx: Int
+    transparentBackground: Boolean
+    buttonLabel: String
+    closeOnSubmit: Boolean
+  }
+
   input FormSettingsInput {
     submissionLimits: SubmissionLimitsSettingsInput
     responseCopy: ResponseCopySettingsInput
     accessControl: AccessControlSettingsInput
     collectRespondentEmail: Boolean
     quiz: QuizSettingsInput
+    embed: EmbedSettingsInput
   }
 
   input UpdateFormInput {
@@ -526,6 +552,9 @@ export const typeDefs = gql`
     completionTimeSeconds: Int # Time taken to complete form in seconds
     isPreview: Boolean
     sendResponseCopy: Boolean # Respondent opted in to receive a copy of their answers by email
+    # Form Embed v1 — where this submission was filled in. Sanitised server-side.
+    embedContext: String
+    embedHost: String
   }
 
   input UpdateResponseInput {
@@ -715,7 +744,24 @@ export const typeDefs = gql`
     topCities: [CityStats!]!
     topOperatingSystems: [OSStats!]!
     topBrowsers: [BrowserStats!]!
+    # Form Embed v1 — where these views came from.
+    trafficSources: [TrafficSourceStats!]!
+    topEmbedHosts: [EmbedHostStats!]!
     viewsOverTime: [ViewsOverTimeData!]!
+  }
+
+  type TrafficSourceStats {
+    # 'direct' | 'inline' | 'lightbox' | 'iframe'
+    context: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type EmbedHostStats {
+    # Hostname only, never a full URL.
+    host: String!
+    count: Int!
+    percentage: Float!
   }
 
   type ViewsOverTimeData {
@@ -1242,6 +1288,10 @@ export const typeDefs = gql`
     userAgent: String!
     timezone: String
     language: String
+    # Form Embed v1 — 'direct' (or absent) for the hosted page; otherwise the
+    # embed mode. embedHost is a bare hostname, sanitised server-side.
+    embedContext: String
+    embedHost: String
   }
 
   input UpdateFormStartTimeInput {
@@ -1258,6 +1308,8 @@ export const typeDefs = gql`
     timezone: String
     language: String
     completionTimeSeconds: Int # Time taken to complete form in seconds
+    embedContext: String
+    embedHost: String
   }
 
   input TimeRangeInput {

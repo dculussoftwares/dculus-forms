@@ -262,8 +262,10 @@ import taPluginMicrosoftSheets from './ta/pluginMicrosoftSheets.json';
 import enPluginDashboard from './en/pluginDashboard.json';
 import taPluginDashboard from './ta/pluginDashboard.json';
 import enCollectResponses from './en/collectResponses.json';
+import enEmbed from './en/embed.json';
 import enAutomations from './en/automations.json';
 import taCollectResponses from './ta/collectResponses.json';
+import taEmbed from './ta/embed.json';
 import taAutomations from './ta/automations.json';
 import enIntroSettings from './en/introSettings.json';
 import taIntroSettings from './ta/introSettings.json';
@@ -407,6 +409,7 @@ const enTranslations = {
   pluginDashboard: enPluginDashboard,
   automations: enAutomations,
   collectResponses: enCollectResponses,
+  embed: enEmbed,
 } as const;
 
 const taTranslations = {
@@ -546,6 +549,7 @@ const taTranslations = {
   pluginDashboard: taPluginDashboard,
   automations: taAutomations,
   collectResponses: taCollectResponses,
+  embed: taEmbed,
 } as const;
 
 export const translations = {
