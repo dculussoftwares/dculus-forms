@@ -63,10 +63,13 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
         {/* Actions */}
         <div className="flex justify-end space-x-2 mt-6">
+          {/* Stable testids so tests can drive the dialog without matching on
+              label text, which is translated (en + ta). */}
           <Button
             size="sm"
             variant="ghost"
             onClick={onCancel}
+            data-testid="confirmation-dialog-cancel"
           >
             {displayCancelLabel}
           </Button>
@@ -74,6 +77,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             size="sm"
             variant={variant === 'destructive' ? 'destructive' : 'default'}
             onClick={onConfirm}
+            data-testid="confirmation-dialog-confirm"
           >
             {displayConfirmLabel}
           </Button>

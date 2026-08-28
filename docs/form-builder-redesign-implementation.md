@@ -37,7 +37,7 @@ lives in search params so deep links, browser back, and E2E tests can target exa
 | Design drawer (global) | `LayoutSidebar` (thumbnails, theme, spacing, background + Pexels/Pixabay modals) | Re-house in a `Sheet`/drawer; remove screen toggle (now the rail's job) |
 | Preview overlay | `PreviewTab` (mobile CSS overrides, test-submit flow) | Wrap in full-screen `Dialog`; `Cmd+P`; open via `?preview=1` for the old-route redirect |
 | Settings overlay | `SettingsTab` / `FormSettingsContainer` | Route-driven overlay from header ⚙ |
-| Logic tab | `ConditionsTab` unchanged | Accept `?field=` filter for deep links |
+| Logic tab | ~~`ConditionsTab` unchanged~~ — **superseded**: leaving it on the old styling made it the only builder surface not on the `--tf-*` design system. Now rebuilt as a rail / canvas / inspector workspace matching Content (rule cards with field-type chips and tone-coded actions, inline `RuleInspector` replacing the modal, logic-health panel + `evaluateConditions`-backed simulator, recipe empty state). Presentation only — no data-model, store, Y.js or evaluator change. | Accepts `?ruleField=` filter for deep links |
 | Automations tab | `Automations`, `AutomationBuilder`, `AutomationRuns` pages | Render inside builder shell (keep `FormBuilderHeader`); old routes redirect |
 | **Unified AI** | `AIEditDrawer`, `AIFloatingButton`, pending-condition-suggestion flow | Mount drawer at builder root (all tabs); "✨ Ask AI" pill on every tab; seed context `{activeTab, selectedScreen, selectedPageId, selectedFieldId}` into the drawer's initial system context; route automation asks to automation tools |
 

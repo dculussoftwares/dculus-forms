@@ -18,7 +18,7 @@ Feature: Real-time Collaboration for Condition Rules
   Scenario: Create syncs
     When In session "A" I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
     Then In session "B" I should see a condition rule card for "Show bonus field?"
-    And In session "B" the condition card for "Show bonus field?" should show "IF Show bonus field? is equal to “Yes” THEN Show field(s) Bonus Field" in its summary
+    And In session "B" the condition card for "Show bonus field?" should show "IF Show bonus field? P1 is equal to Yes THEN Show field(s) Bonus Field P1" in its summary
 
   Scenario: Toggle and delete syncs
     When In session "A" I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
@@ -39,8 +39,8 @@ Feature: Real-time Collaboration for Condition Rules
     And In session "B" I update the rule action at index 0 to type "hideField" and target field "cond-bonus"
     And In session "A" I save the condition rule
     And In session "B" I save the condition rule
-    Then In session "B" the condition card for "Show bonus field?" should show "IF Show bonus field? is equal to “No” THEN Show field(s) Bonus Field" in its summary
-    And In session "A" the condition card for "Skip details page?" should show "IF Skip details page? is equal to “Yes” THEN Hide field(s) Bonus Field" in its summary
+    Then In session "B" the condition card for "Show bonus field?" should show "IF Show bonus field? P1 is equal to No THEN Show field(s) Bonus Field P1" in its summary
+    And In session "A" the condition card for "Skip details page?" should show "IF Skip details page? P1 is equal to Yes THEN Hide field(s) Bonus Field P1" in its summary
 
   Scenario: Same-rule concurrent edits resolve last-writer-wins
     When In session "A" I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"

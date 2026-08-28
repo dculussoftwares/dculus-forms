@@ -105,22 +105,32 @@ export interface TargetFieldOption {
   pageIndex: number;
 }
 
-export const fieldDisplayLabel = (field: FormField): string => {
+/**
+ * `untitledLabel` is injected rather than built here: this module is pure and
+ * has no `t`, and the field library already renders type names through i18n,
+ * so an English literal would be the one untranslated field name in the UI.
+ */
+export const fieldDisplayLabel = (field: FormField, untitledLabel: string): string => {
   const labelled = field as { label?: string };
   if (labelled.label && labelled.label.trim() !== '') return labelled.label;
   if (field instanceof RichTextFormField) {
     const text = field.content.replace(/<[^>]*>/g, ' ').trim();
     if (text) return text.length > 40 ? `${text.slice(0, 40)}…` : text;
   }
-  return field.id;
+  // An unlabelled field used to surface its raw nanoid in rule cards and pickers,
+  // which reads as gibberish and is impossible to match against the canvas.
+  return untitledLabel;
 };
 
 /** Every field targetable on the DO side — including RichText info blocks. */
-export const getTargetFieldOptions = (pages: FormPage[]): TargetFieldOption[] => {
+export const getTargetFieldOptions = (
+  pages: FormPage[],
+  untitledLabel: string
+): TargetFieldOption[] => {
   const options: TargetFieldOption[] = [];
   pages.forEach((page, pageIndex) => {
     page.fields.forEach((field) => {
-      options.push({ field, label: fieldDisplayLabel(field), page, pageIndex });
+      options.push({ field, label: fieldDisplayLabel(field, untitledLabel), page, pageIndex });
     });
   });
   return options;
