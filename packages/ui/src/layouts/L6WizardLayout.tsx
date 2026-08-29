@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
-import { getImageUrl, mixWithWhite, RendererMode } from '@dculus/utils';
+import { RendererMode } from '@dculus/utils';
 import { DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
-import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import { useBackgroundVideo } from '../hooks/useBackgroundVideo';
 import { extractMentionFields } from '../utils/mentionFields';
 import { ThankYouScreen } from './shared/ThankYouScreen';
 import { LayoutProps } from '../types';
 import { layoutShell } from './shared/embedShell';
+import { buildOuterBackgroundStyle, BackgroundLayers, HeroMedia, SURFACE } from './shared/surface';
+import { useIntroContentEditing, IntroEditToolbar, IntroEditor } from './shared/introContent';
+import { useResolvedColorScheme, spacingClasses, withSpacing, textColorStyle } from './shared/theme';
 
+/**
+ * L6 "Steps" — no intro/pages toggle: a wide image banner, the headline, and
+ * the form pages stack in one continuously-scrolling column. The thank-you
+ * screen is its only alternate state.
+ */
 export const L6WizardLayout: React.FC<LayoutProps> = ({
   pages,
   layout,
@@ -26,243 +33,98 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
   resultLink,
   embedded,
 }) => {
-  // L6 has no intro/pages toggle — content and pages stack together in one
-  // continuous view. The thank-you screen is the only alternate state it needs.
   const showThankYou = screenOverride === 'thankYou';
-  // L6 Wizard layout styles
-  const getLayoutStyles = () => ({
-    field: {
-      container: 'mb-6',
-      label: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
-      input: 'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
-      textarea: 'w-full h-24 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100',
-      select: 'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
-    },
-    submitButton: 'w-full h-12 bg-blue-600 rounded-lg flex items-center justify-center'
-  });
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [tempContent, setTempContent] = useState(layout?.content || '<h1>Wizard Layout</h1><p>Step-by-step form experience with guided navigation and progress tracking.</p>');
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [editorKey, setEditorKey] = useState(0);
-
-
-  // Handle content changes in temporary state
-  const handleContentChange = (content: string) => {
-    setTempContent(content);
-    setHasUnsavedChanges(content !== (layout?.content || '<h1>Wizard Layout</h1><p>Step-by-step form experience with guided navigation and progress tracking.</p>'));
-  };
-
-  // Save temporary content to layout
-  const handleSave = () => {
-    onLayoutChange?.({ content: tempContent });
-    setHasUnsavedChanges(false);
-    setIsEditMode(false);
-  };
-
-  // Cancel changes and revert to original content
-  const handleCancel = () => {
-    const originalContent = layout?.content || '<h1>Wizard Layout</h1><p>Step-by-step form experience with guided navigation and progress tracking.</p>';
-    setTempContent(originalContent);
-    setHasUnsavedChanges(false);
-    setEditorKey(prev => prev + 1);
-  };
-
-
-  // Update temp content when layout content changes from outside
-  React.useEffect(() => {
-    if (!hasUnsavedChanges) {
-      setTempContent(layout?.content || '<h1>Wizard Layout</h1><p>Step-by-step form experience with guided navigation and progress tracking.</p>');
-      setEditorKey(prev => prev + 1);
-    }
-  }, [layout?.content, hasUnsavedChanges]);
-
+  const editing = useIntroContentEditing(
+    layout,
+    onLayoutChange,
+    '<h1>Wizard Layout</h1><p>Step-by-step form experience with guided navigation and progress tracking.</p>'
+  );
   const { hasVideoBackground, videoUrl } = useBackgroundVideo(layout, cdnEndpoint);
-
-  // Create outer background - custom color when enabled, video/image next, otherwise gradient
-  const outerBackgroundStyle = layout?.isCustomBackgroundColorEnabled && layout?.customBackGroundColor
-    ? {
-        backgroundColor: layout.customBackGroundColor,
-        transition: 'background-color 0.5s ease-in-out'
-      }
-    : layout?.backgroundDominantColor
-    ? {
-        backgroundColor: mixWithWhite(layout.backgroundDominantColor, 0.6),
-        transition: 'background-color 0.5s ease-in-out'
-      }
-    : hasVideoBackground
-    ? { transition: 'all 0.5s ease-in-out' }
-    : layout?.backgroundImageKey && cdnEndpoint
-    ? {
-        backgroundImage: `url(${getImageUrl(layout.backgroundImageKey, cdnEndpoint)})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        transition: 'all 0.5s ease-in-out'
-      }
-    : { 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
-        transition: 'background 0.5s ease-in-out'
-      };
-
+  const scheme = useResolvedColorScheme(layout?.theme);
+  const textStyle = textColorStyle(layout?.textColor, scheme);
+  const spacing = spacingClasses(layout?.spacing);
   const shell = layoutShell(embedded);
+  const outerBackgroundStyle = buildOuterBackgroundStyle({
+    layout,
+    cdnEndpoint,
+    hasVideoBackground,
+    layoutCode: 'L6',
+  });
+
+  const layoutStyles = withSpacing(
+    {
+      field: {
+        container: 'mb-6',
+        label: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2',
+        input:
+          'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
+        textarea:
+          'w-full h-24 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-3 text-gray-900 dark:text-gray-100',
+        select:
+          'w-full h-12 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-4 text-gray-900 dark:text-gray-100',
+      },
+      submitButton: 'w-full h-12 bg-primary rounded-lg flex items-center justify-center',
+    },
+    layout?.spacing
+  );
 
   return (
     <div className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}>
       <div className={shell.scroll}>
-        <div
-          className={`${shell.screen} relative`}
-          style={outerBackgroundStyle}
-        >
-          {/* Video background layer - fills the outer area, no blur (unlike images) */}
-          {hasVideoBackground && !layout?.isCustomBackgroundColorEnabled && !layout?.backgroundDominantColor && (
-            <video
-              key={videoUrl}
-              autoPlay
-              muted
-              loop
-              playsInline
-              aria-hidden="true"
-              className="absolute inset-0 w-full h-full object-cover"
-              src={videoUrl}
-            />
-          )}
-
-          {/* Minimal backdrop blur overlay on top of background image in outer area - only when not using custom color */}
-          {!layout?.isCustomBackgroundColorEnabled && !layout?.backgroundDominantColor && (hasVideoBackground || (layout?.backgroundImageKey && cdnEndpoint)) && (
-            <div
-              className="absolute inset-0"
-              style={{
-                backdropFilter: hasVideoBackground ? undefined : 'blur(50px)',
-                WebkitBackdropFilter: hasVideoBackground ? undefined : 'blur(50px)',
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                transition: 'background-color 0.5s ease-in-out'
-              }}
-            ></div>
-          )}
-
-          {/* Central Content Area with vertical layout - scrollable */}
-          <div className={`${shell.screenPane} relative z-10 px-4 py-4 sm:px-[10%] sm:py-[5%]`}>
-            <div className={`w-full max-w-4xl mx-auto flex flex-col space-y-3 sm:space-y-6 ${shell.minHFull}`}>
-            {showThankYou ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-                <ThankYouScreen
-                  content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}
-                  mode={mode}
-                  onSave={(content) => onLayoutChange?.({ thankYouContent: content })}
-                  mentionFields={extractMentionFields(pages)}
-                  onSubmitAnother={onSubmitAnother}
-                  responseCopyNotice={responseCopyNotice}
-                  gradeResult={gradeResult}
-                  quizResultLabels={quizResultLabels}
-                  resultLink={resultLink}
-                />
-              </div>
-            ) : (
-              <>
-              {/* Background Image/Video in 4:1 ratio */}
-              <div className="w-full h-32 sm:h-48 relative rounded-lg overflow-hidden shadow-lg">
-                {hasVideoBackground ? (
-                  <video
-                    key={videoUrl}
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    aria-hidden="true"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    src={videoUrl}
-                  />
-                ) : layout?.backgroundImageKey && cdnEndpoint ? (
-                  <div
-                    className="absolute inset-0 bg-center bg-no-repeat bg-cover"
-                    style={{ backgroundImage: `url(${getImageUrl(layout.backgroundImageKey, cdnEndpoint)})` }}
-                  ></div>
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-gray-100 to-stone-100"></div>
-                )}
-              </div>
-
-              {/* Rich Text Editor with Mode Toggle + Save/Cancel */}
-              <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-lg p-4 sm:p-6 shadow-lg">
-                {/* Mode toggle and action buttons - only show in BUILDER mode */}
-                {mode === RendererMode.BUILDER && (
-                  <div className="flex justify-between items-center mb-4">
-                  <div className="flex gap-2">
-                    {isEditMode && hasUnsavedChanges && (
-                      <>
-                        <button
-                          onClick={handleSave}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm font-light text-white bg-slate-700 hover:bg-slate-800 rounded-md transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
-                          </svg>
-                          Save
-                        </button>
-                        <button
-                          onClick={handleCancel}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm font-light text-gray-600 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Cancel
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  
-                  <button
-                    onClick={() => setIsEditMode(!isEditMode)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-light text-gray-600 hover:text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-gray-200"
-                  >
-                    {isEditMode ? (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        View
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Edit
-                      </>
-                    )}
-                  </button>
-                  </div>
-                )}
-                
-                {/* Rich Text Editor */}
-                <div className="min-h-32">
-                  <LexicalRichTextEditor
-                    key={`editor-${editorKey}`}
-                    value={tempContent}
-                    onChange={handleContentChange}
-                    placeholder="Enter your wizard layout content..."
-                    className="border-none bg-transparent"
-                    editable={mode === RendererMode.BUILDER ? isEditMode : false}
+        <div className={`${shell.screen} relative`} style={outerBackgroundStyle}>
+          <BackgroundLayers
+            layout={layout}
+            cdnEndpoint={cdnEndpoint}
+            hasVideoBackground={hasVideoBackground}
+            videoUrl={videoUrl}
+          />
+          <div className={`${shell.screenPane} relative z-10 px-4 sm:px-8 ${spacing.screenPaddingY}`}>
+            <div className={`w-full max-w-3xl mx-auto flex flex-col gap-4 sm:gap-6 ${shell.minHFull}`} style={textStyle}>
+              {showThankYou ? (
+                <div className={`bg-white dark:bg-gray-800 ${SURFACE.panel}`}>
+                  <ThankYouScreen
+                    content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}
+                    mode={mode}
+                    onSave={(content) => onLayoutChange?.({ thankYouContent: content })}
+                    mentionFields={extractMentionFields(pages)}
+                    onSubmitAnother={onSubmitAnother}
+                    responseCopyNotice={responseCopyNotice}
+                    gradeResult={gradeResult}
+                    quizResultLabels={quizResultLabels}
+                    resultLink={resultLink}
                   />
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="relative w-full h-44 sm:h-56 rounded-2xl overflow-hidden shadow-lg ring-1 ring-black/5">
+                    <HeroMedia
+                      layout={layout}
+                      cdnEndpoint={cdnEndpoint}
+                      hasVideoBackground={hasVideoBackground}
+                      videoUrl={videoUrl}
+                      layoutCode="L6"
+                    />
+                  </div>
 
-              {/* Pages from schema displayed vertically */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-8 shadow-lg">
-                <PageRenderer
-                  pages={pages}
-                  layoutStyles={getLayoutStyles()}
-                  className=""
-                  showPageNavigation={true}
-                  mode={mode}
-                  initialPageId={initialPageId}
-                />
-              </div>
-              </>
-            )}
+                  <div className={`bg-white dark:bg-gray-800 ${SURFACE.panel} ${spacing.cardPadding}`}>
+                    <IntroEditToolbar editing={editing} mode={mode} />
+                    <div className="min-h-24">
+                      <IntroEditor editing={editing} mode={mode} />
+                    </div>
+                  </div>
 
+                  <div className={`bg-white dark:bg-gray-800 ${SURFACE.panel} ${spacing.cardPadding}`}>
+                    <PageRenderer
+                      pages={pages}
+                      layoutStyles={layoutStyles}
+                      className=""
+                      showPageNavigation={true}
+                      mode={mode}
+                      initialPageId={initialPageId}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
