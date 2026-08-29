@@ -488,7 +488,7 @@ Per `CLAUDE.md`: a checked-in migration under `apps/backend/prisma/migrations/` 
 | `apps/form-viewer/src/pages/EmbedFormViewer.tsx` | thin wrapper: `FormViewer` + `embedded`, param parsing, postMessage bridge |
 | `apps/form-viewer/src/lib/embedBridge.ts` | resize observer, debounce/dead-band, origin-checked messaging |
 | `apps/form-viewer/public/embed.js` | the loader (hand-written, or a separate tiny Vite lib build) |
-| `apps/form-viewer/public/_headers` | `frame-ancestors *` on `/embed/*`, `'self'` elsewhere |
+| `apps/form-viewer/public/_headers` | `frame-ancestors *` on `/embed/*` (detaching the `'self'` inherited from `/*`), `'self'` elsewhere. See §15.6 for the zone-level `X-Frame-Options` that also has to change. |
 | `apps/form-app/src/components/sharing/CollectResponsesPanel.tsx` | the panel: "Who can respond" + Link / QR / Embed tabs |
 | `apps/form-app/src/components/sharing/WhoCanRespondSelect.tsx` | the three presets, writing through to `settings.accessControl` (§2.5) |
 | `apps/form-app/src/components/sharing/LinkTab.tsx` | URL + copy + QR |
@@ -657,6 +657,37 @@ plan's view quota every time. The preview now passes `preview=1`, which
 suppresses view and submission tracking, and the frame is `pointer-events:
 none` so an owner cannot file a real response from inside their own settings
 panel.
+
+### 15.6 Framing depends on a Cloudflare zone-level change, not just `_headers`
+
+`public/_headers` is necessary but not sufficient. Two things sit downstream of
+it and both deny cross-origin framing of `/embed/*` until changed:
+
+1. **A `_headers` self-inflicted wound (fixed in-repo).** A request matching
+   both `/embed/*` and `/*` inherits the headers of both, and a repeated header
+   is *combined*, not overridden. `/embed/*` was therefore emitting
+   `frame-ancestors *` **and** the `frame-ancestors 'self'` from `/*`, and the
+   browser enforces the intersection. `/embed/*` now detaches the inherited
+   value with `! Content-Security-Policy` before setting its own.
+
+2. **A zone-level transform (fixed with Terraform).**
+   Every `*.dculus.com` response — including apps with no `_headers` file at all,
+   e.g. `form-app-*` — carries `X-Frame-Options: SAMEORIGIN`, added by the
+   **"Add security headers" Managed Transform** on the `dculus.com` zone (no
+   hand-made response-header Transform Rules exist). It runs after Pages, so
+   `_headers` cannot remove it, and XFO has no "any origin" value, so inline and
+   lightbox render blank until it is countered.
+
+   `infrastructure/multi-cloud/terraform/cloudflare/embed-framing.tf` adds a
+   zone-level Response Header Transform Rule that, for the viewer hosts on path
+   `/embed/*`, **removes** `X-Frame-Options` and **sets**
+   `Content-Security-Policy: frame-ancestors *` (custom transform rules run
+   after both Managed Transforms and the Pages `_headers`, so these win). The
+   zone is shared but the stack runs per-environment with separate state and a
+   phase can hold one ruleset, so the resource is **gated to the production
+   environment** and its single rule lists every environment's viewer host —
+   dev/staging embedding therefore starts working only after a production
+   deploy has applied it.
 
 ### What is still open
 

@@ -528,6 +528,7 @@ jobs:
           cp ../../r2-api-token.tf .
           cp ../../r2-cors.tf .
           cp ../../r2-cors-state-cleanup.tf .
+          cp ../../embed-framing.tf .
           cp ../../outputs.tf .
 
           # Initialize Terraform

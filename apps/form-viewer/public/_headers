@@ -1,20 +1,33 @@
 # Cloudflare Pages header rules for form-viewer.
 # Deployed by .github/workflows/multi-cloud-deployment.yml (wrangler pages deploy).
-# Rules are matched most-specific-first, so /embed/* wins over /*.
+#
+# A request that matches several patterns inherits the headers of ALL of them,
+# and a header set twice is combined, not overridden (Cloudflare Pages docs,
+# "Attach a header"). So /embed/* also picks up the frame-ancestors 'self' from
+# /* below, and the browser then enforces the intersection — 'self' — which is
+# exactly what this route must not do. The `! Content-Security-Policy` line
+# detaches that inherited value before this block sets its own.
 #
 # Framing policy, in short: only /embed/* may be put in someone else's page.
 # Everything else — including the hosted form at /f/* — is same-origin only.
 # Before Form Embed v1 there was no policy at all, so /f/* going from
 # "anyone may frame this" to "nobody but us" is a tightening, not a loosening.
 #
-# See docs/form-embed-v1-spec.md §11.
+# NOTE: a Cloudflare zone-level transform adds `X-Frame-Options: SAMEORIGIN` to
+# every *.dculus.com response, downstream of this file, and XFO has no
+# "any origin" value. That transform must exclude viewer /embed/* for framing
+# to work at all — this file cannot override it. See docs/form-embed-v1-spec.md §11.
 
 /embed/*
+  # Drop the frame-ancestors 'self' inherited from /* before setting ours.
+  ! Content-Security-Policy
   # The whole point of this route: any site may frame it.
   Content-Security-Policy: frame-ancestors *
-  # Legacy header, kept off deliberately — X-Frame-Options has no "any origin"
-  # value, and setting it to anything would contradict the CSP above in the
-  # browsers that honour both.
+  # XFO has no "any origin" value, so this route carries none and leans
+  # entirely on the CSP above. Detached here in case a broader rule or a
+  # Pages default ever introduces one (the zone-level transform noted above
+  # runs downstream of Pages and is not affected by this line).
+  ! X-Frame-Options
   X-Content-Type-Options: nosniff
   # A hosted form's own page must not be indexed under the host's SEO, and an
   # embed frame is not a page anyone should land on from search.
