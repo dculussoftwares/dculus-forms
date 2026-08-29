@@ -84,9 +84,13 @@ export function withSpacing(
   spacing: SpacingType | string | undefined
 ): LayoutStyles {
   const { fieldGap } = spacingClasses(spacing);
+  // Drop only standalone `mb-*` tokens — not the `mb-` inside a variant class
+  // like `sm:mb-4` (`:` is a regex word boundary), which a token match would
+  // leave as a stray `sm:`.
   const container = (styles.field.container || '')
-    .replace(/\bmb-\d+\b/g, '')
-    .trim();
+    .split(/\s+/)
+    .filter((cls) => cls && !/^mb-\d+$/.test(cls))
+    .join(' ');
   return {
     ...styles,
     field: {

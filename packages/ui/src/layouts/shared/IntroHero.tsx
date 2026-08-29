@@ -18,7 +18,7 @@ import { useContainerBreakpoint } from './useContainerBreakpoint';
 /**
  * One responsive hero for all seven intro layouts (L1–L5, L7, L8).
  *
- * - **Mobile** (container < 640px, measured — see `useContainerBreakpoint`):
+ * - **Mobile** (container < 560px, measured — see `useContainerBreakpoint`):
  *   every variant renders the same Microsoft-Forms-style composition — a crisp
  *   image band with the content sheet sliding up over it, one natural page
  *   scroll, no nested scroll region, no blurred wash.
