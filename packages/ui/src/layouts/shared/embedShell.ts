@@ -41,6 +41,8 @@
  * value and the two would drift.
  */
 const EMBED_INTRO_HEIGHT_CLASS = 'h-[560px]';
+/** Growable variant of {@link EMBED_INTRO_HEIGHT_CLASS} — held literally so Tailwind's scanner sees it. */
+const EMBED_INTRO_MIN_HEIGHT_CLASS = 'min-h-[560px]';
 
 export interface LayoutShellClasses {
   /** Layout root. */
@@ -53,6 +55,13 @@ export interface LayoutShellClasses {
   screenPane: string;
   /** The intro/hero screen shell — definite height in both shells (see above). */
   introScreen: string;
+  /**
+   * Growable intro shell: at least a screenful, but free to grow when the
+   * mobile content sheet is taller than the viewport (the redesigned
+   * `IntroHero` mobile composition scrolls the whole page rather than a nested
+   * card). Desktop still fills exactly.
+   */
+  introScreenGrow: string;
   /** `min-h-full` on an inner column (L6) — meaningless without a definite parent. */
   minHFull: string;
 }
@@ -63,6 +72,7 @@ const VIEWPORT_SHELL: LayoutShellClasses = {
   screen: 'h-full',
   screenPane: 'h-full overflow-y-auto',
   introScreen: 'h-full',
+  introScreenGrow: 'min-h-full',
   minHFull: 'min-h-full',
 };
 
@@ -72,6 +82,7 @@ const EMBEDDED_SHELL: LayoutShellClasses = {
   screen: '',
   screenPane: '',
   introScreen: EMBED_INTRO_HEIGHT_CLASS,
+  introScreenGrow: EMBED_INTRO_MIN_HEIGHT_CLASS,
   minHFull: '',
 };
 

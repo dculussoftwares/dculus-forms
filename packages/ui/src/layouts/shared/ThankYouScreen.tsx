@@ -126,7 +126,10 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
             </div>
           )}
 
-          <div className="mb-6 prose prose-lg max-w-none mx-auto" data-testid="thank-you-message">
+          <div
+            className="mb-6 prose prose-lg dark:prose-invert max-w-none mx-auto dark:[&_.editor-heading-h1]:text-white dark:[&_.editor-heading-h2]:text-gray-100 dark:[&_.editor-paragraph]:text-gray-300 dark:[&_p]:text-gray-300"
+            data-testid="thank-you-message"
+          >
             {isBuilder ? (
               <LexicalRichTextEditor
                 key={`thank-you-editor-${editorKey}`}
@@ -174,7 +177,7 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
         <button
           onClick={onSubmitAnother}
           data-testid="thank-you-submit-another-button"
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors shadow-md"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-6 rounded-lg transition-colors shadow-md"
         >
           Submit another response
         </button>

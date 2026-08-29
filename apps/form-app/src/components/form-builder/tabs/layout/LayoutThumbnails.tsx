@@ -33,24 +33,21 @@ const LAYOUT_TEMPLATES: Array<{
     )
   },
   {
-    // L2 Modern: outer BG → inner padded frame → content LEFT + image RIGHT (swapped vs L1)
+    // L2 Modern: flat frame, large image RIGHT (~55%), edge-to-edge content panel LEFT (no floating card)
     code: 'L2',
     preview: (
       <svg viewBox="0 0 100 56" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="56" fill="#e8edf2" rx="2"/>
-        <rect x="6" y="5" width="88" height="46" fill="#fff" rx="2" stroke="#d1d8e0" strokeWidth="0.5"/>
-        {/* Image panel — RIGHT half */}
-        <rect x="50" y="5" width="44" height="46" fill="#c4b5fd" rx="2"/>
-        <line x1="50" y1="5" x2="50" y2="51" stroke="#d1d8e0" strokeWidth="0.5"/>
-        {/* Mountain + sun icon in right panel */}
-        <polygon points="57,44 70,30 83,44" fill="#a78bfa" opacity="0.8"/>
-        <circle cx="78" cy="19" r="4" fill="#a78bfa" opacity="0.8"/>
-        {/* Content — LEFT half */}
-        <rect x="9" y="14" width="28" height="3" rx="0.5" fill="#94a3b8"/>
-        <rect x="9" y="20" width="22" height="2" rx="0.5" fill="#cbd5e1"/>
-        <rect x="9" y="25" width="18" height="2" rx="0.5" fill="#cbd5e1"/>
-        {/* Purple-blue CTA */}
-        <rect x="10" y="41" width="22" height="6" rx="2" fill="#7c3aed"/>
+        <rect width="100" height="56" fill="#eef1f6" rx="2"/>
+        <rect x="6" y="6" width="88" height="44" fill="#fff" rx="3" stroke="#dfe6f0" strokeWidth="0.5"/>
+        {/* Image panel — RIGHT ~55% */}
+        <rect x="52" y="6" width="42" height="44" fill="#cbd5e1" rx="0"/>
+        <polygon points="58,45 71,31 84,45" fill="#94a3b8" opacity="0.7"/>
+        <circle cx="80" cy="18" r="4" fill="#94a3b8" opacity="0.7"/>
+        {/* Content — LEFT, flush */}
+        <rect x="12" y="16" width="30" height="3" rx="0.5" fill="#94a3b8"/>
+        <rect x="12" y="22" width="24" height="2" rx="0.5" fill="#cbd5e1"/>
+        <rect x="12" y="27" width="20" height="2" rx="0.5" fill="#cbd5e1"/>
+        <rect x="12" y="40" width="22" height="6" rx="2" fill="#3f3247"/>
       </svg>
     )
   },
@@ -72,44 +69,41 @@ const LAYOUT_TEMPLATES: Array<{
     )
   },
   {
-    // L4 Minimal: same split as L1 (image LEFT, content RIGHT) but slate/minimal palette
+    // L4 Minimal: narrow image rail LEFT (~30%), airy centered content, hairline feel
     code: 'L4',
     preview: (
       <svg viewBox="0 0 100 56" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
         <rect width="100" height="56" fill="#f1f5f9" rx="2"/>
-        <rect x="6" y="5" width="88" height="46" fill="#fff" rx="2" stroke="#e2e8f0" strokeWidth="0.5"/>
-        {/* Image panel — LEFT, slate-toned */}
-        <rect x="6" y="5" width="44" height="46" fill="#e2e8f0" rx="2"/>
-        <line x1="50" y1="5" x2="50" y2="51" stroke="#cbd5e1" strokeWidth="0.5"/>
-        <polygon points="14,44 28,30 42,44" fill="#94a3b8" opacity="0.6"/>
-        <circle cx="36" cy="19" r="4" fill="#94a3b8" opacity="0.6"/>
-        {/* Content — RIGHT, minimal style */}
-        <rect x="54" y="14" width="28" height="3" rx="0.5" fill="#94a3b8"/>
-        <rect x="54" y="20" width="22" height="2" rx="0.5" fill="#cbd5e1"/>
-        <rect x="54" y="25" width="18" height="2" rx="0.5" fill="#cbd5e1"/>
-        {/* Slate CTA */}
-        <rect x="57" y="41" width="22" height="6" rx="2" fill="#1e293b"/>
+        <rect x="6" y="6" width="88" height="44" fill="#fff" rx="3" stroke="#e2e8f0" strokeWidth="0.5"/>
+        {/* Narrow image rail — LEFT ~30% */}
+        <rect x="6" y="6" width="26" height="44" fill="#e2e8f0"/>
+        <polygon points="10,44 19,34 28,44" fill="#94a3b8" opacity="0.55"/>
+        <circle cx="24" cy="18" r="3" fill="#94a3b8" opacity="0.55"/>
+        {/* Content — centered in the wide right area */}
+        <rect x="44" y="17" width="34" height="3" rx="0.5" fill="#94a3b8"/>
+        <rect x="48" y="24" width="26" height="2" rx="0.5" fill="#cbd5e1"/>
+        <rect x="50" y="29" width="22" height="2" rx="0.5" fill="#cbd5e1"/>
+        <rect x="48" y="40" width="26" height="6" rx="2" fill="#1e293b"/>
       </svg>
     )
   },
   {
-    // L5 Split: content LEFT + image RIGHT, slate/minimal palette (mirror of L4)
+    // L5 Split: literal 50/50, image edge-to-edge RIGHT, crisp seam
     code: 'L5',
     preview: (
       <svg viewBox="0 0 100 56" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="56" fill="#f1f5f9" rx="2"/>
-        <rect x="6" y="5" width="88" height="46" fill="#fff" rx="2" stroke="#e2e8f0" strokeWidth="0.5"/>
-        {/* Image panel — RIGHT, slate-toned */}
-        <rect x="50" y="5" width="44" height="46" fill="#e2e8f0" rx="2"/>
-        <line x1="50" y1="5" x2="50" y2="51" stroke="#cbd5e1" strokeWidth="0.5"/>
-        <polygon points="57,44 70,30 83,44" fill="#94a3b8" opacity="0.6"/>
-        <circle cx="78" cy="19" r="4" fill="#94a3b8" opacity="0.6"/>
-        {/* Content — LEFT, minimal style */}
-        <rect x="9" y="14" width="28" height="3" rx="0.5" fill="#94a3b8"/>
-        <rect x="9" y="20" width="22" height="2" rx="0.5" fill="#cbd5e1"/>
-        <rect x="9" y="25" width="18" height="2" rx="0.5" fill="#cbd5e1"/>
-        {/* Slate CTA */}
-        <rect x="10" y="41" width="22" height="6" rx="2" fill="#1e293b"/>
+        <rect width="100" height="56" fill="#eef2f6" rx="2"/>
+        <rect x="6" y="6" width="88" height="44" fill="#fff" rx="3" stroke="#e2e8f0" strokeWidth="0.5"/>
+        {/* Image — exact right half */}
+        <rect x="50" y="6" width="44" height="44" fill="#d5dde5"/>
+        <line x1="50" y1="6" x2="50" y2="50" stroke="#94a3b8" strokeWidth="0.8"/>
+        <polygon points="58,45 71,31 84,45" fill="#94a3b8" opacity="0.65"/>
+        <circle cx="80" cy="18" r="4" fill="#94a3b8" opacity="0.65"/>
+        {/* Content — exact left half */}
+        <rect x="12" y="16" width="28" height="3" rx="0.5" fill="#94a3b8"/>
+        <rect x="12" y="22" width="22" height="2" rx="0.5" fill="#cbd5e1"/>
+        <rect x="12" y="27" width="18" height="2" rx="0.5" fill="#cbd5e1"/>
+        <rect x="12" y="40" width="22" height="6" rx="2" fill="#1e293b"/>
       </svg>
     )
   },
@@ -164,8 +158,10 @@ const LAYOUT_TEMPLATES: Array<{
         <polygon points="16,44 36,24 56,44" fill="#93c5fd" opacity="0.7"/>
         <polygon points="44,44 62,30 80,44" fill="#7dd3fc" opacity="0.6"/>
         <circle cx="74" cy="15" r="6" fill="#93c5fd" opacity="0.7"/>
-        {/* CTA button overlay at bottom center of image */}
-        <rect x="34" y="42" width="32" height="6" rx="2" fill="#1e293b"/>
+        {/* Headline + CTA on a bottom scrim */}
+        <rect x="6" y="34" width="88" height="17" fill="#0f172a" opacity="0.55"/>
+        <rect x="12" y="38" width="30" height="3" rx="0.5" fill="#f8fafc"/>
+        <rect x="12" y="44" width="22" height="5" rx="2" fill="#f8fafc"/>
       </svg>
     )
   },
