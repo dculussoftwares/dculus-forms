@@ -658,7 +658,7 @@ suppresses view and submission tracking, and the frame is `pointer-events:
 none` so an owner cannot file a real response from inside their own settings
 panel.
 
-### 15.6 Framing depends on a Cloudflare zone change that is not in this repo
+### 15.6 Framing depends on a Cloudflare zone-level change, not just `_headers`
 
 `public/_headers` is necessary but not sufficient. Two things sit downstream of
 it and both deny cross-origin framing of `/embed/*` until changed:
