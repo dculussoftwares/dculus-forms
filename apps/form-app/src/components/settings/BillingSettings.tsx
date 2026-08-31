@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { ChevronDown, AlertTriangle, Eye, FileText, Sparkles } from 'lucide-react';
+import { ChevronDown, AlertTriangle, Eye, FileText, Mail, Sparkles } from 'lucide-react';
 import { Card, Button, toastSuccess, toastError } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import {
@@ -188,7 +188,8 @@ export function BillingSettings() {
       })()
     : '';
 
-  const limitExceeded = usage.views.exceeded || usage.submissions.exceeded;
+  const limitExceeded =
+    usage.views.exceeded || usage.submissions.exceeded || usage.emails.exceeded;
 
   return (
     <div className="space-y-4">
@@ -254,7 +255,7 @@ export function BillingSettings() {
             : `All the power of the ${planName} plan.`}
         </p>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <UsageCard
             icon={<Eye className="h-4 w-4" />}
             label="Form views"
@@ -271,6 +272,15 @@ export function BillingSettings() {
             limit={usage.submissions.limit}
             unlimited={usage.submissions.unlimited}
             percentage={usage.submissions.percentage}
+            resetDate={`Resets ${resetDateFormatted}`}
+          />
+          <UsageCard
+            icon={<Mail className="h-4 w-4" />}
+            label={t('billing.emailsLabel')}
+            used={usage.emails.used}
+            limit={usage.emails.limit}
+            unlimited={usage.emails.unlimited}
+            percentage={usage.emails.percentage}
             resetDate={`Resets ${resetDateFormatted}`}
           />
           <UsageCard

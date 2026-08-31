@@ -251,6 +251,7 @@
     "portalOpening": "Opening billing portal",
     "portalOpeningDesc": "Manage your subscription in the new tab",
     "portalError": "Failed to open portal",
+    "emailsLabel": "Emails sent",
     "aiCreditsLabel": "AI credits",
     "aiCreditsResetOn": "Your credits reset on {{date}}",
     "enterprisePendingTitle": "Enterprise plan awaiting payment",
