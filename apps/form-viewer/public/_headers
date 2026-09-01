@@ -4,9 +4,14 @@
 # A request that matches several patterns inherits the headers of ALL of them,
 # and a header set twice is combined, not overridden (Cloudflare Pages docs,
 # "Attach a header"). So /embed/* also picks up the frame-ancestors 'self' from
-# /* below, and the browser then enforces the intersection — 'self' — which is
-# exactly what this route must not do. The `! Content-Security-Policy` line
-# detaches that inherited value before this block sets its own.
+# /* — the browser then enforces the intersection, 'self', which is exactly what
+# this route must not do. `! Content-Security-Policy` in the /embed/* block
+# detaches that inherited value before the block sets its own.
+#
+# ORDER MATTERS: Cloudflare applies the blocks top-to-bottom, and a `! Header`
+# line only removes what an *earlier* block set. So /* must come first and
+# /embed/* last — the reverse order (the shape this file shipped with in #337)
+# left the `!` a no-op and /embed/* went out with two CSP headers.
 #
 # Framing policy, in short: only /embed/* may be put in someone else's page.
 # Everything else — including the hosted form at /f/* — is same-origin only.
@@ -16,10 +21,28 @@
 # NOTE: a Cloudflare zone-level transform adds `X-Frame-Options: SAMEORIGIN` to
 # every *.dculus.com response, downstream of this file, and XFO has no
 # "any origin" value. That transform must exclude viewer /embed/* for framing
-# to work at all — this file cannot override it. See docs/form-embed-v1-spec.md §11.
+# to work at all on a *.dculus.com host — this file cannot override it. The
+# zone-level Response Header Transform Rule that carves out the exception lives
+# in infrastructure/multi-cloud/terraform/cloudflare/embed-framing.tf. On a bare
+# *.pages.dev host there is no zone transform, so this file is the whole story
+# there and the ordering above is what makes it work.
+# See docs/form-embed-v1-spec.md §11 and §15.6.
+
+/*
+  Content-Security-Policy: frame-ancestors 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/embed.js
+  # Fetched cross-origin by every host page, and changes rarely. Kept short
+  # enough that a protocol fix reaches host pages within the day.
+  Cache-Control: public, max-age=3600, must-revalidate
+  Content-Type: application/javascript; charset=utf-8
+  X-Content-Type-Options: nosniff
 
 /embed/*
   # Drop the frame-ancestors 'self' inherited from /* before setting ours.
+  # This block is last so the `!` actually has that value to remove.
   ! Content-Security-Policy
   # The whole point of this route: any site may frame it.
   Content-Security-Policy: frame-ancestors *
@@ -32,15 +55,3 @@
   # A hosted form's own page must not be indexed under the host's SEO, and an
   # embed frame is not a page anyone should land on from search.
   X-Robots-Tag: noindex
-
-/embed.js
-  # Fetched cross-origin by every host page, and changes rarely. Kept short
-  # enough that a protocol fix reaches host pages within the day.
-  Cache-Control: public, max-age=3600, must-revalidate
-  Content-Type: application/javascript; charset=utf-8
-  X-Content-Type-Options: nosniff
-
-/*
-  Content-Security-Policy: frame-ancestors 'self'
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin

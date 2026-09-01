@@ -16,14 +16,21 @@
 #                                           would otherwise emit on this path
 # Everything outside viewer `/embed/*` is untouched and keeps SAMEORIGIN.
 #
-# ── Why this lives in the R2/zone stack and is gated to production ────────────
+# ── Why this lives in the R2/zone stack and is gated to one environment ───────
 # The three environments share one Cloudflare zone but run this stack with
 # separate state. A zone can hold exactly one entrypoint ruleset per phase
 # (`http_response_headers_transform` here), and the provider's Create is not an
 # upsert — a second environment applying would fail with "already exists". So a
 # single environment owns it, and its one rule lists the viewer hostnames of
-# ALL environments. Production is that owner. Consequence: dev/staging embedding
-# starts working only after this has been applied from a production deploy.
+# ALL environments (see var.viewer_embed_framing_hosts below).
+#
+# That owner is `dev`, not production: only `main` -> dev deploys on every push,
+# while production deploys only on a `v*` tag. #339 originally gated this to
+# production and the rule then sat unapplied for days — every deploy that ran
+# the E2E suite failed the two @embed iframe scenarios because /embed/* on the
+# deployed viewer still carried `X-Frame-Options: SAMEORIGIN`. Gating to dev
+# means the next push to main creates the zone rule for all three environments.
+# A later production/staging deploy sees count=0 here and leaves it alone.
 #
 # If the zone ever gains a hand-made response-header transform rule, this
 # resource's first apply will fail; import the existing ruleset and fold its
@@ -50,7 +57,8 @@ locals {
 }
 
 resource "cloudflare_ruleset" "embed_framing" {
-  count = var.environment == "production" ? 1 : 0
+  # Owned by dev — the environment that actually deploys on every push to main.
+  count = var.environment == "dev" ? 1 : 0
 
   zone_id     = var.cloudflare_zone_id
   name        = "Form Embed - allow framing of viewer /embed/*"

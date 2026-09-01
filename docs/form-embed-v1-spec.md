@@ -667,8 +667,12 @@ it and both deny cross-origin framing of `/embed/*` until changed:
    both `/embed/*` and `/*` inherits the headers of both, and a repeated header
    is *combined*, not overridden. `/embed/*` was therefore emitting
    `frame-ancestors *` **and** the `frame-ancestors 'self'` from `/*`, and the
-   browser enforces the intersection. `/embed/*` now detaches the inherited
-   value with `! Content-Security-Policy` before setting its own.
+   browser enforces the intersection. `/embed/*` detaches the inherited value
+   with `! Content-Security-Policy` before setting its own — but a `! Header`
+   line only removes what an *earlier* block set, so `/*` must be listed
+   **before** `/embed/*` in the file. #337 shipped them in the opposite order,
+   which left the `!` a no-op and the double CSP header in place; the blocks are
+   now ordered `/*` → `/embed.js` → `/embed/*`.
 
 2. **A zone-level transform (fixed with Terraform).**
    Every `*.dculus.com` response — including apps with no `_headers` file at all,
@@ -684,10 +688,13 @@ it and both deny cross-origin framing of `/embed/*` until changed:
    `Content-Security-Policy: frame-ancestors *` (custom transform rules run
    after both Managed Transforms and the Pages `_headers`, so these win). The
    zone is shared but the stack runs per-environment with separate state and a
-   phase can hold one ruleset, so the resource is **gated to the production
-   environment** and its single rule lists every environment's viewer host —
-   dev/staging embedding therefore starts working only after a production
-   deploy has applied it.
+   phase can hold one ruleset, so the resource is **gated to a single owning
+   environment** and its one rule lists every environment's viewer host. That
+   owner is **`dev`** — the only environment that deploys on every push to
+   `main` (production deploys only on a `v*` tag). #339 first gated it to
+   production and the rule then sat unapplied, failing the two `@embed` iframe
+   scenarios on every deploy run; gating to dev means the next push to `main`
+   creates it for all three environments.
 
 ### What is still open
 
