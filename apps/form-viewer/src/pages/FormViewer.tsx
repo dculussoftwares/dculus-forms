@@ -15,6 +15,7 @@ import { getFormErrorMessage, isSubmissionLimitError, isAccessControlError } fro
 import { quizResultLabels, quizResultLinkLabel } from '../locales/quizResult';
 import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
+import RespondentBadge from '../components/RespondentBadge';
 import { signOut } from '../lib/auth-client';
 
 const SUBMISSION_TIMEOUT_MS = 30_000;
@@ -309,8 +310,10 @@ const FormViewer: React.FC<FormViewerProps> = ({
         // A real sign-out (not just clearing the local token) — better-auth
         // also sets a session cookie independent of the bearer plugin, and
         // that cookie alone would otherwise keep re-authenticating the
-        // rejected identity on the next attempt.
-        void signOut();
+        // rejected identity on the next attempt. Fire-and-forget: the gate is
+        // shown regardless, and a failed sign-out just means the respondent
+        // re-authenticates over a still-live session.
+        void signOut().catch(() => {});
         setSubmissionState('idle');
         setNeedsReauth(true);
         isSubmittingRef.current = false;
@@ -408,6 +411,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
   if (form.accessStatus === 'DOMAIN_REJECTED') {
     return (
       <AccessDeniedScreen
+        signedInEmail={form.respondentEmail}
         allowedDomains={allowedDomains}
         onSwitchAccount={() => refetch()}
       />
@@ -448,12 +452,46 @@ const FormViewer: React.FC<FormViewerProps> = ({
     setSendResponseCopy(false);
   };
 
+  // "Not you?" on the RespondentBadge. Awaits a real server-side sign-out
+  // (throws on failure — the badge then keeps the current identity visible
+  // and offers a retry, never a false "signed out" state), wipes the previous
+  // respondent's in-progress answers, then re-fetches: the form now reports
+  // SIGN_IN_REQUIRED and the SignInGate takes over.
+  const handleSwitchAccount = async () => {
+    await signOut();
+    useFormResponseStore.getState().clearAllResponses();
+    isSubmittingRef.current = false;
+    setSubmissionState('idle');
+    setThankYouData(null);
+    setHasStartedForm(false);
+    setSendResponseCopy(false);
+    setNeedsReauth(false);
+    await refetch();
+  };
+
   // Render the form in fullscreen mode. After a successful submission, the
   // layout's thank-you screen is shown by forcing `screenOverride` — FormRenderer
   // stays mounted rather than being swapped for a separate component, so the
   // thank-you screen inherits the same layout's theme/spacing/background.
   return (
-    <div className={embedded ? 'w-full relative' : 'h-screen w-full'} data-testid="form-viewer-renderer">
+    <div
+      className={embedded ? 'w-full relative' : 'h-screen w-full flex flex-col'}
+      data-testid="form-viewer-renderer"
+    >
+      {/* Identity-gated forms: a full-width banner (its own row above the form,
+          not a floating chip) naming the signed-in account and offering a
+          switch — so a shared or returning browser can't submit silently under
+          a previous respondent. `respondentEmail` is null (banner hidden) for
+          forms that don't capture respondent identity. */}
+      {form.respondentEmail && (
+        <RespondentBadge
+          email={form.respondentEmail}
+          imageUrl={form.respondentImage}
+          embedded={embedded}
+          onSwitchAccount={handleSwitchAccount}
+        />
+      )}
+
       {/* Submission error message */}
       {submissionState === 'error' && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 m-4">
@@ -502,7 +540,9 @@ const FormViewer: React.FC<FormViewerProps> = ({
         cdnEndpoint={cdnEndpoint}
         formSchema={formSchema!}
         mode={RendererMode.SUBMISSION}
-        className={embedded ? 'w-full' : 'h-full w-full'}
+        // `flex-1 min-h-0` (not `h-full`) so the layout fills the space left
+        // under the RespondentBadge banner instead of overflowing past it.
+        className={embedded ? 'w-full' : 'flex-1 min-h-0 w-full'}
         embedded={embedded}
         formId={form.id}
         onFormSubmit={handleFormSubmit}

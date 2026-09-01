@@ -615,6 +615,65 @@ describe('Forms Resolvers', () => {
     });
   });
 
+  describe('Form: respondentEmail', () => {
+    const unauth = { auth: { user: null, session: null, isAuthenticated: false } } as any;
+
+    it('returns the caller\'s own session email for an accessControl form', () => {
+      const form = { ...mockForm, settings: JSON.stringify({ accessControl: { enabled: true, requireSignIn: true } }) };
+      expect(formsResolvers.Form.respondentEmail(form, {}, mockContext as any)).toBe('test@example.com');
+    });
+
+    it('returns the caller\'s own session email for a collectRespondentEmail form', () => {
+      const form = { ...mockForm, settings: JSON.stringify({ collectRespondentEmail: true }) };
+      expect(formsResolvers.Form.respondentEmail(form, {}, mockContext as any)).toBe('test@example.com');
+    });
+
+    it('still returns the email when the domain allowlist would reject this caller', () => {
+      // So AccessDeniedScreen can name the account that needs switching.
+      const form = {
+        ...mockForm,
+        settings: JSON.stringify({ accessControl: { enabled: true, requireSignIn: true, allowedDomains: ['other.com'] } }),
+      };
+      expect(formsResolvers.Form.respondentEmail(form, {}, mockContext as any)).toBe('test@example.com');
+    });
+
+    it('returns null for a form that does not capture respondent identity, even when signed in', () => {
+      const form = { ...mockForm, settings: JSON.stringify({ collectRespondentEmail: false }) };
+      expect(formsResolvers.Form.respondentEmail(form, {}, mockContext as any)).toBeNull();
+    });
+
+    it('returns null when the caller is not authenticated', () => {
+      const form = { ...mockForm, settings: JSON.stringify({ accessControl: { enabled: true, requireSignIn: true } }) };
+      expect(formsResolvers.Form.respondentEmail(form, {}, unauth)).toBeNull();
+    });
+
+    it('never reads anything the client supplied — only context.auth.user.email', () => {
+      // Guards against a future refactor turning this into a lookup.
+      const form = { ...mockForm, settings: JSON.stringify({ accessControl: { enabled: true, requireSignIn: true } }) };
+      const ctx = { auth: { user: { id: 'u1', email: 'real@session.com' }, session: {}, isAuthenticated: true } } as any;
+      expect(formsResolvers.Form.respondentEmail(form, { email: 'spoofed@evil.com' } as any, ctx)).toBe('real@session.com');
+    });
+  });
+
+  describe('Form: respondentImage', () => {
+    const form = { ...mockForm, settings: JSON.stringify({ collectRespondentEmail: true }) };
+
+    it('returns the caller\'s own session image for an identity form', () => {
+      const ctx = { auth: { user: { id: 'u1', email: 'a@b.com', image: 'https://img/a.png' }, session: {}, isAuthenticated: true } } as any;
+      expect(formsResolvers.Form.respondentImage(form, {}, ctx)).toBe('https://img/a.png');
+    });
+
+    it('returns null when the session has no image', () => {
+      expect(formsResolvers.Form.respondentImage(form, {}, mockContext as any)).toBeNull();
+    });
+
+    it('returns null for a form that does not capture respondent identity', () => {
+      const openForm = { ...mockForm, settings: JSON.stringify({ collectRespondentEmail: false }) };
+      const ctx = { auth: { user: { id: 'u1', email: 'a@b.com', image: 'https://img/a.png' }, session: {}, isAuthenticated: true } } as any;
+      expect(formsResolvers.Form.respondentImage(openForm, {}, ctx)).toBeNull();
+    });
+  });
+
   describe('Form: settings', () => {
     it('should parse and return JSON settings', () => {
       const settings = { theme: 'dark', spacing: 'compact' };
