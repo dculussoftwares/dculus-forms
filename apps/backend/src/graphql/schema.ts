@@ -190,6 +190,17 @@ export const typeDefs = gql`
     formSchemaPublic: JSON
     settings: FormSettings
     accessStatus: FormAccessStatus!
+    # The signed-in respondent's OWN verified email, or null. Only ever
+    # derived from the caller's validated session — never a DB lookup of
+    # another user — and only surfaced for forms that capture respondent
+    # identity (accessControl / collectRespondentEmail). Lets the public
+    # viewer show a "Responding as … · Switch account" control so a shared
+    # device can't silently submit under a previous respondent's identity.
+    respondentEmail: String
+    # The signed-in respondent's OWN profile image URL (from their session,
+    # e.g. their Google avatar), or null. Same scoping as respondentEmail —
+    # purely cosmetic for the account chip.
+    respondentImage: String
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!

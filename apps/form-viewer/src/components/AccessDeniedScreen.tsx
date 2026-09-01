@@ -31,8 +31,14 @@ export default function AccessDeniedScreen({ signedInEmail, allowedDomains, onSw
               // also sets a session cookie on sign-in (independent of the bearer
               // plugin), and that cookie alone is enough to re-authenticate the
               // next request. signOut() does a real server round-trip that
-              // invalidates the session and clears the cookie too.
-              await signOut();
+              // invalidates the session and clears the cookie too. If it throws
+              // we still re-fetch: the refetch reflects the true state (the
+              // gate reappears if the session is in fact still live).
+              try {
+                await signOut();
+              } catch {
+                /* surfaced via the refetched access status below */
+              }
               onSwitchAccount();
             }}
           >

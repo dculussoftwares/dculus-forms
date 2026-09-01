@@ -45,10 +45,14 @@ function normalizeAccessControlForComparison(accessControl: any) {
   };
 }
 
-function getFormAccessStatus(parent: any, context: { auth: BetterAuthContext }) {
-  const settings = parent.settings
+function parseFormSettings(parent: any) {
+  return parent.settings
     ? JSON.parse(typeof parent.settings === 'string' ? parent.settings : JSON.stringify(parent.settings))
     : null;
+}
+
+function getFormAccessStatus(parent: any, context: { auth: BetterAuthContext }) {
+  const settings = parseFormSettings(parent);
   return resolveAccessStatus(settings?.accessControl, settings?.collectRespondentEmail, context.auth);
 }
 
@@ -171,6 +175,30 @@ export const formsResolvers = {
     },
     accessStatus: (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
       return getFormAccessStatus(parent, context);
+    },
+    // The caller's OWN verified email, straight from their validated session
+    // — never a lookup keyed by anything the client sent, so there is no way
+    // to read another respondent's identity through this. Scoped to forms
+    // that actually capture respondent identity; every other form returns
+    // null even for a signed-in caller (nothing to disclose). Returned even
+    // when the domain allowlist rejects this caller (accessStatus
+    // DOMAIN_REJECTED) so the "you can't respond" screen can name the
+    // account that needs switching.
+    respondentEmail: (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
+      const settings = parseFormSettings(parent);
+      if (!requiresRespondentIdentity(settings?.accessControl, settings?.collectRespondentEmail)) {
+        return null;
+      }
+      return context.auth.user?.email ?? null;
+    },
+    // Same session-only, same scoping as `respondentEmail` — the caller's own
+    // avatar, never anyone else's. Cosmetic only.
+    respondentImage: (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
+      const settings = parseFormSettings(parent);
+      if (!requiresRespondentIdentity(settings?.accessControl, settings?.collectRespondentEmail)) {
+        return null;
+      }
+      return context.auth.user?.image ?? null;
     },
     settings: (parent: any) => {
       // Parse JSON settings from database or return null if no settings

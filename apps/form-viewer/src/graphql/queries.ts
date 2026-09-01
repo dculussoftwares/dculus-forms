@@ -11,6 +11,12 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
       shortUrl
       formSchemaPublic
       accessStatus
+      # The signed-in respondent's own verified email + avatar (null unless
+      # this form captures respondent identity and the caller is
+      # authenticated). Drives the account header so a shared browser can't
+      # submit silently under a previous respondent.
+      respondentEmail
+      respondentImage
       settings {
         submissionLimits {
           timeWindow {

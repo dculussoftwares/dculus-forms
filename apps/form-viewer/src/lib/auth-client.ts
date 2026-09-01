@@ -29,7 +29,19 @@ export const authClient = createAuthClient({
 
 export const { signIn, emailOtp, oneTimeToken, getSession } = authClient;
 
+/**
+ * Full respondent sign-out. Order matters: `authClient.signOut()` runs while
+ * the bearer token is still present so the server can actually invalidate the
+ * session + clear its cookie (in a cross-site embed frame the cookie isn't
+ * sent, so the bearer is the only credential that reaches better-auth). The
+ * local token is cleared in `finally` regardless, so a failed network call
+ * never leaves the client holding a usable credential — but the error still
+ * propagates so callers can tell the respondent it didn't complete.
+ */
 export const signOut = async () => {
-  clearRespondentToken();
-  return authClient.signOut();
+  try {
+    await authClient.signOut();
+  } finally {
+    clearRespondentToken();
+  }
 };
