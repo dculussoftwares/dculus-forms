@@ -688,13 +688,15 @@ it and both deny cross-origin framing of `/embed/*` until changed:
    `Content-Security-Policy: frame-ancestors *` (custom transform rules run
    after both Managed Transforms and the Pages `_headers`, so these win). The
    zone is shared but the stack runs per-environment with separate state and a
-   phase can hold one ruleset, so the resource is **gated to a single owning
-   environment** and its one rule lists every environment's viewer host. That
-   owner is **`dev`** — the only environment that deploys on every push to
-   `main` (production deploys only on a `v*` tag). #339 first gated it to
+   phase can hold one ruleset, so a `var.manage_embed_framing` flag gates the
+   resource — **true for exactly one environment, false for the rest** — and
+   its one rule lists every environment's viewer host. This repo owns it from
+   **`dev`** (`environments/dev/terraform.tfvars`) because `main` deploys dev on
+   every push while production only deploys on a `v*` tag; #339 first gated it to
    production and the rule then sat unapplied, failing the two `@embed` iframe
-   scenarios on every deploy run; gating to dev means the next push to `main`
-   creates it for all three environments.
+   scenarios on every deploy run. The flag defaults to `true`, so a
+   single-environment deployment (e.g. a fork running only production) needs no
+   change.
 
 ### What is still open
 

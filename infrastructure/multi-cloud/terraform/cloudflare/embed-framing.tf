@@ -16,27 +16,38 @@
 #                                           would otherwise emit on this path
 # Everything outside viewer `/embed/*` is untouched and keeps SAMEORIGIN.
 #
-# ── Why this lives in the R2/zone stack and is gated to one environment ───────
-# The three environments share one Cloudflare zone but run this stack with
-# separate state. A zone can hold exactly one entrypoint ruleset per phase
+# ── Why exactly one environment owns this ────────────────────────────────────
+# Environments that share a Cloudflare zone run this stack with separate state.
+# A zone can hold exactly one entrypoint ruleset per phase
 # (`http_response_headers_transform` here), and the provider's Create is not an
-# upsert — a second environment applying would fail with "already exists". So a
-# single environment owns it, and its one rule lists the viewer hostnames of
-# ALL environments (see var.viewer_embed_framing_hosts below).
+# upsert — a second environment applying would fail with "already exists". So
+# `var.manage_embed_framing` gates the resource: keep it true for exactly one
+# environment and false for the rest. That one rule's expression lists every
+# environment's viewer host (var.viewer_embed_framing_hosts), so a single apply
+# covers them all.
 #
-# That owner is `dev`, not production: only `main` -> dev deploys on every push,
-# while production deploys only on a `v*` tag. #339 originally gated this to
-# production and the rule then sat unapplied for days — every deploy that ran
-# the E2E suite failed the two @embed iframe scenarios because /embed/* on the
-# deployed viewer still carried `X-Frame-Options: SAMEORIGIN`. Gating to dev
-# means the next push to main creates the zone rule for all three environments.
-# A later production/staging deploy sees count=0 here and leaves it alone.
+# This repo owns it from **dev** (dev/terraform.tfvars) — `main` deploys dev on
+# every push while production only deploys on a `v*` tag, so gating to production
+# (as #339 first did) left the rule unapplied for days and failed the @embed
+# E2E scenarios on every run. A single-environment deployment (e.g. a fork
+# running only production) can just leave the default `true`.
 #
-# If the zone ever gains a hand-made response-header transform rule, this
-# resource's first apply will fail; import the existing ruleset and fold its
-# rules in here.
+# If the zone ever gains a hand-made response-header transform rule, the first
+# apply here fails; import the existing ruleset and fold its rules in.
 #
 # See docs/form-embed-v1-spec.md §15.6 and apps/form-viewer/public/_headers.
+
+variable "manage_embed_framing" {
+  description = <<-EOT
+    Whether THIS stack creates the zone-level Response Header Transform Rule that
+    makes the viewer's /embed/* route framable by any site. The rule is a zone
+    singleton, so when several environments share one zone exactly one of them
+    must own it (true here, false in the others). A single-environment
+    deployment can leave the default.
+  EOT
+  type    = bool
+  default = true
+}
 
 variable "viewer_embed_framing_hosts" {
   description = "Viewer hostnames whose /embed/* path must be framable by any site (all environments — this is a zone-wide rule)."
@@ -57,8 +68,8 @@ locals {
 }
 
 resource "cloudflare_ruleset" "embed_framing" {
-  # Owned by dev — the environment that actually deploys on every push to main.
-  count = var.environment == "dev" ? 1 : 0
+  # One environment owns the zone singleton — see the note above.
+  count = var.manage_embed_framing ? 1 : 0
 
   zone_id     = var.cloudflare_zone_id
   name        = "Form Embed - allow framing of viewer /embed/*"
