@@ -15,6 +15,10 @@ cors_allowed_origins = [
   "https://dculus-forms-admin-app-dev.pages.dev"
 ]
 
+# Dev owns the shared zone-level embed-framing rule (embed-framing.tf) — it
+# deploys on every merge to main. Exactly one environment may set this true.
+manage_embed_framing = true
+
 # Disable public access via r2.dev for development
 enable_public_access = false
 
