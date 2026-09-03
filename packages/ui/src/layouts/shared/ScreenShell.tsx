@@ -22,6 +22,8 @@ export const LayoutScreenShell: React.FC<{
   paddingY: string;
   /** center the child (thank-you screen) */
   center?: boolean;
+  /** Ref onto the scrolling pane — see `useScrollReset`. */
+  paneRef?: React.Ref<HTMLDivElement>;
   children: React.ReactNode;
 }> = ({
   layout,
@@ -33,6 +35,7 @@ export const LayoutScreenShell: React.FC<{
   paneClass,
   paddingY,
   center = false,
+  paneRef,
   children,
 }) => (
   <div className={`${screenClass} relative`} style={outerBackgroundStyle}>
@@ -42,12 +45,20 @@ export const LayoutScreenShell: React.FC<{
       hasVideoBackground={hasVideoBackground}
       videoUrl={videoUrl}
     />
+    {/*
+      `center` intentionally does NOT use `items-center`: centering a flex
+      cross-axis clips the start when content overflows the container, and
+      scrollTop can never go negative to reach it — a tall thank-you/quiz
+      result (many review questions) would permanently hide its own top
+      (score badge, first questions) with no way to scroll to it. `m-auto`
+      on the child centers only while there's free space and degrades to
+      top-aligned + fully scrollable once content overflows.
+    */}
     <div
-      className={`${paneClass} relative z-10 px-3 sm:px-8 ${paddingY} ${
-        center ? 'flex items-center justify-center' : ''
-      }`}
+      ref={paneRef}
+      className={`${paneClass} relative z-10 px-3 sm:px-8 ${paddingY} ${center ? 'flex' : ''}`}
     >
-      {children}
+      {center ? <div className="m-auto w-full">{children}</div> : children}
     </div>
   </div>
 );

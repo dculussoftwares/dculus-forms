@@ -113,8 +113,8 @@ export const QuizResultScreen: React.FC<QuizResultScreenProps> = ({
     );
   }
 
-  const hasScore = gradeResult.score !== undefined && gradeResult.maxScore !== undefined;
-  const hasPassed = gradeResult.passed !== undefined;
+  const hasScore = typeof gradeResult.score === 'number' && typeof gradeResult.maxScore === 'number';
+  const hasPassed = typeof gradeResult.passed === 'boolean';
   const questions = gradeResult.questions ?? [];
 
   const announcementParts: string[] = [];
@@ -188,7 +188,7 @@ export const QuizResultScreen: React.FC<QuizResultScreenProps> = ({
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <p className="font-medium text-foreground">{question.label}</p>
-                  {question.correct !== undefined && (
+                  {typeof question.correct === 'boolean' && (
                     <CorrectnessMarker correct={question.correct} labels={labels} />
                   )}
                 </div>
@@ -203,7 +203,7 @@ export const QuizResultScreen: React.FC<QuizResultScreenProps> = ({
                   </p>
                 )}
 
-                {question.pointsAwarded !== undefined && question.pointValue !== undefined && (
+                {typeof question.pointsAwarded === 'number' && typeof question.pointValue === 'number' && (
                   <p className="text-sm text-muted-foreground">
                     {labels.pointsLabel}: {question.pointsAwarded} / {question.pointValue}
                   </p>

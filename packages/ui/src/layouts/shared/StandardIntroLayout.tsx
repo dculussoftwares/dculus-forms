@@ -12,6 +12,7 @@ import { IntroHero, type IntroDesktopVariant } from './IntroHero';
 import { useIntroContentEditing } from './introContent';
 import { LayoutScreenShell, BackToIntro } from './ScreenShell';
 import { useResolvedColorScheme, spacingClasses, withSpacing, textColorStyle } from './theme';
+import { useScrollReset } from './useScrollReset';
 
 /**
  * The shared body of the seven intro layouts (L1–L5, L7, L8). Each of those
@@ -60,6 +61,8 @@ export const StandardIntroLayout: React.FC<StandardIntroLayoutProps> = ({
     setScreen(screenOverride ?? (initialPageId ? 'pages' : 'intro'));
   }, [screenOverride, initialPageId]);
 
+  const scrollRef = useScrollReset<HTMLDivElement>(screen);
+  const paneRef = useScrollReset<HTMLDivElement>(screen);
   const editing = useIntroContentEditing(layout, onLayoutChange, defaultContent);
   const { hasVideoBackground, videoUrl } = useBackgroundVideo(layout, cdnEndpoint);
   const scheme = useResolvedColorScheme(layout?.theme);
@@ -79,7 +82,7 @@ export const StandardIntroLayout: React.FC<StandardIntroLayoutProps> = ({
       ref={rootRef}
       className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}
     >
-      <div className={shell.scroll}>
+      <div ref={scrollRef} className={shell.scroll}>
         {screen === 'intro' ? (
           <IntroHero
             containerRef={rootRef}
@@ -108,6 +111,7 @@ export const StandardIntroLayout: React.FC<StandardIntroLayoutProps> = ({
             screenClass={shell.screen}
             paneClass={shell.screenPane}
             paddingY={spacing.screenPaddingY}
+            paneRef={paneRef}
           >
             <div
               className={`max-w-2xl mx-auto bg-white dark:bg-gray-800 ${SURFACE.panel} ${spacing.cardPadding}`}
@@ -133,6 +137,7 @@ export const StandardIntroLayout: React.FC<StandardIntroLayoutProps> = ({
             screenClass={shell.screen}
             paneClass={shell.screenPane}
             paddingY={spacing.screenPaddingY}
+            paneRef={paneRef}
           >
             <div
               className={`max-w-2xl w-full mx-auto bg-white dark:bg-gray-800 ${SURFACE.panel}`}

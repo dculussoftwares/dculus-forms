@@ -10,6 +10,7 @@ import { layoutShell } from './shared/embedShell';
 import { buildOuterBackgroundStyle, BackgroundLayers, HeroMedia, SURFACE } from './shared/surface';
 import { useIntroContentEditing, IntroEditToolbar, IntroEditor } from './shared/introContent';
 import { useResolvedColorScheme, spacingClasses, withSpacing, textColorStyle } from './shared/theme';
+import { useScrollReset } from './shared/useScrollReset';
 
 /**
  * L6 "Steps" — no intro/pages toggle: a wide image banner, the headline, and
@@ -34,6 +35,8 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
   embedded,
 }) => {
   const showThankYou = screenOverride === 'thankYou';
+  const scrollRef = useScrollReset<HTMLDivElement>(showThankYou);
+  const paneRef = useScrollReset<HTMLDivElement>(showThankYou);
   const editing = useIntroContentEditing(
     layout,
     onLayoutChange,
@@ -70,7 +73,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
 
   return (
     <div className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}>
-      <div className={shell.scroll}>
+      <div ref={scrollRef} className={shell.scroll}>
         <div className={`${shell.screen} relative`} style={outerBackgroundStyle}>
           <BackgroundLayers
             layout={layout}
@@ -78,7 +81,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
             hasVideoBackground={hasVideoBackground}
             videoUrl={videoUrl}
           />
-          <div className={`${shell.screenPane} relative z-10 px-4 sm:px-8 ${spacing.screenPaddingY}`}>
+          <div ref={paneRef} className={`${shell.screenPane} relative z-10 px-4 sm:px-8 ${spacing.screenPaddingY}`}>
             <div className={`w-full max-w-3xl mx-auto flex flex-col gap-4 sm:gap-6 ${shell.minHFull}`} style={textStyle}>
               {showThankYou ? (
                 <div className={`bg-white dark:bg-gray-800 ${SURFACE.panel}`}>
