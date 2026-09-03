@@ -28,7 +28,15 @@ import { QUIZ_GRADING_PLUGIN_TYPE } from '../../plugins/quiz/types.js';
 import { stripConditionallyHiddenValues } from '../../lib/conditionalStrip.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { gradeResponse } from '../../services/quiz/gradingEngine.js';
-import { saveGrade, toRespondentView, getMyQuizResult } from '../../services/quiz/gradingService.js';
+import {
+  saveGrade,
+  toRespondentView,
+  getMyQuizResult,
+  overrideGradeQuestion,
+  releaseGrade,
+  releaseGrades,
+  toGradeRecordPayload,
+} from '../../services/quiz/gradingService.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/core/events.js';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
@@ -761,6 +769,112 @@ export const responsesResolvers = {
         throw createGraphQLError('Fake response generation failed. Please try again.', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
+
+    // Native Quiz — manual grading review/release. EDITOR access, same level
+    // `updateResponse` requires: grading is content work, not an ownership action.
+    overrideResponseGradeQuestion: async (
+      _: any,
+      {
+        input,
+      }: {
+        input: {
+          responseId: string;
+          fieldId: string;
+          correct: boolean;
+          pointsAwarded: number;
+          graderComment?: string;
+        };
+      },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const existingResponse = await getResponseById(input.responseId);
+      if (!existingResponse) {
+        throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
+      }
+      const form = await getFormById(existingResponse.formId);
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+      await requireOrganizationMembership(context.auth, form.organizationId);
+
+      const accessCheck = await checkFormAccess(context.auth.user!.id, form.id, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need EDITOR access to grade responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      const grade = await overrideGradeQuestion(input, context.auth.user!.id);
+      await audit('response.grade_overridden', 'Response', input.responseId, context.auth.user?.id, {
+        fieldId: input.fieldId,
+      });
+      return toGradeRecordPayload(grade);
+    },
+
+    releaseResponseGrade: async (
+      _: any,
+      { responseId }: { responseId: string },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const existingResponse = await getResponseById(responseId);
+      if (!existingResponse) {
+        throw createGraphQLError('Response not found', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
+      }
+      const form = await getFormById(existingResponse.formId);
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+      await requireOrganizationMembership(context.auth, form.organizationId);
+
+      const accessCheck = await checkFormAccess(context.auth.user!.id, form.id, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need EDITOR access to release grades for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+      if (form.settings?.quiz?.gradeRelease !== 'afterReview') {
+        throw createGraphQLError(
+          'Release is only available when Grade release is set to "After manual review"',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
+      const grade = await releaseGrade(responseId, context.auth.user!.id);
+      await audit('response.grade_released', 'Response', responseId, context.auth.user?.id);
+      return toGradeRecordPayload(grade);
+    },
+
+    releaseResponseGrades: async (
+      _: any,
+      { formId, ids }: { formId: string; ids: string[] },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const form = await getFormById(formId);
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+      await requireOrganizationMembership(context.auth, form.organizationId);
+
+      const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need EDITOR access to release grades for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+      if (form.settings?.quiz?.gradeRelease !== 'afterReview') {
+        throw createGraphQLError(
+          'Release is only available when Grade release is set to "After manual review"',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
+      const result = await releaseGrades(formId, ids, context.auth.user!.id);
+      await audit('response.grade_bulk_released', 'Form', formId, context.auth.user?.id, {
+        releasedCount: result.releasedCount,
+        skippedCount: result.skippedCount,
+      });
+      return result;
+    },
   },
 };
 
@@ -958,15 +1072,7 @@ export const extendedResponsesResolvers = {
 
         const gradeRow = await responseGradeRepository.findByResponseId(parent.id);
         if (gradeRow) {
-          return {
-            score: gradeRow.score,
-            maxScore: gradeRow.maxScore,
-            percentage: gradeRow.percentage,
-            passed: gradeRow.passed,
-            status: gradeRow.status,
-            gradedAt: gradeRow.gradedAt.toISOString(),
-            detail: Array.isArray(gradeRow.detail) ? gradeRow.detail : [],
-          };
+          return toGradeRecordPayload(gradeRow);
         }
 
         // Legacy compatibility: no native ResponseGrade row — fall back to

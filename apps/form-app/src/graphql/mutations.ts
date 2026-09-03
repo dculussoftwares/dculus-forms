@@ -198,6 +198,58 @@ export const DELETE_RESPONSES : TypedDocumentNode<any, any> = gql`
   }
 `;
 
+// Native Quiz — manual grading review/release (completes the
+// gradeRelease: 'afterReview' flow). Fields mirror GET_RESPONSE_GRADE_DETAIL's
+// responseGrade selection so the drawer can render straight off the mutation
+// result while its own refetch settles.
+export const OVERRIDE_RESPONSE_GRADE_QUESTION : TypedDocumentNode<any, any> = gql`
+  mutation OverrideResponseGradeQuestion($input: OverrideResponseGradeQuestionInput!) {
+    overrideResponseGradeQuestion(input: $input) {
+      score
+      maxScore
+      percentage
+      passed
+      status
+      gradedAt
+      releasedAt
+      detail {
+        fieldId
+        fieldLabel
+        fieldType
+        mode
+        submittedValue
+        acceptedAnswers
+        correct
+        pointsAwarded
+        pointValue
+        autoPointsAwarded
+        overriddenBy
+        graderComment
+        feedbackShown
+      }
+    }
+  }
+`;
+
+export const RELEASE_RESPONSE_GRADE : TypedDocumentNode<any, any> = gql`
+  mutation ReleaseResponseGrade($responseId: ID!) {
+    releaseResponseGrade(responseId: $responseId) {
+      status
+      releasedAt
+    }
+  }
+`;
+
+export const RELEASE_RESPONSE_GRADES : TypedDocumentNode<any, any> = gql`
+  mutation ReleaseResponseGrades($formId: ID!, $ids: [ID!]!) {
+    releaseResponseGrades(formId: $formId, ids: $ids) {
+      releasedCount
+      skippedCount
+      skippedResponseIds
+    }
+  }
+`;
+
 export const CREATE_TAG : TypedDocumentNode<any, any> = gql`
   mutation CreateTag($formId: ID!, $name: String!, $color: String) {
     createTag(formId: $formId, name: $name, color: $color) {

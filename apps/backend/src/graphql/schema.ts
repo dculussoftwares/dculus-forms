@@ -346,6 +346,7 @@ export const typeDefs = gql`
     passed: Boolean!
     status: String!
     gradedAt: String!
+    releasedAt: String
     detail: [ResponseGradeQuestionDetail!]!
   }
 
@@ -572,6 +573,24 @@ export const typeDefs = gql`
     responseId: ID!
     data: JSON!
     editReason: String
+  }
+
+  # Native Quiz — manual grading review/release (completes the
+  # gradeRelease: 'afterReview' flow: overrideResponseGradeQuestion scores a
+  # question, releaseResponseGrade(s) then makes the grade visible to the
+  # respondent).
+  input OverrideResponseGradeQuestionInput {
+    responseId: ID!
+    fieldId: ID!
+    correct: Boolean!
+    pointsAwarded: Float!
+    graderComment: String
+  }
+
+  type ReleaseResponseGradesResult {
+    releasedCount: Int!
+    skippedCount: Int!
+    skippedResponseIds: [ID!]!
   }
 
   # Response Edit Tracking Input Types
@@ -1673,6 +1692,11 @@ export const typeDefs = gql`
     deleteResponse(id: ID!): Boolean!
     deleteResponses(formId: ID!, ids: [ID!]!): Boolean!
     deletePreviewResponses(formId: ID!): Int!
+
+    # Native Quiz — manual grading review/release
+    overrideResponseGradeQuestion(input: OverrideResponseGradeQuestionInput!): ResponseGradeRecord!
+    releaseResponseGrade(responseId: ID!): ResponseGradeRecord!
+    releaseResponseGrades(formId: ID!, ids: [ID!]!): ReleaseResponseGradesResult!
     generateFakeResponses(formId: ID!, count: Int!): Int!
     deleteAiGeneratedResponses(formId: ID!): Int!
 

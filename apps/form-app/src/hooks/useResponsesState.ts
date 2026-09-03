@@ -16,7 +16,7 @@ import type { DateTimeRangeValue } from '@dculus/ui';
 import { FilterState } from '../components/Filters';
 import { buildSubmittedAtGraphqlFilter } from '../lib/submittedAtFilter';
 import { GENERATE_FORM_RESPONSE_REPORT } from '../graphql/queries';
-import { DELETE_RESPONSES } from '../graphql/mutations';
+import { DELETE_RESPONSES, RELEASE_RESPONSE_GRADES } from '../graphql/mutations';
 
 const getStorageKey = (formId: string) => `dculus-responses-col-${formId}`;
 
@@ -99,6 +99,9 @@ export interface UseResponsesStateReturn {
   handleBulkDelete: (formId: string) => Promise<void>;
   handleBulkExport: (format: 'EXCEL' | 'CSV') => Promise<void>;
   isBulkDeleting: boolean;
+  // Native Quiz — bulk "Release results" for gradeRelease: 'afterReview'
+  handleBulkRelease: (formId: string) => Promise<{ releasedCount: number; skippedCount: number } | undefined>;
+  isBulkReleasing: boolean;
 
   // Submission date filter (presets or custom range)
   submittedAtFilter: DateTimeRangeValue | null;
@@ -256,8 +259,10 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
   // Mutations
   const [generateReport, { loading: exportLoading }] = useMutation(GENERATE_FORM_RESPONSE_REPORT);
   const [bulkDeleteMutation, { loading: bulkDeleteLoading }] = useMutation(DELETE_RESPONSES);
+  const [bulkReleaseMutation, { loading: bulkReleaseLoading }] = useMutation(RELEASE_RESPONSE_GRADES);
   const isExporting = exportLoading;
   const isBulkDeleting = bulkDeleteLoading;
+  const isBulkReleasing = bulkReleaseLoading;
 
   // Pagination handlers
   const handlePageChange = (page: number) => {
@@ -388,6 +393,19 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     }
   };
 
+  // Native Quiz — bulk "Release results" for the selected rows. Returns the
+  // released/skipped counts so the caller can compose an accurate toast
+  // (skipped = still has an ungraded manual question); throws propagate to
+  // the caller's own error toast, same as handleBulkDelete above.
+  const handleBulkRelease = async (fId: string) => {
+    if (!selectedResponseIds.length) return undefined;
+    const { data } = await bulkReleaseMutation({
+      variables: { formId: fId, ids: selectedResponseIds },
+    });
+    clearRowSelection();
+    return data?.releaseResponseGrades;
+  };
+
   // Bulk export (selected rows only)
   const handleBulkExport = async (format: 'EXCEL' | 'CSV') => {
     if (!formId || !selectedResponseIds.length) return;
@@ -440,6 +458,8 @@ export const useResponsesState = ({ formId }: UseResponsesStateProps): UseRespon
     handleBulkDelete,
     handleBulkExport,
     isBulkDeleting,
+    handleBulkRelease,
+    isBulkReleasing,
 
     // Submission date filter
     submittedAtFilter,

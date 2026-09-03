@@ -60,7 +60,12 @@
       "delete": "Delete",
       "deleting": "Deleting...",
       "deleteSuccess": "Responses deleted successfully",
-      "deleteError": "Failed to delete responses"
+      "deleteError": "Failed to delete responses",
+      "release": "Release results",
+      "releasing": "Releasing...",
+      "releaseSuccess": "{{count}} result(s) released",
+      "releaseSuccessWithSkipped": "{{released}} result(s) released, {{skipped}} still need grading",
+      "releaseError": "Failed to release results"
     },
     "preview": {
       "clearButton": "Clear {{count}} preview responses",
@@ -114,7 +119,9 @@
       "notGraded": "Not graded",
       "statusPassed": "Pass",
       "statusFailed": "Fail",
-      "statusNeedsReview": "Needs review"
+      "statusNeedsReview": "Needs review",
+      "released": "Released",
+      "notReleased": "Not released"
     },
     "tags": {
       "addTag": "Add tag",
@@ -226,6 +233,28 @@
       "needsReview": "Needs review"
     },
     "loading": "Loading grade details...",
-    "error": "Failed to load grade details"
+    "error": "Failed to load grade details",
+    "grading": {
+      "gradeThisAnswer": "Grade this answer",
+      "overrideScore": "Override score",
+      "markCorrect": "Mark correct",
+      "markIncorrect": "Mark incorrect",
+      "pointsLabel": "Points",
+      "commentPlaceholder": "Add a comment for the respondent (optional)",
+      "commentLabel": "Grader comment:",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saveSuccess": "Grade saved",
+      "saveError": "Failed to save grade"
+    },
+    "release": {
+      "button": "Release results",
+      "confirm": "Release this response's score to the respondent? This can't be undone.",
+      "pendingHint": "{{count}} question(s) still need grading before results can be released",
+      "readyHint": "Ready to release — the respondent will be able to see their score",
+      "releasedOn": "Released on {{date}}",
+      "success": "Results released",
+      "error": "Failed to release results"
+    }
   }
 }

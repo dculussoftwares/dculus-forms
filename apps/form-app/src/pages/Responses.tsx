@@ -37,7 +37,7 @@ import {
   DELETE_AI_GENERATED_RESPONSES,
 } from '../graphql/mutations';
 import { deserializeFormSchema, FillableFormField, FormResponse, FormSchema } from '@dculus/types';
-import { AlertCircle, ArrowLeft, FileSpreadsheet, FileText, RotateCcw, Trash2, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, FileSpreadsheet, FileText, RotateCcw, Send, Trash2, X } from 'lucide-react';
 
 // Mirrors MAX_FAKE_RESPONSES_PER_REQUEST in the backend's fakeResponseService.ts.
 const MAX_FAKE_RESPONSES = 10;
@@ -50,6 +50,9 @@ interface BulkActionBarProps {
   onClear: () => void;
   isDeleting: boolean;
   isExporting: boolean;
+  // Native Quiz — only shown when the form's gradeRelease is 'afterReview'
+  onRelease?: () => void;
+  isReleasing?: boolean;
   t: (key: string, options?: { values?: Record<string, string | number> }) => string;
 }
 
@@ -61,6 +64,8 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
   onClear,
   isDeleting,
   isExporting,
+  onRelease,
+  isReleasing,
   t,
 }) => (
   <div
@@ -81,6 +86,18 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
         <Trash2 className="h-3 w-3" />
         {isDeleting ? t('toolbar.bulkActions.deleting') : t('toolbar.bulkActions.delete')}
       </Button>
+      {onRelease && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 px-2.5 text-xs gap-1.5"
+          onClick={onRelease}
+          disabled={isReleasing}
+        >
+          <Send className="h-3 w-3" />
+          {isReleasing ? t('toolbar.bulkActions.releasing') : t('toolbar.bulkActions.release')}
+        </Button>
+      )}
       <Button
         variant="outline"
         size="sm"
@@ -162,6 +179,24 @@ const Responses: React.FC = () => {
       toastSuccess(t('toolbar.bulkActions.deleteSuccess'));
     } catch {
       toastError(t('toolbar.bulkActions.deleteError'));
+    }
+  };
+
+  const handleBulkRelease = async () => {
+    if (!actualFormId) return;
+    try {
+      const result = await responsesState.handleBulkRelease(actualFormId);
+      await refetchResponses();
+      if (!result) return;
+      toastSuccess(
+        result.skippedCount > 0
+          ? t('toolbar.bulkActions.releaseSuccessWithSkipped', {
+              values: { released: result.releasedCount, skipped: result.skippedCount },
+            })
+          : t('toolbar.bulkActions.releaseSuccess', { values: { count: result.releasedCount } })
+      );
+    } catch {
+      toastError(t('toolbar.bulkActions.releaseError'));
     }
   };
 
@@ -265,7 +300,10 @@ const Responses: React.FC = () => {
     (t: { name: string }) => t.name !== PREVIEW_TAG_NAME && t.name !== AI_GENERATED_TAG_NAME
   );
 
-  const { data: responsesData, previousData: previousResponsesData, loading: responsesLoading, error: responsesError } = useQuery(GET_FORM_RESPONSES, {
+  const quizGradeRelease = formData?.form?.settings?.quiz?.gradeRelease;
+  const canReleaseGrades = quizEnabled && quizGradeRelease === 'afterReview';
+
+  const { data: responsesData, previousData: previousResponsesData, loading: responsesLoading, error: responsesError, refetch: refetchResponses } = useQuery(GET_FORM_RESPONSES, {
     variables: {
       formId: actualFormId,
       page: responsesState.currentPage,
@@ -313,6 +351,7 @@ const Responses: React.FC = () => {
         formData?.form?.settings?.collectRespondentEmail
       ),
       quizEnabled,
+      quizGradeRelease,
       onViewGrade: responsesState.openGradeDrawer,
       onPluginClick: (pluginType, metadata, responseId) => {
         responsesState.setPluginDialogState({ pluginType, metadata, responseId });
@@ -320,7 +359,7 @@ const Responses: React.FC = () => {
       onDeleteResponse: handleDeleteResponse,
       t,
     }),
-    [formData, pluginsData, formTags, enabledPdfGenerators, locale, actualFormId, responses, quizEnabled, t]
+    [formData, pluginsData, formTags, enabledPdfGenerators, locale, actualFormId, responses, quizEnabled, quizGradeRelease, t]
   );
 
   // Apply stored column order: fixed cols keep their positions; hideable cols are reordered
@@ -532,6 +571,8 @@ const Responses: React.FC = () => {
                   onClear={responsesState.clearRowSelection}
                   isDeleting={responsesState.isBulkDeleting}
                   isExporting={responsesState.isExporting}
+                  onRelease={canReleaseGrades ? handleBulkRelease : undefined}
+                  isReleasing={responsesState.isBulkReleasing}
                   t={t}
                 />
               </div>
@@ -656,6 +697,8 @@ const Responses: React.FC = () => {
         responseId={responsesState.gradeDrawerResponseId}
         open={!!responsesState.gradeDrawerResponseId}
         onClose={responsesState.closeGradeDrawer}
+        canRelease={canReleaseGrades}
+        onChanged={() => refetchResponses()}
         t={t}
       />
 

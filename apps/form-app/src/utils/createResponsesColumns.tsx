@@ -97,6 +97,9 @@ interface CreateResponsesColumnsOptions {
   // so the returned column set/layout is byte-identical to before this
   // feature existed.
   quizEnabled?: boolean;
+  // Native Quiz — when 'afterReview', the Status column also shows a
+  // Released/Not released indicator alongside pass/fail.
+  quizGradeRelease?: string;
   onViewGrade?: (responseId: string) => void;
   onPluginClick: (
     pluginType: string,
@@ -710,6 +713,7 @@ interface ResponseGradeSummary {
  */
 const createGradeColumns = (
   onViewGrade: ((responseId: string) => void) | undefined,
+  quizGradeRelease: string | undefined,
   t: CreateResponsesColumnsOptions['t']
 ): ColumnDef<FormResponse>[] => {
   const scoreColumn: ColumnDef<FormResponse> = {
@@ -758,26 +762,50 @@ const createGradeColumns = (
       if (!grade) {
         return <span className="text-sm text-muted-foreground">—</span>;
       }
+      // Native Quiz — completes the afterReview flow: an owner scanning this
+      // column needs to see at a glance which grades are still private.
+      const releaseBadge =
+        quizGradeRelease === 'afterReview' ? (
+          <Badge
+            variant="outline"
+            className={
+              grade.status === 'RELEASED'
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-slate-50 text-slate-600 border-slate-200'
+            }
+          >
+            {grade.status === 'RELEASED' ? t('table.grade.released') : t('table.grade.notReleased')}
+          </Badge>
+        ) : null;
+
       if (grade.status === 'NEEDS_REVIEW') {
         return (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-            {t('table.grade.statusNeedsReview')}
-          </Badge>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              {t('table.grade.statusNeedsReview')}
+            </Badge>
+            {releaseBadge}
+          </div>
         );
       }
-      return grade.passed ? (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-          {t('table.grade.statusPassed')}
-        </Badge>
-      ) : (
-        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-          {t('table.grade.statusFailed')}
-        </Badge>
+      return (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {grade.passed ? (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              {t('table.grade.statusPassed')}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+              {t('table.grade.statusFailed')}
+            </Badge>
+          )}
+          {releaseBadge}
+        </div>
       );
     },
     enableSorting: true,
     enableHiding: true,
-    size: 130,
+    size: 190,
   };
 
   return [scoreColumn, statusColumn];
@@ -826,6 +854,7 @@ export const createResponsesColumns = ({
   responses = [],
   showRespondentEmail = false,
   quizEnabled = false,
+  quizGradeRelease,
   onViewGrade,
   t,
 }: CreateResponsesColumnsOptions): ColumnDef<FormResponse>[] => {
@@ -923,7 +952,7 @@ export const createResponsesColumns = ({
   // Native Quiz (epic #289, Story 11): Score/Status columns — built ONLY
   // when quizEnabled. Additive guarantee: a non-quiz form gets an empty
   // array here, so its column set/layout is unchanged from before.
-  const gradeColumns = quizEnabled ? createGradeColumns(onViewGrade, t) : [];
+  const gradeColumns = quizEnabled ? createGradeColumns(onViewGrade, quizGradeRelease, t) : [];
 
   // Plugin columns — pass full plugin instances so column titles can be
   // derived from each plugin's stored config (e.g. quiz columnName setting)
