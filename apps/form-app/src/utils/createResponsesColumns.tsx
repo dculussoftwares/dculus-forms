@@ -38,6 +38,7 @@ import {
   ArrowUp,
   ArrowUpDown,
   AtSign,
+  Award,
   Calendar,
   CheckSquare,
   Clock,
@@ -591,8 +592,13 @@ const ResponsesActionsCell: React.FC<{
   row: Row<FormResponse>;
   formId: string;
   onDeleteResponse: (responseId: string) => void;
+  // Native Quiz — additive: both undefined/false for every non-quiz form, so
+  // this menu item is never rendered there (same guarantee as the Score/
+  // Status columns above).
+  quizEnabled: boolean;
+  onViewGrade: ((responseId: string) => void) | undefined;
   t: CreateResponsesColumnsOptions['t'];
-}> = ({ row, formId, onDeleteResponse, t }) => {
+}> = ({ row, formId, onDeleteResponse, quizEnabled, onViewGrade, t }) => {
   const navigate = useNavigate();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -634,6 +640,18 @@ const ResponsesActionsCell: React.FC<{
               <Edit className="mr-2 h-4 w-4" />
               {t('table.actions.edit')}
             </DropdownMenuItem>
+            {quizEnabled && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewGrade?.(row.original.id);
+                }}
+                disabled={!(row.original as any).responseGrade}
+              >
+                <Award className="mr-2 h-4 w-4" />
+                {t('table.actions.gradeDetails')}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               onClick={() =>
                 navigate(
@@ -818,6 +836,8 @@ const createGradeColumns = (
 const createActionsColumn = (
   formId: string,
   onDeleteResponse: (responseId: string) => void,
+  quizEnabled: boolean,
+  onViewGrade: ((responseId: string) => void) | undefined,
   t: CreateResponsesColumnsOptions['t']
 ): ColumnDef<FormResponse> => {
   return {
@@ -830,6 +850,8 @@ const createActionsColumn = (
         row={row}
         formId={formId}
         onDeleteResponse={onDeleteResponse}
+        quizEnabled={quizEnabled}
+        onViewGrade={onViewGrade}
         t={t}
       />
     ),
@@ -995,7 +1017,7 @@ export const createResponsesColumns = ({
   }));
 
   // Actions column
-  const actionsColumn = createActionsColumn(formId, onDeleteResponse, t);
+  const actionsColumn = createActionsColumn(formId, onDeleteResponse, quizEnabled, onViewGrade, t);
 
   // Checkbox first, then Response ID, tags, respondent email, field/plugin/generator columns, Submitted At + Edit Status, actions
   return [

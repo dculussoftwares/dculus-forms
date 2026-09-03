@@ -12,10 +12,16 @@ import {
 } from '@dculus/ui';
 import { FillableFormField, FormResponse, FieldType } from '@dculus/types';
 import { formatFieldValue } from '@dculus/utils';
-import { Download, Edit2, Trash2 } from 'lucide-react';
+import { Award, Download, Edit2, Trash2 } from 'lucide-react';
 import { TagsCell } from './TagsCell';
 import { GeneratePdfButton } from './GeneratePdfButton';
 import { GET_FORM_TAGS } from '../../graphql/queries';
+
+interface ResponseGradeSummary {
+  score: number;
+  maxScore: number;
+  percentage: number;
+}
 
 const GET_RESPONSE_FILE_DOWNLOAD_URL : TypedDocumentNode<any, any> = gql`
   query GetResponseFileDownloadUrl($key: String!) {
@@ -30,6 +36,11 @@ interface ResponseDetailPanelProps {
   open: boolean;
   onClose: () => void;
   onDelete: (responseId: string) => void;
+  // Native Quiz — additive: both undefined/false for every non-quiz form, so
+  // this banner never renders there (same guarantee as the table's Score/
+  // Status columns and "Grade details" menu item).
+  quizEnabled?: boolean;
+  onViewGrade?: (responseId: string) => void;
   t: (key: string, options?: { values?: Record<string, string | number> }) => string;
 }
 
@@ -102,6 +113,8 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
   open,
   onClose,
   onDelete,
+  quizEnabled,
+  onViewGrade,
   t,
 }) => {
   const navigate = useNavigate();
@@ -133,6 +146,15 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
     onClose();
   };
 
+  // Swaps this panel for the grade drawer rather than stacking two right-side
+  // panels — mirrors handleEdit's onClose()-then-navigate above.
+  const handleViewGrade = () => {
+    onClose();
+    onViewGrade?.(response.id);
+  };
+
+  const grade = quizEnabled ? (response as any).responseGrade as ResponseGradeSummary | undefined : undefined;
+
   return (
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-lg flex flex-col p-0 gap-0">
@@ -147,6 +169,40 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
             </p>
           )}
         </SheetHeader>
+
+        {/* Native Quiz — grade banner: additive, only for quiz-enabled forms */}
+        {quizEnabled && (
+          <div
+            className="px-5 py-3 border-b"
+            style={{ backgroundColor: 'var(--tf-icon-lavender)' }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm min-w-0">
+                <Award className="h-4 w-4 shrink-0" style={{ color: '#5c2e6b' }} />
+                <span className="truncate">
+                  {grade
+                    ? t('table.grade.scoreFormat', {
+                        values: { score: grade.score, maxScore: grade.maxScore, percentage: Math.round(grade.percentage) },
+                      })
+                    : t('table.grade.notGraded')}
+                </span>
+              </div>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleViewGrade}
+                disabled={!grade}
+                className="shrink-0 gap-1.5"
+              >
+                <Award className="h-3.5 w-3.5" />
+                {t('table.actions.gradeDetails')}
+              </Button>
+            </div>
+            <p className="text-xs mt-1 pl-6" style={{ color: '#5c2e6b', opacity: 0.75 }}>
+              {grade ? t('table.grade.detailsHint') : t('table.grade.notGradedHint')}
+            </p>
+          </div>
+        )}
 
         {/* Tags section */}
         <div className="px-5 py-3 border-b">

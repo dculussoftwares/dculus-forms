@@ -689,6 +689,8 @@ const Responses: React.FC = () => {
           handleDeleteResponse(id);
           responsesState.closeDetailPanel();
         }}
+        quizEnabled={quizEnabled}
+        onViewGrade={responsesState.openGradeDrawer}
         t={t}
       />
 

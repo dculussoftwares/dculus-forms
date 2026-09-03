@@ -121,7 +121,9 @@
       "statusFailed": "Fail",
       "statusNeedsReview": "Needs review",
       "released": "Released",
-      "notReleased": "Not released"
+      "notReleased": "Not released",
+      "detailsHint": "See the per-question breakdown, adjust scores, or release this result.",
+      "notGradedHint": "This response hasn't been graded yet."
     },
     "tags": {
       "addTag": "Add tag",
@@ -142,6 +144,7 @@
       "viewResponse": "View response",
       "edit": "Edit",
       "editHistory": "Edit History",
+      "gradeDetails": "Grade details",
       "delete": "Delete",
       "moreActions": "More actions",
       "deleteConfirmTitle": "Delete Response",
