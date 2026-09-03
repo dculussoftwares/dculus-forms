@@ -23,7 +23,8 @@ import * as editTrackingService from '../../../services/responseEditTrackingServ
 import * as tagService from '../../../services/tagService.js';
 import * as responseCopyService from '../../../services/responseCopyService.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
-import { responseRepository, responseGradeRepository } from '../../../repositories/index.js';
+import * as auditLib from '../../../lib/audit.js';
+import { responseRepository, responseGradeRepository, formRepository } from '../../../repositories/index.js';
 
 // Mock all dependencies
 vi.mock('../../../services/responseService.js');
@@ -63,6 +64,7 @@ vi.mock('../../../services/responseEditTrackingService.js', () => ({
 vi.mock('../../../services/responseCopyService.js', () => ({
   sendResponseCopyIfEnabled: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('../../../lib/audit.js', () => ({ audit: vi.fn().mockResolvedValue(undefined) }));
 
 describe('Responses Resolvers', () => {
   const mockContext = {
@@ -1821,6 +1823,7 @@ describe('Responses Resolvers', () => {
         passed: true,
         status: 'AUTO_GRADED',
         gradedAt: '2024-01-02T00:00:00.000Z',
+        releasedAt: null,
         detail: mockGradeRow.detail,
       });
     });
@@ -2294,6 +2297,262 @@ describe('Responses Resolvers', () => {
         percentage: 80,
         passed: true,
         questions: [],
+      });
+    });
+  });
+
+  // Native Quiz — completes the gradeRelease: 'afterReview' flow: an owner
+  // grades pending manual questions, then releases the grade to the
+  // respondent. Both mutations require EDITOR form access, and release is
+  // additionally gated on the form's gradeRelease policy.
+  describe('Mutation: overrideResponseGradeQuestion / releaseResponseGrade(s) (afterReview flow)', () => {
+    beforeEach(() => {
+      // A prior suite in this file leaves requireOrganizationMembership
+      // permanently rejecting via a persistent (non-Once) mockRejectedValue,
+      // which vi.clearAllMocks() in the outer beforeEach does not undo
+      // (mockClear resets call history, not implementation). Every test
+      // below needs it passing to reach checkFormAccess.
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+    });
+
+    const afterReviewForm = {
+      ...mockForm,
+      settings: { quiz: { enabled: true, gradeRelease: 'afterReview', respondentVisibility: {} } },
+    };
+
+    const gradedQuestion = {
+      fieldId: 'f1',
+      fieldLabel: 'Q1',
+      fieldType: 'RADIO_FIELD',
+      mode: 'exact',
+      submittedValue: 'a',
+      acceptedAnswers: ['a'],
+      correct: true,
+      pointsAwarded: 8,
+      pointValue: 10,
+      autoPointsAwarded: 8,
+    };
+
+    const pendingQuestion = {
+      fieldId: 'f2',
+      fieldLabel: 'Q2',
+      fieldType: 'TEXT_AREA_FIELD',
+      mode: 'manual',
+      submittedValue: 'because',
+      acceptedAnswers: [],
+      correct: null,
+      pointsAwarded: 0,
+      pointValue: 5,
+      autoPointsAwarded: 0,
+    };
+
+    const makeGradeRow = (overrides: Record<string, any> = {}) => ({
+      formId: 'form-123',
+      score: 8,
+      maxScore: 15,
+      percentage: 53.33,
+      passed: false,
+      status: 'NEEDS_REVIEW',
+      autoScore: 8,
+      gradedAt: new Date('2024-01-02T00:00:00Z'),
+      gradedById: null,
+      releasedAt: null,
+      schemaVersion: 1,
+      attemptNumber: 1,
+      integrity: null,
+      detail: [gradedQuestion, pendingQuestion],
+      ...overrides,
+    });
+
+    describe('overrideResponseGradeQuestion', () => {
+      it('rejects without EDITOR form access', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
+        vi.mocked(formService.getFormById).mockResolvedValue(afterReviewForm as any);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: false,
+          permission: 'VIEWER' as any,
+          form: afterReviewForm as any,
+        });
+
+        await expect(
+          responsesResolvers.Mutation.overrideResponseGradeQuestion(
+            {},
+            { input: { responseId: 'response-123', fieldId: 'f2', correct: true, pointsAwarded: 5 } },
+            mockContext as any
+          )
+        ).rejects.toThrow(/EDITOR/);
+
+        expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
+      });
+
+      it('grades the pending question, recomputes the score, and audits the change', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
+        vi.mocked(formService.getFormById).mockResolvedValue(afterReviewForm as any);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'EDITOR' as any,
+          form: afterReviewForm as any,
+        });
+        const gradeRow = makeGradeRow();
+        vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(gradeRow as any);
+        vi.mocked(formRepository.findUnique).mockResolvedValue({
+          settings: { quiz: { passThresholdPercent: 60 } },
+        } as any);
+        vi.mocked(responseRepository.findUnique).mockResolvedValue({ formId: 'form-123' } as any);
+        vi.mocked(responseGradeRepository.upsertForResponse).mockImplementation(
+          (_id, data) => Promise.resolve({ ...gradeRow, ...data } as any)
+        );
+
+        const result = await responsesResolvers.Mutation.overrideResponseGradeQuestion(
+          {},
+          { input: { responseId: 'response-123', fieldId: 'f2', correct: true, pointsAwarded: 5 } },
+          mockContext as any
+        );
+
+        expect(result.score).toBe(13);
+        expect(result.status).toBe('NEEDS_REVIEW'); // unchanged — release is separate
+        expect(auditLib.audit).toHaveBeenCalledWith(
+          'response.grade_overridden',
+          'Response',
+          'response-123',
+          'user-123',
+          { fieldId: 'f2' }
+        );
+      });
+    });
+
+    describe('releaseResponseGrade', () => {
+      it('rejects when the form\'s gradeRelease is not "afterReview"', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
+        vi.mocked(formService.getFormById).mockResolvedValue({
+          ...mockForm,
+          settings: { quiz: { enabled: true, gradeRelease: 'immediate' } },
+        } as any);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'EDITOR' as any,
+          form: mockForm as any,
+        });
+
+        await expect(
+          responsesResolvers.Mutation.releaseResponseGrade(
+            {},
+            { responseId: 'response-123' },
+            mockContext as any
+          )
+        ).rejects.toThrow(/After manual review/);
+
+        expect(responseGradeRepository.findByResponseId).not.toHaveBeenCalled();
+      });
+
+      it('rejects while a question is still pending manual grading', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
+        vi.mocked(formService.getFormById).mockResolvedValue(afterReviewForm as any);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'EDITOR' as any,
+          form: afterReviewForm as any,
+        });
+        vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(makeGradeRow() as any);
+
+        await expect(
+          responsesResolvers.Mutation.releaseResponseGrade(
+            {},
+            { responseId: 'response-123' },
+            mockContext as any
+          )
+        ).rejects.toThrow(/manual grading/);
+
+        expect(responseGradeRepository.upsertForResponse).not.toHaveBeenCalled();
+      });
+
+      it('releases once every question is graded, and audits the release', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
+        vi.mocked(formService.getFormById).mockResolvedValue(afterReviewForm as any);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'EDITOR' as any,
+          form: afterReviewForm as any,
+        });
+        const gradeRow = makeGradeRow({ detail: [gradedQuestion] });
+        vi.mocked(responseGradeRepository.findByResponseId).mockResolvedValue(gradeRow as any);
+        vi.mocked(responseRepository.findUnique).mockResolvedValue({ formId: 'form-123' } as any);
+        vi.mocked(responseGradeRepository.upsertForResponse).mockImplementation(
+          (_id, data) => Promise.resolve({ ...gradeRow, ...data } as any)
+        );
+
+        const result = await responsesResolvers.Mutation.releaseResponseGrade(
+          {},
+          { responseId: 'response-123' },
+          mockContext as any
+        );
+
+        expect(result.status).toBe('RELEASED');
+        expect(result.releasedAt).toEqual(expect.any(String));
+        expect(auditLib.audit).toHaveBeenCalledWith(
+          'response.grade_released',
+          'Response',
+          'response-123',
+          'user-123'
+        );
+      });
+    });
+
+    describe('releaseResponseGrades (bulk)', () => {
+      it('rejects when the form\'s gradeRelease is not "afterReview"', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formService.getFormById).mockResolvedValue({
+          ...mockForm,
+          settings: { quiz: { enabled: true, gradeRelease: 'scheduled' } },
+        } as any);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'EDITOR' as any,
+          form: mockForm as any,
+        });
+
+        await expect(
+          responsesResolvers.Mutation.releaseResponseGrades(
+            {},
+            { formId: 'form-123', ids: ['response-123'] },
+            mockContext as any
+          )
+        ).rejects.toThrow(/After manual review/);
+      });
+
+      it('releases eligible grades, skips ones still pending grading, and audits the counts', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formService.getFormById).mockResolvedValue(afterReviewForm as any);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'EDITOR' as any,
+          form: afterReviewForm as any,
+        });
+        const eligible = makeGradeRow({ responseId: 'r1', detail: [gradedQuestion] });
+        const blocked = makeGradeRow({ responseId: 'r2', detail: [pendingQuestion] });
+        vi.mocked(responseGradeRepository.findMany).mockResolvedValue([eligible, blocked] as any);
+        vi.mocked(responseRepository.findUnique).mockResolvedValue({ formId: 'form-123' } as any);
+        vi.mocked(responseGradeRepository.upsertForResponse).mockResolvedValue(eligible as any);
+
+        const result = await responsesResolvers.Mutation.releaseResponseGrades(
+          {},
+          { formId: 'form-123', ids: ['r1', 'r2'] },
+          mockContext as any
+        );
+
+        expect(result).toEqual({ releasedCount: 1, skippedCount: 1, skippedResponseIds: ['r2'] });
+        expect(auditLib.audit).toHaveBeenCalledWith(
+          'response.grade_bulk_released',
+          'Form',
+          'form-123',
+          'user-123',
+          { releasedCount: 1, skippedCount: 1 }
+        );
       });
     });
   });

@@ -1,7 +1,19 @@
 import { z } from 'zod';
 import type { QuestionGradeResult, QuizSettings, RespondentGradeView } from '@dculus/types';
 import type { ResponseGrade as ResponseGradeRow, Prisma } from '#prisma-client';
-import { responseGradeRepository, responseRepository } from '../../repositories/index.js';
+import { responseGradeRepository, responseRepository, formRepository } from '../../repositories/index.js';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
+
+const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
+
+// Bulk release writes each grade individually (Promise.all of saveGrade
+// calls, not a single bulk statement); this bounds how many concurrent
+// writes one request can trigger. Well above the Responses table's largest
+// page size (100 rows) so a real bulk-select never hits it — this exists to
+// reject an oversized ids array sent directly to the mutation, not to
+// constrain normal UI usage.
+const MAX_BULK_RELEASE_IDS = 500;
 
 /**
  * Native Quiz persistence (D4, epic #289). Thin orchestration over
@@ -261,4 +273,231 @@ export const getMyQuizResult = async (
   if (!gradeRow) return null;
 
   return toRespondentView(gradeRow, quizSettings);
+};
+
+/**
+ * Builder-facing projection of a grade row — the full, unfiltered detail
+ * (unlike `toRespondentView`, this ignores `gradeRelease`/`respondentVisibility`
+ * entirely; callers are responsible for the EDITOR+ access check). Shared by
+ * the `responseGrade` field resolver and the override/release mutations below
+ * so the shape is defined exactly once.
+ */
+export interface GradeRecordPayload {
+  score: number;
+  maxScore: number;
+  percentage: number;
+  passed: boolean;
+  status: GradeStatus;
+  gradedAt: string;
+  releasedAt: string | null;
+  detail: QuestionGradeResult[];
+}
+
+export const toGradeRecordPayload = (grade: ResponseGradeRow): GradeRecordPayload => ({
+  score: grade.score,
+  maxScore: grade.maxScore,
+  percentage: grade.percentage,
+  passed: grade.passed,
+  status: grade.status as GradeStatus,
+  gradedAt: grade.gradedAt.toISOString(),
+  releasedAt: grade.releasedAt ? grade.releasedAt.toISOString() : null,
+  detail: readDetail(grade),
+});
+
+const overrideGradeQuestionInputSchema = z.object({
+  responseId: z.string().min(1),
+  fieldId: z.string().min(1),
+  correct: z.boolean(),
+  pointsAwarded: z.number(),
+  graderComment: z.string().nullish().transform((v) => v ?? undefined),
+});
+
+export interface OverrideGradeQuestionInput {
+  responseId: string;
+  fieldId: string;
+  correct: boolean;
+  pointsAwarded: number;
+  graderComment?: string;
+}
+
+/**
+ * Manually grade (or re-grade) one question on a response — works on any
+ * question, not just `mode: 'manual'` ones, so an owner can also adjust an
+ * auto-graded score (e.g. partial credit for a near-miss text answer).
+ * Recomputes the grade row's score/percentage/passed from the full detail[]
+ * array; leaves `status`/`releasedAt` untouched (release is a separate,
+ * explicit action — see `releaseGrade` below).
+ */
+export const overrideGradeQuestion = async (
+  input: OverrideGradeQuestionInput,
+  graderId: string
+): Promise<ResponseGradeRow> => {
+  const { responseId, fieldId, correct, pointsAwarded, graderComment } =
+    overrideGradeQuestionInputSchema.parse(input);
+
+  const grade = await responseGradeRepository.findByResponseId(responseId);
+  if (!grade) {
+    throw createGraphQLError('Grade not found for this response', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
+  }
+
+  const detail = readDetail(grade);
+  const index = detail.findIndex((q) => q.fieldId === fieldId);
+  if (index === -1) {
+    throw createGraphQLError('Question not found on this response\'s grade', GRAPHQL_ERROR_CODES.NOT_FOUND);
+  }
+
+  const question = detail[index];
+  const clampedPoints = round2(Math.min(Math.max(pointsAwarded, 0), question.pointValue));
+
+  const nextDetail = [...detail];
+  nextDetail[index] = {
+    ...question,
+    correct,
+    pointsAwarded: clampedPoints,
+    overriddenBy: graderId,
+    ...(graderComment !== undefined ? { graderComment } : {}),
+  };
+
+  const score = round2(nextDetail.reduce((sum, q) => sum + q.pointsAwarded, 0));
+  const maxScore = grade.maxScore;
+  const percentage = maxScore > 0 ? round2((score / maxScore) * 100) : 0;
+
+  const formRow = await formRepository.findUnique({
+    where: { id: grade.formId },
+    select: { settings: true },
+  });
+  const passThresholdPercent =
+    (formRow?.settings as { quiz?: { passThresholdPercent?: number } } | null)?.quiz
+      ?.passThresholdPercent ?? 60;
+
+  return saveGrade({
+    responseId,
+    score,
+    maxScore,
+    percentage,
+    passed: percentage >= passThresholdPercent,
+    status: grade.status as GradeStatus,
+    autoScore: grade.autoScore,
+    detail: nextDetail,
+    gradedById: graderId,
+    releasedAt: grade.releasedAt,
+    schemaVersion: grade.schemaVersion,
+    attemptNumber: grade.attemptNumber,
+    integrity: grade.integrity,
+  });
+};
+
+/**
+ * Releases one response's grade to its respondent — the missing half of the
+ * `gradeRelease: 'afterReview'` policy (`isReleased` above already treats
+ * `RELEASED` as visible; nothing previously ever wrote that status). Blocks
+ * while any question is still `correct: null` (unscored manual grading) so a
+ * respondent can never see a score that was never actually finished.
+ * Idempotent: releasing an already-released grade is a no-op, not an error.
+ */
+export const releaseGrade = async (
+  responseId: string,
+  actorId: string
+): Promise<ResponseGradeRow> => {
+  const grade = await responseGradeRepository.findByResponseId(responseId);
+  if (!grade) {
+    throw createGraphQLError('Grade not found for this response', GRAPHQL_ERROR_CODES.RESPONSE_NOT_FOUND);
+  }
+
+  if (grade.status === 'RELEASED') return grade;
+
+  const pendingCount = readDetail(grade).filter((q) => q.correct === null).length;
+  if (pendingCount > 0) {
+    throw createGraphQLError(
+      `${pendingCount} question${pendingCount === 1 ? '' : 's'} still need${pendingCount === 1 ? 's' : ''} manual grading before this response can be released`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  return saveGrade({
+    responseId,
+    score: grade.score,
+    maxScore: grade.maxScore,
+    percentage: grade.percentage,
+    passed: grade.passed,
+    status: 'RELEASED',
+    autoScore: grade.autoScore,
+    detail: readDetail(grade),
+    gradedById: actorId,
+    releasedAt: new Date(),
+    schemaVersion: grade.schemaVersion,
+    attemptNumber: grade.attemptNumber,
+    integrity: grade.integrity,
+  });
+};
+
+export interface ReleaseGradesResult {
+  releasedCount: number;
+  skippedCount: number;
+  skippedResponseIds: string[];
+}
+
+/**
+ * Bulk counterpart to `releaseGrade` — releases every eligible grade among
+ * `ids` (scoped defensively to `formId`, same non-trust posture as
+ * `saveGrade`'s formId handling) and reports how many were skipped for still
+ * having ungraded manual questions, so the caller can surface an honest
+ * count rather than silently under-releasing.
+ */
+export const releaseGrades = async (
+  formId: string,
+  ids: string[],
+  actorId: string
+): Promise<ReleaseGradesResult> => {
+  if (ids.length > MAX_BULK_RELEASE_IDS) {
+    throw createGraphQLError(
+      `Cannot release more than ${MAX_BULK_RELEASE_IDS} responses at once`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
+  const rows = (await getGradesForResponses(ids)).filter((g) => g.formId === formId);
+
+  const toRelease: ResponseGradeRow[] = [];
+  const skippedResponseIds: string[] = [];
+  let alreadyReleased = 0;
+
+  for (const grade of rows) {
+    if (grade.status === 'RELEASED') {
+      alreadyReleased += 1;
+      continue;
+    }
+    const hasPending = readDetail(grade).some((q) => q.correct === null);
+    if (hasPending) {
+      skippedResponseIds.push(grade.responseId);
+    } else {
+      toRelease.push(grade);
+    }
+  }
+
+  await Promise.all(
+    toRelease.map((grade) =>
+      saveGrade({
+        responseId: grade.responseId,
+        score: grade.score,
+        maxScore: grade.maxScore,
+        percentage: grade.percentage,
+        passed: grade.passed,
+        status: 'RELEASED',
+        autoScore: grade.autoScore,
+        detail: readDetail(grade),
+        gradedById: actorId,
+        releasedAt: new Date(),
+        schemaVersion: grade.schemaVersion,
+        attemptNumber: grade.attemptNumber,
+        integrity: grade.integrity,
+      })
+    )
+  );
+
+  return {
+    releasedCount: toRelease.length + alreadyReleased,
+    skippedCount: skippedResponseIds.length,
+    skippedResponseIds,
+  };
 };

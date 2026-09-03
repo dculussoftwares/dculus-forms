@@ -160,7 +160,7 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
       {resultLink && (
         <a
           href={resultLink.href}
-          className="inline-block text-sm font-medium text-primary hover:underline mb-4"
+          className="block text-sm font-medium text-primary hover:underline mb-4"
           data-testid="thank-you-result-link"
         >
           {resultLink.label}
