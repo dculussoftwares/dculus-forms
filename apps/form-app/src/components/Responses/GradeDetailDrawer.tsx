@@ -13,7 +13,7 @@
  * `releaseResponseGrade` makes the grade visible to the respondent.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Sheet,
@@ -111,13 +111,28 @@ export const GradeDetailDrawer: React.FC<GradeDetailDrawerProps> = ({
   // whole tab until manually dismissed.
   const [showReleaseConfirm, setShowReleaseConfirm] = useState(false);
 
+  // This component instance is reused across responses (Responses.tsx just
+  // toggles responseId/open rather than remounting it), so without this a
+  // draft left open on one response's question would carry into the next
+  // response's grade — same fieldId, wrong response.
+  useEffect(() => {
+    setEditingFieldId(null);
+    setDraftCorrect(null);
+    setDraftPoints(0);
+    setDraftComment('');
+    setShowReleaseConfirm(false);
+  }, [responseId]);
+
   const grade: ResponseGradeRecord | undefined = data?.response?.responseGrade;
   const needsReview = grade?.status === 'NEEDS_REVIEW';
   const passed = !!grade?.passed && !needsReview;
   const totalQuestions = grade?.detail.length ?? 0;
   const correctCount = grade?.detail.filter((q) => q.correct === true).length ?? 0;
   const pendingCount = grade?.detail.filter((q) => q.correct === null).length ?? 0;
-  const isReleased = grade?.status === 'RELEASED';
+  // Mirrors the backend's isReleased() (gradingService.ts) — REVIEWED and
+  // RELEASED are equally visible to the respondent, so both read as
+  // "already released" here even though nothing currently writes REVIEWED.
+  const isReleased = grade?.status === 'RELEASED' || grade?.status === 'REVIEWED';
 
   const startEditing = (question: QuestionGradeDetail) => {
     setEditingFieldId(question.fieldId);

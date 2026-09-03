@@ -7,6 +7,14 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 
 const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
 
+// Bulk release writes each grade individually (Promise.all of saveGrade
+// calls, not a single bulk statement); this bounds how many concurrent
+// writes one request can trigger. Well above the Responses table's largest
+// page size (100 rows) so a real bulk-select never hits it — this exists to
+// reject an oversized ids array sent directly to the mutation, not to
+// constrain normal UI usage.
+const MAX_BULK_RELEASE_IDS = 500;
+
 /**
  * Native Quiz persistence (D4, epic #289). Thin orchestration over
  * `responseGradeRepository` — no grading logic lives here (that's the pure
@@ -441,6 +449,13 @@ export const releaseGrades = async (
   ids: string[],
   actorId: string
 ): Promise<ReleaseGradesResult> => {
+  if (ids.length > MAX_BULK_RELEASE_IDS) {
+    throw createGraphQLError(
+      `Cannot release more than ${MAX_BULK_RELEASE_IDS} responses at once`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
   const rows = (await getGradesForResponses(ids)).filter((g) => g.formId === formId);
 
   const toRelease: ResponseGradeRow[] = [];

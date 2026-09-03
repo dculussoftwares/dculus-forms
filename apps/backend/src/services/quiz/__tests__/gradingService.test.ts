@@ -667,6 +667,13 @@ describe('gradingService', () => {
       expect(result.skippedCount).toBe(0);
       expect(responseGradeRepository.upsertForResponse).not.toHaveBeenCalled();
     });
+
+    it('rejects an oversized ids array before ever querying the repository', async () => {
+      const tooMany = Array.from({ length: 501 }, (_, i) => `r${i}`);
+
+      await expect(releaseGrades('form-1', tooMany, 'grader-1')).rejects.toThrow(/500/);
+      expect(responseGradeRepository.findMany).not.toHaveBeenCalled();
+    });
   });
 
   describe('toGradeRecordPayload', () => {
