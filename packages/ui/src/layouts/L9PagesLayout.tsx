@@ -10,6 +10,7 @@ import { layoutShell } from './shared/embedShell';
 import { buildOuterBackgroundStyle, SURFACE } from './shared/surface';
 import { LayoutScreenShell } from './shared/ScreenShell';
 import { useResolvedColorScheme, spacingClasses, withSpacing, textColorStyle } from './shared/theme';
+import { useScrollReset } from './shared/useScrollReset';
 
 /**
  * L9 "Direct" — no intro screen: the form pages render immediately on a card
@@ -33,6 +34,8 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
   embedded,
 }) => {
   const showThankYou = screenOverride === 'thankYou';
+  const scrollRef = useScrollReset<HTMLDivElement>(showThankYou);
+  const paneRef = useScrollReset<HTMLDivElement>(showThankYou);
   const { hasVideoBackground, videoUrl } = useBackgroundVideo(layout, cdnEndpoint);
   const scheme = useResolvedColorScheme(layout?.theme);
   const textStyle = textColorStyle(layout?.textColor, scheme);
@@ -64,7 +67,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
 
   return (
     <div className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}>
-      <div className={shell.scroll}>
+      <div ref={scrollRef} className={shell.scroll}>
         <LayoutScreenShell
           layout={layout}
           cdnEndpoint={cdnEndpoint}
@@ -75,6 +78,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
           paneClass={shell.screenPane}
           paddingY={spacing.screenPaddingY}
           center={showThankYou}
+          paneRef={paneRef}
         >
           {showThankYou ? (
             <div
