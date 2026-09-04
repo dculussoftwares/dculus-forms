@@ -14,8 +14,9 @@ import { Plus, X } from 'lucide-react';
 import type { FillableFormField } from '@dculus/types';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useAutomationBuilderStore } from '../../../store/useAutomationBuilderStore';
-import { getFieldIcon } from '../../utils/fieldIcons';
 import { getOperatorOptions, renderFilterInput } from '../../Filters/FilterRow';
+import { FilterFieldSelect, type FilterableField } from '../../Filters/FilterFieldSelect';
+import { TRIGGER_QUIZ_META_FIELDS } from '../../Filters/metaFilterFields';
 import type { FilterState } from '../../Filters/FilterPanel';
 import type { AutomationConditionNodeData, ConditionCombinator, ConditionRule } from './types';
 
@@ -40,6 +41,13 @@ export const ConditionRulesEditor: React.FC<ConditionRulesEditorProps> = ({ node
   const { t } = useTranslation('automations');
   const { t: tFilter } = useTranslation('filterRow');
   const updateNodeData = useAutomationBuilderStore((s) => s.updateNodeData);
+  const quizEnabled = useAutomationBuilderStore((s) => s.quizEnabled);
+  const triggerType = useAutomationBuilderStore((s) => s.triggerType);
+
+  // Trigger-context quiz fields only exist in the form.submitted event payload
+  // (emitFormSubmitted's quizFanout) — see metaFilterFields.ts's TRIGGER_QUIZ_META_FIELDS
+  // doc comment for why these use different fieldIds from the Responses-page __grade* set.
+  const metaFields = quizEnabled && triggerType === 'form.submitted' ? TRIGGER_QUIZ_META_FIELDS : [];
 
   const rules = data.rules ?? [];
   const combinator: ConditionCombinator = data.combinator ?? 'AND';
@@ -108,8 +116,10 @@ export const ConditionRulesEditor: React.FC<ConditionRulesEditorProps> = ({ node
 
       <div className="space-y-3">
         {rules.map((rule, index) => {
-          const field = fields.find((f) => f.id === rule.fieldId);
-          const operatorOptions = field ? getOperatorOptions(field.type, tFilter) : [];
+          const formField = fields.find((f) => f.id === rule.fieldId);
+          const metaField = !formField ? metaFields.find((m) => m.id === rule.fieldId) : undefined;
+          const field: FilterableField | undefined = formField ?? metaField;
+          const operatorOptions = field ? getOperatorOptions(field, tFilter) : [];
           const filterState: FilterState = {
             fieldId: rule.fieldId,
             operator: rule.operator,
@@ -146,28 +156,15 @@ export const ConditionRulesEditor: React.FC<ConditionRulesEditorProps> = ({ node
                 </Button>
               </div>
 
-              <Select value={rule.fieldId || ''} onValueChange={(fieldId) => handleFieldChange(index, fieldId)}>
-                <SelectTrigger className="h-9" data-testid="condition-field-select">
-                  <SelectValue placeholder={tFilter('placeholders.selectField')}>
-                    {field && (
-                      <div className="flex items-center gap-2">
-                        <div className="text-muted-foreground flex-shrink-0">{getFieldIcon(field.type)}</div>
-                        <span className="truncate">{field.label}</span>
-                      </div>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {fields.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="text-muted-foreground flex-shrink-0">{getFieldIcon(f.type)}</div>
-                        <span className="truncate">{f.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FilterFieldSelect
+                fields={fields}
+                metaFields={metaFields}
+                value={rule.fieldId || ''}
+                onChange={(fieldId) => handleFieldChange(index, fieldId)}
+                t={tFilter}
+                triggerClassName="h-9"
+                testId="condition-field-select"
+              />
 
               {field && (
                 <div className="flex items-center gap-2 flex-wrap">

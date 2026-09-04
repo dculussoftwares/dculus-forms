@@ -31,6 +31,10 @@ export interface AutomationBuilderState {
   /** Fillable fields from the form schema — powers the condition rule editor's field picker
    * and the ConditionNode summary card. Loaded once alongside the graph (#200). */
   formFields: FillableFormField[];
+  /** Mirror of Form.settings.quiz.enabled — gates the Quiz section of the condition rule
+   * editor's field picker (quizPercentage/quizPassed only exist in the form.submitted
+   * trigger payload when quiz grading is on). Loaded once alongside formFields. */
+  quizEnabled: boolean;
   /** The automation's triggerType — read-only mirror of Automation.triggerType (#201), not
    * part of the graph nodes/edges. Never changes after creation, so it's loaded once here
    * for the TriggerNode/config panel rather than re-fetched from `automation` every render. */
@@ -51,6 +55,7 @@ export interface AutomationBuilderState {
     automationId: string;
     formTitle: string;
     formFields?: FillableFormField[];
+    quizEnabled?: boolean;
     triggerType: string;
     triggerConfig?: Record<string, any> | null;
     graph: { nodes: any[]; edges: any[] };
@@ -128,6 +133,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   automationId: null,
   formTitle: '',
   formFields: [],
+  quizEnabled: false,
   triggerType: 'form.submitted',
   triggerConfig: null,
   nodes: [],
@@ -138,7 +144,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   validationErrorsByNode: {},
   structuralErrors: [],
 
-  loadGraph: ({ automationId, formTitle, formFields, triggerType, triggerConfig, graph, isReadOnly }) => {
+  loadGraph: ({ automationId, formTitle, formFields, quizEnabled, triggerType, triggerConfig, graph, isReadOnly }) => {
     // A session draft (see draftStorage.ts) means there are unsaved edits that survived a
     // same-tab reload — e.g. the full-page OAuth redirect from a Google/Microsoft Sheets
     // "Connect" click. Prefer it over the server's last-Saved graph when present.
@@ -168,6 +174,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       automationId,
       formTitle,
       formFields: formFields ?? [],
+      quizEnabled: quizEnabled ?? false,
       triggerType,
       triggerConfig: triggerConfig ?? null,
       nodes: layoutedNodes,

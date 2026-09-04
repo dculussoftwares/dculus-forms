@@ -8,6 +8,7 @@ import { NodeCard } from './NodeCard';
 import type { AutomationNode } from '../layout';
 import type { AutomationConditionNodeData } from '../types';
 import { summarizeConditionRules } from '../conditionSummary';
+import { TRIGGER_QUIZ_META_FIELDS } from '../../../Filters/metaFilterFields';
 
 /**
  * Condition ("if/else") node (#200): summarizes its rules on the card ("If Email contains
@@ -24,7 +25,13 @@ export const ConditionNode: React.FC<NodeProps<AutomationNode>> = ({ id, data, s
   const errors = useAutomationBuilderStore((s) => s.validationErrorsByNode[id]);
 
   const { rules, combinator } = data as AutomationConditionNodeData;
-  const subtitle = summarizeConditionRules(rules ?? [], combinator ?? 'AND', formFields, t, tFilter);
+  const subtitle = summarizeConditionRules(
+    rules ?? [],
+    combinator ?? 'AND',
+    [...formFields, ...TRIGGER_QUIZ_META_FIELDS],
+    t,
+    tFilter
+  );
 
   return (
     <NodeCard

@@ -21,11 +21,13 @@ import {
   CheckboxField,
 } from '@dculus/types';
 import { FilterState } from './FilterPanel';
-import { getFieldIcon } from '../utils/fieldIcons';
 import { useTranslation } from '../../hooks/useTranslation';
+import { MetaFilterField, MetaFieldKind } from './metaFilterFields';
+import { FilterFieldSelect, FilterableField, isMetaFilterField } from './FilterFieldSelect';
 
 interface FilterRowProps {
   fields: FillableFormField[];
+  metaFields?: MetaFilterField[];
   filter: FilterState;
   onChange: (filter: Partial<FilterState>) => void;
   onRemove: () => void;
@@ -37,7 +39,7 @@ interface FilterRowProps {
  * callers (e.g. renderFilterInput's "{{count}} selected" label) can pass interpolation values. */
 type TranslateFn = (key: string, options?: { values?: Record<string, string | number> }) => string;
 
-export const getOperatorOptions = (
+const getFormFieldOperatorOptions = (
   fieldType: FieldType,
   t: TranslateFn
 ) => {
@@ -114,11 +116,60 @@ export const getOperatorOptions = (
   }
 };
 
-const truncateLabel = (label: string, maxLength = 50): string => {
-  return label.length > maxLength ? `${label.slice(0, maxLength)}...` : label;
+/** Default operator set per meta-field kind — mirrors the FieldType-based sets above, since
+ * the backend meta-field SQL builders (responseQueryBuilder.ts) support the exact same
+ * operator vocabulary per kind (text/number/date), plus the two kinds with no form-field
+ * equivalent: 'enum' (gradeStatus: EQUALS/NOT_EQUALS/IN/NOT_IN/IS_EMPTY/IS_NOT_EMPTY) and
+ * 'boolean' (a fixed two-value choice: EQUALS only). A field's own `operators` override
+ * (only __completenessPercent uses this, to drop IS_EMPTY/IS_NOT_EMPTY) wins when present. */
+const getMetaOperatorOptions = (metaField: MetaFilterField, t: TranslateFn) => {
+  if (metaField.operators) {
+    return metaField.operators.map((value) => ({ value, label: t(`operators.${OPERATOR_LABEL_KEY[value] ?? value}`) }));
+  }
+  const kind: MetaFieldKind = metaField.kind;
+  switch (kind) {
+    case 'text':
+      return getFormFieldOperatorOptions(FieldType.TEXT_INPUT_FIELD, t);
+    case 'number':
+      return getFormFieldOperatorOptions(FieldType.NUMBER_FIELD, t);
+    case 'date':
+      return getFormFieldOperatorOptions(FieldType.DATE_FIELD, t);
+    case 'enum':
+      return [
+        { value: 'EQUALS', label: t('operators.equals') },
+        { value: 'NOT_EQUALS', label: t('operators.notEquals') },
+        { value: 'IN', label: t('operators.includes') },
+        { value: 'NOT_IN', label: t('operators.notIncludes') },
+        { value: 'IS_EMPTY', label: t('operators.isEmpty') },
+        { value: 'IS_NOT_EMPTY', label: t('operators.isNotEmpty') },
+      ];
+    case 'boolean':
+      return [{ value: 'EQUALS', label: t('operators.equals') }];
+    default:
+      return [];
+  }
 };
 
-export const renderFilterInput = (
+/** Maps an operator's raw value back to its i18n key, for `getMetaOperatorOptions`'
+ * `operators` override array (a plain list of operator values, not {value,label} pairs). */
+const OPERATOR_LABEL_KEY: Record<string, string> = {
+  EQUALS: 'equals',
+  NOT_EQUALS: 'notEquals',
+  GREATER_THAN: 'greaterThan',
+  GREATER_THAN_OR_EQUAL: 'greaterThanOrEqual',
+  LESS_THAN: 'lessThan',
+  LESS_THAN_OR_EQUAL: 'lessThanOrEqual',
+  BETWEEN: 'between',
+};
+
+/** Dispatches on whether `field` is a real form field or a response meta-filter — the
+ * single entry point ConditionRulesEditor.tsx and DigestFiltersEditor.tsx also call. */
+export const getOperatorOptions = (field: FilterableField, t: TranslateFn) => {
+  if (isMetaFilterField(field)) return getMetaOperatorOptions(field, t);
+  return getFormFieldOperatorOptions(field.type, t);
+};
+
+const renderFormFieldInput = (
   field: FillableFormField,
   filter: FilterState,
   onChange: (filter: Partial<FilterState>) => void,
@@ -376,8 +427,237 @@ export const renderFilterInput = (
   }
 };
 
+const renderMetaFilterInput = (
+  field: MetaFilterField,
+  filter: FilterState,
+  onChange: (filter: Partial<FilterState>) => void,
+  t: TranslateFn
+) => {
+  if (!filter.operator || filter.operator === 'IS_EMPTY' || filter.operator === 'IS_NOT_EMPTY') {
+    return null;
+  }
+
+  const handleValueChange = (value: string) => {
+    onChange({ fieldId: filter.fieldId, operator: filter.operator, value, active: true });
+  };
+
+  const handleNumberRangeChange = (type: 'min' | 'max', value: string) => {
+    const numValue = value === '' ? undefined : Number(value);
+    onChange({
+      fieldId: filter.fieldId,
+      operator: filter.operator,
+      numberRange: { ...filter.numberRange, [type]: numValue },
+      active: true,
+    });
+  };
+
+  const handleDateRangeChange = (type: 'from' | 'to', value: string) => {
+    onChange({
+      fieldId: filter.fieldId,
+      operator: filter.operator,
+      dateRange: { ...filter.dateRange, [type]: value || undefined },
+      active: true,
+    });
+  };
+
+  const handleValuesChange = (values: string[]) => {
+    onChange({ fieldId: filter.fieldId, operator: filter.operator, values, active: values.length > 0 });
+  };
+
+  switch (field.kind) {
+    case 'text':
+      return (
+        <Input
+          placeholder={t('placeholders.enterValue')}
+          value={filter.value || ''}
+          onChange={(e) => handleValueChange(e.target.value)}
+          className="h-9 min-w-[200px]"
+        />
+      );
+
+    case 'number':
+      if (filter.operator === 'BETWEEN') {
+        return (
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              placeholder={t('placeholders.min')}
+              value={filter.numberRange?.min ?? ''}
+              onChange={(e) => handleNumberRangeChange('min', e.target.value)}
+              className="h-9 w-24"
+            />
+            <span className="text-muted-foreground">{t('conjunctions.and')}</span>
+            <Input
+              type="number"
+              placeholder={t('placeholders.max')}
+              value={filter.numberRange?.max ?? ''}
+              onChange={(e) => handleNumberRangeChange('max', e.target.value)}
+              className="h-9 w-24"
+            />
+          </div>
+        );
+      }
+      return (
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            placeholder={t('placeholders.enterNumber')}
+            value={filter.value || ''}
+            onChange={(e) => handleValueChange(e.target.value)}
+            className="h-9 min-w-[140px]"
+          />
+          {field.unit && <span className="text-sm text-muted-foreground">{field.unit}</span>}
+        </div>
+      );
+
+    case 'date':
+      if (filter.operator === 'DATE_TODAY') return null;
+      if (filter.operator === 'DATE_LAST_N_DAYS') {
+        return (
+          <Input
+            type="number"
+            placeholder={t('placeholders.enterDays')}
+            value={filter.value || '7'}
+            min={1}
+            onChange={(e) => handleValueChange(e.target.value)}
+            className="h-9 w-24"
+          />
+        );
+      }
+      if (filter.operator === 'DATE_BETWEEN') {
+        return (
+          <div className="flex items-center gap-2">
+            <DatePicker
+              date={filter.dateRange?.from ? parseCalendarDate(filter.dateRange.from) : undefined}
+              onDateChange={(date) => handleDateRangeChange('from', date ? formatCalendarDate(date) : '')}
+              placeholder={t('placeholders.from')}
+              className="h-9 w-36"
+            />
+            <span className="text-muted-foreground">{t('conjunctions.and')}</span>
+            <DatePicker
+              date={filter.dateRange?.to ? parseCalendarDate(filter.dateRange.to) : undefined}
+              onDateChange={(date) => handleDateRangeChange('to', date ? formatCalendarDate(date) : '')}
+              placeholder={t('placeholders.to')}
+              className="h-9 w-36"
+            />
+          </div>
+        );
+      }
+      return (
+        <DatePicker
+          date={filter.value ? parseCalendarDate(filter.value) : undefined}
+          onDateChange={(date) => handleValueChange(date ? formatCalendarDate(date) : '')}
+          placeholder={t('placeholders.selectDate')}
+          className="h-9 min-w-[200px]"
+        />
+      );
+
+    case 'boolean': {
+      const options = field.booleanOptions ?? [];
+      return (
+        <Select value={filter.value || ''} onValueChange={handleValueChange}>
+          <SelectTrigger className="h-9 min-w-[160px]">
+            <SelectValue placeholder={t('metaSelectValuePlaceholder')} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {t(option.labelKey)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    case 'enum': {
+      const options = field.enumOptions ?? [];
+      if (filter.operator === 'EQUALS' || filter.operator === 'NOT_EQUALS') {
+        return (
+          <Select value={filter.value || ''} onValueChange={handleValueChange}>
+            <SelectTrigger className="h-9 min-w-[200px]">
+              <SelectValue placeholder={t('metaSelectValuePlaceholder')} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {t(option.labelKey)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        );
+      }
+      // IN / NOT_IN: multi-select checkboxes, mirroring SELECT_FIELD's IN/NOT_IN rendering.
+      return (
+        <div className="relative min-w-[200px]">
+          <Select value="placeholder" onValueChange={() => {}}>
+            <SelectTrigger className="h-9">
+              <SelectValue>
+                <span className="text-muted-foreground">
+                  {filter.values?.length
+                    ? t('placeholders.selectedCount', { values: { count: filter.values.length } })
+                    : t('placeholders.selectOptions')}
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              {options.map((option, index) => {
+                const isSelected = filter.values?.includes(option.value) ?? false;
+                return (
+                  <div
+                    key={option.value}
+                    className="flex items-center space-x-2 p-2 hover:bg-background"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      id={`${field.id}-${index}`}
+                      checked={isSelected}
+                      onCheckedChange={(checked) => {
+                        const currentValues = filter.values || [];
+                        const newValues =
+                          checked && typeof checked === 'boolean'
+                            ? [...currentValues, option.value]
+                            : currentValues.filter((v) => v !== option.value);
+                        handleValuesChange(newValues);
+                      }}
+                    />
+                    <Label
+                      htmlFor={`${field.id}-${index}`}
+                      className="text-sm font-medium leading-none cursor-pointer flex-1 min-w-0 truncate"
+                    >
+                      {t(option.labelKey)}
+                    </Label>
+                  </div>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+
+    default:
+      return null;
+  }
+};
+
+/** Dispatches on whether `field` is a real form field or a response meta-filter — the
+ * single entry point ConditionRulesEditor.tsx and DigestFiltersEditor.tsx also call. */
+export const renderFilterInput = (
+  field: FilterableField,
+  filter: FilterState,
+  onChange: (filter: Partial<FilterState>) => void,
+  t: TranslateFn
+) => {
+  if (isMetaFilterField(field)) return renderMetaFilterInput(field, filter, onChange, t);
+  return renderFormFieldInput(field, filter, onChange, t);
+};
+
 export const FilterRow: React.FC<FilterRowProps> = ({
   fields,
+  metaFields = [],
   filter,
   onChange,
   onRemove,
@@ -386,12 +666,12 @@ export const FilterRow: React.FC<FilterRowProps> = ({
 }) => {
   const { t } = useTranslation('filterRow');
   const currentField = fields.find((f) => f.id === filter.fieldId);
-  const operatorOptions = currentField
-    ? getOperatorOptions(currentField.type, t)
-    : [];
+  const currentMeta = !currentField ? metaFields.find((m) => m.id === filter.fieldId) : undefined;
+  const activeField: FilterableField | undefined = currentField ?? currentMeta;
+  const operatorOptions = activeField ? getOperatorOptions(activeField, t) : [];
 
   const handleFieldChange = (fieldId: string) => {
-    const field = fields.find((f) => f.id === fieldId);
+    const field = fields.find((f) => f.id === fieldId) ?? metaFields.find((m) => m.id === fieldId);
     if (field) {
       onChange({
         fieldId,
@@ -448,43 +728,19 @@ export const FilterRow: React.FC<FilterRowProps> = ({
 
       {/* Row 1: Field Selection */}
       <div>
-        <Select value={filter.fieldId || ''} onValueChange={handleFieldChange}>
-          <SelectTrigger
-            className="h-10 w-full bg-[var(--tf-icon-teal)] border-[var(--tf-green-bg-md)] hover:bg-[rgba(23,119,103,0.06)]"
-            data-testid="filter-field-select"
-          >
-            <SelectValue placeholder={t('placeholders.selectField')}>
-              {currentField && (
-                <div className="flex items-center gap-2">
-                  <div className="text-[var(--tf-green)] flex-shrink-0">
-                    {getFieldIcon(currentField.type)}
-                  </div>
-                  <span className="truncate" title={currentField.label}>
-                    {truncateLabel(currentField.label)}
-                  </span>
-                </div>
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {fields.map((field) => (
-              <SelectItem key={field.id} value={field.id}>
-                <div className="flex items-center gap-2">
-                  <div className="text-muted-foreground flex-shrink-0">
-                    {getFieldIcon(field.type)}
-                  </div>
-                  <span className="truncate" title={field.label}>
-                    {truncateLabel(field.label)}
-                  </span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <FilterFieldSelect
+          fields={fields}
+          metaFields={metaFields}
+          value={filter.fieldId || ''}
+          onChange={handleFieldChange}
+          t={t}
+          triggerClassName="h-10 w-full bg-[var(--tf-icon-teal)] border-[var(--tf-green-bg-md)] hover:bg-[rgba(23,119,103,0.06)]"
+          testId="filter-field-select"
+        />
       </div>
 
       {/* Row 2: Operator and Value */}
-      {currentField && (
+      {activeField && (
         <div className="flex items-center gap-3">
           {/* Operator Selection */}
           <div className="min-w-0 flex-shrink-0">
@@ -514,7 +770,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
               className="flex-1 min-w-0"
               data-testid="filter-value-container"
             >
-              {renderFilterInput(currentField, filter, onChange, t)}
+              {renderFilterInput(activeField, filter, onChange, t)}
             </div>
           )}
         </div>

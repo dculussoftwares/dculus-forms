@@ -12,6 +12,7 @@ interface TemplateAutomationRowProps {
   formId: string;
   canEdit: boolean;
   fillableFields: FillableFormField[];
+  quizEnabled: boolean;
   generators: any[];
   refetchGenerators: () => void;
   onOpenDesigner: () => void;
@@ -23,6 +24,7 @@ export const TemplateAutomationRow: React.FC<TemplateAutomationRowProps> = ({
   formId,
   canEdit,
   fillableFields,
+  quizEnabled,
   generators,
   refetchGenerators,
   onOpenDesigner,
@@ -155,6 +157,7 @@ export const TemplateAutomationRow: React.FC<TemplateAutomationRowProps> = ({
                   template={template}
                   canEdit={canEdit}
                   fillableFields={fillableFields}
+                  quizEnabled={quizEnabled}
                   refetch={refetchGenerators}
                 />
               ))}

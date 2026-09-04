@@ -154,6 +154,56 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
       if (filter.fieldId === '__gradeStatus') {
         return evaluateFilterOperator(filter.operator, response.grade?.status, filter);
       }
+      if (filter.fieldId === '__gradeAttempt') {
+        return evaluateFilterOperator(filter.operator, response.grade?.attemptNumber, filter);
+      }
+
+      // Response meta-filters (beyond quiz grading), same fallback convention as the grade
+      // fields above: best-effort against optional attached properties (`.submissionAnalytics`,
+      // `.lastEditedAt`/`.lastEditedByEmail`, `.completenessPercent`, `.isDuplicateEmail`,
+      // `.pdfGeneratedByGenerator`) that only callers going through
+      // responseFilterContext.ts's attachFilterContext actually populate — otherwise these
+      // simply evaluate against undefined rather than crash. The primary, always-correct path
+      // for all of these remains the SQL JOINs in responseQueryBuilder.ts.
+      if (filter.fieldId === '__completionTimeSeconds') {
+        return evaluateFilterOperator(filter.operator, response.submissionAnalytics?.completionTimeSeconds, filter);
+      }
+      if (filter.fieldId === '__browser') {
+        return evaluateFilterOperator(filter.operator, response.submissionAnalytics?.browser, filter);
+      }
+      if (filter.fieldId === '__operatingSystem') {
+        return evaluateFilterOperator(filter.operator, response.submissionAnalytics?.operatingSystem, filter);
+      }
+      if (filter.fieldId === '__country') {
+        return evaluateFilterOperator(filter.operator, response.submissionAnalytics?.countryAlpha2, filter);
+      }
+      if (filter.fieldId === '__respondentType') {
+        if (filter.operator !== 'EQUALS' || !filter.value) return false;
+        const type = response.respondentUserId ? 'authenticated' : 'anonymous';
+        return type === filter.value;
+      }
+      if (filter.fieldId === '__respondentEmail') {
+        return evaluateFilterOperator(filter.operator, response.respondentEmail, filter);
+      }
+      if (filter.fieldId === '__duplicateEmail') {
+        if (filter.operator !== 'EQUALS' || !filter.value) return false;
+        return String(!!response.isDuplicateEmail) === filter.value;
+      }
+      if (filter.fieldId === '__lastEditedAt') {
+        return evaluateFilterOperator(filter.operator, response.lastEditedAt, filter);
+      }
+      if (filter.fieldId === '__lastEditedByEmail') {
+        return evaluateFilterOperator(filter.operator, response.lastEditedByEmail, filter);
+      }
+      if (filter.fieldId === '__completenessPercent') {
+        return evaluateFilterOperator(filter.operator, response.completenessPercent, filter);
+      }
+      if (filter.fieldId.startsWith('__pdfGenerated_')) {
+        if (filter.operator !== 'EQUALS' || !filter.value) return false;
+        const generatorId = filter.fieldId.slice('__pdfGenerated_'.length);
+        const generated = !!response.pdfGeneratedByGenerator?.[generatorId];
+        return String(generated) === filter.value;
+      }
 
       // Get field value from response data (handles both 'data' and 'responseData' properties)
       const fieldValue =

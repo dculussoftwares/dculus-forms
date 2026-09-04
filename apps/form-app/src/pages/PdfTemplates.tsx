@@ -329,6 +329,7 @@ const PdfTemplates: React.FC = () => {
                 formId={formId!}
                 canEdit={canEdit}
                 fillableFields={fillableFields}
+                quizEnabled={!!form?.settings?.quiz?.enabled}
                 generators={generatorsByTemplateId[template.id] ?? []}
                 refetchGenerators={refetchGenerators}
                 onOpenDesigner={() => navigate(`/dashboard/form/${formId}/pdf-templates/${template.id}`)}

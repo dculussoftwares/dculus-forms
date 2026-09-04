@@ -19,7 +19,7 @@ import {
   toastError,
 } from '@dculus/ui';
 import { MainLayout } from '../components/MainLayout';
-import { FilterModal } from '../components/Filters';
+import { FilterModal, buildMetaFilterFields } from '../components/Filters';
 import { QuizResultsDialog } from '../plugins/quiz/ResultsDialog';
 import { ResponsesToolbar } from '../components/Responses/ResponsesToolbar';
 import { ResponsesTable } from '../components/Responses/ResponsesTable';
@@ -329,6 +329,14 @@ const Responses: React.FC = () => {
     });
     return fields;
   }, [formData]);
+
+  // Response meta-filters (beyond form fields): quiz grade, submission analytics, respondent
+  // identity, edit history, completeness, and — one per configured generator — PDF
+  // generation status. Gated by quizEnabled / enabledPdfGenerators, both already loaded above.
+  const metaFields = useMemo(
+    () => buildMetaFilterFields({ quizEnabled, pdfGenerators: enabledPdfGenerators }),
+    [quizEnabled, enabledPdfGenerators]
+  );
 
   // Fall back to previousData while a refetch (e.g. filter/sort/page change) is in flight,
   // so the table keeps showing rows instead of flashing empty and triggering a full-table loading state.
@@ -673,6 +681,7 @@ const Responses: React.FC = () => {
         open={responsesState.showFilterModal}
         onClose={() => responsesState.setShowFilterModal(false)}
         fields={fillableFields}
+        metaFields={metaFields}
         filters={responsesState.filters}
         filterLogic={responsesState.filterLogic}
         onApplyFilters={responsesState.handleApplyFilters}

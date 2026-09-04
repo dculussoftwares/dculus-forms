@@ -8,6 +8,7 @@ import { uploadTemporaryFile } from '../../services/temporaryFileService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { deserializeFormSchema, QuestionGradeResult } from '@dculus/types';
 import { ResponseFilter, applyResponseFilters } from '../../services/responseFilterService.js';
+import { attachFilterContext } from '../../services/responseFilterContext.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { logger } from '../../lib/logger.js';
 import * as pluginService from '../../services/pluginService.js';
@@ -71,6 +72,7 @@ export const unifiedExportResolvers = {
         // Apply filters before the size check so that a form with > 50k total
         // responses can still be exported when filters narrow the result set.
         if (filters && filters.length > 0) {
+          await attachFilterContext(responses, formId, filters);
           responses = applyResponseFilters(responses, filters, filterLogic);
           logger.info(`Found ${responses.length} responses after applying ${filters.length} filters with ${filterLogic} logic`);
 

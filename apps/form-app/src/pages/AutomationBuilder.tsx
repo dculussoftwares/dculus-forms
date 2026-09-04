@@ -70,12 +70,13 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
       automationId,
       formTitle: form.title,
       formFields,
+      quizEnabled: !!form.settings?.quiz?.enabled,
       triggerType: automation.triggerType,
       triggerConfig: automation.triggerConfig,
       graph: automation.graph,
       isReadOnly: !canEdit,
     });
-  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, formFields, canEdit, loadGraph]);
+  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, form.settings?.quiz?.enabled, formFields, canEdit, loadGraph]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(automation.name);

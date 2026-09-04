@@ -42,5 +42,49 @@
     "selectOption": "ஒரு விருப்பத்தைத் தேர்ந்தெடுக்கவும்...",
     "selectOptions": "விருப்பங்களைத் தேர்ந்தெடுக்கவும்...",
     "selectedCount": "{{count}} தேர்ந்தெடுக்கப்பட்டது"
-  }
+  },
+  "metaSections": {
+    "formFields": "படிவப் புலங்கள்",
+    "quiz": "வினாடி வினா",
+    "submission": "சமர்ப்பிப்பு விவரங்கள்",
+    "respondent": "பதிலளிப்பவர்",
+    "editHistory": "திருத்த வரலாறு",
+    "response": "பதில்",
+    "pdf": "PDF உருவாக்கம்"
+  },
+  "metaFields": {
+    "gradePercentage": "மதிப்பெண் (%)",
+    "gradePassed": "தேர்ச்சி",
+    "gradeStatus": "மதிப்பீட்டு நிலை",
+    "gradeAttempt": "முயற்சி எண்",
+    "quizPercentage": "வினாடி வினா மதிப்பெண் (%)",
+    "quizPassed": "வினாடி வினா தேர்ச்சி",
+    "completionTimeSeconds": "முடிக்கும் நேரம் (வினாடி)",
+    "browser": "உலாவி",
+    "operatingSystem": "இயக்க முறைமை",
+    "country": "நாடு குறியீடு",
+    "respondentType": "பதிலளிப்பவர் வகை",
+    "respondentEmail": "பதிலளிப்பவர் மின்னஞ்சல்",
+    "duplicateEmail": "நகல் சமர்ப்பிப்பு",
+    "lastEditedAt": "கடைசியாக திருத்தப்பட்ட நேரம்",
+    "lastEditedByEmail": "கடைசியாக திருத்தியவர் (மின்னஞ்சல்)",
+    "completenessPercent": "முழுமை (%)",
+    "pdfGenerated": "PDF உள்ளதா: {{name}}"
+  },
+  "metaEnumOptions": {
+    "gradeStatus": {
+      "AUTO_GRADED": "தானாக மதிப்பிடப்பட்டது",
+      "NEEDS_REVIEW": "மறுஆய்வு தேவை",
+      "REVIEWED": "மறுஆய்வு செய்யப்பட்டது",
+      "RELEASED": "வெளியிடப்பட்டது"
+    }
+  },
+  "metaBooleanLabels": {
+    "gradePassed": { "true": "தேர்ச்சி", "false": "தோல்வி" },
+    "quizPassed": { "true": "தேர்ச்சி", "false": "தோல்வி" },
+    "respondentType": { "authenticated": "உள்நுழைந்தவர்", "anonymous": "அநாமதேயர்" },
+    "duplicateEmail": { "true": "நகல்", "false": "தனித்துவமானது" },
+    "pdfGenerated": { "true": "உருவாக்கப்பட்டது", "false": "உருவாக்கப்படவில்லை" }
+  },
+  "metaSelectValuePlaceholder": "தேர்ந்தெடுக்கவும்..."
 }

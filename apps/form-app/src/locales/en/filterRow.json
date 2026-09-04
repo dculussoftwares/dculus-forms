@@ -42,5 +42,49 @@
     "selectOption": "Select an option...",
     "selectOptions": "Select options...",
     "selectedCount": "{{count}} selected"
-  }
+  },
+  "metaSections": {
+    "formFields": "Form Fields",
+    "quiz": "Quiz",
+    "submission": "Submission Details",
+    "respondent": "Respondent",
+    "editHistory": "Edit History",
+    "response": "Response",
+    "pdf": "PDF Generation"
+  },
+  "metaFields": {
+    "gradePercentage": "Score (%)",
+    "gradePassed": "Passed",
+    "gradeStatus": "Grading Status",
+    "gradeAttempt": "Attempt Number",
+    "quizPercentage": "Quiz Score (%)",
+    "quizPassed": "Quiz Passed",
+    "completionTimeSeconds": "Completion Time (sec)",
+    "browser": "Browser",
+    "operatingSystem": "Operating System",
+    "country": "Country Code",
+    "respondentType": "Respondent Type",
+    "respondentEmail": "Respondent Email",
+    "duplicateEmail": "Duplicate Submission",
+    "lastEditedAt": "Last Edited At",
+    "lastEditedByEmail": "Last Edited By (Email)",
+    "completenessPercent": "Completeness (%)",
+    "pdfGenerated": "Has PDF: {{name}}"
+  },
+  "metaEnumOptions": {
+    "gradeStatus": {
+      "AUTO_GRADED": "Auto-graded",
+      "NEEDS_REVIEW": "Needs review",
+      "REVIEWED": "Reviewed",
+      "RELEASED": "Released"
+    }
+  },
+  "metaBooleanLabels": {
+    "gradePassed": { "true": "Passed", "false": "Failed" },
+    "quizPassed": { "true": "Passed", "false": "Failed" },
+    "respondentType": { "authenticated": "Authenticated", "anonymous": "Anonymous" },
+    "duplicateEmail": { "true": "Duplicate", "false": "Unique" },
+    "pdfGenerated": { "true": "Generated", "false": "Not generated" }
+  },
+  "metaSelectValuePlaceholder": "Select..."
 }

@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { buildPostgreSQLFilter, buildRawSQLCondition, canFilterAtDatabase, filtersNeedGradeJoin } from '../responseQueryBuilder.js';
+import {
+  buildPostgreSQLFilter,
+  buildRawSQLCondition,
+  canFilterAtDatabase,
+  filtersNeedGradeJoin,
+  buildJoinClause,
+  isMetaFilterFieldId,
+} from '../responseQueryBuilder.js';
 
 describe('Response Query Builder', () => {
   describe('Security - SQL Injection Protection', () => {
@@ -830,6 +837,179 @@ describe('filtersNeedGradeJoin', () => {
   });
   it('returns true when a filter targets __gradeStatus', () => {
     expect(filtersNeedGradeJoin([{ fieldId: '__gradeStatus', operator: 'EQUALS', value: 'NEEDS_REVIEW' }])).toBe(true);
+  });
+});
+
+// Response meta-filters beyond quiz grading (P0 doc: completion time, device/geo,
+// respondent identity, edit history, completeness, PDF generation status).
+describe('response meta filters', () => {
+  describe('__gradeAttempt filters', () => {
+    it('GREATER_THAN_OR_EQUAL with value', () => {
+      const r = buildRawSQLCondition({ fieldId: '__gradeAttempt', operator: 'GREATER_THAN_OR_EQUAL', value: '2' }, 1);
+      expect(r.sql).toBe('rg."attemptNumber" >= $1::numeric');
+      expect(r.values).toEqual(['2']);
+    });
+  });
+
+  describe('grade IS_EMPTY / IS_NOT_EMPTY (no ResponseGrade row)', () => {
+    it('__gradePercentage IS_EMPTY', () => {
+      expect(buildRawSQLCondition({ fieldId: '__gradePercentage', operator: 'IS_EMPTY' }, 1).sql).toBe('rg.percentage IS NULL');
+    });
+    it('__gradePassed IS_NOT_EMPTY', () => {
+      expect(buildRawSQLCondition({ fieldId: '__gradePassed', operator: 'IS_NOT_EMPTY' }, 1).sql).toBe('rg.passed IS NOT NULL');
+    });
+    it('__gradeStatus IS_EMPTY', () => {
+      expect(buildRawSQLCondition({ fieldId: '__gradeStatus', operator: 'IS_EMPTY' }, 1).sql).toBe('rg.status IS NULL');
+    });
+  });
+
+  describe('__completionTimeSeconds filters', () => {
+    it('BETWEEN with min and max', () => {
+      const r = buildRawSQLCondition({ fieldId: '__completionTimeSeconds', operator: 'BETWEEN', numberRange: { min: 30, max: 300 } }, 1);
+      expect(r.sql).toContain('fsa."completionTimeSeconds" >= $1::numeric');
+      expect(r.sql).toContain('fsa."completionTimeSeconds" <= $2::numeric');
+      expect(r.values).toEqual([30, 300]);
+    });
+    it('IS_EMPTY', () => {
+      expect(buildRawSQLCondition({ fieldId: '__completionTimeSeconds', operator: 'IS_EMPTY' }, 1).sql).toBe('fsa."completionTimeSeconds" IS NULL');
+    });
+  });
+
+  describe('__browser / __operatingSystem / __country filters', () => {
+    it('__browser CONTAINS', () => {
+      const r = buildRawSQLCondition({ fieldId: '__browser', operator: 'CONTAINS', value: 'Chrome' }, 1);
+      expect(r.sql).toBe('fsa.browser ILIKE $1');
+      expect(r.values).toEqual(['%Chrome%']);
+    });
+    it('__operatingSystem EQUALS', () => {
+      const r = buildRawSQLCondition({ fieldId: '__operatingSystem', operator: 'EQUALS', value: 'macOS' }, 1);
+      expect(r.sql).toBe('LOWER(fsa."operatingSystem") = LOWER($1)');
+    });
+    it('__country EQUALS empty value returns empty', () => {
+      expect(buildRawSQLCondition({ fieldId: '__country', operator: 'EQUALS' }, 1).sql).toBe('');
+    });
+  });
+
+  describe('__respondentType filters', () => {
+    it('authenticated', () => {
+      const r = buildRawSQLCondition({ fieldId: '__respondentType', operator: 'EQUALS', value: 'authenticated' }, 1);
+      expect(r.sql).toBe('"response"."respondentUserId" IS NOT NULL');
+      expect(r.values).toEqual([]);
+    });
+    it('anonymous', () => {
+      const r = buildRawSQLCondition({ fieldId: '__respondentType', operator: 'EQUALS', value: 'anonymous' }, 1);
+      expect(r.sql).toBe('"response"."respondentUserId" IS NULL');
+    });
+    it('non-EQUALS operator returns empty', () => {
+      expect(buildRawSQLCondition({ fieldId: '__respondentType', operator: 'CONTAINS' as any, value: 'authenticated' }, 1).sql).toBe('');
+    });
+  });
+
+  describe('__respondentEmail filters', () => {
+    it('CONTAINS', () => {
+      const r = buildRawSQLCondition({ fieldId: '__respondentEmail', operator: 'CONTAINS', value: 'acme.com' }, 1);
+      expect(r.sql).toBe('"response"."respondentEmail" ILIKE $1');
+    });
+  });
+
+  describe('__duplicateEmail filters', () => {
+    it('true requires a non-null email and a matching sibling response', () => {
+      const r = buildRawSQLCondition({ fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'true' }, 1);
+      expect(r.sql).toContain('"response"."respondentEmail" IS NOT NULL');
+      expect(r.sql).toContain('EXISTS');
+      expect(r.sql).not.toContain('NOT EXISTS');
+    });
+    it('false negates the EXISTS check', () => {
+      const r = buildRawSQLCondition({ fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'false' }, 1);
+      expect(r.sql).toContain('AND NOT EXISTS');
+    });
+  });
+
+  describe('__lastEditedAt / __lastEditedByEmail filters', () => {
+    it('__lastEditedAt DATE_AFTER', () => {
+      const r = buildRawSQLCondition({ fieldId: '__lastEditedAt', operator: 'DATE_AFTER', value: '2026-01-01' }, 1);
+      expect(r.sql).toBe('leh."editedAt" > $1::timestamptz');
+    });
+    it('__lastEditedAt IS_NOT_EMPTY means "was edited at all"', () => {
+      expect(buildRawSQLCondition({ fieldId: '__lastEditedAt', operator: 'IS_NOT_EMPTY' }, 1).sql).toBe('leh."editedAt" IS NOT NULL');
+    });
+    it('__lastEditedByEmail EQUALS', () => {
+      const r = buildRawSQLCondition({ fieldId: '__lastEditedByEmail', operator: 'EQUALS', value: 'a@b.com' }, 1);
+      expect(r.sql).toBe('LOWER(leh."editedByEmail") = LOWER($1)');
+    });
+  });
+
+  describe('__completenessPercent filters', () => {
+    it('GREATER_THAN_OR_EQUAL', () => {
+      const r = buildRawSQLCondition({ fieldId: '__completenessPercent', operator: 'GREATER_THAN_OR_EQUAL', value: '80' }, 1);
+      expect(r.sql).toContain('NULLIF(fm."fieldCount", 0)');
+      expect(r.sql).toContain('>= $1::numeric');
+    });
+    it('IS_EMPTY is not supported (always has a numeric value)', () => {
+      expect(buildRawSQLCondition({ fieldId: '__completenessPercent', operator: 'IS_EMPTY' }, 1).sql).toBe('');
+    });
+  });
+
+  describe('__pdfGenerated_<id> filters', () => {
+    it('true', () => {
+      const r = buildRawSQLCondition({ fieldId: '__pdfGenerated_gen123', operator: 'EQUALS', value: 'true' }, 1);
+      expect(r.sql).toContain('pgr."generatorId" = $1');
+      expect(r.sql).not.toContain('NOT EXISTS');
+      expect(r.values).toEqual(['gen123']);
+    });
+    it('false negates the EXISTS check', () => {
+      const r = buildRawSQLCondition({ fieldId: '__pdfGenerated_gen123', operator: 'EQUALS', value: 'false' }, 1);
+      expect(r.sql.trim().startsWith('NOT EXISTS')).toBe(true);
+    });
+    it('rejects an unsafe generator id', () => {
+      expect(() =>
+        buildRawSQLCondition({ fieldId: '__pdfGenerated_gen 123;drop', operator: 'EQUALS', value: 'true' }, 1)
+      ).toThrow();
+    });
+  });
+
+  describe('buildJoinClause', () => {
+    it('returns empty string when nothing needs a join', () => {
+      expect(buildJoinClause([{ fieldId: 'field-1', operator: 'EQUALS', value: 'x' }])).toBe('');
+      expect(buildJoinClause(undefined)).toBe('');
+    });
+    it('composes multiple joins when filters span categories', () => {
+      const clause = buildJoinClause([
+        { fieldId: '__gradePercentage', operator: 'GREATER_THAN', value: '50' },
+        { fieldId: '__browser', operator: 'EQUALS', value: 'Chrome' },
+        { fieldId: '__lastEditedAt', operator: 'IS_NOT_EMPTY' },
+        { fieldId: '__completenessPercent', operator: 'GREATER_THAN', value: '50' },
+      ]);
+      expect(clause).toContain('response_grade');
+      expect(clause).toContain('form_submission_analytics');
+      expect(clause).toContain('response_edit_history');
+      expect(clause).toContain('form_metadata');
+    });
+    it('adds the grade join for a grade sort even without a grade filter', () => {
+      expect(buildJoinClause([], true)).toContain('response_grade');
+    });
+    it('does not add unrelated joins for a duplicate-email or pdf-generated filter (no join needed)', () => {
+      const clause = buildJoinClause([
+        { fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'true' },
+        { fieldId: '__pdfGenerated_gen1', operator: 'EQUALS', value: 'true' },
+      ]);
+      expect(clause).toBe('');
+    });
+  });
+
+  describe('isMetaFilterFieldId', () => {
+    it('recognizes every meta fieldId', () => {
+      expect(isMetaFilterFieldId('__submittedAt')).toBe(true);
+      expect(isMetaFilterFieldId('__tags')).toBe(true);
+      expect(isMetaFilterFieldId('__gradePercentage')).toBe(true);
+      expect(isMetaFilterFieldId('__completionTimeSeconds')).toBe(true);
+      expect(isMetaFilterFieldId('__respondentType')).toBe(true);
+      expect(isMetaFilterFieldId('__completenessPercent')).toBe(true);
+      expect(isMetaFilterFieldId('__pdfGenerated_abc123')).toBe(true);
+    });
+    it('rejects a real form fieldId', () => {
+      expect(isMetaFilterFieldId('some-form-field-id')).toBe(false);
+    });
   });
 });
 

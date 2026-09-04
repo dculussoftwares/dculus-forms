@@ -5,11 +5,13 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { FilterRow } from './FilterRow';
 import { FillableFormField } from '@dculus/types';
 import { FilterState } from './FilterPanel';
+import { MetaFilterField } from './metaFilterFields';
 
 interface FilterModalProps {
   open: boolean;
   onClose: () => void;
   fields: FillableFormField[];
+  metaFields?: MetaFilterField[];
   filters: Record<string, FilterState>;
   filterLogic: 'AND' | 'OR';
   onApplyFilters: (filters: Record<string, FilterState>, filterLogic: 'AND' | 'OR') => void;
@@ -19,6 +21,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   open,
   onClose,
   fields,
+  metaFields,
   filters,
   filterLogic,
   onApplyFilters,
@@ -152,6 +155,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                   <FilterRow
                     key={filterId}
                     fields={fields}
+                    metaFields={metaFields}
                     filter={filter}
                     onChange={(updates) => updateDraftFilter(filterId, updates)}
                     onRemove={() => handleRemoveFilter(filterId)}

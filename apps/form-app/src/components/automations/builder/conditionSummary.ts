@@ -1,5 +1,6 @@
-import type { FillableFormField } from '@dculus/types';
 import { getOperatorOptions } from '../../Filters/FilterRow';
+import { isMetaFilterField, type FilterableField } from '../../Filters/FilterFieldSelect';
+import { getMetaFieldLabel } from '../../Filters/FilterFieldSelect';
 import type { ConditionCombinator, ConditionRule } from './types';
 
 type Translate = (key: string, options?: { values?: Record<string, string | number> }) => string;
@@ -38,7 +39,7 @@ function formatRuleValue(rule: ConditionRule): string {
 export function summarizeConditionRules(
   rules: ConditionRule[],
   combinator: ConditionCombinator,
-  fields: FillableFormField[],
+  fields: FilterableField[],
   t: Translate,
   tFilter: Translate
 ): string {
@@ -46,9 +47,13 @@ export function summarizeConditionRules(
 
   const [first, ...rest] = rules;
   const field = fields.find((f) => f.id === first.fieldId);
-  const fieldLabel = field?.label ?? t('builder.nodes.condition.unknownField');
+  const fieldLabel = field
+    ? isMetaFilterField(field)
+      ? getMetaFieldLabel(field, tFilter)
+      : field.label
+    : t('builder.nodes.condition.unknownField');
   const operatorLabel = field && first.operator
-    ? (getOperatorOptions(field.type, tFilter).find((o) => o.value === first.operator)?.label ?? '')
+    ? (getOperatorOptions(field, tFilter).find((o) => o.value === first.operator)?.label ?? '')
     : '';
   const valueText = formatRuleValue(first);
 
