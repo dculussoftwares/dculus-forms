@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
+import { Check, Copy } from 'lucide-react';
 import type { RespondentGradeView } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../../rich-text-editor/LexicalRichTextEditor';
@@ -29,8 +30,22 @@ export interface ThankYouScreenProps {
    * identity-gated quiz submission with a deferred grade release
    * ('afterReview'/'scheduled'), so the respondent has somewhere to come
    * back to once the grade releases. Absent for every other case.
+   *
+   * `href` should be an absolute URL — it is shown verbatim in a copyable
+   * field so the respondent can save it before leaving the page.
+   *
+   * The button/link microcopy is supplied by the caller rather than
+   * hardcoded here (this package has no i18n framework — the owning app's
+   * locale file is the single source, same as `label`/`description`).
    */
-  resultLink?: { href: string; label: string };
+  resultLink?: {
+    href: string;
+    label: string;
+    description?: string;
+    copyLabel?: string;
+    copiedLabel?: string;
+    openLabel?: string;
+  };
 }
 
 const SuccessIcon: React.FC = () => (
@@ -62,6 +77,30 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
   const [tempContent, setTempContent] = useState(content);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editorKey, setEditorKey] = useState(0);
+  const [resultLinkCopied, setResultLinkCopied] = useState(false);
+  const resultLinkCopiedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(
+    () => () => {
+      if (resultLinkCopiedTimeout.current) clearTimeout(resultLinkCopiedTimeout.current);
+    },
+    []
+  );
+
+  const handleCopyResultLink = async () => {
+    if (!resultLink) return;
+    try {
+      await navigator.clipboard.writeText(resultLink.href);
+      setResultLinkCopied(true);
+      // Reset the timer on every copy so the confirmation always stays
+      // visible for a full 2s after the *latest* click.
+      if (resultLinkCopiedTimeout.current) clearTimeout(resultLinkCopiedTimeout.current);
+      resultLinkCopiedTimeout.current = setTimeout(() => setResultLinkCopied(false), 2000);
+    } catch {
+      // Clipboard blocked (permissions / insecure context) — the URL is
+      // still visible and selectable in the field, so this is non-fatal.
+    }
+  };
 
   const handleContentChange = (next: string) => {
     setTempContent(next);
@@ -158,13 +197,48 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
           fallback, the response still saves and the deferred link is still
           the respondent's only way back to a grade a reviewer finishes later. */}
       {resultLink && (
-        <a
-          href={resultLink.href}
-          className="block text-sm font-medium text-primary hover:underline mb-4"
+        <div
+          className="mb-6 max-w-md mx-auto rounded-lg border border-border bg-muted/40 p-4 text-left"
           data-testid="thank-you-result-link"
         >
-          {resultLink.label}
-        </a>
+          <p className="text-sm font-semibold text-foreground">{resultLink.label}</p>
+          {resultLink.description && (
+            <p className="mt-1 text-xs text-muted-foreground">{resultLink.description}</p>
+          )}
+          <div className="mt-3 flex items-center gap-2">
+            <input
+              type="text"
+              readOnly
+              value={resultLink.href}
+              onFocus={(e) => e.currentTarget.select()}
+              aria-label={resultLink.label}
+              className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs text-muted-foreground"
+              data-testid="thank-you-result-link-url"
+            />
+            <button
+              type="button"
+              onClick={handleCopyResultLink}
+              className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              data-testid="thank-you-result-link-copy"
+            >
+              {resultLinkCopied ? (
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              {resultLinkCopied
+                ? resultLink.copiedLabel ?? 'Copied'
+                : resultLink.copyLabel ?? 'Copy link'}
+            </button>
+          </div>
+          <a
+            href={resultLink.href}
+            className="mt-3 inline-block text-xs font-medium text-primary hover:underline"
+            data-testid="thank-you-result-link-open"
+          >
+            {resultLink.openLabel ?? 'Open results page'}
+          </a>
+        </div>
       )}
 
       {responseCopyNotice && (

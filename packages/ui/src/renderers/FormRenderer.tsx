@@ -61,7 +61,14 @@ export interface FormRendererProps {
    * to. Absent for every other case, leaving existing thank-you screens
    * byte-for-byte unaffected.
    */
-  resultLink?: { href: string; label: string };
+  resultLink?: {
+    href: string;
+    label: string;
+    description?: string;
+    copyLabel?: string;
+    copiedLabel?: string;
+    openLabel?: string;
+  };
   /**
    * Form Embed v1 — switches every layout to its content-height shell so the
    * host page can size the iframe from the content. Set only by
