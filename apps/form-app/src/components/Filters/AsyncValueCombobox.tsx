@@ -47,19 +47,37 @@ export const AsyncValueCombobox: React.FC<AsyncValueComboboxProps> = ({
   className,
 }) => {
   const [open, setOpen] = useState(false);
+  // True from the moment a fetch is scheduled until it settles — spans BOTH the debounce
+  // wait and the network request, so the popover shows a single continuous loading state
+  // instead of flashing "no matches" while the debounce timer hasn't fired yet.
+  const [waiting, setWaiting] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  // Tracks whether we've already fetched once for the current "open" session, so the very
+  // first fetch (right when the popover opens) runs immediately — nothing to debounce yet,
+  // the user hasn't typed anything since opening — while every subsequent fetch (typing)
+  // still waits out DEBOUNCE_MS. Reset whenever the popover closes.
+  const openedRef = useRef(false);
 
-  const [fetchValues, { data, loading, error }] = useLazyQuery(GET_DISTINCT_RESPONSE_FIELD_VALUES, {
+  const [fetchValues, { data, error }] = useLazyQuery(GET_DISTINCT_RESPONSE_FIELD_VALUES, {
     fetchPolicy: 'cache-first',
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      openedRef.current = false;
+      return;
+    }
+    const delay = openedRef.current ? DEBOUNCE_MS : 0;
+    openedRef.current = true;
+
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    setWaiting(true);
     debounceRef.current = setTimeout(() => {
-      fetchValues({ variables: { formId, fieldId, search: value || undefined, limit: 20 } });
-    }, DEBOUNCE_MS);
+      fetchValues({ variables: { formId, fieldId, search: value || undefined, limit: 20 } }).finally(() =>
+        setWaiting(false)
+      );
+    }, delay);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
@@ -101,7 +119,7 @@ export const AsyncValueCombobox: React.FC<AsyncValueComboboxProps> = ({
       >
         <Command shouldFilter={false}>
           <CommandList className="max-h-52">
-            {loading ? (
+            {waiting ? (
               <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               </div>
