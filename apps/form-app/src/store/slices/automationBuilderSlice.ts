@@ -35,6 +35,10 @@ export interface AutomationBuilderState {
    * editor's field picker (quizPercentage/quizPassed only exist in the form.submitted
    * trigger payload when quiz grading is on). Loaded once alongside formFields. */
   quizEnabled: boolean;
+  /** Enabled PDF generators for this form, as { id, name } — powers the digest filter
+   * editor's per-generator "Has PDF: <name>" meta fields (buildMetaFilterFields'
+   * pdfGenerators option). Loaded once alongside formFields/quizEnabled. */
+  pdfGenerators: { id: string; name: string }[];
   /** The automation's triggerType — read-only mirror of Automation.triggerType (#201), not
    * part of the graph nodes/edges. Never changes after creation, so it's loaded once here
    * for the TriggerNode/config panel rather than re-fetched from `automation` every render. */
@@ -56,6 +60,7 @@ export interface AutomationBuilderState {
     formTitle: string;
     formFields?: FillableFormField[];
     quizEnabled?: boolean;
+    pdfGenerators?: { id: string; name: string }[];
     triggerType: string;
     triggerConfig?: Record<string, any> | null;
     graph: { nodes: any[]; edges: any[] };
@@ -134,6 +139,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   formTitle: '',
   formFields: [],
   quizEnabled: false,
+  pdfGenerators: [],
   triggerType: 'form.submitted',
   triggerConfig: null,
   nodes: [],
@@ -144,7 +150,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   validationErrorsByNode: {},
   structuralErrors: [],
 
-  loadGraph: ({ automationId, formTitle, formFields, quizEnabled, triggerType, triggerConfig, graph, isReadOnly }) => {
+  loadGraph: ({ automationId, formTitle, formFields, quizEnabled, pdfGenerators, triggerType, triggerConfig, graph, isReadOnly }) => {
     // A session draft (see draftStorage.ts) means there are unsaved edits that survived a
     // same-tab reload — e.g. the full-page OAuth redirect from a Google/Microsoft Sheets
     // "Connect" click. Prefer it over the server's last-Saved graph when present.
@@ -175,6 +181,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       formTitle,
       formFields: formFields ?? [],
       quizEnabled: quizEnabled ?? false,
+      pdfGenerators: pdfGenerators ?? [],
       triggerType,
       triggerConfig: triggerConfig ?? null,
       nodes: layoutedNodes,

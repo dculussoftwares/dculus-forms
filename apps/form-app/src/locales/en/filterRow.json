@@ -52,6 +52,9 @@
     "response": "Response",
     "pdf": "PDF Generation"
   },
+  "metaUnits": {
+    "seconds": "sec"
+  },
   "metaFields": {
     "gradePercentage": "Score (%)",
     "gradePassed": "Passed",

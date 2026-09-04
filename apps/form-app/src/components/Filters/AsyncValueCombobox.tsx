@@ -58,6 +58,12 @@ export const AsyncValueCombobox: React.FC<AsyncValueComboboxProps> = ({
   // the user hasn't typed anything since opening — while every subsequent fetch (typing)
   // still waits out DEBOUNCE_MS. Reset whenever the popover closes.
   const openedRef = useRef(false);
+  // Bumped on every scheduled fetch; a settling request only clears `waiting` if it's still
+  // the latest one. Without this, an older request that happens to settle AFTER a newer one
+  // was scheduled (e.g. a slow first load overtaken by a fast debounced keystroke fetch)
+  // would clear `waiting` while the newer, still-pending request is what the popover should
+  // actually be waiting on — flashing the wrong state for a moment.
+  const requestIdRef = useRef(0);
 
   const [fetchValues, { data, error }] = useLazyQuery(GET_DISTINCT_RESPONSE_FIELD_VALUES, {
     fetchPolicy: 'cache-first',
@@ -73,10 +79,11 @@ export const AsyncValueCombobox: React.FC<AsyncValueComboboxProps> = ({
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setWaiting(true);
+    const requestId = ++requestIdRef.current;
     debounceRef.current = setTimeout(() => {
-      fetchValues({ variables: { formId, fieldId, search: value || undefined, limit: 20 } }).finally(() =>
-        setWaiting(false)
-      );
+      fetchValues({ variables: { formId, fieldId, search: value || undefined, limit: 20 } }).finally(() => {
+        if (requestIdRef.current === requestId) setWaiting(false);
+      });
     }, delay);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);

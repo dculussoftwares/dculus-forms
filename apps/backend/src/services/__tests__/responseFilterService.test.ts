@@ -1085,13 +1085,23 @@ describe('Response Filter Service', () => {
 
     it('__duplicateEmail reads response.isDuplicateEmail', () => {
       const responses = [
-        responseWithContext({ id: 'dup', isDuplicateEmail: true }),
-        responseWithContext({ id: 'unique', isDuplicateEmail: false }),
+        responseWithContext({ id: 'dup', respondentEmail: 'a@acme.com', isDuplicateEmail: true }),
+        responseWithContext({ id: 'unique', respondentEmail: 'b@acme.com', isDuplicateEmail: false }),
       ];
       const result = applyResponseFilters(responses, [
         { fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'true' },
       ]);
       expect(result.map((r) => r.id)).toEqual(['dup']);
+    });
+
+    it('__duplicateEmail matches neither true nor false when respondentEmail is absent (mirrors the SQL builder)', () => {
+      const responses = [responseWithContext({ id: 'no-email', isDuplicateEmail: true })];
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'true' }])
+      ).toHaveLength(0);
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'false' }])
+      ).toHaveLength(0);
     });
 
     it('__lastEditedAt / __lastEditedByEmail read the attached last-edit context', () => {

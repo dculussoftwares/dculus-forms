@@ -47,8 +47,13 @@ export interface MetaFilterField {
   kind: MetaFieldKind;
   labelKey: string;
   labelValues?: Record<string, string | number>;
-  /** Cosmetic suffix shown next to a number input, e.g. '%' or 'sec'. */
+  /** Cosmetic suffix shown next to a number input, for a symbol that's the same across
+   * locales (e.g. '%'). For a word-based unit that needs translation, use `unitKey`
+   * instead — the renderer prefers `unitKey` over `unit` when both would apply. */
   unit?: string;
+  /** i18n key (under the filterRow namespace) resolving to a translated unit word, e.g.
+   * "sec" / "வினாடி" for completion time. */
+  unitKey?: string;
   /** Overrides the kind's default operator list — only completenessPercent uses this,
    * to drop IS_EMPTY/IS_NOT_EMPTY (it's a computed value, never actually absent). */
   operators?: string[];
@@ -90,7 +95,7 @@ const QUIZ_META_FIELDS: MetaFilterField[] = [
 ];
 
 const SUBMISSION_META_FIELDS: MetaFilterField[] = [
-  { id: '__completionTimeSeconds', section: 'submission', kind: 'number', labelKey: 'metaFields.completionTimeSeconds', unit: 'sec' },
+  { id: '__completionTimeSeconds', section: 'submission', kind: 'number', labelKey: 'metaFields.completionTimeSeconds', unitKey: 'metaUnits.seconds' },
   { id: '__browser', section: 'submission', kind: 'text', labelKey: 'metaFields.browser', supportsSuggestions: true },
   { id: '__operatingSystem', section: 'submission', kind: 'text', labelKey: 'metaFields.operatingSystem', supportsSuggestions: true },
   { id: '__country', section: 'submission', kind: 'text', labelKey: 'metaFields.country', supportsSuggestions: true },

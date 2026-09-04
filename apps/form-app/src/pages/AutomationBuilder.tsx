@@ -5,6 +5,7 @@ import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dcul
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, Input, Badge, LoadingSpinner, EmptyState, Tooltip, TooltipContent, TooltipTrigger, toastSuccess, toastError } from '@dculus/ui';
 import { GET_FORM_BY_ID } from '../graphql/queries';
+import { GET_PDF_GENERATORS } from '../graphql/pdfGenerators';
 import { GET_AUTOMATION, UPDATE_AUTOMATION, SET_AUTOMATION_STATUS } from '../graphql/automations';
 import { AlertCircle, ArrowLeft, FlaskConical, History, Pencil, Play, Loader2 } from 'lucide-react';
 import { AutomationCanvas } from '../components/automations/builder/AutomationCanvas';
@@ -59,24 +60,46 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     return fields;
   }, [form.formSchema]);
 
+  // Enabled PDF generators for this form (#347 review) — powers the digest filter editor's
+  // per-generator "Has PDF: <name>" meta fields, same extraction pattern Responses.tsx uses.
+  // `loading` gates the loadGraph effect below (not just an initial-render concern here) —
+  // that effect loads the store exactly once per automationId, so if it ran before this
+  // query resolved, the digest editor would be stuck with an empty pdfGenerators list even
+  // after the query later completed.
+  const { data: pdfGeneratorsData, loading: pdfGeneratorsLoading } = useQuery(GET_PDF_GENERATORS, {
+    variables: { formId },
+    skip: !formId,
+  });
+  const pdfGenerators = useMemo(
+    () =>
+      (pdfGeneratorsData?.pdfGenerators ?? [])
+        .filter((g: any) => g.enabled)
+        .map((g: any) => ({ id: g.id, name: g.name })),
+    [pdfGeneratorsData]
+  );
+
   // Only (re)load the graph into the store when the automation actually changes — the cache
   // updates `automation` after every Save/Activate mutation (same id), and re-running loadGraph
   // then would stomp on in-progress local edits with what we just persisted.
   const loadedAutomationIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (loadedAutomationIdRef.current === automationId) return;
+    // Wait for the PDF generators query too — this only delays the one-time initial load,
+    // not every render (formLoading/automationLoading already gate the outer component).
+    if (pdfGeneratorsLoading) return;
     loadedAutomationIdRef.current = automationId;
     loadGraph({
       automationId,
       formTitle: form.title,
       formFields,
       quizEnabled: !!form.settings?.quiz?.enabled,
+      pdfGenerators,
       triggerType: automation.triggerType,
       triggerConfig: automation.triggerConfig,
       graph: automation.graph,
       isReadOnly: !canEdit,
     });
-  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, form.settings?.quiz?.enabled, formFields, canEdit, loadGraph]);
+  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, form.settings?.quiz?.enabled, formFields, pdfGenerators, pdfGeneratorsLoading, canEdit, loadGraph]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(automation.name);

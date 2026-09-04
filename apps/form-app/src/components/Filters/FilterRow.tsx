@@ -524,7 +524,9 @@ const renderMetaFilterInput = (
             onChange={(e) => handleValueChange(e.target.value)}
             className="h-9 min-w-[140px]"
           />
-          {field.unit && <span className="text-sm text-muted-foreground">{field.unit}</span>}
+          {(field.unitKey || field.unit) && (
+            <span className="text-sm text-muted-foreground">{field.unitKey ? t(field.unitKey) : field.unit}</span>
+          )}
         </div>
       );
 

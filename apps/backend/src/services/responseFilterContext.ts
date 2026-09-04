@@ -85,12 +85,20 @@ export async function attachFilterContext(
     needsAnalytics
       ? prisma.formSubmissionAnalytics.findMany({ where: { responseId: { in: ids } } })
       : Promise.resolve([]),
+    // DISTINCT ON — one row per response (the most recent edit) — rather than fetching
+    // every edit-history row and reducing in JS: a heavily-edited response otherwise
+    // transfers and retains every discarded edit just to find its latest one.
     needsLastEdit
-      ? prisma.responseEditHistory.findMany({
-          where: { responseId: { in: ids } },
-          orderBy: { editedAt: 'desc' },
-          include: { editedBy: { select: { email: true } } },
-        })
+      ? prisma.$queryRaw<{ responseId: string; editedAt: Date; editedByEmail: string | null }[]>`
+          SELECT DISTINCT ON (reh."responseId")
+            reh."responseId" AS "responseId",
+            reh."editedAt" AS "editedAt",
+            u.email AS "editedByEmail"
+          FROM "response_edit_history" reh
+          LEFT JOIN "user" u ON u.id = reh."editedById"
+          WHERE reh."responseId" = ANY(${ids})
+          ORDER BY reh."responseId", reh."editedAt" DESC
+        `
       : Promise.resolve([]),
     needsCompleteness
       ? prisma.formMetadata.findUnique({ where: { formId } })
@@ -105,16 +113,10 @@ export async function attachFilterContext(
   const gradeByResponseId = new Map(grades.map((g) => [g.responseId, g]));
   const analyticsByResponseId = new Map(analytics.map((a) => [a.responseId, a]));
 
-  // Keep only the first (most recent, since we ordered desc) edit-history row per response.
-  const lastEditByResponseId = new Map<string, { editedAt: Date; editedByEmail?: string }>();
-  for (const edit of lastEdits) {
-    if (!lastEditByResponseId.has(edit.responseId)) {
-      lastEditByResponseId.set(edit.responseId, {
-        editedAt: edit.editedAt,
-        editedByEmail: edit.editedBy?.email,
-      });
-    }
-  }
+  // Already exactly one (the most recent) row per response — DISTINCT ON did the reduction in SQL.
+  const lastEditByResponseId = new Map(
+    lastEdits.map((edit) => [edit.responseId, { editedAt: edit.editedAt, editedByEmail: edit.editedByEmail ?? undefined }])
+  );
 
   let emailCounts: Map<string, number> | undefined;
   if (needsDuplicate) {

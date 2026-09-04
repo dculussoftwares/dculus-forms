@@ -187,6 +187,9 @@ function applyFilterToResponse(filter: ResponseFilter, response: any): boolean {
       }
       if (filter.fieldId === '__duplicateEmail') {
         if (filter.operator !== 'EQUALS' || !filter.value) return false;
+        // Matches the SQL builder's semantics: a response with no email matches
+        // neither "Duplicate" nor "Unique" — the concept doesn't apply to it.
+        if (!response.respondentEmail) return false;
         return String(!!response.isDuplicateEmail) === filter.value;
       }
       if (filter.fieldId === '__lastEditedAt') {

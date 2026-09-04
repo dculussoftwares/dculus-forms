@@ -48,11 +48,13 @@ export const DigestFiltersEditor: React.FC<DigestFiltersEditorProps> = ({
   const { t } = useTranslation('automations');
   const { t: tFilter } = useTranslation('filterRow');
   const quizEnabled = useAutomationBuilderStore((s) => s.quizEnabled);
+  const pdfGenerators = useAutomationBuilderStore((s) => s.pdfGenerators);
 
   // Digest filters run through the SQL-backed responseService.getResponsesByFormId (see
   // engine.ts's fetchDigestResponses), unlike ConditionRulesEditor's trigger-time rules —
-  // so the full meta-filter registry applies here, not just the trigger-payload quiz fields.
-  const metaFields = buildMetaFilterFields({ quizEnabled });
+  // so the full meta-filter registry applies here, including per-generator PDF status,
+  // not just the trigger-payload quiz fields.
+  const metaFields = buildMetaFilterFields({ quizEnabled, pdfGenerators });
 
   const [fetchCount, { data: countData, loading: countLoading, error: countError }] = useLazyQuery(
     PREVIEW_PDF_GENERATOR_MATCH_COUNT

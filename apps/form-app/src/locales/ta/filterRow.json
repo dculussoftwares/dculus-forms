@@ -52,6 +52,9 @@
     "response": "பதில்",
     "pdf": "PDF உருவாக்கம்"
   },
+  "metaUnits": {
+    "seconds": "வினாடி"
+  },
   "metaFields": {
     "gradePercentage": "மதிப்பெண் (%)",
     "gradePassed": "தேர்ச்சி",

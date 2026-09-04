@@ -7,7 +7,7 @@ type Translate = (key: string, options?: { values?: Record<string, string | numb
 
 const NO_VALUE_OPERATORS = new Set(['IS_EMPTY', 'IS_NOT_EMPTY', 'DATE_TODAY']);
 
-function formatRuleValue(rule: ConditionRule): string {
+function formatRuleValue(rule: ConditionRule, field: FilterableField | undefined, tFilter: Translate): string {
   if (!rule.operator || NO_VALUE_OPERATORS.has(rule.operator)) return '';
 
   if (rule.operator === 'BETWEEN' || rule.operator === 'DATE_BETWEEN') {
@@ -16,6 +16,13 @@ function formatRuleValue(rule: ConditionRule): string {
     const to = rule.operator === 'BETWEEN' ? rule.numberRange?.max : rule.dateRange?.to;
     if (!range || (from === undefined && to === undefined)) return '';
     return `${from ?? '…'} - ${to ?? '…'}`;
+  }
+
+  // A boolean meta field (e.g. quizPassed) stores its raw "true"/"false" value — resolve
+  // it to the same translated label the editor's dropdown shows, rather than the literal.
+  if (field && isMetaFilterField(field) && field.kind === 'boolean' && rule.value !== undefined) {
+    const option = field.booleanOptions?.find((o) => o.value === rule.value);
+    if (option) return tFilter(option.labelKey);
   }
 
   if (rule.values && rule.values.length > 0) {
@@ -55,7 +62,7 @@ export function summarizeConditionRules(
   const operatorLabel = field && first.operator
     ? (getOperatorOptions(field, tFilter).find((o) => o.value === first.operator)?.label ?? '')
     : '';
-  const valueText = formatRuleValue(first);
+  const valueText = formatRuleValue(first, field, tFilter);
 
   const primary = t('builder.nodes.condition.summaryPrimary', {
     values: { field: fieldLabel, operator: operatorLabel, value: valueText },
