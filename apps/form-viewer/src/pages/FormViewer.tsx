@@ -12,7 +12,7 @@ import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics'
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
 import { buildCompletionTimeInput } from '../lib/completionTime';
 import { getFormErrorMessage, isSubmissionLimitError, isAccessControlError } from '../lib/formError';
-import { quizResultLabels, quizResultLinkLabel } from '../locales/quizResult';
+import { quizResultLabels, quizResultLinkLabel, quizResultLinkDescription } from '../locales/quizResult';
 import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
 import RespondentBadge from '../components/RespondentBadge';
@@ -392,7 +392,13 @@ const FormViewer: React.FC<FormViewerProps> = ({
     !!form.settings?.accessControl?.enabled || !!form.settings?.collectRespondentEmail;
   const resultLink =
     quizSettings?.enabled && quizSettings.gradeRelease !== 'immediate' && requiresIdentity
-      ? { href: `/f/${shortUrl}/result`, label: quizResultLinkLabel }
+      ? {
+          // Absolute URL — ThankYouScreen shows it verbatim in a copyable
+          // field so the respondent can save it before leaving.
+          href: `${window.location.origin}/f/${shortUrl}/result`,
+          label: quizResultLinkLabel,
+          description: quizResultLinkDescription,
+        }
       : undefined;
 
   // Access control is checked before the "form not ready" guard below —

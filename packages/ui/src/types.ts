@@ -37,7 +37,7 @@ export interface LayoutProps {
    * to. Absent for every other case, leaving existing thank-you screens
    * byte-for-byte unaffected.
    */
-  resultLink?: { href: string; label: string };
+  resultLink?: { href: string; label: string; description?: string };
   /**
    * Form Embed v1 — render the content-height shell instead of the viewport
    * shell, so a host page's iframe can be sized from the content. Only
