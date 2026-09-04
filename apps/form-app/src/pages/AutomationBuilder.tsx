@@ -5,6 +5,7 @@ import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dcul
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, Input, Badge, LoadingSpinner, EmptyState, Tooltip, TooltipContent, TooltipTrigger, toastSuccess, toastError } from '@dculus/ui';
 import { GET_FORM_BY_ID } from '../graphql/queries';
+import { GET_PDF_GENERATORS } from '../graphql/pdfGenerators';
 import { GET_AUTOMATION, UPDATE_AUTOMATION, SET_AUTOMATION_STATUS } from '../graphql/automations';
 import { AlertCircle, ArrowLeft, FlaskConical, History, Pencil, Play, Loader2 } from 'lucide-react';
 import { AutomationCanvas } from '../components/automations/builder/AutomationCanvas';
@@ -37,6 +38,7 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const formId = form.id;
 
   const loadGraph = useAutomationBuilderStore((s) => s.loadGraph);
+  const setPdfGenerators = useAutomationBuilderStore((s) => s.setPdfGenerators);
   const isDirty = useAutomationBuilderStore((s) => s.isDirty);
   const structuralErrors = useAutomationBuilderStore((s) => s.structuralErrors);
   const setValidationErrors = useAutomationBuilderStore((s) => s.setValidationErrors);
@@ -59,6 +61,41 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     return fields;
   }, [form.formSchema]);
 
+  // Enabled PDF generators for this form (#347 review) — powers the digest filter editor's
+  // per-generator "Has PDF: <name>" meta fields, same extraction pattern Responses.tsx uses.
+  const { data: pdfGeneratorsData, error: pdfGeneratorsError } = useQuery(GET_PDF_GENERATORS, {
+    variables: { formId },
+    skip: !formId,
+  });
+  const pdfGenerators = useMemo(
+    () =>
+      (pdfGeneratorsData?.pdfGenerators ?? [])
+        .filter((g: any) => g.enabled)
+        .map((g: any) => ({ id: g.id, name: g.name })),
+    [pdfGeneratorsData]
+  );
+
+  // Kept independent of the once-per-automationId loadGraph effect below — GET_PDF_GENERATORS
+  // has its own loading/error lifecycle, so tying it to that one-time load would either block
+  // the graph from ever loading on a query error, or (if only gated on `loading`) permanently
+  // commit an empty list with no way for a later successful refetch to update it (#347 review).
+  // Only commits on an actual successful result, so a transient error leaves whatever
+  // generators list is already in the store untouched rather than clearing it.
+  useEffect(() => {
+    if (pdfGeneratorsData && !pdfGeneratorsError) setPdfGenerators(pdfGenerators);
+  }, [pdfGenerators, pdfGeneratorsData, pdfGeneratorsError, setPdfGenerators]);
+
+  // Resets immediately on a form change (distinct from the automation-scoped resets above —
+  // this global store can in principle be reused across forms without a full remount, e.g.
+  // browser back/forward between two different forms' automation builders). Without this, a
+  // slow or failed GET_PDF_GENERATORS request for the new form could leave the PREVIOUS
+  // form's generator list sitting in the store, which the digest editor would then offer as
+  // if it belonged to the current form (#347 review). The success effect above repopulates
+  // it correctly as soon as the new form's query resolves.
+  useEffect(() => {
+    setPdfGenerators([]);
+  }, [formId, setPdfGenerators]);
+
   // Only (re)load the graph into the store when the automation actually changes — the cache
   // updates `automation` after every Save/Activate mutation (same id), and re-running loadGraph
   // then would stomp on in-progress local edits with what we just persisted.
@@ -70,12 +107,13 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
       automationId,
       formTitle: form.title,
       formFields,
+      quizEnabled: !!form.settings?.quiz?.enabled,
       triggerType: automation.triggerType,
       triggerConfig: automation.triggerConfig,
       graph: automation.graph,
       isReadOnly: !canEdit,
     });
-  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, formFields, canEdit, loadGraph]);
+  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, form.settings?.quiz?.enabled, formFields, canEdit, loadGraph]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(automation.name);

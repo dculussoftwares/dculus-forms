@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { buildMetaFilterFields } from '../Filters/metaFilterFields';
 import { useMutation } from '@apollo/client/react';
 import {
   Button,
@@ -60,19 +61,27 @@ const safeFormatDistance = (dateVal: string | null | undefined): string => {
 interface AutomationBlockProps {
   generator: any;
   template: { id: string; name: string };
+  formId: string;
   canEdit: boolean;
   fillableFields: FillableFormField[];
+  quizEnabled: boolean;
   refetch: () => void;
 }
 
 export const AutomationBlock: React.FC<AutomationBlockProps> = ({
   generator,
   template,
+  formId,
   canEdit,
   fillableFields,
+  quizEnabled,
   refetch,
 }) => {
   const { t } = useTranslation('pdfGenerators');
+  // This generator's own PDF-generation status isn't offered here (filtering "has a PDF
+  // from generator X" while configuring generator X's own match criteria is circular) —
+  // every other meta-filter section applies, same as the Responses page.
+  const metaFields = useMemo(() => buildMetaFilterFields({ quizEnabled }), [quizEnabled]);
   const [columnNameDraft, setColumnNameDraft] = useState(generator.columnName ?? '');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showResultsModal, setShowResultsModal] = useState(false);
@@ -334,6 +343,8 @@ export const AutomationBlock: React.FC<AutomationBlockProps> = ({
         open={showFilterModal}
         onClose={() => setShowFilterModal(false)}
         fields={fillableFields}
+        metaFields={metaFields}
+        formId={formId}
         filters={filtersAsState}
         filterLogic={generator.filterLogic ?? 'AND'}
         onApplyFilters={(newFilters, newLogic) => {

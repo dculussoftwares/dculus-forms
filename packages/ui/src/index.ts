@@ -224,7 +224,7 @@ export {
   TypographyTableHead,
   TypographyTableCell,
 } from "./typography"
-export { Popover, PopoverTrigger, PopoverContent } from "./popover"
+export { Popover, PopoverTrigger, PopoverAnchor, PopoverContent } from "./popover"
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs"
 export { PageWrapper } from "./page-wrapper"
 export { LoadingSpinner } from "./loading-spinner"

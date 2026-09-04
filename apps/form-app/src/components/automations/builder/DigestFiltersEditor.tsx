@@ -4,8 +4,10 @@ import { Button, Label, Select, SelectContent, SelectItem, SelectTrigger, Select
 import { Plus, X, Loader2 } from 'lucide-react';
 import type { FillableFormField } from '@dculus/types';
 import { useTranslation } from '../../../hooks/useTranslation';
-import { getFieldIcon } from '../../utils/fieldIcons';
+import { useAutomationBuilderStore } from '../../../store/useAutomationBuilderStore';
 import { getOperatorOptions, renderFilterInput } from '../../Filters/FilterRow';
+import { FilterFieldSelect, type FilterableField } from '../../Filters/FilterFieldSelect';
+import { buildMetaFilterFields } from '../../Filters/metaFilterFields';
 import type { FilterState } from '../../Filters/FilterPanel';
 import { PREVIEW_PDF_GENERATOR_MATCH_COUNT } from '../../../graphql/pdfGenerators';
 import type { ConditionRule } from './types';
@@ -45,6 +47,14 @@ export const DigestFiltersEditor: React.FC<DigestFiltersEditorProps> = ({
 }) => {
   const { t } = useTranslation('automations');
   const { t: tFilter } = useTranslation('filterRow');
+  const quizEnabled = useAutomationBuilderStore((s) => s.quizEnabled);
+  const pdfGenerators = useAutomationBuilderStore((s) => s.pdfGenerators);
+
+  // Digest filters run through the SQL-backed responseService.getResponsesByFormId (see
+  // engine.ts's fetchDigestResponses), unlike ConditionRulesEditor's trigger-time rules —
+  // so the full meta-filter registry applies here, including per-generator PDF status,
+  // not just the trigger-payload quiz fields.
+  const metaFields = buildMetaFilterFields({ quizEnabled, pdfGenerators });
 
   const [fetchCount, { data: countData, loading: countLoading, error: countError }] = useLazyQuery(
     PREVIEW_PDF_GENERATOR_MATCH_COUNT
@@ -90,8 +100,10 @@ export const DigestFiltersEditor: React.FC<DigestFiltersEditorProps> = ({
 
       <div className="space-y-3">
         {filters.map((filter, index) => {
-          const field = fields.find((f) => f.id === filter.fieldId);
-          const operatorOptions = field ? getOperatorOptions(field.type, tFilter) : [];
+          const formField = fields.find((f) => f.id === filter.fieldId);
+          const metaField = !formField ? metaFields.find((m) => m.id === filter.fieldId) : undefined;
+          const field: FilterableField | undefined = formField ?? metaField;
+          const operatorOptions = field ? getOperatorOptions(field, tFilter) : [];
           const filterState: FilterState = {
             fieldId: filter.fieldId,
             operator: filter.operator,
@@ -123,28 +135,15 @@ export const DigestFiltersEditor: React.FC<DigestFiltersEditorProps> = ({
                 </Button>
               </div>
 
-              <Select value={filter.fieldId || ''} onValueChange={(fieldId) => handleFieldChange(index, fieldId)}>
-                <SelectTrigger className="h-9" data-testid="digest-filter-field-select">
-                  <SelectValue placeholder={tFilter('placeholders.selectField')}>
-                    {field && (
-                      <div className="flex items-center gap-2">
-                        <div className="text-muted-foreground flex-shrink-0">{getFieldIcon(field.type)}</div>
-                        <span className="truncate">{field.label}</span>
-                      </div>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {fields.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      <div className="flex items-center gap-2">
-                        <div className="text-muted-foreground flex-shrink-0">{getFieldIcon(f.type)}</div>
-                        <span className="truncate">{f.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FilterFieldSelect
+                fields={fields}
+                metaFields={metaFields}
+                value={filter.fieldId || ''}
+                onChange={(fieldId) => handleFieldChange(index, fieldId)}
+                t={tFilter}
+                triggerClassName="h-9"
+                testId="digest-filter-field-select"
+              />
 
               {field && (
                 <div className="flex items-center gap-2 flex-wrap">
@@ -171,7 +170,8 @@ export const DigestFiltersEditor: React.FC<DigestFiltersEditorProps> = ({
                           delete rest.active;
                           handleFilterChange(index, rest);
                         },
-                        tFilter
+                        tFilter,
+                        formId
                       )}
                     </div>
                   )}

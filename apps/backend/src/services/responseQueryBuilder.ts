@@ -45,6 +45,7 @@ export const GRADE_FIELD_IDS = new Set([
   '__gradePercentage',
   '__gradePassed',
   '__gradeStatus',
+  '__gradeAttempt',
 ]);
 
 /**
@@ -59,6 +60,114 @@ export const RESPONSE_GRADE_JOIN = 'LEFT JOIN "response_grade" rg ON rg."respons
 /** Whether any filter in the list targets a grade field (Story 11) — used to decide whether to add RESPONSE_GRADE_JOIN. */
 export function filtersNeedGradeJoin(filters?: ResponseFilter[]): boolean {
   return !!filters?.some((f) => GRADE_FIELD_IDS.has(f.fieldId));
+}
+
+/**
+ * Response meta-filters (beyond quiz grading) — special fieldIds mirroring the
+ * __submittedAt/__tags/__grade* convention above. Each group is backed by its own
+ * LEFT JOIN, added only when a filter actually references one of its fieldIds so a
+ * form that never uses them sees no SQL change at all (same "additive, zero cost
+ * when unused" guarantee as RESPONSE_GRADE_JOIN).
+ */
+export const SUBMISSION_ANALYTICS_FIELD_IDS = new Set([
+  '__completionTimeSeconds',
+  '__browser',
+  '__operatingSystem',
+  '__country',
+]);
+
+export const LAST_EDIT_FIELD_IDS = new Set(['__lastEditedAt', '__lastEditedByEmail']);
+
+export const PDF_GENERATED_FIELD_PREFIX = '__pdfGenerated_';
+
+/** LEFT JOIN against the response's 1:1 submission-analytics row (device/geo/completion time). */
+export const RESPONSE_SUBMISSION_ANALYTICS_JOIN =
+  'LEFT JOIN "form_submission_analytics" fsa ON fsa."responseId" = "response".id';
+
+/**
+ * LEFT JOIN LATERAL pulling just the most recent edit-history row per response (and its
+ * editor's email) — a LATERAL rather than a plain join because "most recent" needs an
+ * ORDER BY + LIMIT 1 per response, which a plain JOIN can't express.
+ */
+export const RESPONSE_LAST_EDIT_JOIN =
+  'LEFT JOIN LATERAL (' +
+  'SELECT reh."editedAt" AS "editedAt", u.email AS "editedByEmail" ' +
+  'FROM "response_edit_history" reh ' +
+  'LEFT JOIN "user" u ON u.id = reh."editedById" ' +
+  'WHERE reh."responseId" = "response".id ' +
+  'ORDER BY reh."editedAt" DESC LIMIT 1' +
+  ') leh ON true';
+
+/** LEFT JOIN against the form's cached field count, used to compute __completenessPercent. */
+export const RESPONSE_FORM_METADATA_JOIN =
+  'LEFT JOIN "form_metadata" fm ON fm."formId" = "response"."formId"';
+
+/** SQL expression for __completenessPercent: non-empty top-level keys in `data`, as a % of the form's cached field count. */
+const COMPLETENESS_PERCENT_EXPR =
+  '((SELECT COUNT(*) FROM jsonb_each("response".data) e ' +
+  "WHERE e.value IS NOT NULL AND e.value <> 'null'::jsonb AND e.value <> '\"\"'::jsonb" +
+  ')::numeric / NULLIF(fm."fieldCount", 0) * 100)';
+
+export function filtersNeedSubmissionAnalyticsJoin(filters?: ResponseFilter[]): boolean {
+  return !!filters?.some((f) => SUBMISSION_ANALYTICS_FIELD_IDS.has(f.fieldId));
+}
+
+export function filtersNeedLastEditJoin(filters?: ResponseFilter[]): boolean {
+  return !!filters?.some((f) => LAST_EDIT_FIELD_IDS.has(f.fieldId));
+}
+
+export function filtersNeedFormMetadataJoin(filters?: ResponseFilter[]): boolean {
+  return !!filters?.some((f) => f.fieldId === '__completenessPercent');
+}
+
+/**
+ * Composes every LEFT JOIN a filter/sort set actually needs into one clause. Replaces the
+ * single-purpose "gradeJoinNeeded ? RESPONSE_GRADE_JOIN : ''" check that predates the meta
+ * filters above — a form that filters on none of them gets the exact same SQL as before.
+ */
+export function buildJoinClause(filters?: ResponseFilter[], needsGradeJoin = false): string {
+  const joins: string[] = [];
+  if (filtersNeedGradeJoin(filters) || needsGradeJoin) joins.push(RESPONSE_GRADE_JOIN);
+  if (filtersNeedSubmissionAnalyticsJoin(filters)) joins.push(RESPONSE_SUBMISSION_ANALYTICS_JOIN);
+  if (filtersNeedLastEditJoin(filters)) joins.push(RESPONSE_LAST_EDIT_JOIN);
+  if (filtersNeedFormMetadataJoin(filters)) joins.push(RESPONSE_FORM_METADATA_JOIN);
+  return joins.join(' ');
+}
+
+/** The non-dynamic (static-id) response/respondent fieldIds — __duplicateEmail,
+ * __respondentType, __respondentEmail need no join, so they aren't in any of the
+ * Set-based join checks above, but still need to be recognized as meta (not form-data)
+ * fieldIds by the in-memory context-attachment path. __pdfGenerated_* is dynamic and
+ * checked separately via its prefix. */
+export const RESPONDENT_META_FIELD_IDS = new Set([
+  '__respondentType',
+  '__respondentEmail',
+  '__duplicateEmail',
+]);
+
+export const COMPLETENESS_FIELD_ID = '__completenessPercent';
+
+export function isPdfGeneratedFieldId(fieldId: string): boolean {
+  return fieldId.startsWith(PDF_GENERATED_FIELD_PREFIX);
+}
+
+export function pdfGeneratorIdFromFieldId(fieldId: string): string {
+  return fieldId.slice(PDF_GENERATED_FIELD_PREFIX.length);
+}
+
+/** Every special (non-form-field) fieldId this module understands, used by the in-memory
+ * context-attachment path to know when a response needs enrichment before filtering. */
+export function isMetaFilterFieldId(fieldId: string): boolean {
+  return (
+    fieldId === '__submittedAt' ||
+    fieldId === '__tags' ||
+    GRADE_FIELD_IDS.has(fieldId) ||
+    SUBMISSION_ANALYTICS_FIELD_IDS.has(fieldId) ||
+    LAST_EDIT_FIELD_IDS.has(fieldId) ||
+    RESPONDENT_META_FIELD_IDS.has(fieldId) ||
+    fieldId === COMPLETENESS_FIELD_ID ||
+    isPdfGeneratedFieldId(fieldId)
+  );
 }
 
 /**
@@ -223,6 +332,139 @@ function buildGradeStatusCondition(filter: ResponseFilter, startIndex: number): 
 }
 
 /**
+ * Generic builders for the meta filters below — each operates on a plain SQL
+ * column/expression (already table-qualified) rather than a JSONB accessor, so they're
+ * shared across every meta field of a given kind instead of one bespoke function per field.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildTextColumnCondition(col: string, filter: ResponseFilter, startIndex: number): { sql: string; values: any[] } {
+  switch (filter.operator) {
+    case 'IS_EMPTY':
+      return { sql: `(${col} IS NULL OR ${col} = '')`, values: [] };
+    case 'IS_NOT_EMPTY':
+      return { sql: `(${col} IS NOT NULL AND ${col} != '')`, values: [] };
+    case 'EQUALS':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `LOWER(${col}) = LOWER($${startIndex})`, values: [String(filter.value)] };
+    case 'NOT_EQUALS':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `(${col} IS NULL OR LOWER(${col}) != LOWER($${startIndex}))`, values: [String(filter.value)] };
+    case 'CONTAINS':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `${col} ILIKE $${startIndex}`, values: [`%${filter.value}%`] };
+    case 'NOT_CONTAINS':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `(${col} IS NULL OR ${col} NOT ILIKE $${startIndex})`, values: [`%${filter.value}%`] };
+    case 'STARTS_WITH':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `${col} ILIKE $${startIndex}`, values: [`${filter.value}%`] };
+    case 'ENDS_WITH':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `${col} ILIKE $${startIndex}`, values: [`%${filter.value}`] };
+    default:
+      return { sql: '', values: [] };
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildNumberColumnCondition(
+  expr: string,
+  filter: ResponseFilter,
+  startIndex: number,
+  opts: { allowEmpty: boolean } = { allowEmpty: true }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): { sql: string; values: any[] } {
+  switch (filter.operator) {
+    case 'IS_EMPTY':
+      return opts.allowEmpty ? { sql: `${expr} IS NULL`, values: [] } : { sql: '', values: [] };
+    case 'IS_NOT_EMPTY':
+      return opts.allowEmpty ? { sql: `${expr} IS NOT NULL`, values: [] } : { sql: '', values: [] };
+    case 'EQUALS':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `${expr} = $${startIndex}::numeric`, values: [filter.value] };
+    case 'NOT_EQUALS':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `(${expr} IS NULL OR ${expr} != $${startIndex}::numeric)`, values: [filter.value] };
+    case 'GREATER_THAN':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `${expr} > $${startIndex}::numeric`, values: [filter.value] };
+    case 'GREATER_THAN_OR_EQUAL':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `${expr} >= $${startIndex}::numeric`, values: [filter.value] };
+    case 'LESS_THAN':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `${expr} < $${startIndex}::numeric`, values: [filter.value] };
+    case 'LESS_THAN_OR_EQUAL':
+      if (filter.value === undefined) return { sql: '', values: [] };
+      return { sql: `${expr} <= $${startIndex}::numeric`, values: [filter.value] };
+    case 'BETWEEN': {
+      if (!filter.numberRange) return { sql: '', values: [] };
+      const conditions: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const values: any[] = [];
+      let idx = startIndex;
+      if (filter.numberRange.min !== undefined) {
+        conditions.push(`${expr} >= $${idx}::numeric`);
+        values.push(filter.numberRange.min);
+        idx++;
+      }
+      if (filter.numberRange.max !== undefined) {
+        conditions.push(`${expr} <= $${idx}::numeric`);
+        values.push(filter.numberRange.max);
+      }
+      if (conditions.length === 0) return { sql: '', values: [] };
+      return { sql: `(${conditions.join(' AND ')})`, values };
+    }
+    default:
+      return { sql: '', values: [] };
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildDateColumnCondition(col: string, filter: ResponseFilter, startIndex: number): { sql: string; values: any[] } {
+  switch (filter.operator) {
+    case 'IS_EMPTY':
+      return { sql: `${col} IS NULL`, values: [] };
+    case 'IS_NOT_EMPTY':
+      return { sql: `${col} IS NOT NULL`, values: [] };
+    case 'DATE_EQUALS':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `DATE(${col}) = DATE($${startIndex}::timestamptz)`, values: [filter.value] };
+    case 'DATE_BEFORE':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `${col} < $${startIndex}::timestamptz`, values: [filter.value] };
+    case 'DATE_AFTER':
+      if (!filter.value) return { sql: '', values: [] };
+      return { sql: `${col} > $${startIndex}::timestamptz`, values: [filter.value] };
+    case 'DATE_BETWEEN': {
+      if (!filter.dateRange) return { sql: '', values: [] };
+      const parts: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const vals: any[] = [];
+      let idx = startIndex;
+      if (filter.dateRange.from) { parts.push(`${col} >= $${idx}::timestamptz`); vals.push(filter.dateRange.from); idx++; }
+      if (filter.dateRange.to)   { parts.push(`${col} <= $${idx}::timestamptz`); vals.push(filter.dateRange.to); }
+      return parts.length ? { sql: `(${parts.join(' AND ')})`, values: vals } : { sql: '', values: [] };
+    }
+    case 'DATE_TODAY':
+      return { sql: `DATE(${col}) = CURRENT_DATE`, values: [] };
+    case 'DATE_LAST_N_DAYS': {
+      const n = Math.max(1, parseInt(filter.value || '7', 10) || 7);
+      return { sql: `${col} >= NOW() - ($${startIndex} || ' days')::interval`, values: [String(n)] };
+    }
+    default:
+      return { sql: '', values: [] };
+  }
+}
+
+const ensureSafeGeneratorId = (id: string): string => {
+  if (!SAFE_FIELD_ID_PATTERN.test(id)) {
+    throw new Error(`Invalid PDF generator id "${id}"`);
+  }
+  return id;
+};
+
+/**
  * Builds raw SQL condition for a single filter
  * Returns SQL string with PostgreSQL placeholders ($1, $2, etc.) and parameter values
  */
@@ -249,15 +491,101 @@ export function buildRawSQLCondition(
   }
 
   if (filter.fieldId === '__gradePercentage') {
+    if (filter.operator === 'IS_EMPTY') return { sql: 'rg.percentage IS NULL', values: [] };
+    if (filter.operator === 'IS_NOT_EMPTY') return { sql: 'rg.percentage IS NOT NULL', values: [] };
     return buildGradePercentageCondition(filter, startIndex);
   }
 
   if (filter.fieldId === '__gradePassed') {
+    if (filter.operator === 'IS_EMPTY') return { sql: 'rg.passed IS NULL', values: [] };
+    if (filter.operator === 'IS_NOT_EMPTY') return { sql: 'rg.passed IS NOT NULL', values: [] };
     return buildGradePassedCondition(filter, startIndex);
   }
 
   if (filter.fieldId === '__gradeStatus') {
+    if (filter.operator === 'IS_EMPTY') return { sql: 'rg.status IS NULL', values: [] };
+    if (filter.operator === 'IS_NOT_EMPTY') return { sql: 'rg.status IS NOT NULL', values: [] };
     return buildGradeStatusCondition(filter, startIndex);
+  }
+
+  // Native Quiz: attempt number, for retake-enabled quizzes. Same rg join as the three fields above.
+  if (filter.fieldId === '__gradeAttempt') {
+    return buildNumberColumnCondition('rg."attemptNumber"', filter, startIndex);
+  }
+
+  if (filter.fieldId === '__completionTimeSeconds') {
+    return buildNumberColumnCondition('fsa."completionTimeSeconds"', filter, startIndex);
+  }
+  if (filter.fieldId === '__browser') {
+    return buildTextColumnCondition('fsa.browser', filter, startIndex);
+  }
+  if (filter.fieldId === '__operatingSystem') {
+    return buildTextColumnCondition('fsa."operatingSystem"', filter, startIndex);
+  }
+  if (filter.fieldId === '__country') {
+    return buildTextColumnCondition('fsa."countryAlpha2"', filter, startIndex);
+  }
+
+  // Respondent identity: derived from whether the response carries an authenticated
+  // respondentUserId (only ever set when the form's accessControl setting is enabled).
+  if (filter.fieldId === '__respondentType') {
+    if (filter.operator !== 'EQUALS' || !filter.value) return { sql: '', values: [] };
+    return filter.value === 'authenticated'
+      ? { sql: '"response"."respondentUserId" IS NOT NULL', values: [] }
+      : { sql: '"response"."respondentUserId" IS NULL', values: [] };
+  }
+  if (filter.fieldId === '__respondentEmail') {
+    return buildTextColumnCondition('"response"."respondentEmail"', filter, startIndex);
+  }
+
+  // Same email submitted more than once for this form (non-deleted responses only).
+  // A response with no respondentEmail matches neither "Duplicate" nor "Unique" — the
+  // concept doesn't apply to it.
+  if (filter.fieldId === '__duplicateEmail') {
+    if (filter.operator !== 'EQUALS' || !filter.value) return { sql: '', values: [] };
+    const dupExists = `EXISTS (
+      SELECT 1 FROM "response" r2
+      WHERE r2."formId" = "response"."formId"
+        AND r2.id <> "response".id
+        AND r2."deletedAt" IS NULL
+        AND r2."respondentEmail" = "response"."respondentEmail"
+    )`;
+    const hasEmail = `"response"."respondentEmail" IS NOT NULL`;
+    return filter.value === 'true'
+      ? { sql: `(${hasEmail} AND ${dupExists})`, values: [] }
+      : { sql: `(${hasEmail} AND NOT ${dupExists})`, values: [] };
+  }
+
+  if (filter.fieldId === '__lastEditedAt') {
+    return buildDateColumnCondition('leh."editedAt"', filter, startIndex);
+  }
+  if (filter.fieldId === '__lastEditedByEmail') {
+    return buildTextColumnCondition('leh."editedByEmail"', filter, startIndex);
+  }
+
+  // Non-empty top-level keys in `data`, as a % of the form's cached field count
+  // (form_metadata.fieldCount) — an approximation of "fillable fields answered", not exact
+  // (fieldCount includes non-fillable rich-text fields too), but close enough to be useful
+  // and avoids re-parsing the form schema per response.
+  if (filter.fieldId === '__completenessPercent') {
+    return buildNumberColumnCondition(COMPLETENESS_PERCENT_EXPR, filter, startIndex, { allowEmpty: false });
+  }
+
+  // Dynamic, one per PdfGenerator: whether this response already has a successfully
+  // generated PDF from that generator. generatorId is passed as a bound parameter, never
+  // interpolated into the SQL string, even though ensureSafeGeneratorId also validates it.
+  if (filter.fieldId.startsWith(PDF_GENERATED_FIELD_PREFIX)) {
+    const generatorId = ensureSafeGeneratorId(filter.fieldId.slice(PDF_GENERATED_FIELD_PREFIX.length));
+    if (filter.operator !== 'EQUALS' || !filter.value) return { sql: '', values: [] };
+    const genExists = `EXISTS (
+      SELECT 1 FROM "pdf_generation_result" pgr
+      WHERE pgr."generatorId" = $${startIndex}
+        AND pgr."responseId" = "response".id
+        AND pgr.status = 'success'
+    )`;
+    return filter.value === 'true'
+      ? { sql: genExists, values: [generatorId] }
+      : { sql: `NOT ${genExists}`, values: [generatorId] };
   }
 
   const safeFieldId = ensureSafeFieldId(filter.fieldId);

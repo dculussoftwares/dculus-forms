@@ -1030,5 +1030,109 @@ describe('Response Filter Service', () => {
       expect(result).toHaveLength(3);
     });
   });
+
+  // Response meta-filters beyond quiz grading, evaluated against properties that only
+  // responseFilterContext.ts's attachFilterContext actually populates in production —
+  // exercised here directly against pre-attached properties (same convention as the
+  // existing __gradePercentage/__gradePassed/__gradeStatus fallback).
+  describe('response meta filters (memory fallback)', () => {
+    const responseWithContext = (overrides: Record<string, unknown>) => ({
+      id: 'resp-ctx',
+      data: {},
+      ...overrides,
+    });
+
+    it('__gradeAttempt reads response.grade.attemptNumber', () => {
+      const responses = [responseWithContext({ grade: { attemptNumber: 2 } })];
+      const filters: ResponseFilter[] = [{ fieldId: '__gradeAttempt', operator: 'GREATER_THAN_OR_EQUAL', value: '2' }];
+      expect(applyResponseFilters(responses, filters)).toHaveLength(1);
+    });
+
+    it('__completionTimeSeconds reads response.submissionAnalytics.completionTimeSeconds', () => {
+      const responses = [
+        responseWithContext({ submissionAnalytics: { completionTimeSeconds: 45 } }),
+        responseWithContext({ submissionAnalytics: { completionTimeSeconds: 400 } }),
+      ];
+      const filters: ResponseFilter[] = [{ fieldId: '__completionTimeSeconds', operator: 'LESS_THAN', value: '100' }];
+      expect(applyResponseFilters(responses, filters)).toHaveLength(1);
+    });
+
+    it('__respondentType derives authenticated/anonymous from respondentUserId', () => {
+      const responses = [
+        responseWithContext({ id: 'a', respondentUserId: 'user-1' }),
+        responseWithContext({ id: 'b', respondentUserId: null }),
+      ];
+      const authenticated = applyResponseFilters(responses, [
+        { fieldId: '__respondentType', operator: 'EQUALS', value: 'authenticated' },
+      ]);
+      expect(authenticated.map((r) => r.id)).toEqual(['a']);
+
+      const anonymous = applyResponseFilters(responses, [
+        { fieldId: '__respondentType', operator: 'EQUALS', value: 'anonymous' },
+      ]);
+      expect(anonymous.map((r) => r.id)).toEqual(['b']);
+    });
+
+    it('__respondentEmail reads response.respondentEmail with normal text operators', () => {
+      const responses = [responseWithContext({ respondentEmail: 'jane@acme.com' })];
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__respondentEmail', operator: 'CONTAINS', value: 'acme' }])
+      ).toHaveLength(1);
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__respondentEmail', operator: 'CONTAINS', value: 'other' }])
+      ).toHaveLength(0);
+    });
+
+    it('__duplicateEmail reads response.isDuplicateEmail', () => {
+      const responses = [
+        responseWithContext({ id: 'dup', respondentEmail: 'a@acme.com', isDuplicateEmail: true }),
+        responseWithContext({ id: 'unique', respondentEmail: 'b@acme.com', isDuplicateEmail: false }),
+      ];
+      const result = applyResponseFilters(responses, [
+        { fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'true' },
+      ]);
+      expect(result.map((r) => r.id)).toEqual(['dup']);
+    });
+
+    it('__duplicateEmail matches neither true nor false when respondentEmail is absent (mirrors the SQL builder)', () => {
+      const responses = [responseWithContext({ id: 'no-email', isDuplicateEmail: true })];
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'true' }])
+      ).toHaveLength(0);
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__duplicateEmail', operator: 'EQUALS', value: 'false' }])
+      ).toHaveLength(0);
+    });
+
+    it('__lastEditedAt / __lastEditedByEmail read the attached last-edit context', () => {
+      const responses = [responseWithContext({ lastEditedAt: '2026-02-01T00:00:00Z', lastEditedByEmail: 'editor@acme.com' })];
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__lastEditedAt', operator: 'IS_NOT_EMPTY' }])
+      ).toHaveLength(1);
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__lastEditedByEmail', operator: 'EQUALS', value: 'editor@acme.com' }])
+      ).toHaveLength(1);
+    });
+
+    it('__completenessPercent reads response.completenessPercent', () => {
+      const responses = [responseWithContext({ completenessPercent: 75 })];
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__completenessPercent', operator: 'GREATER_THAN_OR_EQUAL', value: '50' }])
+      ).toHaveLength(1);
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__completenessPercent', operator: 'GREATER_THAN_OR_EQUAL', value: '90' }])
+      ).toHaveLength(0);
+    });
+
+    it('__pdfGenerated_<id> reads response.pdfGeneratedByGenerator[id]', () => {
+      const responses = [responseWithContext({ pdfGeneratedByGenerator: { gen1: true, gen2: false } })];
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__pdfGenerated_gen1', operator: 'EQUALS', value: 'true' }])
+      ).toHaveLength(1);
+      expect(
+        applyResponseFilters(responses, [{ fieldId: '__pdfGenerated_gen2', operator: 'EQUALS', value: 'true' }])
+      ).toHaveLength(0);
+    });
+  });
 });
 

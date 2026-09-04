@@ -8,6 +8,7 @@ import {
   responseRepository,
 } from '../repositories/index.js';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
+import { attachFilterContext } from './responseFilterContext.js';
 import { getAllResponsesByFormId } from './responseService.js';
 import { deleteGeneratedPdfsForGenerator } from './pdfGeneratorStorage.js';
 
@@ -170,6 +171,7 @@ export const countMatchingResponses = async (
   filterLogic: 'AND' | 'OR' = 'AND'
 ): Promise<number> => {
   const responses = await getAllResponsesByFormId(formId);
+  await attachFilterContext(responses, formId, filters);
   return applyResponseFilters(responses, filters, filterLogic).length;
 };
 
@@ -184,6 +186,7 @@ export const getMatchingResponses = async (
   filterLogic: 'AND' | 'OR' = 'AND'
 ): Promise<{ id: string; data: Record<string, any> }[]> => {
   const responses = await getAllResponsesByFormId(formId);
+  await attachFilterContext(responses, formId, filters);
   return applyResponseFilters(responses, filters, filterLogic).map((r) => ({
     id: r.id,
     data: r.data as Record<string, any>,

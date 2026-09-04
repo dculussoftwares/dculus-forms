@@ -2,11 +2,11 @@ import { FormResponse } from '@dculus/types';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { createGraphQLError } from '#graphql-errors';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
+import { attachFilterContext } from './responseFilterContext.js';
 import {
   buildRawSQLCondition,
   canFilterAtDatabase,
-  filtersNeedGradeJoin,
-  RESPONSE_GRADE_JOIN,
+  buildJoinClause,
 } from './responseQueryBuilder.js';
 import { batchLoadTagsForResponses } from './tagService.js';
 import { responseRepository, createResponseRepository } from '../repositories/index.js';
@@ -237,8 +237,7 @@ export async function getResponsesByFormId(
       // is only added when a filter or the sort actually targets a grade
       // field — a non-quiz form's query never references it, so its SQL
       // (and query count) stays identical to before this feature existed.
-      const gradeJoinNeeded = filtersNeedGradeJoin(filters) || isGradeSort;
-      const joinClause = gradeJoinNeeded ? RESPONSE_GRADE_JOIN : '';
+      const joinClause = buildJoinClause(filters, isGradeSort);
 
       const logicOperator = filterLogic === 'OR' ? ' OR ' : ' AND ';
       let whereClause = `WHERE "response"."formId" = $1`;
@@ -284,6 +283,7 @@ export async function getResponsesByFormId(
       logger.error('Database filtering failed, falling back to memory filtering:', error);
       // Fallback to memory processing
       const allResponses = await responseRepository.listByForm(formId);
+      await attachFilterContext(allResponses, formId, filters);
       const filteredResponses = applyResponseFilters(allResponses, filters, filterLogic);
       total = filteredResponses.length;
       responses = filteredResponses.slice(skip, skip + validLimit);
@@ -295,6 +295,7 @@ export async function getResponsesByFormId(
     logger.info(`Using memory filtering for ${filters?.length || 0} filters (form field sort: ${isFormFieldSort})`);
 
     const allResponses = await responseRepository.listByForm(formId);
+    if (hasFilters) await attachFilterContext(allResponses, formId, filters);
     const filteredResponses = hasFilters ? applyResponseFilters(allResponses, filters, filterLogic) : allResponses;
     total = filteredResponses.length;
 
@@ -414,6 +415,7 @@ export const getAllResponsesByFormId = async (formId: string): Promise<FormRespo
       data: (response.data as Prisma.JsonObject) || {},
       metadata: response.metadata as FormResponse['metadata'],
       respondentEmail: (response as any).respondentEmail ?? undefined,
+      respondentUserId: (response as any).respondentUserId ?? null,
       submittedAt: response.submittedAt,
     }));
 

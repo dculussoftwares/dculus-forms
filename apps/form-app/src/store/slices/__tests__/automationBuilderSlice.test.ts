@@ -286,3 +286,23 @@ describe('automationBuilderSlice — removeNode(non-condition) reconnect (regres
     expect(reconnected?.target).toBe('end');
   });
 });
+
+describe('automationBuilderSlice — setPdfGenerators (#347 review regression)', () => {
+  test('setPdfGenerators updates the store independently of loadGraph', () => {
+    loadTestGraph('automation-8', [{ id: 'trigger', type: 'trigger', data: { triggerType: 'form.submitted' } }], []);
+    expect(useAutomationBuilderStore.getState().pdfGenerators).toEqual([]);
+
+    useAutomationBuilderStore.getState().setPdfGenerators([{ id: 'gen1', name: 'Certificate' }]);
+    expect(useAutomationBuilderStore.getState().pdfGenerators).toEqual([{ id: 'gen1', name: 'Certificate' }]);
+  });
+
+  test('loadGraph does not reset pdfGenerators — an error on a later GET_PDF_GENERATORS refetch must not wipe an already-known-good list', () => {
+    loadTestGraph('automation-9', [{ id: 'trigger', type: 'trigger', data: { triggerType: 'form.submitted' } }], []);
+    useAutomationBuilderStore.getState().setPdfGenerators([{ id: 'gen1', name: 'Certificate' }]);
+
+    // Switching automations (a fresh loadGraph call) must not clobber the form-scoped
+    // pdfGenerators mirror — it's independent of which automation is currently loaded.
+    loadTestGraph('automation-10', [{ id: 'trigger', type: 'trigger', data: { triggerType: 'form.submitted' } }], []);
+    expect(useAutomationBuilderStore.getState().pdfGenerators).toEqual([{ id: 'gen1', name: 'Certificate' }]);
+  });
+});
