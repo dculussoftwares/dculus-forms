@@ -469,3 +469,31 @@ export async function copyFileForForm(
     );
   }
 }
+
+/**
+ * Copy a PDF template's uploaded base PDF within the private R2 bucket when a form is
+ * duplicated, returning the new object key.
+ *
+ * Separate from `copyFileForForm` because that one is hardcoded to the public bucket and
+ * the `FormBackground` key layout. PDF template assets live in the private bucket under
+ * `files/pdf-template-asset/{formId}/...` and are only ever read through pre-signed URLs.
+ * Giving the duplicated template its own object means replacing or deleting one form's
+ * base PDF can never disturb the other's.
+ */
+export async function copyPdfTemplateAssetForForm(
+  sourceKey: string,
+  formId: string
+): Promise<string> {
+  const originalFilename = sourceKey.split('/').pop() || 'template.pdf';
+  const newKey = generateS3Key(originalFilename, 'PdfTemplateAsset', formId);
+
+  await s3Client.send(
+    new CopyObjectCommand({
+      Bucket: s3Config.privateBucketName,
+      CopySource: `${s3Config.privateBucketName}/${sourceKey}`,
+      Key: newKey,
+    })
+  );
+
+  return newKey;
+}

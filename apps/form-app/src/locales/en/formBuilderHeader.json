@@ -53,7 +53,7 @@
   },
   "duplicateDialog": {
     "title": "Duplicate this form?",
-    "description": "We'll create a new copy with the same pages, fields, and settings. When it's ready, you'll move to the dashboard.",
+    "description": "We'll create a new copy with the same pages, fields, and settings. Automations, plugins, and PDF templates come along too, switched off so the copy doesn't send anything on its own. Responses and analytics stay with the original. When it's ready, you'll move to the dashboard.",
     "progressLabel": "Duplicating your form...",
     "cancel": "Cancel",
     "confirm": "Duplicate",

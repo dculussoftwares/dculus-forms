@@ -23,6 +23,8 @@ import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { audit } from '../lib/audit.js';
 import { copyAutomationsToForm } from './automation/copyAutomation.js';
+import { copyPluginsToForm } from './copyFormPlugins.js';
+import { copyPdfTemplatesToForm } from './copyPdfTemplates.js';
 
 export interface Form extends Omit<IForm, 'formSchema'> {
   formSchema: any; // JsonValue from Prisma
@@ -195,9 +197,22 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
     throw new Error('Form not found');
   }
 
-  // Retrieve the latest schema from Hocuspocus
-  const existingSchema = await getFormSchemaFromHocuspocus(formId);
-  const schemaClone = existingSchema ? JSON.parse(JSON.stringify(existingSchema)) : undefined;
+  // The live collaborative document is the source of truth for the schema, but it can be
+  // absent (form never opened in the builder, or Hocuspocus init failed at creation time)
+  // or time out under connection-pool pressure. Every other reader falls back to the
+  // persisted formSchema column — duplication must too, or the copy silently lands with
+  // zero pages and fields while still reporting success.
+  let liveSchema: any = null;
+  try {
+    liveSchema = await getFormSchemaFromHocuspocus(formId);
+  } catch (error) {
+    logger.error(
+      `❌ Failed to read live schema for form ${formId} during duplication; falling back to stored formSchema:`,
+      error
+    );
+  }
+  const sourceSchema = liveSchema ?? existingForm.formSchema ?? undefined;
+  const schemaClone = sourceSchema ? JSON.parse(JSON.stringify(sourceSchema)) : undefined;
 
   const newFormId = generateId();
 
@@ -283,11 +298,24 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
     }
   }
 
-  // Automations were silently dropped by form duplication until now — a customer who built a
-  // multi-step flow and cloned the form for next quarter lost all of it with no warning. Copies
-  // land as DRAFTs with integration bindings stripped, so a clone can never start delivering
-  // alongside the original on its own.
-  await copyAutomationsToForm(formId, newFormId, userId);
+  // Automations, plugins, and PDF templates were all silently dropped by form duplication
+  // until now — a customer who built a multi-step flow, wired submission-notification
+  // emails, or set up certificate generation and cloned the form for next quarter lost all
+  // of it with no warning. Each copier is best-effort (logs, never throws) so a failure in
+  // one never fails the whole duplication:
+  //   - automations land as DRAFTs with integration bindings stripped
+  //   - plugins land disabled
+  //   - PDF generators land with autoRunOnSubmit off
+  // so a clone can never start delivering alongside the original on its own.
+  try {
+    await copyAutomationsToForm(formId, newFormId, userId);
+    await copyPluginsToForm(formId, newFormId);
+    await copyPdfTemplatesToForm(formId, newFormId, userId);
+  } catch (error) {
+    // The copiers already swallow their own errors; this is a belt-and-braces guard so a
+    // regression in one can never turn a successful form duplication into a hard failure.
+    logger.error(`❌ Post-duplication copy step failed for form ${newFormId}:`, error);
+  }
 
   return {
     ...newForm,
