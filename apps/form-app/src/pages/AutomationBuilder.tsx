@@ -85,6 +85,17 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     if (pdfGeneratorsData && !pdfGeneratorsError) setPdfGenerators(pdfGenerators);
   }, [pdfGenerators, pdfGeneratorsData, pdfGeneratorsError, setPdfGenerators]);
 
+  // Resets immediately on a form change (distinct from the automation-scoped resets above —
+  // this global store can in principle be reused across forms without a full remount, e.g.
+  // browser back/forward between two different forms' automation builders). Without this, a
+  // slow or failed GET_PDF_GENERATORS request for the new form could leave the PREVIOUS
+  // form's generator list sitting in the store, which the digest editor would then offer as
+  // if it belonged to the current form (#347 review). The success effect above repopulates
+  // it correctly as soon as the new form's query resolves.
+  useEffect(() => {
+    setPdfGenerators([]);
+  }, [formId, setPdfGenerators]);
+
   // Only (re)load the graph into the store when the automation actually changes — the cache
   // updates `automation` after every Save/Activate mutation (same id), and re-running loadGraph
   // then would stomp on in-progress local edits with what we just persisted.
