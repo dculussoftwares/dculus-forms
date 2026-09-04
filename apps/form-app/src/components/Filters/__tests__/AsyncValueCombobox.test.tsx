@@ -51,9 +51,10 @@ describe('AsyncValueCombobox — out-of-order request settling', () => {
   });
 
   it('keeps showing the loading state until the LATEST request settles, even if an older one resolves later', async () => {
-    const calls: ReturnType<typeof deferred<any>>[] = [];
+    // <void> — nothing reads the resolved value; only settle-order/timing is under test.
+    const calls: ReturnType<typeof deferred<void>>[] = [];
     const fetchValues = jest.fn(() => {
-      const d = deferred<any>();
+      const d = deferred<void>();
       calls.push(d);
       return d.promise;
     });
@@ -105,14 +106,14 @@ describe('AsyncValueCombobox — out-of-order request settling', () => {
     // The OLDER request (#1) settles after the newer one was scheduled. This must NOT
     // clear the loading state — request #2 (the latest) is still pending.
     await act(async () => {
-      calls[0].resolve({});
+      calls[0].resolve();
       await Promise.resolve();
     });
     expect(screen.queryByText('No matches')).not.toBeInTheDocument();
 
     // The LATEST request (#2) settles — only now should the loading state clear.
     await act(async () => {
-      calls[1].resolve({});
+      calls[1].resolve();
       await Promise.resolve();
     });
     expect(screen.getByText('No matches')).toBeInTheDocument();

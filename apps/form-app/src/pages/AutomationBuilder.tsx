@@ -38,6 +38,7 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const formId = form.id;
 
   const loadGraph = useAutomationBuilderStore((s) => s.loadGraph);
+  const setPdfGenerators = useAutomationBuilderStore((s) => s.setPdfGenerators);
   const isDirty = useAutomationBuilderStore((s) => s.isDirty);
   const structuralErrors = useAutomationBuilderStore((s) => s.structuralErrors);
   const setValidationErrors = useAutomationBuilderStore((s) => s.setValidationErrors);
@@ -62,11 +63,7 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
 
   // Enabled PDF generators for this form (#347 review) — powers the digest filter editor's
   // per-generator "Has PDF: <name>" meta fields, same extraction pattern Responses.tsx uses.
-  // `loading` gates the loadGraph effect below (not just an initial-render concern here) —
-  // that effect loads the store exactly once per automationId, so if it ran before this
-  // query resolved, the digest editor would be stuck with an empty pdfGenerators list even
-  // after the query later completed.
-  const { data: pdfGeneratorsData, loading: pdfGeneratorsLoading } = useQuery(GET_PDF_GENERATORS, {
+  const { data: pdfGeneratorsData, error: pdfGeneratorsError } = useQuery(GET_PDF_GENERATORS, {
     variables: { formId },
     skip: !formId,
   });
@@ -78,28 +75,34 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     [pdfGeneratorsData]
   );
 
+  // Kept independent of the once-per-automationId loadGraph effect below — GET_PDF_GENERATORS
+  // has its own loading/error lifecycle, so tying it to that one-time load would either block
+  // the graph from ever loading on a query error, or (if only gated on `loading`) permanently
+  // commit an empty list with no way for a later successful refetch to update it (#347 review).
+  // Only commits on an actual successful result, so a transient error leaves whatever
+  // generators list is already in the store untouched rather than clearing it.
+  useEffect(() => {
+    if (pdfGeneratorsData && !pdfGeneratorsError) setPdfGenerators(pdfGenerators);
+  }, [pdfGenerators, pdfGeneratorsData, pdfGeneratorsError, setPdfGenerators]);
+
   // Only (re)load the graph into the store when the automation actually changes — the cache
   // updates `automation` after every Save/Activate mutation (same id), and re-running loadGraph
   // then would stomp on in-progress local edits with what we just persisted.
   const loadedAutomationIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (loadedAutomationIdRef.current === automationId) return;
-    // Wait for the PDF generators query too — this only delays the one-time initial load,
-    // not every render (formLoading/automationLoading already gate the outer component).
-    if (pdfGeneratorsLoading) return;
     loadedAutomationIdRef.current = automationId;
     loadGraph({
       automationId,
       formTitle: form.title,
       formFields,
       quizEnabled: !!form.settings?.quiz?.enabled,
-      pdfGenerators,
       triggerType: automation.triggerType,
       triggerConfig: automation.triggerConfig,
       graph: automation.graph,
       isReadOnly: !canEdit,
     });
-  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, form.settings?.quiz?.enabled, formFields, pdfGenerators, pdfGeneratorsLoading, canEdit, loadGraph]);
+  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, form.settings?.quiz?.enabled, formFields, canEdit, loadGraph]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(automation.name);

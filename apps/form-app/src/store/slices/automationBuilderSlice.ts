@@ -37,7 +37,9 @@ export interface AutomationBuilderState {
   quizEnabled: boolean;
   /** Enabled PDF generators for this form, as { id, name } — powers the digest filter
    * editor's per-generator "Has PDF: <name>" meta fields (buildMetaFilterFields'
-   * pdfGenerators option). Loaded once alongside formFields/quizEnabled. */
+   * pdfGenerators option). Updated via setPdfGenerators whenever GET_PDF_GENERATORS
+   * resolves — deliberately NOT part of loadGraph's once-per-automationId load, since
+   * that query has its own independent loading/error lifecycle (#347 review). */
   pdfGenerators: { id: string; name: string }[];
   /** The automation's triggerType — read-only mirror of Automation.triggerType (#201), not
    * part of the graph nodes/edges. Never changes after creation, so it's loaded once here
@@ -60,12 +62,18 @@ export interface AutomationBuilderState {
     formTitle: string;
     formFields?: FillableFormField[];
     quizEnabled?: boolean;
-    pdfGenerators?: { id: string; name: string }[];
     triggerType: string;
     triggerConfig?: Record<string, any> | null;
     graph: { nodes: any[]; edges: any[] };
     isReadOnly: boolean;
   }) => void;
+  /** Updates the PDF-generators mirror independently of loadGraph's once-per-automationId
+   * call — GET_PDF_GENERATORS is a separate query with its own loading/error lifecycle, so
+   * tying it to the one-time graph load would either block that load forever on a query
+   * error, or (if only gated on `loading`) permanently commit an empty list when the query
+   * happens to fail on the very first load, with no way for a later successful refetch to
+   * update it (#347 review). The caller only invokes this on a successful query result. */
+  setPdfGenerators: (pdfGenerators: { id: string; name: string }[]) => void;
   setSelectedNodeId: (id: string | null) => void;
   /** Re-runs dagre layout using each node's actual rendered size (reported by React
    * Flow's `onNodesChange` as 'dimensions' change events — see AutomationCanvas.tsx) in
@@ -150,7 +158,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   validationErrorsByNode: {},
   structuralErrors: [],
 
-  loadGraph: ({ automationId, formTitle, formFields, quizEnabled, pdfGenerators, triggerType, triggerConfig, graph, isReadOnly }) => {
+  loadGraph: ({ automationId, formTitle, formFields, quizEnabled, triggerType, triggerConfig, graph, isReadOnly }) => {
     // A session draft (see draftStorage.ts) means there are unsaved edits that survived a
     // same-tab reload — e.g. the full-page OAuth redirect from a Google/Microsoft Sheets
     // "Connect" click. Prefer it over the server's last-Saved graph when present.
@@ -181,7 +189,6 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       formTitle,
       formFields: formFields ?? [],
       quizEnabled: quizEnabled ?? false,
-      pdfGenerators: pdfGenerators ?? [],
       triggerType,
       triggerConfig: triggerConfig ?? null,
       nodes: layoutedNodes,
@@ -444,4 +451,6 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   },
 
   setTriggerConfig: (triggerConfig) => set({ triggerConfig }),
+
+  setPdfGenerators: (pdfGenerators) => set({ pdfGenerators }),
 });
