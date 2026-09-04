@@ -15,6 +15,14 @@ export default defineConfig({
         replacement: path.resolve(__dirname, '../../packages/types/src/graphql.ts'),
       },
       {
+        find: '@dculus/types/quiz.js',
+        replacement: path.resolve(__dirname, '../../packages/types/src/quiz.ts'),
+      },
+      {
+        find: '@dculus/types/quiz',
+        replacement: path.resolve(__dirname, '../../packages/types/src/quiz.ts'),
+      },
+      {
         find: '@dculus/types/embed.js',
         replacement: path.resolve(__dirname, '../../packages/types/src/embed.ts'),
       },

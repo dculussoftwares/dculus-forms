@@ -51,6 +51,16 @@ const normalizeFieldType = (type: unknown): string => String(type ?? '').toLower
 /** Normalise a label or title to lowercase alphanumeric words for fuzzy comparison. */
 const normalizeLabel = (value: string): string => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
+/** Fisher–Yates shuffle into a new array — used to scramble quiz option order. */
+const shuffledCopy = <T>(items: readonly T[]): T[] => {
+  const out = items.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+};
+
 /** Resolve an AI-supplied field label (or id) without ever guessing a weak match. */
 function resolveField(schema: { pages: any[] }, reference: string): any | null {
   const fields = (schema.pages ?? []).flatMap((page: any) => page.fields ?? []);
@@ -194,8 +204,22 @@ export function createFormEditTools(
         required: z.boolean(),
         placeholder: z.string().nullable(),
         options: z.array(z.string()).nullable().describe('For select/radio/checkbox only; null otherwise'),
+        correctAnswers: z
+          .array(z.string())
+          .nullable()
+          .optional()
+          .describe(
+            'QUIZ ONLY: exact label(s) of the correct option(s), verbatim from "options" (one for radio, 2+ for checkbox). Sets the answer key automatically and reshuffles the options so the answer is not always first. Omit / null for non-graded fields.'
+          ),
       }),
-      execute: async (args) => ({ type: 'ADD_FIELD' as const, ...args }),
+      execute: async ({ correctAnswers, ...args }) => {
+        const key = (correctAnswers ?? []).filter((a) => (args.options ?? []).includes(a));
+        if (key.length === 0) return { type: 'ADD_FIELD' as const, ...args };
+        // Reshuffle so the keyed answer isn't predictably first (labels stay valid).
+        const options =
+          args.options && args.options.length > 1 ? shuffledCopy(args.options) : args.options;
+        return { type: 'ADD_FIELD' as const, ...args, options, correctAnswers: key };
+      },
     }),
 
     updateFields: tool({
@@ -716,7 +740,7 @@ export function createFormEditTools(
 }
 
 export type FormOperation =
-  | { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null }
+  | { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null; correctAnswers?: string[] | null }
   | { type: 'UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> }
   | { type: 'RELOCATE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null; mode: 'move' | 'copy' }
   | { type: 'REORDER'; scope: 'fields' | 'pages'; ids: string[]; pageId?: string }

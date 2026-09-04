@@ -1798,6 +1798,7 @@ export const typeDefs = gql`
       prompt: String!
       organizationId: ID!
       mode: AIFormMode = standard
+      quiz: Boolean = false
     ): AIGeneratedForm!
     createAIChatConversation(formId: ID!, organizationId: ID!): AIChatConversation!
     deleteAIChatConversation(id: ID!, organizationId: ID!): Boolean!
@@ -1842,6 +1843,8 @@ export const typeDefs = gql`
     placeholder: String
     required: Boolean!
     options: [AIFieldOption!]
+    "QUIZ ONLY: verbatim label(s) of the correct option(s); null for non-quiz / non-graded fields"
+    correctAnswers: [String!]
     section: String!
   }
 

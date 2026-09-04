@@ -198,6 +198,40 @@ describe('addField', () => {
     }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({ type: 'ADD_FIELD', pageId: 'page-1', insertAfterFieldId: 'f-1', fieldType: 'text', label: 'Last Name', required: false, placeholder: null, options: null });
   });
+
+  it('ignores correctAnswers for a non-quiz field (no key, no reshuffle)', async () => {
+    const tools = makeFullTools();
+    const result: any = await tools.addField.execute!({
+      pageId: 'page-1', insertAfterFieldId: null, fieldType: 'radio',
+      label: 'Colour', required: false, placeholder: null,
+      options: ['Red', 'Green', 'Blue'], correctAnswers: null,
+    }, { messages: [], toolCallId: 'test' });
+    expect(result.correctAnswers).toBeUndefined();
+    expect(result.options).toEqual(['Red', 'Green', 'Blue']);
+  });
+
+  it('keys a quiz question and reshuffles its options', async () => {
+    const tools = makeFullTools();
+    const anyReordered = await Promise.all(
+      Array.from({ length: 40 }).map(() =>
+        tools.addField.execute!({
+          pageId: 'page-1', insertAfterFieldId: null, fieldType: 'radio',
+          label: 'Capital of France?', required: true, placeholder: null,
+          options: ['Paris', 'Berlin', 'Rome', 'Madrid'], correctAnswers: ['Paris'],
+        }, { messages: [], toolCallId: 'test' })
+      )
+    ).then((rs) => rs.some((r: any) => r.options.join('') !== 'ParisBerlinRomeMadrid'));
+
+    const result: any = await tools.addField.execute!({
+      pageId: 'page-1', insertAfterFieldId: null, fieldType: 'radio',
+      label: 'Capital of France?', required: true, placeholder: null,
+      options: ['Paris', 'Berlin', 'Rome', 'Madrid'], correctAnswers: ['Paris', 'Nope'],
+    }, { messages: [], toolCallId: 'test' });
+
+    expect(result.correctAnswers).toEqual(['Paris']); // hallucinated 'Nope' dropped
+    expect([...result.options].sort()).toEqual(['Berlin', 'Madrid', 'Paris', 'Rome']);
+    expect(anyReordered).toBe(true);
+  });
 });
 
 describe('upsertConditionRule (proposal only)', () => {

@@ -279,8 +279,8 @@ export const REMOVE_TAG_FROM_RESPONSE : TypedDocumentNode<any, any> = gql`
 `;
 
 export const GENERATE_FORM_WITH_AI : TypedDocumentNode<any, any> = gql`
-  mutation GenerateFormWithAI($prompt: String!, $organizationId: ID!, $mode: AIFormMode) {
-    generateFormWithAI(prompt: $prompt, organizationId: $organizationId, mode: $mode) {
+  mutation GenerateFormWithAI($prompt: String!, $organizationId: ID!, $mode: AIFormMode, $quiz: Boolean) {
+    generateFormWithAI(prompt: $prompt, organizationId: $organizationId, mode: $mode, quiz: $quiz) {
       suggestedTitle
       tokensUsed
       fields {
@@ -292,6 +292,7 @@ export const GENERATE_FORM_WITH_AI : TypedDocumentNode<any, any> = gql`
           value
           label
         }
+        correctAnswers
         section
       }
       layout {
