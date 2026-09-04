@@ -225,6 +225,16 @@ export const GET_FORM_RESPONSES : TypedDocumentNode<any, any> = gql`
   }
 `;
 
+// Distinct-value suggestions for a response meta-filter's dropdown-plus-free-text value
+// input (FilterRow's AsyncValueCombobox) — e.g. browsers/OSes/countries actually seen,
+// or editor/respondent emails actually on file. Returns [] for a fieldId with no
+// suggestion support, so callers don't need to check first.
+export const GET_DISTINCT_RESPONSE_FIELD_VALUES : TypedDocumentNode<any, any> = gql`
+  query GetDistinctResponseFieldValues($formId: ID!, $fieldId: String!, $search: String, $limit: Int) {
+    distinctResponseFieldValues(formId: $formId, fieldId: $fieldId, search: $search, limit: $limit)
+  }
+`;
+
 // Native Quiz (epic #289, Story 11): full per-question breakdown for the grade
 // detail drawer — kept out of GET_FORM_RESPONSES so the main table query
 // doesn't pull every response's full answer-key JSON on every page load.

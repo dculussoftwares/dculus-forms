@@ -12,6 +12,8 @@ interface FilterModalProps {
   onClose: () => void;
   fields: FillableFormField[];
   metaFields?: MetaFilterField[];
+  /** Scopes AsyncValueCombobox's suggestion query for suggestible meta fields. */
+  formId?: string;
   filters: Record<string, FilterState>;
   filterLogic: 'AND' | 'OR';
   onApplyFilters: (filters: Record<string, FilterState>, filterLogic: 'AND' | 'OR') => void;
@@ -22,6 +24,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   onClose,
   fields,
   metaFields,
+  formId,
   filters,
   filterLogic,
   onApplyFilters,
@@ -156,6 +159,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     key={filterId}
                     fields={fields}
                     metaFields={metaFields}
+                    formId={formId}
                     filter={filter}
                     onChange={(updates) => updateDraftFilter(filterId, updates)}
                     onRemove={() => handleRemoveFilter(filterId)}

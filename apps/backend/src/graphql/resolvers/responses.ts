@@ -10,6 +10,7 @@ import {
 } from '../../services/responseService.js';
 import { Prisma } from '#prisma-client';
 import { ResponseFilter } from '../../services/responseFilterService.js';
+import { getDistinctResponseFieldValues } from '../../services/responseFieldSuggestions.js';
 import { getFormById, getAccessibleFormIds } from '../../services/formService.js';
 import {
   BetterAuthContext,
@@ -252,6 +253,28 @@ export const responsesResolvers = {
         filters,
         filterLogic
       );
+    },
+
+    distinctResponseFieldValues: async (
+      _: any,
+      { formId, fieldId, search, limit }: { formId: string; fieldId: string; search?: string; limit?: number },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const form = await getFormById(formId);
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+
+      await requireOrganizationMembership(context.auth, form.organizationId);
+
+      const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.VIEWER);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need VIEWER access to view this form\'s responses', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      return getDistinctResponseFieldValues(formId, fieldId, search ?? undefined, limit ?? undefined);
     },
   },
   Mutation: {

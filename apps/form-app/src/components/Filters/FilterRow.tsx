@@ -24,10 +24,14 @@ import { FilterState } from './FilterPanel';
 import { useTranslation } from '../../hooks/useTranslation';
 import { MetaFilterField, MetaFieldKind } from './metaFilterFields';
 import { FilterFieldSelect, FilterableField, isMetaFilterField } from './FilterFieldSelect';
+import { AsyncValueCombobox } from './AsyncValueCombobox';
 
 interface FilterRowProps {
   fields: FillableFormField[];
   metaFields?: MetaFilterField[];
+  /** Scopes AsyncValueCombobox's suggestion query — a meta field with
+   * `supportsSuggestions` falls back to a plain text Input when this is omitted. */
+  formId?: string;
   filter: FilterState;
   onChange: (filter: Partial<FilterState>) => void;
   onRemove: () => void;
@@ -431,7 +435,8 @@ const renderMetaFilterInput = (
   field: MetaFilterField,
   filter: FilterState,
   onChange: (filter: Partial<FilterState>) => void,
-  t: TranslateFn
+  t: TranslateFn,
+  formId?: string
 ) => {
   if (!filter.operator || filter.operator === 'IS_EMPTY' || filter.operator === 'IS_NOT_EMPTY') {
     return null;
@@ -466,6 +471,19 @@ const renderMetaFilterInput = (
 
   switch (field.kind) {
     case 'text':
+      if (field.supportsSuggestions && formId) {
+        return (
+          <AsyncValueCombobox
+            formId={formId}
+            fieldId={field.id}
+            value={filter.value || ''}
+            onChange={handleValueChange}
+            placeholder={t('placeholders.enterValue')}
+            noMatchesLabel={t('metaSuggestions.noMatches')}
+            className="min-w-[200px]"
+          />
+        );
+      }
       return (
         <Input
           placeholder={t('placeholders.enterValue')}
@@ -644,20 +662,24 @@ const renderMetaFilterInput = (
 };
 
 /** Dispatches on whether `field` is a real form field or a response meta-filter — the
- * single entry point ConditionRulesEditor.tsx and DigestFiltersEditor.tsx also call. */
+ * single entry point ConditionRulesEditor.tsx and DigestFiltersEditor.tsx also call.
+ * `formId` is only used by suggestible meta fields (AsyncValueCombobox) — harmless to
+ * omit for a real form field or a non-suggestible meta field. */
 export const renderFilterInput = (
   field: FilterableField,
   filter: FilterState,
   onChange: (filter: Partial<FilterState>) => void,
-  t: TranslateFn
+  t: TranslateFn,
+  formId?: string
 ) => {
-  if (isMetaFilterField(field)) return renderMetaFilterInput(field, filter, onChange, t);
+  if (isMetaFilterField(field)) return renderMetaFilterInput(field, filter, onChange, t, formId);
   return renderFormFieldInput(field, filter, onChange, t);
 };
 
 export const FilterRow: React.FC<FilterRowProps> = ({
   fields,
   metaFields = [],
+  formId,
   filter,
   onChange,
   onRemove,
@@ -770,7 +792,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
               className="flex-1 min-w-0"
               data-testid="filter-value-container"
             >
-              {renderFilterInput(activeField, filter, onChange, t)}
+              {renderFilterInput(activeField, filter, onChange, t, formId)}
             </div>
           )}
         </div>

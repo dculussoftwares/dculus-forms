@@ -86,5 +86,8 @@
     "duplicateEmail": { "true": "நகல்", "false": "தனித்துவமானது" },
     "pdfGenerated": { "true": "உருவாக்கப்பட்டது", "false": "உருவாக்கப்படவில்லை" }
   },
-  "metaSelectValuePlaceholder": "தேர்ந்தெடுக்கவும்..."
+  "metaSelectValuePlaceholder": "தேர்ந்தெடுக்கவும்...",
+  "metaSuggestions": {
+    "noMatches": "பொருந்தும் மதிப்புகள் இல்லை — நீங்கள் இன்னும் உங்கள் சொந்த மதிப்பை உள்ளிடலாம்"
+  }
 }

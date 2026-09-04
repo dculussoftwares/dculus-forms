@@ -168,7 +168,8 @@ export const DigestFiltersEditor: React.FC<DigestFiltersEditorProps> = ({
                           delete rest.active;
                           handleFilterChange(index, rest);
                         },
-                        tFilter
+                        tFilter,
+                        formId
                       )}
                     </div>
                   )}

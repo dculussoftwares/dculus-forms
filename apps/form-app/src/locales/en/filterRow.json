@@ -86,5 +86,8 @@
     "duplicateEmail": { "true": "Duplicate", "false": "Unique" },
     "pdfGenerated": { "true": "Generated", "false": "Not generated" }
   },
-  "metaSelectValuePlaceholder": "Select..."
+  "metaSelectValuePlaceholder": "Select...",
+  "metaSuggestions": {
+    "noMatches": "No matching values yet — you can still type your own"
+  }
 }

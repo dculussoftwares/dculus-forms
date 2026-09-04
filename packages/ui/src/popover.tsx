@@ -10,6 +10,12 @@ const Popover = PopoverPrimitive.Root
 
 const PopoverTrigger = PopoverPrimitive.Trigger
 
+// Positions PopoverContent relative to an element without taking over its click
+// behavior — unlike PopoverTrigger, which toggles open/closed on click. Use this
+// when something other than a click already drives `open` (e.g. a text input whose
+// focus/typing opens a suggestions popover, per AsyncValueCombobox.tsx).
+const PopoverAnchor = PopoverPrimitive.Anchor
+
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
@@ -29,4 +35,4 @@ const PopoverContent = React.forwardRef<
 ))
 PopoverContent.displayName = PopoverPrimitive.Content.displayName
 
-export { Popover, PopoverTrigger, PopoverContent }
+export { Popover, PopoverTrigger, PopoverAnchor, PopoverContent }

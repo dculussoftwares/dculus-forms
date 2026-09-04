@@ -155,6 +155,7 @@ export const TemplateAutomationRow: React.FC<TemplateAutomationRowProps> = ({
                   key={generator.id}
                   generator={generator}
                   template={template}
+                  formId={formId}
                   canEdit={canEdit}
                   fillableFields={fillableFields}
                   quizEnabled={quizEnabled}

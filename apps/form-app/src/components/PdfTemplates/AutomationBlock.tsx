@@ -61,6 +61,7 @@ const safeFormatDistance = (dateVal: string | null | undefined): string => {
 interface AutomationBlockProps {
   generator: any;
   template: { id: string; name: string };
+  formId: string;
   canEdit: boolean;
   fillableFields: FillableFormField[];
   quizEnabled: boolean;
@@ -70,6 +71,7 @@ interface AutomationBlockProps {
 export const AutomationBlock: React.FC<AutomationBlockProps> = ({
   generator,
   template,
+  formId,
   canEdit,
   fillableFields,
   quizEnabled,
@@ -342,6 +344,7 @@ export const AutomationBlock: React.FC<AutomationBlockProps> = ({
         onClose={() => setShowFilterModal(false)}
         fields={fillableFields}
         metaFields={metaFields}
+        formId={formId}
         filters={filtersAsState}
         filterLogic={generator.filterLogic ?? 'AND'}
         onApplyFilters={(newFilters, newLogic) => {

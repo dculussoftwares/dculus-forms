@@ -682,6 +682,7 @@ const Responses: React.FC = () => {
         onClose={() => responsesState.setShowFilterModal(false)}
         fields={fillableFields}
         metaFields={metaFields}
+        formId={actualFormId}
         filters={responsesState.filters}
         filterLogic={responsesState.filterLogic}
         onApplyFilters={responsesState.handleApplyFilters}

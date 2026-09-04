@@ -81,3 +81,23 @@ describe('TRIGGER_QUIZ_META_FIELDS', () => {
     expect(ids.some((id) => id.startsWith('__'))).toBe(false);
   });
 });
+
+describe('supportsSuggestions', () => {
+  // Keep in sync with backend's SUGGESTIBLE_FIELD_IDS (responseFieldSuggestions.ts) —
+  // a field flagged here without matching backend support renders a combobox whose
+  // suggestion query always returns [].
+  it('is set on exactly the fields with a real, boundable value set', () => {
+    const fields = buildMetaFilterFields({ quizEnabled: true });
+    const suggestible = fields.filter((f) => f.supportsSuggestions).map((f) => f.id);
+    expect(suggestible.sort()).toEqual(
+      ['__browser', '__operatingSystem', '__country', '__lastEditedByEmail', '__respondentEmail'].sort()
+    );
+  });
+
+  it('is never set on a non-text kind field', () => {
+    const fields = buildMetaFilterFields({ quizEnabled: true, pdfGenerators: [{ id: 'g1', name: 'G' }] });
+    for (const field of fields) {
+      if (field.supportsSuggestions) expect(field.kind).toBe('text');
+    }
+  });
+});

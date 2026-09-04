@@ -1453,6 +1453,12 @@ export const typeDefs = gql`
       filterLogic: FilterLogic = AND
     ): PaginatedResponses!
 
+    # Distinct values actually present for a response meta-filter field (e.g. __browser,
+    # __operatingSystem, __country, __lastEditedByEmail, __respondentEmail), for the
+    # filter UI's dropdown-plus-free-text value input. Returns [] for any fieldId that
+    # doesn't support suggestions (form fields, or a meta field with no natural value set).
+    distinctResponseFieldValues(formId: ID!, fieldId: String!, search: String, limit: Int = 20): [String!]!
+
     # Native Quiz (epic #289, Story 16/#320, D9): lets a signed-in respondent
     # retrieve their OWN deferred-release quiz grade later. Auth-only —
     # deliberately no form-permission check; see resolver for why.

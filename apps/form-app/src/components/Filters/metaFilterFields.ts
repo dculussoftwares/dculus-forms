@@ -54,6 +54,12 @@ export interface MetaFilterField {
   operators?: string[];
   enumOptions?: MetaEnumOption[];
   booleanOptions?: [MetaBooleanOption, MetaBooleanOption];
+  /** kind: 'text' fields only — renders as a dropdown-plus-free-text combobox
+   * (AsyncValueCombobox) offering distinct values actually seen in the data
+   * (backend: responseFieldSuggestions.ts's SUGGESTIBLE_FIELD_IDS — keep in sync),
+   * while still accepting arbitrary typed text (a value not yet seen, or a
+   * CONTAINS/STARTS_WITH fragment). Plain fields without this stay a bare text Input. */
+  supportsSuggestions?: boolean;
 }
 
 const QUIZ_META_FIELDS: MetaFilterField[] = [
@@ -85,9 +91,9 @@ const QUIZ_META_FIELDS: MetaFilterField[] = [
 
 const SUBMISSION_META_FIELDS: MetaFilterField[] = [
   { id: '__completionTimeSeconds', section: 'submission', kind: 'number', labelKey: 'metaFields.completionTimeSeconds', unit: 'sec' },
-  { id: '__browser', section: 'submission', kind: 'text', labelKey: 'metaFields.browser' },
-  { id: '__operatingSystem', section: 'submission', kind: 'text', labelKey: 'metaFields.operatingSystem' },
-  { id: '__country', section: 'submission', kind: 'text', labelKey: 'metaFields.country' },
+  { id: '__browser', section: 'submission', kind: 'text', labelKey: 'metaFields.browser', supportsSuggestions: true },
+  { id: '__operatingSystem', section: 'submission', kind: 'text', labelKey: 'metaFields.operatingSystem', supportsSuggestions: true },
+  { id: '__country', section: 'submission', kind: 'text', labelKey: 'metaFields.country', supportsSuggestions: true },
 ];
 
 const RESPONDENT_META_FIELDS: MetaFilterField[] = [
@@ -101,7 +107,7 @@ const RESPONDENT_META_FIELDS: MetaFilterField[] = [
       { value: 'anonymous', labelKey: 'metaBooleanLabels.respondentType.anonymous' },
     ],
   },
-  { id: '__respondentEmail', section: 'respondent', kind: 'text', labelKey: 'metaFields.respondentEmail' },
+  { id: '__respondentEmail', section: 'respondent', kind: 'text', labelKey: 'metaFields.respondentEmail', supportsSuggestions: true },
   {
     id: '__duplicateEmail',
     section: 'respondent',
@@ -116,7 +122,7 @@ const RESPONDENT_META_FIELDS: MetaFilterField[] = [
 
 const EDIT_HISTORY_META_FIELDS: MetaFilterField[] = [
   { id: '__lastEditedAt', section: 'editHistory', kind: 'date', labelKey: 'metaFields.lastEditedAt' },
-  { id: '__lastEditedByEmail', section: 'editHistory', kind: 'text', labelKey: 'metaFields.lastEditedByEmail' },
+  { id: '__lastEditedByEmail', section: 'editHistory', kind: 'text', labelKey: 'metaFields.lastEditedByEmail', supportsSuggestions: true },
 ];
 
 const RESPONSE_META_FIELDS: MetaFilterField[] = [
