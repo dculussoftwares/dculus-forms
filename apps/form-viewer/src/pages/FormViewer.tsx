@@ -12,7 +12,14 @@ import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics'
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
 import { buildCompletionTimeInput } from '../lib/completionTime';
 import { getFormErrorMessage, isSubmissionLimitError, isAccessControlError } from '../lib/formError';
-import { quizResultLabels, quizResultLinkLabel, quizResultLinkDescription } from '../locales/quizResult';
+import {
+  quizResultLabels,
+  quizResultLinkLabel,
+  quizResultLinkDescription,
+  quizResultLinkCopyLabel,
+  quizResultLinkCopiedLabel,
+  quizResultLinkOpenLabel,
+} from '../locales/quizResult';
 import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
 import RespondentBadge from '../components/RespondentBadge';
@@ -398,6 +405,9 @@ const FormViewer: React.FC<FormViewerProps> = ({
           href: `${window.location.origin}/f/${shortUrl}/result`,
           label: quizResultLinkLabel,
           description: quizResultLinkDescription,
+          copyLabel: quizResultLinkCopyLabel,
+          copiedLabel: quizResultLinkCopiedLabel,
+          openLabel: quizResultLinkOpenLabel,
         }
       : undefined;
 

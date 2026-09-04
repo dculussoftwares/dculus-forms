@@ -31,6 +31,9 @@ export const quizResultLabels: QuizResultScreenLabels = {
 export const quizResultLinkLabel = 'Come back later to see your result';
 export const quizResultLinkDescription =
   'Your score is being reviewed. Save this link — bookmark it or copy it somewhere safe — then reopen it later and sign in with the same account you used to submit.';
+export const quizResultLinkCopyLabel = 'Copy link';
+export const quizResultLinkCopiedLabel = 'Copied';
+export const quizResultLinkOpenLabel = 'Open results page';
 
 export const quizResultPageLabels = {
   loading: 'Loading your result…',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { Check, Copy } from 'lucide-react';
 import type { RespondentGradeView } from '@dculus/types';
@@ -33,8 +33,19 @@ export interface ThankYouScreenProps {
    *
    * `href` should be an absolute URL — it is shown verbatim in a copyable
    * field so the respondent can save it before leaving the page.
+   *
+   * The button/link microcopy is supplied by the caller rather than
+   * hardcoded here (this package has no i18n framework — the owning app's
+   * locale file is the single source, same as `label`/`description`).
    */
-  resultLink?: { href: string; label: string; description?: string };
+  resultLink?: {
+    href: string;
+    label: string;
+    description?: string;
+    copyLabel?: string;
+    copiedLabel?: string;
+    openLabel?: string;
+  };
 }
 
 const SuccessIcon: React.FC = () => (
@@ -67,13 +78,24 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [editorKey, setEditorKey] = useState(0);
   const [resultLinkCopied, setResultLinkCopied] = useState(false);
+  const resultLinkCopiedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(
+    () => () => {
+      if (resultLinkCopiedTimeout.current) clearTimeout(resultLinkCopiedTimeout.current);
+    },
+    []
+  );
 
   const handleCopyResultLink = async () => {
     if (!resultLink) return;
     try {
       await navigator.clipboard.writeText(resultLink.href);
       setResultLinkCopied(true);
-      window.setTimeout(() => setResultLinkCopied(false), 2000);
+      // Reset the timer on every copy so the confirmation always stays
+      // visible for a full 2s after the *latest* click.
+      if (resultLinkCopiedTimeout.current) clearTimeout(resultLinkCopiedTimeout.current);
+      resultLinkCopiedTimeout.current = setTimeout(() => setResultLinkCopied(false), 2000);
     } catch {
       // Clipboard blocked (permissions / insecure context) — the URL is
       // still visible and selectable in the field, so this is non-fatal.
@@ -204,7 +226,9 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
               ) : (
                 <Copy className="h-3.5 w-3.5" aria-hidden="true" />
               )}
-              {resultLinkCopied ? 'Copied' : 'Copy link'}
+              {resultLinkCopied
+                ? resultLink.copiedLabel ?? 'Copied'
+                : resultLink.copyLabel ?? 'Copy link'}
             </button>
           </div>
           <a
@@ -212,7 +236,7 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
             className="mt-3 inline-block text-xs font-medium text-primary hover:underline"
             data-testid="thank-you-result-link-open"
           >
-            Open results page
+            {resultLink.openLabel ?? 'Open results page'}
           </a>
         </div>
       )}
