@@ -145,4 +145,19 @@ describe('copyPdfTemplatesToForm', () => {
 
     await expect(copyPdfTemplatesToForm('src', 'dst', 'user-1')).resolves.toBe(0);
   });
+
+  it('keeps copying the remaining templates when one create fails', async () => {
+    vi.mocked(pdfTemplateRepository.listByForm).mockResolvedValue([
+      { id: 't1', name: 'first', template: {}, fileKey: null, fileName: null, pageCount: 1 },
+      { id: 't2', name: 'second', template: {}, fileKey: null, fileName: null, pageCount: 1 },
+    ] as any);
+    vi.mocked(pdfTemplateRepository.createTemplate)
+      .mockRejectedValueOnce(new Error('db blip'))
+      .mockImplementationOnce(async (data: any) => ({ ...data }));
+
+    const count = await copyPdfTemplatesToForm('src', 'dst', 'user-1');
+
+    expect(count).toBe(1);
+    expect(pdfTemplateRepository.createTemplate).toHaveBeenCalledTimes(2);
+  });
 });

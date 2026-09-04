@@ -37,31 +37,40 @@ export async function copyPdfTemplatesToForm(
     const templateIdMap = new Map<string, string>();
 
     for (const template of templates) {
-      let newFileKey = template.fileKey;
-      if (template.fileKey) {
-        try {
-          newFileKey = await copyPdfTemplateAssetForForm(template.fileKey, targetFormId);
-        } catch (error) {
-          logger.error(
-            `❌ Failed to copy PDF template asset for duplicated form ${targetFormId}; sharing the source object instead:`,
-            error
-          );
-          // A shared, read-only base PDF still renders; a template with no basePdf does not.
-          newFileKey = template.fileKey;
+      try {
+        let newFileKey = template.fileKey;
+        if (template.fileKey) {
+          try {
+            newFileKey = await copyPdfTemplateAssetForForm(template.fileKey, targetFormId);
+          } catch (error) {
+            logger.error(
+              `❌ Failed to copy PDF template asset for duplicated form ${targetFormId}; sharing the source object instead:`,
+              error
+            );
+            // A shared, read-only base PDF still renders; a template with no basePdf does not.
+            newFileKey = template.fileKey;
+          }
         }
-      }
 
-      const created = await pdfTemplateRepository.createTemplate({
-        id: generateId(),
-        formId: targetFormId,
-        name: template.name,
-        template: (template.template ?? {}) as Prisma.InputJsonValue,
-        fileKey: newFileKey,
-        fileName: template.fileName,
-        pageCount: template.pageCount,
-        createdById: userId,
-      });
-      templateIdMap.set(template.id, created.id);
+        const created = await pdfTemplateRepository.createTemplate({
+          id: generateId(),
+          formId: targetFormId,
+          name: template.name,
+          template: (template.template ?? {}) as Prisma.InputJsonValue,
+          fileKey: newFileKey,
+          fileName: template.fileName,
+          pageCount: template.pageCount,
+          createdById: userId,
+        });
+        // Only a successful create earns a mapping — a generator for a template we
+        // couldn't copy is skipped below rather than left pointing at nothing.
+        templateIdMap.set(template.id, created.id);
+      } catch (error) {
+        logger.error(
+          `❌ Failed to copy PDF template ${template.id} to form ${targetFormId}; skipping it and continuing:`,
+          error
+        );
+      }
     }
 
     let copiedGenerators = 0;

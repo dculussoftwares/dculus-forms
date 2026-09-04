@@ -307,14 +307,22 @@ export const duplicateForm = async (formId: string, userId: string): Promise<For
   //   - plugins land disabled
   //   - PDF generators land with autoRunOnSubmit off
   // so a clone can never start delivering alongside the original on its own.
-  try {
-    await copyAutomationsToForm(formId, newFormId, userId);
-    await copyPluginsToForm(formId, newFormId);
-    await copyPdfTemplatesToForm(formId, newFormId, userId);
-  } catch (error) {
-    // The copiers already swallow their own errors; this is a belt-and-braces guard so a
-    // regression in one can never turn a successful form duplication into a hard failure.
-    logger.error(`❌ Post-duplication copy step failed for form ${newFormId}:`, error);
+  //
+  // Run them independently (allSettled): the copiers already swallow their own errors, but
+  // if a regression ever let one reject, a sequential `await` chain would skip the rest —
+  // an unrelated plugin-copy failure must not also cost the clone its PDF templates.
+  const copyOutcomes = await Promise.allSettled([
+    copyAutomationsToForm(formId, newFormId, userId),
+    copyPluginsToForm(formId, newFormId),
+    copyPdfTemplatesToForm(formId, newFormId, userId),
+  ]);
+  for (const outcome of copyOutcomes) {
+    if (outcome.status === 'rejected') {
+      logger.error(
+        `❌ Post-duplication copy step failed for form ${newFormId}:`,
+        outcome.reason
+      );
+    }
   }
 
   return {

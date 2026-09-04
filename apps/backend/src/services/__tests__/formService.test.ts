@@ -904,11 +904,14 @@ describe('Form Service', () => {
       expect(copyPdfTemplatesToForm).toHaveBeenCalledWith('form-123', 'new-form-id', 'user-456');
     });
 
-    it('still resolves when a copier rejects (best-effort, never fails the duplication)', async () => {
+    it('still resolves and runs the other copiers when one rejects', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(copyPluginsToForm).mockRejectedValue(new Error('plugin copy blew up'));
 
       await expect(duplicateForm('form-123', 'user-456')).resolves.toBeDefined();
+      // A plugin-copy failure must not stop the automation or PDF-template copiers.
+      expect(copyAutomationsToForm).toHaveBeenCalledWith('form-123', 'new-form-id', 'user-456');
+      expect(copyPdfTemplatesToForm).toHaveBeenCalledWith('form-123', 'new-form-id', 'user-456');
       loggerError.mockRestore();
     });
 
