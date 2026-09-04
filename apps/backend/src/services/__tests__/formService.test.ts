@@ -17,6 +17,9 @@ import { initializeHocuspocusDocument, getFormSchemaFromHocuspocus } from '../ho
 import { sendFormPublishedNotification } from '../emailService.js';
 import { checkFormAccess } from '../../graphql/resolvers/formSharing.js';
 import { copyFileForForm } from '../fileUploadService.js';
+import { copyAutomationsToForm } from '../automation/copyAutomation.js';
+import { copyPluginsToForm } from '../copyFormPlugins.js';
+import { copyPdfTemplatesToForm } from '../copyPdfTemplates.js';
 import { generateShortUrl, generateId } from '@dculus/utils';
 import { ThemeType, SpacingType, LayoutCode, PageModeType, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
 
@@ -26,6 +29,9 @@ vi.mock('../hocuspocus.js');
 vi.mock('../emailService.js');
 vi.mock('../../graphql/resolvers/formSharing.js');
 vi.mock('../fileUploadService.js');
+vi.mock('../automation/copyAutomation.js');
+vi.mock('../copyFormPlugins.js');
+vi.mock('../copyPdfTemplates.js');
 vi.mock('@dculus/utils', async () => {
   const actual = await vi.importActual<typeof import('@dculus/utils')>('@dculus/utils');
   return {
@@ -685,6 +691,9 @@ describe('Form Service', () => {
       } as any);
       vi.mocked(formRepository.createOwnerPermission).mockResolvedValue({} as any);
       vi.mocked(initializeHocuspocusDocument).mockResolvedValue(undefined);
+      vi.mocked(copyAutomationsToForm).mockResolvedValue(0);
+      vi.mocked(copyPluginsToForm).mockResolvedValue(0);
+      vi.mocked(copyPdfTemplatesToForm).mockResolvedValue(0);
     });
 
     it('should duplicate form with (Copy) suffix', async () => {
@@ -845,13 +854,65 @@ describe('Form Service', () => {
       loggerError.mockRestore();
     });
 
-    it('should handle null schema from Hocuspocus', async () => {
+    it('falls back to the stored formSchema column when Hocuspocus has no live doc', async () => {
+      const storedSchema = {
+        pages: [{ id: 'stored-page', title: 'Stored', fields: [], order: 0 }],
+        isShuffleEnabled: false,
+      };
+      vi.mocked(formRepository.findById).mockResolvedValue({
+        ...mockForm,
+        formSchema: storedSchema,
+      } as any);
       vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue(null);
 
       const result = await duplicateForm('form-123', 'user-456');
 
       expect(result).toBeDefined();
-      expect(initializeHocuspocusDocument).toHaveBeenCalled();
+      expect(initializeHocuspocusDocument).toHaveBeenCalledWith(
+        'new-form-id',
+        expect.objectContaining({ pages: storedSchema.pages })
+      );
+    });
+
+    it('falls back to the stored formSchema column when the Hocuspocus read throws', async () => {
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      const storedSchema = {
+        pages: [{ id: 'stored-page', title: 'Stored', fields: [], order: 0 }],
+        isShuffleEnabled: false,
+      };
+      vi.mocked(formRepository.findById).mockResolvedValue({
+        ...mockForm,
+        formSchema: storedSchema,
+      } as any);
+      vi.mocked(getFormSchemaFromHocuspocus).mockRejectedValue(new Error('DB query timeout'));
+
+      const result = await duplicateForm('form-123', 'user-456');
+
+      expect(result).toBeDefined();
+      expect(initializeHocuspocusDocument).toHaveBeenCalledWith(
+        'new-form-id',
+        expect.objectContaining({ pages: storedSchema.pages })
+      );
+      loggerError.mockRestore();
+    });
+
+    it('copies automations, plugins, and PDF templates onto the duplicate', async () => {
+      await duplicateForm('form-123', 'user-456');
+
+      expect(copyAutomationsToForm).toHaveBeenCalledWith('form-123', 'new-form-id', 'user-456');
+      expect(copyPluginsToForm).toHaveBeenCalledWith('form-123', 'new-form-id');
+      expect(copyPdfTemplatesToForm).toHaveBeenCalledWith('form-123', 'new-form-id', 'user-456');
+    });
+
+    it('still resolves and runs the other copiers when one rejects', async () => {
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      vi.mocked(copyPluginsToForm).mockRejectedValue(new Error('plugin copy blew up'));
+
+      await expect(duplicateForm('form-123', 'user-456')).resolves.toBeDefined();
+      // A plugin-copy failure must not stop the automation or PDF-template copiers.
+      expect(copyAutomationsToForm).toHaveBeenCalledWith('form-123', 'new-form-id', 'user-456');
+      expect(copyPdfTemplatesToForm).toHaveBeenCalledWith('form-123', 'new-form-id', 'user-456');
+      loggerError.mockRestore();
     });
 
     it('should copy form settings', async () => {
