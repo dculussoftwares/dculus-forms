@@ -14,6 +14,10 @@
       "types": "./dist/graphql.d.ts",
       "import": "./dist/graphql.js"
     },
+    "./quiz.js": {
+      "types": "./dist/quiz.d.ts",
+      "import": "./dist/quiz.js"
+    },
     "./ai.js": {
       "types": "./dist/ai.d.ts",
       "import": "./dist/ai.js"

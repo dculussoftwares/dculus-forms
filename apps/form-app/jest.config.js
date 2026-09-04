@@ -23,6 +23,10 @@ module.exports = {
     // Before the generic @dculus/* rule: `@dculus/types/embed` is a leaf module
     // inside the types package, not a package of its own.
     '^@dculus/types/embed(\\.js)?$': '<rootDir>/../../packages/types/src/embed',
+    // `@dculus/types/quiz` is a self-contained leaf (imports only zod + a type)
+    // — import it directly to dodge the circular @dculus/types barrel that
+    // leaves quiz.ts's runtime consts `undefined` under jest's CJS runner.
+    '^@dculus/types/quiz(\\.js)?$': '<rootDir>/../../packages/types/src/quiz',
     '^@dculus/(.*)$': '<rootDir>/../../packages/$1/src',
     '^@dculus/type$': '<rootDir>/../../packages/types/src/index',
     '^(\\.{1,2}/.*)\\.js$': '$1',

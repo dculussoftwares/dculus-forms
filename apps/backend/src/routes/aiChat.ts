@@ -128,7 +128,8 @@ Rules:
 7. Proposals (removeFields, removePage, proposeFieldTypeChange, proposeValidation, upsertConditionRule) do NOT apply immediately — tell the user to confirm in the card. Never say "deleted/converted"; say "will be once confirmed".
 8. Merge pages: relocateField (move) ALL fields first, THEN removePage on empty source pages.
 9. Remix/transform: read structure, removeFields unneeded, addField new ones, updateFields to relabel keepers, updateLayout for title+CTA. Add before removing.
-10. Make only requested changes. Confirm what you did in final text.`;
+10. Make only requested changes. Confirm what you did in final text.
+11. Quiz questions: when the user asks to add graded/quiz questions, use addField with a "radio" field (one correct answer) or "checkbox" field (2+ correct answers) and pass correctAnswers = the exact option label(s). The answer key is set and options reshuffled automatically — never hand-order the correct option first.`;
 
 /**
  * The per-turn dynamic context, delivered as a trailing user message placed AFTER conversation

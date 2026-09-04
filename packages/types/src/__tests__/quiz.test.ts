@@ -29,6 +29,7 @@ import {
   DEFAULT_QUIZ_SETTINGS,
   FIELD_TYPE_DEFAULT_GRADING_MODE,
   isGradableFieldType,
+  buildAnswerKeyGrading,
 } from '../quiz.js';
 
 const exactGrading: FieldGrading = {
@@ -463,5 +464,58 @@ describe('quiz.ts — FIELD_TYPE_DEFAULT_GRADING_MODE / isGradableFieldType', ()
     for (const type of Object.keys(FIELD_TYPE_DEFAULT_GRADING_MODE) as FieldType[]) {
       expect(isGradableFieldType(type)).toBe(true);
     }
+  });
+});
+
+describe('quiz.ts — buildAnswerKeyGrading', () => {
+  it('radio → exact mode, single accepted answer, 1 point default', () => {
+    expect(buildAnswerKeyGrading('radio_field', ['Paris', 'Berlin'])).toEqual({
+      mode: 'exact',
+      pointValue: 1,
+      acceptedAnswers: ['Paris'],
+    });
+  });
+
+  it('checkbox → set mode with scoring "all" and every accepted answer', () => {
+    expect(buildAnswerKeyGrading('checkbox_field', ['A', 'C'])).toEqual({
+      mode: 'set',
+      pointValue: 1,
+      acceptedAnswers: ['A', 'C'],
+      set: { scoring: 'all' },
+    });
+  });
+
+  it('select → exact mode (single-select quiz question)', () => {
+    expect(buildAnswerKeyGrading('select_field', ['Yes'])?.mode).toBe('exact');
+  });
+
+  it('honours a custom point value', () => {
+    expect(buildAnswerKeyGrading('radio_field', ['x'], 5)?.pointValue).toBe(5);
+  });
+
+  it('trims and drops blank answers', () => {
+    expect(buildAnswerKeyGrading('checkbox_field', ['  A  ', '', '   '])).toEqual({
+      mode: 'set',
+      pointValue: 1,
+      acceptedAnswers: ['A'],
+      set: { scoring: 'all' },
+    });
+  });
+
+  it('returns undefined when there is nothing to key', () => {
+    expect(buildAnswerKeyGrading('radio_field', [])).toBeUndefined();
+    expect(buildAnswerKeyGrading('radio_field', null)).toBeUndefined();
+    expect(buildAnswerKeyGrading('radio_field', undefined)).toBeUndefined();
+  });
+
+  it('returns undefined for manual / unknown field types', () => {
+    expect(buildAnswerKeyGrading('text_area_field', ['essay'])).toBeUndefined();
+    expect(buildAnswerKeyGrading('file_upload_field', ['x'])).toBeUndefined();
+    expect(buildAnswerKeyGrading('not_a_field', ['x'])).toBeUndefined();
+  });
+
+  it('produces grading that survives sanitizeFieldGrading unchanged', () => {
+    const g = buildAnswerKeyGrading('checkbox_field', ['A', 'B']);
+    expect(sanitizeFieldGrading(g)).toEqual(g);
   });
 });

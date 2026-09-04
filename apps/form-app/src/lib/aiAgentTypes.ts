@@ -24,8 +24,8 @@ export interface AddFieldToolPart {
   type: 'tool-addField';
   toolCallId: string;
   state: ToolState;
-  input?: { pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null };
-  output?: { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null };
+  input?: { pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null; correctAnswers?: string[] | null };
+  output?: { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null; correctAnswers?: string[] | null };
 }
 
 export interface UpdateFieldsToolPart {

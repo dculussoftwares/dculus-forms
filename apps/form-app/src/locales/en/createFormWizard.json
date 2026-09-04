@@ -58,7 +58,7 @@
     },
     "aiPromptLabel": "What should the quiz cover?",
     "aiPromptPlaceholder": "e.g. \"10 questions about world capitals, multiple choice\"",
-    "aiPromptTemplate": "Create a quiz about: {{topic}}. Use multiple-choice or single-select questions, each phrased as a quiz question with one clearly correct answer choice.",
+    "aiPromptTemplate": "Create a quiz about: {{topic}}.",
     "passThreshold": {
       "label": "Pass threshold",
       "suffix": "%"

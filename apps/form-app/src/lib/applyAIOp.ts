@@ -1,4 +1,5 @@
 import { FieldType, sanitizeConditions } from '@dculus/types';
+import { buildAnswerKeyGrading } from '@dculus/types/quiz.js';
 import type { FormBuilderState } from '../store/types/store.types';
 import { getApiBaseUrl } from './config';
 
@@ -89,6 +90,9 @@ export function applyAIOp(
 
       const fieldType = AI_TYPE_MAP[op.fieldType] ?? FieldType.TEXT_INPUT_FIELD;
       const isChoice = CHOICE_TYPES.has(fieldType);
+      const grading = isChoice && op.correctAnswers?.length
+        ? buildAnswerKeyGrading(fieldType, op.correctAnswers)
+        : undefined;
       const fieldData = {
         label: op.label,
         required: op.required ?? false,
@@ -97,6 +101,7 @@ export function applyAIOp(
         prefix: '',
         hint: '',
         ...(isChoice && { options: op.options ?? ['Option 1', 'Option 2'] }),
+        ...(grading ? { grading } : {}),
       };
 
       if (op.insertAfterFieldId) {

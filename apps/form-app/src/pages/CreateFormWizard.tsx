@@ -11,7 +11,7 @@ import {
 } from '@dculus/ui';
 import { cn, generateRandomString } from '@dculus/utils';
 import type { LayoutCode, GradeRelease } from '@dculus/types';
-import { DEFAULT_QUIZ_SETTINGS } from '@dculus/types';
+import { DEFAULT_QUIZ_SETTINGS, buildAnswerKeyGrading } from '@dculus/types/quiz.js';
 import {
   LayoutTemplate,
   ArrowLeft,
@@ -67,6 +67,9 @@ interface AIField {
   placeholder: string | null;
   required: boolean;
   options: Array<{ value: string; label: string }> | null;
+  // Quiz generation only: verbatim label(s) of the correct option(s). Present
+  // (non-null) => attach a pre-filled answer key when building the field JSON.
+  correctAnswers?: string[] | null;
   section: string;
 }
 
@@ -118,10 +121,14 @@ function buildFieldJson(f: AIField) {
     hint: '',
   };
   if (['select_field', 'radio_field', 'checkbox_field'].includes(fieldType)) {
+    const grading = f.correctAnswers?.length
+      ? buildAnswerKeyGrading(fieldType, f.correctAnswers)
+      : undefined;
     return {
       ...base,
       options: f.options?.map(o => o.label) ?? ['Option 1', 'Option 2'],
       ...(fieldType === 'select_field' ? { multiple: false } : {}),
+      ...(grading ? { grading } : {}),
     };
   }
   if (fieldType === 'file_upload_field') {
@@ -438,7 +445,7 @@ const CreateFormWizard: React.FC = () => {
       // quiz-framed, no forked AI pipeline (epic #289, Story 09).
       const framedPrompt = t('quiz.aiPromptTemplate', { values: { topic: quizPrompt.trim() } });
       const { data: genData } = await generateForm({
-        variables: { prompt: framedPrompt, organizationId, mode: aiMode },
+        variables: { prompt: framedPrompt, organizationId, mode: aiMode, quiz: true },
       });
 
       const { fields, layout: generatedLayout } = genData.generateFormWithAI;

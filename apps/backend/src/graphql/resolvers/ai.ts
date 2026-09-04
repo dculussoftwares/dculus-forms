@@ -22,7 +22,7 @@ export const aiResolvers = {
   Mutation: {
     generateFormWithAI: async (
       _: any,
-      { prompt, organizationId, mode = 'standard' }: { prompt: string; organizationId: string; mode?: AIFormMode },
+      { prompt, organizationId, mode = 'standard', quiz = false }: { prompt: string; organizationId: string; mode?: AIFormMode; quiz?: boolean },
       context: { auth: BetterAuthContext }
     ) => {
       requireAuth(context.auth);
@@ -44,7 +44,7 @@ export const aiResolvers = {
       }
 
       try {
-        const result = await generateFormWithAI(prompt.trim(), mode);
+        const result = await generateFormWithAI(prompt.trim(), mode, { quiz });
         // generateFormWithAI always calls getPrimaryModel() (lib/ai.ts) — the 'mini' tier.
         await recordAITokenUsage(organizationId, result.tokensUsed, 'mini');
         return result;

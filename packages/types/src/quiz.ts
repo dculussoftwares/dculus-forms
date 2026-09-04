@@ -248,3 +248,45 @@ export const sanitizeQuizSettings = (
   const parsed = quizSettingsSchema.safeParse(input);
   return parsed.success ? (parsed.data as QuizSettings) : undefined;
 };
+
+/**
+ * Builds a ready-to-persist `FieldGrading` (answer key) from a raw list of
+ * correct-answer strings — used by the AI form/quiz generators to pre-fill the
+ * key so an AI-authored quiz is gradable without the user hand-keying every
+ * question.
+ *
+ * The grading mode follows `FIELD_TYPE_DEFAULT_GRADING_MODE`, matching what the
+ * builder's `GradingSettings` would create for a manually keyed field:
+ *   - `exact`   (radio/select/date) — single accepted answer
+ *   - `set`     (checkbox)          — all listed answers, `scoring: 'all'`
+ *   - `text`    (text/email/phone)  — any listed answer matches
+ *   - `numeric` (number)            — single numeric target
+ *   - `manual`  (textarea/file)     — nothing to key, returns undefined
+ *
+ * Returns `undefined` when there is nothing to key (no answers, unknown/manual
+ * field type) so callers can spread the result conditionally.
+ */
+export const buildAnswerKeyGrading = (
+  fieldType: FieldType | string,
+  correctAnswers: readonly string[] | null | undefined,
+  pointValue = 1
+): FieldGrading | undefined => {
+  const answers = (correctAnswers ?? [])
+    .map((a) => (typeof a === 'string' ? a.trim() : ''))
+    .filter((a) => a.length > 0);
+  if (answers.length === 0) return undefined;
+
+  const mode = FIELD_TYPE_DEFAULT_GRADING_MODE[fieldType as FieldType];
+  switch (mode) {
+    case 'set':
+      return { mode: 'set', pointValue, acceptedAnswers: answers, set: { scoring: 'all' } };
+    case 'exact':
+      return { mode: 'exact', pointValue, acceptedAnswers: [answers[0]] };
+    case 'text':
+      return { mode: 'text', pointValue, acceptedAnswers: answers };
+    case 'numeric':
+      return { mode: 'numeric', pointValue, acceptedAnswers: [answers[0]] };
+    default:
+      return undefined;
+  }
+};

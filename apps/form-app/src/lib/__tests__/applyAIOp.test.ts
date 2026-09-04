@@ -71,6 +71,21 @@ describe('applyAIOp — ADD_FIELD', () => {
     applyAIOp({ type: 'ADD_FIELD', pageId: 'page-1', insertAfterFieldId: null, fieldType: 'select', label: 'Size', required: false, placeholder: null, options: ['S', 'M', 'L'] }, store as any);
     expect(store.addField).toHaveBeenCalledWith('page-1', FieldType.SELECT_FIELD, expect.objectContaining({ options: ['S', 'M', 'L'] }));
   });
+
+  it('attaches an answer key when correctAnswers is present (quiz question)', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'ADD_FIELD', pageId: 'page-1', insertAfterFieldId: null, fieldType: 'radio', label: 'Capital of France?', required: true, placeholder: null, options: ['Berlin', 'Paris', 'Rome'], correctAnswers: ['Paris'] }, store as any);
+    expect(store.addField).toHaveBeenCalledWith('page-1', FieldType.RADIO_FIELD, expect.objectContaining({
+      options: ['Berlin', 'Paris', 'Rome'],
+      grading: { mode: 'exact', pointValue: 1, acceptedAnswers: ['Paris'] },
+    }));
+  });
+
+  it('attaches no grading when correctAnswers is absent', () => {
+    const store = makeStore();
+    applyAIOp({ type: 'ADD_FIELD', pageId: 'page-1', insertAfterFieldId: null, fieldType: 'radio', label: 'Colour', required: false, placeholder: null, options: ['Red', 'Blue'] }, store as any);
+    expect(store.addField).toHaveBeenCalledWith('page-1', FieldType.RADIO_FIELD, expect.not.objectContaining({ grading: expect.anything() }));
+  });
 });
 
 describe('applyAIOp — UPDATE_FIELDS', () => {

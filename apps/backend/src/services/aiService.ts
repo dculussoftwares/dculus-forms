@@ -31,6 +31,12 @@ const AIFieldSchema = z.object({
     .array(AIFieldOptionSchema)
     .nullable()
     .describe('Option list for select/radio/checkbox types, or null for others'),
+  correctAnswers: z
+    .array(z.string())
+    .nullable()
+    .describe(
+      'QUIZ ONLY: exact label string(s) of the correct option(s) for this question, copied verbatim from this field\'s "options". One entry for a single-answer (radio) question, two or more for a multi-answer (checkbox) question. null for non-quiz forms and for any field that is not a graded question.'
+    ),
   section: z
     .string()
     .describe(
@@ -76,6 +82,7 @@ You MUST respond with valid JSON matching EXACTLY this structure — no extra ke
       "placeholder": "Hint text or null",
       "required": true,
       "options": null,
+      "correctAnswers": null,
       "section": "Personal Information"
     }
   ],
@@ -87,10 +94,11 @@ You MUST respond with valid JSON matching EXACTLY this structure — no extra ke
 
 Strict rules:
 - "suggestedTitle" MUST be a short descriptive title string.
-- Each field MUST have: type, label, placeholder (string or null), required (boolean), options (array or null), section (string).
+- Each field MUST have: type, label, placeholder (string or null), required (boolean), options (array or null), correctAnswers (array or null), section (string).
 - "required" MUST be true or false — never omit it.
 - "placeholder" MUST be a string or null — never omit it.
 - "options" MUST be an array of {"value": "...", "label": "..."} objects for select/radio/checkbox fields; null for all other field types.
+- "correctAnswers" MUST be null for a normal (non-quiz) form.
 - "section" MUST be a short (2-4 word) name for the logical group/page this field belongs to. List fields belonging to the same section consecutively — they will become one page together.
 - "layout.content" MUST use only <h1> and <p> tags — no other HTML.
 - "layout.customCTAButtonName" MUST be a short action-oriented label (max 4 words).`;
@@ -126,24 +134,78 @@ keeping each section to roughly 2-6 fields, so each section becomes its own page
 ${JSON_SCHEMA_RULES}`,
 };
 
+// Appended to the mode prompt when generating a quiz. The generator must both
+// mark the correct option(s) AND we reshuffle them afterwards (prepareQuizFields)
+// so the answer is never predictably first — LLMs strongly bias the correct
+// choice to position 1 when left to their own ordering.
+const QUIZ_RULES = `
+This is a QUIZ, not a plain form. Additional rules:
+- Every graded question MUST be a "radio" field (exactly one correct answer) or a "checkbox" field (two or more correct answers). Never use "select" for a question.
+- Give each question 3–5 options: the correct answer(s) plus plausible, non-trivial distractors.
+- "correctAnswers" MUST contain the exact label string(s) of the correct option(s), copied verbatim from that same field's "options" — one entry for a "radio" question, two or more for a "checkbox" question.
+- Do NOT always put the correct option first; vary its position (it is reshuffled anyway).
+- Any non-question field (e.g. the respondent's name) MUST have "correctAnswers": null.`;
+
+const MODE_SYSTEM_PROMPTS_QUIZ = Object.fromEntries(
+  (Object.keys(MODE_SYSTEM_PROMPTS) as AIFormMode[]).map((m) => [
+    m,
+    `${MODE_SYSTEM_PROMPTS[m]}\n${QUIZ_RULES}`,
+  ])
+) as Record<AIFormMode, string>;
+
+// Fisher–Yates; returns a new array, does not mutate the input.
+function shuffled<T>(items: readonly T[]): T[] {
+  const out = items.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/**
+ * For a quiz generation result: shuffle each question's options so the correct
+ * choice isn't predictably first, and drop any `correctAnswers` entry the model
+ * hallucinated that doesn't match a real option. A question left without a
+ * usable key comes back with `correctAnswers: null` (keyed = false downstream).
+ * Exported for unit testing — pure, no I/O.
+ */
+export function prepareQuizFields(fields: AIGeneratedField[]): AIGeneratedField[] {
+  return fields.map((field) => {
+    if (!field.options || field.options.length < 2) {
+      return { ...field, correctAnswers: null };
+    }
+    const options = shuffled(field.options);
+    const labels = new Set(options.map((o) => o.label));
+    const correct = (field.correctAnswers ?? []).filter((a) => labels.has(a));
+    return { ...field, options, correctAnswers: correct.length > 0 ? correct : null };
+  });
+}
+
 export async function generateFormWithAI(
   prompt: string,
-  mode: AIFormMode = 'standard'
+  mode: AIFormMode = 'standard',
+  opts: { quiz?: boolean } = {}
 ): Promise<AIGeneratedForm> {
-  logger.info({ prompt, mode }, 'Generating form with AI');
+  const quiz = opts.quiz ?? false;
+  logger.info({ prompt, mode, quiz }, 'Generating form with AI');
 
   const { output, usage } = await generateText({
     model: getPrimaryModel(),
     output: Output.object({ schema: AIFormSchema }),
-    system: MODE_SYSTEM_PROMPTS[mode],
-    prompt: `Create a form for: ${prompt}`,
+    system: quiz ? MODE_SYSTEM_PROMPTS_QUIZ[mode] : MODE_SYSTEM_PROMPTS[mode],
+    prompt: quiz ? `Create a quiz for: ${prompt}` : `Create a form for: ${prompt}`,
   });
 
   const tokensUsed = usage?.totalTokens ?? 0;
 
-  logger.info({ tokensUsed, fieldCount: output.fields.length, mode }, 'AI form generation complete');
+  const fields = quiz
+    ? prepareQuizFields(output.fields)
+    : output.fields.map((f) => ({ ...f, correctAnswers: null }));
 
-  return { ...output, tokensUsed };
+  logger.info({ tokensUsed, fieldCount: fields.length, mode, quiz }, 'AI form generation complete');
+
+  return { ...output, fields, tokensUsed };
 }
 
 // ---------------------------------------------------------------------------
