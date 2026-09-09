@@ -1,4 +1,7 @@
+import { existsSync, readdirSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { resolve, dirname, join, basename, extname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Prisma } from '#prisma-client';
 import { checkTemplate, getDefaultFont, BLANK_PDF, type Font, type Template } from '@pdfme/common';
 import { generate } from '@pdfme/generator';
@@ -92,19 +95,82 @@ function escapeRegExp(value: string): string {
 let cachedFonts: Font | null = null;
 
 /**
- * pdfme font map for generation: default Roboto (fallback) plus Noto Sans
- * Tamil read from the backend's committed asset. src/services and
- * dist/services sit at the same depth, so the relative URL resolves in
- * dev (tsx), tests and the built image alike.
+ * Resolves any asset path relative to the backend's `assets/` directory.
+ * Works across dev (tsx), vitest tests, and built production distributions
+ * (dist/apps/backend/src/services/ or Docker container working directory).
+ */
+export function resolveAssetPath(subPath = ''): string {
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const normalized = subPath.replace(/^\/+/, '');
+  const candidates = [
+    // Production built layout: dist/apps/backend/src/services -> apps/backend/assets/...
+    resolve(currentDir, '../../../../assets', normalized),
+    // Copied to dist/apps/backend/assets OR dev/test layout (src/services -> assets/...)
+    resolve(currentDir, '../../assets', normalized),
+    // Relative to process.cwd() (e.g. Docker container or local apps/backend)
+    resolve(process.cwd(), 'assets', normalized),
+    // Relative to process.cwd() when run from monorepo root
+    resolve(process.cwd(), 'apps/backend/assets', normalized),
+  ];
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[1];
+}
+
+/**
+ * Resolves a font file located in the backend's `assets/fonts/` directory.
+ */
+export function resolveFontPath(fontFileName: string): string {
+  const fontPath = resolveAssetPath(join('fonts', fontFileName));
+  if (!existsSync(fontPath)) {
+    throw new Error(`Font file "${fontFileName}" not found at "${fontPath}"`);
+  }
+  return fontPath;
+}
+
+/**
+ * Locate the bundled Noto Sans Tamil font across environments.
+ * Maintained as an alias to resolveFontPath for backward compatibility.
+ */
+export function resolveTamilFontPath(): string {
+  return resolveFontPath('NotoSansTamil-Regular.ttf');
+}
+
+/**
+ * Reset cached font map in memory (useful for testing).
+ */
+export function _resetCachedFontsForTesting(): void {
+  cachedFonts = null;
+}
+
+/**
+ * pdfme font map for generation: default Roboto (fallback) plus any fonts
+ * discovered in the backend's committed `assets/fonts` directory (e.g. Noto Sans Tamil).
  */
 export async function getPdfFonts(): Promise<Font> {
   if (cachedFonts) return cachedFonts;
-  const fontUrl = new URL(
-    '../../assets/fonts/NotoSansTamil-Regular.ttf',
-    import.meta.url
-  );
-  const data = await readFile(fontUrl);
-  cachedFonts = { ...getDefaultFont(), [TAMIL_FONT_NAME]: { data } };
+
+  const fontMap: Font = { ...getDefaultFont() };
+  const fontsDir = resolveAssetPath('fonts');
+
+  if (existsSync(fontsDir)) {
+    const files = readdirSync(fontsDir);
+    for (const file of files) {
+      const ext = extname(file).toLowerCase();
+      if (ext === '.ttf' || ext === '.otf') {
+        const fontPath = join(fontsDir, file);
+        const data = await readFile(fontPath);
+        const fullName = basename(file, ext);
+        const cleanName = fullName.replace(/[-_]regular$/i, '');
+
+        fontMap[fullName] = { data };
+        if (cleanName && cleanName !== fullName) {
+          fontMap[cleanName] = { data };
+        }
+      }
+    }
+  }
+
+  cachedFonts = fontMap;
   return cachedFonts;
 }
 

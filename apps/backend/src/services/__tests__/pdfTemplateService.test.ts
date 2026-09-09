@@ -10,7 +10,12 @@ import {
   coerceAiSampleData,
   formatResponseValueForPdf,
   generatePdfForResponse,
+  getPdfFonts,
+  resolveAssetPath,
+  resolveFontPath,
   resolveResponsePdfAttachment,
+  resolveTamilFontPath,
+  _resetCachedFontsForTesting,
   stripBasePdf,
   validatePdfTemplate,
 } from '../pdfTemplateService.js';
@@ -539,6 +544,39 @@ describe('generatePdfForResponse', () => {
     expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
     expect(pdf.length).toBeGreaterThan(500);
   }, 30000);
+
+  it('resolves assets and fonts generically across environments', async () => {
+    _resetCachedFontsForTesting();
+
+    const assetsDir = resolveAssetPath();
+    expect(assetsDir).toBeTruthy();
+
+    const fontsDir = resolveAssetPath('fonts');
+    expect(fontsDir).toBeTruthy();
+    expect(fontsDir.endsWith('fonts')).toBe(true);
+
+    const fontPath = resolveFontPath('NotoSansTamil-Regular.ttf');
+    expect(fontPath).toBeTruthy();
+    expect(fontPath.endsWith('NotoSansTamil-Regular.ttf')).toBe(true);
+
+    // Also check backward-compatible alias
+    expect(resolveTamilFontPath()).toBe(fontPath);
+
+    // Non-existent font throws clear error
+    expect(() => resolveFontPath('NonExistentFont.ttf')).toThrowError(
+      /Font file "NonExistentFont\.ttf" not found/
+    );
+
+    const fonts = await getPdfFonts();
+    expect(fonts).toHaveProperty('NotoSansTamil');
+    expect(fonts).toHaveProperty('NotoSansTamil-Regular');
+    expect(fonts).toHaveProperty('Roboto');
+    expect(fonts['NotoSansTamil'].data).toBeDefined();
+
+    // Re-call to verify caching path
+    const cached = await getPdfFonts();
+    expect(cached).toBe(fonts);
+  });
 
   it('substitutes a label-bracket fallback for unanswered fields', async () => {
     const storedTemplate = {
