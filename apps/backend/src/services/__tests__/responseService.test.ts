@@ -157,7 +157,6 @@ describe('Response Service', () => {
         orderBy: { submittedAt: 'desc' },
         skip: 0,
         take: 10,
-        include: { form: true },
       });
       expect(result.data).toHaveLength(1);
       expect(result.total).toBe(25);

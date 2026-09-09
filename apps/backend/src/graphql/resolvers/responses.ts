@@ -193,7 +193,8 @@ export const responsesResolvers = {
       },
       context: { auth: BetterAuthContext }
     ) => {
-      // 🔒 SECURITY: Verify user is a member of the target organization
+      // 🔒 SECURITY: Verify user is authenticated and is a member of the target organization
+      requireAuth(context.auth);
       await requireOrganizationMembership(context.auth, organizationId);
 
       const userId = context.auth.user!.id;
@@ -201,13 +202,17 @@ export const responsesResolvers = {
       // 🔒 SECURITY: Scope to forms the user can actually access (VIEWER or above).
       // Org membership alone is not sufficient — a NO_ACCESS permission must be respected.
       const accessibleFormIds = await getAccessibleFormIds(organizationId, userId);
+      const validSortOrder = sortOrder && ['asc', 'desc'].includes(sortOrder.toLowerCase())
+        ? (sortOrder.toLowerCase() as 'asc' | 'desc')
+        : 'desc';
+
       return await getResponsesByOrganizationId({
         organizationId,
         accessibleFormIds,
         page,
         limit,
         sortBy,
-        sortOrder: sortOrder as 'asc' | 'desc',
+        sortOrder: validSortOrder,
       });
     },
     response: async (

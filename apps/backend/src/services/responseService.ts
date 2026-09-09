@@ -87,9 +87,6 @@ export const getResponsesByOrganizationId = async ({
       orderBy: { [validSortBy]: validSortOrder },
       skip,
       take: validLimit,
-      include: {
-        form: true,
-      },
     }),
   ]);
 
