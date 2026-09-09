@@ -17,13 +17,108 @@ import { emitResponseEdited } from '../plugins/core/events.js';
 import { Prisma } from '#prisma-client';
 
 
+export interface GetResponsesByOrganizationIdParams {
+  organizationId: string;
+  accessibleFormIds?: string[];
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaginatedResponsesResult {
+  data: FormResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface IterateResponsesOptions {
+  batchSize?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  filters?: ResponseFilter[];
+  filterLogic?: 'AND' | 'OR';
+}
+
+/**
+ * Fetch paginated responses across an organization, scoped to accessible forms.
+ * Replaces the unpaginated 10,000-row cap with database-level pagination.
+ */
+export const getResponsesByOrganizationId = async ({
+  organizationId,
+  accessibleFormIds,
+  page = 1,
+  limit = 10,
+  sortBy = 'submittedAt',
+  sortOrder = 'desc',
+}: GetResponsesByOrganizationIdParams): Promise<PaginatedResponsesResult> => {
+  const validPage = Math.max(1, page);
+  const validLimit = Math.min(Math.max(1, limit), 100);
+  const skip = (validPage - 1) * validLimit;
+
+  const validSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase())
+    ? (sortOrder.toLowerCase() as 'asc' | 'desc')
+    : 'desc';
+  const allowedSortFields = ['id', 'submittedAt'];
+  const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'submittedAt';
+
+  if (accessibleFormIds && accessibleFormIds.length === 0) {
+    return {
+      data: [],
+      total: 0,
+      page: validPage,
+      limit: validLimit,
+      totalPages: 0,
+    };
+  }
+
+  const where: Prisma.ResponseWhereInput = {
+    form: { organizationId },
+    deletedAt: null,
+    ...(accessibleFormIds ? { formId: { in: accessibleFormIds } } : {}),
+  };
+
+  const [total, responses] = await Promise.all([
+    responseRepository.count({ where }),
+    responseRepository.findMany({
+      where,
+      orderBy: { [validSortBy]: validSortOrder },
+      skip,
+      take: validLimit,
+    }),
+  ]);
+
+  const baseData = responses.map((response) => ({
+    id: response.id,
+    formId: response.formId,
+    data: (response.data as Prisma.JsonObject) || {},
+    metadata: (response.metadata as FormResponse['metadata']) || undefined,
+    respondentEmail: (response as any).respondentEmail ?? undefined,
+    submittedAt: response.submittedAt,
+    tags: [] as { id: string; formId: string; name: string; color: string; createdAt: Date }[],
+  }));
+
+  const tagMap = await batchLoadTagsForResponses(baseData.map((r) => r.id));
+  const data = baseData.map((r) => ({ ...r, tags: tagMap[r.id] ?? [] }));
+  const totalPages = Math.ceil(total / validLimit);
+
+  return {
+    data,
+    total,
+    page: validPage,
+    limit: validLimit,
+    totalPages,
+  };
+};
+
 /**
  * Fetch recent responses across an organization (or all orgs when omitted).
  *
  * P1-13: Hard-capped at 10,000 rows to prevent full-table scans at high volume.
- * The cap is intentional — this endpoint is used for org-wide response listing
- * in the UI, which is inherently paginated. For full exports use
- * getAllResponsesByFormId; for paginated access use getResponsesByFormId.
+ * Maintained for backward compatibility. For paginated access, use
+ * getResponsesByOrganizationId or getResponsesByFormId.
  */
 export const getAllResponses = async (organizationId?: string): Promise<FormResponse[]> => {
   const HARD_CAP = 10_000;
@@ -389,6 +484,44 @@ export async function getResponsesByFormId(
     limit: validLimit,
     totalPages,
   };
+}
+
+/**
+ * Memory-safe async generator that yields responses in manageable batches.
+ * Iterates through form responses page by page using `getResponsesByFormId`,
+ * preventing unbounded heap allocations.
+ */
+export async function* iterateResponsesByFormId(
+  formId: string,
+  options: IterateResponsesOptions = {}
+): AsyncGenerator<FormResponse[], void, unknown> {
+  const batchSize = Math.min(Math.max(1, options.batchSize ?? 100), 100);
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const pageResult = await getResponsesByFormId(
+      formId,
+      page,
+      batchSize,
+      options.sortBy ?? 'submittedAt',
+      options.sortOrder ?? 'desc',
+      options.filters,
+      options.filterLogic
+    );
+
+    if (!pageResult.data || pageResult.data.length === 0) {
+      break;
+    }
+
+    yield pageResult.data;
+
+    if (page >= pageResult.totalPages || pageResult.data.length < batchSize) {
+      hasMore = false;
+    } else {
+      page++;
+    }
+  }
 }
 
 /**

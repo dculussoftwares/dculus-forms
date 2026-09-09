@@ -1,9 +1,9 @@
 import {
   deleteResponse,
   deleteResponses,
-  getAllResponses,
   getResponseById,
   getResponsesByFormId,
+  getResponsesByOrganizationId,
   submitResponse,
   submitResponseWithMaxLimitCheck,
   updateResponse,
@@ -178,10 +178,23 @@ export const responsesResolvers = {
   Query: {
     responses: async (
       _: any,
-      { organizationId }: { organizationId: string },
+      {
+        organizationId,
+        page = 1,
+        limit = 10,
+        sortBy = 'submittedAt',
+        sortOrder = 'desc',
+      }: {
+        organizationId: string;
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        sortOrder?: string;
+      },
       context: { auth: BetterAuthContext }
     ) => {
-      // 🔒 SECURITY: Verify user is a member of the target organization
+      // 🔒 SECURITY: Verify user is authenticated and is a member of the target organization
+      requireAuth(context.auth);
       await requireOrganizationMembership(context.auth, organizationId);
 
       const userId = context.auth.user!.id;
@@ -189,8 +202,18 @@ export const responsesResolvers = {
       // 🔒 SECURITY: Scope to forms the user can actually access (VIEWER or above).
       // Org membership alone is not sufficient — a NO_ACCESS permission must be respected.
       const accessibleFormIds = await getAccessibleFormIds(organizationId, userId);
-      const allResponses = await getAllResponses(organizationId);
-      return allResponses.filter((r) => accessibleFormIds.includes(r.formId));
+      const validSortOrder = sortOrder && ['asc', 'desc'].includes(sortOrder.toLowerCase())
+        ? (sortOrder.toLowerCase() as 'asc' | 'desc')
+        : 'desc';
+
+      return await getResponsesByOrganizationId({
+        organizationId,
+        accessibleFormIds,
+        page,
+        limit,
+        sortBy,
+        sortOrder: validSortOrder,
+      });
     },
     response: async (
       _: any,

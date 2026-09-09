@@ -67,7 +67,15 @@ vi.mock('../../../services/responseCopyService.js', () => ({
 vi.mock('../../../lib/audit.js', () => ({ audit: vi.fn().mockResolvedValue(undefined) }));
 
 describe('Responses Resolvers', () => {
-  const mockContext = {
+  const mockContext: {
+    auth: betterAuthMiddleware.BetterAuthContext;
+    req: {
+      ip: string;
+      headers: {
+        'user-agent': string;
+      };
+    };
+  } = {
     auth: {
       user: {
         id: 'user-123',
@@ -134,41 +142,96 @@ describe('Responses Resolvers', () => {
   });
 
   describe('Query: responses', () => {
-    it('should return responses for accessible forms only', async () => {
+    it('should return paginated responses for accessible forms only', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123']);
-      vi.mocked(responseService.getAllResponses).mockResolvedValue([mockResponse] as any);
+      const paginatedResult = {
+        data: [mockResponse],
+        total: 1,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      } satisfies Awaited<ReturnType<typeof responseService.getResponsesByOrganizationId>>;
+      vi.mocked(responseService.getResponsesByOrganizationId).mockResolvedValue(paginatedResult);
 
       const result = await responsesResolvers.Query.responses(
         {},
-        { organizationId: 'org-123' },
+        { organizationId: 'org-123', page: 1, limit: 10 },
         mockContext
       );
 
+      expect(betterAuthMiddleware.requireAuth).toHaveBeenCalledWith(mockContext.auth);
       expect(betterAuthMiddleware.requireOrganizationMembership).toHaveBeenCalledWith(
         mockContext.auth,
         'org-123'
       );
-      expect(responseService.getAllResponses).toHaveBeenCalledWith('org-123');
-      // mockResponse.formId === 'form-123' which is in the accessible list
-      expect(result).toEqual([mockResponse]);
+      expect(formService.getAccessibleFormIds).toHaveBeenCalledWith('org-123', mockContext.auth.user.id);
+      expect(responseService.getResponsesByOrganizationId).toHaveBeenCalledWith({
+        organizationId: 'org-123',
+        accessibleFormIds: ['form-123'],
+        page: 1,
+        limit: 10,
+        sortBy: 'submittedAt',
+        sortOrder: 'desc',
+      });
+      expect(result).toEqual(paginatedResult);
     });
 
-    it('should exclude responses from forms the user cannot access', async () => {
+    it('should pass custom pagination and sorting arguments', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
-      // User has access to form-123 but NOT form-456
-      vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123']);
-      const hiddenResponse = { ...mockResponse, id: 'response-456', formId: 'form-456' };
-      vi.mocked(responseService.getAllResponses).mockResolvedValue([mockResponse, hiddenResponse] as any);
+      vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123', 'form-456']);
+      const paginatedResult = {
+        data: [mockResponse],
+        total: 25,
+        page: 2,
+        limit: 20,
+        totalPages: 2,
+      } satisfies Awaited<ReturnType<typeof responseService.getResponsesByOrganizationId>>;
+      vi.mocked(responseService.getResponsesByOrganizationId).mockResolvedValue(paginatedResult);
 
       const result = await responsesResolvers.Query.responses(
         {},
-        { organizationId: 'org-123' },
+        { organizationId: 'org-123', page: 2, limit: 20, sortBy: 'id', sortOrder: 'asc' },
         mockContext
       );
 
-      expect(result).toEqual([mockResponse]);
-      expect(result).not.toContainEqual(hiddenResponse);
+      expect(responseService.getResponsesByOrganizationId).toHaveBeenCalledWith({
+        organizationId: 'org-123',
+        accessibleFormIds: ['form-123', 'form-456'],
+        page: 2,
+        limit: 20,
+        sortBy: 'id',
+        sortOrder: 'asc',
+      });
+      expect(result).toEqual(paginatedResult);
+    });
+
+    it('should default sortOrder when invalid is passed', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
+      vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123']);
+      const paginatedResult = {
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+      } satisfies Awaited<ReturnType<typeof responseService.getResponsesByOrganizationId>>;
+      vi.mocked(responseService.getResponsesByOrganizationId).mockResolvedValue(paginatedResult);
+
+      await responsesResolvers.Query.responses(
+        {},
+        { organizationId: 'org-123', sortOrder: 'invalid' },
+        mockContext
+      );
+
+      expect(responseService.getResponsesByOrganizationId).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sortOrder: 'desc',
+        })
+      );
     });
 
     it('should throw error when user is not organization member', async () => {

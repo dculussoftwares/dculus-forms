@@ -1441,7 +1441,13 @@ export const typeDefs = gql`
     # Form Queries
     form(id: ID!): Form
     formByShortUrl(shortUrl: String!): Form
-    responses(organizationId: ID!): [FormResponse!]!
+    responses(
+      organizationId: ID!
+      page: Int = 1
+      limit: Int = 10
+      sortBy: String = "submittedAt"
+      sortOrder: String = "desc"
+    ): PaginatedResponses!
     response(id: ID!): FormResponse
     responsesByForm(
       formId: ID!
