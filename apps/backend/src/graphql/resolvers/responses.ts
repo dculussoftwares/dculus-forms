@@ -1,9 +1,9 @@
 import {
   deleteResponse,
   deleteResponses,
-  getAllResponses,
   getResponseById,
   getResponsesByFormId,
+  getResponsesByOrganizationId,
   submitResponse,
   submitResponseWithMaxLimitCheck,
   updateResponse,
@@ -178,7 +178,19 @@ export const responsesResolvers = {
   Query: {
     responses: async (
       _: any,
-      { organizationId }: { organizationId: string },
+      {
+        organizationId,
+        page = 1,
+        limit = 10,
+        sortBy = 'submittedAt',
+        sortOrder = 'desc',
+      }: {
+        organizationId: string;
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        sortOrder?: string;
+      },
       context: { auth: BetterAuthContext }
     ) => {
       // 🔒 SECURITY: Verify user is a member of the target organization
@@ -189,8 +201,14 @@ export const responsesResolvers = {
       // 🔒 SECURITY: Scope to forms the user can actually access (VIEWER or above).
       // Org membership alone is not sufficient — a NO_ACCESS permission must be respected.
       const accessibleFormIds = await getAccessibleFormIds(organizationId, userId);
-      const allResponses = await getAllResponses(organizationId);
-      return allResponses.filter((r) => accessibleFormIds.includes(r.formId));
+      return await getResponsesByOrganizationId({
+        organizationId,
+        accessibleFormIds,
+        page,
+        limit,
+        sortBy,
+        sortOrder: sortOrder as 'asc' | 'desc',
+      });
     },
     response: async (
       _: any,

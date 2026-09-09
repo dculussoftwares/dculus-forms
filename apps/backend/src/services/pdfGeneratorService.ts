@@ -7,9 +7,8 @@ import {
   pdfTemplateRepository,
   responseRepository,
 } from '../repositories/index.js';
-import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
-import { attachFilterContext } from './responseFilterContext.js';
-import { getAllResponsesByFormId } from './responseService.js';
+import type { ResponseFilter } from './responseFilterService.js';
+import { getResponsesByFormId, iterateResponsesByFormId } from './responseService.js';
 import { deleteGeneratedPdfsForGenerator } from './pdfGeneratorStorage.js';
 
 export interface PdfGeneratorInput {
@@ -170,27 +169,37 @@ export const countMatchingResponses = async (
   filters: ResponseFilter[],
   filterLogic: 'AND' | 'OR' = 'AND'
 ): Promise<number> => {
-  const responses = await getAllResponsesByFormId(formId);
-  await attachFilterContext(responses, formId, filters);
-  return applyResponseFilters(responses, filters, filterLogic).length;
+  const result = await getResponsesByFormId(
+    formId,
+    1,
+    1,
+    'submittedAt',
+    'desc',
+    filters,
+    filterLogic
+  );
+  return result.total;
 };
 
 /**
  * Resolve the responses a generator's filter currently matches (id + data) —
- * used to seed a bulk PdfGenerationRun without re-fetching each response
- * individually inside the job loop.
+ * uses chunked iteration to avoid unbounded memory loading for large forms.
  */
 export const getMatchingResponses = async (
   formId: string,
   filters: ResponseFilter[],
   filterLogic: 'AND' | 'OR' = 'AND'
 ): Promise<{ id: string; data: Record<string, any> }[]> => {
-  const responses = await getAllResponsesByFormId(formId);
-  await attachFilterContext(responses, formId, filters);
-  return applyResponseFilters(responses, filters, filterLogic).map((r) => ({
-    id: r.id,
-    data: r.data as Record<string, any>,
-  }));
+  const matching: { id: string; data: Record<string, any> }[] = [];
+  for await (const batch of iterateResponsesByFormId(formId, { filters, filterLogic })) {
+    for (const r of batch) {
+      matching.push({
+        id: r.id,
+        data: r.data as Record<string, any>,
+      });
+    }
+  }
+  return matching;
 };
 
 /**

@@ -3,6 +3,8 @@ import {
   getAllResponses,
   getResponseById,
   getResponsesByFormId,
+  getResponsesByOrganizationId,
+  iterateResponsesByFormId,
   getAllResponsesByFormId,
   submitResponse,
   submitResponseWithMaxLimitCheck,
@@ -131,6 +133,124 @@ describe('Response Service', () => {
       const result = await getAllResponses();
 
       expect(result[0].metadata).toBeUndefined();
+    });
+  });
+
+  describe('getResponsesByOrganizationId', () => {
+    it('should return paginated responses for an organization', async () => {
+      vi.mocked(responseRepository.count).mockResolvedValueOnce(25);
+      vi.mocked(responseRepository.findMany).mockResolvedValueOnce([mockResponse] as any);
+
+      const result = await getResponsesByOrganizationId({
+        organizationId: 'org-123',
+        page: 1,
+        limit: 10,
+        sortBy: 'submittedAt',
+        sortOrder: 'desc',
+      });
+
+      expect(responseRepository.count).toHaveBeenCalledWith({
+        where: { form: { organizationId: 'org-123' }, deletedAt: null },
+      });
+      expect(responseRepository.findMany).toHaveBeenCalledWith({
+        where: { form: { organizationId: 'org-123' }, deletedAt: null },
+        orderBy: { submittedAt: 'desc' },
+        skip: 0,
+        take: 10,
+        include: { form: true },
+      });
+      expect(result.data).toHaveLength(1);
+      expect(result.total).toBe(25);
+      expect(result.page).toBe(1);
+      expect(result.limit).toBe(10);
+      expect(result.totalPages).toBe(3);
+    });
+
+    it('should scope to accessibleFormIds when provided', async () => {
+      vi.mocked(responseRepository.count).mockResolvedValueOnce(1);
+      vi.mocked(responseRepository.findMany).mockResolvedValueOnce([mockResponse] as any);
+
+      const result = await getResponsesByOrganizationId({
+        organizationId: 'org-123',
+        accessibleFormIds: ['form-123'],
+        page: 1,
+        limit: 10,
+      });
+
+      expect(responseRepository.count).toHaveBeenCalledWith({
+        where: {
+          form: { organizationId: 'org-123' },
+          deletedAt: null,
+          formId: { in: ['form-123'] },
+        },
+      });
+      expect(result.total).toBe(1);
+    });
+
+    it('should return empty result immediately if accessibleFormIds is empty', async () => {
+      const result = await getResponsesByOrganizationId({
+        organizationId: 'org-123',
+        accessibleFormIds: [],
+        page: 1,
+        limit: 10,
+      });
+
+      expect(responseRepository.count).not.toHaveBeenCalled();
+      expect(responseRepository.findMany).not.toHaveBeenCalled();
+      expect(result.data).toEqual([]);
+      expect(result.total).toBe(0);
+      expect(result.totalPages).toBe(0);
+    });
+
+    it('should clamp limit and calculate skip properly', async () => {
+      vi.mocked(responseRepository.count).mockResolvedValueOnce(150);
+      vi.mocked(responseRepository.findMany).mockResolvedValueOnce([]);
+
+      const result = await getResponsesByOrganizationId({
+        organizationId: 'org-123',
+        page: 2,
+        limit: 500, // Should be capped at 100
+      });
+
+      expect(responseRepository.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 100, // (2 - 1) * 100
+          take: 100,
+        })
+      );
+      expect(result.limit).toBe(100);
+      expect(result.totalPages).toBe(2);
+    });
+  });
+
+  describe('iterateResponsesByFormId', () => {
+    it('should yield responses in chunks until all pages are read', async () => {
+      vi.mocked(responseRepository.count).mockResolvedValue(3);
+      // Page 1 returns 2 responses, totalPages = 2
+      vi.mocked(responseRepository.findMany)
+        .mockResolvedValueOnce([mockResponse, { ...mockResponse, id: 'response-2' }] as any)
+        .mockResolvedValueOnce([{ ...mockResponse, id: 'response-3' }] as any);
+
+      const batches: any[][] = [];
+      for await (const batch of iterateResponsesByFormId('form-123', { batchSize: 2 })) {
+        batches.push(batch);
+      }
+
+      expect(batches).toHaveLength(2);
+      expect(batches[0]).toHaveLength(2);
+      expect(batches[1]).toHaveLength(1);
+    });
+
+    it('should stop iteration when page returns no data', async () => {
+      vi.mocked(responseRepository.count).mockResolvedValueOnce(0);
+      vi.mocked(responseRepository.findMany).mockResolvedValueOnce([]);
+
+      const batches: any[][] = [];
+      for await (const batch of iterateResponsesByFormId('form-empty')) {
+        batches.push(batch);
+      }
+
+      expect(batches).toHaveLength(0);
     });
   });
 

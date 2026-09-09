@@ -185,7 +185,7 @@ Uses the comprehensive `checkFormAccess` from `formSharing.ts` (respects `NO_ACC
 
 | Operation | Type | Guard | Notes |
 |-----------|------|-------|-------|
-| `responses(orgId)` | Query | `requireOrganizationMembership` | Scoped to forms the user can access (creator or VIEWER+). Does **not** return forms where user has `NO_ACCESS`. |
+| `responses(orgId, page, limit, …)` | Query | `requireOrganizationMembership` | Paginated (`PaginatedResponses`). Scoped to forms the user can access (creator or VIEWER+). Does **not** return forms where user has `NO_ACCESS`. |
 | `response(id)` | Query | `requireAuth` + `checkFormAccess(VIEWER)` | |
 | `responsesByForm(formId, …)` | Query | `requireAuth` + `requireOrganizationMembership` + `checkFormAccess(VIEWER)` | Supports pagination, sorting, and filtering. |
 | `responseEditHistory(responseId)` | Query | `requireAuth` + `requireOrganizationMembership` + `checkFormAccess(VIEWER)` | |
