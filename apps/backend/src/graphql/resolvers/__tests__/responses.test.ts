@@ -67,7 +67,15 @@ vi.mock('../../../services/responseCopyService.js', () => ({
 vi.mock('../../../lib/audit.js', () => ({ audit: vi.fn().mockResolvedValue(undefined) }));
 
 describe('Responses Resolvers', () => {
-  const mockContext = {
+  const mockContext: {
+    auth: betterAuthMiddleware.BetterAuthContext;
+    req: {
+      ip: string;
+      headers: {
+        'user-agent': string;
+      };
+    };
+  } = {
     auth: {
       user: {
         id: 'user-123',
@@ -135,7 +143,7 @@ describe('Responses Resolvers', () => {
 
   describe('Query: responses', () => {
     it('should return paginated responses for accessible forms only', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123']);
       const paginatedResult = {
@@ -171,7 +179,7 @@ describe('Responses Resolvers', () => {
     });
 
     it('should pass custom pagination and sorting arguments', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123', 'form-456']);
       const paginatedResult = {
@@ -201,7 +209,7 @@ describe('Responses Resolvers', () => {
     });
 
     it('should default sortOrder when invalid is passed', async () => {
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
       vi.mocked(formService.getAccessibleFormIds).mockResolvedValue(['form-123']);
       const paginatedResult = {
@@ -215,7 +223,7 @@ describe('Responses Resolvers', () => {
 
       await responsesResolvers.Query.responses(
         {},
-        { organizationId: 'org-123', sortOrder: 'invalid' as any },
+        { organizationId: 'org-123', sortOrder: 'invalid' },
         mockContext
       );
 
