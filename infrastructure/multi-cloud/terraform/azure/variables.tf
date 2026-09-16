@@ -80,13 +80,13 @@ variable "ingress_transport" {
 }
 
 variable "postgres_connection_string" {
-  description = "PostgreSQL connection string (via PgBouncer)"
+  description = "PostgreSQL connection string (direct connection to shared PostgreSQL flexible server)"
   type        = string
   sensitive   = true
 }
 
 variable "postgres_direct_url" {
-  description = "Direct PostgreSQL connection string (bypasses PgBouncer, used by Prisma for migrations)"
+  description = "Direct PostgreSQL connection string (bypasses PgBouncer, used by Prisma and pg-boss)"
   type        = string
   sensitive   = true
 }

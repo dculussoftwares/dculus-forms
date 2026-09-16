@@ -123,7 +123,13 @@ resource "azurerm_container_app" "backend" {
 
       env {
         name  = "DATABASE_URL"
-        value = var.postgres_connection_string
+        # Directly connect to shared PostgreSQL Flexible Server (bypasses PgBouncer)
+        # Prisma adapter manages client-side connection pooling (max: 2)
+        value = var.postgres_direct_url != "" ? (
+          can(regex("connection_limit=", var.postgres_direct_url)) ? var.postgres_direct_url : (
+            can(regex("\\?", var.postgres_direct_url)) ? "${var.postgres_direct_url}&connection_limit=2" : "${var.postgres_direct_url}?connection_limit=2&sslmode=require"
+          )
+        ) : var.postgres_connection_string
       }
 
       env {

@@ -1,5 +1,9 @@
 # PgBouncer Migration Guide
 
+> [!NOTE]
+> **Status (September 2026): Disconnected / Direct Connection Restored**
+> Due to Azure Container Instances (ACI) vCPU billing rounding up to a full 1.0 vCPU (costing ₹3,190.33/mo), apps have been transitioned back to direct connections to `dculus-shared-postgres.postgres.database.azure.com:5432` with application-level pool limits (`max: 2` in Prisma / `@prisma/adapter-pg`). Total active connections remain under 20 (well below the 50 limit). PgBouncer will be dismantled in Step 2.
+
 ## What Changed
 
 A PgBouncer connection pooler (Azure Container Instance) was added in front of the shared PostgreSQL server.
