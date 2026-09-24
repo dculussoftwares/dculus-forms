@@ -8,5 +8,8 @@
     "placeholder": "Search field types…  ( / )",
     "empty": "No field types match \"{{query}}\""
   },
-  "recentlyUsed": "Recently used"
+  "recentlyUsed": "Recently used",
+  "suggested": "Suggested for you",
+  "allCategories": "All",
+  "insertHere": "Insert here"
 }

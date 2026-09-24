@@ -601,6 +601,39 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
     },
 
     /**
+     * Restore a deleted field (e.g. from Undo toast)
+     */
+    restoreField: (pageId: string, field: FormField, index: number) => {
+      const { _getYDoc, _isYJSReady } = get() as any;
+      const ydoc = _getYDoc();
+      const isReady = _isYJSReady();
+
+      if (!ydoc || !isReady) return;
+
+      const formSchemaMap = ydoc.getMap('formSchema');
+      const pagesArray = getOrCreatePagesArray(formSchemaMap);
+      const pageIndex = pagesArray
+        .toArray()
+        .findIndex((pageMap) => pageMap.get('id') === pageId);
+      if (pageIndex === -1) return;
+
+      const pageMap = pagesArray.get(pageIndex);
+      let fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
+      if (!fieldsArray) {
+        fieldsArray = new Y.Array();
+        pageMap.set('fields', fieldsArray);
+      }
+
+      const fieldMap = serializeFieldToYMap(field);
+      const safeIndex = Math.max(0, Math.min(index, fieldsArray.length));
+      if (safeIndex >= fieldsArray.length) {
+        fieldsArray.push([fieldMap]);
+      } else {
+        fieldsArray.insert(safeIndex, [fieldMap]);
+      }
+    },
+
+    /**
      * Move a field from one page to another
      *
      * Removes the field from source page and adds it to target page.

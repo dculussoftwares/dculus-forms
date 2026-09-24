@@ -18,7 +18,16 @@
     "noPageSelected": "No page selected",
     "fieldCount": "{{count}} field",
     "fieldCount_plural": "{{count}} fields",
-    "placeholder": "Form fields will appear here"
+    "placeholder": "Form fields will appear here",
+    "addContent": "Add content",
+    "emptyTitle": "Start building your page",
+    "emptySubtitle": "Add your first question or drag field types from the library.",
+    "addFirstQuestion": "Add your first question",
+    "orQuickStart": "or start with:"
+  },
+  "notifications": {
+    "fieldDeleted": "Question deleted",
+    "undo": "Undo"
   },
   "status": {
     "connected": "Connected",

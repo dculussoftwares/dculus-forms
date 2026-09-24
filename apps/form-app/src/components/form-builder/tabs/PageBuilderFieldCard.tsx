@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
-import { FieldPreview, Button, Badge } from '@dculus/ui';
+import { FieldPreview, Button, Badge, toast } from '@dculus/ui';
 import { FormField, FormPage, FillableFormField, isGradableFieldType } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useConditionReferenceCounts } from '../../../hooks/useConditionReferenceCounts';
@@ -60,6 +60,7 @@ export const FieldCard: React.FC<{
   onMoveDown?: () => void;
   onMoveToPage?: (targetPageId: string) => void;
   onCopyToPage?: (targetPageId: string) => void;
+  onUpdateLabel?: (newLabel: string) => void;
   isAnyDragActive?: boolean;
   isRecentlyDropped?: boolean;
   isDelayingExpansion?: boolean;
@@ -79,6 +80,7 @@ export const FieldCard: React.FC<{
   onMoveDown,
   onMoveToPage,
   onCopyToPage,
+  onUpdateLabel,
   isAnyDragActive = false,
   isRecentlyDropped = false,
   isDelayingExpansion = false,
@@ -89,6 +91,28 @@ export const FieldCard: React.FC<{
     'label' in field && typeof field.label === 'string' && field.label
       ? field.label
       : typeConfig.label;
+
+  const [isEditingLabel, setIsEditingLabel] = React.useState(false);
+  const [draftLabel, setDraftLabel] = React.useState(label);
+
+  React.useEffect(() => {
+    setDraftLabel(label);
+  }, [label]);
+
+  const handleSaveLabel = () => {
+    setIsEditingLabel(false);
+    const trimmed = draftLabel.trim();
+    if (trimmed && trimmed !== label && onUpdateLabel) {
+      onUpdateLabel(trimmed);
+    } else {
+      setDraftLabel(label);
+    }
+  };
+
+  const handleCancelLabel = () => {
+    setIsEditingLabel(false);
+    setDraftLabel(label);
+  };
 
   // Get field type config for icon and category
   const Icon = typeConfig.icon;
@@ -203,15 +227,53 @@ export const FieldCard: React.FC<{
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium truncate flex items-center gap-1 text-[#4c414e] dark:text-white">
-            <span className="truncate">{label}</span>
-            {'validation' in field &&
-              (field as FillableFormField).validation?.required && (
-                <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
-                  *
-                </span>
-              )}
-          </div>
+          {isEditingLabel ? (
+            <input
+              type="text"
+              value={draftLabel}
+              onChange={(e) => setDraftLabel(e.target.value)}
+              onBlur={handleSaveLabel}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSaveLabel();
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  handleCancelLabel();
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full text-sm font-medium px-1.5 py-0.5 -mx-1.5 rounded border border-[var(--tf-border-strong)] bg-white dark:bg-gray-800 text-[#3c323e] dark:text-white focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+              autoFocus
+            />
+          ) : (
+            <div
+              className="text-sm font-medium truncate flex items-center gap-1 text-[#4c414e] dark:text-white group/label cursor-text"
+              onClick={(e) => {
+                if (isSelected && onUpdateLabel) {
+                  e.stopPropagation();
+                  setIsEditingLabel(true);
+                }
+              }}
+              onDoubleClick={(e) => {
+                if (onUpdateLabel) {
+                  e.stopPropagation();
+                  setIsEditingLabel(true);
+                }
+              }}
+              title={onUpdateLabel ? (isSelected ? 'Click to edit label' : 'Double click to edit label') : undefined}
+            >
+              <span className="truncate group-hover/label:underline decoration-dashed decoration-gray-400 underline-offset-2">
+                {label}
+              </span>
+              {'validation' in field &&
+                (field as FillableFormField).validation?.required && (
+                  <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
+                    *
+                  </span>
+                )}
+            </div>
+          )}
           <div className="text-xs text-[#655d67] dark:text-gray-400 flex items-center gap-1.5">
             <span>{typeConfig.label}</span>
             {isGradable && isKeyed && (
@@ -390,12 +452,15 @@ export const DraggableFieldCard: React.FC<{
     selectedFieldId,
     setSelectedField,
     removeField,
+    restoreField,
     duplicateField,
     reorderFields,
     moveFieldBetweenPages,
     copyFieldToPage,
+    updateField,
     pages,
   } = useFormBuilderStore();
+  const { t } = useTranslation('pageBuilderTab');
 
   // Detect if ANY drag is active
   const { active } = useDndContext();
@@ -419,10 +484,26 @@ export const DraggableFieldCard: React.FC<{
   };
 
   const handleDelete = () => {
+    const deletedField = field;
+    const deletedIndex = index;
     removeField(pageId, field.id);
     if (isSelected) {
       setSelectedField(null);
     }
+    toast({
+      title: t('notifications.fieldDeleted', { defaultValue: 'Question deleted' }),
+      action: {
+        label: t('notifications.undo', { defaultValue: 'Undo' }),
+        onClick: () => {
+          restoreField(pageId, deletedField, deletedIndex);
+          setSelectedField(deletedField.id);
+        },
+      },
+    });
+  };
+
+  const handleUpdateLabel = (newLabel: string) => {
+    updateField(pageId, field.id, { label: newLabel });
   };
 
   const handleDuplicate = () => {
@@ -474,6 +555,7 @@ export const DraggableFieldCard: React.FC<{
         }
         onMoveToPage={canEdit ? handleMoveToPage : undefined}
         onCopyToPage={canEdit ? handleCopyToPage : undefined}
+        onUpdateLabel={canEdit ? handleUpdateLabel : undefined}
       />
     </div>
   );

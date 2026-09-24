@@ -18,7 +18,16 @@
     "noPageSelected": "No page selected",
     "fieldCount": "{{count}} field",
     "fieldCount_plural": "{{count}} fields",
-    "placeholder": "Form fields will appear here"
+    "placeholder": "Form fields will appear here",
+    "addContent": "உள்ளடக்கத்தைச் சேர்",
+    "emptyTitle": "உங்கள் பக்கத்தை உருவாக்கத் தொடங்குங்கள்",
+    "emptySubtitle": "உங்கள் முதல் கேள்வியைச் சேர்க்கவும் அல்லது நூலகத்திலிருந்து புல வகைகளை இழுக்கவும்.",
+    "addFirstQuestion": "உங்கள் முதல் கேள்வியைச் சேர்",
+    "orQuickStart": "அல்லது இதனுடன் தொடங்குங்கள்:"
+  },
+  "notifications": {
+    "fieldDeleted": "கேள்வி நீக்கப்பட்டது",
+    "undo": "செயல்தவிர்"
   },
   "status": {
     "connected": "இணைக்கப்பட்டது",

@@ -81,6 +81,7 @@ export interface FieldsSlice {
   removeField: (pageId: string, fieldId: string) => void;
   reorderFields: (pageId: string, oldIndex: number, newIndex: number) => void;
   duplicateField: (pageId: string, fieldId: string) => void;
+  restoreField: (pageId: string, field: FormField, index: number) => void;
   moveFieldBetweenPages: (
     sourcePageId: string,
     targetPageId: string,
