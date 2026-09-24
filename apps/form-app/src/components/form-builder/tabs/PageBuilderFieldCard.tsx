@@ -397,6 +397,7 @@ export const FieldCard: React.FC<{
                       onChange={(e) => setDraftLabel(e.target.value)}
                       onBlur={handleSaveLabel}
                       onKeyDown={(e) => {
+                        if (e.nativeEvent.isComposing) return;
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           handleSaveLabel();
@@ -406,17 +407,27 @@ export const FieldCard: React.FC<{
                         }
                       }}
                       onClick={(e) => e.stopPropagation()}
+                      aria-label={t('fieldCard.editQuestion', { defaultValue: 'Edit question title' })}
                       className="w-full text-sm font-medium px-2 py-1 mb-2 rounded border border-[var(--tf-border-strong)] bg-white dark:bg-gray-800 text-[#3c323e] dark:text-white focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
                       autoFocus
                     />
                   ) : (
                     <div
+                      role={onUpdateLabel ? 'button' : undefined}
+                      tabIndex={onUpdateLabel ? 0 : undefined}
                       className={cn(
                         'text-sm font-medium flex items-center gap-1.5 text-[#4c414e] dark:text-white group/label cursor-text mb-2',
-                        onUpdateLabel && 'hover:underline decoration-dashed decoration-gray-400 underline-offset-2'
+                        onUpdateLabel && 'hover:underline decoration-dashed decoration-gray-400 underline-offset-2 focus:outline-none focus:ring-1 focus:ring-primary rounded px-0.5'
                       )}
                       onClick={(e) => {
                         if (onUpdateLabel) {
+                          e.stopPropagation();
+                          setIsEditingLabel(true);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (onUpdateLabel && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
                           e.stopPropagation();
                           setIsEditingLabel(true);
                         }
@@ -429,7 +440,10 @@ export const FieldCard: React.FC<{
                     >
                       <span className="truncate">{label}</span>
                       {isRequired && (
-                        <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
+                        <span
+                          className="text-[#ce5d55] text-sm flex-shrink-0"
+                          title={t('fieldCard.requiredFieldTooltip', { defaultValue: 'Required field' })}
+                        >
                           *
                         </span>
                       )}
@@ -453,6 +467,7 @@ export const FieldCard: React.FC<{
                     hideLabel={hasLabel}
                     editableRichText={isSelected && Boolean(onUpdateContent)}
                     onContentChange={onUpdateContent ? handleContentChange : undefined}
+                    richTextPlaceholder={t('fieldCard.richTextPlaceholder', { defaultValue: 'Type rich text content here...' })}
                   />
                 </div>
               </div>
@@ -602,20 +617,24 @@ export const DraggableFieldCard: React.FC<{
   const handleDelete = () => {
     const deletedField = field;
     const deletedIndex = index;
-    removeField(pageId, field.id);
-    if (isSelected) {
-      setSelectedField(null);
-    }
-    toast({
-      title: t('notifications.fieldDeleted', { defaultValue: 'Question deleted' }),
-      action: {
-        label: t('notifications.undo', { defaultValue: 'Undo' }),
-        onClick: () => {
-          restoreField(pageId, deletedField, deletedIndex);
-          setSelectedField(deletedField.id);
+    const removed = removeField(pageId, field.id);
+    if (removed !== false) {
+      if (isSelected) {
+        setSelectedField(null);
+      }
+      toast({
+        title: t('notifications.fieldDeleted', { defaultValue: 'Question deleted' }),
+        action: {
+          label: t('notifications.undo', { defaultValue: 'Undo' }),
+          onClick: () => {
+            const restored = restoreField(pageId, deletedField, deletedIndex);
+            if (restored) {
+              setSelectedField(deletedField.id);
+            }
+          },
         },
-      },
-    });
+      });
+    }
   };
 
   const handleUpdateLabel = (newLabel: string) => {
@@ -647,6 +666,7 @@ export const DraggableFieldCard: React.FC<{
   };
 
   const isFillable = 'validation' in field;
+  const hasLabel = 'label' in field;
 
   const handleToggleRequired = (newRequired: boolean) => {
     if (!canEdit || !isFillable) return;
@@ -658,6 +678,14 @@ export const DraggableFieldCard: React.FC<{
       },
     });
   };
+
+  const handleUpdateContent = React.useCallback(
+    (newContent: string) => {
+      if (!canEdit) return;
+      updateField(pageId, field.id, { content: newContent });
+    },
+    [canEdit, updateField, pageId, field.id]
+  );
 
   return (
     <div ref={setNodeRef}>
@@ -684,9 +712,9 @@ export const DraggableFieldCard: React.FC<{
         }
         onMoveToPage={canEdit ? handleMoveToPage : undefined}
         onCopyToPage={canEdit ? handleCopyToPage : undefined}
-        onUpdateLabel={canEdit ? handleUpdateLabel : undefined}
+        onUpdateLabel={canEdit && hasLabel ? handleUpdateLabel : undefined}
         onToggleRequired={canEdit && isFillable ? handleToggleRequired : undefined}
-        onUpdateContent={canEdit ? (newContent: string) => updateField(pageId, field.id, { content: newContent }) : undefined}
+        onUpdateContent={canEdit ? handleUpdateContent : undefined}
       />
     </div>
   );

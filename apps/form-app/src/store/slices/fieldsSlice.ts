@@ -346,25 +346,25 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
     /**
      * Remove a field from a page
      */
-    removeField: (pageId: string, fieldId: string) => {
+    removeField: (pageId: string, fieldId: string): boolean => {
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
 
-      if (!ydoc || !isReady) return;
+      if (!ydoc || !isReady) return false;
 
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = formSchemaMap.get('pages') as Y.Array<Y.Map<any>>;
 
       if (!pagesArray) {
         console.warn('YJS formSchema pages array not found');
-        return;
+        return false;
       }
       const pageIndex = pagesArray
         .toArray()
         .findIndex((pageMap) => pageMap.get('id') === pageId);
 
-      if (pageIndex === -1) return;
+      if (pageIndex === -1) return false;
 
       const pageMap = pagesArray.get(pageIndex);
       const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
@@ -376,7 +376,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         ydoc.transact(() => {
           fieldsArray.get(fieldIndex).set('deleted', true);
         });
+        return true;
       }
+      return false;
     },
 
     /**
@@ -603,25 +605,40 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
     /**
      * Restore a deleted field (e.g. from Undo toast)
      */
-    restoreField: (pageId: string, field: FormField, index: number) => {
+    restoreField: (pageId: string, field: FormField, index: number): boolean => {
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
 
-      if (!ydoc || !isReady) return;
+      if (!ydoc || !isReady) {
+        toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
+        return false;
+      }
 
       const formSchemaMap = ydoc.getMap('formSchema');
       const pagesArray = getOrCreatePagesArray(formSchemaMap);
       const pageIndex = pagesArray
         .toArray()
         .findIndex((pageMap) => pageMap.get('id') === pageId);
-      if (pageIndex === -1) return;
+      if (pageIndex === -1) return false;
 
       const pageMap = pagesArray.get(pageIndex);
       let fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
       if (!fieldsArray) {
         fieldsArray = new Y.Array();
         pageMap.set('fields', fieldsArray);
+      }
+
+      // If map already exists (e.g. soft-deleted by removeField), restore it directly
+      // rather than inserting a duplicate ID map into the Y.Array
+      const existingFieldIndex = fieldsArray
+        .toArray()
+        .findIndex((fieldMap) => fieldMap.get('id') === field.id);
+      if (existingFieldIndex !== -1) {
+        ydoc.transact(() => {
+          fieldsArray.get(existingFieldIndex).set('deleted', false);
+        });
+        return true;
       }
 
       const fieldMap = serializeFieldToYMap(field);
@@ -631,6 +648,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       } else {
         fieldsArray.insert(safeIndex, [fieldMap]);
       }
+      return true;
     },
 
     /**

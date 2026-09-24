@@ -25,6 +25,7 @@ interface FieldPreviewProps {
   hideLabel?: boolean;
   editableRichText?: boolean;
   onContentChange?: (content: string) => void;
+  richTextPlaceholder?: string;
 }
 
 const getDefaultLabel = (type: FieldType): string => {
@@ -63,6 +64,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   hideLabel = false,
   editableRichText = false,
   onContentChange,
+  richTextPlaceholder,
 }) => {
   // Memoize field data extraction to make it reactive to field changes
   const fieldData = useMemo(() => {
@@ -420,7 +422,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
               value={richTextContent}
               onChange={onContentChange}
               editable={isEditable}
-              placeholder="Type rich text content here..."
+              placeholder={richTextPlaceholder || 'Type rich text content here...'}
               className="min-h-24 border-none shadow-none"
             />
           </div>
@@ -442,13 +444,18 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   return (
     <div className="space-y-2">
       {/* Field Label */}
-      {!hideLabel && (
+      {!hideLabel ? (
         <div className="flex items-center space-x-1">
           <Label htmlFor={inputId} className="text-sm font-medium text-gray-900 dark:text-white">
             {fieldData.label}
             {fieldData.required && <span className="text-red-500 ml-1">*</span>}
           </Label>
         </div>
+      ) : (
+        /* Visually hidden label preserves field-level accessible name when custom question header is rendered */
+        <Label htmlFor={inputId} className="sr-only">
+          {fieldData.label}
+        </Label>
       )}
 
       {/* Field Input */}
