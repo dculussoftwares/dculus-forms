@@ -14,16 +14,18 @@
     }
   },
   "formArea": {
-    "untitledPage": "Untitled Page",
-    "noPageSelected": "No page selected",
-    "fieldCount": "{{count}} field",
-    "fieldCount_plural": "{{count}} fields",
-    "placeholder": "Form fields will appear here",
+    "untitledPage": "தலைப்பிடப்படாத பக்கம்",
+    "noPageSelected": "பக்கம் எதுவும் தேர்ந்தெடுக்கப்படவில்லை",
+    "fieldCount": "{{count}} புலம்",
+    "fieldCount_plural": "{{count}} புலங்கள்",
+    "placeholder": "படிவ புலங்கள் இங்கே தோன்றும்",
     "addContent": "உள்ளடக்கத்தைச் சேர்",
     "emptyTitle": "உங்கள் பக்கத்தை உருவாக்கத் தொடங்குங்கள்",
     "emptySubtitle": "உங்கள் முதல் கேள்வியைச் சேர்க்கவும் அல்லது நூலகத்திலிருந்து புல வகைகளை இழுக்கவும்.",
     "addFirstQuestion": "உங்கள் முதல் கேள்வியைச் சேர்",
-    "orQuickStart": "அல்லது இதனுடன் தொடங்குங்கள்:"
+    "orQuickStart": "அல்லது இதனுடன் தொடங்குங்கள்:",
+    "insertFieldHere": "புலத்தை இங்கே செருகவும்",
+    "dropHere": "இங்கே விடவும்"
   },
   "notifications": {
     "fieldDeleted": "கேள்வி நீக்கப்பட்டது",
@@ -38,7 +40,7 @@
     "description": "அதன் அமைப்புகளைத் திருத்த ஒரு புலத்தைக் கிளிக் செய்யவும்"
   },
   "deleteField": {
-    "button": "Delete Field"
+    "button": "புலத்தை நீக்கு"
   },
   "dragHint": "ஒரு புல வகையை இங்கே இழுக்கவும்",
   "ruleReferences": {
@@ -59,5 +61,19 @@
       "single": "{{count}} லாஜிக் விதி இந்தப் புலத்தைப் பயன்படுத்துகிறது",
       "multiple": "{{count}} லாஜிக் விதிகள் இந்தப் புலத்தைப் பயன்படுத்துகின்றன"
     }
+  },
+  "fieldCard": {
+    "question": "கேள்வி",
+    "required": "கட்டாயம்",
+    "markRequired": "கட்டாயமாக்கு",
+    "markOptional": "விருப்பத்தேர்வாக்கு",
+    "editQuestion": "கேள்வி தலைப்பைத் திருத்து",
+    "clickToEdit": "கேள்வியைத் திருத்த கிளிக் செய்யவும்",
+    "typeAQuestion": "உங்கள் கேள்வியை இங்கே தட்டச்சு செய்யவும்...",
+    "save": "சேமி",
+    "cancel": "ரத்துசெய்",
+    "keyboardSaveHint": "சேமிக்க Enter ↵ · புதிய வரிக்கு Shift+Enter · ரத்து செய்ய Esc",
+    "requiredFieldTooltip": "கட்டாய புலம்",
+    "richTextPlaceholder": "வடிவமைக்கப்பட்ட உரையை இங்கே தட்டச்சு செய்யவும்..."
   }
 }

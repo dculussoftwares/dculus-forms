@@ -109,34 +109,24 @@ export const EmptyFormAreaPlaceholder: React.FC<{
             <span className="text-[11px] text-[var(--tf-muted)] mr-1">
               {t('formArea.orQuickStart', { defaultValue: 'or start with:' })}
             </span>
-            <button
-              type="button"
-              onClick={() => handleQuickAdd(FieldType.TEXT_INPUT_FIELD)}
-              className="text-xs px-2.5 py-1 rounded-lg border border-[var(--tf-border-medium)] hover:border-[var(--tf-border-strong)] hover:bg-[var(--tf-faint)] text-[var(--tf-text)] transition-colors cursor-pointer"
-            >
-              + Short Text
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickAdd(FieldType.EMAIL_FIELD)}
-              className="text-xs px-2.5 py-1 rounded-lg border border-[var(--tf-border-medium)] hover:border-[var(--tf-border-strong)] hover:bg-[var(--tf-faint)] text-[var(--tf-text)] transition-colors cursor-pointer"
-            >
-              + Email
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickAdd(FieldType.RADIO_FIELD)}
-              className="text-xs px-2.5 py-1 rounded-lg border border-[var(--tf-border-medium)] hover:border-[var(--tf-border-strong)] hover:bg-[var(--tf-faint)] text-[var(--tf-text)] transition-colors cursor-pointer"
-            >
-              + Multiple Choice
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickAdd(FieldType.NUMBER_FIELD)}
-              className="text-xs px-2.5 py-1 rounded-lg border border-[var(--tf-border-medium)] hover:border-[var(--tf-border-strong)] hover:bg-[var(--tf-faint)] text-[var(--tf-text)] transition-colors cursor-pointer"
-            >
-              + Number
-            </button>
+            {([
+              FieldType.TEXT_INPUT_FIELD,
+              FieldType.EMAIL_FIELD,
+              FieldType.RADIO_FIELD,
+              FieldType.NUMBER_FIELD,
+            ] as const).map((type) => {
+              const cfg = FIELD_TYPES.find((f) => f.type === type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleQuickAdd(type)}
+                  className="text-xs px-2.5 py-1 rounded-lg border border-[var(--tf-border-medium)] hover:border-[var(--tf-border-strong)] hover:bg-[var(--tf-faint)] text-[var(--tf-text)] transition-colors cursor-pointer"
+                >
+                  + {cfg?.label || type}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -160,6 +150,7 @@ export const DropIndicator: React.FC<{
 }> = ({ index, pageId, isAnyDragActive = false }) => {
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
+  const { t } = useTranslation('pageBuilderTab');
   const { setNodeRef, isOver } = useDroppable({
     id: `drop-indicator-${pageId}-${index}`,
     data: {
@@ -193,7 +184,7 @@ export const DropIndicator: React.FC<{
         >
           {isOver && (
             <span className="text-xs text-[#3c323e] font-medium select-none">
-              Drop here
+              {t('formArea.dropHere', { defaultValue: 'Drop here' })}
             </span>
           )}
         </div>
@@ -216,8 +207,9 @@ export const DropIndicator: React.FC<{
         >
           <button
             type="button"
-            className="opacity-0 group-hover/divider:opacity-100 transition-all duration-150 transform scale-90 group-hover/divider:scale-100 w-5 h-5 rounded-full bg-white dark:bg-card border border-[var(--tf-border-medium)] hover:border-[var(--tf-border-strong)] shadow-xs hover:shadow hover:scale-110 flex items-center justify-center text-[var(--tf-muted)] hover:text-[var(--tf-dark)] cursor-pointer"
-            title="Insert field here"
+            className="opacity-0 group-hover/divider:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-all duration-150 transform scale-90 group-hover/divider:scale-100 focus-visible:scale-100 w-5 h-5 rounded-full bg-white dark:bg-card border border-[var(--tf-border-medium)] hover:border-[var(--tf-border-strong)] shadow-xs hover:shadow hover:scale-110 flex items-center justify-center text-[var(--tf-muted)] hover:text-[var(--tf-dark)] cursor-pointer"
+            title={t('formArea.insertFieldHere', { defaultValue: 'Insert field here' })}
+            aria-label={t('formArea.insertFieldHere', { defaultValue: 'Insert field here' })}
             data-testid={`insert-field-button-${index}`}
           >
             <Plus className="w-3 h-3" />
@@ -375,21 +367,29 @@ export const FormArea: React.FC<{
       if (fieldIndex === -1) return;
       const currentField = selectedPage.fields[fieldIndex];
 
-      // Delete / Backspace: remove field with undo toast
+      // Delete / Backspace: remove field with undo toast (guard against focused interactive controls)
       if (e.key === 'Delete' || e.key === 'Backspace') {
+        const target = e.target as HTMLElement | null;
+        if (target && target.closest('button, select, [role="button"], [role="switch"], [role="menuitem"], [role="combobox"], [role="option"]')) {
+          return;
+        }
         e.preventDefault();
-        removeField(selectedPage.id, currentField.id);
-        setSelectedField(null);
-        toast({
-          title: t('notifications.fieldDeleted', { defaultValue: 'Question deleted' }),
-          action: {
-            label: t('notifications.undo', { defaultValue: 'Undo' }),
-            onClick: () => {
-              restoreField(selectedPage.id, currentField, fieldIndex);
-              setSelectedField(currentField.id);
+        const removed = removeField(selectedPage.id, currentField.id);
+        if (removed !== false) {
+          setSelectedField(null);
+          toast({
+            title: t('notifications.fieldDeleted', { defaultValue: 'Question deleted' }),
+            action: {
+              label: t('notifications.undo', { defaultValue: 'Undo' }),
+              onClick: () => {
+                const restored = restoreField(selectedPage.id, currentField, fieldIndex);
+                if (restored) {
+                  setSelectedField(currentField.id);
+                }
+              },
             },
-          },
-        });
+          });
+        }
         return;
       }
 

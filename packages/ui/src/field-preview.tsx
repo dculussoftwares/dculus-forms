@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { FormField, FieldType, RichTextFormField, PhoneNumberField } from '@dculus/types';
+import { cn } from '@dculus/utils';
 import { Upload } from 'lucide-react';
 import {
   Input,
@@ -21,6 +22,10 @@ interface FieldPreviewProps {
   field: FormField;
   disabled?: boolean;
   showValidation?: boolean;
+  hideLabel?: boolean;
+  editableRichText?: boolean;
+  onContentChange?: (content: string) => void;
+  richTextPlaceholder?: string;
 }
 
 const getDefaultLabel = (type: FieldType): string => {
@@ -56,6 +61,10 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   field,
   disabled = true,
   showValidation: _showValidation = true,
+  hideLabel = false,
+  editableRichText = false,
+  onContentChange,
+  richTextPlaceholder,
 }) => {
   // Memoize field data extraction to make it reactive to field changes
   const fieldData = useMemo(() => {
@@ -391,14 +400,29 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
 
       case FieldType.RICH_TEXT_FIELD: {
         const richTextField = field as RichTextFormField;
+        const isEditable = editableRichText && !!onContentChange;
         const richTextContent =
           richTextField.content ||
-          '<p>Rich text content will appear here...</p>';
+          (isEditable ? '' : '<p>Rich text content will appear here...</p>');
         return (
-          <div className="border border-gray-200 rounded-lg">
+          <div
+            className={cn(
+              'rounded-lg transition-all',
+              isEditable
+                ? 'border border-[var(--tf-border-strong)] bg-white dark:bg-gray-800 shadow-xs'
+                : 'border border-[var(--tf-border-medium)] bg-white dark:bg-gray-900'
+            )}
+            onClick={(e) => {
+              if (isEditable) {
+                e.stopPropagation();
+              }
+            }}
+          >
             <RichTextEditor
               value={richTextContent}
-              editable={false}
+              onChange={onContentChange}
+              editable={isEditable}
+              placeholder={richTextPlaceholder || 'Type rich text content here...'}
               className="min-h-24 border-none shadow-none"
             />
           </div>
@@ -420,12 +444,19 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   return (
     <div className="space-y-2">
       {/* Field Label */}
-      <div className="flex items-center space-x-1">
-        <Label htmlFor={inputId} className="text-sm font-medium text-gray-900 dark:text-white">
+      {!hideLabel ? (
+        <div className="flex items-center space-x-1">
+          <Label htmlFor={inputId} className="text-sm font-medium text-gray-900 dark:text-white">
+            {fieldData.label}
+            {fieldData.required && <span className="text-red-500 ml-1">*</span>}
+          </Label>
+        </div>
+      ) : (
+        /* Visually hidden label preserves field-level accessible name when custom question header is rendered */
+        <Label htmlFor={inputId} className="sr-only">
           {fieldData.label}
-          {fieldData.required && <span className="text-red-500 ml-1">*</span>}
         </Label>
-      </div>
+      )}
 
       {/* Field Input */}
       {renderFieldInput()}

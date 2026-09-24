@@ -23,7 +23,9 @@
     "emptyTitle": "Start building your page",
     "emptySubtitle": "Add your first question or drag field types from the library.",
     "addFirstQuestion": "Add your first question",
-    "orQuickStart": "or start with:"
+    "orQuickStart": "or start with:",
+    "insertFieldHere": "Insert field here",
+    "dropHere": "Drop here"
   },
   "notifications": {
     "fieldDeleted": "Question deleted",
@@ -59,5 +61,19 @@
       "single": "{{count}} logic rule uses this field",
       "multiple": "{{count}} logic rules use this field"
     }
+  },
+  "fieldCard": {
+    "question": "Question",
+    "required": "Required",
+    "markRequired": "Mark as required",
+    "markOptional": "Mark as optional",
+    "editQuestion": "Edit question title",
+    "clickToEdit": "Click to edit question",
+    "typeAQuestion": "Type your question here...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "keyboardSaveHint": "Enter ↵ to save · Shift+Enter for new line · Esc to cancel",
+    "requiredFieldTooltip": "Required field",
+    "richTextPlaceholder": "Type rich text content here..."
   }
 }
