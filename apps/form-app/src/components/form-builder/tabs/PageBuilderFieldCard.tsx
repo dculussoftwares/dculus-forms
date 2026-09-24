@@ -1,7 +1,8 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
-import { FieldPreview, Button, Badge, toast } from '@dculus/ui';
+import { FieldPreview, Button, Badge, Switch, toast } from '@dculus/ui';
 import { FormField, FormPage, FillableFormField, isGradableFieldType } from '@dculus/types';
+import { cn } from '@dculus/utils';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useConditionReferenceCounts } from '../../../hooks/useConditionReferenceCounts';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -22,6 +23,7 @@ import {
   ArrowDown,
   Link2,
   AlertTriangle,
+  Pencil,
 } from 'lucide-react';
 import { PageActionsSelector } from '../PageActionsSelector';
 
@@ -61,6 +63,8 @@ export const FieldCard: React.FC<{
   onMoveToPage?: (targetPageId: string) => void;
   onCopyToPage?: (targetPageId: string) => void;
   onUpdateLabel?: (newLabel: string) => void;
+  onToggleRequired?: (required: boolean) => void;
+  onUpdateContent?: (newContent: string) => void;
   isAnyDragActive?: boolean;
   isRecentlyDropped?: boolean;
   isDelayingExpansion?: boolean;
@@ -81,6 +85,8 @@ export const FieldCard: React.FC<{
   onMoveToPage,
   onCopyToPage,
   onUpdateLabel,
+  onToggleRequired,
+  onUpdateContent,
   isAnyDragActive = false,
   isRecentlyDropped = false,
   isDelayingExpansion = false,
@@ -92,12 +98,24 @@ export const FieldCard: React.FC<{
       ? field.label
       : typeConfig.label;
 
+  const isFillable = 'validation' in field;
+  const isRequired = isFillable && Boolean((field as FillableFormField).validation?.required);
+  const hasLabel = 'label' in field;
+
   const [isEditingLabel, setIsEditingLabel] = React.useState(false);
   const [draftLabel, setDraftLabel] = React.useState(label);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     setDraftLabel(label);
   }, [label]);
+
+  React.useEffect(() => {
+    if (isEditingLabel && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditingLabel]);
 
   const handleSaveLabel = () => {
     setIsEditingLabel(false);
@@ -113,6 +131,41 @@ export const FieldCard: React.FC<{
     setIsEditingLabel(false);
     setDraftLabel(label);
   };
+
+  // Debounced rich text content updates
+  const pendingContentRef = React.useRef<string | null>(null);
+  const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushContentChange = React.useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (pendingContentRef.current !== null && onUpdateContent) {
+      const contentToSave = pendingContentRef.current;
+      pendingContentRef.current = null;
+      onUpdateContent(contentToSave);
+    }
+  }, [onUpdateContent]);
+
+  const handleContentChange = React.useCallback(
+    (newContent: string) => {
+      pendingContentRef.current = newContent;
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        flushContentChange();
+      }, 300);
+    },
+    [flushContentChange]
+  );
+
+  React.useEffect(() => {
+    return () => {
+      flushContentChange();
+    };
+  }, [flushContentChange]);
 
   // Get field type config for icon and category
   const Icon = typeConfig.icon;
@@ -208,74 +261,40 @@ export const FieldCard: React.FC<{
       data-testid={`draggable-field-${field.id}`}
     >
       {/* Header row — always visible in both compact and expanded states */}
-      <div className="flex items-center gap-3 w-full">
-        {dragHandleProps && (
-          <div
-            {...dragHandleProps}
-            className="flex-shrink-0 p-1 -ml-1 cursor-grab rounded-md transition-colors hover:bg-[var(--tf-tab-bg)]"
-            title="Drag to reorder"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
-          </div>
-        )}
-
-        <div
-          className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${categoryColor}`}
-        >
-          <Icon className="w-3.5 h-3.5" />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          {isEditingLabel ? (
-            <input
-              type="text"
-              value={draftLabel}
-              onChange={(e) => setDraftLabel(e.target.value)}
-              onBlur={handleSaveLabel}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSaveLabel();
-                } else if (e.key === 'Escape') {
-                  e.preventDefault();
-                  handleCancelLabel();
-                }
-              }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full text-sm font-medium px-1.5 py-0.5 -mx-1.5 rounded border border-[var(--tf-border-strong)] bg-white dark:bg-gray-800 text-[#3c323e] dark:text-white focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
-              autoFocus
-            />
-          ) : (
+      <div className="flex items-center justify-between gap-3 w-full">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          {dragHandleProps && (
             <div
-              className="text-sm font-medium truncate flex items-center gap-1 text-[#4c414e] dark:text-white group/label cursor-text"
-              onClick={(e) => {
-                if (isSelected && onUpdateLabel) {
-                  e.stopPropagation();
-                  setIsEditingLabel(true);
-                }
-              }}
-              onDoubleClick={(e) => {
-                if (onUpdateLabel) {
-                  e.stopPropagation();
-                  setIsEditingLabel(true);
-                }
-              }}
-              title={onUpdateLabel ? (isSelected ? 'Click to edit label' : 'Double click to edit label') : undefined}
+              {...dragHandleProps}
+              className="flex-shrink-0 p-1 -ml-1 cursor-grab rounded-md transition-colors hover:bg-[var(--tf-tab-bg)]"
+              title="Drag to reorder"
+              onClick={(e) => e.stopPropagation()}
             >
-              <span className="truncate group-hover/label:underline decoration-dashed decoration-gray-400 underline-offset-2">
-                {label}
-              </span>
-              {'validation' in field &&
-                (field as FillableFormField).validation?.required && (
-                  <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
-                    *
-                  </span>
-                )}
+              <GripVertical className="w-4 h-4 text-muted-foreground dark:text-gray-500" />
             </div>
           )}
-          <div className="text-xs text-[#655d67] dark:text-gray-400 flex items-center gap-1.5">
-            <span>{typeConfig.label}</span>
+
+          <div
+            className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${categoryColor}`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+          </div>
+
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-xs font-semibold text-[#3c323e] dark:text-white">
+              {typeConfig.label}
+            </span>
+
+            {/* In compact / dragging mode, show truncated label so reordering is identifiable */}
+            {shouldShowCompact && (
+              <>
+                <span className="text-xs text-[#655d67] dark:text-gray-400">·</span>
+                <span className="text-xs text-[#655d67] dark:text-gray-400 truncate max-w-[200px]">
+                  {label}
+                </span>
+              </>
+            )}
+
             {isGradable && isKeyed && (
               <Badge
                 variant="outline"
@@ -319,6 +338,34 @@ export const FieldCard: React.FC<{
             )}
           </div>
         </div>
+
+        {/* Right side of header: Required Toggle */}
+        {isFillable && onToggleRequired && (
+          <div
+            className="flex-shrink-0 flex items-center gap-1.5 select-none"
+            onClick={(e) => e.stopPropagation()}
+            data-testid={`field-required-toggle-${field.id}`}
+          >
+            <span
+              onClick={() => onToggleRequired(!isRequired)}
+              className={cn(
+                'text-xs cursor-pointer transition-colors',
+                isRequired
+                  ? 'text-[#3c323e] dark:text-white font-medium'
+                  : 'text-[#655d67] dark:text-gray-400 hover:text-[#3c323e] dark:hover:text-white'
+              )}
+            >
+              {t('fieldCard.required', { defaultValue: 'Required' })}
+              {isRequired && <span className="text-[#ce5d55] font-semibold ml-0.5">*</span>}
+            </span>
+            <Switch
+              checked={isRequired}
+              onCheckedChange={onToggleRequired}
+              className="scale-75 origin-right cursor-pointer"
+              aria-label={t('fieldCard.required', { defaultValue: 'Required' })}
+            />
+          </div>
+        )}
       </div>
 
       {/* Animated expansion panel — collapses to zero height during drag */}
@@ -331,14 +378,83 @@ export const FieldCard: React.FC<{
       >
         <div className="overflow-hidden">
           <div className="pt-3 space-y-2.5">
-            {/* Field Preview */}
+            {/* Field Preview & In-place Question Title */}
             <div className="pl-9 pr-1" data-testid={`field-content-${index + 1}`}>
-              <div className="px-3 py-2.5 rounded-lg" style={{ backgroundColor: 'var(--tf-faint)', border: '1px solid var(--tf-border-faint)' }}>
-                <FieldPreview
-                  field={field}
-                  disabled={true}
-                  showValidation={false}
-                />
+              <div
+                className="px-3 py-2.5 rounded-lg"
+                style={{
+                  backgroundColor: 'var(--tf-faint)',
+                  border: '1px solid var(--tf-border-faint)',
+                }}
+              >
+                {/* Single Question Title - In-place editing */}
+                {hasLabel && (
+                  isEditingLabel ? (
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={draftLabel}
+                      onChange={(e) => setDraftLabel(e.target.value)}
+                      onBlur={handleSaveLabel}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSaveLabel();
+                        } else if (e.key === 'Escape') {
+                          e.preventDefault();
+                          handleCancelLabel();
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full text-sm font-medium px-2 py-1 mb-2 rounded border border-[var(--tf-border-strong)] bg-white dark:bg-gray-800 text-[#3c323e] dark:text-white focus:outline-none focus:ring-1 focus:ring-primary shadow-xs"
+                      autoFocus
+                    />
+                  ) : (
+                    <div
+                      className={cn(
+                        'text-sm font-medium flex items-center gap-1.5 text-[#4c414e] dark:text-white group/label cursor-text mb-2',
+                        onUpdateLabel && 'hover:underline decoration-dashed decoration-gray-400 underline-offset-2'
+                      )}
+                      onClick={(e) => {
+                        if (onUpdateLabel) {
+                          e.stopPropagation();
+                          setIsEditingLabel(true);
+                        }
+                      }}
+                      title={
+                        onUpdateLabel
+                          ? t('fieldCard.clickToEdit', { defaultValue: 'Click to edit label' })
+                          : undefined
+                      }
+                    >
+                      <span className="truncate">{label}</span>
+                      {isRequired && (
+                        <span className="text-[#ce5d55] text-sm flex-shrink-0" title="Required field">
+                          *
+                        </span>
+                      )}
+                      {onUpdateLabel && (
+                        <Pencil className="w-3 h-3 text-[#655d67] opacity-0 group-hover/label:opacity-100 transition-opacity ml-0.5" />
+                      )}
+                    </div>
+                  )
+                )}
+
+                {/* Field Input (label suppressed if hasLabel to eliminate duplicate) */}
+                <div
+                  onBlur={() => {
+                    flushContentChange();
+                  }}
+                >
+                  <FieldPreview
+                    field={field}
+                    disabled={true}
+                    showValidation={false}
+                    hideLabel={hasLabel}
+                    editableRichText={isSelected && Boolean(onUpdateContent)}
+                    onContentChange={onUpdateContent ? handleContentChange : undefined}
+                  />
+                </div>
               </div>
             </div>
 
@@ -530,6 +646,19 @@ export const DraggableFieldCard: React.FC<{
     copyFieldToPage(pageId, targetPageId, field.id);
   };
 
+  const isFillable = 'validation' in field;
+
+  const handleToggleRequired = (newRequired: boolean) => {
+    if (!canEdit || !isFillable) return;
+    const currentValidation = (field as FillableFormField).validation || {};
+    updateField(pageId, field.id, {
+      validation: {
+        ...currentValidation,
+        required: newRequired,
+      },
+    });
+  };
+
   return (
     <div ref={setNodeRef}>
       <FieldCard
@@ -556,6 +685,8 @@ export const DraggableFieldCard: React.FC<{
         onMoveToPage={canEdit ? handleMoveToPage : undefined}
         onCopyToPage={canEdit ? handleCopyToPage : undefined}
         onUpdateLabel={canEdit ? handleUpdateLabel : undefined}
+        onToggleRequired={canEdit && isFillable ? handleToggleRequired : undefined}
+        onUpdateContent={canEdit ? (newContent: string) => updateField(pageId, field.id, { content: newContent }) : undefined}
       />
     </div>
   );
