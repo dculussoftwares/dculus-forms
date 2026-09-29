@@ -2,15 +2,24 @@ import { UseFormReturn, FieldErrors } from 'react-hook-form';
 import { FormField, FieldFormData } from '@dculus/types';
 
 /**
+ * Autosave state of the field settings panel:
+ * - idle: nothing edited since the field was selected
+ * - pending: edits waiting for the debounce (or for the connection to return)
+ * - saved: every edit has been written to the collaborative document
+ * - invalid: edits are held back until validation errors are fixed
+ */
+export type FieldSaveStatus = 'idle' | 'pending' | 'saved' | 'invalid';
+
+/**
  * Props for the useFieldEditor hook
  */
 export interface UseFieldEditorProps {
   /** The form field being edited (null when no field selected) */
   field: FormField | null;
-  /** Callback when field is saved */
-  onSave: (updates: Record<string, any>) => void;
-  /** Callback when editing is cancelled */
-  onCancel?: () => void;
+  /** Writes changed properties to the field; `fieldId` is the field the values belong to */
+  onSave: (updates: Record<string, any>, fieldId: string) => void;
+  /** When false (read-only or disconnected), edits are held instead of saved */
+  enabled?: boolean;
 }
 
 /**
@@ -19,22 +28,14 @@ export interface UseFieldEditorProps {
 export interface UseFieldEditorReturn {
   /** React Hook Form instance */
   form: UseFormReturn<FieldFormData>;
-  /** Whether form has unsaved changes */
-  isDirty: boolean;
-  /** Whether save operation is in progress */
-  isSaving: boolean;
   /** Whether form data is valid */
   isValid: boolean;
   /** Form validation errors */
   errors: FieldErrors<FieldFormData>;
-  /** Save the current form data */
-  handleSave: () => Promise<void>;
-  /** Cancel editing and revert changes */
-  handleCancel: () => void;
-  /** Reset form to original field data */
-  handleReset: () => void;
-  /** Auto-save if valid and dirty */
-  handleAutoSave: () => void;
+  /** Autosave state for the status indicator */
+  saveStatus: FieldSaveStatus;
+  /** Save pending edits immediately (skips the debounce) */
+  handleSave: () => void;
   /** Add a new option (for option-based fields) */
   addOption: () => void;
   /** Update an option at specific index */

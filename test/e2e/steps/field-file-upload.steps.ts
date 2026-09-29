@@ -20,7 +20,7 @@
 import { Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
-import { addFieldToPage, openLastFieldSettings, createFormViaGraphQL } from './helpers';
+import { addFieldToPage, openLastFieldSettings, createFormViaGraphQL, waitForFieldSettingsSaved } from './helpers';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DRAG / OPEN-SETTINGS STEPS
@@ -55,8 +55,7 @@ Then('I fill the file upload field settings with valid data', async function (th
 
 Then('I save the file upload field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: /save/i }).click();
-  await this.page.waitForTimeout(1_000);
+  await waitForFieldSettingsSaved(this.page);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,7 +124,7 @@ Then('I test file upload hint too long validation', async function (this: Custom
 
 /**
  * Fix all errors: set a valid label and clear the oversized hint, then blur
- * to re-trigger validation. The save button should become enabled.
+ * to re-trigger validation. Autosave should then go through.
  */
 Then('I fix all validation errors for file upload', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');

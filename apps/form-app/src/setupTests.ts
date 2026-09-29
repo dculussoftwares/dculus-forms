@@ -308,7 +308,9 @@ jest.mock('@dculus/types', () => {
     FileUploadField,
     PhoneNumberField,
     textInputFieldValidationSchema,
-    getFieldValidationSchema: jest.fn(() => ({})),
+    getFieldValidationSchema: jest.fn(() => ({
+      safeParse: (data: unknown) => ({ success: true, data }),
+    })),
     // Keep AI proposal tests aligned with the production trust boundary.
     sanitizeConditions: (input: unknown) => {
       if (!Array.isArray(input)) return undefined;

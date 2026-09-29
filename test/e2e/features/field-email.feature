@@ -22,9 +22,9 @@ Feature: Email Field Comprehensive Validations
     Then I test label and hint validation for email
     And I test placeholder validation for email
     And I test default value validation for email
-    And I verify save button is disabled with errors
+    And I verify field settings are not saved due to errors
     And I fix all validation errors for email
-    And I verify save button is enabled
+    And I verify field settings are saved
     Then I save the email field settings
 
   Scenario: Create email field via GraphQL and validate all validations in viewer

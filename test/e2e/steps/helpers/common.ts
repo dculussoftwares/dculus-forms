@@ -104,6 +104,27 @@ export async function openLastFieldSettings(world: CustomWorld): Promise<void> {
 }
 
 /**
+ * Field settings autosave: waits until the panel reports every edit as written
+ * to the collaborative document ("idle" means nothing was edited).
+ */
+export async function waitForFieldSettingsSaved(page: Page): Promise<void> {
+  await expect(page.getByTestId('field-settings-save-status')).toHaveAttribute(
+    'data-status',
+    /^(saved|idle)$/,
+    { timeout: 10_000 }
+  );
+}
+
+/** Field settings autosave: waits until edits are held back by validation errors. */
+export async function expectFieldSettingsBlockedByErrors(page: Page): Promise<void> {
+  await expect(page.getByTestId('field-settings-save-status')).toHaveAttribute(
+    'data-status',
+    'invalid',
+    { timeout: 10_000 }
+  );
+}
+
+/**
  * Creates a form via GraphQL using the currently signed-in user's organization.
  * Navigates to the form dashboard after creation.
  */

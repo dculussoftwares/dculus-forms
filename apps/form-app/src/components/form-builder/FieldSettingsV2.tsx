@@ -23,7 +23,6 @@ import { useFieldEditor } from '../../hooks';
 import {
   ValidationSummary,
   FieldSettingsHeader,
-  FieldSettingsFooter,
   FormInputField,
   useFieldSettingsConstants,
 } from './field-settings';
@@ -65,7 +64,7 @@ interface FileUploadFieldSettingsInnerProps {
   field: FileUploadField;
   isConnected: boolean;
   isReadOnly?: boolean;
-  onUpdate?: (updates: Record<string, any>) => void;
+  onUpdate?: (updates: Record<string, any>, fieldId: string) => void;
 }
 
 const FileUploadFieldSettingsInner: React.FC<
@@ -75,25 +74,18 @@ const FileUploadFieldSettingsInner: React.FC<
   const isEditable = isConnected && !isReadOnly;
   const {
     form,
-    isSaving,
     isValid,
     errors: formErrors,
+    saveStatus,
     handleSave,
-    handleCancel,
-    handleReset,
   } = useFieldEditor({
     field,
-    onSave: (updates) => onUpdate?.(updates),
-    onCancel: () => {},
+    enabled: isEditable && !!onUpdate,
+    onSave: (updates, fieldId) => onUpdate?.(updates, fieldId),
   });
 
   const errors = formErrors as any;
-  const {
-    control,
-    watch,
-    setValue,
-    formState: { isDirty },
-  } = form;
+  const { control, watch, setValue } = form;
   const allowedMimeTypes: string[] = watch('allowedMimeTypes') || [];
 
   const toggleMimeType = (value: string) => {
@@ -105,16 +97,15 @@ const FileUploadFieldSettingsInner: React.FC<
 
   return (
     <div className="h-full flex flex-col">
-      <FieldSettingsHeader field={field} isDirty={isDirty} />
+      <FieldSettingsHeader field={field} saveStatus={saveStatus} isConnected={isConnected} />
 
       <div className="flex-1 overflow-y-auto">
         <form
-          onSubmit={handleSave}
-          className={`p-4 space-y-6 transition-all duration-200 ${
-            isDirty
-              ? 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10'
-              : ''
-          }`}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+          className="p-4 space-y-6"
         >
           {!isValid && Object.keys(errors).length > 0 && (
             <ValidationSummary errors={errors} />
@@ -245,18 +236,6 @@ const FileUploadFieldSettingsInner: React.FC<
           <div className="pb-4" />
         </form>
       </div>
-
-      <FieldSettingsFooter
-        isDirty={isDirty}
-        isValid={isValid}
-        isConnected={isConnected}
-        isReadOnly={isReadOnly}
-        isSaving={isSaving}
-        errors={errors}
-        onReset={handleReset}
-        onCancel={handleCancel}
-        onSave={handleSave}
-      />
     </div>
   );
 };
@@ -264,7 +243,7 @@ const FileUploadFieldSettingsInner: React.FC<
 interface FieldSettingsV2Props {
   field: FormField | null;
   isConnected: boolean;
-  onUpdate?: (updates: Record<string, any>) => void;
+  onUpdate?: (updates: Record<string, any>, fieldId: string) => void;
   onDelete?: () => void;
   onFieldSwitch?: () => void;
 }

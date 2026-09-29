@@ -21,9 +21,9 @@ Feature: Radio Field
     And I open the radio field settings
     Then I test label and hint validation for radio
     And I test options validation for radio
-    And I verify save button is disabled with errors
+    And I verify field settings are not saved due to errors
     And I fix all validation errors for radio
-    And I verify save button is enabled
+    And I verify field settings are saved
     Then I save the radio field settings
 
   @radio-viewer

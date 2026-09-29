@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import DOMPurify from 'dompurify';
 import { RichTextFormField } from '@dculus/types';
 import { Settings } from 'lucide-react';
@@ -6,7 +6,6 @@ import { useFieldEditor } from '../../../hooks';
 import {
   ValidationSummary,
   FieldSettingsHeader,
-  FieldSettingsFooter,
   RichTextSettings,
   useFieldSettingsConstants,
 } from '../field-settings';
@@ -15,7 +14,7 @@ interface RichTextFieldSettingsProps {
   field: RichTextFormField | null;
   isConnected: boolean;
   isReadOnly?: boolean;
-  onUpdate?: (updates: Record<string, any>) => void;
+  onUpdate?: (updates: Record<string, any>, fieldId: string) => void;
   onFieldSwitch?: () => void;
 }
 
@@ -31,48 +30,26 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
   onFieldSwitch: _onFieldSwitch,
 }) => {
   const constants = useFieldSettingsConstants();
+  const isEditable = isConnected && !isReadOnly;
 
   const {
     form,
-    isSaving,
     isValid,
     errors: formErrors,
+    saveStatus,
     handleSave,
-    handleCancel,
-    handleReset,
   } = useFieldEditor({
     field,
-    onSave: async (updates) => {
-      // Sanitize content before saving
+    enabled: isEditable && !!onUpdate,
+    onSave: (updates, fieldId) => {
       if (updates.content) {
         updates.content = DOMPurify.sanitize(updates.content);
       }
-      if (onUpdate) {
-        await onUpdate(updates);
-      }
+      onUpdate?.(updates, fieldId);
     },
-    onCancel: () => console.log('Rich text field edit cancelled'),
   });
 
-  const {
-    control,
-    formState: { isDirty },
-  } = form;
-
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      } else if (e.key === 'Escape') {
-        handleCancel();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave, handleCancel]);
+  const { control } = form;
 
   if (!field) {
     return (
@@ -89,17 +66,16 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <FieldSettingsHeader field={field} isDirty={isDirty} />
+      <FieldSettingsHeader field={field} saveStatus={saveStatus} isConnected={isConnected} />
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
         <form
-          onSubmit={handleSave}
-          className={`p-4 space-y-6 transition-all duration-200 ${
-            isDirty
-              ? 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10'
-              : ''
-          }`}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+          className="p-4 space-y-6"
         >
           {/* Validation Error Summary */}
           {!isValid && Object.keys(formErrors).length > 0 && (
@@ -119,18 +95,6 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
           <div className="pb-4"></div>
         </form>
       </div>
-
-      <FieldSettingsFooter
-        isDirty={isDirty}
-        isValid={isValid}
-        isConnected={isConnected}
-        isReadOnly={isReadOnly}
-        isSaving={isSaving}
-        errors={formErrors}
-        onReset={handleReset}
-        onCancel={handleCancel}
-        onSave={handleSave}
-      />
     </div>
   );
 };

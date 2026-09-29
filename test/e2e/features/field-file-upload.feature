@@ -37,7 +37,7 @@ Feature: File Upload Field
     And I test file upload label too long validation
     And I test file upload hint too long validation
     And I fix all validation errors for file upload
-    And I verify save button is enabled
+    And I verify field settings are saved
     And I save the file upload field settings
 
   @field-file-upload @file-upload-maxfiles

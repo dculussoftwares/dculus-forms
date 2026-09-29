@@ -9,7 +9,7 @@
 import { Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
-import { addFieldToPage, openLastFieldSettings, createFormViaGraphQL } from './helpers';
+import { addFieldToPage, openLastFieldSettings, createFormViaGraphQL, waitForFieldSettingsSaved, expectFieldSettingsBlockedByErrors } from './helpers';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DRAG STEPS  (one per field type)
@@ -98,7 +98,7 @@ async function fillAndSaveLabel(world: CustomWorld, label: string) {
   await expect(world.page.getByTestId('field-settings-panel')).toBeVisible({ timeout: 15_000 });
   await world.page.waitForSelector('#field-label', { timeout: 10_000 });
   await world.page.fill('#field-label', label);
-  await world.page.getByRole('button', { name: /save/i }).click();
+  await waitForFieldSettingsSaved(world.page);
   await expect(world.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 }
 
@@ -276,10 +276,9 @@ Then('I test min max length validation for long text', async function (this: Cus
   await expect(this.page.locator('text=/minimum.*maximum|min.*less.*max/i').first()).toBeVisible({ timeout: 5_000 });
 });
 
-Then('I verify save button is disabled with errors', async function (this: CustomWorld) {
+Then('I verify field settings are not saved due to errors', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  const saveButton = this.page.getByRole('button', { name: /save/i });
-  await expect(saveButton).toBeDisabled({ timeout: 5_000 });
+  await expectFieldSettingsBlockedByErrors(this.page);
 });
 
 Then('I fix all validation errors for long text', async function (this: CustomWorld) {
@@ -291,15 +290,14 @@ Then('I fix all validation errors for long text', async function (this: CustomWo
   await this.page.locator('#field-label').click();
 });
 
-Then('I verify save button is enabled', async function (this: CustomWorld) {
+Then('I verify field settings are saved', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  const saveButton = this.page.getByRole('button', { name: /save/i });
-  await expect(saveButton).toBeEnabled({ timeout: 5_000 });
+  await waitForFieldSettingsSaved(this.page);
 });
 
 Then('I save the long text field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: /save/i }).click();
+  await waitForFieldSettingsSaved(this.page);
   await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 });
 
@@ -417,7 +415,7 @@ Then('I fix all validation errors for email', async function (this: CustomWorld)
 
 Then('I save the email field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: /save/i }).click();
+  await waitForFieldSettingsSaved(this.page);
   await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 });
 
@@ -526,7 +524,7 @@ Then('I fix all validation errors for number', async function (this: CustomWorld
 
 Then('I save the number field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: /save/i }).click();
+  await waitForFieldSettingsSaved(this.page);
   await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 });
 
@@ -650,7 +648,7 @@ Then('I fix all validation errors for date', async function (this: CustomWorld) 
 
 Then('I save the date field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: /save/i }).click();
+  await waitForFieldSettingsSaved(this.page);
   await expect(this.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
 });
 
@@ -759,7 +757,7 @@ Then('I fix all validation errors for radio', async function (this: CustomWorld)
 
 Then('I save the radio field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: /save/i }).click();
+  await waitForFieldSettingsSaved(this.page);
   await this.page.waitForLoadState('networkidle');
 });
 
@@ -835,7 +833,7 @@ Then('I fix all validation errors for dropdown', async function (this: CustomWor
 
 Then('I save the dropdown field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: /save/i }).click();
+  await waitForFieldSettingsSaved(this.page);
   await this.page.waitForLoadState('networkidle');
 });
 
@@ -944,7 +942,7 @@ Then('I fix selection limits for checkbox', async function (this: CustomWorld) {
 
 Then('I save the checkbox field settings', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await this.page.getByRole('button', { name: /save/i }).click();
+  await waitForFieldSettingsSaved(this.page);
   await this.page.waitForLoadState('networkidle');
 });
 

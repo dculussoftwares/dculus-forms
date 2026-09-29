@@ -30,9 +30,9 @@ Feature: Checkbox Field
     And I open the checkbox field settings
     Then I test label and hint validation for checkbox
     And I test options validation for checkbox
-    And I verify save button is disabled with errors
+    And I verify field settings are not saved due to errors
     And I fix all validation errors for checkbox
-    And I verify save button is enabled
+    And I verify field settings are saved
     Then I save the checkbox field settings
 
   Scenario: Create checkbox field via GraphQL and validate validations in viewer

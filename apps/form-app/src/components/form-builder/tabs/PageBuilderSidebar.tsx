@@ -56,14 +56,13 @@ export const RightSidebar: React.FC<{
   const selectedPage =
     selection.kind === 'page' ? pages.find((page) => page.id === selection.pageId) || null : null;
 
-  const handleUpdate = (updates: Record<string, unknown>) => {
-    if (selectedFieldId) {
-      const pageWithField = pages.find((page) =>
-        page.fields.some((f) => f.id === selectedFieldId)
-      );
-      if (pageWithField) {
-        updateField(pageWithField.id, selectedFieldId, updates);
-      }
+  // fieldId is explicit: pending edits can be flushed after selection has moved to another field
+  const handleUpdate = (updates: Record<string, unknown>, fieldId: string) => {
+    const pageWithField = useFormBuilderStore
+      .getState()
+      .pages.find((page) => page.fields.some((f) => f.id === fieldId));
+    if (pageWithField) {
+      updateField(pageWithField.id, fieldId, updates);
     }
   };
 

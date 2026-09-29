@@ -1,7 +1,6 @@
 export { ErrorMessage } from './ErrorMessage';
 export { ValidationSummary } from './ValidationSummary';
 export { FieldSettingsHeader } from './FieldSettingsHeader';
-export { FieldSettingsFooter } from './FieldSettingsFooter';
 export { OptionsSettings } from './OptionsSettings';
 export { RichTextSettings } from './RichTextSettings';
 export { FormInputField } from './FormInputField';

@@ -21,9 +21,9 @@ Feature: Long Text Field Comprehensive Validations
     And I open the long text field settings
     Then I test label and hint validation for long text
     And I test min max length validation for long text
-    And I verify save button is disabled with errors
+    And I verify field settings are not saved due to errors
     And I fix all validation errors for long text
-    And I verify save button is enabled
+    And I verify field settings are saved
     Then I save the long text field settings
 
   Scenario: Validate long text field settings with invalid data in builder

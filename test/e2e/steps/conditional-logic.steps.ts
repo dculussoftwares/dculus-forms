@@ -9,7 +9,7 @@
 import { When, Then } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
-import { createFormViaGraphQL, fetchLatestResponse } from './helpers';
+import { createFormViaGraphQL, fetchLatestResponse, waitForFieldSettingsSaved } from './helpers';
 
 const conditionalLogicFields = () => ({
   layout: {
@@ -1363,8 +1363,7 @@ When(
   'I save the builder field settings',
   async function (this: CustomWorld) {
     if (!this.page) throw new Error('Page is not initialized');
-    await this.page.getByRole('button', { name: /save/i }).click();
-    await this.page.waitForTimeout(500);
+    await waitForFieldSettingsSaved(this.page);
   }
 );
 

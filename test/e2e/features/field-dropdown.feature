@@ -21,9 +21,9 @@ Feature: Dropdown Field Comprehensive Validations
     And I open the dropdown field settings
     Then I test label and hint validation for dropdown
     And I test options validation for dropdown
-    And I verify save button is disabled with errors
+    And I verify field settings are not saved due to errors
     And I fix all validation errors for dropdown
-    And I verify save button is enabled
+    And I verify field settings are saved
     Then I save the dropdown field settings
 
   Scenario: Create dropdown field via GraphQL and validate all validations in viewer
