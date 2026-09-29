@@ -1085,7 +1085,7 @@ const CreateFormWizard: React.FC = () => {
                                 key={video.id}
                                 poster={video.image}
                                 previewSrc={getPexelsPreviewSrc(video)}
-                                alt={`Pexels video ${video.id}`}
+                                alt={t('appearance.videoAlt', { values: { id: video.id } })}
                                 isSelected={isSelected}
                                 onClick={() => handleSelectPexelsVideo(video)}
                               />

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { Input, Button, Card, toastError, toastSuccess } from '@dculus/ui';
 import { Search, Download, Eye, Heart, Loader2, X } from 'lucide-react';
@@ -57,7 +57,7 @@ function PixabayVideoCard({ video, isApplying, uploading, onApply, t }: PixabayV
         {/* Overlay with stats - visible on hover, or while this item is uploading */}
         <div className={cn(
           'absolute inset-0 bg-black/40 transition-opacity',
-          isApplying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          isApplying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
         )}>
           <div className="absolute top-2 right-2 text-white text-xs space-y-1">
             <div className="flex items-center gap-1 bg-black/50 rounded px-1">
@@ -115,36 +115,43 @@ export function PixabayModal({ isOpen, onClose, formId, formTitle, onImageApplie
   const [uploading, setUploading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  // Only the latest search may update state, so a slow earlier response can't clobber it.
+  const requestIdRef = useRef(0);
 
-  const handleSearch = useCallback(async (query: string, pageNum: number = 1, type: MediaType = mediaType) => {
+  const handleSearch = useCallback(async (query: string, pageNum: number, type: MediaType) => {
+    const requestId = ++requestIdRef.current;
     const q = query.trim() || defaultQuery;
 
     setLoading(true);
     try {
       if (type === 'photo') {
         const response = await searchPixabayImages(q, pageNum, 20);
+        if (requestId !== requestIdRef.current) return;
         setImages(prev => (pageNum === 1 ? response.hits : [...prev, ...response.hits]));
         setHasMore(response.hits.length === 20);
       } else {
         const response = await searchPixabayVideos(q, pageNum, 20);
+        if (requestId !== requestIdRef.current) return;
         setVideos(prev => (pageNum === 1 ? response.hits : [...prev, ...response.hits]));
         setHasMore(response.hits.length === 20);
       }
       setPage(pageNum);
     } catch {
+      if (requestId !== requestIdRef.current) return;
       if (type === 'photo') {
         toastError(t('searchFailedTitle'), t('imageSearchFailed'));
       } else {
         toastError(t('searchFailedTitle'), t('videoSearchFailed'));
       }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [mediaType, t, defaultQuery]);
+  }, [t, defaultQuery]);
 
+  // Rerun when the title-derived default changes (e.g. form title loads after open).
   useEffect(() => {
     if (isOpen) handleSearch('', 1, 'photo');
-  }, [isOpen]);
+  }, [isOpen, defaultQuery]);
 
   const handleMediaTypeChange = (type: MediaType) => {
     setMediaType(type);
@@ -157,11 +164,11 @@ export function PixabayModal({ isOpen, onClose, formId, formTitle, onImageApplie
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearch(searchQuery, 1);
+    handleSearch(searchQuery, 1, mediaType);
   };
 
   const handleLoadMore = () => {
-    handleSearch(searchQuery, page + 1);
+    handleSearch(searchQuery, page + 1, mediaType);
   };
 
   const handleApplyImage = async (image: PixabayImage) => {
@@ -209,6 +216,7 @@ export function PixabayModal({ isOpen, onClose, formId, formTitle, onImageApplie
   };
 
   const resetModal = () => {
+    requestIdRef.current++;
     setMediaType('photo');
     setSearchQuery('');
     setImages([]);

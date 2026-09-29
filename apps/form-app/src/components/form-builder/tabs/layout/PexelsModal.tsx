@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { Input, Button, Card, toastError, toastSuccess } from '@dculus/ui';
 import { Search, Loader2, X } from 'lucide-react';
@@ -32,7 +32,7 @@ interface PexelsVideoCardProps {
   isApplying: boolean;
   uploading: boolean;
   onApply: (video: PexelsVideo) => void;
-  t: (key: string) => string;
+  t: (key: string, options?: { values: Record<string, string | number> }) => string;
 }
 
 function PexelsVideoCard({ video, isApplying, uploading, onApply, t }: PexelsVideoCardProps) {
@@ -49,14 +49,14 @@ function PexelsVideoCard({ video, isApplying, uploading, onApply, t }: PexelsVid
         <HoverPreviewVideo
           poster={video.image}
           src={getPexelsPreviewSrc(video)}
-          alt={`Pexels video ${video.id}`}
+          alt={t('videoAlt', { values: { id: video.id } })}
           active={active}
           iconClassName="h-8 w-8"
         />
 
         <div className={cn(
           'absolute inset-0 bg-black/40 transition-opacity',
-          isApplying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          isApplying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
         )}>
           <div className="absolute inset-0 flex items-center justify-center">
             <Button
@@ -94,36 +94,43 @@ export function PexelsModal({ isOpen, onClose, formId, formTitle, onImageApplied
   const [uploading, setUploading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  // Only the latest search may update state, so a slow earlier response can't clobber it.
+  const requestIdRef = useRef(0);
 
-  const handleSearch = useCallback(async (query: string, pageNum: number = 1, type: MediaType = mediaType) => {
+  const handleSearch = useCallback(async (query: string, pageNum: number, type: MediaType) => {
+    const requestId = ++requestIdRef.current;
     const q = query.trim() || defaultQuery;
 
     setLoading(true);
     try {
       if (type === 'photo') {
         const response = await searchPexelsImages(q, pageNum, 15);
+        if (requestId !== requestIdRef.current) return;
         setImages(prev => (pageNum === 1 ? response.photos : [...prev, ...response.photos]));
         setHasMore(response.photos.length === 15);
       } else {
         const response = await searchPexelsVideos(q, pageNum, 15);
+        if (requestId !== requestIdRef.current) return;
         setVideos(prev => (pageNum === 1 ? response.videos : [...prev, ...response.videos]));
         setHasMore(response.videos.length === 15);
       }
       setPage(pageNum);
     } catch {
+      if (requestId !== requestIdRef.current) return;
       if (type === 'photo') {
         toastError(t('searchFailedTitle'), t('imageSearchFailed'));
       } else {
         toastError(t('searchFailedTitle'), t('videoSearchFailed'));
       }
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [mediaType, t, defaultQuery]);
+  }, [t, defaultQuery]);
 
+  // Rerun when the title-derived default changes (e.g. form title loads after open).
   useEffect(() => {
     if (isOpen) handleSearch('', 1, 'photo');
-  }, [isOpen]);
+  }, [isOpen, defaultQuery]);
 
   const handleMediaTypeChange = (type: MediaType) => {
     setMediaType(type);
@@ -136,11 +143,11 @@ export function PexelsModal({ isOpen, onClose, formId, formTitle, onImageApplied
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearch(searchQuery, 1);
+    handleSearch(searchQuery, 1, mediaType);
   };
 
   const handleLoadMore = () => {
-    handleSearch(searchQuery, page + 1);
+    handleSearch(searchQuery, page + 1, mediaType);
   };
 
   const handleApplyImage = async (photo: PexelsPhoto) => {
@@ -188,6 +195,7 @@ export function PexelsModal({ isOpen, onClose, formId, formTitle, onImageApplied
   };
 
   const resetModal = () => {
+    requestIdRef.current++;
     setMediaType('photo');
     setSearchQuery('');
     setImages([]);
