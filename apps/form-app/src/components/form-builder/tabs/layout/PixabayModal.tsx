@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { Input, Button, Card, toastError, toastSuccess } from '@dculus/ui';
-import { Search, Download, Eye, Heart, Loader2, X, Play } from 'lucide-react';
+import { Search, Download, Eye, Heart, Loader2, X } from 'lucide-react';
+import { HoverPreviewVideo, useHoverPreview } from '../../../utils/HoverPreviewVideo';
 import { cn } from '@dculus/utils';
 import {
   searchPixabayImages,
@@ -12,11 +13,13 @@ import {
   type PixabayVideo,
 } from '../../../../services/pixabayService';
 import { UploadError } from '../../../../services/fileUploadService';
+import { extractSearchKeyword } from '../../../../utils/mediaSearch';
 
 interface PixabayModalProps {
   isOpen: boolean;
   onClose: () => void;
   formId: string;
+  formTitle?: string;
   onImageApplied: (imageKey: string, dominantColor: string) => void;
   onVideoApplied: (videoKey: string, dominantColor: string) => void;
   onUploadSuccess: () => void;
@@ -24,8 +27,84 @@ interface PixabayModalProps {
 
 type MediaType = 'photo' | 'video';
 
-export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoApplied, onUploadSuccess }: PixabayModalProps) {
+interface PixabayVideoCardProps {
+  video: PixabayVideo;
+  isApplying: boolean;
+  uploading: boolean;
+  onApply: (video: PixabayVideo) => void;
+  t: (key: string, options?: { values: Record<string, string> }) => string;
+}
+
+function PixabayVideoCard({ video, isApplying, uploading, onApply, t }: PixabayVideoCardProps) {
+  const { active, handlers } = useHoverPreview();
+
+  return (
+    <Card
+      className={cn(
+        'group transition-all hover:shadow-lg relative overflow-hidden',
+        isApplying ? 'ring-2 ring-blue-500' : ''
+      )}
+    >
+      <div className="aspect-video relative overflow-hidden rounded-lg" {...handlers}>
+        <HoverPreviewVideo
+          poster={video.videos.tiny.thumbnail}
+          src={video.videos.tiny.url}
+          alt={video.tags}
+          active={active}
+          iconClassName="h-8 w-8"
+        />
+
+        {/* Overlay with stats - visible on hover, or while this item is uploading */}
+        <div className={cn(
+          'absolute inset-0 bg-black/40 transition-opacity',
+          isApplying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        )}>
+          <div className="absolute top-2 right-2 text-white text-xs space-y-1">
+            <div className="flex items-center gap-1 bg-black/50 rounded px-1">
+              <Eye className="h-3 w-3" />
+              <span>{video.views.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-black/50 rounded px-1">
+              <Download className="h-3 w-3" />
+              <span>{video.downloads.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-black/50 rounded px-1">
+              <Heart className="h-3 w-3" />
+              <span>{video.likes.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Button
+              onClick={() => onApply(video)}
+              disabled={uploading}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+            >
+              {isApplying ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {t('applyingButton')}
+                </>
+              ) : (
+                t('applyVideoBackgroundButton')
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-3">
+        <p className="text-xs text-foreground dark:text-gray-400 truncate font-medium">{video.tags}</p>
+        <p className="text-xs text-muted-foreground dark:text-gray-500">{t('byAuthor', { values: { author: video.user } })}</p>
+      </div>
+    </Card>
+  );
+}
+
+export function PixabayModal({ isOpen, onClose, formId, formTitle, onImageApplied, onVideoApplied, onUploadSuccess }: PixabayModalProps) {
   const { t } = useTranslation('pixabayImageBrowser');
+  // Shown when the search box is empty so the grid is never blank on open.
+  const defaultQuery = extractSearchKeyword(formTitle ?? '');
   const [mediaType, setMediaType] = useState<MediaType>('photo');
   const [searchQuery, setSearchQuery] = useState('');
   const [images, setImages] = useState<PixabayImage[]>([]);
@@ -38,16 +117,16 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
   const [hasMore, setHasMore] = useState(false);
 
   const handleSearch = useCallback(async (query: string, pageNum: number = 1, type: MediaType = mediaType) => {
-    if (!query.trim()) return;
+    const q = query.trim() || defaultQuery;
 
     setLoading(true);
     try {
       if (type === 'photo') {
-        const response = await searchPixabayImages(query, pageNum, 20);
+        const response = await searchPixabayImages(q, pageNum, 20);
         setImages(prev => (pageNum === 1 ? response.hits : [...prev, ...response.hits]));
         setHasMore(response.hits.length === 20);
       } else {
-        const response = await searchPixabayVideos(query, pageNum, 20);
+        const response = await searchPixabayVideos(q, pageNum, 20);
         setVideos(prev => (pageNum === 1 ? response.hits : [...prev, ...response.hits]));
         setHasMore(response.hits.length === 20);
       }
@@ -61,7 +140,11 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
     } finally {
       setLoading(false);
     }
-  }, [mediaType, t]);
+  }, [mediaType, t, defaultQuery]);
+
+  useEffect(() => {
+    if (isOpen) handleSearch('', 1, 'photo');
+  }, [isOpen]);
 
   const handleMediaTypeChange = (type: MediaType) => {
     setMediaType(type);
@@ -69,9 +152,7 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
     setVideos([]);
     setHasMore(false);
     setPage(1);
-    if (searchQuery.trim()) {
-      handleSearch(searchQuery, 1, type);
-    }
+    handleSearch(searchQuery, 1, type);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -282,70 +363,23 @@ export function PixabayModal({ isOpen, onClose, formId, onImageApplied, onVideoA
               </div>
             )}
 
+            {loading && (mediaType === 'photo' ? images.length === 0 : videos.length === 0) && (
+              <div className="flex items-center justify-center h-44">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
             {mediaType === 'video' && videos.length > 0 && (
               <div className="grid grid-cols-3 gap-4 mb-4">
                 {videos.map((video) => (
-                  <Card
+                  <PixabayVideoCard
                     key={video.id}
-                    className={cn(
-                      'group transition-all hover:shadow-lg relative overflow-hidden',
-                      uploading && selectedVideo?.id === video.id ? 'ring-2 ring-blue-500' : ''
-                    )}
-                  >
-                    <div className="aspect-video relative overflow-hidden rounded-lg">
-                      <img
-                        src={video.videos.tiny.thumbnail}
-                        alt={video.tags}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <Play className="h-8 w-8 text-white/90" />
-                      </div>
-
-                      {/* Overlay with stats - visible on hover, or while this item is uploading */}
-                      <div className={cn(
-                        'absolute inset-0 bg-black/40 transition-opacity',
-                        uploading && selectedVideo?.id === video.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      )}>
-                        <div className="absolute top-2 right-2 text-white text-xs space-y-1">
-                          <div className="flex items-center gap-1 bg-black/50 rounded px-1">
-                            <Eye className="h-3 w-3" />
-                            <span>{video.views.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1 bg-black/50 rounded px-1">
-                            <Download className="h-3 w-3" />
-                            <span>{video.downloads.toLocaleString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1 bg-black/50 rounded px-1">
-                            <Heart className="h-3 w-3" />
-                            <span>{video.likes.toLocaleString()}</span>
-                          </div>
-                        </div>
-
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Button
-                            onClick={() => handleApplyVideo(video)}
-                            disabled={uploading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                          >
-                            {uploading && selectedVideo?.id === video.id ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                {t('applyingButton')}
-                              </>
-                            ) : (
-                              t('applyVideoBackgroundButton')
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-3">
-                      <p className="text-xs text-foreground dark:text-gray-400 truncate font-medium">{video.tags}</p>
-                      <p className="text-xs text-muted-foreground dark:text-gray-500">{t('byAuthor', { values: { author: video.user } })}</p>
-                    </div>
-                  </Card>
+                    video={video}
+                    isApplying={uploading && selectedVideo?.id === video.id}
+                    uploading={uploading}
+                    onApply={handleApplyVideo}
+                    t={t}
+                  />
                 ))}
               </div>
             )}

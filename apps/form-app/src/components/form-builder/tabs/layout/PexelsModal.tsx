@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from '../../../../hooks/useTranslation';
 import { Input, Button, Card, toastError, toastSuccess } from '@dculus/ui';
-import { Search, Loader2, X, Play } from 'lucide-react';
+import { Search, Loader2, X } from 'lucide-react';
+import { HoverPreviewVideo, useHoverPreview, getPexelsPreviewSrc } from '../../../utils/HoverPreviewVideo';
 import { cn } from '@dculus/utils';
 import {
   searchPexelsImages,
@@ -12,11 +13,13 @@ import {
   type PexelsVideo,
 } from '../../../../services/pexelsService';
 import { UploadError } from '../../../../services/fileUploadService';
+import { extractSearchKeyword } from '../../../../utils/mediaSearch';
 
 interface PexelsModalProps {
   isOpen: boolean;
   onClose: () => void;
   formId: string;
+  formTitle?: string;
   onImageApplied: (imageKey: string, dominantColor: string) => void;
   onVideoApplied: (videoKey: string, dominantColor: string) => void;
   onUploadSuccess: () => void;
@@ -24,8 +27,63 @@ interface PexelsModalProps {
 
 type MediaType = 'photo' | 'video';
 
-export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoApplied, onUploadSuccess }: PexelsModalProps) {
+interface PexelsVideoCardProps {
+  video: PexelsVideo;
+  isApplying: boolean;
+  uploading: boolean;
+  onApply: (video: PexelsVideo) => void;
+  t: (key: string) => string;
+}
+
+function PexelsVideoCard({ video, isApplying, uploading, onApply, t }: PexelsVideoCardProps) {
+  const { active, handlers } = useHoverPreview();
+
+  return (
+    <Card
+      className={cn(
+        'group transition-all hover:shadow-lg relative overflow-hidden',
+        isApplying ? 'ring-2 ring-blue-500' : ''
+      )}
+    >
+      <div className="aspect-video relative overflow-hidden rounded-lg" {...handlers}>
+        <HoverPreviewVideo
+          poster={video.image}
+          src={getPexelsPreviewSrc(video)}
+          alt={`Pexels video ${video.id}`}
+          active={active}
+          iconClassName="h-8 w-8"
+        />
+
+        <div className={cn(
+          'absolute inset-0 bg-black/40 transition-opacity',
+          isApplying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        )}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Button
+              onClick={() => onApply(video)}
+              disabled={uploading}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+            >
+              {isApplying ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {t('applyingButton')}
+                </>
+              ) : (
+                t('applyVideoBackgroundButton')
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+export function PexelsModal({ isOpen, onClose, formId, formTitle, onImageApplied, onVideoApplied, onUploadSuccess }: PexelsModalProps) {
   const { t } = useTranslation('pexelsImageBrowser');
+  // Shown when the search box is empty so the grid is never blank on open.
+  const defaultQuery = extractSearchKeyword(formTitle ?? '');
   const [mediaType, setMediaType] = useState<MediaType>('photo');
   const [searchQuery, setSearchQuery] = useState('');
   const [images, setImages] = useState<PexelsPhoto[]>([]);
@@ -38,16 +96,16 @@ export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoAp
   const [hasMore, setHasMore] = useState(false);
 
   const handleSearch = useCallback(async (query: string, pageNum: number = 1, type: MediaType = mediaType) => {
-    if (!query.trim()) return;
+    const q = query.trim() || defaultQuery;
 
     setLoading(true);
     try {
       if (type === 'photo') {
-        const response = await searchPexelsImages(query, pageNum, 15);
+        const response = await searchPexelsImages(q, pageNum, 15);
         setImages(prev => (pageNum === 1 ? response.photos : [...prev, ...response.photos]));
         setHasMore(response.photos.length === 15);
       } else {
-        const response = await searchPexelsVideos(query, pageNum, 15);
+        const response = await searchPexelsVideos(q, pageNum, 15);
         setVideos(prev => (pageNum === 1 ? response.videos : [...prev, ...response.videos]));
         setHasMore(response.videos.length === 15);
       }
@@ -61,7 +119,11 @@ export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoAp
     } finally {
       setLoading(false);
     }
-  }, [mediaType, t]);
+  }, [mediaType, t, defaultQuery]);
+
+  useEffect(() => {
+    if (isOpen) handleSearch('', 1, 'photo');
+  }, [isOpen]);
 
   const handleMediaTypeChange = (type: MediaType) => {
     setMediaType(type);
@@ -69,9 +131,7 @@ export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoAp
     setVideos([]);
     setHasMore(false);
     setPage(1);
-    if (searchQuery.trim()) {
-      handleSearch(searchQuery, 1, type);
-    }
+    handleSearch(searchQuery, 1, type);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -252,49 +312,23 @@ export function PexelsModal({ isOpen, onClose, formId, onImageApplied, onVideoAp
               </div>
             )}
 
+            {loading && (mediaType === 'photo' ? images.length === 0 : videos.length === 0) && (
+              <div className="flex items-center justify-center h-44">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
             {mediaType === 'video' && videos.length > 0 && (
               <div className="grid grid-cols-3 gap-4 mb-4">
                 {videos.map((video) => (
-                  <Card
+                  <PexelsVideoCard
                     key={video.id}
-                    className={cn(
-                      'group transition-all hover:shadow-lg relative overflow-hidden',
-                      uploading && selectedVideo?.id === video.id ? 'ring-2 ring-blue-500' : ''
-                    )}
-                  >
-                    <div className="aspect-video relative overflow-hidden rounded-lg">
-                      <img
-                        src={video.image}
-                        alt={`Pexels video ${video.id}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <Play className="h-8 w-8 text-white/90" />
-                      </div>
-
-                      <div className={cn(
-                        'absolute inset-0 bg-black/40 transition-opacity',
-                        uploading && selectedVideo?.id === video.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      )}>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Button
-                            onClick={() => handleApplyVideo(video)}
-                            disabled={uploading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
-                          >
-                            {uploading && selectedVideo?.id === video.id ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                {t('applyingButton')}
-                              </>
-                            ) : (
-                              t('applyVideoBackgroundButton')
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
+                    video={video}
+                    isApplying={uploading && selectedVideo?.id === video.id}
+                    uploading={uploading}
+                    onApply={handleApplyVideo}
+                    t={t}
+                  />
                 ))}
               </div>
             )}
