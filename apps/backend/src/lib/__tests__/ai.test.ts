@@ -16,10 +16,10 @@ function setEnv(overrides: Record<string, string | undefined> = {}) {
   const defaults: Record<string, string> = {
     AI_PRIMARY_BASE_URL: PRIMARY_BASE_URL,
     AI_PRIMARY_API_KEY: PRIMARY_API_KEY,
-    AI_PRIMARY_MODEL: 'gpt-5.4-mini',
+    AI_PRIMARY_MODEL: 'gpt-6-luna',
     AI_FAST_BASE_URL: FAST_BASE_URL,
     AI_FAST_API_KEY: FAST_API_KEY,
-    AI_FAST_MODEL: 'gpt-5.4-nano',
+    AI_FAST_MODEL: 'gpt-6-luna-fast',
   };
   Object.assign(process.env, defaults, overrides);
 }
@@ -38,17 +38,17 @@ describe('getPrimaryModel', () => {
     setEnv();
     const { getPrimaryModel } = await import('../ai.js');
     const model = getPrimaryModel();
-    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-5.4-mini' });
+    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-6-luna' });
     expect(createOpenAI).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: PRIMARY_BASE_URL, apiKey: PRIMARY_API_KEY }),
     );
   });
 
-  it('falls back to gpt-5.4-mini when AI_PRIMARY_MODEL is unset', async () => {
+  it('falls back to gpt-6-luna when AI_PRIMARY_MODEL is unset', async () => {
     setEnv({ AI_PRIMARY_MODEL: undefined });
     const { getPrimaryModel } = await import('../ai.js');
     const model = getPrimaryModel();
-    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-5.4-mini' });
+    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-6-luna' });
   });
 });
 
@@ -59,17 +59,17 @@ describe('getFastModel', () => {
     setEnv();
     const { getFastModel } = await import('../ai.js');
     const model = getFastModel();
-    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-5.4-nano' });
+    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-6-luna-fast' });
     expect(createOpenAI).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: FAST_BASE_URL, apiKey: FAST_API_KEY }),
     );
   });
 
-  it('falls back to gpt-5.4-nano when AI_FAST_MODEL is unset', async () => {
+  it('falls back to gpt-6-luna-fast when AI_FAST_MODEL is unset', async () => {
     setEnv({ AI_FAST_MODEL: undefined });
     const { getFastModel } = await import('../ai.js');
     const model = getFastModel();
-    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-5.4-nano' });
+    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-6-luna-fast' });
   });
 });
 
@@ -77,15 +77,15 @@ describe('getPrimaryModelId', () => {
   beforeEach(() => { vi.resetModules(); clearEnv(); });
 
   it('returns AI_PRIMARY_MODEL env var', async () => {
-    setEnv({ AI_PRIMARY_MODEL: 'gpt-5.4-mini' });
+    setEnv({ AI_PRIMARY_MODEL: 'gpt-6-luna' });
     const { getPrimaryModelId } = await import('../ai.js');
-    expect(getPrimaryModelId()).toBe('gpt-5.4-mini');
+    expect(getPrimaryModelId()).toBe('gpt-6-luna');
   });
 
-  it('falls back to gpt-5.4-mini when unset', async () => {
+  it('falls back to gpt-6-luna when unset', async () => {
     setEnv({ AI_PRIMARY_MODEL: undefined });
     const { getPrimaryModelId } = await import('../ai.js');
-    expect(getPrimaryModelId()).toBe('gpt-5.4-mini');
+    expect(getPrimaryModelId()).toBe('gpt-6-luna');
   });
 });
 

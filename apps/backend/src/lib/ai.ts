@@ -27,7 +27,7 @@ export function getPrimaryModel(): LanguageModel {
   return buildModel(
     env('AI_PRIMARY_BASE_URL')!,
     env('AI_PRIMARY_API_KEY')!,
-    env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini',
+    env('AI_PRIMARY_MODEL') ?? 'gpt-6-luna',
   );
 }
 
@@ -37,21 +37,21 @@ export function getFastModel(): LanguageModel {
   return buildModel(
     env('AI_FAST_BASE_URL')!,
     env('AI_FAST_API_KEY')!,
-    env('AI_FAST_MODEL') ?? 'gpt-5.4-nano',
+    env('AI_FAST_MODEL') ?? 'gpt-6-luna-fast',
   );
 }
 
 // Returns the resolved primary model id — used for telemetry only.
 export function getPrimaryModelId(): string {
-  return env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini';
+  return env('AI_PRIMARY_MODEL') ?? 'gpt-6-luna';
 }
 
 /**
  * Route a request to the appropriate model tier based on classified intent.
  *
  * Two-tier routing strategy (Option A — no new infrastructure required):
- *   'nano' → gpt-5.4-nano (fast model)  — simple CRUD ops + questions
- *   'mini' → gpt-5.4-mini (primary model) — complex analysis, remix, bulk edits
+ *   'nano' → fast deployment (gpt-6-luna)    — simple CRUD ops + questions
+ *   'mini' → primary deployment (gpt-6-luna) — complex analysis, remix, bulk edits
  *
  * Both models are already deployed in ai.tf. This reuses the existing env vars:
  *   AI_FAST_*   → nano (previously only used for auto-title generation)
@@ -64,8 +64,8 @@ export function getRoutedModel(tier: 'nano' | 'mini'): LanguageModel {
 
 /** Returns the model ID string for the given tier — used for telemetry logging. */
 export function getRoutedModelId(tier: 'nano' | 'mini'): string {
-  if (tier === 'nano') return env('AI_FAST_MODEL') ?? 'gpt-5.4-nano';
-  return env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini';
+  if (tier === 'nano') return env('AI_FAST_MODEL') ?? 'gpt-6-luna-fast';
+  return env('AI_PRIMARY_MODEL') ?? 'gpt-6-luna';
 }
 
 /**
@@ -78,8 +78,8 @@ export function getModelForIntent(intent: IntentTier): LanguageModel {
 
 export function getModelIdForIntent(intent: IntentTier): string {
   return intent === 'complex'
-    ? (env('AI_PRIMARY_MODEL') ?? 'gpt-5.4-mini')
-    : (env('AI_FAST_MODEL') ?? 'gpt-5.4-nano');
+    ? (env('AI_PRIMARY_MODEL') ?? 'gpt-6-luna')
+    : (env('AI_FAST_MODEL') ?? 'gpt-6-luna-fast');
 }
 
 // GPT models on Azure AI Services use automatic prompt caching — no explicit

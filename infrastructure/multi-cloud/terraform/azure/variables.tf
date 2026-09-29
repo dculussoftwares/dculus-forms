@@ -331,11 +331,11 @@ variable "ai_fast_tpm" {
 variable "ai_primary_model" {
   description = "Primary model deployment name for complex tasks (form edit agent, form generation)"
   type        = string
-  default     = "gpt-5.4-mini"
+  default     = "gpt-6-luna"
 }
 
 variable "ai_fast_model" {
   description = "Fast model deployment name for lightweight tasks (auto-title generation)"
   type        = string
-  default     = "gpt-5.4-nano"
+  default     = "gpt-6-luna-fast"
 }

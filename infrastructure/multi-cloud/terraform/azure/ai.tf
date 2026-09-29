@@ -28,15 +28,15 @@ resource "azurerm_cognitive_account" "ai" {
   tags                          = var.tags
 }
 
-// Primary model — gpt-5.4-mini via Azure AI Services (GlobalStandard = pay-per-token)
+// Primary model — gpt-6-luna via Azure AI Services (GlobalStandard = pay-per-token)
 resource "azurerm_cognitive_deployment" "primary" {
   name                 = var.ai_primary_model
   cognitive_account_id = azurerm_cognitive_account.ai.id
 
   model {
     format  = "OpenAI"
-    name    = "gpt-5.4-mini"
-    version = "2026-03-17"
+    name    = "gpt-6-luna"
+    version = "2026-09-22"
   }
 
   sku {
@@ -45,15 +45,15 @@ resource "azurerm_cognitive_deployment" "primary" {
   }
 }
 
-// Fast model — gpt-5.4-nano via Azure AI Services (GlobalStandard = pay-per-token)
+// Fast model — gpt-6-luna under a separate deployment so it keeps its own TPM capacity
 resource "azurerm_cognitive_deployment" "fast" {
   name                 = var.ai_fast_model
   cognitive_account_id = azurerm_cognitive_account.ai.id
 
   model {
     format  = "OpenAI"
-    name    = "gpt-5.4-nano"
-    version = "2026-03-17"
+    name    = "gpt-6-luna"
+    version = "2026-09-22"
   }
 
   sku {
