@@ -94,6 +94,7 @@
     "noVideos": "No videos found for this topic",
     "imageSelected": "Image selected",
     "videoSelected": "Video selected",
+    "videoAlt": "Pexels video {{id}}",
     "noMediaSelected": "No background selected — you can add one later in the Layout tab",
     "create": "Create Form",
     "creating": "Creating…",

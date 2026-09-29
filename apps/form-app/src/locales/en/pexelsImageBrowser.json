@@ -8,6 +8,7 @@
   "applyBackgroundButton": "Apply Background",
   "applyVideoBackgroundButton": "Apply Video Background",
   "byAuthor": "by {{author}}",
+  "videoAlt": "Pexels video {{id}}",
   "loadMoreButton": "Load More",
   "mediaType": {
     "photos": "Photos",

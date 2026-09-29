@@ -17,6 +17,7 @@ import { BackgroundImageGallery } from '../tabs/layout/BackgroundImageGallery';
 import { PixabayModal } from '../tabs/layout/PixabayModal';
 import { PexelsModal } from '../tabs/layout/PexelsModal';
 import { GET_FORM_FILES } from '../../../graphql/templates';
+import { GET_FORM_BY_ID } from '../../../graphql/queries';
 
 type Translate = (key: string, options?: { values?: Record<string, string | number> }) => string;
 
@@ -68,6 +69,14 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
       return current;
     });
   }, [layout.backgroundImageKey, layout.backgroundVideoKey]);
+
+  // cache-first: the builder has normally already loaded this form.
+  const { data: formData } = useQuery(GET_FORM_BY_ID, {
+    variables: { id: formId },
+    fetchPolicy: 'cache-first',
+    skip: !formId,
+  });
+  const formTitle: string | undefined = formData?.form?.title;
 
   const { data: formFilesData, refetch: refetchFormFiles } = useQuery(GET_FORM_FILES, {
     variables: {
@@ -339,6 +348,7 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
         isOpen={isPexelsModalOpen}
         onClose={() => setIsPexelsModalOpen(false)}
         formId={formId}
+        formTitle={formTitle}
         onImageApplied={(imageKey, dominantColor) =>
           onLayoutUpdate({ backgroundImageKey: imageKey, backgroundVideoKey: '', backgroundDominantColor: dominantColor })
         }
@@ -352,6 +362,7 @@ export const BackgroundControls: React.FC<BackgroundControlsProps> = ({
         isOpen={isPixabayModalOpen}
         onClose={() => setIsPixabayModalOpen(false)}
         formId={formId}
+        formTitle={formTitle}
         onImageApplied={(imageKey, dominantColor) =>
           onLayoutUpdate({ backgroundImageKey: imageKey, backgroundVideoKey: '', backgroundDominantColor: dominantColor })
         }

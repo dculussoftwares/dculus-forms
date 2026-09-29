@@ -26,7 +26,6 @@ import {
   Palette,
   Image as ImageIcon,
   Video as VideoIcon,
-  Play,
   Layout as LayoutIcon,
   GraduationCap,
   PenLine,
@@ -38,6 +37,7 @@ import { GET_TEMPLATES } from '../graphql/templates';
 import { useAppConfig } from '@/hooks';
 import { useTranslation } from '../hooks/useTranslation';
 import { getErrorDetails } from '../utils/graphqlErrors';
+import { extractSearchKeyword } from '../utils/mediaSearch';
 import { getCdnEndpoint } from '../lib/config';
 import { LayoutThumbnails } from '../components/form-builder/tabs/layout/LayoutThumbnails';
 import {
@@ -45,6 +45,7 @@ import {
   searchPexelsVideos, downloadPexelsVideo,
 } from '../services/pexelsService';
 import type { PexelsPhoto, PexelsVideo } from '../services/pexelsService';
+import { HoverPreviewVideo, useHoverPreview, getPexelsPreviewSrc } from '../components/utils/HoverPreviewVideo';
 import {
   searchPixabayImages, downloadPixabayImage,
   searchPixabayVideos, downloadPixabayVideo,
@@ -92,6 +93,39 @@ interface SelectedVideo {
 }
 
 type SelectedMedia = SelectedImage | SelectedVideo;
+
+// ─── Video thumbnail with hover preview ──────────────────────────────────────
+
+interface VideoThumbButtonProps {
+  poster: string;
+  previewSrc?: string;
+  alt: string;
+  isSelected: boolean;
+  onClick: () => void;
+}
+
+function VideoThumbButton({ poster, previewSrc, alt, isSelected, onClick }: VideoThumbButtonProps) {
+  const { active, handlers } = useHoverPreview();
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      {...handlers}
+      className={cn(
+        'relative overflow-hidden rounded-lg aspect-video border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+        isSelected ? 'border-primary shadow-md' : 'border-transparent hover:border-primary/50'
+      )}
+    >
+      <HoverPreviewVideo poster={poster} src={previewSrc} alt={alt} active={active} />
+      {isSelected && (
+        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center pointer-events-none">
+          <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
+        </div>
+      )}
+    </button>
+  );
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -182,20 +216,6 @@ function buildFormSchema(
     start = end;
   }
   return { pages, layout, isShuffleEnabled: false };
-}
-
-function extractSearchKeyword(title: string): string {
-  const stopWords = new Set([
-    'form', 'survey', 'questionnaire', 'application', 'registration',
-    'request', 'feedback', 'the', 'a', 'an', 'of', 'for', 'with',
-    'and', 'or', 'my', 'your', 'our', 'new', 'create', 'submit',
-  ]);
-  const words = title
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, '')
-    .split(/\s+/)
-    .filter(w => !stopWords.has(w) && w.length > 2);
-  return words.slice(0, 2).join(' ') || 'professional office';
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -1061,32 +1081,14 @@ const CreateFormWizard: React.FC = () => {
                           {pexelsVideos.map(video => {
                             const isSelected = selectedMedia?.kind === 'video' && selectedMedia.source === 'pexels' && (selectedMedia.video as PexelsVideo).id === video.id;
                             return (
-                              <button
+                              <VideoThumbButton
                                 key={video.id}
-                                type="button"
+                                poster={video.image}
+                                previewSrc={getPexelsPreviewSrc(video)}
+                                alt={t('appearance.videoAlt', { values: { id: video.id } })}
+                                isSelected={isSelected}
                                 onClick={() => handleSelectPexelsVideo(video)}
-                                className={cn(
-                                  'relative overflow-hidden rounded-lg aspect-video border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                                  isSelected
-                                    ? 'border-primary shadow-md'
-                                    : 'border-transparent hover:border-primary/50'
-                                )}
-                              >
-                                <img
-                                  src={video.image}
-                                  alt={`Pexels video ${video.id}`}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                  <Play className="h-6 w-6 text-white/90" />
-                                </div>
-                                {isSelected && (
-                                  <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                    <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
-                                  </div>
-                                )}
-                              </button>
+                              />
                             );
                           })}
                         </div>
@@ -1164,32 +1166,14 @@ const CreateFormWizard: React.FC = () => {
                         {pixabayVideos.map(video => {
                           const isSelected = selectedMedia?.kind === 'video' && selectedMedia.source === 'pixabay' && (selectedMedia.video as PixabayVideo).id === video.id;
                           return (
-                            <button
+                            <VideoThumbButton
                               key={video.id}
-                              type="button"
+                              poster={video.videos.tiny.thumbnail}
+                              previewSrc={video.videos.tiny.url}
+                              alt={video.tags}
+                              isSelected={isSelected}
                               onClick={() => handleSelectPixabayVideo(video)}
-                              className={cn(
-                                'relative overflow-hidden rounded-lg aspect-video border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                                isSelected
-                                  ? 'border-primary shadow-md'
-                                  : 'border-transparent hover:border-primary/50'
-                              )}
-                            >
-                              <img
-                                src={video.videos.tiny.thumbnail}
-                                alt={video.tags}
-                                className="w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                <Play className="h-6 w-6 text-white/90" />
-                              </div>
-                              {isSelected && (
-                                <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                                  <CheckCircle2 className="h-6 w-6 text-white drop-shadow" />
-                                </div>
-                              )}
-                            </button>
+                            />
                           );
                         })}
                       </div>

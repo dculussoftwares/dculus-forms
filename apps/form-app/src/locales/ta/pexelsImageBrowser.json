@@ -8,6 +8,7 @@
   "applyBackgroundButton": "பின்னணியைப் பயன்படுத்தவும்",
   "applyVideoBackgroundButton": "வீடியோ பின்னணியைப் பயன்படுத்தவும்",
   "byAuthor": "{{author}} மூலம்",
+  "videoAlt": "Pexels வீடியோ {{id}}",
   "loadMoreButton": "மேலும் ஏற்றவும்",
   "mediaType": {
     "photos": "படங்கள்",
