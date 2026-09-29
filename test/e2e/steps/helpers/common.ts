@@ -108,6 +108,8 @@ export async function openLastFieldSettings(world: CustomWorld): Promise<void> {
  * to the collaborative document ("idle" means nothing was edited).
  */
 export async function waitForFieldSettingsSaved(page: Page): Promise<void> {
+  // Flush the debounce so a stale "saved" status from an earlier write can't satisfy the wait
+  await page.keyboard.press('ControlOrMeta+s');
   await expect(page.getByTestId('field-settings-save-status')).toHaveAttribute(
     'data-status',
     /^(saved|idle)$/,
