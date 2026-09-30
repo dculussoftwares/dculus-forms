@@ -14,6 +14,7 @@ const { create } = require('zustand') as typeof import('zustand');
 import { toastError } from '@dculus/ui';
 import {
   FieldType,
+  GridField,
   TextFieldValidation,
   TextInputField,
   buildPageTree,
@@ -334,6 +335,24 @@ describe('existing actions on a page with a grid (§7.4)', () => {
     const { act, ids } = standard();
     expect(act().removeField('p1', 'g1')).toBe(true);
     expect(ids('p1')).toEqual(['top', 'bottom']);
+  });
+
+  it('removeField + restoreField on a grid brings its children back (undo toast)', () => {
+    const { act, layout } = standard();
+    act().removeField('p1', 'g1');
+    expect(act().restoreField('p1', new GridField('g1'), 1)).toBe(true);
+    expect(layout('p1')).toEqual(['top', { g1: [['a', 'b'], ['c']] }, 'bottom']);
+  });
+
+  it('undoing a grid delete leaves children deleted before it deleted', () => {
+    const { act, ids, ydoc } = standard();
+    ydoc.transact(() => {
+      const f = (ydoc.getMap('formSchema').get('pages') as Y.Array<Y.Map<any>>).get(0).get('fields') as Y.Array<Y.Map<any>>;
+      f.toArray().find((m) => m.get('id') === 'b')!.set('deleted', true);
+    });
+    act().removeField('p1', 'g1');
+    act().restoreField('p1', new GridField('g1'), 1);
+    expect(ids('p1')).toEqual(['top', 'g1', 'a', 'c', 'bottom']);
   });
 
   it('removeField + restoreField on a child keeps it in its column', () => {

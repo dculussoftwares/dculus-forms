@@ -447,6 +447,11 @@ export const createGridActions = (get: StoreGetter) => {
     return { gridId, fieldIds: removed.map((s) => s.id) };
   };
 
+  // removeField on a grid also deletes its children; restoreField replays this so undo brings them back.
+  // Only ids that delete removed are kept, so children deleted earlier stay deleted.
+  const removedGridSnapshots = new Map<string, GridSnapshot>();
+  const snapshotKey = (pageId: string, gridId: string) => `${pageId}:${gridId}`;
+
   const duplicateGridIn = (fields: FieldsArray, gridId: string): string | undefined => {
     const shadows = shadowsOf(fields);
     const grid = shadows.find((s) => s.id === gridId && !s.deleted && isLayoutField(s));
@@ -703,7 +708,13 @@ export const createGridActions = (get: StoreGetter) => {
       onGridPage(pageId, (fields) => {
         const index = rawIndexOf(fields, fieldId);
         if (index === -1) return false;
-        if (isLiveGridMap(fields.get(index)) && removeGridIn(fields, fieldId, true)) return true;
+        if (isLiveGridMap(fields.get(index))) {
+          const snapshot = removeGridIn(fields, fieldId, true);
+          if (snapshot) {
+            removedGridSnapshots.set(snapshotKey(pageId, fieldId), snapshot);
+            return true;
+          }
+        }
         fields.get(index).set('deleted', true);
         return true;
       }) ?? false,
@@ -712,7 +723,16 @@ export const createGridActions = (get: StoreGetter) => {
       onGridPage(
         pageId,
         (fields) => {
-          // A grid comes back alone; the undo toast uses restoreGrid to bring its children back too
+          const snapshot = removedGridSnapshots.get(snapshotKey(pageId, field.id));
+          if (snapshot) {
+            removedGridSnapshots.delete(snapshotKey(pageId, field.id));
+            const ids = new Set(snapshot.fieldIds);
+            fields
+              .toArray()
+              .filter((map) => ids.has(map.get('id')) && isDeletedMap(map))
+              .forEach((map) => map.set('deleted', false));
+            return true;
+          }
           const existing = rawIndexOf(fields, field.id);
           if (existing !== -1) {
             fields.get(existing).set('deleted', false);
