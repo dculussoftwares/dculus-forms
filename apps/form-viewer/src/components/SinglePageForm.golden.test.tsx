@@ -45,6 +45,8 @@ import {
 import { RendererMode } from '@dculus/utils';
 import { SinglePageForm, useFormResponseStore } from '@dculus/ui';
 
+type FormHandle = NonNullable<NonNullable<React.ComponentProps<typeof SinglePageForm>['formRef']>['current']>;
+
 const req = (required: boolean) => new FillableFormFieldValidation(required);
 
 const gridlessPage: FormPage = {
@@ -93,12 +95,12 @@ describe('SinglePageForm on a grid-less page (golden)', () => {
 
   it('blocks submit while required fields are empty', async () => {
     const onSubmit = vi.fn();
-    const formRef = React.createRef<any>();
+    const formRef = React.createRef<FormHandle>();
     render(<SinglePageForm page={gridlessPage} onSubmit={onSubmit} formRef={formRef} />);
 
     let result: unknown;
     await act(async () => {
-      result = await formRef.current.submit();
+      result = await formRef.current!.submit();
     });
 
     expect(onSubmit).not.toHaveBeenCalled();
@@ -121,11 +123,11 @@ describe('SinglePageForm on a grid-less page (golden)', () => {
       }),
     };
     const onSubmit = vi.fn();
-    const formRef = React.createRef<any>();
+    const formRef = React.createRef<FormHandle>();
     render(<SinglePageForm page={page} onSubmit={onSubmit} formRef={formRef} />);
 
     await act(async () => {
-      await formRef.current.submit();
+      await formRef.current!.submit();
     });
 
     expect(onSubmit.mock.calls).toMatchSnapshot();

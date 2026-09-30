@@ -102,93 +102,52 @@ beforeAll(() => {
   jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
 
-// Order matters: each step runs on the document left by the previous one.
-describe('structural store actions on a grid-less form (golden)', () => {
-  test('0. seed document', () => {
-    expect(snap()).toMatchSnapshot();
-  });
+// One scenario: every step runs on the document left by the previous one, so it must run as a
+// unit. Each step gets a named snapshot; splitting it into separate tests would make `-t` runs
+// snapshot the wrong document.
+test('structural store actions on a grid-less form (golden)', () => {
+  const step = (name: string, run: () => void = () => undefined) => {
+    run();
+    expect(snap()).toMatchSnapshot(name);
+  };
 
-  test('addField appends', () => {
+  step('0. seed document');
+
+  step('addField appends', () => {
     act().addField('p1', FieldType.TEXT_AREA_FIELD, { label: 'Comments' });
-    expect(snap()).toMatchSnapshot();
   });
 
-  test('addField appends rich text with its content', () => {
+  step('addField appends rich text with its content', () => {
     act().addField('p1', FieldType.RICH_TEXT_FIELD, { content: '<p>Hello</p>' } as any);
-    expect(snap()).toMatchSnapshot();
   });
 
-  test('addFieldAtIndex lands in the visual slot when a soft-deleted field precedes it', () => {
+  step('addFieldAtIndex lands in the visual slot when a soft-deleted field precedes it', () => {
     // Visible order is A, B, D, ...; slot 2 is between B and D, after the soft-deleted fC.
     act().addFieldAtIndex('p1', FieldType.SELECT_FIELD, { label: 'Inserted', options: ['x'] }, 2);
     expect(visibleIds('p1').slice(0, 4)).toEqual(['fA', 'fB', expect.any(String), 'fD']);
-    expect(snap()).toMatchSnapshot();
   });
 
-  test('reorderFields', () => {
-    act().reorderFields('p1', 0, 2);
-    expect(snap()).toMatchSnapshot();
-  });
+  step('reorderFields', () => act().reorderFields('p1', 0, 2));
+  step('duplicateField', () => act().duplicateField('p1', 'fB'));
+  step('convertFieldType', () => act().convertFieldType('p1', 'fA', FieldType.TEXT_AREA_FIELD));
+  step('removeField soft-deletes', () => act().removeField('p1', 'fD'));
 
-  test('duplicateField', () => {
-    act().duplicateField('p1', 'fB');
-    expect(snap()).toMatchSnapshot();
-  });
-
-  test('convertFieldType', () => {
-    act().convertFieldType('p1', 'fA', FieldType.TEXT_AREA_FIELD);
-    expect(snap()).toMatchSnapshot();
-  });
-
-  test('removeField soft-deletes', () => {
-    act().removeField('p1', 'fD');
-    expect(snap()).toMatchSnapshot();
-  });
-
-  test('restoreField flips the deleted flag back', () => {
+  step('restoreField flips the deleted flag back', () => {
     const restored = new TextInputField('fD', 'Age', '', '', '', '', new TextFieldValidation(false));
     act().restoreField('p1', restored, 1);
-    expect(snap()).toMatchSnapshot();
   });
 
-  test('moveFieldBetweenPages', () => {
-    act().moveFieldBetweenPages('p1', 'p2', 'fA', 1);
-    expect(snap()).toMatchSnapshot();
-  });
+  step('moveFieldBetweenPages', () => act().moveFieldBetweenPages('p1', 'p2', 'fA', 1));
+  step('copyFieldToPage', () => act().copyFieldToPage('p2', 'p1', 'fG'));
+  step('addEmptyPage', () => act().addEmptyPage());
+  step('addPageAtPosition', () => act().addPageAtPosition('Inserted Page', 'p1', 'p9'));
+  step('duplicatePage', () => act().duplicatePage('p2'));
 
-  test('copyFieldToPage', () => {
-    act().copyFieldToPage('p2', 'p1', 'fG');
-    expect(snap()).toMatchSnapshot();
-  });
-
-  test('addEmptyPage', () => {
-    act().addEmptyPage();
-    expect(snap()).toMatchSnapshot();
-  });
-
-  test('addPageAtPosition', () => {
-    act().addPageAtPosition('Inserted Page', 'p1', 'p9');
-    expect(snap()).toMatchSnapshot();
-  });
-
-  test('duplicatePage', () => {
-    act().duplicatePage('p2');
-    expect(snap()).toMatchSnapshot();
-  });
-
-  test('updatePageTitle / updatePageShowName', () => {
+  step('updatePageTitle / updatePageShowName', () => {
     act().updatePageTitle('p1', 'Renamed');
     act().updatePageShowName('p1', false);
-    expect(snap()).toMatchSnapshot();
   });
 
-  test('reorderPages', () => {
-    act().reorderPages(0, 2);
-    expect(snap()).toMatchSnapshot();
-  });
-
-  test('removePage', () => {
-    act().removePage('p9');
-    expect(snap()).toMatchSnapshot();
-  });
+  step('reorderPages', () => act().reorderPages(0, 2));
+  step('removePage', () => act().removePage('p9'));
 });

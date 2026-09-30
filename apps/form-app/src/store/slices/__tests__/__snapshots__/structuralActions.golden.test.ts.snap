@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`structural store actions on a grid-less form (golden) 0. seed document 1`] = `
+exports[`structural store actions on a grid-less form (golden): 0. seed document 1`] = `
 {
   "pages": [
     {
@@ -142,7 +142,7 @@ exports[`structural store actions on a grid-less form (golden) 0. seed document 
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) addEmptyPage 1`] = `
+exports[`structural store actions on a grid-less form (golden): addEmptyPage 1`] = `
 {
   "pages": [
     {
@@ -366,7 +366,7 @@ exports[`structural store actions on a grid-less form (golden) addEmptyPage 1`] 
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) addField appends 1`] = `
+exports[`structural store actions on a grid-less form (golden): addField appends 1`] = `
 {
   "pages": [
     {
@@ -523,7 +523,7 @@ exports[`structural store actions on a grid-less form (golden) addField appends 
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) addField appends rich text with its content 1`] = `
+exports[`structural store actions on a grid-less form (golden): addField appends rich text with its content 1`] = `
 {
   "pages": [
     {
@@ -685,7 +685,7 @@ exports[`structural store actions on a grid-less form (golden) addField appends 
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) addFieldAtIndex lands in the visual slot when a soft-deleted field precedes it 1`] = `
+exports[`structural store actions on a grid-less form (golden): addFieldAtIndex lands in the visual slot when a soft-deleted field precedes it 1`] = `
 {
   "pages": [
     {
@@ -865,7 +865,7 @@ exports[`structural store actions on a grid-less form (golden) addFieldAtIndex l
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) addPageAtPosition 1`] = `
+exports[`structural store actions on a grid-less form (golden): addPageAtPosition 1`] = `
 {
   "pages": [
     {
@@ -1097,7 +1097,7 @@ exports[`structural store actions on a grid-less form (golden) addPageAtPosition
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) convertFieldType 1`] = `
+exports[`structural store actions on a grid-less form (golden): convertFieldType 1`] = `
 {
   "pages": [
     {
@@ -1293,7 +1293,7 @@ exports[`structural store actions on a grid-less form (golden) convertFieldType 
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) copyFieldToPage 1`] = `
+exports[`structural store actions on a grid-less form (golden): copyFieldToPage 1`] = `
 {
   "pages": [
     {
@@ -1510,7 +1510,7 @@ exports[`structural store actions on a grid-less form (golden) copyFieldToPage 1
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) duplicateField 1`] = `
+exports[`structural store actions on a grid-less form (golden): duplicateField 1`] = `
 {
   "pages": [
     {
@@ -1706,7 +1706,7 @@ exports[`structural store actions on a grid-less form (golden) duplicateField 1`
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) duplicatePage 1`] = `
+exports[`structural store actions on a grid-less form (golden): duplicatePage 1`] = `
 {
   "pages": [
     {
@@ -2001,7 +2001,7 @@ exports[`structural store actions on a grid-less form (golden) duplicatePage 1`]
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) moveFieldBetweenPages 1`] = `
+exports[`structural store actions on a grid-less form (golden): moveFieldBetweenPages 1`] = `
 {
   "pages": [
     {
@@ -2198,7 +2198,7 @@ exports[`structural store actions on a grid-less form (golden) moveFieldBetweenP
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) removeField soft-deletes 1`] = `
+exports[`structural store actions on a grid-less form (golden): removeField soft-deletes 1`] = `
 {
   "pages": [
     {
@@ -2395,7 +2395,7 @@ exports[`structural store actions on a grid-less form (golden) removeField soft-
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) removePage 1`] = `
+exports[`structural store actions on a grid-less form (golden): removePage 1`] = `
 {
   "pages": [
     {
@@ -2696,7 +2696,7 @@ exports[`structural store actions on a grid-less form (golden) removePage 1`] = 
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) reorderFields 1`] = `
+exports[`structural store actions on a grid-less form (golden): reorderFields 1`] = `
 {
   "pages": [
     {
@@ -2877,7 +2877,7 @@ exports[`structural store actions on a grid-less form (golden) reorderFields 1`]
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) reorderPages 1`] = `
+exports[`structural store actions on a grid-less form (golden): reorderPages 1`] = `
 {
   "pages": [
     {
@@ -3186,7 +3186,7 @@ exports[`structural store actions on a grid-less form (golden) reorderPages 1`] 
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) restoreField flips the deleted flag back 1`] = `
+exports[`structural store actions on a grid-less form (golden): restoreField flips the deleted flag back 1`] = `
 {
   "pages": [
     {
@@ -3383,7 +3383,7 @@ exports[`structural store actions on a grid-less form (golden) restoreField flip
 }
 `;
 
-exports[`structural store actions on a grid-less form (golden) updatePageTitle / updatePageShowName 1`] = `
+exports[`structural store actions on a grid-less form (golden): updatePageTitle / updatePageShowName 1`] = `
 {
   "pages": [
     {
