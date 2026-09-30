@@ -15,8 +15,45 @@ const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
+function scrollableAncestorOf(element: Element): HTMLElement | null {
+  let node = element.parentElement;
+  while (node) {
+    const { overflowY } = getComputedStyle(node);
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
+
+// scrollIntoView also scrolls overflow:hidden ancestors, shifting the builder layout under the top bar.
 export function scrollToElement(element: Element, block: ScrollLogicalPosition) {
-  element.scrollIntoView?.({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block });
+  const container = scrollableAncestorOf(element);
+  if (!container) return;
+  const containerRect = container.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  const offsetTop = elementRect.top - containerRect.top;
+  const offsetBottom = elementRect.bottom - containerRect.bottom;
+
+  let delta: number;
+  if (block === 'center') {
+    delta = offsetTop - (container.clientHeight - elementRect.height) / 2;
+  } else if (block === 'start') {
+    delta = offsetTop;
+  } else if (block === 'end') {
+    delta = offsetBottom;
+  } else if (offsetTop < 0) {
+    delta = offsetTop;
+  } else if (offsetBottom > 0) {
+    delta = Math.min(offsetBottom, offsetTop);
+  } else {
+    return;
+  }
+  container.scrollTo({
+    top: container.scrollTop + delta,
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+  });
 }
 
 const settingGroupOf = (element: Element) =>
