@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { NumberField, type NumberFieldFormData } from "@dculus/types";
 import { type FieldErrors } from "react-hook-form";
 import { Settings } from 'lucide-react';
@@ -9,7 +9,6 @@ import { useQuizMode } from '../../../contexts/QuizModeContext';
 import {
   ValidationSummary,
   FieldSettingsHeader,
-  FieldSettingsFooter,
   FormInputField,
   useFieldSettingsConstants
 } from '../field-settings';
@@ -19,7 +18,7 @@ interface NumberFieldSettingsProps {
   field: NumberField | null;
   isConnected: boolean;
   isReadOnly?: boolean;
-  onUpdate?: (updates: Record<string, any>) => void;
+  onUpdate?: (updates: Record<string, any>, fieldId: string) => void;
   onFieldSwitch?: () => void;
 }
 
@@ -39,46 +38,18 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
   const { enabled: isQuizModeEnabled } = useQuizMode();
   const {
     form,
-    isSaving,
     isValid,
     errors: formErrors,
+    saveStatus,
     handleSave,
-    handleCancel,
-    handleReset,
   } = useFieldEditor({
     field,
-    onSave: async (updates) => {
-      if (onUpdate) {
-        await onUpdate(updates);
-      }
-    },
-    onCancel: () => console.log('Number field edit cancelled'),
+    enabled: isEditable && !!onUpdate,
+    onSave: (updates, fieldId) => onUpdate?.(updates, fieldId),
   });
 
-  const { control, watch, setValue, formState: { isDirty } } = form;
+  const { control, watch, setValue } = form;
   const errors = formErrors as FieldErrors<NumberFieldFormData>;
-
-  // Track field changes (auto-save disabled)
-  const fieldIdRef = useRef<string | null>(null);
-  useEffect(() => {
-    // Track field changes without auto-save
-    fieldIdRef.current = field?.id || null;
-  }, [field?.id]);
-
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      } else if (e.key === 'Escape') {
-        handleCancel();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave, handleCancel]);
 
   if (!field) {
     return (
@@ -93,13 +64,17 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
 
   return (
     <div className="h-full flex flex-col">
-      <FieldSettingsHeader field={field} isDirty={isDirty} />
+      <FieldSettingsHeader field={field} saveStatus={saveStatus} isConnected={isConnected} />
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        <form onSubmit={handleSave} className={`p-4 space-y-6 transition-all duration-200 ${
-          isDirty ? 'bg-gradient-to-b from-orange-25 to-transparent dark:from-orange-950/10' : ''
-        }`}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSave();
+          }}
+          className="p-4 space-y-6"
+        >
           {/* Validation Error Summary */}
           {!isValid && Object.keys(formErrors).length > 0 && (
             <ValidationSummary errors={formErrors} />
@@ -253,18 +228,6 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
           <div className="pb-4"></div>
         </form>
       </div>
-
-      <FieldSettingsFooter
-        isDirty={isDirty}
-        isValid={isValid}
-        isConnected={isConnected}
-        isReadOnly={isReadOnly}
-        isSaving={isSaving}
-        errors={formErrors}
-        onReset={handleReset}
-        onCancel={handleCancel}
-        onSave={handleSave}
-      />
     </div>
   );
 };

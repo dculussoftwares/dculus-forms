@@ -207,8 +207,6 @@ import enOrganizationSwitcher from './en/organizationSwitcher.json';
 import taOrganizationSwitcher from './ta/organizationSwitcher.json';
 import enSubscriptionDashboard from './en/subscriptionDashboard.json';
 import taSubscriptionDashboard from './ta/subscriptionDashboard.json';
-import enFieldSettingsFooter from './en/fieldSettingsFooter.json';
-import taFieldSettingsFooter from './ta/fieldSettingsFooter.json';
 import enRichTextFieldSettings from './en/richTextFieldSettings.json';
 import taRichTextFieldSettings from './ta/richTextFieldSettings.json';
 import enUsageChart from './en/usageChart.json';
@@ -380,7 +378,6 @@ const enTranslations = {
   quizGradingPluginConfig: enQuizGradingPluginConfig,
   organizationSwitcher: enOrganizationSwitcher,
   subscriptionDashboard: enSubscriptionDashboard,
-  fieldSettingsFooter: enFieldSettingsFooter,
   richTextFieldSettings: enRichTextFieldSettings,
   usageChart: enUsageChart,
   validationSummary: enValidationSummary,
@@ -520,7 +517,6 @@ const taTranslations = {
   quizGradingPluginConfig: taQuizGradingPluginConfig,
   organizationSwitcher: taOrganizationSwitcher,
   subscriptionDashboard: taSubscriptionDashboard,
-  fieldSettingsFooter: taFieldSettingsFooter,
   richTextFieldSettings: taRichTextFieldSettings,
   usageChart: taUsageChart,
   validationSummary: taValidationSummary,

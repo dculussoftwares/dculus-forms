@@ -1,7 +1,8 @@
 import React from 'react';
-import { Type, FileCode, Upload, Phone } from 'lucide-react';
+import { Type, FileCode, Upload, Phone, Loader2, Check, AlertCircle, CloudOff } from 'lucide-react';
 import { FormField, FieldType } from '@dculus/types';
 import { useTranslation } from '../../../hooks';
+import type { FieldSaveStatus } from '../../../hooks/types';
 
 const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.TEXT_INPUT_FIELD]: <Type className="w-4 h-4" />,
@@ -35,12 +36,62 @@ const getFieldTypeLabels = (t: any) => ({
 
 interface FieldSettingsHeaderProps {
   field: FormField;
-  isDirty: boolean;
+  saveStatus: FieldSaveStatus;
+  isConnected: boolean;
 }
+
+const SaveStatusIndicator: React.FC<{ saveStatus: FieldSaveStatus; isConnected: boolean }> = ({
+  saveStatus,
+  isConnected,
+}) => {
+  const { t } = useTranslation('fieldSettingsHeader');
+  const status = !isConnected ? 'offline' : saveStatus;
+
+  const content: Record<typeof status, React.ReactNode> = {
+    idle: null,
+    pending: (
+      <span className="flex items-center gap-1 text-muted-foreground">
+        <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+        {t('status.saving')}
+      </span>
+    ),
+    saved: (
+      <span className="flex items-center gap-1 text-muted-foreground">
+        <Check className="w-3 h-3 text-green-600" aria-hidden="true" />
+        {t('status.saved')}
+      </span>
+    ),
+    invalid: (
+      <span className="flex items-center gap-1 text-destructive">
+        <AlertCircle className="w-3 h-3" aria-hidden="true" />
+        {t('status.invalid')}
+      </span>
+    ),
+    offline: (
+      <span className="flex items-center gap-1 text-yellow-700 dark:text-yellow-400">
+        <CloudOff className="w-3 h-3" aria-hidden="true" />
+        {t('status.offline')}
+      </span>
+    ),
+  };
+
+  return (
+    <div
+      data-testid="field-settings-save-status"
+      data-status={status}
+      role="status"
+      aria-live="polite"
+      className="flex items-center justify-end min-w-[120px] text-xs font-medium"
+    >
+      {content[status]}
+    </div>
+  );
+};
 
 export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({
   field,
-  isDirty,
+  saveStatus,
+  isConnected,
 }) => {
   const { t } = useTranslation('fieldSettingsHeader');
   const fieldTypeLabels = getFieldTypeLabels(t);
@@ -48,11 +99,7 @@ export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({
   return (
     <div
       data-testid="field-settings-header"
-      className={`flex-shrink-0 border-b border-[var(--tf-border-medium)] dark:border-gray-700 p-4 transition-colors duration-200 ${
-        isDirty
-          ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800'
-          : 'bg-white dark:bg-gray-900'
-      }`}
+      className="flex-shrink-0 border-b border-[var(--tf-border-medium)] dark:border-gray-700 p-4 bg-white dark:bg-gray-900"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -70,19 +117,7 @@ export const FieldSettingsHeader: React.FC<FieldSettingsHeaderProps> = ({
           </div>
         </div>
 
-        {/* Dirty state indicator */}
-        <div className="flex items-center justify-end min-w-[120px]">
-          <div
-            className={`flex items-center space-x-1 text-orange-600 text-xs transition-all duration-200 ease-in-out ${
-              isDirty
-                ? 'opacity-100 transform translate-x-0'
-                : 'opacity-0 transform translate-x-2 pointer-events-none'
-            }`}
-          >
-            <div className="w-2 h-2 bg-orange-600 rounded-full animate-pulse"></div>
-            <span className="font-medium">{t('header.unsavedChanges')}</span>
-          </div>
-        </div>
+        <SaveStatusIndicator saveStatus={saveStatus} isConnected={isConnected} />
       </div>
     </div>
   );

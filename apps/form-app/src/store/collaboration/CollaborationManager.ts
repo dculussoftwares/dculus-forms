@@ -530,22 +530,12 @@ export class CollaborationManager {
 
       const cleanups: Array<() => void> = [];
 
-      // Observer for field properties
+      // Deep so nested-only writes (validation, grading, options) also refresh the store
       const fieldObserver = () => {
         this.scheduleUpdateFromYJS();
       };
-      fieldMap.observe(fieldObserver);
-      cleanups.push(() => fieldMap.unobserve(fieldObserver));
-
-      // Observer for validation sub-map
-      const validationMap = fieldMap.get('validation');
-      if (validationMap && validationMap instanceof Y.Map) {
-        const validationObserver = () => {
-          this.scheduleUpdateFromYJS();
-        };
-        validationMap.observe(validationObserver);
-        cleanups.push(() => validationMap.unobserve(validationObserver));
-      }
+      fieldMap.observeDeep(fieldObserver);
+      cleanups.push(() => fieldMap.unobserveDeep(fieldObserver));
 
       // Store cleanups by field ID for surgical removal
       this.fieldObserverMap.set(fieldId, cleanups);

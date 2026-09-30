@@ -69,7 +69,7 @@ When('I navigate to the form dashboard from the builder', async function (this: 
   if (!match) throw new Error(`Could not extract form ID from builder URL: ${url}`);
   this.currentFormId = match[1];
   // The last field save's Y.js update is sent over the collaboration
-  // WebSocket, not plain HTTP — "networkidle" after clicking Save (in the
+  // WebSocket, not plain HTTP — the "Saved" status (awaited by the
   // "I save the ... field settings" steps) doesn't wait for it to actually
   // reach the server. Navigating away immediately can abort that in-flight
   // WebSocket message before Hocuspocus persists it, so the answer key

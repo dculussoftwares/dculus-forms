@@ -15,7 +15,12 @@
   },
   "header": {
     "settings": "Settings",
-    "configure": "Configure field properties and validation",
-    "unsavedChanges": "Unsaved changes"
+    "configure": "Configure field properties and validation"
+  },
+  "status": {
+    "saving": "Saving…",
+    "saved": "Saved",
+    "invalid": "Fix errors to save",
+    "offline": "Offline"
   }
 }

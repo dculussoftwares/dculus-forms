@@ -1,7 +1,7 @@
 import { Then, When } from '@cucumber/cucumber';
 import { expect } from '@playwright/test';
 import { CustomWorld } from '../support/world';
-import { createFormSchemaWithAllFields, createFormViaGraphQL } from './helpers';
+import { createFormSchemaWithAllFields, createFormViaGraphQL, waitForFieldSettingsSaved } from './helpers';
 
 When('I create a form via GraphQL with all field types', async function (this: CustomWorld) {
   await createFormViaGraphQL(this, createFormSchemaWithAllFields(), 'E2E Multi-Page Navigation Test');
@@ -60,11 +60,7 @@ When('I save the field settings', async function (this: CustomWorld) {
     throw new Error('Page is not initialized');
   }
 
-  // Use keyboard shortcut Cmd+S (or Ctrl+S on Windows/Linux)
-  await this.page.keyboard.press('Meta+s');
-
-  // Wait a bit for the save operation to complete
-  await this.page.waitForTimeout(1000);
+  await waitForFieldSettingsSaved(this.page);
 });
 
 Then('the field settings should be saved successfully', async function (this: CustomWorld) {
@@ -78,9 +74,7 @@ Then('the field settings should be saved successfully', async function (this: Cu
     // It's OK if the element doesn't exist at all
   });
 
-  // Wait for save to complete - the orange background should disappear
-  // The form has a gradient background when dirty
-  await this.page.waitForTimeout(1500);
+  await waitForFieldSettingsSaved(this.page);
 });
 
 When('I reload the collaborative builder page', async function (this: CustomWorld) {

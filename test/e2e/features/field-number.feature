@@ -22,9 +22,9 @@ Feature: Number Field Comprehensive Validations
     Then I test label validation for number
     And I test min max value validation for number
     And I test default value range validation for number
-    And I verify save button is disabled with errors
+    And I verify field settings are not saved due to errors
     And I fix all validation errors for number
-    And I verify save button is enabled
+    And I verify field settings are saved
     Then I save the number field settings
 
   Scenario: Create number field via GraphQL and validate all validations in viewer

@@ -3,7 +3,7 @@
  * These tests ensure the new architecture performs well and handles edge cases gracefully
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useFieldEditor } from '../../../../hooks';
 
 jest.mock('@hookform/resolvers/zod', () => ({
@@ -183,9 +183,9 @@ describe('Performance and Stability Tests', () => {
         await result.current.form.trigger();
       });
 
-      // Label should reflect update and form marked dirty
+      // Label should reflect update and an autosave should be queued
       expect(result.current.form.getValues('label')).toBe('');
-      expect(result.current.form.formState.isDirty).toBe(true);
+      expect(result.current.saveStatus).toBe('pending');
 
       // Restore a valid label
       await act(async () => {
@@ -199,50 +199,10 @@ describe('Performance and Stability Tests', () => {
       // Label remains updated and validation ran without throwing
       expect(result.current.form.getValues('label')).toBe('Valid Label');
     });
-
-    test.skip('hooks process overlapping save requests sequentially', async () => {
-      const field = createMockField('text') as any;
-      const onSave = jest.fn()
-        .mockImplementationOnce(() => new Promise(resolve => setTimeout(resolve, 500)))
-        .mockResolvedValue(undefined);
-
-      const { result } = renderHook(() =>
-        useFieldEditor({ field, onSave })
-      );
-
-      // Make field dirty and valid
-      await act(async () => {
-        (result.current.setValue as any)('label', 'Valid Label', {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-        await result.current.form.trigger();
-      });
-
-      // Start first save
-      let firstSave: Promise<void>;
-      await act(async () => {
-        firstSave = result.current.handleSave();
-      });
-
-      await waitFor(() => expect(result.current.isSaving).toBe(true));
-
-      // Try to start another save while first is in progress
-      await act(async () => {
-        await result.current.handleSave();
-      });
-
-      // Both save attempts should complete sequentially
-      expect(onSave).toHaveBeenCalledTimes(2);
-      await act(async () => {
-        await firstSave;
-      });
-      expect(result.current.isSaving).toBe(false);
-    });
   });
 
   describe('Save Performance', () => {
-    test('multiple rapid saves invoke onSave for each attempt', async () => {
+    test('repeated saves only write when something changed', async () => {
       const field = createMockField('text') as any;
       const onSave = createMockOnSave();
 
@@ -261,13 +221,13 @@ describe('Performance and Stability Tests', () => {
 
       // Trigger save multiple times quickly
       await act(async () => {
-        await result.current.handleSave();
-        await result.current.handleSave();
-        await result.current.handleSave();
+        result.current.handleSave();
+        result.current.handleSave();
+        result.current.handleSave();
       });
 
-      // Each save attempt should invoke onSave
-      expect(onSave).toHaveBeenCalledTimes(3);
+      expect(onSave).toHaveBeenCalledTimes(1);
+      expect(onSave).toHaveBeenCalledWith({ label: 'Valid Label' }, 'test-id');
     });
 
     test('different field types have appropriate save behavior', async () => {
@@ -297,8 +257,8 @@ describe('Performance and Stability Tests', () => {
         });
         await textResult.current.form.trigger();
         await richTextResult.current.form.trigger();
-        await textResult.current.handleSave();
-        await richTextResult.current.handleSave();
+        textResult.current.handleSave();
+        richTextResult.current.handleSave();
       });
 
       // Both should save successfully

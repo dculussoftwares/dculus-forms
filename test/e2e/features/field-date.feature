@@ -23,9 +23,9 @@ Feature: Date Field Comprehensive Validations
     Then I test label and hint validation for date
     And I test min max date validation for date
     And I test default value date validation for date
-    And I verify save button is disabled with errors
+    And I verify field settings are not saved due to errors
     And I fix all validation errors for date
-    And I verify save button is enabled
+    And I verify field settings are saved
     Then I save the date field settings
 
   Scenario: Create date field via GraphQL and validate all validations in viewer
