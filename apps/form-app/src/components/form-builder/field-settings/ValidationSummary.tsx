@@ -85,8 +85,6 @@ export const ValidationSummary: React.FC<ValidationSummaryProps> = ({ errors }) 
           <div className="mt-6 rounded-lg bg-white dark:bg-gray-900 shadow-lg">
             <div
               data-testid="validation-error-summary"
-              role="status"
-              aria-live="polite"
               className="p-3 bg-[var(--tf-error-bg)] dark:bg-red-900/20 border border-[var(--tf-error-bg-lg)] dark:border-red-800 rounded-lg"
             >
               <div className="flex items-start space-x-2">

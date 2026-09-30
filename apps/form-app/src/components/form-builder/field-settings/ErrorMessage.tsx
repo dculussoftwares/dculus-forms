@@ -54,16 +54,22 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({ error }) => {
     return () => clearTimeout(timer);
   }, [visible]);
 
-  if (!mounted || !lastMessageRef.current) return null;
-
   return (
-    <ErrorCollapse ref={containerRef} visible={visible} className="!mt-0">
-      <div className="flex items-center space-x-1 text-destructive dark:text-red-400 text-xs mt-2 p-2 bg-[var(--tf-error-bg)] dark:bg-red-900/20 border border-[var(--tf-error-bg-lg)] dark:border-red-800 rounded-lg">
-        <AlertCircle className="w-3 h-3 flex-shrink-0" />
-        <span className="font-medium">
-          <ErrorText message={lastMessageRef.current} />
-        </span>
-      </div>
-    </ErrorCollapse>
+    <>
+      {mounted && lastMessageRef.current && (
+        <ErrorCollapse ref={containerRef} visible={visible} className="!mt-0">
+          <div className="flex items-center space-x-1 text-destructive dark:text-red-400 text-xs mt-2 p-2 bg-[var(--tf-error-bg)] dark:bg-red-900/20 border border-[var(--tf-error-bg-lg)] dark:border-red-800 rounded-lg">
+            <AlertCircle className="w-3 h-3 flex-shrink-0" />
+            <span className="font-medium">
+              <ErrorText message={lastMessageRef.current} />
+            </span>
+          </div>
+        </ErrorCollapse>
+      )}
+      {/* Stays mounted so screen readers announce the delayed error. */}
+      <span className="sr-only" aria-live="polite">
+        {visible && message ? <ErrorText message={message} /> : null}
+      </span>
+    </>
   );
 };

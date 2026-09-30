@@ -44,12 +44,15 @@ export function findSettingElement(root: Element, path: string): Element | null 
   return null;
 }
 
-/** Human label for a setting, read from its rendered <label> or aria-label. */
+/** Human label for a setting: its <label for>, aria-label, or the first label in its setting wrapper. */
 export function findSettingLabel(root: Element, path: string): string | null {
-  const text =
+  const explicit =
     root.querySelector(`label[for="field-${path}"]`)?.textContent ??
     root.querySelector(`[id="field-${path}"]`)?.getAttribute('aria-label');
-  return text?.trim() || null;
+  if (explicit?.trim()) return explicit.trim();
+  const target = findSettingElement(root, path);
+  const grouped = target && settingGroupOf(target).querySelector('label')?.textContent;
+  return grouped?.trim() || null;
 }
 
 export function goToSetting(root: Element | null | undefined, path: string) {
