@@ -777,6 +777,11 @@ export const initializeHocuspocusDocument = async (
             const fieldMap = new Y.Map();
             fieldMap.set('id', field.id);
             fieldMap.set('type', field.type);
+            // Re-seed the soft-delete flag; without it, duplicateForm and
+            // create-from-template resurrect previously deleted fields.
+            if (field.deleted) {
+              fieldMap.set('deleted', true);
+            }
 
             // Handle Rich Text fields differently (they only need content property)
             if (field.type === 'rich_text_field') {

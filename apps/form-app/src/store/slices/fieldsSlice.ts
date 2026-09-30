@@ -23,6 +23,8 @@ import {
   createGradingYMap,
   serializeFieldToYMap,
   generateUniqueId,
+  visualToRawIndex,
+  visualSlotToRawIndex,
 } from '../helpers/fieldHelpers';
 import {
   extractFieldData,
@@ -151,12 +153,15 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       }
 
       const fieldMap = serializeFieldToYMap(field);
-      const safeIndex = Math.max(0, Math.min(insertIndex, fieldsArray.length));
+      // insertIndex is a visual slot (counts only non-deleted fields); convert
+      // to a raw Y.Array index so a drop lands in the intended slot even when
+      // soft-deleted fields precede it.
+      const rawIndex = visualSlotToRawIndex(fieldsArray, Math.max(0, insertIndex));
 
-      if (safeIndex === fieldsArray.length) {
+      if (rawIndex === fieldsArray.length) {
         fieldsArray.push([fieldMap]);
       } else {
-        fieldsArray.insert(safeIndex, [fieldMap]);
+        fieldsArray.insert(rawIndex, [fieldMap]);
       }
     },
 
@@ -519,20 +524,8 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         return;
       }
 
-      // Helper to convert visual (filtered, non-deleted) index to raw Y.Array index
-      const toRawIndex = (visualIndex: number): number => {
-        let count = -1;
-        for (let i = 0; i < fieldsArray.length; i++) {
-          const fm = fieldsArray.get(i);
-          if (fm instanceof Y.Map && fm.get('deleted') === true) continue;
-          count++;
-          if (count === visualIndex) return i;
-        }
-        return -1;
-      };
-
-      const rawOldIndex = toRawIndex(oldIndex);
-      const rawNewIndex = toRawIndex(newIndex);
+      const rawOldIndex = visualToRawIndex(fieldsArray, oldIndex);
+      const rawNewIndex = visualToRawIndex(fieldsArray, newIndex);
 
       if (rawOldIndex === -1 || rawNewIndex === -1) {
         console.warn(
@@ -647,11 +640,14 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       }
 
       const fieldMap = serializeFieldToYMap(field);
-      const safeIndex = Math.max(0, Math.min(index, fieldsArray.length));
-      if (safeIndex >= fieldsArray.length) {
+      // index is the field's visual slot at delete time; convert to a raw
+      // Y.Array index so it lands where the user expects, not skewed by any
+      // soft-deleted fields that precede it.
+      const rawIndex = visualSlotToRawIndex(fieldsArray, Math.max(0, index));
+      if (rawIndex >= fieldsArray.length) {
         fieldsArray.push([fieldMap]);
       } else {
-        fieldsArray.insert(safeIndex, [fieldMap]);
+        fieldsArray.insert(rawIndex, [fieldMap]);
       }
       return true;
     },
@@ -735,11 +731,12 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         // Remove field from source page
         sourceFieldsArray.delete(fieldIndex, 1);
 
-        // Add field to target page at specified index
+        // Add field to target page at specified index. insertIndex is a
+        // visual slot in the target page; convert to a raw Y.Array index.
         const newFieldMap = createYJSFieldMap(fieldData);
         const safeInsertIndex =
           insertIndex !== undefined
-            ? Math.max(0, Math.min(insertIndex, targetFieldsArray.length))
+            ? visualSlotToRawIndex(targetFieldsArray, Math.max(0, insertIndex))
             : targetFieldsArray.length;
 
         if (safeInsertIndex === targetFieldsArray.length) {

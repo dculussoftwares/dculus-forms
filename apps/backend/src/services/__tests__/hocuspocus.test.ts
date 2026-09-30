@@ -859,6 +859,54 @@ describe('Hocuspocus Service', () => {
       expect(collaborativeDocumentRepository.saveDocumentState).toHaveBeenCalled();
     });
 
+    it('should re-seed the deleted flag for soft-deleted fields', async () => {
+      const schemaWithDeletedField = {
+        pages: [
+          {
+            id: 'page-1',
+            title: 'Page 1',
+            order: 0,
+            fields: [
+              {
+                id: 'field-1',
+                type: 'text_input_field',
+                label: 'Keep',
+                validation: { required: false, type: 'text_input_field' },
+              },
+              {
+                id: 'field-2',
+                type: 'text_input_field',
+                label: 'Deleted',
+                deleted: true,
+                validation: { required: false, type: 'text_input_field' },
+              },
+            ],
+          },
+        ],
+        layout: mockFormSchema.layout,
+        isShuffleEnabled: false,
+      };
+
+      let savedBuffer: Buffer | undefined;
+      vi.mocked(collaborativeDocumentRepository.saveDocumentState).mockImplementation(
+        async (_docName: string, buffer: Buffer) => {
+          savedBuffer = buffer;
+          return undefined as any;
+        }
+      );
+
+      await initializeHocuspocusDocument('form-123', schemaWithDeletedField);
+
+      expect(savedBuffer).toBeDefined();
+      const doc = new Y.Doc();
+      Y.applyUpdate(doc, new Uint8Array(savedBuffer!));
+      const pagesArray = doc.getMap('formSchema').get('pages') as Y.Array<Y.Map<any>>;
+      const fieldsArray = pagesArray.get(0).get('fields') as Y.Array<Y.Map<any>>;
+
+      expect(fieldsArray.get(0).get('deleted')).toBeUndefined();
+      expect(fieldsArray.get(1).get('deleted')).toBe(true);
+    });
+
     it('should use default layout values when not provided', async () => {
       const schemaWithPartialLayout = {
         pages: mockFormSchema.pages,
