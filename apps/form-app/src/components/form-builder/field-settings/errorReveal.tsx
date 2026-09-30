@@ -43,8 +43,10 @@ export function scrollToElement(element: Element, block: ScrollLogicalPosition) 
     delta = offsetTop;
   } else if (block === 'end') {
     delta = offsetBottom;
+  } else if (offsetTop < 0 && offsetBottom > 0) {
+    return;
   } else if (offsetTop < 0) {
-    delta = offsetTop;
+    delta = Math.max(offsetTop, offsetBottom);
   } else if (offsetBottom > 0) {
     delta = Math.min(offsetBottom, offsetTop);
   } else {
