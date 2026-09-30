@@ -592,7 +592,7 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
   const handleThumbnailLeave = () => {
     if (!videoRef.current) return;
     videoRef.current.pause();
-    videoRef.current.currentTime = 0;
+    videoRef.current.currentTime = 0.1;
   };
 
   return (
@@ -620,11 +620,11 @@ function FormCard({ form, onNavigate, showPermissionBadge = false }: FormCardPro
           >
             <video
               ref={videoRef}
-              src={bgVideoUrl}
+              src={`${bgVideoUrl}#t=0.1`}
               muted
               loop
               playsInline
-              preload="none"
+              preload="metadata"
               aria-hidden="true"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
