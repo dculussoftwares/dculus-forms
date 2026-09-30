@@ -47,7 +47,13 @@ function seed(field: FieldData) {
   const fieldMap = () => fieldsArray.get(0);
   const update = (updates: Record<string, unknown>) =>
     store.getState().updateField('page-1', field.id, updates);
-  return { fieldMap, update, read: () => extractFieldData(fieldMap()) };
+  return {
+    store,
+    fieldMap,
+    update,
+    read: () => extractFieldData(fieldMap()),
+    readAt: (index: number) => extractFieldData(fieldsArray.get(index)),
+  };
 }
 
 describe('updateField clearing settings', () => {
@@ -84,6 +90,31 @@ describe('updateField clearing settings', () => {
     expect(read().validation?.maxLength).toBeUndefined();
     expect(read().min).toBeUndefined();
     expect(read().max).toBeUndefined();
+  });
+
+  test('clears text length limits sent through the direct min/max keys', () => {
+    const { update, read, fieldMap } = seed(
+      baseField({ type: FieldType.TEXT_INPUT_FIELD, min: 2, max: 50 })
+    );
+
+    update({ min: null, max: null });
+
+    expect(fieldMap().has('min')).toBe(false);
+    expect(fieldMap().has('max')).toBe(false);
+    expect(read().min).toBeUndefined();
+    expect(read().max).toBeUndefined();
+  });
+
+  test('a text minLength of 0 survives duplicating the field', () => {
+    const { store, update, readAt } = seed(
+      baseField({ type: FieldType.TEXT_INPUT_FIELD, min: 2, max: 50 })
+    );
+
+    update({ validation: { required: false, minLength: 0, maxLength: 50 } });
+    store.getState().duplicateField('page-1', 'f1');
+
+    expect(readAt(0).validation?.minLength).toBe(0);
+    expect(readAt(1).validation?.minLength).toBe(0);
   });
 
   test('clears checkbox selection limits', () => {

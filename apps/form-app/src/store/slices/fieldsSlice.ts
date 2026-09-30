@@ -325,6 +325,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         ) {
           // For text fields, min maps to minLength in validation (fallback for old format)
           setOrClear(validationMap, 'minLength', value);
+          if (value !== undefined) fieldMap.delete('min');
         } else if (
           key === 'max' &&
           (fieldType === FieldType.TEXT_INPUT_FIELD ||
@@ -332,6 +333,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         ) {
           // For text fields, max maps to maxLength in validation (fallback for old format)
           setOrClear(validationMap, 'maxLength', value);
+          if (value !== undefined) fieldMap.delete('max');
         } else if (value === null) {
           if (key !== 'id' && key !== 'type') fieldMap.delete(key);
         } else if (value !== undefined) {

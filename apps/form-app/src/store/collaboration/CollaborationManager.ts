@@ -125,8 +125,8 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     options: fieldMap.get('options')
       ? fieldMap.get('options').toArray()
       : undefined,
-    min: validation?.minLength || fieldMap.get('min'),
-    max: validation?.maxLength || fieldMap.get('max'),
+    min: validation?.minLength ?? fieldMap.get('min'),
+    max: validation?.maxLength ?? fieldMap.get('max'),
     minDate: fieldMap.get('minDate'),
     maxDate: fieldMap.get('maxDate'),
     validation,
