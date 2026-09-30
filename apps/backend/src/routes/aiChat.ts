@@ -73,7 +73,20 @@ async function getFormSchemaFromYjs(formId: string): Promise<{ pages: any[] } | 
     where: { id: formId },
     select: { formSchema: true },
   });
-  return form ? (form.formSchema as any) : null;
+  return form ? withoutLayoutFields(form.formSchema as any) : null;
+}
+
+// The stored JSON snapshot can hold layout fields; the AI context must never list them as targets.
+function withoutLayoutFields(schema: { pages?: any[] } | null): { pages: any[] } | null {
+  if (!schema || !Array.isArray(schema.pages)) return schema as { pages: any[] } | null;
+  return {
+    ...schema,
+    pages: schema.pages.map((page: any) =>
+      Array.isArray(page?.fields)
+        ? { ...page, fields: page.fields.filter((field: unknown) => !isLayoutField(field)) }
+        : page
+    ),
+  };
 }
 
 // ── Schema cache ──────────────────────────────────────────────────────────────
