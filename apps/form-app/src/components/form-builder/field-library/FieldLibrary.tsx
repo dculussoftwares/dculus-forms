@@ -8,10 +8,12 @@ import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
 import { isTypingTarget } from '../../../utils/isTypingTarget';
+import { useGridLayoutEnabled } from '../../../contexts/GridLayoutFlagContext';
 import {
   DraggableFieldType,
   getCategoriesConfig,
-  getFieldTypesConfig,
+  getFieldTypeKey,
+  getPaletteFieldTypesConfig,
   type FieldTypeConfig,
 } from '../FieldTypesPanel';
 import {
@@ -25,6 +27,7 @@ const CATEGORY_ORDER: FieldTypeConfig['category'][] = [
   'choice',
   'content',
   'advanced',
+  'layout',
 ];
 
 const groupByCategory = (
@@ -63,6 +66,7 @@ export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
   const recent = useRecentFieldTypes();
   const { selectedPageId, addField } = useFormBuilderStore();
   const { createFieldData } = useFieldCreation();
+  const gridLayoutEnabled = useGridLayoutEnabled();
 
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -70,8 +74,15 @@ export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
 
   const canAdd = permissions.canAddFields();
 
-  const FIELD_TYPES = useMemo(() => getFieldTypesConfig(tFieldTypes), [tFieldTypes]);
+  const FIELD_TYPES = useMemo(
+    () => getPaletteFieldTypesConfig(tFieldTypes, gridLayoutEnabled),
+    [tFieldTypes, gridLayoutEnabled]
+  );
   const CATEGORIES = useMemo(() => getCategoriesConfig(tFieldTypes), [tFieldTypes]);
+  const categoryOrder = useMemo(
+    () => CATEGORY_ORDER.filter((category) => category !== 'layout' || gridLayoutEnabled),
+    [gridLayoutEnabled]
+  );
 
   const query = search.trim().toLowerCase();
   const filtered = useMemo(
@@ -145,7 +156,7 @@ export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
         </div>
         <ScrollArea className="min-h-0 flex-1">
           <div className="space-y-5 p-3">
-            {CATEGORY_ORDER.map((category) => {
+            {categoryOrder.map((category) => {
               const fields = grouped[category];
               if (!fields?.length) return null;
               return (
@@ -163,7 +174,7 @@ export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
                   <div className="space-y-1.5">
                     {fields.map((fieldType) => (
                       <DraggableFieldType
-                        key={fieldType.type}
+                        key={getFieldTypeKey(fieldType)}
                         fieldType={fieldType}
                         categories={CATEGORIES}
                         onAdd={() => handleAdd(fieldType)}
@@ -284,7 +295,7 @@ export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
             </div>
           )}
 
-          {CATEGORY_ORDER.map((category) => {
+          {categoryOrder.map((category) => {
             const fields = grouped[category];
             if (!fields?.length) return null;
             return (
@@ -295,7 +306,7 @@ export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
                 <div className="grid grid-cols-3 gap-2">
                   {fields.map((fieldType) => (
                     <DraggableFieldType
-                      key={fieldType.type}
+                      key={getFieldTypeKey(fieldType)}
                       fieldType={fieldType}
                       categories={CATEGORIES}
                       onAdd={() => handleAdd(fieldType)}

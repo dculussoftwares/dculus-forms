@@ -21,7 +21,8 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useBuilderSelectionUrlSync } from '../../../hooks/useBuilderSelectionUrlSync';
-import { getCdnEndpoint } from '../../../lib/config';
+import { getCdnEndpoint, isGridLayoutEnabled } from '../../../lib/config';
+import { GridLayoutFlagContext } from '../../../contexts/GridLayoutFlagContext';
 import { RendererMode, cn } from '@dculus/utils';
 import { FieldTypeDisplay, type FieldTypeConfig } from '../FieldTypesPanel';
 import { FieldLibrary } from '../field-library/FieldLibrary';
@@ -414,104 +415,106 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
   };
 
   return (
-    <DndContext
-      sensors={canEdit ? sensors : []}
-      collisionDetection={collisionDetectionStrategy}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="flex h-full" data-testid="new-page-builder-tab">
-        {/* Journey rail: the respondent's journey — Intro / Pages / Thank You */}
-        <JourneyRail />
+    <GridLayoutFlagContext.Provider value={isGridLayoutEnabled()}>
+      <DndContext
+        sensors={canEdit ? sensors : []}
+        collisionDetection={collisionDetectionStrategy}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="flex h-full" data-testid="new-page-builder-tab">
+          {/* Journey rail: the respondent's journey — Intro / Pages / Thank You */}
+          <JourneyRail />
 
-        {/* Docked Field Library — only rendered while pinned; unpinned it lives in
-            the rail's "+ Add content" mega-panel popover instead. */}
-        <FieldLibrary mode="docked" />
+          {/* Docked Field Library — only rendered while pinned; unpinned it lives in
+              the rail's "+ Add content" mega-panel popover instead. */}
+          <FieldLibrary mode="docked" />
 
-        {/* Center: Canvas with toolbar */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-          <CanvasToolbar
-            onOpenDesign={() => setIsDesignDrawerOpen(true)}
-            device={device}
-            onDeviceChange={setDevice}
-            onOpenPreview={() => onOpenPreview?.()}
-          />
+          {/* Center: Canvas with toolbar */}
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            <CanvasToolbar
+              onOpenDesign={() => setIsDesignDrawerOpen(true)}
+              device={device}
+              onDeviceChange={setDevice}
+              onOpenPreview={() => onOpenPreview?.()}
+            />
 
-          {quizSummary && <QuizSummaryStrip summary={quizSummary} />}
+            {quizSummary && <QuizSummaryStrip summary={quizSummary} />}
 
-          <div
-            className={cn(
-              'flex-1 overflow-hidden min-h-0',
-              device === 'mobile' && 'flex justify-center overflow-y-auto py-6 bg-[var(--tf-faint)]'
-            )}
-          >
-            {device === 'mobile' && <style dangerouslySetInnerHTML={{ __html: MOBILE_CANVAS_CSS }} />}
             <div
               className={cn(
-                'h-full',
-                device === 'mobile' &&
-                  'mobile-preview w-[390px] shrink-0 overflow-y-auto rounded-[32px] border-[10px] border-[#1c1c1e] shadow-2xl bg-white'
+                'flex-1 overflow-hidden min-h-0',
+                device === 'mobile' && 'flex justify-center overflow-y-auto py-6 bg-[var(--tf-faint)]'
               )}
             >
-              {selection.kind === 'intro' || selection.kind === 'thankYou' ? (
-                <FormRenderer
-                  formSchema={formSchema}
-                  className="h-full"
-                  cdnEndpoint={cdnEndpoint}
-                  mode={RendererMode.BUILDER}
-                  formId={formId || ''}
-                  onLayoutChange={updateLayout}
-                  screenOverride={selection.kind === 'intro' ? 'intro' : 'thankYou'}
-                />
-              ) : (
-                <FormArea
-                  recentlyDroppedFieldId={recentlyDroppedFieldId}
-                  isDelayingExpansion={isDelayingExpansion}
-                  isAnyDragActive={isAnyDragActive}
-                />
-              )}
+              {device === 'mobile' && <style dangerouslySetInnerHTML={{ __html: MOBILE_CANVAS_CSS }} />}
+              <div
+                className={cn(
+                  'h-full',
+                  device === 'mobile' &&
+                    'mobile-preview w-[390px] shrink-0 overflow-y-auto rounded-[32px] border-[10px] border-[#1c1c1e] shadow-2xl bg-white'
+                )}
+              >
+                {selection.kind === 'intro' || selection.kind === 'thankYou' ? (
+                  <FormRenderer
+                    formSchema={formSchema}
+                    className="h-full"
+                    cdnEndpoint={cdnEndpoint}
+                    mode={RendererMode.BUILDER}
+                    formId={formId || ''}
+                    onLayoutChange={updateLayout}
+                    screenOverride={selection.kind === 'intro' ? 'intro' : 'thankYou'}
+                  />
+                ) : (
+                  <FormArea
+                    recentlyDroppedFieldId={recentlyDroppedFieldId}
+                    isDelayingExpansion={isDelayingExpansion}
+                    isAnyDragActive={isAnyDragActive}
+                  />
+                )}
+              </div>
             </div>
           </div>
+
+          {/* Right: Field Settings with Resizable Width */}
+          <RightSidebar width={sidebarWidth} onWidthChange={setSidebarWidth} />
         </div>
 
-        {/* Right: Field Settings with Resizable Width */}
-        <RightSidebar width={sidebarWidth} onWidthChange={setSidebarWidth} />
-      </div>
+        <DesignDrawer
+          isOpen={isDesignDrawerOpen}
+          onClose={() => setIsDesignDrawerOpen(false)}
+          layout={layout}
+          formId={formId || ''}
+          canEditLayout={canEditLayout}
+          onLayoutSelect={handleLayoutSelect}
+          onLayoutUpdate={handleLayoutUpdate}
+        />
 
-      <DesignDrawer
-        isOpen={isDesignDrawerOpen}
-        onClose={() => setIsDesignDrawerOpen(false)}
-        layout={layout}
-        formId={formId || ''}
-        canEditLayout={canEditLayout}
-        onLayoutSelect={handleLayoutSelect}
-        onLayoutUpdate={handleLayoutUpdate}
-      />
-
-      {/* Drag Overlay - follows cursor during drag */}
-      <DragOverlay dropAnimation={dropAnimation}>
-        {activeFieldType && (
-          <div className="w-72">
-            <FieldTypeDisplay fieldType={activeFieldType} isOverlay />
-          </div>
-        )}
-        {activeField && (
-          <div className="w-[400px] pointer-events-none opacity-90">
-            <FieldCard
-              field={activeField.field}
-              pageId={activeField.pageId}
-              index={activeField.index}
-              totalFields={1}
-              pages={[]}
-              isDragging={true}
-              isAnyDragActive={true}
-              dragHandleProps={{}}
-            />
-          </div>
-        )}
-      </DragOverlay>
-    </DndContext>
+        {/* Drag Overlay - follows cursor during drag */}
+        <DragOverlay dropAnimation={dropAnimation}>
+          {activeFieldType && (
+            <div className="w-72">
+              <FieldTypeDisplay fieldType={activeFieldType} isOverlay />
+            </div>
+          )}
+          {activeField && (
+            <div className="w-[400px] pointer-events-none opacity-90">
+              <FieldCard
+                field={activeField.field}
+                pageId={activeField.pageId}
+                index={activeField.index}
+                totalFields={1}
+                pages={[]}
+                isDragging={true}
+                isAnyDragActive={true}
+                dragHandleProps={{}}
+              />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+    </GridLayoutFlagContext.Provider>
   );
 };
 

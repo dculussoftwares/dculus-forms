@@ -48,6 +48,8 @@ export const setFieldLibraryPinned = (pinned: boolean): void => {
 
 /** Records a field type as used; call from every add path (click and drag). */
 export const recordRecentFieldType = (fieldType: FieldType): void => {
+  // Grid tiles differ only by preset, which the recent list (types only) can't tell apart
+  if (fieldType === FieldType.GRID_FIELD) return;
   const next = [fieldType, ...readRecentList().filter((type) => type !== fieldType)].slice(
     0,
     RECENT_LIMIT

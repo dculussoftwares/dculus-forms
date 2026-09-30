@@ -1,9 +1,14 @@
 import { useCallback } from 'react';
-import { FieldType } from '@dculus/types';
+import { FieldType, setColumnCount } from '@dculus/types';
 import { FieldTypeConfig } from '../components/form-builder/FieldTypesPanel';
 
 export const useFieldCreation = () => {
   const createFieldData = useCallback((fieldType: FieldTypeConfig) => {
+    // A grid holds no answer: its only data is the equal split for the tile's column count
+    if (fieldType.type === FieldType.GRID_FIELD) {
+      return { columnWidths: setColumnCount([], fieldType.preset?.columns ?? 2) };
+    }
+
     const baseData = {
       label: fieldType.label,
       required: false,
