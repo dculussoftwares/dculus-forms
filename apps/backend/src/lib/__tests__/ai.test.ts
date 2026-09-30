@@ -1,7 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock provider SDK — model construction must not require real credentials.
-const openaiChat = vi.fn((model: string) => ({ kind: 'openai', model }));
+const doGenerate = vi.fn(async (params: unknown) => params);
+const doStream = vi.fn(async (params: unknown) => params);
+const openaiChat = vi.fn((modelId: string) => ({
+  specificationVersion: 'v3',
+  provider: 'openai.chat',
+  modelId,
+  supportedUrls: {},
+  doGenerate,
+  doStream,
+}));
 const openaiCallable = Object.assign(vi.fn(), { chat: openaiChat });
 const createOpenAI = vi.fn(() => openaiCallable);
 
@@ -38,7 +47,7 @@ describe('getPrimaryModel', () => {
     setEnv();
     const { getPrimaryModel } = await import('../ai.js');
     const model = getPrimaryModel();
-    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-6-luna' });
+    expect(model).toMatchObject({ provider: 'openai.chat', modelId: 'gpt-6-luna' });
     expect(createOpenAI).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: PRIMARY_BASE_URL, apiKey: PRIMARY_API_KEY }),
     );
@@ -48,7 +57,41 @@ describe('getPrimaryModel', () => {
     setEnv({ AI_PRIMARY_MODEL: undefined });
     const { getPrimaryModel } = await import('../ai.js');
     const model = getPrimaryModel();
-    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-6-luna' });
+    expect(model).toMatchObject({ modelId: 'gpt-6-luna' });
+  });
+});
+
+// gpt-6-luna rejects function tools on /chat/completions unless reasoning_effort is 'none'.
+describe('reasoningEffort default', () => {
+  beforeEach(() => { vi.resetModules(); clearEnv(); doGenerate.mockClear(); doStream.mockClear(); });
+
+  it.each(['getPrimaryModel', 'getFastModel'] as const)(
+    '%s sends reasoningEffort none on generate and stream calls',
+    async (getter) => {
+      setEnv();
+      const ai = await import('../ai.js');
+      const model = ai[getter]() as unknown as {
+        doGenerate: (p: object) => Promise<unknown>;
+        doStream: (p: object) => Promise<unknown>;
+      };
+      await model.doGenerate({ prompt: [] });
+      await model.doStream({ prompt: [] });
+      const expected = expect.objectContaining({
+        providerOptions: { openai: { reasoningEffort: 'none' } },
+      });
+      expect(doGenerate).toHaveBeenCalledWith(expected);
+      expect(doStream).toHaveBeenCalledWith(expected);
+    },
+  );
+
+  it('lets a call-level reasoningEffort override the default', async () => {
+    setEnv();
+    const { getPrimaryModel } = await import('../ai.js');
+    const model = getPrimaryModel() as unknown as { doGenerate: (p: object) => Promise<unknown> };
+    await model.doGenerate({ prompt: [], providerOptions: { openai: { reasoningEffort: 'low' } } });
+    expect(doGenerate).toHaveBeenCalledWith(
+      expect.objectContaining({ providerOptions: { openai: { reasoningEffort: 'low' } } }),
+    );
   });
 });
 
@@ -59,7 +102,7 @@ describe('getFastModel', () => {
     setEnv();
     const { getFastModel } = await import('../ai.js');
     const model = getFastModel();
-    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-6-luna-fast' });
+    expect(model).toMatchObject({ provider: 'openai.chat', modelId: 'gpt-6-luna-fast' });
     expect(createOpenAI).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: FAST_BASE_URL, apiKey: FAST_API_KEY }),
     );
@@ -69,7 +112,7 @@ describe('getFastModel', () => {
     setEnv({ AI_FAST_MODEL: undefined });
     const { getFastModel } = await import('../ai.js');
     const model = getFastModel();
-    expect(model).toMatchObject({ kind: 'openai', model: 'gpt-6-luna-fast' });
+    expect(model).toMatchObject({ modelId: 'gpt-6-luna-fast' });
   });
 });
 

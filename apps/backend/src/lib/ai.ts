@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import type { LanguageModel } from 'ai';
+import { defaultSettingsMiddleware, wrapLanguageModel, type LanguageModel } from 'ai';
 import type { IntentTier } from './intentClassifier.js';
 
 // Returns the env var value only when it is a non-empty, non-"undefined" string.
@@ -16,8 +16,15 @@ function env(key: string): string | undefined {
 // This endpoint accepts Bearer auth and requires no api-version query param.
 // .chat() forces Chat Completions (/chat/completions); the default provider call
 // uses the newer Responses API (/responses) which Azure does not support.
+// gpt-6-luna rejects function tools on /chat/completions unless reasoning_effort
+// is 'none', so it is set as a default for every call (callers can override).
 function buildModel(baseUrl: string, apiKey: string, model: string): LanguageModel {
-  return createOpenAI({ baseURL: baseUrl, apiKey }).chat(model) as LanguageModel;
+  return wrapLanguageModel({
+    model: createOpenAI({ baseURL: baseUrl, apiKey }).chat(model),
+    middleware: defaultSettingsMiddleware({
+      settings: { providerOptions: { openai: { reasoningEffort: 'none' } } },
+    }),
+  });
 }
 
 // Primary model — form editing chat (streaming + tool calls) and form
