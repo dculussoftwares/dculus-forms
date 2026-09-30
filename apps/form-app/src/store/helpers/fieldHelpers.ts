@@ -24,6 +24,11 @@ import {
   TextFieldValidation,
   CheckboxFieldValidation,
   FieldGrading,
+  GridField,
+  isLayoutField,
+  sanitizeGridColumn,
+  sanitizeGridColumnWidths,
+  sanitizeGridId,
 } from '@dculus/types';
 import { generateRandomString } from '@dculus/utils';
 import { FieldData } from '../collaboration/CollaborationManager';
@@ -111,11 +116,22 @@ export const visualSlotToRawIndex = (
 export const isFillableFormField = (
   field: FormField
 ): field is FillableFormField => {
+  // The fallback below is true for every real type, so layout fields must be ruled out first
+  if (isLayoutField(field)) return false;
   return (
     field instanceof FillableFormField ||
     (field as FillableFormField).label !== undefined ||
     field.type !== FieldType.FORM_FIELD
   );
+};
+
+/** Writes the grid pointers only when defined, so grid-less fields keep today's Y.Map shape. */
+export const copyLayoutKeys = (
+  from: { gridId?: string; gridColumn?: number },
+  to: Y.Map<any>
+): void => {
+  if (from.gridId !== undefined) to.set('gridId', from.gridId);
+  if (from.gridColumn !== undefined) to.set('gridColumn', from.gridColumn);
 };
 
 /**
@@ -149,6 +165,14 @@ export const createFormField = (
   }
   if (fieldData.suffix && field instanceof FillableFormField) {
     field.suffix = fieldData.suffix;
+  }
+
+  // A grid never nests; other fields keep a valid pointer (e.g. when converting a grid child)
+  const gridId = isLayoutField(field) ? undefined : sanitizeGridId(fieldData.gridId);
+  if (gridId !== undefined) {
+    field.gridId = gridId;
+    const gridColumn = sanitizeGridColumn(fieldData.gridColumn);
+    if (gridColumn !== undefined) field.gridColumn = gridColumn;
   }
 
   return field;
@@ -351,6 +375,8 @@ const createFormFieldInstance = (
         (fieldData as FileUploadField).maxFiles
       );
     }
+    case FieldType.GRID_FIELD:
+      return new GridField(fieldId, fieldData.columnWidths);
     default:
       return new FormField(fieldId);
   }
@@ -459,6 +485,9 @@ export const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
       fieldMap.set('allowedMimeTypes', mimeArray);
     } else if (key === 'grading' && value) {
       fieldMap.set('grading', createGradingYMap(value as FieldGrading));
+    } else if (key === 'columnWidths' && value) {
+      // Plain array (whole-array last-write-wins), never a Y.Array: two concurrent resizes must not interleave
+      fieldMap.set('columnWidths', sanitizeGridColumnWidths(value));
     } else if (value !== undefined) {
       fieldMap.set(key, value);
     }
@@ -493,6 +522,8 @@ export const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
   } else if (fieldData.type === FieldType.RICH_TEXT_FIELD) {
     // Rich Text fields don't have validation - skip validation setup
     // Content is already handled in the Object.entries loop above
+  } else if (fieldData.type === FieldType.GRID_FIELD) {
+    // Layout containers have no answer, so no validation map
   } else if (fieldData.type === FieldType.FILE_UPLOAD_FIELD) {
     // File upload fields use basic required validation
     const validationMap = new Y.Map();
@@ -514,6 +545,14 @@ export const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
  * Serialize a FormField instance to YJS Map
  */
 export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
+  if (isLayoutField(field)) {
+    const fieldMap = new Y.Map();
+    fieldMap.set('id', field.id);
+    fieldMap.set('type', field.type);
+    fieldMap.set('columnWidths', sanitizeGridColumnWidths(field.columnWidths));
+    return fieldMap;
+  }
+
   // Checked explicitly and before the heuristic below: isFillableFormField's
   // `field.type !== FieldType.FORM_FIELD` fallback is true for every real
   // field type (including rich text), which made this non-fillable branch
@@ -523,6 +562,7 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     fieldMap.set('id', field.id);
     fieldMap.set('type', field.type);
     fieldMap.set('content', (field as RichTextFormField).content || '');
+    copyLayoutKeys(field, fieldMap);
     return fieldMap;
   }
 
@@ -530,6 +570,7 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     const fieldMap = new Y.Map();
     fieldMap.set('id', field.id);
     fieldMap.set('type', field.type);
+    copyLayoutKeys(field, fieldMap);
 
     return fieldMap;
   }
@@ -555,6 +596,8 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     maxFiles: (fillableField as FileUploadField).maxFiles,
     grading: fillableField.grading,
     defaultCountry: (fillableField as PhoneNumberField).defaultCountry,
+    gridId: field.gridId,
+    gridColumn: field.gridColumn,
   };
 
   return createYJSFieldMap(fieldData);

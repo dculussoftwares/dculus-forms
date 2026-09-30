@@ -11,6 +11,7 @@ import {
   FormPage,
   sanitizeConditions,
   sanitizeFieldGrading,
+  sanitizeGridColumnWidths,
 } from '@dculus/types';
 import * as Y from 'yjs';
 import { DEFAULT_LAYOUT } from '../helpers/defaultLayout';
@@ -38,6 +39,11 @@ export type FieldData = {
   defaultCountry?: string;
   deleted?: boolean;
   grading?: FieldGrading;
+  /** Grid layout pointers; present only on fields that live in a grid. */
+  gridId?: string;
+  gridColumn?: number;
+  /** Grid fields only. */
+  columnWidths?: number[];
 };
 
 // Converts a nested Y.Map (e.g. `grading.text`/`grading.numeric`/`grading.set`) into a
@@ -144,6 +150,16 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
 
   if (fieldType === FieldType.RICH_TEXT_FIELD) {
     result.content = fieldMap.get('content') || '';
+  }
+
+  // Layout keys are added only when stored, so a field without a grid keeps today's shape.
+  const gridId = fieldMap.get('gridId');
+  if (gridId !== undefined) result.gridId = gridId;
+  const gridColumn = fieldMap.get('gridColumn');
+  if (gridColumn !== undefined) result.gridColumn = gridColumn;
+  if (fieldType === FieldType.GRID_FIELD) {
+    // Stored as a plain array; tolerate a Y.Array from an older or foreign writer
+    result.columnWidths = sanitizeGridColumnWidths(fieldMap.get('columnWidths'));
   }
 
   if (fieldType === FieldType.FILE_UPLOAD_FIELD) {
