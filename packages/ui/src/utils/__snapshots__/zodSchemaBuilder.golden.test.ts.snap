@@ -1,0 +1,525 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`page-level validator behaviour (golden) > a page with several invalid fields reports errors in field order 1`] = `
+[
+  "t: T must be at least 2 characters long",
+  "t: T is required",
+  "e: E must be a valid email address (e.g. name@example.com)",
+  "n: N must be between 1 and 10",
+]
+`;
+
+exports[`page-level validator behaviour (golden) > createPageDefaultValues per type 1`] = `
+{
+  "f0": "",
+  "f1": "",
+  "f10": "",
+  "f11": [],
+  "f12": [],
+  "f13": [],
+  "f14": [],
+  "f15": "",
+  "f2": "",
+  "f3": "",
+  "f4": "",
+  "f5": "",
+  "f6": "",
+  "f7": "",
+  "f8": "",
+  "f9": "",
+}
+`;
+
+exports[`page-level validator behaviour (golden) > createPageSchema key set includes every field id, rich text included 1`] = `
+[
+  "t",
+  "e",
+  "r",
+  "n",
+]
+`;
+
+exports[`page-level validator behaviour (golden) > hidden ids drop their keys; required overrides flip required both ways 1`] = `
+{
+  "hidden": {
+    "errors": [],
+    "isValid": true,
+  },
+  "overrides": {
+    "errors": [
+      {
+        "field": "e",
+        "message": "E is required",
+      },
+      {
+        "field": "e",
+        "message": "E must be a valid email address (e.g. name@example.com)",
+      },
+      {
+        "field": "n",
+        "message": "N must be between 1 and 10",
+      },
+      {
+        "field": "n",
+        "message": "N is required",
+      },
+    ],
+    "isValid": false,
+  },
+}
+`;
+
+exports[`validators per field type (golden) > checkbox optional min2 max3 1`] = `
+[
+  {
+    "input": [],
+    "result": "valid",
+  },
+  {
+    "input": [
+      "X",
+    ],
+    "result": [
+      "f: For Q, select at least 2 options or leave all unchecked",
+    ],
+  },
+  {
+    "input": [
+      "X",
+      "Y",
+    ],
+    "result": "valid",
+  },
+  {
+    "input": [
+      "X",
+      "Y",
+      "Z",
+    ],
+    "result": "valid",
+  },
+  {
+    "input": [
+      "X",
+      "Y",
+      "Z",
+      "W",
+    ],
+    "result": [
+      "f: Q allows a maximum of 3 selections",
+    ],
+  },
+  {
+    "input": "<undefined>",
+    "result": [
+      "f: Invalid input: expected array, received undefined",
+    ],
+  },
+]
+`;
+
+exports[`validators per field type (golden) > checkbox required 1`] = `
+[
+  {
+    "input": [],
+    "result": [
+      "f: Please select at least 1 option for Q",
+    ],
+  },
+  {
+    "input": [
+      "X",
+    ],
+    "result": "valid",
+  },
+  {
+    "input": "<undefined>",
+    "result": [
+      "f: Invalid input: expected array, received undefined",
+    ],
+  },
+]
+`;
+
+exports[`validators per field type (golden) > date required bounded 1`] = `
+[
+  {
+    "input": "",
+    "result": [
+      "f: Q is required",
+      "f: Q must be a valid date",
+      "f: Q must be between January 1, 2026 and December 31, 2026",
+    ],
+  },
+  {
+    "input": "2025-12-31",
+    "result": [
+      "f: Q must be between January 1, 2026 and December 31, 2026",
+    ],
+  },
+  {
+    "input": "2026-01-01",
+    "result": "valid",
+  },
+  {
+    "input": "2026-06-15",
+    "result": "valid",
+  },
+  {
+    "input": "2026-12-31",
+    "result": "valid",
+  },
+  {
+    "input": "2027-01-01",
+    "result": [
+      "f: Q must be between January 1, 2026 and December 31, 2026",
+    ],
+  },
+  {
+    "input": "not-a-date",
+    "result": [
+      "f: Q must be a valid date",
+    ],
+  },
+]
+`;
+
+exports[`validators per field type (golden) > email optional 1`] = `
+[
+  {
+    "input": "",
+    "result": "valid",
+  },
+  {
+    "input": "nope",
+    "result": [
+      "f: Q must be a valid email address (e.g. name@example.com)",
+    ],
+  },
+  {
+    "input": "a@b.co",
+    "result": "valid",
+  },
+]
+`;
+
+exports[`validators per field type (golden) > email required 1`] = `
+[
+  {
+    "input": "",
+    "result": [
+      "f: Q is required",
+      "f: Q must be a valid email address (e.g. name@example.com)",
+    ],
+  },
+  {
+    "input": "nope",
+    "result": [
+      "f: Q must be a valid email address (e.g. name@example.com)",
+    ],
+  },
+  {
+    "input": "a@b",
+    "result": [
+      "f: Q must be a valid email address (e.g. name@example.com)",
+    ],
+  },
+  {
+    "input": "a@b.co",
+    "result": "valid",
+  },
+  {
+    "input": " a@b.co ",
+    "result": "valid",
+  },
+]
+`;
+
+exports[`validators per field type (golden) > file optional 1`] = `
+[
+  {
+    "input": [],
+    "result": "valid",
+  },
+  {
+    "input": "<undefined>",
+    "result": "valid",
+  },
+]
+`;
+
+exports[`validators per field type (golden) > file required max2 1`] = `
+[
+  {
+    "input": [],
+    "result": [
+      "f: Please upload at least one file for Q",
+    ],
+  },
+  {
+    "input": [
+      {
+        "name": "a.pdf",
+      },
+    ],
+    "result": "valid",
+  },
+  {
+    "input": [
+      {
+        "name": "a",
+      },
+      {
+        "name": "b",
+      },
+      {
+        "name": "c",
+      },
+    ],
+    "result": [
+      "f: Q allows a maximum of 2 files",
+    ],
+  },
+  {
+    "input": "<undefined>",
+    "result": [
+      "f: Invalid input: expected array, received undefined",
+    ],
+  },
+]
+`;
+
+exports[`validators per field type (golden) > number optional 1`] = `
+[
+  {
+    "input": "",
+    "result": "valid",
+  },
+  {
+    "input": 0,
+    "result": "valid",
+  },
+  {
+    "input": -5,
+    "result": "valid",
+  },
+  {
+    "input": 1.5,
+    "result": "valid",
+  },
+]
+`;
+
+exports[`validators per field type (golden) > number required 18-99 1`] = `
+[
+  {
+    "input": "",
+    "result": [
+      "f: Q must be between 18 and 99",
+      "f: Q is required",
+    ],
+  },
+  {
+    "input": 17,
+    "result": [
+      "f: Q must be between 18 and 99",
+    ],
+  },
+  {
+    "input": 18,
+    "result": "valid",
+  },
+  {
+    "input": 99,
+    "result": "valid",
+  },
+  {
+    "input": 100,
+    "result": [
+      "f: Q must be between 18 and 99",
+    ],
+  },
+  {
+    "input": "30",
+    "result": [
+      "f: Too big: expected string to have <=0 characters",
+    ],
+  },
+  {
+    "input": "abc",
+    "result": [
+      "f: Too big: expected string to have <=0 characters",
+    ],
+  },
+  {
+    "input": 0,
+    "result": [
+      "f: Q must be between 18 and 99",
+    ],
+  },
+]
+`;
+
+exports[`validators per field type (golden) > phone required 1`] = `
+[
+  {
+    "input": "",
+    "result": [
+      "f: Q is required",
+    ],
+  },
+  {
+    "input": "12",
+    "result": [
+      "f: Q must be a valid phone number",
+    ],
+  },
+  {
+    "input": "+14155552671",
+    "result": "valid",
+  },
+  {
+    "input": "4155552671",
+    "result": [
+      "f: Q must be a valid phone number",
+    ],
+  },
+]
+`;
+
+exports[`validators per field type (golden) > radio required 1`] = `
+[
+  {
+    "input": "",
+    "result": [
+      "f: Please select an option for Q",
+    ],
+  },
+  {
+    "input": "A",
+    "result": "valid",
+  },
+  {
+    "input": "Z",
+    "result": "valid",
+  },
+]
+`;
+
+exports[`validators per field type (golden) > rich text (non-fillable) 1`] = `
+[
+  {
+    "input": "",
+    "result": "valid",
+  },
+  {
+    "input": "<undefined>",
+    "result": "valid",
+  },
+  {
+    "input": "x",
+    "result": "valid",
+  },
+]
+`;
+
+exports[`validators per field type (golden) > select required 1`] = `
+[
+  {
+    "input": "",
+    "result": [
+      "f: Please select an option for Q",
+    ],
+  },
+  {
+    "input": "A",
+    "result": "valid",
+  },
+  {
+    "input": "Z",
+    "result": "valid",
+  },
+]
+`;
+
+exports[`validators per field type (golden) > text optional 1`] = `
+[
+  {
+    "input": "",
+    "result": "valid",
+  },
+  {
+    "input": "anything",
+    "result": "valid",
+  },
+  {
+    "input": "<undefined>",
+    "result": "valid",
+  },
+]
+`;
+
+exports[`validators per field type (golden) > text required min3 max5 1`] = `
+[
+  {
+    "input": "",
+    "result": [
+      "f: Q must be at least 3 characters long",
+      "f: Q is required",
+    ],
+  },
+  {
+    "input": "ab",
+    "result": [
+      "f: Q must be at least 3 characters long",
+    ],
+  },
+  {
+    "input": "abc",
+    "result": "valid",
+  },
+  {
+    "input": "abcde",
+    "result": "valid",
+  },
+  {
+    "input": "abcdef",
+    "result": [
+      "f: Q cannot exceed 5 characters",
+    ],
+  },
+  {
+    "input": "<undefined>",
+    "result": [
+      "f: Invalid input: expected string, received undefined",
+    ],
+  },
+  {
+    "input": 42,
+    "result": [
+      "f: Invalid input: expected string, received number",
+    ],
+  },
+]
+`;
+
+exports[`validators per field type (golden) > textarea required max10 1`] = `
+[
+  {
+    "input": "",
+    "result": [
+      "f: Q is required",
+    ],
+  },
+  {
+    "input": "hello",
+    "result": "valid",
+  },
+  {
+    "input": "hello world!",
+    "result": [
+      "f: Q cannot exceed 10 characters",
+    ],
+  },
+]
+`;
