@@ -20,8 +20,8 @@ import { RendererMode } from '@dculus/utils';
 import { Upload } from 'lucide-react';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import {
-  Input,
-  Textarea,
+  AffixedInput,
+  AffixedTextarea,
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
   RadioGroup, RadioGroupItem,
   Checkbox,
@@ -167,10 +167,13 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const len = String(cf.value || '').length;
               return (
                 <div>
-                  <Input
+                  <AffixedInput
                     {...cf}
                     value={cf.value ?? ''}
                     type="text"
+                    prefixText={fillableField?.prefix}
+                    suffixText={fillableField?.suffix}
+                    invalid={hasError}
                     placeholder={fillableField?.placeholder || 'Type your answer here…'}
                     maxLength={v?.maxLength}
                     disabled={!isInteractive}
@@ -188,9 +191,12 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const len = String(cf.value || '').length;
               return (
                 <div>
-                  <Textarea
+                  <AffixedTextarea
                     {...cf}
                     value={cf.value ?? ''}
+                    prefixText={fillableField?.prefix}
+                    suffixText={fillableField?.suffix}
+                    invalid={hasError}
                     placeholder={fillableField?.placeholder || 'Type your answer here…'}
                     maxLength={v?.maxLength}
                     disabled={!isInteractive}
@@ -206,10 +212,13 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             case FieldType.EMAIL_FIELD:
               return (
                 <div>
-                  <Input
+                  <AffixedInput
                     {...cf}
                     value={cf.value ?? ''}
                     type="email"
+                    prefixText={fillableField?.prefix}
+                    suffixText={fillableField?.suffix}
+                    invalid={hasError}
                     placeholder={fillableField?.placeholder || 'name@example.com'}
                     disabled={!isInteractive}
                     className={errCls}
@@ -247,12 +256,15 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const nf = field as any;
               return (
                 <div>
-                  <Input
+                  <AffixedInput
                     name={cf.name}
                     ref={cf.ref}
                     onBlur={cf.onBlur}
                     value={cf.value ?? ''}
                     type="number"
+                    prefixText={fillableField?.prefix}
+                    suffixText={fillableField?.suffix}
+                    invalid={hasError}
                     min={nf.min}
                     max={nf.max}
                     placeholder={fillableField?.placeholder || '0'}

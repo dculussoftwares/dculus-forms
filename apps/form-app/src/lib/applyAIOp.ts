@@ -263,7 +263,8 @@ export function applyAIOp(
           required: sourceField.required ?? false,
           placeholder: sourceField.placeholder ?? '',
           defaultValue: '',
-          prefix: '',
+          prefix: sourceField.prefix ?? '',
+          suffix: sourceField.suffix ?? '',
           hint: sourceField.hint ?? '',
           ...(isChoice && { options: sourceField.options ?? [] }),
         };

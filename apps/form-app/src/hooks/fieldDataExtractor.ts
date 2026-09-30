@@ -42,6 +42,7 @@ export function extractBaseFieldData(field: FormField): BaseFieldData {
     placeholder: fillableField.placeholder || '',
     defaultValue: getFieldDefaultValue(field),
     prefix: fillableField.prefix || '',
+    suffix: fillableField.suffix || '',
     required: fillableField.validation?.required || false,
   };
 }

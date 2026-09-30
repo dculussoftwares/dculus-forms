@@ -109,6 +109,9 @@ export const createFormField = (
   if (fieldData.grading && field instanceof FillableFormField) {
     field.grading = fieldData.grading;
   }
+  if (fieldData.suffix && field instanceof FillableFormField) {
+    field.suffix = fieldData.suffix;
+  }
 
   return field;
 };
@@ -493,6 +496,7 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     label: fillableField.label || '',
     defaultValue: fillableField.defaultValue || '',
     prefix: fillableField.prefix || '',
+    suffix: fillableField.suffix || '',
     hint: fillableField.hint || '',
     required: fillableField.validation?.required || false,
     placeholder: fillableField.placeholder || '',

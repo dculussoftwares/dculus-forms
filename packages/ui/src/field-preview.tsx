@@ -4,7 +4,8 @@ import { cn } from '@dculus/utils';
 import { Upload } from 'lucide-react';
 import {
   Input,
-  Textarea,
+  AffixedInput,
+  AffixedTextarea,
   Select,
   SelectTrigger,
   SelectContent,
@@ -104,6 +105,17 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       return '';
     };
 
+    const getFieldSuffix = (): string => {
+      if (
+        'suffix' in field &&
+        typeof field.suffix === 'string' &&
+        field.suffix
+      ) {
+        return field.suffix;
+      }
+      return '';
+    };
+
     const getFieldDefaultValue = (): string => {
       if (
         'defaultValue' in field &&
@@ -151,6 +163,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       hint: getFieldHint(),
       placeholder: getFieldPlaceholder(),
       prefix: getFieldPrefix(),
+      suffix: getFieldSuffix(),
       defaultValue: getFieldDefaultValue(),
       defaultValueArray: getFieldDefaultValueArray(),
       options: getFieldOptions(),
@@ -163,6 +176,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
     'hint' in field ? field.hint : null,
     'placeholder' in field ? field.placeholder : null,
     'prefix' in field ? field.prefix : null,
+    'suffix' in field ? field.suffix : null,
     'defaultValue' in field ? (field as any).defaultValue : null,
     'defaultValues' in field ? (field as any).defaultValues : null,
     'options' in field ? field.options : null,
@@ -175,63 +189,49 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       fieldData.placeholder || `Enter your ${fieldData.label.toLowerCase()}`;
     const defaultValue = fieldData.defaultValue;
     const prefix = fieldData.prefix;
+    const suffix = fieldData.suffix;
     const options = fieldData.options;
 
     switch (field.type) {
       case FieldType.TEXT_INPUT_FIELD:
         return (
-          <div className="relative">
-            {prefix && (
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                {prefix}
-              </span>
-            )}
-            <Input
-              id={inputId}
-              type="text"
-              placeholder={placeholder}
-              defaultValue={defaultValue}
-              disabled={disabled}
-              className={`text-sm ${prefix ? 'pl-8' : ''}`}
-            />
-          </div>
+          <AffixedInput
+            id={inputId}
+            type="text"
+            prefixText={prefix}
+            suffixText={suffix}
+            placeholder={placeholder}
+            defaultValue={defaultValue}
+            disabled={disabled}
+            className="text-sm"
+          />
         );
 
       case FieldType.TEXT_AREA_FIELD:
         return (
-          <div className="relative">
-            {prefix && (
-              <span className="absolute left-3 top-3 text-gray-500 text-sm z-10">
-                {prefix}
-              </span>
-            )}
-            <Textarea
-              id={inputId}
-              placeholder={placeholder}
-              defaultValue={defaultValue}
-              disabled={disabled}
-              className={`text-sm min-h-[80px] resize-none ${prefix ? 'pl-8' : ''}`}
-            />
-          </div>
+          <AffixedTextarea
+            id={inputId}
+            prefixText={prefix}
+            suffixText={suffix}
+            placeholder={placeholder}
+            defaultValue={defaultValue}
+            disabled={disabled}
+            className="text-sm min-h-[80px] resize-none"
+          />
         );
 
       case FieldType.EMAIL_FIELD:
         return (
-          <div className="relative">
-            {prefix && (
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                {prefix}
-              </span>
-            )}
-            <Input
-              id={inputId}
-              type="email"
-              placeholder={placeholder || 'Enter your email'}
-              defaultValue={defaultValue}
-              disabled={disabled}
-              className={`text-sm ${prefix ? 'pl-8' : ''}`}
-            />
-          </div>
+          <AffixedInput
+            id={inputId}
+            type="email"
+            prefixText={prefix}
+            suffixText={suffix}
+            placeholder={placeholder || 'Enter your email'}
+            defaultValue={defaultValue}
+            disabled={disabled}
+            className="text-sm"
+          />
         );
 
       case FieldType.PHONE_NUMBER_FIELD: {
@@ -251,23 +251,18 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       case FieldType.NUMBER_FIELD: {
         const numberField = field as any;
         return (
-          <div className="relative">
-            {prefix && (
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                {prefix}
-              </span>
-            )}
-            <Input
-              id={inputId}
-              type="number"
-              placeholder={placeholder || 'Enter a number'}
-              defaultValue={defaultValue}
-              min={numberField.min}
-              max={numberField.max}
-              disabled={disabled}
-              className={`text-sm ${prefix ? 'pl-8' : ''}`}
-            />
-          </div>
+          <AffixedInput
+            id={inputId}
+            type="number"
+            prefixText={prefix}
+            suffixText={suffix}
+            placeholder={placeholder || 'Enter a number'}
+            defaultValue={defaultValue}
+            min={numberField.min}
+            max={numberField.max}
+            disabled={disabled}
+            className="text-sm"
+          />
         );
       }
 
