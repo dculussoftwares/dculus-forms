@@ -19,11 +19,13 @@ const focusControl = (e: React.MouseEvent<HTMLDivElement>) => {
     ?.focus()
 }
 
-const Addon: React.FC<{ className?: string; children: React.ReactNode }> = ({
-  className,
-  children,
-}) => (
+const Addon: React.FC<{
+  id: string
+  className?: string
+  children: React.ReactNode
+}> = ({ id, className, children }) => (
   <span
+    id={id}
     className={cn(
       "shrink-0 max-w-[40%] truncate select-none text-sm text-[#655d67] dark:text-muted-foreground",
       className
@@ -33,15 +35,60 @@ const Addon: React.FC<{ className?: string; children: React.ReactNode }> = ({
   </span>
 )
 
+const INVALID_BORDER =
+  "border-[#ce5d55] focus-within:border-[#ce5d55] dark:border-[#ce5d55] dark:focus-within:border-[#ce5d55]"
+
+// Exposes the addon text (currency/unit) to assistive tech as part of the control's description.
+const useAffixIds = (
+  prefixText: string | undefined,
+  suffixText: string | undefined,
+  describedBy: string | undefined
+) => {
+  const baseId = React.useId()
+  const prefixId = `${baseId}-prefix`
+  const suffixId = `${baseId}-suffix`
+  const ids = [
+    prefixText ? prefixId : undefined,
+    suffixText ? suffixId : undefined,
+    describedBy,
+  ].filter(Boolean)
+  return {
+    prefixId,
+    suffixId,
+    describedBy: ids.length ? ids.join(" ") : undefined,
+  }
+}
+
 /**
  * Input with an inline prefix/suffix addon. Lays the addons out in normal flow
  * (never absolutely positioned) so the typed value can never collide with them.
  * With no prefix and no suffix it renders a plain `Input`.
  */
 const AffixedInput = React.forwardRef<HTMLInputElement, InputProps & AffixProps>(
-  ({ prefixText, suffixText, invalid, className, disabled, ...props }, ref) => {
+  (
+    {
+      prefixText,
+      suffixText,
+      invalid,
+      className,
+      disabled,
+      "aria-describedby": ariaDescribedBy,
+      ...props
+    },
+    ref
+  ) => {
+    const affix = useAffixIds(prefixText, suffixText, ariaDescribedBy)
+
     if (!prefixText && !suffixText) {
-      return <Input ref={ref} disabled={disabled} className={className} {...props} />
+      return (
+        <Input
+          ref={ref}
+          disabled={disabled}
+          className={className}
+          aria-describedby={ariaDescribedBy}
+          {...props}
+        />
+      )
     }
 
     return (
@@ -49,15 +96,20 @@ const AffixedInput = React.forwardRef<HTMLInputElement, InputProps & AffixProps>
         onClick={focusControl}
         className={cn(
           "flex h-9 w-full items-center rounded-lg border border-[rgba(81,76,84,0.15)] bg-white/80 transition-colors duration-150 focus-within:border-[#3c323e] dark:bg-white/5 dark:border-white/10",
-          invalid && "border-[#ce5d55] focus-within:border-[#ce5d55]",
+          invalid && INVALID_BORDER,
           disabled && "cursor-not-allowed opacity-50",
           className
         )}
       >
-        {prefixText && <Addon className="pl-3">{prefixText}</Addon>}
+        {prefixText && (
+          <Addon id={affix.prefixId} className="pl-3">
+            {prefixText}
+          </Addon>
+        )}
         <Input
           ref={ref}
           disabled={disabled}
+          aria-describedby={affix.describedBy}
           className={cn(
             "h-full min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:border-0 disabled:opacity-100 dark:bg-transparent",
             prefixText && "pl-1.5",
@@ -65,7 +117,11 @@ const AffixedInput = React.forwardRef<HTMLInputElement, InputProps & AffixProps>
           )}
           {...props}
         />
-        {suffixText && <Addon className="pr-3">{suffixText}</Addon>}
+        {suffixText && (
+          <Addon id={affix.suffixId} className="pr-3">
+            {suffixText}
+          </Addon>
+        )}
       </div>
     )
   }
@@ -76,36 +132,68 @@ AffixedInput.displayName = "AffixedInput"
 const AffixedTextarea = React.forwardRef<
   HTMLTextAreaElement,
   TextareaProps & AffixProps
->(({ prefixText, suffixText, invalid, className, disabled, ...props }, ref) => {
-  if (!prefixText && !suffixText) {
-    return <Textarea ref={ref} disabled={disabled} className={className} {...props} />
-  }
+>(
+  (
+    {
+      prefixText,
+      suffixText,
+      invalid,
+      className,
+      disabled,
+      "aria-describedby": ariaDescribedBy,
+      ...props
+    },
+    ref
+  ) => {
+    const affix = useAffixIds(prefixText, suffixText, ariaDescribedBy)
 
-  return (
-    <div
-      onClick={focusControl}
-      className={cn(
-        "flex w-full items-start rounded-xl border-2 border-gray-200 bg-white transition-colors duration-150 focus-within:border-primary dark:bg-gray-900 dark:border-gray-700",
-        invalid && "border-[#ce5d55] focus-within:border-[#ce5d55]",
-        disabled && "cursor-not-allowed opacity-50"
-      )}
-    >
-      {prefixText && <Addon className="pl-4 pt-3">{prefixText}</Addon>}
-      <Textarea
-        ref={ref}
-        disabled={disabled}
+    if (!prefixText && !suffixText) {
+      return (
+        <Textarea
+          ref={ref}
+          disabled={disabled}
+          className={className}
+          aria-describedby={ariaDescribedBy}
+          {...props}
+        />
+      )
+    }
+
+    return (
+      <div
+        onClick={focusControl}
         className={cn(
-          "min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:border-0 disabled:opacity-100 dark:bg-transparent",
-          prefixText && "pl-2",
-          suffixText && "pr-2",
-          className
+          "flex w-full items-start rounded-xl border-2 border-gray-200 bg-white transition-colors duration-150 focus-within:border-primary dark:bg-gray-900 dark:border-gray-700",
+          invalid && INVALID_BORDER,
+          disabled && "cursor-not-allowed opacity-50"
         )}
-        {...props}
-      />
-      {suffixText && <Addon className="pr-4 pt-3">{suffixText}</Addon>}
-    </div>
-  )
-})
+      >
+        {prefixText && (
+          <Addon id={affix.prefixId} className="pl-4 pt-3">
+            {prefixText}
+          </Addon>
+        )}
+        <Textarea
+          ref={ref}
+          disabled={disabled}
+          aria-describedby={affix.describedBy}
+          className={cn(
+            "min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:border-0 disabled:opacity-100 dark:bg-transparent",
+            prefixText && "pl-2",
+            suffixText && "pr-2",
+            className
+          )}
+          {...props}
+        />
+        {suffixText && (
+          <Addon id={affix.suffixId} className="pr-4 pt-3">
+            {suffixText}
+          </Addon>
+        )}
+      </div>
+    )
+  }
+)
 AffixedTextarea.displayName = "AffixedTextarea"
 
 export { AffixedInput, AffixedTextarea }
