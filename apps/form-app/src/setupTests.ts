@@ -71,6 +71,7 @@ jest.mock('@dculus/types', () => {
     FILE_UPLOAD_FIELD: 'file_upload_field',
     PHONE_NUMBER_FIELD: 'phone_number_field',
     RICH_TEXT_FIELD: 'rich_text_field',
+    GRID_FIELD: 'grid_field',
   };
 
   class TextFieldValidation {
@@ -297,10 +298,27 @@ jest.mock('@dculus/types', () => {
   // by file path because this factory is replacing the '@dculus/types' module
   // name itself. Spread first so the explicit keys below still win.
   const actualConditions = jest.requireActual('../../../packages/types/src/conditions');
+  // Real grid helpers (isLayoutField, sanitizers, tree builders): stubbing them would make
+  // layout tests assert against fiction, same reasoning as conditions above.
+  const actualGrid = jest.requireActual('../../../packages/types/src/grid');
+
+  class GridField {
+    id: string;
+    type: string;
+    columnWidths: number[];
+
+    constructor(id: string, columnWidths: number[] = [50, 50]) {
+      this.id = id;
+      this.type = 'grid_field';
+      this.columnWidths = actualGrid.sanitizeGridColumnWidths(columnWidths);
+    }
+  }
 
   return {
     ...actualConditions,
+    ...actualGrid,
     FieldType,
+    GridField,
     TextFieldValidation,
     FillableFormFieldValidation,
     TextInputField,

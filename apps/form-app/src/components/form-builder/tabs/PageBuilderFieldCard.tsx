@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router';
 import { FieldPreview, Button, Badge, Switch, toast } from '@dculus/ui';
-import { FormField, FormPage, FillableFormField, isGradableFieldType } from '@dculus/types';
+import { FormField, FormPage, FillableFormField, isGradableFieldType, isLayoutField } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useConditionReferenceCounts } from '../../../hooks/useConditionReferenceCounts';
@@ -98,7 +98,7 @@ export const FieldCard: React.FC<{
       ? field.label
       : typeConfig.label;
 
-  const isFillable = 'validation' in field;
+  const isFillable = !isLayoutField(field) && 'validation' in field;
   const isRequired = isFillable && Boolean((field as FillableFormField).validation?.required);
   const hasLabel = 'label' in field;
 
@@ -665,7 +665,7 @@ export const DraggableFieldCard: React.FC<{
     copyFieldToPage(pageId, targetPageId, field.id);
   };
 
-  const isFillable = 'validation' in field;
+  const isFillable = !isLayoutField(field) && 'validation' in field;
   const hasLabel = 'label' in field;
 
   const handleToggleRequired = (newRequired: boolean) => {

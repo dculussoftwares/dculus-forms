@@ -15,6 +15,7 @@ import {
   FormField,
   FormPage,
   isGradableFieldType,
+  sanitizeGridColumnWidths,
 } from '@dculus/types';
 import { getOrCreatePagesArray } from '../helpers/yjsHelpers';
 import {
@@ -218,7 +219,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
 
       // Get or create validation map
       let validationMap = fieldMap.get('validation');
-      if (!validationMap || !(validationMap instanceof Y.Map)) {
+      if (fieldType !== FieldType.GRID_FIELD && (!validationMap || !(validationMap instanceof Y.Map))) {
         validationMap = new Y.Map();
         validationMap.set('required', false);
         if (
@@ -235,6 +236,13 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       }
 
       Object.entries(updates).forEach(([key, value]) => {
+        // A grid holds no answer, so it has no validation map for these keys to write to
+        if (
+          fieldType === FieldType.GRID_FIELD &&
+          (key === 'validation' || key === 'required' || key === 'min' || key === 'max')
+        ) {
+          return;
+        }
         console.log(`📝 FieldsSlice - Processing update key '${key}':`, {
           fieldId,
           key,
@@ -339,6 +347,9 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
           // For text fields, max maps to maxLength in validation (fallback for old format)
           setOrClear(validationMap, 'maxLength', value);
           if (value !== undefined) fieldMap.delete('max');
+        } else if (key === 'columnWidths' && Array.isArray(value)) {
+          // Replaced as one plain array so concurrent resizes cannot interleave into a sum other than 100
+          fieldMap.set('columnWidths', sanitizeGridColumnWidths(value));
         } else if (value === null) {
           if (key !== 'id' && key !== 'type') fieldMap.delete(key);
         } else if (value !== undefined) {
@@ -443,6 +454,10 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
         placeholder: oldData.placeholder,
         required: oldData.validation?.required ?? false,
       };
+
+      // A grid child stays in its column when its type changes
+      if (oldData.gridId !== undefined) carriedData.gridId = oldData.gridId;
+      if (oldData.gridColumn !== undefined) carriedData.gridColumn = oldData.gridColumn;
 
       // Carry options when converting between choice types (dropdown ↔ radio ↔ checkbox).
       if (isChoice(oldType) && isChoice(newType) && Array.isArray(oldData.options) && oldData.options.length > 0) {

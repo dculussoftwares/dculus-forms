@@ -201,11 +201,27 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
       const originalFieldsArray = originalPageMap.get('fields') as Y.Array<Y.Map<any>>;
       const duplicateFieldsArray = new Y.Array();
 
-      originalFieldsArray.toArray().forEach((originalFieldMap) => {
+      // Children point at their grid by id, so the pointers must follow the new ids
+      const newIdByOldId = new Map<string, string>();
+      const duplicatedFields = originalFieldsArray.toArray().map((originalFieldMap) => {
         const fieldData = extractFieldData(originalFieldMap);
-        fieldData.id = generateShortEntityId('f');
-        const duplicateFieldMap = createYJSFieldMap(fieldData);
-        duplicateFieldsArray.push([duplicateFieldMap]);
+        const newId = generateShortEntityId('f');
+        newIdByOldId.set(fieldData.id, newId);
+        fieldData.id = newId;
+        return fieldData;
+      });
+      duplicatedFields.forEach((fieldData) => {
+        if (fieldData.gridId !== undefined) {
+          const newGridId = newIdByOldId.get(fieldData.gridId);
+          if (newGridId !== undefined) {
+            fieldData.gridId = newGridId;
+          } else {
+            // Points outside this page: the copy must not reference the original page's grid
+            delete fieldData.gridId;
+            delete fieldData.gridColumn;
+          }
+        }
+        duplicateFieldsArray.push([createYJSFieldMap(fieldData)]);
       });
 
       duplicatePageMap.set('fields', duplicateFieldsArray);

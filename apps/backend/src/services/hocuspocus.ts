@@ -1,7 +1,14 @@
 import { Hocuspocus } from '@hocuspocus/server';
 import { Database } from '@hocuspocus/extension-database';
 import * as Y from 'yjs';
-import { sanitizeConditions, sanitizeFieldGrading, DEFAULT_THANK_YOU_CONTENT, type FieldGrading } from '@dculus/types';
+import {
+  canonicalizeFields,
+  sanitizeConditions,
+  sanitizeFieldGrading,
+  sanitizeGridColumnWidths,
+  DEFAULT_THANK_YOU_CONTENT,
+  type FieldGrading,
+} from '@dculus/types';
 import { generateRandomString } from '@dculus/utils';
 import {
   extractFormStatsFromYDoc,
@@ -378,6 +385,14 @@ const yMapToPlainObject = (value: any): any => {
   return plain;
 };
 
+// Grid layout pointers, copied only when stored so a field without a grid keeps its exact shape.
+const copyLayoutKeysFromYMap = (fieldMap: Y.Map<any>, field: any): void => {
+  const gridId = fieldMap.get('gridId');
+  if (gridId !== undefined) field.gridId = gridId;
+  const gridColumn = fieldMap.get('gridColumn');
+  if (gridColumn !== undefined) field.gridColumn = gridColumn;
+};
+
 // Reads a field's `grading` Y.Map (built by createGradingYMap in
 // apps/form-app/src/store/helpers/fieldHelpers.ts) back into a plain
 // FieldGrading object. Native Quiz (epic #289, Story 06/13): without this,
@@ -474,13 +489,28 @@ export const getFormSchemaFromHocuspocus = async (
                 if (fieldMap instanceof Y.Map) {
                   const fieldType = fieldMap.get('type');
 
-                  // Handle Rich Text fields differently (they only have id, type, and content)
-                  if (fieldType === 'rich_text_field') {
+                  // Grid: a layout container with no validation and no children of its own
+                  if (fieldType === 'grid_field') {
+                    const field: any = {
+                      id: fieldMap.get('id'),
+                      type: fieldType,
+                      // A plain array; sanitize also accepts a Y.Array from an older writer
+                      columnWidths: sanitizeGridColumnWidths(
+                        fieldMap.get('columnWidths')
+                      ),
+                    };
+                    if (fieldMap.get('deleted') === true) {
+                      field.deleted = true;
+                    }
+                    page.fields.push(field);
+                  } else if (fieldType === 'rich_text_field') {
+                    // Handle Rich Text fields differently (they only have id, type, and content)
                     const field: any = {
                       id: fieldMap.get('id'),
                       type: fieldType,
                       content: fieldMap.get('content') || '',
                     };
+                    copyLayoutKeysFromYMap(fieldMap, field);
                     if (fieldMap.get('deleted') === true) {
                       field.deleted = true;
                     }
@@ -519,6 +549,7 @@ export const getFormSchemaFromHocuspocus = async (
                       maxFileSizeMb: fieldMap.get('maxFileSizeMb'),
                       maxFiles: fieldMap.get('maxFiles'),
                     };
+                    copyLayoutKeysFromYMap(fieldMap, field);
                     if (fieldMap.get('deleted') === true) {
                       field.deleted = true;
                     }
@@ -603,6 +634,7 @@ export const getFormSchemaFromHocuspocus = async (
                     if (fieldMap.has('defaultCountry'))
                       field.defaultCountry = fieldMap.get('defaultCountry');
 
+                    copyLayoutKeysFromYMap(fieldMap, field);
                     if (fieldMap.get('deleted') === true) {
                       field.deleted = true;
                     }
@@ -611,6 +643,8 @@ export const getFormSchemaFromHocuspocus = async (
                 }
               }
             }
+            // Read-side repair only, no write-back; returns the same array for a page without a grid
+            page.fields = canonicalizeFields(page.fields);
             convertedPages.push(page);
           }
         }
@@ -782,9 +816,21 @@ export const initializeHocuspocusDocument = async (
             if (field.deleted) {
               fieldMap.set('deleted', true);
             }
+            // Grid pointers for every type except a grid itself (grids never nest)
+            if (field.type !== 'grid_field') {
+              if (field.gridId !== undefined) fieldMap.set('gridId', field.gridId);
+              if (field.gridColumn !== undefined)
+                fieldMap.set('gridColumn', field.gridColumn);
+            }
 
             // Handle Rich Text fields differently (they only need content property)
-            if (field.type === 'rich_text_field') {
+            if (field.type === 'grid_field') {
+              // Plain array (whole-array last-write-wins), no validation map
+              fieldMap.set(
+                'columnWidths',
+                sanitizeGridColumnWidths(field.columnWidths)
+              );
+            } else if (field.type === 'rich_text_field') {
               fieldMap.set('content', field.content || '');
             } else if (field.type === 'file_upload_field') {
               fieldMap.set('label', field.label || '');

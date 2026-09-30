@@ -1,7 +1,8 @@
-import { FormField, FillableFormField, FieldType } from '@dculus/types';
+import { FormField, FillableFormField, FieldType, isLayoutField } from '@dculus/types';
 
 export const isFillableFormField = (field: FormField): field is FillableFormField =>
-    field instanceof FillableFormField || (field as any).label !== undefined || field.type !== FieldType.FORM_FIELD;
+    !isLayoutField(field) &&
+    (field instanceof FillableFormField || (field as any).label !== undefined || field.type !== FieldType.FORM_FIELD);
 
 export const getFieldLabel = (field: FormField): string =>
     isFillableFormField(field) ? (field as FillableFormField).label || 'Untitled Field' : 'Basic Field';

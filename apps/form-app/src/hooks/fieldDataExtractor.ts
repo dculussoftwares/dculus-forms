@@ -13,6 +13,7 @@ import {
   TextFieldValidation,
   CheckboxFieldValidation,
   FieldGrading,
+  GridField,
 } from '@dculus/types';
 import {
   BaseFieldData,
@@ -281,6 +282,12 @@ const FIELD_DATA_EXTRACTORS: Partial<
 
   [FieldType.RICH_TEXT_FIELD]: (field: FormField) => ({
     ...extractRichTextData(field),
+  }),
+
+  [FieldType.GRID_FIELD]: (field: FormField) => ({
+    id: field.id,
+    type: field.type,
+    columnWidths: (field as GridField).columnWidths,
   }),
 };
 
