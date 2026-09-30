@@ -3,11 +3,12 @@ import { googleSheetsHandler } from '../handler.js';
 import type { PluginEvent, PluginContext } from '../../core/types.js';
 import type { GoogleSheetsPluginConfig } from '../types.js';
 
-vi.mock('@dculus/types', () => ({
+vi.mock('@dculus/types', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@dculus/types')>()),
   deserializeFormSchema: vi.fn(),
 }));
 
-import { deserializeFormSchema } from '@dculus/types';
+import { deserializeFormSchema, FieldType } from '@dculus/types';
 
 const originalFetch = global.fetch;
 
@@ -370,6 +371,50 @@ describe('Google Sheets Handler', () => {
         '2026-01-01T00:00:00.000Z',
         'response-1',
       ]);
+    });
+
+    it('skips a grid layout field in both the header row and the data row so columns stay aligned', async () => {
+      config.spreadsheetId = undefined;
+      const mockEvent: PluginEvent = {
+        type: 'form.submitted',
+        formId: 'form-1',
+        organizationId: 'org-1',
+        timestamp: new Date('2026-01-01T00:00:00.000Z'),
+        data: { responseId: 'response-1' },
+      };
+      const fields = [
+        { id: 'name', label: 'Name', type: 'text_input_field', gridId: 'g1', gridColumn: 0 },
+        { id: 'g1', type: FieldType.GRID_FIELD, columnWidths: [50, 50] },
+        { id: 'email', label: 'Email', type: 'email_field', gridId: 'g1', gridColumn: 1 },
+      ];
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields }] } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({
+        id: 'response-1',
+        data: { name: 'Ada', email: 'ada@example.com', g1: 'stray', submittedAt: '2026-01-01T00:00:00.000Z' },
+      } as any);
+
+      global.fetch = vi.fn().mockImplementation((url: string, opts: RequestInit) => {
+        if (url.endsWith('/spreadsheets') && opts.method === 'POST') {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ spreadsheetId: 'new-sheet-1' }), text: async () => '' });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({ updates: { updatedRange: 'Sheet1!A2:Z2' } }),
+          text: async () => '',
+        });
+      }) as any;
+
+      const result = await googleSheetsHandler({ id: 'plugin-1', config }, mockEvent, mockContext);
+
+      expect(result.success).toBe(true);
+      const calls = vi.mocked(global.fetch).mock.calls;
+      const headerCall = calls.find(([url, opts]) => (url as string).includes('/values/Sheet1!A1?') && (opts as RequestInit).method === 'PUT');
+      const appendCall = calls.find(([url]) => (url as string).includes('append'));
+      const headers = JSON.parse((headerCall?.[1] as RequestInit).body as string).values[0];
+      const row = JSON.parse((appendCall?.[1] as RequestInit).body as string).values[0];
+      expect(headers).toEqual(['Name', 'Email', 'Submitted At', 'Response ID']);
+      expect(row).toEqual(['Ada', 'ada@example.com', '2026-01-01T00:00:00.000Z', 'response-1']);
     });
   });
 });

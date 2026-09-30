@@ -127,6 +127,33 @@ describe('Form Metadata Service', () => {
       expect(result.backgroundImageKey).toBeNull();
     });
 
+    it('should not count grid layout fields but still count rich text and skip deleted fields', () => {
+      const ydoc = new Y.Doc();
+      const formSchemaMap = ydoc.getMap('formSchema');
+      const makeField = (props: Record<string, unknown>) => {
+        const fieldMap = new Y.Map();
+        Object.entries(props).forEach(([key, value]) => fieldMap.set(key, value));
+        return fieldMap;
+      };
+      const fields = new Y.Array();
+      fields.push([
+        makeField({ id: 'g1', type: 'grid_field' }),
+        makeField({ id: 'f1', type: 'text_input_field', gridId: 'g1', gridColumn: 0 }),
+        makeField({ id: 'f2', type: 'rich_text_field', gridId: 'g1', gridColumn: 1 }),
+        makeField({ id: 'f3', type: 'email_field', deleted: true }),
+      ]);
+      const page = new Y.Map();
+      page.set('fields', fields);
+      const pagesArray = new Y.Array();
+      pagesArray.push([page]);
+      formSchemaMap.set('pages', pagesArray);
+
+      const result = extractFormStatsFromYDoc(ydoc);
+
+      expect(result.pageCount).toBe(1);
+      expect(result.fieldCount).toBe(2);
+    });
+
     it('should handle errors gracefully', () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       const invalidYDoc = null as any;

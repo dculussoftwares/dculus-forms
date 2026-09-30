@@ -1,5 +1,5 @@
 import { generateId } from '@dculus/utils';
-import { FieldType } from '@dculus/types';
+import { FieldType, isLayoutField } from '@dculus/types';
 import { Prisma } from '#prisma-client';
 import { responseRepository, tagRepository } from '../repositories/index.js';
 import { generateAiFakeResponses } from './aiService.js';
@@ -35,7 +35,11 @@ function buildFakeResponseFieldEntries(
   for (const page of deserializedSchema?.pages ?? []) {
     for (const field of page?.fields ?? []) {
       if (!field?.id) continue;
-      if (field.type === FieldType.RICH_TEXT_FIELD || field.type === FieldType.FILE_UPLOAD_FIELD) {
+      if (
+        isLayoutField(field) ||
+        field.type === FieldType.RICH_TEXT_FIELD ||
+        field.type === FieldType.FILE_UPLOAD_FIELD
+      ) {
         continue;
       }
       const options = Array.isArray(field.options) ? field.options : undefined;

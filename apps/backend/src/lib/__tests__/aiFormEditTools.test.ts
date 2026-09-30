@@ -1,5 +1,6 @@
 // apps/backend/src/lib/__tests__/aiFormEditTools.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { FieldType } from '@dculus/types';
 import { createFormEditTools } from '../aiFormEditTools.js';
 import { prisma } from '../prisma.js';
 
@@ -159,6 +160,16 @@ describe('listFields', () => {
     ] }] });
     const result = await tools.listFields!.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
     expect(result.pages[0]).toContain('unknown_custom_field');
+  });
+
+  it('omits a grid layout field from the page listing', async () => {
+    const tools = makeFullTools({ pages: [{ id: 'p1', title: 'T', fields: [
+      { id: 'g1', type: FieldType.GRID_FIELD, columnWidths: [50, 50] },
+      { id: 'f-1', type: 'TEXT_INPUT_FIELD', label: 'Name', required: true, gridId: 'g1', gridColumn: 0 },
+      { id: 'f-2', type: 'EMAIL_FIELD', label: 'Email', required: false, gridId: 'g1', gridColumn: 1 },
+    ] }] });
+    const result = await tools.listFields!.execute!({ pageId: undefined }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.pages[0]).toBe('p1 "T" [id:p1]: f-1|text|"Name"|req, f-2|email|"Email"|opt');
   });
 });
 
@@ -570,6 +581,43 @@ describe('upsertConditionRule (proposal only)', () => {
     expect(result).toMatchObject({
       type: 'PROPOSE_CONDITION_RULE',
       rule: { terms: [{ fieldId: 'dob', operator: 'before', value: '2026-08-20' }] },
+    });
+  });
+
+  describe('with a grid layout field on the page', () => {
+    const gridSchema = {
+      pages: [{
+        id: 'page-1', title: 'Details', fields: [
+          { id: 'g1', type: FieldType.GRID_FIELD, columnWidths: [50, 50] },
+          { id: 'country', type: 'SELECT_FIELD', label: 'Country', options: ['India', 'USA'], gridId: 'g1', gridColumn: 0 },
+          { id: 'gst', type: 'TEXT_INPUT_FIELD', label: 'GST field', gridId: 'g1', gridColumn: 1 },
+        ],
+      }],
+    };
+
+    it('does not resolve an unrelated label to the unlabelled grid', async () => {
+      const tools = makeFullTools(gridSchema);
+      const result = await tools.upsertConditionRule.execute!({
+        combinator: 'all',
+        terms: [{ field: 'Country', operator: 'equals', value: 'India' }],
+        actions: [{ type: 'setFieldVisibility', fields: ['Postcode'], defaultState: 'hidden' }],
+        rationale: 'Test',
+      }, { messages: [], toolCallId: 'test' });
+      expect(result).toEqual({ error: 'I couldn\'t find a unique target field matching "Postcode". Please use the exact field label.' });
+    });
+
+    it('still resolves a partial label to the real field inside the grid', async () => {
+      const tools = makeFullTools(gridSchema);
+      const result = await tools.upsertConditionRule.execute!({
+        combinator: 'all',
+        terms: [{ field: 'Country', operator: 'equals', value: 'India' }],
+        actions: [{ type: 'setFieldVisibility', fields: ['GST'], defaultState: 'hidden' }],
+        rationale: 'Test',
+      }, { messages: [], toolCallId: 'test' });
+      expect(result).toMatchObject({
+        type: 'PROPOSE_CONDITION_RULE',
+        rule: { actions: [{ type: 'showField', fieldIds: ['gst'] }] },
+      });
     });
   });
 });

@@ -5,7 +5,7 @@
  * for retrieving field analytics.
  */
 
-import { FieldType } from '@dculus/types';
+import { FieldType, isLayoutField } from '@dculus/types';
 import { formRepository } from '../../repositories/index.js';
 import { getFormSchemaFromHocuspocus } from '../hocuspocus.js';
 
@@ -239,6 +239,7 @@ export const getAllFieldsAnalytics = async (
         page.fields.forEach((field: any) => {
           // Only process fillable fields
           if (
+            !isLayoutField(field) &&
             field.type !== FieldType.RICH_TEXT_FIELD &&
             field.type !== FieldType.FORM_FIELD &&
             field.type !== FieldType.FILLABLE_FORM_FIELD &&

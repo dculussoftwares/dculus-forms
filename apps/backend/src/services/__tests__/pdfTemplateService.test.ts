@@ -22,6 +22,18 @@ import {
 
 const BLANK_A4 = { width: 210, height: 297, padding: [10, 10, 10, 10] as [number, number, number, number] };
 
+const gridSchema = {
+  pages: [
+    {
+      fields: [
+        { id: 'g1', type: FieldType.GRID_FIELD, columnWidths: [50, 50] },
+        { id: 'f-name', type: FieldType.TEXT_INPUT_FIELD, label: 'Name', gridId: 'g1', gridColumn: 0 },
+        { id: 'f-email', type: FieldType.EMAIL_FIELD, label: 'Email', gridId: 'g1', gridColumn: 1 },
+      ],
+    },
+  ],
+};
+
 const textSchema = (name: string, content: string, extra: Record<string, any> = {}) => ({
   name,
   type: 'text',
@@ -164,6 +176,11 @@ describe('buildSampleResponseData', () => {
     expect(values['f-check']).toBe('A, B');
     expect(values['f-file']).toBe('sample-document.pdf');
   });
+
+  it('skips a grid layout field', () => {
+    const data = buildSampleResponseData(gridSchema);
+    expect(data).toEqual({ 'f-name': 'Sample answer', 'f-email': 'sample@example.com' });
+  });
 });
 
 describe('coerceAiSampleData', () => {
@@ -212,6 +229,13 @@ describe('coerceAiSampleData', () => {
     expect(data['f-file']).toEqual(['sample/sample-document.pdf']);
     expect(data['f-text']).toBe('Sample answer');
   });
+
+  it('ignores an AI answer keyed by a grid layout field', () => {
+    const data = coerceAiSampleData(gridSchema, { g1: 'Invented', 'f-name': 'Priya Raman' });
+    expect(data).not.toHaveProperty('g1');
+    expect(data['f-name']).toBe('Priya Raman');
+    expect(data['f-email']).toBe('sample@example.com');
+  });
 });
 
 describe('buildAiFieldEntries', () => {
@@ -230,6 +254,13 @@ describe('buildAiFieldEntries', () => {
     expect(entries).toEqual([
       { id: 'f1', type: 'text input', label: 'Name' },
       { id: 'f2', type: 'radio', label: 'Color', options: ['Red'] },
+    ]);
+  });
+
+  it('omits a grid layout field', () => {
+    expect(buildAiFieldEntries(gridSchema)).toEqual([
+      { id: 'f-name', type: 'text input', label: 'Name' },
+      { id: 'f-email', type: 'email', label: 'Email' },
     ]);
   });
 });

@@ -15,6 +15,7 @@ import {
   FormField,
   FormPage,
   RichTextFormField,
+  isLayoutField,
 } from '@dculus/types';
 
 export const TRIGGER_OPERATORS: Partial<Record<FieldType, ConditionOperator[]>> = {
@@ -122,7 +123,7 @@ export const fieldDisplayLabel = (field: FormField, untitledLabel: string): stri
   return untitledLabel;
 };
 
-/** Every field targetable on the DO side — including RichText info blocks. */
+/** Every field targetable on the DO side — including RichText info blocks, excluding layout containers. */
 export const getTargetFieldOptions = (
   pages: FormPage[],
   untitledLabel: string
@@ -130,6 +131,7 @@ export const getTargetFieldOptions = (
   const options: TargetFieldOption[] = [];
   pages.forEach((page, pageIndex) => {
     page.fields.forEach((field) => {
+      if (isLayoutField(field)) return;
       options.push({ field, label: fieldDisplayLabel(field, untitledLabel), page, pageIndex });
     });
   });

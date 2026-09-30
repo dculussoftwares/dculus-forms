@@ -688,5 +688,29 @@ describe('fieldAnalyticsService', () => {
       const field = result.fields.find(item => item.fieldId === 'noLabelField');
       expect(field?.fieldLabel).toBe('Field noLabelField');
     });
+
+    it('skips a grid layout field while analysing the fields inside it', async () => {
+      vi.mocked(formRepository.findUnique).mockResolvedValue({
+        formSchema: {},
+      } as any);
+      vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({
+        pages: [
+          {
+            fields: [
+              { id: 'g1', type: FieldType.GRID_FIELD, columnWidths: [50, 50] },
+              { id: 'textField', type: FieldType.TEXT_INPUT_FIELD, label: 'Text field', gridId: 'g1', gridColumn: 0 },
+              { id: 'numberField', type: FieldType.NUMBER_FIELD, label: 'Number field', gridId: 'g1', gridColumn: 1 },
+            ],
+          },
+        ],
+      });
+      vi.mocked(responseRepository.listByForm).mockResolvedValue(sampleResponses as any);
+
+      const result = await getAllFieldsAnalytics('form-grid');
+
+      expect(result.fields.map(item => item.fieldId)).toEqual(['textField', 'numberField']);
+      expect(result.fields[0]).toMatchObject({ fieldType: FieldType.TEXT_INPUT_FIELD, totalResponses: 2 });
+      expect(result.fields[1]).toMatchObject({ fieldType: FieldType.NUMBER_FIELD, totalResponses: 2 });
+    });
   });
 });

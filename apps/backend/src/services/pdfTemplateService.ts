@@ -20,7 +20,7 @@ import {
   barcodes,
 } from '@pdfme/schemas';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
-import { FieldType } from '@dculus/types';
+import { FieldType, isLayoutField } from '@dculus/types';
 import { substitutePlaceholdersPlainText, createFieldLabelsMap } from '@dculus/utils';
 import { downloadFileBuffer } from './fileUploadService.js';
 import { pdfTemplateRepository, createPdfTemplateRepository } from '../repositories/index.js';
@@ -278,7 +278,7 @@ export function buildSampleResponseData(deserializedSchema: any): Record<string,
   const data: Record<string, any> = {};
   for (const page of deserializedSchema?.pages ?? []) {
     for (const field of page?.fields ?? []) {
-      if (!field?.id) continue;
+      if (!field?.id || isLayoutField(field)) continue;
       const options: string[] = Array.isArray(field.options) ? field.options : [];
       switch (field.type) {
         case FieldType.RICH_TEXT_FIELD:
@@ -330,7 +330,7 @@ export function buildAiFieldEntries(
   const entries: { id: string; type: string; label: string; options?: string[] }[] = [];
   for (const page of deserializedSchema?.pages ?? []) {
     for (const field of page?.fields ?? []) {
-      if (!field?.id || field.type === FieldType.RICH_TEXT_FIELD) continue;
+      if (!field?.id || field.type === FieldType.RICH_TEXT_FIELD || isLayoutField(field)) continue;
       const options = Array.isArray(field.options) ? field.options : undefined;
       entries.push({
         id: field.id,
@@ -356,7 +356,7 @@ export function coerceAiSampleData(
   const data = buildSampleResponseData(deserializedSchema);
   for (const page of deserializedSchema?.pages ?? []) {
     for (const field of page?.fields ?? []) {
-      if (!field?.id) continue;
+      if (!field?.id || isLayoutField(field)) continue;
       const raw = aiAnswers[field.id];
       if (typeof raw !== 'string' || !raw.trim()) continue;
       const value = raw.trim();

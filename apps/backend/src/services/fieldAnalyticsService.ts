@@ -1,4 +1,4 @@
-import { FieldType } from '@dculus/types';
+import { FieldType, isLayoutField } from '@dculus/types';
 import {
   responseRepository,
   formRepository,
@@ -978,7 +978,11 @@ export const getAllFieldsAnalytics = async (formId: string): Promise<{
       if (page.fields) {
         page.fields.forEach((field: any) => {
           // Only process fillable fields
-          if (field.type !== FieldType.RICH_TEXT_FIELD && field.type !== FieldType.FORM_FIELD) {
+          if (
+            !isLayoutField(field) &&
+            field.type !== FieldType.RICH_TEXT_FIELD &&
+            field.type !== FieldType.FORM_FIELD
+          ) {
             const fieldLabel = field.label || `Field ${field.id}`;
             allFields.push({
               id: field.id,

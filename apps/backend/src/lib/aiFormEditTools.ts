@@ -1,6 +1,12 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { conditionalRuleSchema, sanitizeConditions, type ConditionOperator, type ConditionalRule } from '@dculus/types';
+import {
+  conditionalRuleSchema,
+  isLayoutField,
+  sanitizeConditions,
+  type ConditionOperator,
+  type ConditionalRule,
+} from '@dculus/types';
 import { generateRandomString, parseEmailList, validateEmailList } from '@dculus/utils';
 import { countResponsesPerField, countResponsesReferencingAnyField } from '../services/responseService.js';
 import { prisma } from './prisma.js';
@@ -63,7 +69,10 @@ const shuffledCopy = <T>(items: readonly T[]): T[] => {
 
 /** Resolve an AI-supplied field label (or id) without ever guessing a weak match. */
 function resolveField(schema: { pages: any[] }, reference: string): any | null {
-  const fields = (schema.pages ?? []).flatMap((page: any) => page.fields ?? []);
+  // Layout fields have no label; `wanted.includes('')` would otherwise match any reference
+  const fields = (schema.pages ?? [])
+    .flatMap((page: any) => page.fields ?? [])
+    .filter((field: any) => !isLayoutField(field));
   const direct = fields.find((field: any) => field.id === reference);
   if (direct) return direct;
   const wanted = normalizeLabel(reference);
@@ -156,6 +165,7 @@ export function createFormEditTools(
           pages: filtered.map((p: any) => {
             const pi = pages.indexOf(p) + 1;
             const fields = (p.fields ?? [])
+              .filter((f: any) => !isLayoutField(f))
               .map((f: any) => `${f.id}|${TYPE_MAP[f.type] ?? f.type}|"${f.label}"|${(f.required ?? false) ? 'req' : 'opt'}`)
               .join(', ');
             return `p${pi} "${p.title ?? `Page ${pi}`}" [id:${p.id}]: ${fields || '(empty)'}`;
