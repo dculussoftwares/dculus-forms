@@ -144,6 +144,7 @@ import { createFormEditAgent } from '../../lib/formEditAgent.js';
 import { getConversation, saveConversationMessages, truncateToolResults } from '../../services/aiChatService.js';
 import { pruneMessages, validateUIMessages, streamText } from 'ai';
 import { requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
+import { checkFormAccess } from '../../graphql/resolvers/formSharing.js';
 
 function makeUIMessageStreamResponse(chunks: string[]) {
   const encoder = new TextEncoder();
@@ -168,6 +169,10 @@ describe('POST /chat', () => {
     vi.clearAllMocks();
     (checkAITokenBudget as any).mockResolvedValue({ allowed: true, used: 0, limit: 50000 });
     (getConversation as any).mockResolvedValue({ id: 'conv-1', formId: 'form-1', messageCount: 2 });
+    // clearAllMocks keeps queued *Once values; reset so an unconsumed one can't leak into the next test.
+    vi.mocked(checkFormAccess)
+      .mockReset()
+      .mockResolvedValue({ hasAccess: true, permission: 'OWNER', form: {} } as any);
     // Restore streamText default after clearAllMocks wipes it.
     // The route does `for await (const chunk of questionWebResponse.body)` so the
     // body must be a proper async-iterable ReadableStream, not a plain string body.
