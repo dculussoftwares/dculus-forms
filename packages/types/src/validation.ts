@@ -695,6 +695,11 @@ export const richTextFieldValidationSchema = z.object({
     .default(''),
 });
 
+// Grid (layout) field: no answer to validate, only its column widths
+export const gridFieldValidationSchema = z.object({
+  columnWidths: z.array(z.number().int()).min(1).max(4).default([50, 50]),
+});
+
 // Factory function to get validation schema by field type
 export function getFieldValidationSchema(fieldType: FieldType) {
   switch (fieldType) {
@@ -720,6 +725,8 @@ export function getFieldValidationSchema(fieldType: FieldType) {
       return phoneNumberFieldValidationSchema;
     case FieldType.RICH_TEXT_FIELD:
       return richTextFieldValidationSchema;
+    case FieldType.GRID_FIELD:
+      return gridFieldValidationSchema;
     default:
       return baseFieldValidationSchema;
   }
@@ -750,6 +757,7 @@ export type PhoneNumberFieldFormData = z.infer<
 export type RichTextFieldFormData = z.infer<
   typeof richTextFieldValidationSchema
 >;
+export type GridFieldFormData = z.infer<typeof gridFieldValidationSchema>;
 
 // Union type for all field form data
 export type FieldFormData =
@@ -763,7 +771,8 @@ export type FieldFormData =
   | DateFieldFormData
   | PhoneNumberFieldFormData
   | FileUploadFieldFormData
-  | RichTextFieldFormData;
+  | RichTextFieldFormData
+  | GridFieldFormData;
 
 // Form layout validation schema
 export const formLayoutValidationSchema = z

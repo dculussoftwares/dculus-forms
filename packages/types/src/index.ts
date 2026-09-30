@@ -39,6 +39,12 @@
  */
 
 import { sanitizeConditions, type ConditionalRule } from './conditions.js';
+import {
+  canonicalizeFields,
+  sanitizeGridColumn,
+  sanitizeGridColumnWidths,
+  sanitizeGridId,
+} from './grid.js';
 import { sanitizeFieldGrading, type FieldGrading, type QuizSettings } from './quiz.js';
 import type { EmbedSettings } from './embed.js';
 
@@ -217,6 +223,11 @@ export class FormField {
   id: string;
   type: FieldType;
   deleted?: boolean;
+  // `declare` emits no class field, so fields without a grid never get an own `gridId: undefined` key.
+  /** Id of the GridField this field lives in; absent = top level. */
+  declare gridId?: string;
+  /** 0-based column inside that grid; absent = column 0. */
+  declare gridColumn?: number;
   constructor(id: string) {
     this.id = id;
     this.type = FieldType.FORM_FIELD;
@@ -369,6 +380,22 @@ export class RichTextFormField extends NonFillableFormField {
     super(id);
     this.content = content;
     this.type = FieldType.RICH_TEXT_FIELD;
+  }
+}
+
+/**
+ * Grid (column container) for laying fields out side by side. Non-fillable and deliberately
+ * label-less: several consumers treat a truthy `label` as "this is an answerable field".
+ * Children point at it through `gridId` / `gridColumn`; see grid.ts.
+ */
+export class GridField extends NonFillableFormField {
+  /** Integer percentages, 1..MAX_GRID_COLUMNS entries, summing to 100. */
+  columnWidths: number[];
+
+  constructor(id: string, columnWidths: number[] = [50, 50]) {
+    super(id);
+    this.type = FieldType.GRID_FIELD;
+    this.columnWidths = sanitizeGridColumnWidths(columnWidths);
   }
 }
 
@@ -646,6 +673,7 @@ export enum FieldType {
   FILE_UPLOAD_FIELD = 'file_upload_field',
   PHONE_NUMBER_FIELD = 'phone_number_field',
   RICH_TEXT_FIELD = 'rich_text_field',
+  GRID_FIELD = 'grid_field',
   FORM_FIELD = 'form_field',
   FILLABLE_FORM_FIELD = 'fillable_form_field',
   NON_FILLABLE_FORM_FIELD = 'non_fillable_form_field',
@@ -680,7 +708,7 @@ export const serializeFormField = (field: FormField): any => {
  * - TextFieldValidation for TEXT_INPUT_FIELD and TEXT_AREA_FIELD
  * - FillableFormFieldValidation for all other field types
  */
-export const deserializeFormField = (data: any): FormField | null => {
+const deserializeFieldByType = (data: any): FormField | null => {
   // `data.validation` is the canonical source; `data.required`/`data.min`/`data.max` are
   // fallbacks for field payloads that set these at the top level instead (e.g. the AI
   // form-edit tools). `??` only falls through on null/undefined, so an explicit `false`
@@ -856,12 +884,32 @@ export const deserializeFormField = (data: any): FormField | null => {
       const richTextContent = data.content || '';
       return new RichTextFormField(data.id, richTextContent);
     }
+    case FieldType.GRID_FIELD:
+      return new GridField(data.id, sanitizeGridColumnWidths(data.columnWidths));
     default:
       console.warn(
         `[deserializeFormField] Unknown field type "${(data as { type?: string }).type}" for id "${data.id}". Skipping field.`
       );
       return null;
   }
+};
+
+/**
+ * Reconstructs a field from stored data. The layout pointers are copied for every type here (not only
+ * in deserializeFormSchema) because the viewer and the builder store call this per field. They are set
+ * only when valid, so a field without a grid keeps exactly today's shape. A grid never nests (I1).
+ */
+export const deserializeFormField = (data: any): FormField | null => {
+  const field = deserializeFieldByType(data);
+  if (!field || field.type === FieldType.GRID_FIELD) return field;
+
+  const gridId = sanitizeGridId(data?.gridId);
+  if (gridId === undefined) return field;
+
+  field.gridId = gridId;
+  const gridColumn = sanitizeGridColumn(data.gridColumn);
+  if (gridColumn !== undefined) field.gridColumn = gridColumn;
+  return field;
 };
 
 export const serializeFormSchema = (schema: FormSchema): any => {
@@ -881,13 +929,16 @@ export const deserializeFormSchema = (data: any): FormSchema => {
     layout: data.layout, // Explicitly preserve layout object
     pages: (data.pages || []).map((page: any) => ({
       ...page,
-      fields: (page.fields || [])
-        .map((fieldData: any) => {
-          const field = deserializeFormField(fieldData);
-          if (field && fieldData.deleted) field.deleted = true;
-          return field;
-        })
-        .filter((f: FormField | null): f is FormField => f !== null),
+      // No-op (same array) for a page without a grid
+      fields: canonicalizeFields(
+        (page.fields || [])
+          .map((fieldData: any) => {
+            const field = deserializeFormField(fieldData);
+            if (field && fieldData.deleted) field.deleted = true;
+            return field;
+          })
+          .filter((f: FormField | null): f is FormField => f !== null)
+      ),
     })),
   };
 
@@ -1059,6 +1110,9 @@ export interface PaginatedResponse<T> {
 
 // Re-export conditional logic types and evaluator
 export * from './conditions.js';
+
+// Grid layout helpers
+export * from './grid.js';
 
 // Re-export native quiz types, sanitizers and shared defaults
 export * from './quiz.js';
