@@ -125,5 +125,6 @@ export interface BaseFieldData {
   placeholder?: string;
   defaultValue?: string | string[];
   prefix?: string;
+  suffix?: string;
   required: boolean;
 }

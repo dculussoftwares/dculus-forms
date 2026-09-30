@@ -88,6 +88,10 @@ export const baseFieldValidationSchema = z.object({
     .string()
     .max(10, 'fieldSettingsConstants:errorMessages.prefixTooLong')
     .optional(),
+  suffix: z
+    .string()
+    .max(10, 'fieldSettingsConstants:errorMessages.suffixTooLong')
+    .optional(),
   required: z.boolean().default(false),
 });
 

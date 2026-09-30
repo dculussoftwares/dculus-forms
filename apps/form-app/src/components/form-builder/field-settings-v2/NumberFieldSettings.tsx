@@ -130,6 +130,16 @@ export const NumberFieldSettings: React.FC<NumberFieldSettingsProps> = ({
               disabled={!isEditable}
             />
 
+            {/* Suffix */}
+            <FormInputField
+              name="suffix"
+              label={constants.LABELS.SUFFIX}
+              placeholder={constants.PLACEHOLDERS.SUFFIX_TEXT}
+              control={control}
+              error={errors.suffix}
+              disabled={!isEditable}
+            />
+
             {/* Default Value */}
             <FormInputField
               name="defaultValue"

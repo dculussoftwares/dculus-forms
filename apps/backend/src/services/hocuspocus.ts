@@ -569,6 +569,8 @@ export const getFormSchemaFromHocuspocus = async (
                       label: fieldMap.get('label'),
                       defaultValue,
                       prefix: fieldMap.get('prefix'),
+                      suffix: fieldMap.get('suffix'),
+                      placeholder: fieldMap.get('placeholder'),
                       hint: fieldMap.get('hint'),
                       validation: validationData,
                     };
@@ -822,6 +824,8 @@ export const initializeHocuspocusDocument = async (
               }
 
               fieldMap.set('prefix', field.prefix || '');
+              fieldMap.set('suffix', field.suffix || '');
+              fieldMap.set('placeholder', field.placeholder || '');
               fieldMap.set('hint', field.hint || '');
 
               // Create validation map with all validation properties

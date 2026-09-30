@@ -23,6 +23,7 @@ export type FieldData = {
   placeholder?: string;
   defaultValue?: string;
   prefix?: string;
+  suffix?: string;
   hint?: string;
   options?: string[];
   min?: number;
@@ -121,6 +122,7 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     placeholder: fieldMap.get('placeholder') || '',
     defaultValue,
     prefix: fieldMap.get('prefix') || '',
+    suffix: fieldMap.get('suffix') || '',
     hint: fieldMap.get('hint') || '',
     options: fieldMap.get('options')
       ? fieldMap.get('options').toArray()

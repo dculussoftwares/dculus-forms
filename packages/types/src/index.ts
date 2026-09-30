@@ -301,6 +301,9 @@ export class FillableFormField extends FormField {
   label: string;
   defaultValue: string;
   prefix: string;
+  // Text shown after the input (e.g. "kg", "%"). Optional and not a constructor
+  // parameter for the same reason as `grading`; absent means no suffix.
+  suffix?: string;
   hint: string;
   placeholder: string;
   validation: FillableFormFieldValidation;
@@ -713,6 +716,7 @@ export const deserializeFormField = (data: any): FormField | null => {
   const withGrading = <T extends FillableFormField>(field: T): T => {
     const grading = sanitizeFieldGrading(data.grading);
     if (grading) field.grading = grading;
+    if (typeof data.suffix === 'string' && data.suffix) field.suffix = data.suffix;
     return field;
   };
 
