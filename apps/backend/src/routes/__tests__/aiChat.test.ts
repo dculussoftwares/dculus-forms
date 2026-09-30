@@ -116,6 +116,8 @@ vi.mock('ai', () => ({
   convertToModelMessages: vi.fn().mockResolvedValue([{ role: 'user', content: 'hi' }]),
   pruneMessages: vi.fn().mockImplementation(({ messages }) => messages), // pass-through
   streamText: vi.fn(),
+  wrapLanguageModel: vi.fn(({ model }) => model),
+  defaultSettingsMiddleware: vi.fn(() => ({})),
 }));
 
 vi.mock('../../lib/prisma.js', () => ({
