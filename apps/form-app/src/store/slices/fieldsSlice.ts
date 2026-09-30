@@ -31,6 +31,7 @@ import {
   extractFieldData,
   FieldData,
 } from '../collaboration/CollaborationManager';
+import { createGridActions, involvesGrid } from './gridActions';
 
 // In updateField, `null` clears a stored setting while `undefined` leaves it untouched.
 const setOrClear = (map: Y.Map<any>, key: string, value: unknown) => {
@@ -51,7 +52,12 @@ const setOrClear = (map: Y.Map<any>, key: string, value: unknown) => {
  * - Copying fields to other pages
  */
 export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
+  // Every structural action below starts with one `involvesGrid` branch; grid-less pages skip it
+  const grid = createGridActions(get);
+
   return {
+    ...grid.actions,
+
     /**
      * Add a field to a page
      *
@@ -62,6 +68,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       fieldType: FieldType,
       fieldData: Partial<FieldData> = {}
     ) => {
+      if (involvesGrid(get, [pageId], { type: fieldType, gridId: fieldData.gridId })) return grid.aware.addField(pageId, fieldType, fieldData);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -115,6 +122,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       fieldData: Partial<FieldData>,
       insertIndex: number
     ) => {
+      if (involvesGrid(get, [pageId], { type: fieldType, gridId: fieldData?.gridId })) return grid.aware.addFieldAtIndex(pageId, fieldType, fieldData, insertIndex);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -368,6 +376,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      * Remove a field from a page
      */
     removeField: (pageId: string, fieldId: string): boolean => {
+      if (involvesGrid(get, [pageId], { id: fieldId })) return grid.aware.removeField(pageId, fieldId);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -413,6 +422,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      * Done in one transaction so collaborators never see a half-converted state.
      */
     convertFieldType: (pageId: string, fieldId: string, newType: FieldType) => {
+      if (involvesGrid(get, [pageId], { id: fieldId, type: newType })) return grid.aware.convertFieldType(pageId, fieldId, newType);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -506,6 +516,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      * Uses atomic move operation wrapped in transaction for CRDT safety.
      */
     reorderFields: (pageId: string, oldIndex: number, newIndex: number) => {
+      if (involvesGrid(get, [pageId])) return grid.aware.reorderFields(pageId, oldIndex, newIndex);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -581,6 +592,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      * Creates a copy of the field with a new ID and "(Copy)" suffix.
      */
     duplicateField: (pageId: string, fieldId: string) => {
+      if (involvesGrid(get, [pageId], { id: fieldId })) return grid.aware.duplicateField(pageId, fieldId);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -619,6 +631,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
      * Restore a deleted field (e.g. from Undo toast)
      */
     restoreField: (pageId: string, field: FormField, index: number): boolean => {
+      if (involvesGrid(get, [pageId], field)) return grid.aware.restoreField(pageId, field, index);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -678,6 +691,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       fieldId: string,
       insertIndex?: number
     ) => {
+      if (involvesGrid(get, [sourcePageId, targetPageId], { id: fieldId })) return grid.aware.moveFieldBetweenPages(sourcePageId, targetPageId, fieldId, insertIndex);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
@@ -780,6 +794,7 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
       targetPageId: string,
       fieldId: string
     ) => {
+      if (involvesGrid(get, [sourcePageId, targetPageId], { id: fieldId })) return grid.aware.copyFieldToPage(sourcePageId, targetPageId, fieldId);
       const { _getYDoc, _isYJSReady } = get() as any;
       const ydoc = _getYDoc();
       const isReady = _isYJSReady();
