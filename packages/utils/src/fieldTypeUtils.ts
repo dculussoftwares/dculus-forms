@@ -28,6 +28,7 @@ export {
   BarChart3,
   Upload,
   Phone,
+  Columns,
 } from 'lucide-react';
 
 /**
@@ -46,6 +47,7 @@ export const FIELD_TYPE_ICON_MAP: Record<FieldType, string> = {
   [FieldType.FILE_UPLOAD_FIELD]: 'Upload',
   [FieldType.PHONE_NUMBER_FIELD]: 'Phone',
   [FieldType.RICH_TEXT_FIELD]: 'FileText',
+  [FieldType.GRID_FIELD]: 'Columns',
   // Base types - fallback to generic icon
   [FieldType.TEXT]: 'BarChart3',
   [FieldType.FORM_FIELD]: 'BarChart3',
@@ -86,6 +88,7 @@ export const FIELD_TYPE_TRANSLATION_KEYS: Record<FieldType, string> = {
   [FieldType.FILE_UPLOAD_FIELD]: 'fieldTypes.file_upload_field',
   [FieldType.PHONE_NUMBER_FIELD]: 'fieldTypes.phone_number_field',
   [FieldType.RICH_TEXT_FIELD]: 'fieldTypes.rich_text_field',
+  [FieldType.GRID_FIELD]: 'fieldTypes.grid_field',
   // Base types
   [FieldType.TEXT]: 'fieldTypes.unknown',
   [FieldType.FORM_FIELD]: 'fieldTypes.unknown',

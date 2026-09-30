@@ -289,6 +289,10 @@ export const formatFieldValue = (
       // For rich text, return raw HTML or strip tags based on context
       return String(value);
 
+    case FieldType.GRID_FIELD:
+      // Layout container: holds no value
+      return '';
+
     default:
       return String(value);
   }
