@@ -68,6 +68,44 @@ export const generateUniqueId = (): string => {
 };
 
 /**
+ * Convert a visual (non-deleted-filtered) field position to its raw Y.Array
+ * index. Returns -1 if the visual index is out of range.
+ */
+export const visualToRawIndex = (
+  fieldsArray: Y.Array<Y.Map<any>>,
+  visualIndex: number
+): number => {
+  let count = -1;
+  for (let i = 0; i < fieldsArray.length; i++) {
+    const fm = fieldsArray.get(i);
+    if (fm instanceof Y.Map && fm.get('deleted') === true) continue;
+    count++;
+    if (count === visualIndex) return i;
+  }
+  return -1;
+};
+
+/**
+ * Convert a visual INSERT SLOT (0 = before the first visible field, N = after
+ * the last of N visible fields) to a raw Y.Array insert index. Unlike
+ * visualToRawIndex, a slot always resolves to a valid position — including
+ * past any trailing soft-deleted fields — so callers can insert directly.
+ */
+export const visualSlotToRawIndex = (
+  fieldsArray: Y.Array<Y.Map<any>>,
+  visualSlot: number
+): number => {
+  let visibleSeen = 0;
+  for (let i = 0; i < fieldsArray.length; i++) {
+    const fm = fieldsArray.get(i);
+    if (fm instanceof Y.Map && fm.get('deleted') === true) continue;
+    if (visibleSeen === visualSlot) return i;
+    visibleSeen++;
+  }
+  return fieldsArray.length;
+};
+
+/**
  * Check if a field is fillable (has label, validation, etc.)
  */
 export const isFillableFormField = (
@@ -476,15 +514,22 @@ export const createYJSFieldMap = (fieldData: FieldData): Y.Map<any> => {
  * Serialize a FormField instance to YJS Map
  */
 export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
+  // Checked explicitly and before the heuristic below: isFillableFormField's
+  // `field.type !== FieldType.FORM_FIELD` fallback is true for every real
+  // field type (including rich text), which made this non-fillable branch
+  // unreachable and dropped rich-text `content` on add.
+  if (field.type === FieldType.RICH_TEXT_FIELD) {
+    const fieldMap = new Y.Map();
+    fieldMap.set('id', field.id);
+    fieldMap.set('type', field.type);
+    fieldMap.set('content', (field as RichTextFormField).content || '');
+    return fieldMap;
+  }
+
   if (!(field instanceof FillableFormField) && !isFillableFormField(field)) {
     const fieldMap = new Y.Map();
     fieldMap.set('id', field.id);
     fieldMap.set('type', field.type);
-
-    // Handle rich text fields
-    if (field.type === FieldType.RICH_TEXT_FIELD) {
-      fieldMap.set('content', (field as RichTextFormField).content || '');
-    }
 
     return fieldMap;
   }

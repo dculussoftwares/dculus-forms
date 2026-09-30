@@ -396,6 +396,13 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     }, 400);
   };
 
+  // Handle drag cancel (e.g. Escape) - reset immediately, there is no drop to animate
+  const handleDragCancel = () => {
+    setActiveFieldType(null);
+    setActiveField(null);
+    setIsDelayingExpansion(false);
+  };
+
   // Use pointerWithin as the primary collision detection so that the tiny
   // DropIndicator gap zones (2–8px tall) win over the large field cards.
   // Fallback to rectIntersection for sidebar-to-form-area drops where the
@@ -412,6 +419,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
       collisionDetection={collisionDetectionStrategy}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
       <div className="flex h-full" data-testid="new-page-builder-tab">
         {/* Journey rail: the respondent's journey — Intro / Pages / Thank You */}
