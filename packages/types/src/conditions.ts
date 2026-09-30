@@ -9,6 +9,7 @@
 
 import { z } from 'zod';
 import { FieldType, type FormPage } from './index.js';
+import { isLayoutField } from './grid.js';
 
 export type ConditionOperator =
   | 'equals'
@@ -420,7 +421,8 @@ export const evaluateConditions = (
     for (const field of page.fields ?? []) {
       if (field.deleted) continue;
       fieldInfo.set(field.id, { type: field.type, pageId: page.id });
-      ids.push(field.id);
+      // A page whose real fields are all hidden must still auto-hide; a grid is not one of them
+      if (!isLayoutField(field)) ids.push(field.id);
     }
     pageFieldIds.set(page.id, ids);
   }
@@ -645,7 +647,7 @@ export const detectConditionCycles = (
     const fieldIds: string[] = [];
     for (const field of page.fields ?? []) {
       if (field.deleted) continue;
-      fieldIds.push(field.id);
+      if (!isLayoutField(field)) fieldIds.push(field.id);
       fieldPageMap.set(field.id, page.id);
     }
     pageFieldMap.set(page.id, fieldIds);
