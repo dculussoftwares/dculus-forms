@@ -612,6 +612,22 @@ describe('countFields', () => {
   it('returns 0 for an empty form', () => {
     expect(countFields({ pages: [] })).toBe(0);
   });
+
+  it('excludes grid layout fields', () => {
+    const schema = {
+      pages: [
+        {
+          id: 'p1',
+          fields: [
+            { id: 'g1', type: 'grid_field', columnWidths: [50, 50] },
+            { id: 'f1', type: 'text_input_field', gridId: 'g1', gridColumn: 0 },
+            { id: 'f2', type: 'rich_text_field', gridId: 'g1', gridColumn: 1 },
+          ],
+        },
+      ],
+    };
+    expect(countFields(schema)).toBe(2);
+  });
 });
 
 describe('buildEphemeralContext', () => {

@@ -265,6 +265,27 @@ describe('getAllFieldsAnalytics', () => {
     expect((result.fields[0] as any).fieldType).toBe(FieldType.TEXT_INPUT_FIELD);
   });
 
+  it('skips a grid layout field instead of failing the whole page', async () => {
+    const schemaWithGrid = {
+      pages: [{
+        fields: [
+          { id: 'g1', type: FieldType.GRID_FIELD, columnWidths: [50, 50] },
+          { id: 'f1', type: FieldType.TEXT_INPUT_FIELD, label: 'Text', gridId: 'g1', gridColumn: 0 },
+          { id: 'f2', type: FieldType.EMAIL_FIELD, label: 'Email', gridId: 'g1', gridColumn: 1 },
+        ],
+      }],
+    };
+    vi.mocked(formRepository.findUnique).mockResolvedValue({ formSchema: schemaWithGrid } as any);
+    vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue(null);
+
+    const result = await getAllFieldsAnalytics('form-1');
+
+    expect(result.fields.map((f: any) => f.fieldType)).toEqual([
+      FieldType.TEXT_INPUT_FIELD,
+      FieldType.EMAIL_FIELD,
+    ]);
+  });
+
   it('uses field id as label when field.label is missing', async () => {
     const schemaNoLabel = {
       pages: [{ fields: [{ id: 'f-no-label', type: FieldType.TEXT_INPUT_FIELD }] }],

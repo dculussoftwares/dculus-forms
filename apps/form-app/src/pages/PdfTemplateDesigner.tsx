@@ -30,7 +30,7 @@ import {
   toastSuccess,
   toastError,
 } from '@dculus/ui';
-import { deserializeFormSchema, FieldType } from '@dculus/types';
+import { deserializeFormSchema, FieldType, isLayoutField } from '@dculus/types';
 import { AlertCircle, ArrowLeft, Eye, Save } from 'lucide-react';
 import { MainLayout } from '../components/MainLayout';
 import { useTranslation } from '../hooks/useTranslation';
@@ -139,7 +139,7 @@ const PdfTemplateDesigner: React.FC = () => {
       const fields: FormFieldEntry[] = [];
       for (const page of schema?.pages ?? []) {
         for (const field of (page as any)?.fields ?? []) {
-          if (!field?.id || field.type === FieldType.RICH_TEXT_FIELD) continue;
+          if (!field?.id || field.type === FieldType.RICH_TEXT_FIELD || isLayoutField(field)) continue;
           fields.push({
             id: field.id,
             label: (field as any).label || '',

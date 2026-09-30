@@ -1,4 +1,4 @@
-import { deserializeFormSchema } from '@dculus/types';
+import { deserializeFormSchema, isLayoutField } from '@dculus/types';
 import type { PluginHandler } from '../core/types.js';
 import type { GoogleSheetsPluginConfig, GoogleSheetsResult, GoogleToken } from './types.js';
 
@@ -263,7 +263,8 @@ const buildRowValues = (
   if (formSchema?.pages) {
     for (const page of formSchema.pages) {
       for (const field of page.fields ?? []) {
-        if (!field?.id) continue;
+        // Must match buildHeaders exactly, or every later column shifts
+        if (!field?.id || isLayoutField(field)) continue;
         const raw = responseData[field.id];
         rowValues.push(resolveFieldValue(field, raw));
       }
@@ -380,7 +381,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       if (formSchema?.pages) {
         for (const page of formSchema.pages) {
           for (const field of page.fields ?? []) {
-            if (field?.id) fieldHeaders.push((field as any).label ?? field.id);
+            if (field?.id && !isLayoutField(field)) fieldHeaders.push((field as any).label ?? field.id);
           }
         }
       } else {

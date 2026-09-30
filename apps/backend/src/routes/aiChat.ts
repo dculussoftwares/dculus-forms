@@ -2,6 +2,7 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { validateUIMessages, convertToModelMessages, pruneMessages, streamText } from 'ai';
 import type { UIMessage, ModelMessage } from 'ai';
 import * as Y from 'yjs';
+import { isLayoutField } from '@dculus/types';
 import {
   requireAuth,
   requireOrganizationMembership,
@@ -47,7 +48,7 @@ async function getFormSchemaFromYjs(formId: string): Promise<{ pages: any[] } | 
       if (!pagesArray) return { pages: [] };
       const pages = pagesArray.toArray().map((pageMap) => {
         const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>> | undefined;
-        const fields = fieldsArray ? fieldsArray.toArray().map((fieldMap) => {
+        const fields = fieldsArray ? fieldsArray.toArray().filter((fieldMap) => !isLayoutField({ type: fieldMap.get('type') })).map((fieldMap) => {
           const optionsRaw = fieldMap.get('options');
           const options = optionsRaw instanceof Y.Array ? optionsRaw.toArray() : (optionsRaw ?? null);
           return {
@@ -104,7 +105,11 @@ const TYPE_MAP: Record<string, string> = {
 };
 
 export function countFields(schema: { pages: any[] }): number {
-  return (schema.pages ?? []).reduce((n, p) => n + (p.fields?.length ?? 0), 0);
+  // The Prisma fallback can still hold layout fields, so filter here too
+  return (schema.pages ?? []).reduce(
+    (n, p) => n + (p.fields?.filter((f: unknown) => !isLayoutField(f)).length ?? 0),
+    0
+  );
 }
 
 /**

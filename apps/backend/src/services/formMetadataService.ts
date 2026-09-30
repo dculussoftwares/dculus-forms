@@ -1,4 +1,5 @@
 import * as Y from 'yjs';
+import { FieldType } from '@dculus/types';
 import { constructCdnUrl } from '../utils/cdn.js';
 import { logger } from '../lib/logger.js';
 import {
@@ -42,7 +43,8 @@ export const extractFormStatsFromYDoc = (ydoc: Y.Doc): FormMetadataStats => {
         const fieldsArray = pageMap.get('fields') as Y.Array<Y.Map<any>>;
         if (fieldsArray) {
           fieldsArray.forEach((fieldMap) => {
-            if (fieldMap.get('deleted') !== true) fieldCount++;
+            // Layout containers are not questions; rich text still counts (unchanged)
+            if (fieldMap.get('deleted') !== true && fieldMap.get('type') !== FieldType.GRID_FIELD) fieldCount++;
           });
         }
       });

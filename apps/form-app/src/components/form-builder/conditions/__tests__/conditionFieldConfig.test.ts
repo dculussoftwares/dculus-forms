@@ -1,5 +1,5 @@
 import { ConditionalRule, FieldType, FormPage } from '@dculus/types';
-import { checkBackwardReference, checkRuleReferences } from '../conditionFieldConfig';
+import { checkBackwardReference, checkRuleReferences, getTargetFieldOptions } from '../conditionFieldConfig';
 
 const makeRule = (overrides: Partial<ConditionalRule>): ConditionalRule => ({
   id: 'rule-1',
@@ -135,5 +135,27 @@ describe('checkBackwardReference', () => {
     // targeting page 2 still counts as backward even though field-p1 (an
     // earlier trigger) alone wouldn't have made it so.
     expect(checkBackwardReference(rule, pages).hasBackwardReference).toBe(true);
+  });
+});
+
+describe('getTargetFieldOptions', () => {
+  it('omits a grid layout field but keeps the fields inside it', () => {
+    const page = {
+      id: 'page-1',
+      title: 'page-1',
+      order: 0,
+      fields: [
+        { id: 'g1', type: FieldType.GRID_FIELD, columnWidths: [50, 50] },
+        { id: 'field-a', type: FieldType.TEXT_INPUT_FIELD, label: 'Name', gridId: 'g1', gridColumn: 0 },
+        { id: 'field-b', type: FieldType.EMAIL_FIELD, label: 'Email', gridId: 'g1', gridColumn: 1 },
+      ],
+    } as unknown as FormPage;
+
+    const options = getTargetFieldOptions([page], 'Untitled');
+
+    expect(options.map((option) => [option.field.id, option.label])).toEqual([
+      ['field-a', 'Name'],
+      ['field-b', 'Email'],
+    ]);
   });
 });
