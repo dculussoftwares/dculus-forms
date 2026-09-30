@@ -10,6 +10,7 @@ import {
   DateField,
   CheckboxField,
   FileUploadField,
+  isLayoutField,
 } from '@dculus/types';
 
 export interface ValidationError {
@@ -57,14 +58,18 @@ const formatDateForDisplay = (isoDate: string): string => {
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 const isFillableField = (field: FormField): field is FillableFormField =>
-  field instanceof FillableFormField ||
+  !isLayoutField(field) &&
+  (field instanceof FillableFormField ||
   (field as any).label !== undefined ||
-  field.type !== FieldType.FORM_FIELD;
+  field.type !== FieldType.FORM_FIELD);
 
 /**
  * Creates a Zod schema for a single form field based on its validation properties
  */
 export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
+  // Layout containers hold no answer; checked before the fillable heuristic, which accepts every real type
+  if (isLayoutField(field)) return z.any().optional();
+
   const fillableField = isFillableField(field)
     ? (field as FillableFormField)
     : null;
@@ -394,7 +399,8 @@ export const createPageSchema = (
   const schemaFields: Record<string, z.ZodTypeAny> = {};
 
   page.fields.forEach((field) => {
-    if (hiddenFieldIds?.has(field.id)) return;
+    // No key at all for a layout field, so it can never reach the submitted payload
+    if (isLayoutField(field) || hiddenFieldIds?.has(field.id)) return;
     const override = requiredOverrides?.get(field.id);
     const effectiveField = override !== undefined && isFillableField(field)
       ? applyRequiredOverrides(field as FillableFormField, override)
@@ -414,6 +420,7 @@ export const createPageDefaultValues = (
   const defaultValues: Record<string, any> = {};
 
   page.fields.forEach((field) => {
+    if (isLayoutField(field)) return;
     const fillableField = isFillableField(field)
       ? (field as FillableFormField)
       : null;

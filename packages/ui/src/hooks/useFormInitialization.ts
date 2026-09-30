@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { FieldType, FormPage } from '@dculus/types';
+import { FieldType, FormPage, isLayoutField } from '@dculus/types';
 import { useFormResponseStore } from '../stores/useFormResponseStore';
 import { createPageDefaultValues } from '../utils/zodSchemaBuilder';
 
@@ -36,6 +36,7 @@ export const useFormInitialization = (page: FormPage) => {
     const cleanedValues: Record<string, any> = {};
 
     page.fields.forEach((field) => {
+      if (isLayoutField(field)) return;
       const value = merged[field.id];
       cleanedValues[field.id] =
         value !== undefined ? value : getFieldDefaultValue(field.type);
