@@ -10,9 +10,9 @@
  */
 import { FieldType, type FormField, type GridField } from './index.js';
 
-export const MAX_GRID_COLUMNS = 4;
-export const MIN_GRID_COLUMN_PERCENT = 10;
-export const MAX_GRID_ID_LENGTH = 64;
+import { MAX_GRID_COLUMNS, MAX_GRID_ID_LENGTH, MIN_GRID_COLUMN_PERCENT } from './gridConstants.js';
+
+export { MAX_GRID_COLUMNS, MAX_GRID_ID_LENGTH, MIN_GRID_COLUMN_PERCENT };
 
 export interface GridColumnNode {
   index: number;

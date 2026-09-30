@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js/max';
 import { FieldType } from './index.js';
 import { fieldGradingSchema } from './quiz.js';
+import { MAX_GRID_COLUMNS, MIN_GRID_COLUMN_PERCENT } from './gridConstants.js';
 
 // Mirrors MAX_REGEX_PATTERN_LENGTH in apps/backend/src/services/quiz/gradingEngine.ts —
 // the engine silently treats a longer pattern as non-matching (score 0); this schema
@@ -695,9 +696,16 @@ export const richTextFieldValidationSchema = z.object({
     .default(''),
 });
 
-// Grid (layout) field: no answer to validate, only its column widths
+// Grid (layout) field: no answer to validate, only its column widths (same rules as sanitizeGridColumnWidths)
 export const gridFieldValidationSchema = z.object({
-  columnWidths: z.array(z.number().int()).min(1).max(4).default([50, 50]),
+  columnWidths: z
+    .array(z.number().int().min(MIN_GRID_COLUMN_PERCENT))
+    .min(1)
+    .max(MAX_GRID_COLUMNS)
+    .refine((widths) => widths.reduce((sum, width) => sum + width, 0) === 100, {
+      message: 'Column widths must add up to 100',
+    })
+    .default([50, 50]),
 });
 
 // Factory function to get validation schema by field type

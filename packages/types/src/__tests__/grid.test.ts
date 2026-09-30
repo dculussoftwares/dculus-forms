@@ -10,6 +10,7 @@ import {
   deserializeFormField,
   deserializeFormSchema,
   serializeFormField,
+  gridFieldValidationSchema,
   buildPageTree,
   canonicalizeFields,
   countQuestionFields,
@@ -472,5 +473,27 @@ describe('deserializeFormSchema', () => {
       ])
     );
     expect(schema.pages[0].fields[1].deleted).toBe(true);
+  });
+});
+
+describe('gridFieldValidationSchema', () => {
+  const parse = (columnWidths: unknown) => gridFieldValidationSchema.safeParse({ columnWidths });
+
+  it('accepts what sanitizeGridColumnWidths keeps', () => {
+    for (const widths of [[100], [50, 50], [36, 30, 34], [25, 25, 25, 25], [10, 90]]) {
+      expect(parse(widths).success).toBe(true);
+      expect(sanitizeGridColumnWidths(widths)).toEqual(widths);
+    }
+  });
+
+  it('rejects what sanitizeGridColumnWidths would silently replace', () => {
+    for (const widths of [[5, 95], [50, 40], [], [20, 20, 20, 20, 20], [33.3, 66.7], [60, 60]]) {
+      expect(parse(widths).success).toBe(false);
+      expect(sanitizeGridColumnWidths(widths)).not.toEqual(widths);
+    }
+  });
+
+  it('defaults to two equal columns', () => {
+    expect(gridFieldValidationSchema.parse({}).columnWidths).toEqual([50, 50]);
   });
 });
