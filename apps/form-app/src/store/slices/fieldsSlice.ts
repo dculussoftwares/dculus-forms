@@ -29,6 +29,12 @@ import {
   FieldData,
 } from '../collaboration/CollaborationManager';
 
+// In updateField, `null` clears a stored setting while `undefined` leaves it untouched.
+const setOrClear = (map: Y.Map<any>, key: string, value: unknown) => {
+  if (value === null) map.delete(key);
+  else if (value !== undefined) map.set(key, value);
+};
+
 /**
  * Create the fields slice
  *
@@ -300,19 +306,14 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
             fieldType === FieldType.TEXT_INPUT_FIELD ||
             fieldType === FieldType.TEXT_AREA_FIELD
           ) {
-            if (validationData.minLength !== undefined) {
-              validationMap.set('minLength', validationData.minLength);
-            }
-            if (validationData.maxLength !== undefined) {
-              validationMap.set('maxLength', validationData.maxLength);
-            }
+            setOrClear(validationMap, 'minLength', validationData.minLength);
+            setOrClear(validationMap, 'maxLength', validationData.maxLength);
+            // Deserialization falls back to these legacy copies, which would resurrect a cleared limit
+            if (validationData.minLength !== undefined) fieldMap.delete('min');
+            if (validationData.maxLength !== undefined) fieldMap.delete('max');
           } else if (fieldType === FieldType.CHECKBOX_FIELD) {
-            if (validationData.minSelections !== undefined) {
-              validationMap.set('minSelections', validationData.minSelections);
-            }
-            if (validationData.maxSelections !== undefined) {
-              validationMap.set('maxSelections', validationData.maxSelections);
-            }
+            setOrClear(validationMap, 'minSelections', validationData.minSelections);
+            setOrClear(validationMap, 'maxSelections', validationData.maxSelections);
           }
         } else if (key === 'required') {
           // Update validation required field (fallback for direct required updates)
@@ -323,14 +324,18 @@ export const createFieldsSlice: SliceCreator<FieldsSlice> = (_set, get) => {
             fieldType === FieldType.TEXT_AREA_FIELD)
         ) {
           // For text fields, min maps to minLength in validation (fallback for old format)
-          validationMap.set('minLength', value);
+          setOrClear(validationMap, 'minLength', value);
+          if (value !== undefined) fieldMap.delete('min');
         } else if (
           key === 'max' &&
           (fieldType === FieldType.TEXT_INPUT_FIELD ||
             fieldType === FieldType.TEXT_AREA_FIELD)
         ) {
           // For text fields, max maps to maxLength in validation (fallback for old format)
-          validationMap.set('maxLength', value);
+          setOrClear(validationMap, 'maxLength', value);
+          if (value !== undefined) fieldMap.delete('max');
+        } else if (value === null) {
+          if (key !== 'id' && key !== 'type') fieldMap.delete(key);
         } else if (value !== undefined) {
           console.log(`✅ FieldsSlice - Setting field property:`, {
             fieldId,

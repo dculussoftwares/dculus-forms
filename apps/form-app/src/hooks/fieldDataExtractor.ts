@@ -70,8 +70,8 @@ export function extractValidationData(field: FormField): ValidationFieldData {
   return {
     validation: {
       required: validation.required || false,
-      minLength: validation.minLength || undefined,
-      maxLength: validation.maxLength || undefined,
+      minLength: validation.minLength ?? undefined,
+      maxLength: validation.maxLength ?? undefined,
     },
   };
 }
@@ -87,8 +87,8 @@ export function extractCheckboxValidationData(
   return {
     validation: {
       required: validation.required || false,
-      minSelections: validation.minSelections || undefined,
-      maxSelections: validation.maxSelections || undefined,
+      minSelections: validation.minSelections ?? undefined,
+      maxSelections: validation.maxSelections ?? undefined,
     },
   };
 }
@@ -109,8 +109,8 @@ export function extractOptionData(field: FormField): OptionFieldData {
 export function extractNumberRangeData(field: FormField): NumberRangeFieldData {
   const fieldWithRange = field as NumberField;
   return {
-    min: fieldWithRange.min || undefined,
-    max: fieldWithRange.max || undefined,
+    min: fieldWithRange.min ?? undefined,
+    max: fieldWithRange.max ?? undefined,
   };
 }
 
