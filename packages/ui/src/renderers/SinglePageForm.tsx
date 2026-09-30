@@ -1,9 +1,10 @@
 import React, { useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef } from 'react';
 import { useForm, FormProvider, Resolver, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormPage } from '@dculus/types';
+import { FormPage, buildPageTree, countQuestionFields, pageHasGrid } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { FormFieldRenderer } from './FormFieldRenderer';
+import { GridRenderer } from './GridRenderer';
 import { createPageSchema } from '../utils/zodSchemaBuilder';
 import { FormValidationState } from '../types/validation';
 import { useFormInitialization, useFormValidation, useStoreSync, useFormSubmission } from '../hooks';
@@ -156,8 +157,19 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
     [page.fields, hiddenFieldIds]
   );
 
+  // Grid-less pages never build a tree, so their markup stays exactly as before (R2)
+  const hasGrid = useMemo(() => (page.fields ? pageHasGrid(page.fields) : false), [page.fields]);
+  const pageTree = useMemo(
+    () => (hasGrid ? buildPageTree(visibleFields) : null),
+    [hasGrid, visibleFields]
+  );
+
   // Early return for empty pages
-  if (!page.fields || page.fields.length === 0) {
+  if (
+    !page.fields ||
+    page.fields.length === 0 ||
+    (hasGrid && countQuestionFields(page.fields) === 0)
+  ) {
     return (
       <div className={`text-center py-8 ${className}`}>
         <p className="text-gray-500 text-sm">
@@ -179,7 +191,30 @@ export const SinglePageForm: React.FC<SinglePageFormProps> = ({
         className={`space-y-4 ${className}`}
       >
         <div className="space-y-4">
-          {visibleFields.map((field) => (
+          {pageTree
+            ? pageTree.map((node) =>
+                node.kind === 'grid' ? (
+                  <GridRenderer
+                    key={node.grid.id}
+                    node={node}
+                    control={control}
+                    fieldStyles={styles.field}
+                    mode={mode}
+                    hiddenFieldIds={hiddenFieldIds}
+                    requiredOverrides={requiredOverrides}
+                  />
+                ) : (
+                  <FormFieldRenderer
+                    key={node.field.id}
+                    field={node.field}
+                    control={control}
+                    fieldStyles={styles.field}
+                    mode={mode}
+                    requiredOverride={requiredOverrides?.get(node.field.id)}
+                  />
+                )
+              )
+            : visibleFields.map((field) => (
             <FormFieldRenderer
               key={field.id}
               field={field}

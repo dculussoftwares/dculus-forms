@@ -15,7 +15,9 @@ import {
   SpacingType,
   PageModeType,
   deserializeFormField,
-  DEFAULT_THANK_YOU_CONTENT
+  DEFAULT_THANK_YOU_CONTENT,
+  GridField,
+  type FormField
 } from '@dculus/types';
 import { generateId } from '@dculus/utils';
 
@@ -425,6 +427,48 @@ export const createSinglePage = (): FormPage[] => {
     }
   ];
 };
+
+const inGrid = <T extends FormField>(field: T, gridId: string, gridColumn: number): T =>
+  Object.assign(field, { gridId, gridColumn });
+
+// Grid layouts: fields point at their grid through gridId / gridColumn (storage stays flat)
+export const createGridPages = (): FormPage[] => [
+  {
+    id: 'grid-page-2col',
+    title: 'Two columns',
+    order: 0,
+    fields: [
+      new GridField('grid-2col', [50, 50]),
+      inGrid(new TextInputField('g2-first', 'First Name', '', '', '', '', new FillableFormFieldValidation(true)), 'grid-2col', 0),
+      inGrid(new TextInputField('g2-last', 'Last Name', '', '', '', '', new FillableFormFieldValidation(true)), 'grid-2col', 1),
+      inGrid(new EmailField('g2-email', 'Email', '', '', '', '', new FillableFormFieldValidation(false)), 'grid-2col', 0),
+      inGrid(new DateField('g2-date', 'Start Date', '', '', '', '', new FillableFormFieldValidation(false)), 'grid-2col', 1),
+      new TextAreaField('g2-notes', 'Notes', '', '', 'Below the grid', '', new FillableFormFieldValidation(false)),
+    ],
+  },
+  {
+    id: 'grid-page-3col',
+    title: 'Three uneven columns',
+    order: 1,
+    fields: [
+      new GridField('grid-3col', [36, 30, 34]),
+      inGrid(new TextInputField('g3-city', 'City', '', '', '', '', new FillableFormFieldValidation(false)), 'grid-3col', 0),
+      inGrid(new SelectField('g3-state', 'State', '', '', '', new FillableFormFieldValidation(false), ['CA', 'NY', 'TX']), 'grid-3col', 1),
+      inGrid(new NumberField('g3-zip', 'ZIP', '', '', '', '', new FillableFormFieldValidation(false), 0, 99999), 'grid-3col', 2),
+      inGrid(new RadioField('g3-type', 'Address type', '', '', '', new FillableFormFieldValidation(false), ['Home', 'Work']), 'grid-3col', 0),
+    ],
+  },
+  {
+    id: 'grid-page-empty',
+    title: 'Grid with no visible children',
+    order: 2,
+    fields: [
+      new TextInputField('ge-before', 'Before the grid', '', '', '', '', new FillableFormFieldValidation(false)),
+      new GridField('grid-empty', [50, 50]),
+      new TextInputField('ge-after', 'After the grid', '', '', '', '', new FillableFormFieldValidation(false)),
+    ],
+  },
+];
 
 // Sample form layouts
 export const sampleLayouts: Record<string, FormLayout> = {

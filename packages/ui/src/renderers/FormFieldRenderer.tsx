@@ -15,6 +15,7 @@ import {
   TextFieldValidation,
   RichTextFormField,
   PhoneNumberField,
+  isLayoutField,
 } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { Upload } from 'lucide-react';
@@ -84,6 +85,9 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   mode = RendererMode.PREVIEW,
   requiredOverride,
 }) => {
+  // Layout containers render through GridRenderer; the fillable heuristic below would treat them as inputs
+  if (isLayoutField(field)) return null;
+
   const isFillableField = (f: FormField): f is FillableFormField =>
     f instanceof FillableFormField || (f as any).label !== undefined || f.type !== FieldType.FORM_FIELD;
 

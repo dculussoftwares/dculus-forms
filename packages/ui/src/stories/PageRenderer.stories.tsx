@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
 import { PageRenderer } from '../renderers/PageRenderer';
-import { createSamplePages, createSinglePage, createValidationTestPages, formModes } from './mocks';
+import { createGridPages, createSamplePages, createSinglePage, createValidationTestPages, formModes } from './mocks';
 import { RendererMode } from '@dculus/utils';
 
 const meta: Meta<typeof PageRenderer> = {
@@ -277,6 +277,22 @@ export const ValidationTestForm: Story = {
     docs: {
       description: {
         story: 'Comprehensive validation test form with all supported field types across 4 pages. Includes required/optional fields, min/max constraints, email validation, date ranges, and selection fields. Perfect for testing React Hook Form + Zod validation behavior.',
+      },
+    },
+  },
+};
+
+// Grid layouts
+export const GridLayouts: Story = {
+  args: {
+    pages: createGridPages(),
+    mode: RendererMode.PREVIEW,
+    showPageNavigation: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Grid layouts: a 2-column grid, a 3-column grid with uneven widths (36/30/34), and a grid with no visible children (renders nothing). Columns sit side by side only when the grid container is wide enough and stack otherwise; resize the canvas to see it.',
       },
     },
   },
