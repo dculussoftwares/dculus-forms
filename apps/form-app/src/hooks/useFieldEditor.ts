@@ -62,11 +62,13 @@ export function buildFieldUpdates(
   values: Values,
   changedKeys: string[]
 ): Values {
+  // updateField reads `undefined` as "unchanged", so a cleared input must be sent as `null`
+  const orClear = (value: unknown) => (value === undefined ? null : value);
   const updates: Values = {};
   changedKeys
     .filter((key) => !VALIDATION_KEYS.includes(key))
     .forEach((key) => {
-      updates[key] = values[key];
+      updates[key] = orClear(values[key]);
     });
 
   if (!changedKeys.some((key) => VALIDATION_KEYS.includes(key))) return updates;
@@ -76,14 +78,14 @@ export function buildFieldUpdates(
   if (fieldType === FieldType.TEXT_INPUT_FIELD || fieldType === FieldType.TEXT_AREA_FIELD) {
     updates.validation = {
       required,
-      minLength: validation.minLength,
-      maxLength: validation.maxLength,
+      minLength: orClear(validation.minLength),
+      maxLength: orClear(validation.maxLength),
     };
   } else if (fieldType === FieldType.CHECKBOX_FIELD) {
     updates.validation = {
       required,
-      minSelections: validation.minSelections,
-      maxSelections: validation.maxSelections,
+      minSelections: orClear(validation.minSelections),
+      maxSelections: orClear(validation.maxSelections),
     };
   } else {
     updates.validation = { required };

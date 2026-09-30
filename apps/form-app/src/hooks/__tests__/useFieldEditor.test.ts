@@ -88,9 +88,19 @@ describe('useFieldEditor autosave', () => {
     advance(0);
 
     expect(onSave).toHaveBeenCalledWith(
-      { validation: { required: true, minLength: undefined, maxLength: undefined } },
+      { validation: { required: true, minLength: null, maxLength: null } },
       'field-1'
     );
+  });
+
+  it('sends null for a cleared setting so it is removed', () => {
+    const numberField = textField({ id: 'num-1', type: FieldType.NUMBER_FIELD, min: 5 });
+    const { onSave, edit, advance } = setup(numberField);
+
+    edit('min', undefined);
+    advance();
+
+    expect(onSave).toHaveBeenCalledWith({ min: null }, 'num-1');
   });
 
   it('saves unchecking required on choice fields', () => {
