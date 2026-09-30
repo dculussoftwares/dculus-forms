@@ -40,13 +40,18 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
         </Button>
       </div>
       
-      <div className={constants.CSS_CLASSES.INPUT_SPACING}>
+      <div data-field-path="options" className={constants.CSS_CLASSES.INPUT_SPACING}>
         {options.map((option: string, index: number) => {
           const isEmpty = !option || option.trim() === '';
           const hasError = errors.options && Array.isArray(errors.options) && errors.options[index];
           
           return (
-            <div key={index} className="space-y-1">
+            <div
+              key={index}
+              data-settings-field
+              data-field-path={`options.${index}`}
+              className="space-y-1"
+            >
               <div className="flex items-center space-x-2">
                 <Input
                   value={option}
@@ -68,14 +73,9 @@ export const OptionsSettings: React.FC<OptionsSettingsProps> = ({
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-              {isEmpty && (
-                <div className="text-xs text-destructive dark:text-red-400 ml-1">
-                  {constants.ERROR_MESSAGES.OPTION_EMPTY}
-                </div>
-              )}
-              {hasError && (
-                <ErrorMessage error={hasError} />
-              )}
+              <ErrorMessage
+                error={hasError || (isEmpty ? constants.ERROR_MESSAGES.OPTION_EMPTY : undefined)}
+              />
             </div>
           );
         })}

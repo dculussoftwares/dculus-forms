@@ -47,7 +47,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
   const { enabled: isQuizModeEnabled } = useQuizMode();
   const {
     form,
-    isValid,
     errors: formErrors,
     saveStatus,
     handleSave,
@@ -112,10 +111,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
             }}
             className="p-4 space-y-6"
           >
-            {/* Validation Error Summary */}
-            {!isValid && Object.keys(formErrors).length > 0 && (
-              <ValidationSummary errors={formErrors} />
-            )}
 
             {/* Basic Settings */}
             <div className={constants.CSS_CLASSES.SECTION_SPACING}>
@@ -385,6 +380,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
 
             {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
             <div className="pb-4"></div>
+
+            <ValidationSummary errors={formErrors} />
           </form>
         </div>
       </div>

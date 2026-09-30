@@ -37,7 +37,6 @@ export const PhoneNumberFieldSettings: React.FC<PhoneNumberFieldSettingsProps> =
   const isEditable = isConnected && !isReadOnly;
   const {
     form,
-    isValid,
     errors: formErrors,
     saveStatus,
     handleSave,
@@ -82,10 +81,6 @@ export const PhoneNumberFieldSettings: React.FC<PhoneNumberFieldSettingsProps> =
           }}
           className="p-4 space-y-6"
         >
-          {/* Validation Error Summary */}
-          {!isValid && Object.keys(formErrors).length > 0 && (
-            <ValidationSummary errors={formErrors} />
-          )}
 
           {/* Basic Settings */}
           <div className={constants.CSS_CLASSES.SECTION_SPACING}>
@@ -154,7 +149,11 @@ export const PhoneNumberFieldSettings: React.FC<PhoneNumberFieldSettingsProps> =
             </div>
 
             {/* Default Value */}
-            <div className={constants.CSS_CLASSES.INPUT_SPACING}>
+            <div
+              data-settings-field
+              data-field-path="defaultValue"
+              className={constants.CSS_CLASSES.INPUT_SPACING}
+            >
               <Label className={constants.CSS_CLASSES.LABEL_STYLE}>
                 {constants.LABELS.DEFAULT_VALUE}
               </Label>
@@ -207,6 +206,8 @@ export const PhoneNumberFieldSettings: React.FC<PhoneNumberFieldSettingsProps> =
 
           {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
           <div className="pb-4"></div>
+
+          <ValidationSummary errors={formErrors} />
         </form>
       </div>
     </div>
