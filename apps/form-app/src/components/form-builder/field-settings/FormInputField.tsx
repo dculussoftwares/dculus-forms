@@ -65,7 +65,7 @@ export function FormInputField<T extends FieldValues = FieldValues>({
   const inputId = `field-${name}`;
 
   return (
-    <div className={constants.CSS_CLASSES.INPUT_SPACING}>
+    <div data-settings-field className={constants.CSS_CLASSES.INPUT_SPACING}>
       <Label 
         htmlFor={inputId} 
         className={constants.CSS_CLASSES.LABEL_STYLE}

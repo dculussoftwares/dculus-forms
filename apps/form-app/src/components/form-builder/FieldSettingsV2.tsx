@@ -74,7 +74,6 @@ const FileUploadFieldSettingsInner: React.FC<
   const isEditable = isConnected && !isReadOnly;
   const {
     form,
-    isValid,
     errors: formErrors,
     saveStatus,
     handleSave,
@@ -107,9 +106,6 @@ const FileUploadFieldSettingsInner: React.FC<
           }}
           className="p-4 space-y-6"
         >
-          {!isValid && Object.keys(errors).length > 0 && (
-            <ValidationSummary errors={errors} />
-          )}
 
           {/* Basic Settings */}
           <div className={constants.CSS_CLASSES.SECTION_SPACING}>
@@ -234,6 +230,8 @@ const FileUploadFieldSettingsInner: React.FC<
           </div>
 
           <div className="pb-4" />
+
+          <ValidationSummary errors={errors} />
         </form>
       </div>
     </div>

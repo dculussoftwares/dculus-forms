@@ -38,7 +38,6 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
   const { enabled: isQuizModeEnabled } = useQuizMode();
   const {
     form,
-    isValid,
     errors: formErrors,
     saveStatus,
     handleSave,
@@ -75,10 +74,6 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
           }}
           className="p-4 space-y-6"
         >
-          {/* Validation Error Summary */}
-          {!isValid && Object.keys(formErrors).length > 0 && (
-            <ValidationSummary errors={formErrors} />
-          )}
 
           {/* Basic Settings */}
           <div className={constants.CSS_CLASSES.SECTION_SPACING}>
@@ -228,6 +223,8 @@ export const TextFieldSettings: React.FC<TextFieldSettingsProps> = ({
 
           {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
           <div className="pb-4"></div>
+
+          <ValidationSummary errors={formErrors} />
         </form>
       </div>
     </div>

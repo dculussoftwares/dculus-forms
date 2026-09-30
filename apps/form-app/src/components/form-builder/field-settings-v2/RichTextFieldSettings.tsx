@@ -34,7 +34,6 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
 
   const {
     form,
-    isValid,
     errors: formErrors,
     saveStatus,
     handleSave,
@@ -77,10 +76,6 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
           }}
           className="p-4 space-y-6"
         >
-          {/* Validation Error Summary */}
-          {!isValid && Object.keys(formErrors).length > 0 && (
-            <ValidationSummary errors={formErrors} />
-          )}
 
           {/* Rich Text Content Settings */}
           <RichTextSettings
@@ -93,6 +88,8 @@ export const RichTextFieldSettings: React.FC<RichTextFieldSettingsProps> = ({
 
           {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
           <div className="pb-4"></div>
+
+          <ValidationSummary errors={formErrors} />
         </form>
       </div>
     </div>

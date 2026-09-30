@@ -149,8 +149,7 @@ Then('I verify all validations work correctly', async function (this: CustomWorl
   // After all validation tests have passed and errors were fixed,
   // confirm there are no remaining validation error messages
   const validationErrors = this.page.locator('[role="alert"], .text-destructive, [data-testid*="error"]');
-  const errorCount = await validationErrors.count();
 
-  // All validation errors should be cleared at this point
-  expect(errorCount).toBe(0);
+  // Errors collapse with a short exit transition, so wait rather than count once.
+  await expect(validationErrors).toHaveCount(0, { timeout: 5_000 });
 });

@@ -16,6 +16,7 @@ import { useFieldEditor } from '../../../hooks';
 import { useQuizMode } from '../../../contexts/QuizModeContext';
 import {
   ValidationSummary,
+  ErrorMessage,
   FieldSettingsHeader,
   FormInputField,
   OptionsSettings,
@@ -47,7 +48,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
   const { enabled: isQuizModeEnabled } = useQuizMode();
   const {
     form,
-    isValid,
     errors: formErrors,
     saveStatus,
     handleSave,
@@ -112,10 +112,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
             }}
             className="p-4 space-y-6"
           >
-            {/* Validation Error Summary */}
-            {!isValid && Object.keys(formErrors).length > 0 && (
-              <ValidationSummary errors={formErrors} />
-            )}
 
             {/* Basic Settings */}
             <div className={constants.CSS_CLASSES.SECTION_SPACING}>
@@ -150,7 +146,11 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
 
               {/* Default Value - Dropdown for single selection fields (Radio and Select) */}
               {isSingleSelectionField && (
-                <div className="space-y-2">
+                <div
+                  data-settings-field
+                  data-field-path="defaultValue"
+                  className="space-y-2"
+                >
                   <Label className={constants.CSS_CLASSES.LABEL_STYLE}>
                     {constants.LABELS.DEFAULT_VALUE}
                   </Label>
@@ -199,17 +199,17 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                       </Select>
                     )}
                   />
-                  {errors.defaultValue && (
-                    <p className="text-sm text-destructive dark:text-red-400">
-                      {errors.defaultValue.message}
-                    </p>
-                  )}
+                  <ErrorMessage error={errors.defaultValue} />
                 </div>
               )}
 
               {/* Default Value - Multiple selection for Checkbox fields */}
               {field.type === 'checkbox_field' && (
-                <div className="space-y-2">
+                <div
+                  data-settings-field
+                  data-field-path="defaultValue"
+                  className="space-y-2"
+                >
                   <Label className={constants.CSS_CLASSES.LABEL_STYLE}>
                     {constants.LABELS.DEFAULT_VALUE}
                   </Label>
@@ -268,11 +268,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                       );
                     }}
                   />
-                  {errors.defaultValue && (
-                    <p className="text-sm text-destructive">
-                      {errors.defaultValue.message}
-                    </p>
-                  )}
+                  <ErrorMessage error={errors.defaultValue} />
                 </div>
               )}
             </div>
@@ -385,6 +381,8 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
 
             {/* Add some bottom padding to prevent content from being hidden behind the floating actions */}
             <div className="pb-4"></div>
+
+            <ValidationSummary errors={formErrors} />
           </form>
         </div>
       </div>

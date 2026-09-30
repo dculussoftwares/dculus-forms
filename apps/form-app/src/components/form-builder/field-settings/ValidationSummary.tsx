@@ -1,8 +1,20 @@
-import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import React, { useRef } from 'react';
+import { AlertTriangle, ChevronRight } from 'lucide-react';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useLocale } from '../../../hooks/useLocale';
 import { flattenErrors } from '../../../utils/formErrors';
+import {
+  ErrorCollapse,
+  findSettingLabel,
+  goToSetting,
+  usePresence,
+  useSettledValue,
+} from './errorReveal';
+
+interface SummaryItem {
+  path: string;
+  message: string;
+}
 
 interface ValidationSummaryProps {
   errors: Record<string, any>;
@@ -36,62 +48,77 @@ const useMessageTranslator = () => {
   };
 };
 
+/**
+ * Sticky banner pinned to the bottom of the settings scroll area.
+ * Render it last in the form (unconditionally) so appearing never pushes the
+ * settings being edited; each issue scrolls smoothly to and focuses its setting.
+ */
 export const ValidationSummary: React.FC<ValidationSummaryProps> = ({ errors }) => {
   const { t } = useTranslation('validationSummary');
   const translateMessage = useMessageTranslator();
-  
-  // Flatten nested errors from react-hook-form
-  const flatErrors = flattenErrors(errors);
-  
-  const errorMessages = Object.entries(flatErrors)
-    .filter(([_, error]) => {
-      const message = error?.message || (typeof error === 'string' ? error : null);
-      return Boolean(message);
-    })
-    .map(([field, error]) => {
-      const translatedMessage = translateMessage(error?.message || (typeof error === 'string' ? error : ''));
-      return {
-        field,
-        message: translatedMessage,
-        // Check both the full path and the last part for global errors
-        isGlobalError: ['minDate', 'maxDate', 'defaultValue', 'min', 'max', 'options', 'validation.minLength', 'validation.maxLength', 'validation.minSelections', 'validation.maxSelections'].includes(field)
-      };
-    });
+  const anchorRef = useRef<HTMLDivElement>(null);
 
-  if (errorMessages.length === 0) return null;
+  const items: SummaryItem[] = Object.entries(flattenErrors(errors))
+    .map(([path, error]) => ({
+      path,
+      message: error?.message || (typeof error === 'string' ? error : ''),
+    }))
+    .filter((item) => Boolean(item.message))
+    .map((item) => ({ ...item, message: translateMessage(item.message) }));
 
-  const globalErrors = errorMessages.filter(err => err.isGlobalError);
-  const fieldErrors = errorMessages.filter(err => !err.isGlobalError);
+  const signature = items.length
+    ? items.map((item) => `${item.path}=${item.message}`).join('|')
+    : null;
+  const settledItems = useSettledValue(items, signature);
+  const { mounted, visible } = usePresence(Boolean(settledItems));
+  // Keep the last list on screen while the banner collapses away.
+  const lastItemsRef = useRef<SummaryItem[]>([]);
+  if (settledItems) lastItemsRef.current = settledItems;
+
+  const root = anchorRef.current?.closest('form') ?? null;
+  const shownItems = lastItemsRef.current;
 
   return (
-    <div 
-      data-testid="validation-error-summary"
-      className="mb-6 p-4 bg-[var(--tf-error-bg)] dark:bg-red-900/20 border border-[var(--tf-error-bg-lg)] dark:border-red-800 rounded-lg"
-    >
-      <div className="flex items-start space-x-2">
-        <AlertTriangle className="w-4 h-4 text-destructive dark:text-red-400 mt-0.5 flex-shrink-0" />
-        <div className="flex-1">
-          <h4 className="text-sm font-medium text-destructive dark:text-red-200 mb-2">
-            {t('title')}
-          </h4>
-          <ul className="space-y-1 text-sm text-red-700 dark:text-red-300">
-            {globalErrors.map((err, index) => (
-              <li key={index} className="flex items-start space-x-1">
-                <span className="text-destructive mt-1">•</span>
-                <span>{String(err.message)}</span>
-              </li>
-            ))}
-            {fieldErrors.map((err, index) => (
-              <li key={index} className="flex items-start space-x-1">
-                <span className="text-destructive mt-1">•</span>
-                <span>
-                  <strong className="capitalize">{err.field}:</strong> {String(err.message)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+    <div ref={anchorRef} className="sticky bottom-3 z-10 !mt-0">
+      {mounted && shownItems.length > 0 && (
+        <ErrorCollapse visible={visible}>
+          <div className="mt-6 rounded-lg bg-white dark:bg-gray-900 shadow-lg">
+            <div
+              data-testid="validation-error-summary"
+              className="p-3 bg-[var(--tf-error-bg)] dark:bg-red-900/20 border border-[var(--tf-error-bg-lg)] dark:border-red-800 rounded-lg"
+            >
+              <div className="flex items-start space-x-2">
+                <AlertTriangle className="w-4 h-4 text-destructive dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-medium text-destructive dark:text-red-200 mb-1">
+                    {t('title')}
+                  </h4>
+                  <ul className="max-h-32 overflow-y-auto text-sm text-red-700 dark:text-red-300">
+                    {shownItems.map((item) => {
+                      const label = root ? findSettingLabel(root, item.path) : null;
+                      return (
+                        <li key={item.path}>
+                          <button
+                            type="button"
+                            onClick={() => goToSetting(anchorRef.current?.closest('form'), item.path)}
+                            className="group flex w-full items-start gap-1 rounded px-1 py-0.5 text-left hover:bg-[var(--tf-error-bg-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+                          >
+                            <span className="flex-1">
+                              {label && <strong className="font-medium">{label}: </strong>}
+                              {item.message}
+                            </span>
+                            <ChevronRight className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 opacity-50 group-hover:opacity-100" />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ErrorCollapse>
+      )}
     </div>
   );
 };
