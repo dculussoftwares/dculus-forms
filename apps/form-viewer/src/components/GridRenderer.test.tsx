@@ -175,6 +175,24 @@ describe('SinglePageForm grid rendering', () => {
     expect(inputNames(container.querySelector('form') as HTMLElement)).toEqual(['e']);
   });
 
+  it('keeps a later column mounted and focused when an earlier column collapses', () => {
+    const formPage = threeColumnPage();
+    const tree = (hidden: string[]) => (
+      <FormResponseContext.Provider value={withHidden(hidden)}>
+        <SinglePageForm page={formPage} onSubmit={vi.fn()} />
+      </FormResponseContext.Provider>
+    );
+    const { rerender, container } = render(tree([]));
+    const input = container.querySelector('input[name="y"]') as HTMLInputElement;
+    input.focus();
+    expect(document.activeElement).toBe(input);
+
+    rerender(tree(['x']));
+
+    expect(container.querySelector('input[name="y"]')).toBe(input);
+    expect(document.activeElement).toBe(input);
+  });
+
   it('adds no grid markup to a grid-less page', () => {
     const { container } = renderPage(page([text('a'), text('b')]));
 

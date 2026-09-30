@@ -439,6 +439,12 @@ describe('visibleColumns (D4)', () => {
     expect(visibleColumns(g, new Set(['a', 'b'])).map((c) => c.widthPercent)).toEqual([100]);
     expect(visibleColumns(g, new Set(['a', 'b', 'c']))).toEqual([]);
   });
+
+  it('keeps each column original index after earlier columns collapse', () => {
+    expect(visibleColumns(g).map((c) => c.index)).toEqual([0, 1, 2]);
+    expect(visibleColumns(g, new Set(['a'])).map((c) => c.index)).toEqual([1, 2]);
+    expect(visibleColumns(g, new Set(['b'])).map((c) => c.index)).toEqual([0, 2]);
+  });
 });
 
 describe('deserializeFormSchema', () => {

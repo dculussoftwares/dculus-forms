@@ -90,7 +90,8 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
       >
         {columns.map((column, index) => (
           <div
-            key={index}
+            // Original column index: a collapsing earlier column must not remount (and unfocus) later ones
+            key={column.index}
             className={COLUMN_CLASS}
             data-testid={`viewer-grid-column-${gridId}-${index}`}
           >

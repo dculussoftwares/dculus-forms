@@ -238,9 +238,9 @@ export const setColumnCount = (widths: readonly number[], count: number): number
 export const visibleColumns = (
   node: Extract<PageNode, { kind: 'grid' }>,
   hiddenFieldIds: ReadonlySet<string> = new Set()
-): { fields: FormField[]; widthPercent: number }[] => {
+): { index: number; fields: FormField[]; widthPercent: number }[] => {
   const kept = node.columns
-    .map((c) => ({ fields: c.fields.filter((f) => !hiddenFieldIds.has(f.id)), width: c.widthPercent }))
+    .map((c) => ({ index: c.index, fields: c.fields.filter((f) => !hiddenFieldIds.has(f.id)), width: c.widthPercent }))
     .filter((c) => c.fields.length > 0);
   if (kept.length === 0) return [];
 
@@ -256,5 +256,5 @@ export const visibleColumns = (
     floors[i] += 1;
     remainder -= 1;
   }
-  return kept.map((c, i) => ({ fields: c.fields, widthPercent: floors[i] }));
+  return kept.map((c, i) => ({ index: c.index, fields: c.fields, widthPercent: floors[i] }));
 };
