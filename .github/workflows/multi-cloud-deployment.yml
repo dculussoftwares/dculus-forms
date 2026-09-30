@@ -1697,9 +1697,18 @@ jobs:
           pnpm --filter backend exec tsx src/scripts/seed-e2e-subscription.ts
           echo "✅ E2E subscription seeded — Advanced plan, counters reset"
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('source/**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      # Hooks only launch chromium; installing firefox/webkit too was pure overhead.
       - name: Install Playwright browsers
         working-directory: ./source
-        run: pnpm exec playwright install --with-deps
+        run: pnpm exec playwright install chromium --with-deps
 
       - name: Run e2e tests against Cloudflare Pages
         working-directory: ./source

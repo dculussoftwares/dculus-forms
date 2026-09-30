@@ -425,10 +425,22 @@ jobs:
           retention-days: 1
 
   e2e-local:
-    name: E2E Tests (Local Runner)
+    name: E2E Tests (Local Runner, ${{ matrix.shard }})
     runs-on: ubuntu-latest
     needs: [build-shared-packages, build-backend]
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: '1of3'
+            command: pnpm test:e2e --shard 1/3
+          - shard: '2of3'
+            command: pnpm test:e2e --shard 2/3
+          - shard: '3of3'
+            command: pnpm test:e2e --shard 3/3
+          - shard: collab
+            command: pnpm test:e2e:collab
 
     services:
       postgres:
@@ -573,18 +585,15 @@ jobs:
           wait $FRONTEND_TRACK
           wait $PLAYWRIGHT_TRACK
 
-      - name: Run E2E tests
-        run: pnpm test:e2e
-
-      - name: Run E2E collaboration tests (serial)
-        run: pnpm test:e2e:collab
+      - name: Run E2E tests (${{ matrix.shard }})
+        run: ${{ matrix.command }}
 
       - name: Upload E2E screenshots on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-local-screenshots
-          path: test-results/screenshots/
+          name: e2e-local-screenshots-${{ matrix.shard }}
+          path: test-results/e2e/screenshots/
           if-no-files-found: ignore
 
   create-release-artifacts:
