@@ -11,7 +11,8 @@
     "phone": "Phone Number",
     "formField": "Form Field",
     "richText": "Rich Text",
-    "fileUpload": "File Upload"
+    "fileUpload": "File Upload",
+    "columns": "Columns"
   },
   "header": {
     "settings": "Settings",

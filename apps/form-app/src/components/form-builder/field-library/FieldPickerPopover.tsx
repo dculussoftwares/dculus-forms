@@ -9,14 +9,17 @@ import { cn } from '@dculus/utils';
 import { FieldType } from '@dculus/types';
 import { Sparkles } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import type { GridTarget } from '../../../store/types/store.types';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
 import { useQuizMode } from '../../../contexts/QuizModeContext';
+import { useGridLayoutEnabled } from '../../../contexts/GridLayoutFlagContext';
 import {
   DraggableFieldType,
   getCategoriesConfig,
-  getFieldTypesConfig,
+  getFieldTypeKey,
+  getPaletteFieldTypesConfig,
   type FieldTypeConfig,
 } from '../FieldTypesPanel';
 import {
@@ -30,11 +33,14 @@ const CATEGORY_ORDER: FieldTypeConfig['category'][] = [
   'choice',
   'content',
   'advanced',
+  'layout',
 ];
 
 interface FieldPickerPopoverProps {
   pageId: string;
   insertIndex?: number;
+  /** Add into a grid column instead of the page's top level; layout tiles are hidden (grids never nest). */
+  gridTarget?: GridTarget;
   children: React.ReactNode;
   align?: 'start' | 'center' | 'end';
   side?: 'top' | 'right' | 'bottom' | 'left';
@@ -48,6 +54,7 @@ interface FieldPickerPopoverProps {
 export const FieldPickerPopover: React.FC<FieldPickerPopoverProps> = ({
   pageId,
   insertIndex,
+  gridTarget,
   children,
   align = 'center',
   side = 'bottom',
@@ -73,9 +80,10 @@ export const FieldPickerPopover: React.FC<FieldPickerPopoverProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const { addField, addFieldAtIndex, pages, setSelectedField } = useFormBuilderStore();
+  const { addField, addFieldAtIndex, addFieldToGrid, pages, setSelectedField } = useFormBuilderStore();
   const { createFieldData } = useFieldCreation();
   const { enabled: isQuizModeEnabled } = useQuizMode();
+  const gridLayoutEnabled = useGridLayoutEnabled() && !gridTarget;
   const recent = useRecentFieldTypes();
 
   const currentPage = useMemo(
@@ -83,8 +91,15 @@ export const FieldPickerPopover: React.FC<FieldPickerPopoverProps> = ({
     [pages, pageId]
   );
 
-  const FIELD_TYPES = useMemo(() => getFieldTypesConfig(tFieldTypes), [tFieldTypes]);
+  const FIELD_TYPES = useMemo(
+    () => getPaletteFieldTypesConfig(tFieldTypes, gridLayoutEnabled),
+    [tFieldTypes, gridLayoutEnabled]
+  );
   const CATEGORIES = useMemo(() => getCategoriesConfig(tFieldTypes), [tFieldTypes]);
+  const categoryOrder = useMemo(
+    () => CATEGORY_ORDER.filter((category) => category !== 'layout' || gridLayoutEnabled),
+    [gridLayoutEnabled]
+  );
 
   const smartSuggestions = useMemo(
     () => getSmartFieldSuggestions(currentPage?.fields || [], FIELD_TYPES, isQuizModeEnabled),
@@ -127,6 +142,16 @@ export const FieldPickerPopover: React.FC<FieldPickerPopoverProps> = ({
 
     const previousFieldIds = new Set(currentPage?.fields.map((f) => f.id) ?? []);
     const fieldData = createFieldData(fieldType);
+
+    if (gridTarget) {
+      const newFieldId = addFieldToGrid(pageId, fieldType.type as FieldType, fieldData, gridTarget);
+      recordRecentFieldType(fieldType.type as FieldType);
+      setIsOpen(false);
+      setSearch('');
+      setSelectedCategory('all');
+      if (newFieldId) setTimeout(() => setSelectedField(newFieldId), 80);
+      return;
+    }
 
     if (insertIndex !== undefined) {
       addFieldAtIndex(pageId, fieldType.type as FieldType, fieldData, insertIndex);
@@ -200,7 +225,7 @@ export const FieldPickerPopover: React.FC<FieldPickerPopoverProps> = ({
             <span className="text-xs font-semibold uppercase tracking-wider text-[#655d67] dark:text-gray-300">
               {title || t('title')}
             </span>
-            {insertIndex !== undefined && (
+            {(insertIndex !== undefined || gridTarget) && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--tf-icon-lavender)] text-[#5c2e6b] font-medium">
                 {t('insertHere')}
               </span>
@@ -234,7 +259,7 @@ export const FieldPickerPopover: React.FC<FieldPickerPopoverProps> = ({
             >
               {t('allCategories')}
             </button>
-            {CATEGORY_ORDER.map((category) => (
+            {categoryOrder.map((category) => (
               <button
                 key={category}
                 type="button"
@@ -296,7 +321,7 @@ export const FieldPickerPopover: React.FC<FieldPickerPopoverProps> = ({
             )}
 
             {/* Categorized Fields */}
-            {CATEGORY_ORDER.map((category) => {
+            {categoryOrder.map((category) => {
               const fields = grouped[category];
               if (!fields?.length) return null;
               return (
@@ -307,7 +332,7 @@ export const FieldPickerPopover: React.FC<FieldPickerPopoverProps> = ({
                   <div className="grid grid-cols-3 gap-2">
                     {fields.map((fieldType) => (
                       <DraggableFieldType
-                        key={fieldType.type}
+                        key={getFieldTypeKey(fieldType)}
                         fieldType={fieldType}
                         categories={CATEGORIES}
                         idPrefix={idPrefix}

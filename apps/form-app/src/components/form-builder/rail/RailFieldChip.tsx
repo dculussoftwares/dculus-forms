@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { useNavigate, useParams } from 'react-router';
 import { Zap } from 'lucide-react';
-import { FormField } from '@dculus/types';
+import { FormField, isLayoutField } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
@@ -32,6 +32,8 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
   isSelected,
 }) => {
   const { t } = useTranslation('journeyRail');
+  const { t: tGrid } = useTranslation('gridLayout');
+  const isGrid = isLayoutField(field);
   const navigate = useNavigate();
   const { formId } = useParams<{ formId: string }>();
   const permissions = useFormPermissions();
@@ -52,6 +54,7 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
       field,
       pageId,
       index,
+      ...(isGrid && { isGrid: true }),
     },
     disabled: !canReorder,
   });
@@ -95,7 +98,9 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
         <Icon className="h-3 w-3" />
       </span>
       <span className="min-w-0 flex-1 truncate">
-        {('label' in field && typeof field.label === 'string' && field.label) || field.type}
+        {isGrid
+          ? tGrid('block.title', { values: { count: field.columnWidths.length } })
+          : ('label' in field && typeof field.label === 'string' && field.label) || field.type}
       </span>
       {ruleCount > 0 && (
         <button

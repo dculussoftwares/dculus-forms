@@ -7,7 +7,8 @@
     "input": "Input Fields",
     "choice": "Choice Fields",
     "content": "Content",
-    "advanced": "Advanced"
+    "advanced": "Advanced",
+    "layout": "Layout"
   },
   "fieldTypes": {
     "shortText": {
@@ -53,6 +54,18 @@
     "fileUpload": {
       "label": "File Upload",
       "description": "Allow respondents to upload files"
+    },
+    "oneColumn": {
+      "label": "1 Column",
+      "description": "A single-column layout block"
+    },
+    "twoColumns": {
+      "label": "2 Columns",
+      "description": "Place questions side by side in two columns"
+    },
+    "threeColumns": {
+      "label": "3 Columns",
+      "description": "Place questions side by side in three columns"
     }
   }
 }

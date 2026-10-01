@@ -4,6 +4,29 @@
 > Scope: form-app (builder), form-viewer (public), `@dculus/types`, `@dculus/ui`, `@dculus/utils`, backend (Hocuspocus + consumers)
 > Reference behaviour: Zoho Forms "Grid" (1 / 2 / 3-column containers, per-column % widths, drag-to-resize divider, floating settings/delete toolbar, drag fields into columns)
 
+### Implementation status (updated 2026-10-01)
+
+| Phase | Scope | State |
+|---|---|---|
+| 0b | Pre-existing bug fixes (visual/raw index, `onDragCancel`, rich-text serialize, `deleted` seeding) | Merged #380 |
+| 0c | Golden baselines (store, Hocuspocus, zod, viewer, deserialization) | Merged #381; **Playwright screenshot baselines still pending** (generate in CI/Linux) |
+| 1a | `GridField`, `grid.ts` helpers, constants, validation | Merged #382 |
+| 1b | Y.js / CollaborationManager / Hocuspocus plumbing | Merged #383 |
+| 1c | Consumer skips (analytics, PDF, sheets, AI, metadata, conditions) | Merged #384 |
+| 2a | Viewer `GridRenderer` (container queries, `VITE_GRID_RENDER=stack`) | Merged #385 |
+| 2b | Viewer validation / submission skips | Merged #388 |
+| 3a | Store grid actions + `involvesGrid` branches + permission wrapper | Merged #389 |
+| 3b | Builder authoring behind `VITE_ENABLE_GRID_LAYOUT` | **In progress — PR #391** |
+| 4 | Builder polish (§8.7 keyboard, §8.8 rail/counts, undo callers, a11y, mobile) | Not started |
+| 5 | Integrations (optional) | Not started |
+| 6 | E2E suites, rollout, flag removal, docs | Not started |
+
+**Phase 3b — done in #391:** palette tiles (1/2/3 columns, flag-gated) and creation presets; en/ta translations (`fieldTypesPanel` layout keys, new `gridLayout` namespace, `fieldSettingsHeader.columns`); `grid_field` icon/label maps; canvas `GridBlock` (`tabs/PageBuilderGridBlock.tsx`) with columns, slot indicators, empty-column add, toolbar (settings/duplicate/delete with undo); compact `FieldCard` density with translated `⋯` menu (`tabs/CompactCardMenu.tsx`); `DropIndicator.beforeNodeId`; grid-aware `FieldListWithDropZones` (grid-less pages render the same DOM); DnD `grid-slot`/`grid-column` branches, same-page `placeField` on grid pages, slim grid overlay; collision wrapper (`tabs/gridCollision.ts`, identity without grid droppables); grid-form-only droppable re-measuring; column resize (pointer capture, 5 %/1 % snap, keyboard, single commit); `GridSettings` panel; picker `gridTarget`. Tests: collision (mutation-checked), palette/picker, `GridSettings`, `GridBlock` — form-app jest 569 passed, golden 17/17 unchanged, tsc clean, lint 0 errors.
+
+**Phase 3b — remaining:** browser QA of drag into/between/out of columns (flag on), backend + viewer gates and pre-push builds, CI, review, merge.
+
+**Known gaps deferred to Phase 4:** the journey rail lists the grid as a flat `grid_field` chip (grouping and `countQuestionFields` counts are §8.8); sidebar/keyboard delete of a grid uses `removeField` (works, but no `restoreGrid` toast yet); dnd announcements ("column N of M").
+
 ### What changed in v2
 - **Existing store actions get guarded grid-aware branches** (§7.4). v1 claimed they could stay untouched; they cannot (moving a grid with `reorderFields` leaves its children behind, `duplicatePage` orphans `gridId`, `convertFieldType` drops it). The store is the only chokepoint covering canvas, rail, keyboard, card menus, AI and the permission wrapper.
 - **No server write-back.** The server never writes to a live Y.Doc and `Form.formSchema` is a creation-time snapshot (§3.8). Canonicalization is read-side plus client write-side only (§6).

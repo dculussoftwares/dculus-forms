@@ -1,0 +1,45 @@
+{
+  "block": {
+    "ariaLabel": "{{count}}-column layout",
+    "title": "{{count}} columns",
+    "dragHandle": "Drag to move layout",
+    "settings": "Layout settings",
+    "duplicate": "Duplicate layout",
+    "delete": "Delete layout",
+    "emptyColumn": "Drag and drop fields here",
+    "columnAriaLabel": "Column {{index}} of {{total}}",
+    "resizeHandle": "Resize columns {{left}} and {{right}}",
+    "moving": "Moving layout",
+    "deleted": "Layout deleted",
+    "undo": "Undo"
+  },
+  "card": {
+    "moreActions": "More actions",
+    "settings": "Settings",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "duplicate": "Duplicate",
+    "moveToPage": "Move to page",
+    "copyToPage": "Copy to page",
+    "delete": "Delete"
+  },
+  "settings": {
+    "title": "Column layout",
+    "description": "Place questions side by side. Columns stack on narrow screens.",
+    "columnCount": "Number of columns",
+    "columnWidths": "Column widths (%)",
+    "columnWidthLabel": "Column {{index}} width",
+    "widthsTotal": "Total: {{total}}%",
+    "widthsMustSum": "Widths must add up to 100% and each column must be at least {{min}}%.",
+    "apply": "Apply widths",
+    "distributeEqually": "Distribute equally",
+    "actions": "Actions",
+    "duplicate": "Duplicate layout",
+    "ungroup": "Ungroup",
+    "ungroupHint": "Keeps the questions and removes the columns.",
+    "deleteWithFields": "Delete layout and its questions",
+    "columnsMerged": "Questions from removed columns moved to column {{column}}",
+    "deleted": "Layout deleted",
+    "undo": "Undo"
+  }
+}

@@ -20,6 +20,8 @@ import {
   FileCode,
   GripVertical,
   Upload,
+  Phone,
+  Columns2,
 } from 'lucide-react';
 
 export type CompactFieldCardVariant = 'normal' | 'dragSource' | 'overlay';
@@ -41,6 +43,8 @@ const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
   [FieldType.DATE_FIELD]: 'Date',
   [FieldType.RICH_TEXT_FIELD]: 'Rich Text',
   [FieldType.FILE_UPLOAD_FIELD]: 'File Upload',
+  [FieldType.PHONE_NUMBER_FIELD]: 'Phone Number',
+  [FieldType.GRID_FIELD]: 'Columns',
 };
 
 const getFieldIcon = (type: FieldType): React.ReactNode => {
@@ -66,6 +70,10 @@ const getFieldIcon = (type: FieldType): React.ReactNode => {
       return <Upload className={iconClass} />;
     case FieldType.RICH_TEXT_FIELD:
       return <FileCode className={iconClass} />;
+    case FieldType.PHONE_NUMBER_FIELD:
+      return <Phone className={iconClass} />;
+    case FieldType.GRID_FIELD:
+      return <Columns2 className={iconClass} />;
     default:
       return <Type className={iconClass} />;
   }

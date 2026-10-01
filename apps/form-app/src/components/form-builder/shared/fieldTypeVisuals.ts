@@ -4,6 +4,7 @@ import {
   CheckSquare,
   ChevronDown,
   Circle,
+  Columns2,
   FileCode,
   FileText,
   Hash,
@@ -39,6 +40,7 @@ export const getFieldTypeConfig = (
     phone_number_field: { icon: Phone, category: 'input', label: 'Phone Number' },
     rich_text_field: { icon: FileCode, category: 'content', label: 'Rich Text' },
     file_upload_field: { icon: Upload, category: 'advanced', label: 'File Upload' },
+    grid_field: { icon: Columns2, category: 'layout', label: 'Columns' },
   };
   return configs[type] || { icon: Type, category: 'input', label: 'Unknown' };
 };
