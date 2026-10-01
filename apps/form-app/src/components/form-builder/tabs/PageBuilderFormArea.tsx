@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { ScrollArea, Button, toast } from '@dculus/ui';
-import { FormPage, FormField, FieldType } from '@dculus/types';
+import { FormPage, FormField, FieldType, buildPageTree, pageHasGrid } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { Plus } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
@@ -9,6 +9,7 @@ import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
 import { useDroppable } from '@dnd-kit/core';
 import { DraggableFieldCard } from './PageBuilderFieldCard';
+import { GridBlock } from './PageBuilderGridBlock';
 import { FieldPickerPopover } from '../field-library/FieldPickerPopover';
 import { getFieldTypesConfig } from '../FieldTypesPanel';
 import { recordRecentFieldType } from '../field-library/fieldLibraryStorage';
@@ -147,7 +148,9 @@ export const DropIndicator: React.FC<{
   index: number;
   pageId: string;
   isAnyDragActive?: boolean;
-}> = ({ index, pageId, isAnyDragActive = false }) => {
+  /** Grid pages only: the top-level node this slot sits before (null = end of page). */
+  beforeNodeId?: string | null;
+}> = ({ index, pageId, isAnyDragActive = false, beforeNodeId }) => {
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
   const { t } = useTranslation('pageBuilderTab');
@@ -157,6 +160,7 @@ export const DropIndicator: React.FC<{
       type: 'field-insert',
       pageId,
       insertIndex: index,
+      ...(beforeNodeId !== undefined && { beforeNodeId }),
     },
     disabled: !canEdit,
   });
@@ -225,6 +229,71 @@ export const DropIndicator: React.FC<{
 // =============================================================================
 
 /**
+ * Top-level nodes of a page that has a grid (§8.2): plain fields and grid blocks, with insert slots
+ * between nodes. Slot indexes count the canonical visible order, so the insert popover's
+ * `addFieldAtIndex` lands before the same node the slot's `beforeNodeId` names.
+ */
+const GridAwareNodeList: React.FC<{
+  fields: FormField[];
+  pageId: string;
+  recentlyDroppedFieldId?: string | null;
+  isDelayingExpansion: boolean;
+  isAnyDragActive: boolean;
+}> = ({ fields, pageId, recentlyDroppedFieldId, isDelayingExpansion, isAnyDragActive }) => {
+  const nodes = useMemo(() => buildPageTree(fields), [fields]);
+  const indexById = useMemo(() => new Map(fields.map((f, i) => [f.id, i])), [fields]);
+
+  let cursor = 0;
+  const items = nodes.map((node) => {
+    const start = cursor;
+    const nodeId = node.kind === 'field' ? node.field.id : node.grid.id;
+    cursor += node.kind === 'field' ? 1 : 1 + node.columns.reduce((s, c) => s + c.fields.length, 0);
+    return { node, nodeId, start };
+  });
+
+  return (
+    <>
+      {items.map(({ node, nodeId, start }) => (
+        <div key={nodeId}>
+          <DropIndicator
+            index={start}
+            pageId={pageId}
+            isAnyDragActive={isAnyDragActive}
+            beforeNodeId={nodeId}
+          />
+          {node.kind === 'field' ? (
+            <DraggableFieldCard
+              field={node.field}
+              index={indexById.get(node.field.id) ?? start}
+              pageId={pageId}
+              totalFields={fields.length}
+              isRecentlyDropped={node.field.id === recentlyDroppedFieldId}
+              isDelayingExpansion={isDelayingExpansion}
+            />
+          ) : (
+            <GridBlock
+              grid={node.grid}
+              columns={node.columns}
+              pageId={pageId}
+              pageFields={fields}
+              recentlyDroppedFieldId={recentlyDroppedFieldId}
+              isDelayingExpansion={isDelayingExpansion}
+              isAnyDragActive={isAnyDragActive}
+            />
+          )}
+        </div>
+      ))}
+      <DropIndicator
+        index={cursor}
+        pageId={pageId}
+        isAnyDragActive={isAnyDragActive}
+        beforeNodeId={null}
+      />
+    </>
+  );
+};
+
+/**
  * FieldListWithDropZones - Renders fields with drop/insert indicators and bottom Add content button
  */
 export const FieldListWithDropZones: React.FC<{
@@ -243,9 +312,20 @@ export const FieldListWithDropZones: React.FC<{
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
   const { t } = useTranslation('pageBuilderTab');
+  const hasGrid = pageHasGrid(fields);
 
   return (
     <div className="space-y-0.5">
+      {hasGrid ? (
+        <GridAwareNodeList
+          fields={fields}
+          pageId={pageId}
+          recentlyDroppedFieldId={recentlyDroppedFieldId}
+          isDelayingExpansion={isDelayingExpansion}
+          isAnyDragActive={isAnyDragActive}
+        />
+      ) : (
+      <>
       <DropIndicator index={0} pageId={pageId} isAnyDragActive={isAnyDragActive} />
 
       {fields.map((field, index) => (
@@ -261,6 +341,8 @@ export const FieldListWithDropZones: React.FC<{
           <DropIndicator index={index + 1} pageId={pageId} isAnyDragActive={isAnyDragActive} />
         </div>
       ))}
+      </>
+      )}
 
       {/* Bottom "+ Add content" button — left-aligned to avoid overlap with centered floating Ask AI pill */}
       {canEdit && (

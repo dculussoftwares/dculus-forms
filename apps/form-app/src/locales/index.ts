@@ -52,6 +52,8 @@ import enTabNavigation from './en/tabNavigation.json';
 import taTabNavigation from './ta/tabNavigation.json';
 import enFieldTypesPanel from './en/fieldTypesPanel.json';
 import taFieldTypesPanel from './ta/fieldTypesPanel.json';
+import enGridLayout from './en/gridLayout.json';
+import taGridLayout from './ta/gridLayout.json';
 import enDraggablePageItem from './en/draggablePageItem.json';
 import taDraggablePageItem from './ta/draggablePageItem.json';
 import enJourneyRail from './en/journeyRail.json';
@@ -298,6 +300,7 @@ const enTranslations = {
   pdfGenerators: enPdfGenerators,
   tabNavigation: enTabNavigation,
   fieldTypesPanel: enFieldTypesPanel,
+  gridLayout: enGridLayout,
   draggablePageItem: enDraggablePageItem,
   journeyRail: enJourneyRail,
   coachMarks: enCoachMarks,
@@ -437,6 +440,7 @@ const taTranslations = {
   pdfGenerators: taPdfGenerators,
   tabNavigation: taTabNavigation,
   fieldTypesPanel: taFieldTypesPanel,
+  gridLayout: taGridLayout,
   draggablePageItem: taDraggablePageItem,
   journeyRail: taJourneyRail,
   coachMarks: taCoachMarks,
