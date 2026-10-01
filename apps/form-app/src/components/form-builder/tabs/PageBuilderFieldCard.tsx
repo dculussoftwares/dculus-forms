@@ -8,6 +8,7 @@ import { useConditionReferenceCounts } from '../../../hooks/useConditionReferenc
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useQuizMode } from '../../../contexts/QuizModeContext';
 import { hasAnswerKey } from '../../../utils/quizGrading';
+import type { GridTarget } from '../../../store/types/store.types';
 import { CompactCardMenu } from './CompactCardMenu';
 
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
@@ -609,6 +610,8 @@ export const DraggableFieldCard: React.FC<{
   isRecentlyDropped?: boolean;
   isDelayingExpansion?: boolean;
   density?: FieldCardDensity;
+  /** Grid children: one-step moves inside their column (absent = no neighbour that way). */
+  columnMoves?: { up?: GridTarget; down?: GridTarget };
 }> = ({
   field,
   index,
@@ -617,6 +620,7 @@ export const DraggableFieldCard: React.FC<{
   isRecentlyDropped = false,
   isDelayingExpansion = false,
   density,
+  columnMoves,
 }) => {
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
@@ -631,6 +635,7 @@ export const DraggableFieldCard: React.FC<{
     moveFieldBetweenPages,
     copyFieldToPage,
     updateField,
+    placeField,
     pages,
   } = useFormBuilderStore();
   const { t } = useTranslation('pageBuilderTab');
@@ -699,6 +704,21 @@ export const DraggableFieldCard: React.FC<{
     }
   };
 
+  const placeInColumn = (target: GridTarget) => () => {
+    placeField({ pageId, fieldId: field.id, target });
+  };
+  const isGridChild = columnMoves !== undefined;
+  const moveUp = isGridChild
+    ? columnMoves.up && placeInColumn(columnMoves.up)
+    : index > 0
+      ? handleMoveUp
+      : undefined;
+  const moveDown = isGridChild
+    ? columnMoves.down && placeInColumn(columnMoves.down)
+    : index < totalFields - 1
+      ? handleMoveDown
+      : undefined;
+
   const handleMoveToPage = (targetPageId: string) => {
     moveFieldBetweenPages(pageId, targetPageId, field.id);
   };
@@ -749,10 +769,8 @@ export const DraggableFieldCard: React.FC<{
         onClick={handleClick}
         onDelete={canEdit ? handleDelete : undefined}
         onDuplicate={canEdit ? handleDuplicate : undefined}
-        onMoveUp={canReorder && index > 0 ? handleMoveUp : undefined}
-        onMoveDown={
-          canReorder && index < totalFields - 1 ? handleMoveDown : undefined
-        }
+        onMoveUp={canReorder ? moveUp : undefined}
+        onMoveDown={canReorder ? moveDown : undefined}
         onMoveToPage={canEdit ? handleMoveToPage : undefined}
         onCopyToPage={canEdit ? handleCopyToPage : undefined}
         onUpdateLabel={canEdit && hasLabel ? handleUpdateLabel : undefined}

@@ -12,9 +12,13 @@ const mockRestoreGrid = jest.fn(() => true);
 const mockSetSelectedField = jest.fn();
 const mockToast = jest.fn();
 let mockCanEdit = true;
+let mockIsConnected = true;
 
 jest.mock('@/store/useFormBuilderStore', () => {
   const storeInstance = {
+    get isConnected() {
+      return mockIsConnected;
+    },
     selectedFieldId: null,
     setSelectedField: mockSetSelectedField,
     setGridColumnWidths: mockSetGridColumnWidths,
@@ -52,8 +56,13 @@ jest.mock('@/hooks/useTranslation', () => ({
 
 // The real card pulls in the router, quiz context and condition counts; the block only decides what it gets
 jest.mock('../PageBuilderFieldCard', () => ({
-  DraggableFieldCard: ({ field, index, density }: any) => (
-    <div data-testid={`field-content-${index + 1}`} data-field-id={field.id} data-density={density} />
+  DraggableFieldCard: ({ field, index, density, columnMoves }: any) => (
+    <div
+      data-testid={`field-content-${index + 1}`}
+      data-field-id={field.id}
+      data-density={density}
+      data-column-moves={JSON.stringify(columnMoves)}
+    />
   ),
 }));
 
@@ -113,6 +122,28 @@ describe('GridBlock', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCanEdit = true;
+    mockIsConnected = true;
+  });
+
+  it('gives column children one-step moves inside their column only', () => {
+    renderBlock();
+    const [a, b] = within(screen.getByTestId('grid-column-g1-0')).getAllByTestId(/^field-content-/);
+    // a is first: no up; down lands after b (end of column)
+    expect(JSON.parse(a.getAttribute('data-column-moves')!)).toEqual({
+      down: { gridId: 'g1', column: 0, beforeFieldId: null },
+    });
+    // b is last: up lands before a; no down
+    expect(JSON.parse(b.getAttribute('data-column-moves')!)).toEqual({
+      up: { gridId: 'g1', column: 0, beforeFieldId: 'a' },
+    });
+  });
+
+  it('undo of a grid delete does nothing once the editor has gone offline', () => {
+    renderBlock();
+    fireEvent.click(screen.getByTestId('grid-delete-button-g1'));
+    mockIsConnected = false;
+    mockToast.mock.calls[0][0].action.onClick();
+    expect(mockRestoreGrid).not.toHaveBeenCalled();
   });
 
   it('renders the block, its columns, compact children and an empty-column placeholder', () => {

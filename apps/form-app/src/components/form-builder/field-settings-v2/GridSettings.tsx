@@ -36,6 +36,8 @@ const isValidWidths = (widths: number[]): boolean => {
 export const GridSettings: React.FC<GridSettingsProps> = ({ field, isConnected, isReadOnly = false }) => {
   const { t } = useTranslation('gridLayout');
   const isEditable = isConnected && !isReadOnly;
+  const isEditableRef = React.useRef(isEditable);
+  isEditableRef.current = isEditable;
   const {
     pages,
     setGridColumnWidths,
@@ -88,6 +90,7 @@ export const GridSettings: React.FC<GridSettingsProps> = ({ field, isConnected, 
   };
 
   const handleDelete = () => {
+    if (!isEditable) return;
     const snapshot = removeGrid(pageId, field.id, { deleteChildren: true });
     if (!snapshot) return;
     setSelectedField(null);
@@ -96,6 +99,8 @@ export const GridSettings: React.FC<GridSettingsProps> = ({ field, isConnected, 
       action: {
         label: t('settings.undo'),
         onClick: () => {
+          // Re-check at click time: the toast outlives this panel and editability can change
+          if (!isEditableRef.current || !useFormBuilderStore.getState().isConnected) return;
           if (restoreGrid(pageId, snapshot)) setSelectedField(field.id);
         },
       },

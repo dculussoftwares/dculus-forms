@@ -181,6 +181,13 @@ const GridColumn: React.FC<GridColumnProps> = React.memo(
               isRecentlyDropped={field.id === recentlyDroppedFieldId}
               isDelayingExpansion={isDelayingExpansion}
               density="compact"
+              columnMoves={{
+                up: n > 0 ? { gridId, column: column.index, beforeFieldId: fields[n - 1].id } : undefined,
+                down:
+                  n < fields.length - 1
+                    ? { gridId, column: column.index, beforeFieldId: fields[n + 2]?.id ?? null }
+                    : undefined,
+              }}
             />
             <ColumnDropIndicator
               pageId={pageId}
@@ -343,6 +350,8 @@ export const GridBlock: React.FC<GridBlockProps> = ({
   const { t } = useTranslation('gridLayout');
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
+  const canEditRef = React.useRef(canEdit);
+  canEditRef.current = canEdit;
   const canReorder = permissions.canReorderFields();
   const {
     selectedFieldId,
@@ -401,6 +410,7 @@ export const GridBlock: React.FC<GridBlockProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canEdit) return;
     const snapshot = removeGrid(pageId, grid.id, { deleteChildren: true });
     if (!snapshot) return;
     if (isSelected) setSelectedField(null);
@@ -409,6 +419,8 @@ export const GridBlock: React.FC<GridBlockProps> = ({
       action: {
         label: t('block.undo'),
         onClick: () => {
+          // Re-check at click time: the toast outlives this block and editability can change
+          if (!canEditRef.current || !useFormBuilderStore.getState().isConnected) return;
           if (restoreGrid(pageId, snapshot)) setSelectedField(grid.id);
         },
       },

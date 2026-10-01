@@ -11,9 +11,13 @@ const mockRemoveGrid = jest.fn(() => ({ gridId: 'g1', fieldIds: ['g1', 'a'] }));
 const mockRestoreGrid = jest.fn(() => true);
 const mockSetSelectedField = jest.fn();
 const mockToast = jest.fn();
+let mockIsConnected = true;
 
 jest.mock('@/store/useFormBuilderStore', () => {
   const storeInstance = {
+    get isConnected() {
+      return mockIsConnected;
+    },
     pages: [{ id: 'page-1', title: 'Page 1', fields: [{ id: 'g1', type: 'grid_field' }] }],
     setGridColumnWidths: mockSetGridColumnWidths,
     duplicateGrid: mockDuplicateGrid,
@@ -66,7 +70,10 @@ const renderSettings = (widths: number[], props: Partial<React.ComponentProps<ty
   render(<GridSettings field={new GridField('g1', widths)} isConnected {...props} />);
 
 describe('GridSettings', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockIsConnected = true;
+  });
 
   it('shows the current column count and widths', () => {
     renderSettings([60, 40]);
@@ -142,6 +149,22 @@ describe('GridSettings', () => {
     action.onClick();
     expect(mockRestoreGrid).toHaveBeenCalledWith('page-1', { gridId: 'g1', fieldIds: ['g1', 'a'] });
     expect(mockSetSelectedField).toHaveBeenLastCalledWith('g1');
+  });
+
+  it('undo does nothing once the editor has gone offline', () => {
+    renderSettings([50, 50]);
+    fireEvent.click(screen.getByTestId('grid-settings-delete'));
+    mockIsConnected = false;
+    mockToast.mock.calls[0][0].action.onClick();
+    expect(mockRestoreGrid).not.toHaveBeenCalled();
+  });
+
+  it('undo does nothing when editing was revoked after the delete', () => {
+    const { rerender } = renderSettings([50, 50]);
+    fireEvent.click(screen.getByTestId('grid-settings-delete'));
+    rerender(<GridSettings field={new GridField('g1', [50, 50])} isConnected isReadOnly />);
+    mockToast.mock.calls[0][0].action.onClick();
+    expect(mockRestoreGrid).not.toHaveBeenCalled();
   });
 
   it('read-only: no writes and no actions', () => {
