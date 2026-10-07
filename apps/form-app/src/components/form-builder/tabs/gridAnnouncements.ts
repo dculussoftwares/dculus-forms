@@ -11,7 +11,7 @@ type Translate = (key: string, options?: { values?: Record<string, string | numb
 
 const labelOf = (active: Active, t: Translate): string => {
   const data = active.data.current;
-  const label = data?.field?.label ?? data?.fieldType?.label;
+  const label = data?.field?.label ?? data?.fieldType?.label ?? data?.page?.title;
   return typeof label === 'string' && label.trim() ? label : t('dnd.item');
 };
 

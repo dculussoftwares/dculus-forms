@@ -53,6 +53,11 @@ describe('createGridAnnouncements', () => {
     expect(announcements.onDragCancel({ active, over: null } as any)).toBe('dnd.cancelled {"label":"Email"}');
   });
 
+  it('announces a dragged page by its title', () => {
+    const page = { ...active, data: { current: { type: 'page-item', page: pages[0] } } };
+    expect(announcements.onDragStart({ active: page })).toBe('dnd.picked {"label":"Page"}');
+  });
+
   it('falls back to a generic name for an unlabelled drag', () => {
     const unlabelled = { ...active, data: { current: { type: 'field-type', fieldType: { label: '' } } } };
     expect(announcements.onDragStart({ active: unlabelled })).toBe('dnd.picked {"label":"dnd.item"}');

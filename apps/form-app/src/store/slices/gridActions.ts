@@ -619,6 +619,7 @@ export const createGridActions = (get: StoreGetter) => {
         console.warn('Cannot move field to same page - use reorderFields instead');
         return;
       }
+      const movedIds = new Set<string>();
       onPages([sourcePageId, targetPageId], ([sourcePage, targetPage]) => {
         const source = fieldsOfPage(sourcePage);
         const self = source ? shadowsOf(source).find((s) => s.id === fieldId) : undefined;
@@ -638,6 +639,7 @@ export const createGridActions = (get: StoreGetter) => {
                 ...shadows.filter((s) => s.deleted && !isLayoutField(s) && s.gridId === field.id),
               ]
             : [field];
+          taken.forEach((s) => movedIds.add(s.id));
           const takenMaps = taken.map((s) => source.get(shadows.indexOf(s)));
           const moved = takenMaps.map((map) =>
             isLayoutField(field) ? recreateFieldMap(map) : recreateFieldMap(map, clearLayout)
@@ -651,9 +653,10 @@ export const createGridActions = (get: StoreGetter) => {
         });
       });
 
+      // The selection follows the move, including a selected question inside a moved grid
       const { selectedFieldId, setSelection } = get() as any;
-      if (selectedFieldId === fieldId) {
-        setSelection({ kind: 'field', fieldId, pageId: targetPageId });
+      if (selectedFieldId && movedIds.has(selectedFieldId)) {
+        setSelection({ kind: 'field', fieldId: selectedFieldId, pageId: targetPageId });
       }
     },
 

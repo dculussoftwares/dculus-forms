@@ -85,7 +85,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 dark:text-primary dark:bg-primary/10 dark:hover:bg-primary/20 rounded-lg h-auto"
                 >
                   <ArrowRight className="w-3 h-3" />
-                  <span>Move</span>
+                  <span>{t('actions.move')}</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -93,7 +93,7 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 dark:text-purple-400 dark:bg-purple-950/50 dark:hover:bg-purple-950 rounded-lg h-auto"
                 >
                   <Copy className="w-3 h-3" />
-                  <span>Copy</span>
+                  <span>{t('actions.copy')}</span>
                 </Button>
               </div>
             </div>
