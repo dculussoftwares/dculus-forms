@@ -22,6 +22,7 @@
   "undoTitle": "Undo AI changes",
   "cancel": "Cancel",
   "closeAriaLabel": "Close AI assistant",
+  "toolFailed": "Couldn't complete this step",
   "toolStatus": {
     "listFields": "Reading form structure…",
     "getField": "Reading field details…",

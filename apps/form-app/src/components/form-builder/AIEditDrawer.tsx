@@ -17,6 +17,7 @@ import {
   Asterisk,
   Loader2,
   CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { GradientSparkles } from './GradientSparkles.js';
 import { cn } from '@dculus/utils';
@@ -32,7 +33,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { useAIChat } from '../../hooks/useAIChat';
 import { useAIChips } from '../../hooks/useAIChips';
 import { useFormBuilderStore } from '../../store/useFormBuilderStore';
-import type { FormEditAgentUIMessage, FormEditToolPart } from '../../lib/aiAgentTypes';
+import { isToolFailed, isToolSettled, type FormEditAgentUIMessage, type FormEditToolPart } from '../../lib/aiAgentTypes';
 import { resolveAskAIContextDetail, type AskAIBuilderContext } from '../../lib/askAIContext';
 import MutationToolPart from './tool-parts/MutationToolPart';
 import ListFieldsToolPart from './tool-parts/ListFieldsToolPart';
@@ -127,13 +128,15 @@ function StreamingTimeline({ parts }: { parts: FormEditToolPart[] }) {
       <div className="divide-y divide-border/30 px-3 py-1">
         {parts.map((part, i) => {
           const key = (part as any).toolCallId ?? `${part.type}-${i}`;
-          const state = (part as any).state as string;
-          const isDone = state === 'output-available';
+          const isDone = isToolSettled(part);
+          const failed = isToolFailed(part);
 
           return (
             <div key={key} className="flex items-start gap-2.5 py-1.5 text-xs">
               <div className="relative mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center">
-                {isDone ? (
+                {failed ? (
+                  <XCircle className="h-3.5 w-3.5 text-red-500" />
+                ) : isDone ? (
                   <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                 ) : (
                   <span className="h-2 w-2 animate-ping rounded-full bg-primary" />
@@ -144,7 +147,7 @@ function StreamingTimeline({ parts }: { parts: FormEditToolPart[] }) {
                   <span className={cn('font-medium transition-colors', isDone ? 'text-muted-foreground line-through' : 'text-foreground')}>
                     {toolStatusLabel(part, t)}
                   </span>
-                  {isDone && (
+                  {isDone && !failed && (
                     <span className="text-[9px] text-green-600 font-semibold uppercase tracking-wider bg-green-50 px-1 rounded border border-green-200">
                       OK
                     </span>
@@ -172,13 +175,15 @@ function AssistantMessage({
 }) {
   const { t } = useTranslation('aiEditDrawer');
   const textParts = message.parts.filter((p) => p.type === 'text') as { type: 'text'; text: string }[];
-  const combinedText = textParts.map((p) => p.text).join('');
+  // Text from separate steps (before and after tool calls) arrives as separate parts; join them as
+  // paragraphs so "I'll add it." and "Done!" don't run together as "I'll add it.Done!".
+  const combinedText = textParts.map((p) => p.text.trim()).filter(Boolean).join('\n\n');
 
   const toolParts = message.parts.filter((p) => p.type.startsWith('tool-')) as FormEditToolPart[];
 
   // Find any tool part currently in-flight
   const inFlightPart = isStreaming
-    ? toolParts.find((p) => (p as any).state !== 'output-available')
+    ? toolParts.find((p) => !isToolSettled(p))
     : undefined;
 
   return (

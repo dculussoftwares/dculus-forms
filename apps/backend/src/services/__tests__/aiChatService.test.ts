@@ -21,7 +21,8 @@ vi.mock('../../lib/ai.js', () => ({
   getFastModel: vi.fn(() => 'mock-fast-model'),
 }));
 
-vi.mock('ai', () => ({
+vi.mock('ai', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('ai')>()),
   generateText: vi.fn().mockResolvedValue({ text: 'Short title' }),
   stepCountIs: vi.fn((n: number) => ({ type: 'stepCount', count: n })),
 }));
@@ -285,98 +286,65 @@ describe('autoGenerateTitle', () => {
 });
 
 describe('truncateToolResults', () => {
+  // AI SDK v5+ static tool part: `tool-<name>` with state + output.
+  const toolPart = (output: unknown, state = 'output-available') => ({
+    type: 'tool-listFields',
+    toolCallId: 'c1',
+    state,
+    input: {},
+    ...(state === 'output-available' ? { output } : {}),
+  });
+  const assistantWith = (...parts: unknown[]) => [{ id: 'a1', role: 'assistant', parts }] as any[];
+
   it('passes through non-assistant messages unchanged', () => {
     const msgs = [
-      { id: 'u1', role: 'user', content: 'x'.repeat(MAX_TOOL_RESULT_CHARS + 100), parts: [] },
+      { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'x'.repeat(MAX_TOOL_RESULT_CHARS + 100) }] },
     ] as any[];
     expect(truncateToolResults(msgs)).toStrictEqual(msgs);
   });
 
-  it('passes through assistant messages without tool-invocation parts unchanged', () => {
-    const msgs = [
-      { id: 'a1', role: 'assistant', content: 'hello', parts: [{ type: 'text', text: 'hello' }] },
-    ] as any[];
+  it('passes through assistant messages without tool parts unchanged', () => {
+    const msgs = assistantWith({ type: 'text', text: 'hello' });
     expect(truncateToolResults(msgs)).toStrictEqual(msgs);
   });
 
-  it('leaves short tool-invocation result unchanged', () => {
-    const shortResult = 'short result';
-    const msgs = [
-      {
-        id: 'a1', role: 'assistant', content: '', parts: [
-          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'result', result: shortResult } },
-        ],
-      },
-    ] as any[];
-    const out = truncateToolResults(msgs) as any[];
-    expect(out[0].parts[0].toolInvocation.result).toBe(shortResult);
+  it('passes through legacy messages persisted without parts', () => {
+    const msgs = [{ id: 'a1', role: 'assistant', content: 'hello' }] as any[];
+    expect(truncateToolResults(msgs)).toStrictEqual(msgs);
   });
 
-  it('truncates string tool-invocation result exceeding MAX_TOOL_RESULT_CHARS', () => {
-    const bigResult = 'x'.repeat(MAX_TOOL_RESULT_CHARS + 500);
-    const msgs = [
-      {
-        id: 'a1', role: 'assistant', content: '', parts: [
-          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'result', result: bigResult } },
-        ],
-      },
-    ] as any[];
-    const out = truncateToolResults(msgs) as any[];
-    const result: string = out[0].parts[0].toolInvocation.result;
-    expect(result.length).toBeLessThanOrEqual(MAX_TOOL_RESULT_CHARS + 20); // budget + truncation suffix
-    expect(result).toContain('[truncated]');
-    expect(result.startsWith('x'.repeat(MAX_TOOL_RESULT_CHARS))).toBe(true);
+  it('leaves a short tool output unchanged', () => {
+    const out = truncateToolResults(assistantWith(toolPart('short result'))) as any[];
+    expect(out[0].parts[0].output).toBe('short result');
   });
 
-  it('truncates object tool-invocation result by JSON-stringifying first', () => {
-    const bigObj = { fields: Array.from({ length: 300 }, (_, i) => ({ id: `f${i}`, label: `Field ${i} with a fairly long label` })) };
-    const serialized = JSON.stringify(bigObj);
-    const msgs = [
-      {
-        id: 'a1', role: 'assistant', content: '', parts: [
-          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'result', result: bigObj } },
-        ],
-      },
-    ] as any[];
-
-    if (serialized.length <= MAX_TOOL_RESULT_CHARS) {
-      // Object is small — no truncation expected, just verify pass-through
-      const out = truncateToolResults(msgs) as any[];
-      expect(out[0].parts[0].toolInvocation.result).toStrictEqual(bigObj);
-    } else {
-      const out = truncateToolResults(msgs) as any[];
-      const result: string = out[0].parts[0].toolInvocation.result;
-      expect(typeof result).toBe('string');
-      expect(result).toContain('[truncated]');
-    }
+  it('truncates a string tool output exceeding MAX_TOOL_RESULT_CHARS', () => {
+    const out = truncateToolResults(assistantWith(toolPart('x'.repeat(MAX_TOOL_RESULT_CHARS + 500)))) as any[];
+    const output: string = out[0].parts[0].output;
+    expect(output.length).toBeLessThanOrEqual(MAX_TOOL_RESULT_CHARS + 20); // budget + truncation suffix
+    expect(output).toContain('[truncated]');
+    expect(output.startsWith('x'.repeat(MAX_TOOL_RESULT_CHARS))).toBe(true);
   });
 
-  it('does not truncate tool-invocation parts with state other than result', () => {
-    const msgs = [
-      {
-        id: 'a1', role: 'assistant', content: '', parts: [
-          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'call' } },
-        ],
-      },
-    ] as any[];
-    const out = truncateToolResults(msgs) as any[];
-    expect(out[0].parts[0].toolInvocation.state).toBe('call');
-    expect(out[0].parts[0].toolInvocation.result).toBeUndefined();
+  it('truncates an object tool output by JSON-stringifying first', () => {
+    const bigObj = { pages: Array.from({ length: 400 }, (_, i) => `p${i} "Page ${i}" [id:page-${i}]: f${i}|text|"Field"|opt`) };
+    expect(JSON.stringify(bigObj).length).toBeGreaterThan(MAX_TOOL_RESULT_CHARS);
+    const out = truncateToolResults(assistantWith(toolPart(bigObj))) as any[];
+    expect(typeof out[0].parts[0].output).toBe('string');
+    expect(out[0].parts[0].output).toContain('[truncated]');
   });
 
-  it('only truncates tool-invocation parts, leaving text parts in the same message intact', () => {
-    const bigResult = 'y'.repeat(MAX_TOOL_RESULT_CHARS + 100);
-    const msgs = [
-      {
-        id: 'a1', role: 'assistant', content: '', parts: [
-          { type: 'tool-invocation', toolInvocation: { toolCallId: 'c1', toolName: 'listFields', args: {}, state: 'result', result: bigResult } },
-          { type: 'text', text: 'Here are the fields.' },
-        ],
-      },
-    ] as any[];
-    const out = truncateToolResults(msgs) as any[];
+  it('does not touch tool parts that have no output yet', () => {
+    const out = truncateToolResults(assistantWith(toolPart(undefined, 'input-available'))) as any[];
+    expect(out[0].parts[0].state).toBe('input-available');
+    expect(out[0].parts[0].output).toBeUndefined();
+  });
+
+  it('only truncates tool parts, leaving text parts in the same message intact', () => {
+    const out = truncateToolResults(
+      assistantWith(toolPart('y'.repeat(MAX_TOOL_RESULT_CHARS + 100)), { type: 'text', text: 'Here are the fields.' })
+    ) as any[];
     expect(out[0].parts[1]).toStrictEqual({ type: 'text', text: 'Here are the fields.' });
-    const truncated: string = out[0].parts[0].toolInvocation.result;
-    expect(truncated).toContain('[truncated]');
+    expect(out[0].parts[0].output).toContain('[truncated]');
   });
 });

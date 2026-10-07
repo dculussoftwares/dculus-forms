@@ -32,7 +32,8 @@
     "test:watch": "vitest watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:watch": "vitest watch --coverage"
+    "test:coverage:watch": "vitest watch --coverage",
+    "eval:ai": "vitest run --config vitest.eval.config.ts"
   },
   "dependencies": {
     "@ai-sdk/azure": "3.0.66",

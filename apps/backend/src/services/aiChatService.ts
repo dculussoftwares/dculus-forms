@@ -1,4 +1,4 @@
-import { generateText } from 'ai';
+import { generateText, getToolName, isToolUIPart } from 'ai';
 import type { UIMessage } from 'ai';
 import { aiChatRepository } from '../repositories/aiChatRepository.js';
 import { getFastModel } from '../lib/ai.js';
@@ -20,25 +20,22 @@ const SUMMARISE_AFTER_USER_TURNS = 4;
 
 export const MAX_TOOL_RESULT_CHARS = 8_000;
 
+/**
+ * Cap oversized tool outputs (e.g. listFields on a large form) before they are persisted or
+ * replayed to the model. Operates on AI SDK v5+ tool parts (`tool-<name>` with
+ * `state: 'output-available'` and an `output` payload).
+ */
 export function truncateToolResults(messages: UIMessage[]): UIMessage[] {
   return messages.map((msg) => {
-    if (msg.role !== 'assistant') return msg;
-    const parts = msg.parts as any[];
-    if (!parts?.some((p: any) => p.type === 'tool-invocation')) return msg;
-    const truncatedParts = parts.map((part: any) => {
-      if (part.type !== 'tool-invocation' || part.toolInvocation?.state !== 'result') return part;
-      const raw = part.toolInvocation.result;
-      const serialized = typeof raw === 'string' ? raw : JSON.stringify(raw);
+    // Messages persisted by older SDK versions may carry `content` instead of `parts`.
+    if (msg.role !== 'assistant' || !msg.parts?.some(isToolUIPart)) return msg;
+    const parts = msg.parts.map((part) => {
+      if (!isToolUIPart(part) || part.state !== 'output-available') return part;
+      const serialized = typeof part.output === 'string' ? part.output : JSON.stringify(part.output);
       if (serialized.length <= MAX_TOOL_RESULT_CHARS) return part;
-      return {
-        ...part,
-        toolInvocation: {
-          ...part.toolInvocation,
-          result: serialized.slice(0, MAX_TOOL_RESULT_CHARS) + '\n...[truncated]',
-        },
-      };
+      return { ...part, output: `${serialized.slice(0, MAX_TOOL_RESULT_CHARS)}\n...[truncated]` };
     });
-    return { ...msg, parts: truncatedParts };
+    return { ...msg, parts };
   });
 }
 
@@ -72,6 +69,11 @@ export async function getConversation(id: string, userId: string) {
   const conv = await aiChatRepository.findConversationById(id, userId);
   if (!conv) return null;
   return { ...conv, messageCount: conv._count.messages };
+}
+
+/** Ownership lookup without loading the message history — used on every chat turn. */
+export async function findOwnedConversation(id: string, userId: string) {
+  return aiChatRepository.findConversationByUser(id, userId);
 }
 
 export async function deleteConversation(id: string, userId: string) {
@@ -109,30 +111,18 @@ export function pruneToolCallsFromHistory(messages: UIMessage[]): UIMessage[] {
   const cutoff = messages.length - 4;
 
   return messages.map((msg, i) => {
-    if (i >= cutoff) return msg; // recent — keep as-is
-    if (msg.role !== 'assistant') return msg; // only prune assistant tool calls
+    if (i >= cutoff || msg.role !== 'assistant') return msg;
 
-    const parts = msg.parts as any[];
-    if (!parts?.some((p: any) => p.type === 'tool-invocation')) return msg;
+    const toolParts = (msg.parts ?? []).filter(isToolUIPart);
+    if (toolParts.length === 0) return msg;
 
-    // Collect which tools were called so we can annotate the message.
-    const toolNames = parts
-      .filter((p: any) => p.type === 'tool-invocation')
-      .map((p: any) => p.toolInvocation?.toolName)
-      .filter(Boolean);
-
-    const annotation = toolNames.length
-      ? `[used tools: ${toolNames.join(', ')}]`
-      : '[tool calls redacted for context efficiency]';
-
-    // Replace all parts with a single text part noting what ran.
-    const textParts = parts.filter((p: any) => p.type === 'text');
-    const summary: any = [
-      ...textParts,
-      { type: 'text', text: annotation },
-    ];
-
-    return { ...msg, parts: summary };
+    // Replace the tool parts with a single text note so the model still knows what ran.
+    const toolNames = [...new Set(toolParts.map(getToolName))];
+    const textParts = msg.parts.filter((p) => p.type === 'text');
+    return {
+      ...msg,
+      parts: [...textParts, { type: 'text' as const, text: `[used tools: ${toolNames.join(', ')}]` }],
+    };
   });
 }
 

@@ -10,9 +10,12 @@ function makeAssistantTextMsg(text: string, id = `a-${Math.random()}`): UIMessag
   return { id, role: 'assistant', parts: [{ type: 'text', text }] } as any;
 }
 function makeAssistantToolMsg(toolNames: string[], textAfter = '', id = `a-${Math.random()}`): UIMessage {
-  const parts: any[] = toolNames.map((name) => ({
-    type: 'tool-invocation',
-    toolInvocation: { toolName: name, state: 'result', args: {}, result: {} },
+  const parts: any[] = toolNames.map((name, i) => ({
+    type: `tool-${name}`,
+    toolCallId: `call-${i}`,
+    state: 'output-available',
+    input: {},
+    output: {},
   }));
   if (textAfter) parts.push({ type: 'text', text: textAfter });
   return { id, role: 'assistant', parts } as any;
@@ -56,7 +59,7 @@ describe('pruneToolCallsFromHistory', () => {
     expect(result[5]).toBe(msgs[5]);
   });
 
-  it('replaces tool-invocation parts in old messages with annotation', () => {
+  it('replaces tool parts in old messages with an annotation naming the tools', () => {
     const msgs = [
       makeUserMsg('t1'), makeAssistantToolMsg(['addField', 'reorder'], 'ok'),
       makeUserMsg('t2'), makeAssistantTextMsg('good'),
@@ -64,9 +67,11 @@ describe('pruneToolCallsFromHistory', () => {
     ];
     const result = pruneToolCallsFromHistory(msgs);
     const parts = result[1].parts as any[];
-    expect(parts.some((p: any) => p.type === 'tool-invocation')).toBe(false);
-    const texts = parts.filter((p: any) => p.type === 'text').map((p: any) => p.text);
-    expect(texts.join(' ')).toMatch(/addField|used tools/i);
+    expect(parts.some((p: any) => p.type.startsWith('tool-'))).toBe(false);
+    expect(parts).toEqual([
+      { type: 'text', text: 'ok' },
+      { type: 'text', text: '[used tools: addField, reorder]' },
+    ]);
   });
 
   it('preserves user messages in old window unchanged', () => {

@@ -1,6 +1,15 @@
 import { Router, type Router as ExpressRouter } from 'express';
-import { validateUIMessages, convertToModelMessages, pruneMessages, streamText } from 'ai';
-import type { UIMessage, ModelMessage } from 'ai';
+import {
+  convertToModelMessages,
+  createIdGenerator,
+  pruneMessages,
+  streamText,
+  validateUIMessages,
+  type ModelMessage,
+  type StreamTextResult,
+  type ToolSet,
+  type UIMessage,
+} from 'ai';
 import * as Y from 'yjs';
 import { isLayoutField } from '@dculus/types';
 import {
@@ -10,7 +19,7 @@ import {
 } from '../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
 import {
-  getConversation,
+  findOwnedConversation,
   loadConversationMessages,
   saveConversationMessages,
   autoGenerateTitle,
@@ -147,7 +156,8 @@ Rules:
 8. Merge pages: relocateField (move) ALL fields first, THEN removePage on empty source pages.
 9. Remix/transform: read structure, removeFields unneeded, addField new ones, updateFields to relabel keepers, updateLayout for title+CTA. Add before removing.
 10. Make only requested changes. Confirm what you did in final text.
-11. Quiz questions: when the user asks to add graded/quiz questions, use addField with a "radio" field (one correct answer) or "checkbox" field (2+ correct answers) and pass correctAnswers = the exact option label(s). The answer key is set and options reshuffled automatically — never hand-order the correct option first.`;
+11. Quiz questions: when the user asks to add graded/quiz questions, use addField with a "radio" field (one correct answer) or "checkbox" field (2+ correct answers) and pass correctAnswers = the exact option label(s). The answer key is set and options reshuffled automatically — never hand-order the correct option first.
+12. Reply format: 1-3 short sentences of plain Markdown for a narrow chat panel. **Bold** field labels; use a bullet list only for 3+ items. No headings, tables, code blocks, or field/page IDs.`;
 
 /**
  * The per-turn dynamic context, delivered as a trailing user message placed AFTER conversation
@@ -195,6 +205,36 @@ export function buildEphemeralContext(
   return `<current_context>\n${pageLine}\n${totalsLine}\n${structure}\n</current_context>`;
 }
 
+/**
+ * Variant of the system prompt for question turns, which run without tools. Without this note
+ * the model reads the tool-centric rules above and may claim it changed the form when it cannot.
+ */
+export const QUESTION_SYSTEM_PROMPT = `${STATIC_SYSTEM_PROMPT}
+
+This turn has NO editing tools. Answer the question from <current_context>. Never claim you changed the form; if the user wants a change, tell them in one sentence what to ask for (e.g. "Ask me to add a phone field").`;
+
+// Server-side ids keep persisted messages stable across reloads (AI SDK message-persistence guide).
+const generateMessageId = createIdGenerator({ prefix: 'msg', size: 16 });
+
+// The slice of a streamText / agent.stream result the route needs; both turn paths satisfy it.
+type ChatTurnStream = Pick<
+  StreamTextResult<ToolSet, never>,
+  'consumeStream' | 'totalUsage' | 'pipeUIMessageStreamToResponse'
+>;
+
+// Bounds a turn so a stalled provider call can't hold the HTTP stream open indefinitely.
+const CHAT_TURN_TIMEOUT = { totalMs: 120_000, stepMs: 60_000 } as const;
+
+// Shared by both turn paths so the history-trimming policy stays identical.
+async function toPrunedModelMessages(messages: UIMessage[]): Promise<ModelMessage[]> {
+  return pruneMessages({
+    messages: await convertToModelMessages(messages),
+    reasoning: 'all',
+    toolCalls: 'before-last-5-messages',
+    emptyMessages: 'remove',
+  });
+}
+
 aiChatRouter.post('/chat', async (req, res) => {
   const auth = await createBetterAuthContext(req);
 
@@ -225,19 +265,30 @@ aiChatRouter.post('/chat', async (req, res) => {
     return;
   }
 
+  // Verify conversation ownership, and that it belongs to the org being billed for this turn.
+  const conv = await findOwnedConversation(conversationId, auth.user!.id);
+  if (!conv || conv.organizationId !== organizationId) {
+    res.status(404).json({ error: 'Conversation not found' });
+    return;
+  }
+
+  // Re-check form access every turn: edit rights can be revoked after the conversation was created.
+  let permission: string;
+  try {
+    const access = await checkFormAccess(auth.user!.id, conv.formId, PermissionLevel.EDITOR);
+    if (!access.hasAccess) throw new Error('insufficient form permission');
+    permission = access.permission;
+  } catch {
+    res.status(403).json({ error: 'Access denied' });
+    return;
+  }
+
   // Check token budget
   const budget = await checkAITokenBudget(organizationId);
   if (!budget.allowed) {
     res.status(402).json({
       error: `AI token limit reached (${budget.used.toLocaleString()} / ${budget.limit.toLocaleString()} used). Upgrade your plan to continue.`,
     });
-    return;
-  }
-
-  // Verify conversation ownership
-  const conv = await getConversation(conversationId, auth.user!.id);
-  if (!conv) {
-    res.status(404).json({ error: 'Conversation not found' });
     return;
   }
 
@@ -285,137 +336,59 @@ aiChatRouter.post('/chat', async (req, res) => {
 
   logger.debug({ conversationId, intent, modelTier, toolTier }, 'AI chat intent classified');
 
-  // Questions ("what field types do you support?", "how do I...") don't need tools.
-  // Skip the ToolLoopAgent entirely and use direct streamText — saves ~2,100 tokens
-  // of tool definition schemas per question turn.
-  if (intent === 'question') {
-    try {
-      const model = getModelForIntent(intent);
-      const modelMessages = await convertToModelMessages(validated);
-      const prunedModelMessages = pruneMessages({
-        messages: modelMessages,
-        reasoning: 'all',
-        toolCalls: 'before-last-5-messages',
-        emptyMessages: 'remove',
+  // EPHEMERAL tail: dynamic per-turn context appended AFTER history as a trailing user message.
+  // It is NOT part of `validated`/UIMessages, so it is never persisted and never disturbs the
+  // cacheable prefix. Appended after pruning so pruning can't drop it.
+  const ephemeralContext: ModelMessage = {
+    role: 'user',
+    content: buildEphemeralContext(currentPageId, schema),
+  };
+
+  // Questions ("what field types do you support?", "how do I...") don't need tools: skip the
+  // ToolLoopAgent and use direct streamText, saving the tool-schema tokens. Every other intent
+  // runs the agent with the tool tier picked above.
+  const startTurn = async (): Promise<ChatTurnStream> => {
+    const messages = [...(await toPrunedModelMessages(validated)), ephemeralContext];
+    if (intent === 'question') {
+      return streamText({
+        model: getModelForIntent(intent),
+        system: QUESTION_SYSTEM_PROMPT,
+        messages,
+        timeout: CHAT_TURN_TIMEOUT,
       });
-      const ephemeralContext: ModelMessage = {
-        role: 'user',
-        content: buildEphemeralContext(currentPageId, schema),
-      };
-
-      const questionStream = await streamText({
-        model,
-        system: STATIC_SYSTEM_PROMPT,
-        messages: [...prunedModelMessages, ephemeralContext],
-        onFinish: async ({ text, usage }) => {
-          const tokensUsed = usage?.totalTokens ?? 0;
-          // Save user message + the assistant text response
-          const assistantMsg: UIMessage = {
-            id: `msg-${Date.now()}`,
-            role: 'assistant',
-            parts: [{ type: 'text', text }],
-          };
-          await saveConversationMessages(conversationId, [message, assistantMsg], tokensUsed);
-          // Question turns always route through getModelForIntent(intent) with intent === 'question',
-          // which resolves to the fast/nano model — matches intentToModelTier('question') === 'nano'.
-          await recordAITokenUsage(organizationId, tokensUsed, modelTier);
-          const stats = extractUsageStats(usage as any);
-          recordTurnTelemetry({
-            conversationId,
-            formId: conv.formId,
-            formFieldCount: fieldCount,
-            model: getModelIdForIntent(intent),
-            intentTier: intent,
-            modelTier,
-            ...stats,
-          });
-        },
-      });
-
-      questionStream.consumeStream();
-
-      const questionWebResponse = questionStream.toTextStreamResponse();
-      res.status(questionWebResponse.status);
-      for (const [k, v] of questionWebResponse.headers.entries()) {
-        res.setHeader(k, v);
-      }
-      try {
-        for await (const chunk of questionWebResponse.body as any) {
-          res.write(chunk);
-        }
-      } finally {
-        res.end();
-      }
-      return;
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : String(err);
-      logger.warn({ errMsg, conversationId }, 'Question streamText failed — falling back to agent');
-      // Fall through to agent path on error
     }
-  }
-
-  // ── ToolLoopAgent path (simple + complex intents) ──────────────────────────
-  // Resolve the caller's form permission to gate the plugin (integration) tools.
-  // Only the 'full' tier can include them, so skip the lookup on cheaper tiers.
-  let canManagePlugins = false;
-  if (toolTier === 'full') {
-    try {
-      const access = await checkFormAccess(auth.user!.id, conv.formId);
-      canManagePlugins = access.permission === PermissionLevel.OWNER;
-    } catch {
-      // Form missing or lookup failed — leave plugin tools off rather than blocking the chat.
-    }
-  }
-
-  // Static system prompt + stable per-conversation cache key keep the prefix byte-stable so
-  // Azure/OpenAI prefix caching hits on every step and across turns.
-  const agent = createFormEditAgent(schema, {
-    instructions: STATIC_SYSTEM_PROMPT,
-    cacheKey: conversationId,
-    includeReadTools,
-    formId: conv.formId,
-    modelTier,
-    toolTier,
-    canManagePlugins,
-  });
+    // Static system prompt keeps the prefix byte-stable so provider prefix caching hits on
+    // every step and across turns. Plugin (integration) tools are full-tier only and OWNER-gated.
+    const agent = createFormEditAgent(schema, {
+      instructions: STATIC_SYSTEM_PROMPT,
+      cacheKey: conversationId,
+      includeReadTools,
+      formId: conv.formId,
+      modelTier,
+      toolTier,
+      canManagePlugins: toolTier === 'full' && permission === PermissionLevel.OWNER,
+    });
+    return agent.stream({ messages, timeout: CHAT_TURN_TIMEOUT });
+  };
 
   try {
-    const modelMessages = await convertToModelMessages(validated);
-    const prunedModelMessages = pruneMessages({
-      messages: modelMessages,
-      reasoning: 'all',
-      toolCalls: 'before-last-5-messages',
-      emptyMessages: 'remove',
-    });
+    const result = await startTurn();
 
-    // EPHEMERAL tail: dynamic per-turn context appended AFTER history as a trailing user
-    // message. It is NOT part of `validated`/UIMessages, so it is never persisted and never
-    // disturbs the cacheable prefix. Added after pruning so pruning can't drop it.
-    const ephemeralContext: ModelMessage = {
-      role: 'user',
-      content: buildEphemeralContext(currentPageId, schema),
-    };
-    const result = await agent.stream({
-      messages: [...prunedModelMessages, ephemeralContext],
-    });
+    // Ensure onFinish fires (and the turn is persisted) even if the client disconnects.
+    void result.consumeStream();
 
-    // Ensure onFinish fires even if client disconnects
-    result.consumeStream();
-
-    const webResponse = result.toUIMessageStreamResponse({
-      originalMessages: validated as any,
-      onFinish: async ({ messages: finalMessages }: { messages: UIMessage[] }) => {
-        // The ephemeral context is not in originalMessages, so the new messages are exactly
-        // the user turn + assistant response — no snapshot leaks into persisted history.
-        const newMessages = truncateToolResults(finalMessages.slice(previous.length));
+    // Both paths answer with the UI message stream protocol that useChat's DefaultChatTransport
+    // parses — a plain text stream would be silently dropped by the client.
+    result.pipeUIMessageStreamToResponse(res, {
+      originalMessages: validated,
+      generateMessageId,
+      onFinish: async ({ responseMessage }) => {
+        // Persist exactly this turn: the user message plus the assistant reply. The ephemeral
+        // context is not a UI message, so no snapshot leaks into persisted history.
         const usage = await result.totalUsage;
         const tokensUsed = usage?.totalTokens ?? 0;
-        await saveConversationMessages(conversationId, newMessages, tokensUsed);
-        // modelTier reflects the tier this turn's agent actually ran with (from
-        // intentToModelTier(intent) above, threaded into createFormEditAgent).
+        await saveConversationMessages(conversationId, truncateToolResults([message, responseMessage]), tokensUsed);
         await recordAITokenUsage(organizationId, tokensUsed, modelTier);
-
-        const stats = extractUsageStats(usage);
         recordTurnTelemetry({
           conversationId,
           formId: conv.formId,
@@ -423,23 +396,10 @@ aiChatRouter.post('/chat', async (req, res) => {
           model: getModelIdForIntent(intent),
           intentTier: intent,
           modelTier,
-          ...stats,
+          ...extractUsageStats(usage),
         });
       },
     });
-
-    // Bridge Web API Response → Express response
-    res.status(webResponse.status);
-    for (const [k, v] of webResponse.headers.entries()) {
-      res.setHeader(k, v);
-    }
-    try {
-      for await (const chunk of webResponse.body as any) {
-        res.write(chunk);
-      }
-    } finally {
-      res.end();
-    }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     logger.error({ errMsg, conversationId }, 'AI chat stream failed');

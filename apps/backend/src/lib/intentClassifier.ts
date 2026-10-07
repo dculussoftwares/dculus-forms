@@ -29,6 +29,16 @@ const COMPLEX_PATTERNS: RegExp[] = [
   /\ball\s+(fields?|questions?)\b.{0,20}\b(required|optional|validation)\b/i,
   /\b(apply|add)\b.{0,20}\bvalidation\b.{0,30}\b(all|every|each)\b/i,
   /\bconvert\b.{0,30}\b(into|to)\b.{0,30}\b(form|survey|quiz)\b/i,
+  // ── Edits that only full-tier tools can perform ────────────────────────────
+  // The 'core' tier has no upsertConditionRule, proposeFieldTypeChange or relocateField, so
+  // routing these as 'simple' leaves the model unable to act (it can only describe the change).
+  // Conditional logic → upsertConditionRule
+  /\b(show|hide|skip|jump)\b.{0,80}\b(if|when|unless|only\s+(if|when|for))\b/i,
+  /^(?!\s*how\b).*\b(add|create|set\s*up|make|use)\b.{0,30}\b(conditions?|conditional|logic|rules?|branching)\b/i, // "how do I…" stays a question
+  // Field type change → proposeFieldTypeChange
+  /\b(change|convert|turn|switch|make)\b.{0,40}\b(field|question|input|it)\b.{0,15}\b(to|into)\s+(an?\s+)?(dropdown|select|radio|checkbox(es)?|multiple[-\s]choice|text\s*area|paragraph|number|date|email|phone|file)\b/i,
+  // Cross-page move/copy → relocateField (same-page moves stay 'simple' via reorder)
+  /\b(move|copy|duplicate)\b.{0,50}\b(to|onto|into)\b.{0,30}\bpage\b/i,
   // ── Automation / integration (plugin) requests ──────────────────────────────
   // Always complex regardless of phrasing simplicity: plugin tools are full-tier only,
   // and automation has external side effects that warrant the mini model. Patterns are
