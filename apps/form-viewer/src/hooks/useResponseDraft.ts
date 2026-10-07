@@ -47,8 +47,11 @@ const PERMANENT_ERROR_CODES = new Set<string>([
 ]);
 
 class DraftSaveError extends Error {
-  constructor(readonly code: string | undefined) {
+  readonly code: string | undefined;
+
+  constructor(code: string | undefined) {
     super(`Draft save failed${code ? ` (${code})` : ''}`);
+    this.code = code;
   }
 }
 
