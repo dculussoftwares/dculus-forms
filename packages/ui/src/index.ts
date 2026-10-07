@@ -278,11 +278,6 @@ export { FormResponseContext } from "./renderers/FormResponseContext"
 export type { FormResponseContextValue } from "./renderers/FormResponseContext"
 export { SinglePageForm, useSinglePageForm } from "./renderers/SinglePageForm"
 export { QuizResultScreen } from "./renderers/QuizResultScreen"
-export {
-  GRID_COLUMNS_CLASS_BY_COUNT,
-  GRID_SIDE_BY_SIDE_ONLY_CLASS_BY_COUNT,
-  gridTemplateColumns,
-} from "./renderers/gridLayoutClasses"
 export type { LayoutStyles } from "./renderers/PageRenderer"
 export type { FormRendererProps } from "./renderers/FormRenderer"
 export type { SinglePageFormProps } from "./renderers/SinglePageForm"

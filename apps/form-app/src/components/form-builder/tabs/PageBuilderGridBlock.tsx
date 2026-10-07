@@ -9,12 +9,7 @@ import {
   type GridColumnNode,
   type GridField,
 } from '@dculus/types';
-import {
-  Button,
-  GRID_COLUMNS_CLASS_BY_COUNT,
-  GRID_SIDE_BY_SIDE_ONLY_CLASS_BY_COUNT,
-  gridTemplateColumns,
-} from '@dculus/ui';
+import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { ArrowRightLeft, Columns2, Copy, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
@@ -28,6 +23,15 @@ import { useDeleteGridWithUndo } from './useDeleteGridWithUndo';
 
 /** Gap between columns in px (and between stacked columns); the divider sits in the middle of it. */
 const COLUMN_GAP = 12;
+
+/**
+ * The canvas's mobile device frame (`.mobile-preview`, see PageBuilderTab) stacks the columns the
+ * way a phone does in the viewer, and hides the resize dividers there. Pure CSS keyed off the
+ * frame, so toggling Desktop/Mobile re-flows immediately; the Desktop canvas keeps columns side by
+ * side at any canvas width so they stay resizable.
+ */
+const IN_PHONE_FRAME_STACKED = '[.mobile-preview_&]:grid-cols-1';
+const IN_PHONE_FRAME_HIDDEN = '[.mobile-preview_&]:hidden';
 
 /** True when the item being dragged is a grid (palette tile or existing block); grids never nest (I1). */
 const useActiveIsGrid = (): boolean => {
@@ -248,12 +252,10 @@ const ColumnDivider: React.FC<{
   gridId: string;
   index: number;
   widths: number[];
-  /** Hides the divider while the columns are stacked (narrow canvas / phone frame). */
-  visibilityClassName: string;
   usableWidth: () => number;
   onPreview: (widths: number[] | null) => void;
   onCommit: (widths: number[]) => void;
-}> = ({ gridId, index, widths, visibilityClassName, usableWidth, onPreview, onCommit }) => {
+}> = ({ gridId, index, widths, usableWidth, onPreview, onCommit }) => {
   const { t } = useTranslation('gridLayout');
   const drag = React.useRef<{ startX: number; startWidths: number[]; latest: number[] } | null>(null);
 
@@ -322,8 +324,8 @@ const ColumnDivider: React.FC<{
       onKeyDown={handleKeyDown}
       onClick={stopClick}
       className={cn(
-        'absolute top-0 bottom-0 w-3 -ml-1.5 z-10 justify-center cursor-col-resize group/divider touch-none focus-visible:outline-none',
-        visibilityClassName
+        'absolute top-0 bottom-0 w-3 -ml-1.5 z-10 flex justify-center cursor-col-resize group/divider touch-none focus-visible:outline-none',
+        IN_PHONE_FRAME_HIDDEN
       )}
       style={{
         left: `calc((100% - ${gapsTotal}px) * ${offsetBefore / 100} + ${index * COLUMN_GAP + COLUMN_GAP / 2}px)`,
@@ -532,44 +534,40 @@ export const GridBlock: React.FC<GridBlockProps> = ({
         </div>
       </div>
 
-      {/* Columns: side by side once the block is wide enough, stacked below that — the same
-          container-query breakpoints as the viewer, so the phone frame shows what respondents get. */}
-      <div className="@container">
-        <div
-          ref={columnsRef}
-          className={cn('relative', GRID_COLUMNS_CLASS_BY_COUNT[columnCount])}
-          style={{ '--gc': gridTemplateColumns(widths), gap: COLUMN_GAP } as React.CSSProperties}
-        >
-          {columns.map((column) => (
-            <GridColumn
-              key={column.index}
-              pageId={pageId}
+      {/* Columns */}
+      <div
+        ref={columnsRef}
+        className={cn('relative grid [grid-template-columns:var(--gc)]', IN_PHONE_FRAME_STACKED)}
+        style={{ '--gc': widths.map((w) => `minmax(0, ${w}fr)`).join(' '), gap: COLUMN_GAP } as React.CSSProperties}
+      >
+        {columns.map((column) => (
+          <GridColumn
+            key={column.index}
+            pageId={pageId}
+            gridId={grid.id}
+            column={column}
+            columnCount={columnCount}
+            pageIndexOf={pageIndexOf}
+            totalFields={pageFields.length}
+            recentlyDroppedFieldId={recentlyDroppedFieldId}
+            isDelayingExpansion={isDelayingExpansion}
+            isAnyDragActive={isAnyDragActive}
+            dropDisabled={activeIsGrid}
+          />
+        ))}
+        {canEdit &&
+          !isAnyDragActive &&
+          widths.slice(0, -1).map((_, i) => (
+            <ColumnDivider
+              key={i}
               gridId={grid.id}
-              column={column}
-              columnCount={columnCount}
-              pageIndexOf={pageIndexOf}
-              totalFields={pageFields.length}
-              recentlyDroppedFieldId={recentlyDroppedFieldId}
-              isDelayingExpansion={isDelayingExpansion}
-              isAnyDragActive={isAnyDragActive}
-              dropDisabled={activeIsGrid}
+              index={i}
+              widths={widths}
+              usableWidth={usableWidth}
+              onPreview={setPreviewWidths}
+              onCommit={commitWidths}
             />
           ))}
-          {canEdit &&
-            !isAnyDragActive &&
-            widths.slice(0, -1).map((_, i) => (
-              <ColumnDivider
-                key={i}
-                gridId={grid.id}
-                index={i}
-                widths={widths}
-                visibilityClassName={GRID_SIDE_BY_SIDE_ONLY_CLASS_BY_COUNT[columnCount]}
-                usableWidth={usableWidth}
-                onPreview={setPreviewWidths}
-                onCommit={commitWidths}
-              />
-            ))}
-        </div>
       </div>
     </div>
   );
