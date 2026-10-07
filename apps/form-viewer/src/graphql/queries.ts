@@ -183,7 +183,7 @@ export interface ResponseDraftData {
 }
 
 export interface SaveResponseDraftResult {
-  saveResponseDraft: { conflict: boolean; draft: ResponseDraftData };
+  saveResponseDraft: { conflict: boolean; draft: ResponseDraftData | null };
 }
 
 export interface SaveResponseDraftVariables {

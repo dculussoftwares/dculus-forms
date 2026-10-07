@@ -271,6 +271,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
       isDraftReady &&
       !!draftSessionKey &&
       view === 'form' &&
+      !needsReauth &&
       submissionState !== 'submitting' &&
       submissionState !== 'success',
     applyDraft: replaceAnswers,
@@ -635,8 +636,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
   // "Start over" on a restored draft: delete the server copy, then reopen
   // the form empty from its first screen.
   const handleStartOver = async () => {
-    await responseDraft.discard();
-    replaceAnswers(null);
+    await responseDraft.discard(() => replaceAnswers(null));
     setRestoredAt(null);
   };
 
@@ -707,6 +707,19 @@ const FormViewer: React.FC<FormViewerProps> = ({
         onEdit={onEditResponse}
       />
     );
+  };
+
+  // Re-auth after a token expired mid-fill. Re-fetch before resuming: the
+  // same account keeps its answers, while a different one changes the draft
+  // session key, which restores that account's own draft instead of letting
+  // autosave file the previous account's answers under it.
+  const handleReauthenticated = async () => {
+    const { data: fresh } = await refetch();
+    if (fresh?.formByShortUrl?.respondentEmail !== form.respondentEmail) {
+      setMyResponseOverride(undefined);
+      setView('form');
+    }
+    setNeedsReauth(false);
   };
 
   if (!isDraftReady) {
@@ -866,7 +879,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
           <SignInGate
             formTitle={form.title}
             allowedDomains={allowedDomains}
-            onSignedIn={() => setNeedsReauth(false)}
+            onSignedIn={handleReauthenticated}
           />
         </div>
       )}

@@ -25,8 +25,9 @@ export interface ResponseDraftView {
 }
 
 export interface SaveResponseDraftResult {
-  draft: ResponseDraftView;
-  /** True when another tab or device saved first; `draft` is then the stored copy, untouched. */
+  /** The stored draft; null only on a conflict where the draft was submitted or discarded elsewhere. */
+  draft: ResponseDraftView | null;
+  /** True when another tab or device saved, submitted or discarded first; nothing was written. */
   conflict: boolean;
 }
 
@@ -41,6 +42,20 @@ const toView = (row: DraftRow): ResponseDraftView => ({
 });
 
 const draftExpiry = (from: Date) => new Date(from.getTime() + DRAFT_TTL_DAYS * 24 * 60 * 60 * 1000);
+
+const isExpired = (row: DraftRow) => row.expiresAt.getTime() <= Date.now();
+
+/**
+ * The caller's draft, treating an expired row as gone. Expired rows are
+ * purged on a schedule; until then one is deleted here so it can neither be
+ * handed back nor block a fresh first save.
+ */
+async function findLiveDraft(formId: string, userId: string): Promise<DraftRow | null> {
+  const row = await responseDraftRepository.findForRespondent(formId, userId);
+  if (!row || !isExpired(row)) return row;
+  await responseDraftRepository.deleteForRespondent(formId, userId);
+  return null;
+}
 
 const isUniqueViolation = (error: unknown) =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
@@ -68,11 +83,8 @@ export function requireDraftAccess(form: RespondentForm | null, auth: BetterAuth
 }
 
 export async function getResponseDraft(formId: string, userId: string): Promise<ResponseDraftView | null> {
-  const row = await responseDraftRepository.findForRespondent(formId, userId);
-  if (!row) return null;
-  // Expired rows are purged on a schedule; never hand one back in between.
-  if (row.expiresAt.getTime() < Date.now()) return null;
-  return toView(row);
+  const row = await findLiveDraft(formId, userId);
+  return row ? toView(row) : null;
 }
 
 export async function saveResponseDraft(params: {
@@ -97,7 +109,11 @@ export async function saveResponseDraft(params: {
   const data = params.data as Prisma.InputJsonObject;
   const expiresAt = draftExpiry(new Date());
 
-  const createOrReportConflict = async (): Promise<SaveResponseDraftResult> => {
+  // First save from this client: never silently overwrite a draft that
+  // another device created after this page loaded.
+  if (baseVersion === null || baseVersion === undefined) {
+    const existing = await findLiveDraft(formId, userId);
+    if (existing) return { draft: toView(existing), conflict: true };
     try {
       const created = await responseDraftRepository.create({ formId, userId, data, currentPageId, expiresAt });
       return { draft: toView(created), conflict: false };
@@ -108,29 +124,20 @@ export async function saveResponseDraft(params: {
       if (!current) throw error;
       return { draft: toView(current), conflict: true };
     }
-  };
-
-  // First save from this client: never silently overwrite a draft that
-  // another device created after this page loaded.
-  if (baseVersion === null || baseVersion === undefined) {
-    const existing = await responseDraftRepository.findForRespondent(formId, userId);
-    if (existing) return { draft: toView(existing), conflict: true };
-    return createOrReportConflict();
   }
 
-  const written = await responseDraftRepository.updateIfVersion(formId, userId, baseVersion, {
-    data,
-    currentPageId,
-    expiresAt,
-  });
+  // Expired rows are deleted first, so a stale version can't revive one.
+  const live = await findLiveDraft(formId, userId);
+  const written = live
+    ? await responseDraftRepository.updateIfVersion(formId, userId, baseVersion, { data, currentPageId, expiresAt })
+    : 0;
   const current = await responseDraftRepository.findForRespondent(formId, userId);
 
   if (written === 1 && current) return { draft: toView(current), conflict: false };
-  if (current) return { draft: toView(current), conflict: true };
-
-  // The draft was discarded or submitted elsewhere while this tab kept
-  // typing. Keep the respondent's work rather than dropping it.
-  return createOrReportConflict();
+  // A null draft means it was submitted or discarded elsewhere (or expired)
+  // while this tab kept typing. Never recreate it implicitly: the respondent
+  // decides whether to keep saving these answers.
+  return { draft: current ? toView(current) : null, conflict: true };
 }
 
 export async function discardResponseDraft(formId: string, userId: string): Promise<boolean> {

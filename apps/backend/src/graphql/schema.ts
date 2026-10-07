@@ -201,9 +201,10 @@ export const typeDefs = gql`
   }
 
   type SaveResponseDraftResult {
-    draft: ResponseDraft!
-    # True when another tab or device saved first; draft is then the stored
-    # copy, left untouched, so the client can offer to keep either.
+    # Null only on a conflict where the draft was submitted or discarded elsewhere.
+    draft: ResponseDraft
+    # True when another tab or device saved, submitted or discarded first;
+    # nothing was written, so the client can offer to keep either copy.
     conflict: Boolean!
   }
 

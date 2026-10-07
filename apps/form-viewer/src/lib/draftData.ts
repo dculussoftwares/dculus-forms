@@ -67,8 +67,11 @@ function restoreAnswer(field: FormField, value: unknown, keepFiles: boolean): un
     case FieldType.RADIO_FIELD:
     case FieldType.SELECT_FIELD:
       return typeof value === 'string' && hasOptions(field) && field.options.includes(value) ? value : undefined;
+    case FieldType.NUMBER_FIELD:
+      return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
     default:
-      return isPrimitiveAnswer(value) ? value : undefined;
+      // Text, email, phone and date fields all hold strings.
+      return typeof value === 'string' ? value : undefined;
   }
 }
 

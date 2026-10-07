@@ -80,6 +80,10 @@ describe('buildPageResponses', () => {
     });
     expect(buildPageResponses(schema, { cv: [{ not: 'a key' }] }, { keepFiles: true })).toEqual({});
   });
+
+  it('drops scalar answers whose field changed between text and number', () => {
+    expect(buildPageResponses(schema, { name: 42, age: '36' })).toEqual({});
+  });
 });
 
 describe('resolveResumePageId', () => {

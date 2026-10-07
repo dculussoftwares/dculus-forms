@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@dculus/ui';
 import { saveProgressLabels as labels } from '../locales/saveProgress';
-import type { DraftSaveStatus } from '../hooks/useResponseDraft';
+import type { DraftConflict, DraftSaveStatus } from '../hooks/useResponseDraft';
 import { formatDate, formatTime } from '../lib/dateFormat';
 
 /** Quiet autosave state, shown in the respondent account header. */
@@ -13,13 +13,15 @@ export function DraftSaveStatusText({ status, lastSavedAt }: { status: DraftSave
       ? labels.saving
       : status === 'error'
         ? labels.saveFailed
-        : lastSavedAt
+        : status === 'stopped'
+          ? labels.saveStopped
+          : lastSavedAt
           ? labels.savedAt(formatTime(lastSavedAt))
           : labels.saved;
 
   return (
     <span
-      className={`shrink-0 text-xs ${status === 'error' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}
+      className={`shrink-0 text-xs ${status === 'error' || status === 'stopped' ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}
       data-testid="draft-save-status"
       data-status={status}
     >
@@ -33,8 +35,8 @@ interface DraftNoticeProps {
   restoredAt: string | null;
   /** The form has file fields, which drafts never keep. */
   hasFileFields: boolean;
-  /** A newer copy saved elsewhere; non-null shows the conflict prompt instead. */
-  conflict: { updatedAt: string } | null;
+  /** Changes made elsewhere; non-null shows the conflict prompt instead. */
+  conflict: DraftConflict | null;
   embedded?: boolean;
   onStartOver: () => Promise<void>;
   onKeepMine: () => void;
@@ -45,7 +47,8 @@ interface DraftNoticeProps {
 /**
  * The strip under the account header that explains save-and-resume state:
  * a "welcome back" note after restoring a draft (with "Start over"), or the
- * conflict prompt when another tab or device saved newer answers.
+ * conflict prompt when another tab or device saved, submitted or cleared
+ * the answers.
  */
 export default function DraftNotice({
   restoredAt,
@@ -68,6 +71,7 @@ export default function DraftNotice({
   ].join(' ');
 
   if (conflict) {
+    const isGone = conflict.kind === 'gone';
     return (
       <div
         className={`${shell} border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100`}
@@ -75,15 +79,17 @@ export default function DraftNotice({
         data-testid="draft-conflict"
       >
         <div className="min-w-0 flex-1">
-          <p className="font-medium">{labels.conflictTitle}</p>
-          <p className="text-xs opacity-80">{labels.conflictDescription}</p>
+          <p className="font-medium">{isGone ? labels.goneTitle : labels.conflictTitle}</p>
+          <p className="text-xs opacity-80">{isGone ? labels.goneDescription : labels.conflictDescription}</p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={onUseOther} data-testid="draft-conflict-use-other">
-            {labels.useOther}
-          </Button>
+          {!isGone && (
+            <Button size="sm" variant="outline" onClick={onUseOther} data-testid="draft-conflict-use-other">
+              {labels.useOther}
+            </Button>
+          )}
           <Button size="sm" onClick={onKeepMine} data-testid="draft-conflict-keep-mine">
-            {labels.keepMine}
+            {isGone ? labels.keepSaving : labels.keepMine}
           </Button>
         </div>
       </div>
