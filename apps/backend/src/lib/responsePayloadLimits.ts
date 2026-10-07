@@ -3,6 +3,11 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 
 export const MAX_RESPONSE_FIELDS = 500;
 export const MAX_RESPONSE_STRING_LENGTH = 10_000;
+/**
+ * Ceiling on the whole serialized answers object, nested values included:
+ * room for every field at its string limit, plus keys and JSON punctuation.
+ */
+export const MAX_RESPONSE_PAYLOAD_LENGTH = MAX_RESPONSE_FIELDS * (MAX_RESPONSE_STRING_LENGTH + 2_000);
 
 /**
  * P2-04: bounds the size of a respondent-supplied answers object so a public
@@ -26,5 +31,10 @@ export function assertResponsePayloadWithinLimits(data: unknown): void {
         GRAPHQL_ERROR_CODES.BAD_USER_INPUT
       );
     }
+  }
+  // Per-field checks only see top-level strings; nested arrays and objects
+  // are bounded by the total size instead.
+  if (JSON.stringify(data).length > MAX_RESPONSE_PAYLOAD_LENGTH) {
+    throw createGraphQLError('Response data is too large', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
   }
 }

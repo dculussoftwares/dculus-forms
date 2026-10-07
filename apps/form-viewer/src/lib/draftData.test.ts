@@ -73,6 +73,10 @@ describe('buildDraftPageResponses', () => {
       })
     ).toEqual({ p1: { tags: ['a'] } });
   });
+
+  it('drops scalar answers whose field changed between text and number', () => {
+    expect(buildDraftPageResponses(schema, { name: 42, age: '36' })).toEqual({});
+  });
 });
 
 describe('resolveResumePageId', () => {

@@ -20,6 +20,7 @@ const { mutate, client } = vi.hoisted(() => {
 vi.mock('@apollo/client/react', () => ({ useApolloClient: () => client }));
 
 import { act, renderHook } from '@testing-library/react';
+import { CombinedGraphQLErrors } from '@apollo/client';
 import { useFormResponseStore } from '@dculus/ui';
 import { AUTOSAVE_DEBOUNCE_MS, useResponseDraft, type ResponseDraft } from './useResponseDraft';
 
@@ -89,7 +90,7 @@ describe('useResponseDraft', () => {
 
     type('name', 'Mine');
     await flush();
-    expect(result.current.conflict?.version).toBe(7);
+    expect(result.current.conflict).toEqual({ kind: 'newer', draft: draft(7, { name: 'Other' }) });
 
     type('name', 'Mine 2');
     await flush();
@@ -132,6 +133,120 @@ describe('useResponseDraft', () => {
       await vi.runOnlyPendingTimersAsync();
     });
     expect(lastInput()).toMatchObject({ currentPageId: 'p3', baseVersion: 4 });
+  });
+
+  it('pauses on a draft submitted or cleared elsewhere until the respondent keeps saving', async () => {
+    mutate.mockResolvedValueOnce({ data: { saveResponseDraft: { conflict: true, draft: null } } });
+    const { result } = setup();
+    act(() => result.current.seed(draft(4, {})));
+
+    type('name', 'Mine');
+    await flush();
+    expect(result.current.conflict).toEqual({ kind: 'gone' });
+
+    type('name', 'Mine 2');
+    await flush();
+    expect(mutate).toHaveBeenCalledTimes(1);
+
+    mutate.mockResolvedValueOnce(saved(1, { name: 'Mine 2' }));
+    await act(async () => {
+      result.current.keepMine();
+      await vi.runOnlyPendingTimersAsync();
+    });
+    // A brand-new draft: no base version to compare against.
+    expect(lastInput()).toMatchObject({ data: { name: 'Mine 2' }, baseVersion: null });
+    expect(result.current.conflict).toBeNull();
+  });
+
+  it('stops autosave on a rejection a retry cannot fix', async () => {
+    mutate.mockResolvedValueOnce({
+      error: new CombinedGraphQLErrors({ errors: [{ message: 'closed', extensions: { code: 'FORM_CLOSED' } }] }),
+    });
+    const { result } = setup();
+
+    type('name', 'A');
+    await flush();
+    expect(result.current.status).toBe('stopped');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    type('name', 'Ab');
+    await flush();
+    expect(mutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('backs off between retries of a failing save', async () => {
+    mutate.mockResolvedValue({ error: new Error('offline') });
+    setup();
+
+    type('name', 'A');
+    await flush();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+    expect(mutate).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+    expect(mutate).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000);
+    });
+    expect(mutate).toHaveBeenCalledTimes(3);
+  });
+
+  it('sends the hidden-tab save with keepalive and tracks its version', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ json: async () => saved(1, { name: 'A' }) });
+    vi.stubGlobal('fetch', fetchMock);
+    const { result } = setup();
+
+    type('name', 'A');
+    await act(async () => {
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('pagehide'));
+      await vi.runOnlyPendingTimersAsync();
+    });
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    vi.unstubAllGlobals();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ keepalive: true });
+    expect(mutate).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('saved');
+
+    mutate.mockResolvedValueOnce(saved(2, { name: 'Ab' }));
+    type('name', 'Ab');
+    await flush();
+    expect(lastInput().baseVersion).toBe(1);
+  });
+
+  it('start over pauses saves while it clears the answers and the server copy', async () => {
+    mutate.mockResolvedValueOnce(saved(1, { name: 'A' }));
+    const { result } = setup();
+    type('name', 'A');
+    await flush();
+
+    type('name', 'Ab');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    mutate.mockResolvedValueOnce({ data: { discardResponseDraft: true } });
+    await act(async () => {
+      await result.current.discard(() => {
+        // A hidden-tab save attempted mid-reset must not resend the old answers.
+        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+        document.dispatchEvent(new Event('visibilitychange'));
+        useFormResponseStore.getState().clearAllResponses();
+      });
+      await vi.runOnlyPendingTimersAsync();
+    });
+    Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+    vi.unstubAllGlobals();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mutate).toHaveBeenCalledTimes(2);
+    expect(mutate.mock.calls[1][0].variables).toEqual({ formId: 'form-1' });
   });
 
   it('reports an error and retries a failed save', async () => {
