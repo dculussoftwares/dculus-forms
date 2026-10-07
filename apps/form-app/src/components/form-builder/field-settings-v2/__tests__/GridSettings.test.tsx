@@ -151,6 +151,16 @@ describe('GridSettings', () => {
     expect(mockSetSelectedField).toHaveBeenLastCalledWith('g1');
   });
 
+  it('offers "Ungroup instead", which restores the grid and then ungroups it', () => {
+    renderSettings([50, 50]);
+    fireEvent.click(screen.getByTestId('grid-settings-delete'));
+    const { secondaryAction } = mockToast.mock.calls[0][0];
+    expect(secondaryAction.label).toBe('Ungroup instead');
+    secondaryAction.onClick();
+    expect(mockRestoreGrid).toHaveBeenCalledWith('page-1', { gridId: 'g1', fieldIds: ['g1', 'a'] });
+    expect(mockUngroupGrid).toHaveBeenCalledWith('page-1', 'g1');
+  });
+
   it('undo does nothing once the editor has gone offline', () => {
     renderSettings([50, 50]);
     fireEvent.click(screen.getByTestId('grid-settings-delete'));

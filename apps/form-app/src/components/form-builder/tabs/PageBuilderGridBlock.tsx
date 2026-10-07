@@ -9,7 +9,7 @@ import {
   type GridColumnNode,
   type GridField,
 } from '@dculus/types';
-import { Button, toast } from '@dculus/ui';
+import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { Columns2, Copy, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
@@ -18,6 +18,7 @@ import { useTranslation } from '../../../hooks/useTranslation';
 import { FieldPickerPopover } from '../field-library/FieldPickerPopover';
 import { DraggableFieldCard } from './PageBuilderFieldCard';
 import { GRID_COLUMN_DROPPABLE, GRID_DROP_PRIORITY, GRID_SLOT_DROPPABLE } from './gridCollision';
+import { useDeleteGridWithUndo } from './useDeleteGridWithUndo';
 
 /** Gap between columns in px; the divider sits in the middle of it. */
 const COLUMN_GAP = 12;
@@ -350,17 +351,14 @@ export const GridBlock: React.FC<GridBlockProps> = ({
   const { t } = useTranslation('gridLayout');
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
-  const canEditRef = React.useRef(canEdit);
-  canEditRef.current = canEdit;
   const canReorder = permissions.canReorderFields();
   const {
     selectedFieldId,
     setSelectedField,
     setGridColumnWidths,
     duplicateGrid,
-    removeGrid,
-    restoreGrid,
   } = useFormBuilderStore();
+  const deleteGridWithUndo = useDeleteGridWithUndo(canEdit);
   const activeIsGrid = useActiveIsGrid();
 
   const pageIndex = pageFields.findIndex((f) => f.id === grid.id);
@@ -410,21 +408,7 @@ export const GridBlock: React.FC<GridBlockProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!canEdit) return;
-    const snapshot = removeGrid(pageId, grid.id, { deleteChildren: true });
-    if (!snapshot) return;
-    if (isSelected) setSelectedField(null);
-    toast({
-      title: t('block.deleted'),
-      action: {
-        label: t('block.undo'),
-        onClick: () => {
-          // Re-check at click time: the toast outlives this block and editability can change
-          if (!canEditRef.current || !useFormBuilderStore.getState().isConnected) return;
-          if (restoreGrid(pageId, snapshot)) setSelectedField(grid.id);
-        },
-      },
-    });
+    deleteGridWithUndo(pageId, grid.id);
   };
 
   return (

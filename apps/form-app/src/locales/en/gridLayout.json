@@ -11,7 +11,8 @@
     "resizeHandle": "Resize columns {{left}} and {{right}}",
     "moving": "Moving layout",
     "deleted": "Layout deleted",
-    "undo": "Undo"
+    "undo": "Undo",
+    "ungroupInstead": "Ungroup instead"
   },
   "card": {
     "moreActions": "More actions",
