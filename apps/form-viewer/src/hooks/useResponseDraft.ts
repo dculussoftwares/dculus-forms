@@ -51,7 +51,7 @@ export function useResponseDraft({ formId, enabled, applyDraft }: UseResponseDra
   const savedPageIdRef = useRef<string | null>(null);
   const pageIdRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inFlightRef = useRef<Promise<void> | null>(null);
+  const inFlightRef = useRef<Promise<boolean> | null>(null);
   const queuedRef = useRef(false);
   const activeRef = useRef(enabled);
   const conflictRef = useRef(false);
@@ -73,18 +73,19 @@ export function useResponseDraft({ formId, enabled, applyDraft }: UseResponseDra
     return answersChanged || pageChanged ? { data, key } : null;
   }, []);
 
-  const save = useCallback(async (): Promise<void> => {
+  const save = useCallback(async (): Promise<boolean> => {
     clearTimer();
-    if (!activeRef.current || conflictRef.current) return;
+    if (!activeRef.current || conflictRef.current) return false;
     if (inFlightRef.current) {
       queuedRef.current = true;
-      return;
+      return inFlightRef.current;
     }
     const change = pendingChange();
-    if (!change) return;
+    if (!change) return true;
 
-    let settle!: () => void;
-    inFlightRef.current = new Promise<void>((resolve) => (settle = resolve));
+    let settle!: (saved: boolean) => void;
+    inFlightRef.current = new Promise<boolean>((resolve) => (settle = resolve));
+    let saved = false;
     setStatus('saving');
     const pageId = pageIdRef.current;
     try {
@@ -101,24 +102,26 @@ export function useResponseDraft({ formId, enabled, applyDraft }: UseResponseDra
         conflictRef.current = true;
         setConflict(draft);
         setStatus('idle');
-        return;
+        return false;
       }
       versionRef.current = draft.version;
       savedKeyRef.current = change.key;
       savedPageIdRef.current = pageId;
       setLastSavedAt(draft.updatedAt);
       setStatus('saved');
+      saved = true;
     } catch {
       setStatus('error');
       if (activeRef.current) timerRef.current = setTimeout(() => void save(), RETRY_DELAY_MS);
     } finally {
       inFlightRef.current = null;
-      settle();
+      settle(saved);
       if (queuedRef.current) {
         queuedRef.current = false;
         void save();
       }
     }
+    return saved;
   }, [client, formId, pendingChange]);
 
   const scheduleSave = useCallback(
@@ -189,9 +192,11 @@ export function useResponseDraft({ formId, enabled, applyDraft }: UseResponseDra
   }, []);
 
   /** Save any pending change now, before the answers on screen are swapped out. */
-  const flush = useCallback(async () => {
-    while (inFlightRef.current) await inFlightRef.current;
-    await save();
+  const flush = useCallback(async (): Promise<boolean> => {
+    while (inFlightRef.current) {
+      if (!(await inFlightRef.current)) return false;
+    }
+    return save();
   }, [save]);
 
   /** Record the page the respondent is on; saved right away so they resume there. */

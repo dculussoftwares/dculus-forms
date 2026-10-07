@@ -30,7 +30,7 @@ import {
 import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
 import RespondentBadge from '../components/RespondentBadge';
-import { signOut } from '../lib/auth-client';
+import { getSession, signOut } from '../lib/auth-client';
 import DraftNotice, { DraftSaveStatusText } from '../components/DraftNotice';
 import { useResponseDraft, type ResponseDraft } from '../hooks/useResponseDraft';
 import { buildPageResponses, resolveResumePageId } from '../lib/draftData';
@@ -645,7 +645,11 @@ const FormViewer: React.FC<FormViewerProps> = ({
   // in progress is saved as a draft first, and comes back on cancel.
   const handleStartEditing = async () => {
     if (!myResponse || !formSchema) return;
-    if (draftSessionKey) await responseDraft.flush();
+    if (draftSessionKey && !(await responseDraft.flush())) {
+      setSubmissionState('error');
+      setSubmissionMessage('Your answers could not be saved. Please retry before editing your response.');
+      return;
+    }
     const store = useFormResponseStore.getState();
     store.clearAllResponses();
     for (const [pageId, responses] of Object.entries(
@@ -866,7 +870,26 @@ const FormViewer: React.FC<FormViewerProps> = ({
           <SignInGate
             formTitle={form.title}
             allowedDomains={allowedDomains}
-            onSignedIn={() => setNeedsReauth(false)}
+            onSignedIn={async () => {
+              const session = await getSession();
+              const previousEmail = form.respondentEmail?.toLowerCase();
+              const signedInEmail = session.data?.user?.email?.toLowerCase();
+              const identityChanged = !!previousEmail && !!signedInEmail && previousEmail !== signedInEmail;
+
+              // A re-authentication can belong to a different respondent. Do not
+              // let the old account's response or draft survive that transition.
+              if (identityChanged) {
+                useFormResponseStore.getState().clearAllResponses();
+                seedDraft(null);
+                setRestoredAt(null);
+                setMyResponseOverride(null);
+                setView('form');
+              } else {
+                setMyResponseOverride(undefined);
+              }
+              setNeedsReauth(false);
+              await refetch();
+            }}
           />
         </div>
       )}
