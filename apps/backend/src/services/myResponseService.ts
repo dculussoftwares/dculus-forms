@@ -45,11 +45,17 @@ export interface EditMyResponseParams {
  */
 function answersToRemovedFields(rawSchema: unknown, stored: Record<string, unknown>): Record<string, unknown> {
   if (!rawSchema || typeof rawSchema !== 'object') return {};
-  const liveFieldIds = new Set(
-    deserializeFormSchema(rawSchema).pages.flatMap((page) =>
-      page.fields.filter((field) => !field.deleted).map((field) => field.id)
-    )
-  );
+  let liveFieldIds: Set<string>;
+  try {
+    liveFieldIds = new Set(
+      deserializeFormSchema(rawSchema).pages.flatMap((page) =>
+        page.fields.filter((field) => !field.deleted).map((field) => field.id)
+      )
+    );
+  } catch {
+    // An unreadable schema can't say which fields are gone; keep only what was submitted.
+    return {};
+  }
   return Object.fromEntries(Object.entries(stored).filter(([fieldId]) => !liveFieldIds.has(fieldId)));
 }
 

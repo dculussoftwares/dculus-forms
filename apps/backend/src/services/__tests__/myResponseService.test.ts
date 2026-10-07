@@ -135,6 +135,15 @@ describe('editMyResponse', () => {
     );
   });
 
+  it('keeps only the submitted answers when the live schema cannot be read', async () => {
+    vi.mocked(responseRepository.findFirst).mockResolvedValue({ ...stored, data: { name: 'Ada', retired: 'old' } } as any);
+    vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({ pages: 'not-a-list' } as any);
+
+    await edit({ data: { name: 'Grace' } });
+
+    expect(updateResponse).toHaveBeenCalledWith('response-1', { name: 'Grace' }, expect.anything());
+  });
+
   it('drops answers the form rules hide', async () => {
     await edit({ data: { name: 'Grace', hidden: 'x' } });
     expect(updateResponse).toHaveBeenCalledWith('response-1', { name: 'Grace' }, expect.anything());
