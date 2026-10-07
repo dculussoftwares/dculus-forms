@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
 import { z } from 'zod';
 import { FormResponse, FormSchema, FieldType, QuestionGradeResult } from '@dculus/types';
+import { hasResponseValue } from '@dculus/utils';
 import {
   getPluginTypesWithData,
   getPluginExport,
@@ -479,31 +480,43 @@ const extractFieldInfo = (
       'fields'
     );
   } else {
-    // Active and soft-deleted fields from schema
+    // Column order: active fields (schema order), then soft-deleted fields,
+    // then orphan ids (in response data but absent from the schema). Deleted
+    // and orphan columns are only kept when an exported response answered them.
+    const answeredIds = new Set<string>();
+    responses.forEach((response) => {
+      Object.entries(response.data).forEach(([id, value]) => {
+        if (hasResponseValue(value)) answeredIds.add(id);
+      });
+    });
+
+    const knownIds = new Set<string>();
+    const deletedIds: string[] = [];
     formSchema.pages.forEach((page) => {
       page.fields.forEach((field) => {
         if (field.type && field.id && 'label' in field && (field as any).label) {
+          knownIds.add(field.id);
           const label = (field as any).label;
-          fieldInfo[field.id] = field.deleted
-            ? `${label} (deleted)`
-            : label;
-          orderedFieldIds.push(field.id);
+          if (!field.deleted) {
+            fieldInfo[field.id] = label;
+            orderedFieldIds.push(field.id);
+          } else if (answeredIds.has(field.id)) {
+            fieldInfo[field.id] = `${label} (deleted)`;
+            deletedIds.push(field.id);
+          }
         }
       });
     });
 
-    // Orphan field IDs: in response data but not in schema at all
-    const knownIds = new Set(orderedFieldIds);
-    const orphanIds = new Set<string>();
-    responses.forEach((response) => {
-      Object.keys(response.data).forEach((id) => {
-        if (!knownIds.has(id)) orphanIds.add(id);
-      });
-    });
+    // Sorted so a filtered export orders orphan columns the same as a full one.
+    const orphanIds = Array.from(answeredIds)
+      .filter((id) => !knownIds.has(id))
+      .sort();
     orphanIds.forEach((id) => {
       fieldInfo[id] = 'Unknown field (deleted)';
-      orderedFieldIds.push(id);
     });
+
+    orderedFieldIds.push(...deletedIds, ...orphanIds);
   }
 
   return { fieldInfo, orderedFieldIds };

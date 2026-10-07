@@ -8,6 +8,8 @@ import { useConditionReferenceCounts } from '../../../hooks/useConditionReferenc
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useQuizMode } from '../../../contexts/QuizModeContext';
 import { hasAnswerKey } from '../../../utils/quizGrading';
+import type { GridTarget } from '../../../store/types/store.types';
+import { CompactCardMenu } from './CompactCardMenu';
 
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import {
@@ -46,6 +48,8 @@ export { getFieldTypeConfig, getCategoryColor };
 /**
  * FieldCard - Displays a single existing field with optional drag handle
  */
+export type FieldCardDensity = 'default' | 'compact';
+
 export const FieldCard: React.FC<{
   field: FormField;
   pageId: string;
@@ -68,6 +72,8 @@ export const FieldCard: React.FC<{
   isAnyDragActive?: boolean;
   isRecentlyDropped?: boolean;
   isDelayingExpansion?: boolean;
+  /** `compact` is the narrow variant used inside grid columns (§8.3). */
+  density?: FieldCardDensity;
 }> = ({
   field,
   pageId,
@@ -90,7 +96,9 @@ export const FieldCard: React.FC<{
   isAnyDragActive = false,
   isRecentlyDropped = false,
   isDelayingExpansion = false,
+  density = 'default',
 }) => {
+  const isCompact = density === 'compact';
   // Get label for fillable fields, or use type name for others
   const typeConfig = getFieldTypeConfig(field.type);
   const label: string =
@@ -232,7 +240,7 @@ export const FieldCard: React.FC<{
       ref={cardRef}
       onClick={onClick}
       className={`
-        px-4 py-3.5 bg-white dark:bg-card rounded-xl transition-all duration-150 group
+        ${isCompact ? 'px-3 py-3' : 'px-4 py-3.5'} bg-white dark:bg-card rounded-xl transition-all duration-150 group
         ${
           isDragging
             ? 'opacity-40'
@@ -261,8 +269,8 @@ export const FieldCard: React.FC<{
       data-testid={`draggable-field-${field.id}`}
     >
       {/* Header row — always visible in both compact and expanded states */}
-      <div className="flex items-center justify-between gap-3 w-full">
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+      <div className={cn('flex items-center justify-between w-full', isCompact ? 'gap-1.5' : 'gap-3')}>
+        <div className={cn('flex items-center min-w-0 flex-1', isCompact ? 'gap-1.5' : 'gap-2.5')}>
           {dragHandleProps && (
             <div
               {...dragHandleProps}
@@ -281,12 +289,29 @@ export const FieldCard: React.FC<{
           </div>
 
           <div className="flex items-center gap-1.5 min-w-0">
+            {isCompact ? (
+              <span
+                className="min-w-0 text-xs font-semibold leading-snug text-[#3c323e] dark:text-white line-clamp-2 break-words [overflow-wrap:anywhere]"
+                title={label}
+              >
+                {label}
+                {isRequired && (
+                  <span
+                    className="text-[#ce5d55] ml-0.5"
+                    title={t('fieldCard.requiredFieldTooltip', { defaultValue: 'Required field' })}
+                  >
+                    *
+                  </span>
+                )}
+              </span>
+            ) : (
             <span className="text-xs font-semibold text-[#3c323e] dark:text-white">
               {typeConfig.label}
             </span>
+            )}
 
             {/* In compact / dragging mode, show truncated label so reordering is identifiable */}
-            {shouldShowCompact && (
+            {shouldShowCompact && !isCompact && (
               <>
                 <span className="text-xs text-[#655d67] dark:text-gray-400">·</span>
                 <span className="text-xs text-[#655d67] dark:text-gray-400 truncate max-w-[200px]">
@@ -339,8 +364,22 @@ export const FieldCard: React.FC<{
           </div>
         </div>
 
-        {/* Right side of header: Required Toggle */}
-        {isFillable && onToggleRequired && (
+        {/* Right side of header: Required Toggle (compact cards use the ⋯ menu instead) */}
+        {isCompact && (
+          <CompactCardMenu
+            fieldId={field.id}
+            pages={pages}
+            currentPageId={pageId}
+            onSettings={onClick}
+            onMoveUp={onMoveUp}
+            onMoveDown={onMoveDown}
+            onDuplicate={onDuplicate}
+            onMoveToPage={onMoveToPage}
+            onCopyToPage={onCopyToPage}
+            onDelete={onDelete}
+          />
+        )}
+        {!isCompact && isFillable && onToggleRequired && (
           <div
             className="flex-shrink-0 flex items-center gap-1.5 select-none"
             onClick={(e) => e.stopPropagation()}
@@ -377,9 +416,9 @@ export const FieldCard: React.FC<{
         }}
       >
         <div className="overflow-hidden">
-          <div className="pt-3 space-y-2.5">
+          <div className={isCompact ? 'pt-2.5 space-y-2.5' : 'pt-3 space-y-2.5'}>
             {/* Field Preview & In-place Question Title */}
-            <div className="pl-9 pr-1" data-testid={`field-content-${index + 1}`}>
+            <div className={isCompact ? undefined : 'pl-9 pr-1'} data-testid={`field-content-${index + 1}`}>
               <div
                 className="px-3 py-2.5 rounded-lg"
                 style={{
@@ -416,7 +455,7 @@ export const FieldCard: React.FC<{
                       role={onUpdateLabel ? 'button' : undefined}
                       tabIndex={onUpdateLabel ? 0 : undefined}
                       className={cn(
-                        'text-sm font-medium flex items-center gap-1.5 text-[#4c414e] dark:text-white group/label cursor-text mb-2',
+                        'text-sm font-medium flex items-start gap-1.5 text-[#4c414e] dark:text-white group/label cursor-text mb-2',
                         onUpdateLabel && 'hover:underline decoration-dashed decoration-gray-400 underline-offset-2 focus:outline-none focus:ring-1 focus:ring-primary rounded px-0.5'
                       )}
                       onClick={(e) => {
@@ -438,7 +477,7 @@ export const FieldCard: React.FC<{
                           : undefined
                       }
                     >
-                      <span className="truncate">{label}</span>
+                      <span className="min-w-0 leading-snug break-words [overflow-wrap:anywhere]">{label}</span>
                       {isRequired && (
                         <span
                           className="text-[#ce5d55] text-sm flex-shrink-0"
@@ -448,7 +487,7 @@ export const FieldCard: React.FC<{
                         </span>
                       )}
                       {onUpdateLabel && (
-                        <Pencil className="w-3 h-3 text-[#655d67] opacity-0 group-hover/label:opacity-100 transition-opacity ml-0.5" />
+                        <Pencil className="w-3 h-3 mt-1 flex-shrink-0 text-[#655d67] opacity-0 group-hover/label:opacity-100 transition-opacity ml-0.5" />
                       )}
                     </div>
                   )
@@ -474,6 +513,7 @@ export const FieldCard: React.FC<{
             </div>
 
             {/* Actions — fade in on hover */}
+            {!isCompact && (
             <div className="pl-9 pr-1">
               <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
                 {onClick && (
@@ -547,6 +587,7 @@ export const FieldCard: React.FC<{
                 )}
               </div>
             </div>
+            )}
           </div>
         </div>
       </div>
@@ -568,6 +609,9 @@ export const DraggableFieldCard: React.FC<{
   totalFields: number;
   isRecentlyDropped?: boolean;
   isDelayingExpansion?: boolean;
+  density?: FieldCardDensity;
+  /** Grid children: one-step moves inside their column (absent = no neighbour that way). */
+  columnMoves?: { up?: GridTarget; down?: GridTarget };
 }> = ({
   field,
   index,
@@ -575,6 +619,8 @@ export const DraggableFieldCard: React.FC<{
   totalFields,
   isRecentlyDropped = false,
   isDelayingExpansion = false,
+  density,
+  columnMoves,
 }) => {
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
@@ -589,6 +635,7 @@ export const DraggableFieldCard: React.FC<{
     moveFieldBetweenPages,
     copyFieldToPage,
     updateField,
+    placeField,
     pages,
   } = useFormBuilderStore();
   const { t } = useTranslation('pageBuilderTab');
@@ -657,6 +704,21 @@ export const DraggableFieldCard: React.FC<{
     }
   };
 
+  const placeInColumn = (target: GridTarget) => () => {
+    placeField({ pageId, fieldId: field.id, target });
+  };
+  const isGridChild = columnMoves !== undefined;
+  const moveUp = isGridChild
+    ? columnMoves.up && placeInColumn(columnMoves.up)
+    : index > 0
+      ? handleMoveUp
+      : undefined;
+  const moveDown = isGridChild
+    ? columnMoves.down && placeInColumn(columnMoves.down)
+    : index < totalFields - 1
+      ? handleMoveDown
+      : undefined;
+
   const handleMoveToPage = (targetPageId: string) => {
     moveFieldBetweenPages(pageId, targetPageId, field.id);
   };
@@ -700,16 +762,15 @@ export const DraggableFieldCard: React.FC<{
         isAnyDragActive={isAnyDragActive}
         isRecentlyDropped={isRecentlyDropped}
         isDelayingExpansion={isDelayingExpansion}
+        density={density}
         dragHandleProps={
           canReorder ? { ...attributes, ...listeners } : undefined
         }
         onClick={handleClick}
         onDelete={canEdit ? handleDelete : undefined}
         onDuplicate={canEdit ? handleDuplicate : undefined}
-        onMoveUp={canReorder && index > 0 ? handleMoveUp : undefined}
-        onMoveDown={
-          canReorder && index < totalFields - 1 ? handleMoveDown : undefined
-        }
+        onMoveUp={canReorder ? moveUp : undefined}
+        onMoveDown={canReorder ? moveDown : undefined}
         onMoveToPage={canEdit ? handleMoveToPage : undefined}
         onCopyToPage={canEdit ? handleCopyToPage : undefined}
         onUpdateLabel={canEdit && hasLabel ? handleUpdateLabel : undefined}

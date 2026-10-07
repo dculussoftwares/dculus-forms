@@ -61,6 +61,15 @@ export interface PagesSlice {
   _getPageIndex: (pageId: string) => number;
 }
 
+/** A slot inside a grid column; `beforeFieldId` null or absent means the end of the column. */
+export type GridTarget = { gridId: string; column: number; beforeFieldId?: string | null };
+
+/** Where `placeField` puts a field: a grid slot, or a top-level slot before a node (null = end). */
+export type PlaceTarget = GridTarget | { gridId?: undefined; beforeNodeId?: string | null };
+
+/** Exactly the ids `removeGrid` soft-deleted, so `restoreGrid` can bring back only those. */
+export type GridSnapshot = { gridId: string; fieldIds: string[] };
+
 /**
  * Fields Slice
  *
@@ -96,6 +105,30 @@ export interface FieldsSlice {
    * old id remain as immutable history and do not carry over).
    */
   convertFieldType: (pageId: string, fieldId: string, newType: FieldType) => void;
+
+  // Grid layout (docs/grid-layout-strategy.md §7.4). Id-returning actions return undefined when nothing was written.
+  addGrid: (
+    pageId: string,
+    columns: 1 | 2 | 3 | 4,
+    at?: { beforeNodeId?: string | null }
+  ) => string | undefined;
+  addFieldToGrid: (
+    pageId: string,
+    fieldType: FieldType,
+    fieldData: Partial<FieldData>,
+    target: GridTarget
+  ) => string | undefined;
+  /** Returns false when the move is rejected (unknown field or grid, or a grid dropped into a grid). */
+  placeField: (args: { pageId: string; fieldId: string; target: PlaceTarget }) => boolean;
+  setGridColumnWidths: (pageId: string, gridId: string, widths: number[]) => void;
+  ungroupGrid: (pageId: string, gridId: string) => void;
+  removeGrid: (
+    pageId: string,
+    gridId: string,
+    options: { deleteChildren: boolean }
+  ) => GridSnapshot | undefined;
+  restoreGrid: (pageId: string, snapshot: GridSnapshot) => boolean;
+  duplicateGrid: (pageId: string, gridId: string) => string | undefined;
 
   // Internal helpers
   _findFieldInPages: (fieldId: string) => { page: FormPage; field: FormField } | null;

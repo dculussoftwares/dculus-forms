@@ -7,5 +7,9 @@
   "fieldCount": {
     "singular": "field",
     "plural": "fields"
+  },
+  "actions": {
+    "move": "Move",
+    "copy": "Copy"
   }
 }

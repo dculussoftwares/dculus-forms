@@ -7,6 +7,7 @@ import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFieldCreation } from '../../hooks/useFieldCreation';
 import { useFormBuilderStore } from '../../store/useFormBuilderStore';
+import { useGridLayoutEnabled } from '../../contexts/GridLayoutFlagContext';
 import {
   Type,
   FileText,
@@ -19,6 +20,9 @@ import {
   FileCode,
   Upload,
   Phone,
+  Square,
+  Columns2,
+  Columns3,
 } from 'lucide-react';
 
 export interface FieldTypeConfig {
@@ -26,8 +30,16 @@ export interface FieldTypeConfig {
   label: string;
   description: string;
   icon: React.ReactNode;
-  category: 'input' | 'choice' | 'content' | 'advanced';
+  category: 'input' | 'choice' | 'content' | 'advanced' | 'layout';
+  /** Grid tiles share FieldType.GRID_FIELD and differ only by their column count. */
+  preset?: { columns: number };
+  /** Locale-independent test id slug; tiles without one keep the label-derived id. */
+  testIdSlug?: string;
 }
+
+/** Unique per tile: grid presets share a type, and dnd-kit ids / React keys must not collide. */
+export const getFieldTypeKey = (fieldType: FieldTypeConfig): string =>
+  fieldType.preset ? `${fieldType.type}-${fieldType.preset.columns}` : fieldType.type;
 
 export const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
   // Input Fields
@@ -116,6 +128,45 @@ export const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig
   },
 ];
 
+export const getLayoutFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
+  {
+    type: FieldType.GRID_FIELD,
+    label: t('fieldTypes.oneColumn.label'),
+    description: t('fieldTypes.oneColumn.description'),
+    icon: <Square className="w-5 h-5" />,
+    category: 'layout',
+    preset: { columns: 1 },
+    testIdSlug: '1-column',
+  },
+  {
+    type: FieldType.GRID_FIELD,
+    label: t('fieldTypes.twoColumns.label'),
+    description: t('fieldTypes.twoColumns.description'),
+    icon: <Columns2 className="w-5 h-5" />,
+    category: 'layout',
+    preset: { columns: 2 },
+    testIdSlug: '2-columns',
+  },
+  {
+    type: FieldType.GRID_FIELD,
+    label: t('fieldTypes.threeColumns.label'),
+    description: t('fieldTypes.threeColumns.description'),
+    icon: <Columns3 className="w-5 h-5" />,
+    category: 'layout',
+    preset: { columns: 3 },
+    testIdSlug: '3-columns',
+  },
+];
+
+/** The palette's tiles: today's field types, plus the layout tiles when grid layout is enabled. */
+export const getPaletteFieldTypesConfig = (
+  t: (key: string) => string,
+  gridLayoutEnabled: boolean
+): FieldTypeConfig[] =>
+  gridLayoutEnabled
+    ? [...getFieldTypesConfig(t), ...getLayoutFieldTypesConfig(t)]
+    : getFieldTypesConfig(t);
+
 // Dark variants are explicit here for the same reason as in
 // shared/fieldTypeVisuals: these are hardcoded light pastels, and form-app's
 // `.dark` block defines no `--tf-*` overrides, so without them a dark-mode tile
@@ -142,6 +193,11 @@ export const getCategoriesConfig = (t: (key: string) => string) => ({
     label: t('categories.advanced'),
     color:
       'bg-[#fbe19d] text-[#8b6a18] border-[rgba(251,225,157,0.6)] dark:bg-[rgba(251,225,157,0.16)] dark:text-[#f3d489] dark:border-[rgba(251,225,157,0.28)]',
+  },
+  layout: {
+    label: t('categories.layout'),
+    color:
+      'bg-[var(--tf-icon-gray)] text-foreground border-[rgba(81,76,84,0.15)] dark:bg-[rgba(222,220,222,0.14)] dark:text-gray-200 dark:border-[rgba(222,220,222,0.28)]',
   },
 });
 
@@ -231,7 +287,7 @@ export const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
   onAdd,
   idPrefix = '',
 }) => {
-  const draggableId = `field-type-${idPrefix}${fieldType.type}`;
+  const draggableId = `field-type-${idPrefix}${getFieldTypeKey(fieldType)}`;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: draggableId,
     data: {
@@ -262,7 +318,7 @@ export const DraggableFieldType: React.FC<DraggableFieldTypeProps> = ({
       <div
         ref={setNodeRef}
         data-draggable-id={draggableId}
-        data-testid={`field-type-${idPrefix}${fieldType.label.replace(/\s+/g, '-').toLowerCase()}`}
+        data-testid={`field-type-${idPrefix}${fieldType.testIdSlug ?? fieldType.label.replace(/\s+/g, '-').toLowerCase()}`}
         {...listeners}
         {...attributes}
         onClick={onAdd}
@@ -298,13 +354,14 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
   const { t } = useTranslation('fieldTypesPanel');
   const { selectedPageId, addField } = useFormBuilderStore();
   const { createFieldData } = useFieldCreation();
+  const gridLayoutEnabled = useGridLayoutEnabled();
 
   // Hide field types panel for viewers as they can't add fields
   if (!permissions.canAddFields()) {
     return null;
   }
 
-  const FIELD_TYPES = getFieldTypesConfig(t);
+  const FIELD_TYPES = getPaletteFieldTypesConfig(t, gridLayoutEnabled);
   const CATEGORIES = getCategoriesConfig(t);
 
   const groupedFields = FIELD_TYPES.reduce(
@@ -347,7 +404,7 @@ export const FieldTypesPanel: React.FC<FieldTypesPanelProps> = ({
               <div className="space-y-1.5">
                 {fields.map((fieldType) => (
                   <DraggableFieldType
-                    key={fieldType.type}
+                    key={getFieldTypeKey(fieldType)}
                     fieldType={fieldType}
                     categories={CATEGORIES}
                     idPrefix={idPrefix}

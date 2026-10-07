@@ -1,8 +1,39 @@
 # Grid Layout (Column Containers) — Architecture & Implementation Plan
 
-> Status: **Proposal v2 — revised after a code-level validation pass (2026-09-30); awaiting sign-off on §19**
+> Status: **v3 — phases 0b–4d implemented (2026-10-07); Phase 5/6 next. §19 recommendations are implemented as the decisions.**
 > Scope: form-app (builder), form-viewer (public), `@dculus/types`, `@dculus/ui`, `@dculus/utils`, backend (Hocuspocus + consumers)
 > Reference behaviour: Zoho Forms "Grid" (1 / 2 / 3-column containers, per-column % widths, drag-to-resize divider, floating settings/delete toolbar, drag fields into columns)
+
+### Implementation status (updated 2026-10-07)
+
+| Phase | Scope | State |
+|---|---|---|
+| 0b | Pre-existing bug fixes (visual/raw index, `onDragCancel`, rich-text serialize, `deleted` seeding) | Merged #380 |
+| 0c | Golden baselines (store, Hocuspocus, zod, viewer, deserialization) | Merged #381; **Playwright screenshot baselines still pending** (generate in CI/Linux) |
+| 1a | `GridField`, `grid.ts` helpers, constants, validation | Merged #382 |
+| 1b | Y.js / CollaborationManager / Hocuspocus plumbing | Merged #383 |
+| 1c | Consumer skips (analytics, PDF, sheets, AI, metadata, conditions) | Merged #384 |
+| 2a | Viewer `GridRenderer` (container queries) | Merged #385 (its `VITE_GRID_RENDER=stack` kill switch was removed in Phase 4a) |
+| 2b | Viewer validation / submission skips | Merged #388 |
+| 3a | Store grid actions + `involvesGrid` branches + permission wrapper | Merged #389 |
+| 3b | Builder authoring behind `VITE_ENABLE_GRID_LAYOUT` | Merged #391; **browser drag QA still open** (carried into Phase 4 exit gate) |
+| 4a | Drop the `VITE_GRID_RENDER` kill switch; wrap long labels in grid columns (§9.7) | Done in #396 |
+| 4b | Keyboard model (§8.7), shared grid delete with Undo / "Ungroup instead" | Done in #396 |
+| 4c | Rail grouping and question counts (§8.8), grid move/copy to page from the toolbar | Done in #396 |
+| 4d | "Column N of M" drag announcements, translated grid toasts | Done in #396 |
+| 5 | Integrations (optional) | Not started |
+| 6 | E2E suites, rollout, flag removal, docs | Not started |
+
+**Phase 3b — done in #391:** palette tiles (1/2/3 columns, flag-gated) and creation presets; en/ta translations (`fieldTypesPanel` layout keys, new `gridLayout` namespace, `fieldSettingsHeader.columns`); `grid_field` icon/label maps; canvas `GridBlock` (`tabs/PageBuilderGridBlock.tsx`) with columns, slot indicators, empty-column add, toolbar (settings/duplicate/delete with undo); compact `FieldCard` density with translated `⋯` menu (`tabs/CompactCardMenu.tsx`); `DropIndicator.beforeNodeId`; grid-aware `FieldListWithDropZones` (grid-less pages render the same DOM); DnD `grid-slot`/`grid-column` branches, same-page `placeField` on grid pages, slim grid overlay; collision wrapper (`tabs/gridCollision.ts`, identity without grid droppables); grid-form-only droppable re-measuring; column resize (pointer capture, 5 %/1 % snap, keyboard, single commit); `GridSettings` panel; picker `gridTarget`. Tests: collision (mutation-checked), palette/picker, `GridSettings`, `GridBlock` — form-app jest 569 passed, golden 17/17 unchanged, tsc clean, lint 0 errors.
+
+**Phase 3b — carried over:** browser QA of drag into/between/out of columns (flag on) is not done; it moves into the Phase 4 exit gate. Two toasts in `store/slices/gridActions.ts` (L402 connection lost, L764 grid conversion rejected) are hard-coded English; translated in Phase 4d.
+
+**Known gaps deferred to Phase 4:** the journey rail lists the grid as a flat `grid_field` chip (grouping and `countQuestionFields` counts are §8.8); sidebar/keyboard delete of a grid uses `removeField` (works, but no `restoreGrid` toast yet); dnd announcements ("column N of M").
+
+### What changed in v3 (2026-10-07)
+- **No viewer kill switch.** `VITE_GRID_RENDER=stack` is removed in Phase 4a (code, test, docs), shipped in the same PR as this revision. Rollback for a bad grid render is a revert or turning off `VITE_ENABLE_GRID_LAYOUT` for authoring; container-query stacking already covers narrow screens.
+- **Labels must wrap inside columns** (new §9.7, §8.3). Found in review: in the viewer a long single word overflows into the next column and wrapped lines are cramped (`Label` is `leading-none`); in the builder the canvas label is `truncate`, so it never reaches a second line.
+- Phase 4 split into 4a–4d PRs (§16); doc status refreshed.
 
 ### What changed in v2
 - **Existing store actions get guarded grid-aware branches** (§7.4). v1 claimed they could stay untouched; they cannot (moving a grid with `reorderFields` leaves its children behind, `duplicatePage` orphans `gridId`, `convertFieldType` drops it). The store is the only chokepoint covering canvas, rail, keyboard, card menus, AI and the permission wrapper.
@@ -477,6 +508,7 @@ GridBlock  (data-testid="grid-block-{id}", selectable, role="group", aria-label)
   - the `FieldPreview` body is kept (it still collapses during drag);
   - clicking the card selects it.
 - `GridColumn` passes `density="compact"`. Keep `draggable-field-{id}` and `field-content-{n}` unchanged.
+- **Labels wrap, never truncate, inside a column (§9.7).** The canvas label in `PageBuilderFieldCard` (`<span className="truncate">{label}</span>`, ~L480) becomes a wrapping span (`min-w-0 break-words [overflow-wrap:anywhere]`) with the required `*` and pencil kept `shrink-0` beside the first line (`items-start`). The compact header label (~L292) uses `line-clamp-2` + `[overflow-wrap:anywhere]` instead of `truncate`, keeping `title={label}`. Top-level (grid-less) cards get the same wrapping; a full-width label rarely wraps, and today's truncation hides text there too.
 
 ### 8.4 Drag-and-drop protocol
 
@@ -620,6 +652,20 @@ Add an explicit `isLayoutField(field)` early return, placed **before** the filla
 
 ### 9.6 Storybook
 Add `grid_field` scenarios to `packages/ui/src/stories/mocks/index.ts` (`createGridPages`: 2-col, 3-col with uneven widths, hidden-children, empty grid) and stories in `PageRenderer.stories.tsx` / `FieldPreview.stories.tsx`.
+
+
+### 9.7 Labels wrap inside narrow columns
+**Problem.** Column tracks are `minmax(0, Nfr)` and columns are `min-w-0`, so a column can be narrower than its label. In `FormFieldRenderer` the label row is `flex items-center justify-between` and `Label` is `leading-none`:
+- a long word or URL-like label (no spaces) does not break and paints over the neighbouring column;
+- labels that do wrap have line-height 1, so the lines touch and read as overlapping.
+
+**Fix (in `@dculus/ui`, applies to viewer, preview and response edit):**
+- label row: `flex items-start justify-between gap-2`;
+- `Label`: add `min-w-0 flex-1 leading-snug break-words [overflow-wrap:anywhere]` via `className` (do not change the shared `labelVariants`, other screens use it);
+- the required `*` stays inline at the end of the text; the PREVIEW validation indicator is `shrink-0`;
+- option labels for radio/checkbox (`FormFieldRenderer` ~L320/L358) and file chips get the same `[overflow-wrap:anywhere]`.
+
+**Guards:** grid-less golden DOM snapshot changes only by these classes (update the snapshot in the same PR, noted in its description); screenshot check of a 3-column grid at 1280 px with a 60-character label and a 40-character unbroken word in the middle column: no glyph outside its column, no horizontal scroll.
 
 ---
 
@@ -795,7 +841,8 @@ These three areas are hard constraints. Each phase in §16 has an exit gate that
 | Builder phone frame | `FormArea` (not the renderer) draws the canvas, so `GridBlock` uses the same container-query classes and stacks in the 390 px frame (~322 px inside) without touching the shim. Verified in the frame and in `PreviewTab` (~314 px). |
 | Narrow-cell overflow | Explicit checks for components with fixed widths: `PhoneNumberInput` compact `w-[92px]`, `AffixedInput` prefix/suffix `max-w-[40%]`, `DatePicker` trigger, file-upload drop zone. Columns use `minmax(0, Nfr)` so nothing forces overflow. |
 | Field order on phones | Stacked order = DOM order = column-major canonical order; identical to tab order. |
-| Bad mobile bug after release | **Viewer kill switch** `VITE_GRID_RENDER=stack` renders every grid as a single vertical list (no data change). Container-query fallback path exists (`useContainerBreakpoint`). |
+| Bad mobile bug after release | No runtime kill switch (removed in Phase 4a). Ship a fix or revert the viewer deploy; turning off `VITE_ENABLE_GRID_LAYOUT` stops new grids being authored. Container-query fallback path exists (`useContainerBreakpoint`). |
+| Long labels in narrow columns | Labels wrap with `[overflow-wrap:anywhere]` and `leading-snug` (§9.7); never truncated, never painted into the next column. |
 
 **Mobile test matrix** (phase 2 gate, re-run in phases 3–4): container widths 320, 360, 375, 390, 414, 768, 1024; viewer, `PreviewTab` mobile frame, builder mobile frame, embed iframe (`embed.feature` widths), layouts L1–L9 (L6 at 704 px, L4/L7 hero variants), light/dark. Pass criteria: no horizontal scroll, no clipped popups, stacked below threshold, side-by-side above it.
 
@@ -937,9 +984,8 @@ Optional and independent of grids (tracked in §21): switch the stale `Form.form
   - submits a payload with no grid key (verified in the stored `Response.data`);
   - collapses columns whose children are hidden;
   - leaves analytics, export, PDF and email for that form unchanged.
-- The `VITE_GRID_RENDER=stack` kill switch is verified.
 
-**Rollback:** revert the PR (or set the kill switch); no authoring exists yet.
+**Rollback:** revert the PR; no authoring exists yet.
 
 ### Phase 3 — Builder authoring, behind `VITE_ENABLE_GRID_LAYOUT`
 **Tasks**
@@ -965,15 +1011,33 @@ Optional and independent of grids (tracked in §21): switch the stale `Form.form
 **Rollback:** turn flag off (authoring hidden; existing grids still render and remain editable only as top-level-tolerant data), or revert PR.
 
 ### Phase 4 — Builder polish and hardening
-**Tasks**
-1. Keyboard model and selection (§8.7); journey rail grouping and question counts (§8.8).
-2. `ungroupGrid`, `removeGrid` / `restoreGrid` (the undo-toast callers in `PageBuilderFieldCard`, `FormArea` and `PageBuilderSidebar`), `duplicateGrid`, move/copy-to-page semantics; route the card `⋯` actions through the store actions.
-3. Empty-state visuals, selection states, builder mobile-frame check, dnd announcements.
-4. i18n `en` + `ta` (`gridLayout` namespace) and an accessibility pass (§14).
+Four PRs, in this order. Line numbers are as of `main` @ 5a67554.
 
-**Exit gate:** every row of the action matrix below passes; a11y checks (keyboard resize, announcements) pass; mobile and validator gates re-run and green; no regression in existing e2e field features (`field-*.feature`).
+**4a — Remove the kill switch; wrap labels (small, do first)**
+1. Delete `GridRenderMode`, `resolveGridRenderMode`, `readGridRenderEnv`, the `renderMode` prop and the stack branch from `packages/ui/src/renderers/GridRenderer.tsx`; delete the `VITE_GRID_RENDER=stack` test in `apps/form-viewer/src/components/GridRenderer.test.tsx`. Check no `.env*`, Terraform or workflow file sets it.
+2. Viewer label wrapping (§9.7) in `FormFieldRenderer.tsx` (label row ~L132, option labels ~L320/L358).
+3. Builder label wrapping (§8.3) in `PageBuilderFieldCard.tsx` (~L292 compact header, ~L480 canvas label).
+4. Tests: `GridRenderer` test asserts a long unbroken label has the wrap classes; golden DOM snapshot updated deliberately.
 
-**Rollback:** revert PR; phase 3 behaviour remains.
+**4b — Keyboard and selection (§8.7)** in `tabs/PageBuilderFormArea.tsx` (L441-L511, today flat `page.fields` index):
+1. ↑/↓ in tree reading order (grid header → column 0 → column 1 → next node); ←/→ across columns.
+2. Alt+↑/↓ keep `reorderFields` (grid branch owns D10); Alt+←/→ move a child between columns via `placeField`.
+3. Delete/Backspace on a grid → `removeGrid` + `restoreGrid` undo toast with "Ungroup instead"; Cmd/Ctrl+D on a grid → `duplicateGrid`.
+
+**4c — Rail, counts, grid undo, move/copy (§8.8, §7.4)**
+1. `rail/JourneyRail.tsx` L37 and the counts in `CollaborativeFormBuilder.tsx` L222, `JSONPreview.tsx` L53, `FormArea` `PageHeader`, `PageActionsSelector` → `countQuestionFields`.
+2. `rail/RailPageGroup.tsx`: grid as a collapsible parent chip with child chips; insert zones carry `beforeNodeId`.
+3. Grid delete from the field card and sidebar: no change needed. Those paths only ever see questions (a grid uses `GridBlock` and `GridSettings`), and `removeField`/`restoreField` already route a grid through its snapshot branch.
+4. Move/copy a whole grid to another page from a `PageActionsSelector` on the grid toolbar; `moveFieldBetweenPages`/`copyFieldToPage` already carry the children.
+
+**4d — a11y, i18n, visuals**
+1. `accessibility.announcements` on the inner `DndContext` in `PageBuilderTab.tsx` ("column N of M").
+2. Translate the two hard-coded toasts in `gridActions.ts` (en + ta, `gridLayout` namespace).
+3. Empty-state and selection visuals; builder mobile-frame check (§8.9).
+
+**Exit gate (end of 4d):** every row of the action matrix below passes in a browser with the flag on (this includes the drag QA carried over from 3b); a11y checks (keyboard resize, announcements) pass; mobile and validator gates re-run and green; no regression in existing e2e field features (`field-*.feature`).
+
+**Rollback:** revert the PR; phase 3 behaviour remains.
 
 ### Phase 5 — Integrations (independent, optional PRs)
 - Condition targeting of grids (§11 v1.1).
@@ -985,7 +1049,7 @@ Optional and independent of grids (tracked in §21): switch the stale `Form.form
 ### Phase 6 — Rollout and cleanup
 1. Production order: backend + types deploy, then viewer, wait for Cloudflare propagation, then enable the flag for internal orgs, then everyone.
 2. Cross-browser check (Safari 16+, Firefox, Chrome).
-3. Remove the flag after a stable period; keep `VITE_GRID_RENDER=stack` until then.
+3. Remove `VITE_ENABLE_GRID_LAYOUT` after a stable period.
 4. Update `CLAUDE.md`, `.github/copilot-instructions.md` (field-class hierarchy) and the new-field-generator agent notes; add the E2E suite to CI tags.
 
 **Exit gate:** monitored release with no increase in viewer errors or submission failures; baseline screenshots still zero-diff.
@@ -994,6 +1058,7 @@ Optional and independent of grids (tracked in §21): switch the stale `Form.form
 
 | Action | Expected |
 |---|---|
+| Long label (60 chars, or a 40-char word) in a 3-column grid | Wraps inside its column in builder and viewer; never overlaps the next column |
 | Add grid via palette click | Appended at page end, selected, empty columns show placeholder |
 | Drag grid tile to top-level slot | Inserted at slot |
 | Drag new field tile into column slot | Field created with `gridId`/`gridColumn`, positioned before anchor |
@@ -1119,8 +1184,11 @@ Optional and independent of grids (tracked in §21): switch the stale `Form.form
 5. `fix(validation): skip layout fields in schema, defaults and submission; condition auto-hide` (phase 2b)
 6. `feat(builder): grid-aware store actions and permission wrapper` (phase 3a)
 7. `feat(builder): grid palette, columns, drag-and-drop and settings (flagged)` (phase 3b)
-8. `feat(builder): grid keyboard, rail, ungroup/duplicate/delete polish` (phase 4)
-9. `test(e2e): grid layout scenarios` + docs updates (phase 6); phase 5 items as separate follow-ups
+8. `fix(grid): drop VITE_GRID_RENDER kill switch; wrap long labels in columns` (phase 4a)
+9. `feat(builder): grid-aware keyboard navigation and shortcuts` (phase 4b)
+10. `feat(builder): grid rail grouping, question counts, undo and move/copy` (phase 4c)
+11. `feat(builder): grid dnd announcements, translated toasts, visual polish` (phase 4d)
+12. `test(e2e): grid layout scenarios` + docs updates (phase 6); phase 5 items as separate follow-ups
 
 ---
 

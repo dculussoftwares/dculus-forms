@@ -13,6 +13,7 @@ import {
   DateField,
   RichTextFormField,
   PhoneNumberField,
+  GridField,
 } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
@@ -33,6 +34,7 @@ import {
   DateFieldSettings,
   RichTextFieldSettings,
   PhoneNumberFieldSettings,
+  GridSettings,
 } from './field-settings-v2';
 
 /** Common MIME type options for the file upload field settings UI */
@@ -445,6 +447,14 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}
           />
+        </FieldSettingsWrapper>
+      );
+
+    case FieldType.GRID_FIELD:
+      // GridSettings owns delete (removeGrid with an undo toast), so no footer button here
+      return (
+        <FieldSettingsWrapper isConnected={isConnected} deleteButtonLabel={t('deleteField.button')}>
+          <GridSettings field={field as GridField} isConnected={isConnected} isReadOnly={isReadOnly} />
         </FieldSettingsWrapper>
       );
 

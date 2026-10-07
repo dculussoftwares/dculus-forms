@@ -133,6 +133,11 @@ describe('FieldLibrary', () => {
   describe('trigger mode (mega-panel)', () => {
     const openLibrary = () => fireEvent.click(screen.getByTestId('rail-add-content-button'));
 
+    // The mega-panel only opens while unpinned, so start from a saved unpin.
+    beforeEach(() => {
+      localStorage.setItem('dculus.fieldLibrary.pinned', 'false');
+    });
+
     it('renders the add-content button, closed by default', () => {
       render(<FieldLibrary mode="trigger" />);
       expect(screen.getByTestId('rail-add-content-button')).toBeInTheDocument();
@@ -225,7 +230,13 @@ describe('FieldLibrary', () => {
   });
 
   describe('docked mode', () => {
-    it('renders nothing when not pinned', () => {
+    it('is docked by default on first launch', () => {
+      render(<FieldLibrary mode="docked" />);
+      expect(screen.getByTestId('field-library-docked')).toBeInTheDocument();
+    });
+
+    it('renders nothing once the user has unpinned it', () => {
+      localStorage.setItem('dculus.fieldLibrary.pinned', 'false');
       const { container } = render(<FieldLibrary mode="docked" />);
       expect(container).toBeEmptyDOMElement();
     });

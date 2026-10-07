@@ -8,14 +8,23 @@ export interface ToastProps {
     label: string
     onClick: () => void
   }
+  /** A second, secondary button (rendered by sonner as `cancel`). */
+  secondaryAction?: {
+    label: string
+    onClick: () => void
+  }
 }
 
-export const toast = ({ title, description, variant = "default", action }: ToastProps) => {
+export const toast = ({ title, description, variant = "default", action, secondaryAction }: ToastProps) => {
   const toastOptions = {
     description,
     action: action ? {
       label: action.label,
       onClick: action.onClick,
+    } : undefined,
+    cancel: secondaryAction ? {
+      label: secondaryAction.label,
+      onClick: secondaryAction.onClick,
     } : undefined,
   }
 

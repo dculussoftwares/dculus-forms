@@ -1,5 +1,5 @@
 import React from 'react';
-import { FormPage, FormSchema, FormLayout, serializeFormSchema } from '@dculus/types';
+import { FormPage, FormSchema, FormLayout, countQuestionFields, serializeFormSchema } from '@dculus/types';
 import { Button } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -50,7 +50,7 @@ export const JSONPreview: React.FC<JSONPreviewProps> = ({ pages, layout, isShuff
       </div>
       
       <div className="mt-3 text-xs text-muted-foreground dark:text-gray-400 shrink-0">
-        {t('totalFields', { values: { count: pages.reduce((sum, page) => sum + page.fields.length, 0) } })}
+        {t('totalFields', { values: { count: pages.reduce((sum, page) => sum + countQuestionFields(page.fields), 0) } })}
       </div>
     </div>
   );

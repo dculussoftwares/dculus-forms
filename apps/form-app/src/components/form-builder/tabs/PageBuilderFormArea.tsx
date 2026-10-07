@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { ScrollArea, Button, toast } from '@dculus/ui';
-import { FormPage, FormField, FieldType } from '@dculus/types';
+import { FormPage, FormField, FieldType, buildPageTree, countQuestionFields, isLayoutField, pageHasGrid } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { Plus } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
@@ -9,10 +9,13 @@ import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
 import { useDroppable } from '@dnd-kit/core';
 import { DraggableFieldCard } from './PageBuilderFieldCard';
+import { GridBlock } from './PageBuilderGridBlock';
 import { FieldPickerPopover } from '../field-library/FieldPickerPopover';
 import { getFieldTypesConfig } from '../FieldTypesPanel';
 import { recordRecentFieldType } from '../field-library/fieldLibraryStorage';
 import { isTypingTarget } from '../../../utils/isTypingTarget';
+import { adjacentColumnTarget, horizontalNeighbour, verticalNeighbour, type Step } from './gridNavigation';
+import { useDeleteGridWithUndo } from './useDeleteGridWithUndo';
 
 // =============================================================================
 // ConnectionStatus
@@ -147,7 +150,9 @@ export const DropIndicator: React.FC<{
   index: number;
   pageId: string;
   isAnyDragActive?: boolean;
-}> = ({ index, pageId, isAnyDragActive = false }) => {
+  /** Grid pages only: the top-level node this slot sits before (null = end of page). */
+  beforeNodeId?: string | null;
+}> = ({ index, pageId, isAnyDragActive = false, beforeNodeId }) => {
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
   const { t } = useTranslation('pageBuilderTab');
@@ -157,6 +162,7 @@ export const DropIndicator: React.FC<{
       type: 'field-insert',
       pageId,
       insertIndex: index,
+      ...(beforeNodeId !== undefined && { beforeNodeId }),
     },
     disabled: !canEdit,
   });
@@ -225,6 +231,71 @@ export const DropIndicator: React.FC<{
 // =============================================================================
 
 /**
+ * Top-level nodes of a page that has a grid (§8.2): plain fields and grid blocks, with insert slots
+ * between nodes. Slot indexes count the canonical visible order, so the insert popover's
+ * `addFieldAtIndex` lands before the same node the slot's `beforeNodeId` names.
+ */
+const GridAwareNodeList: React.FC<{
+  fields: FormField[];
+  pageId: string;
+  recentlyDroppedFieldId?: string | null;
+  isDelayingExpansion: boolean;
+  isAnyDragActive: boolean;
+}> = ({ fields, pageId, recentlyDroppedFieldId, isDelayingExpansion, isAnyDragActive }) => {
+  const nodes = useMemo(() => buildPageTree(fields), [fields]);
+  const indexById = useMemo(() => new Map(fields.map((f, i) => [f.id, i])), [fields]);
+
+  let cursor = 0;
+  const items = nodes.map((node) => {
+    const start = cursor;
+    const nodeId = node.kind === 'field' ? node.field.id : node.grid.id;
+    cursor += node.kind === 'field' ? 1 : 1 + node.columns.reduce((s, c) => s + c.fields.length, 0);
+    return { node, nodeId, start };
+  });
+
+  return (
+    <>
+      {items.map(({ node, nodeId, start }) => (
+        <div key={nodeId}>
+          <DropIndicator
+            index={start}
+            pageId={pageId}
+            isAnyDragActive={isAnyDragActive}
+            beforeNodeId={nodeId}
+          />
+          {node.kind === 'field' ? (
+            <DraggableFieldCard
+              field={node.field}
+              index={indexById.get(node.field.id) ?? start}
+              pageId={pageId}
+              totalFields={fields.length}
+              isRecentlyDropped={node.field.id === recentlyDroppedFieldId}
+              isDelayingExpansion={isDelayingExpansion}
+            />
+          ) : (
+            <GridBlock
+              grid={node.grid}
+              columns={node.columns}
+              pageId={pageId}
+              pageFields={fields}
+              recentlyDroppedFieldId={recentlyDroppedFieldId}
+              isDelayingExpansion={isDelayingExpansion}
+              isAnyDragActive={isAnyDragActive}
+            />
+          )}
+        </div>
+      ))}
+      <DropIndicator
+        index={cursor}
+        pageId={pageId}
+        isAnyDragActive={isAnyDragActive}
+        beforeNodeId={null}
+      />
+    </>
+  );
+};
+
+/**
  * FieldListWithDropZones - Renders fields with drop/insert indicators and bottom Add content button
  */
 export const FieldListWithDropZones: React.FC<{
@@ -243,9 +314,20 @@ export const FieldListWithDropZones: React.FC<{
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
   const { t } = useTranslation('pageBuilderTab');
+  const hasGrid = pageHasGrid(fields);
 
   return (
     <div className="space-y-0.5">
+      {hasGrid ? (
+        <GridAwareNodeList
+          fields={fields}
+          pageId={pageId}
+          recentlyDroppedFieldId={recentlyDroppedFieldId}
+          isDelayingExpansion={isDelayingExpansion}
+          isAnyDragActive={isAnyDragActive}
+        />
+      ) : (
+      <>
       <DropIndicator index={0} pageId={pageId} isAnyDragActive={isAnyDragActive} />
 
       {fields.map((field, index) => (
@@ -261,6 +343,8 @@ export const FieldListWithDropZones: React.FC<{
           <DropIndicator index={index + 1} pageId={pageId} isAnyDragActive={isAnyDragActive} />
         </div>
       ))}
+      </>
+      )}
 
       {/* Bottom "+ Add content" button — left-aligned to avoid overlap with centered floating Ask AI pill */}
       {canEdit && (
@@ -316,14 +400,17 @@ export const PageHeader: React.FC<{
     );
   }
 
+  const questionCount = countQuestionFields(selectedPage.fields);
+
   return (
     <div className="mb-4 flex items-baseline gap-3">
       <h1 className="text-xl font-semibold text-[#3c323e] dark:text-white">
         {selectedPage.title || t('formArea.untitledPage')}
       </h1>
       <span className="text-xs text-[#655d67] dark:text-gray-400">
-        {selectedPage.fields.length}{' '}
-        {selectedPage.fields.length === 1 ? 'field' : 'fields'}
+        {t(questionCount === 1 ? 'formArea.fieldCount' : 'formArea.fieldCount_plural', {
+          values: { count: questionCount },
+        })}
       </span>
     </div>
   );
@@ -352,13 +439,47 @@ export const FormArea: React.FC<{
     removeField,
     restoreField,
     duplicateField,
+    duplicateGrid,
     reorderFields,
+    placeField,
   } = useFormBuilderStore();
+  const deleteGridWithUndo = useDeleteGridWithUndo(permissions.canEditFields());
   const selectedPage = pages.find((p) => p.id === selectedPageId);
 
   // Canvas Keyboard Shortcuts (Cmd+D to duplicate, Delete/Backspace with undo, Arrow nav, Alt+Arrow reorder)
   useEffect(() => {
     if (!permissions.canEditFields() || !selectedPage || !selectedFieldId) return;
+
+    const hasGrid = pageHasGrid(selectedPage.fields);
+    const arrowStep = (key: string): Step | undefined =>
+      key === 'ArrowUp' || key === 'ArrowLeft' ? -1 : key === 'ArrowDown' || key === 'ArrowRight' ? 1 : undefined;
+
+    /** Arrow keys on a grid page (§8.7). Returns true when the key was handled. */
+    const handleGridArrowKeys = (e: KeyboardEvent, fieldId: string): boolean => {
+      const step = arrowStep(e.key);
+      if (step === undefined || e.metaKey || e.ctrlKey || e.shiftKey) return false;
+      const horizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+
+      if (e.altKey) {
+        // Alt+↑/↓ fall through to reorderFields, whose grid branch owns the column-edge semantics (D10)
+        if (!horizontal) return false;
+        const target = adjacentColumnTarget(selectedPage.fields, fieldId, step);
+        if (target) {
+          e.preventDefault();
+          placeField({ pageId: selectedPage.id, fieldId, target });
+        }
+        return true;
+      }
+
+      const next = horizontal
+        ? horizontalNeighbour(selectedPage.fields, fieldId, step)
+        : verticalNeighbour(selectedPage.fields, fieldId, step);
+      if (next) {
+        e.preventDefault();
+        setSelectedField(next);
+      }
+      return true;
+    };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
@@ -374,6 +495,10 @@ export const FormArea: React.FC<{
           return;
         }
         e.preventDefault();
+        if (isLayoutField(currentField)) {
+          deleteGridWithUndo(selectedPage.id, currentField.id);
+          return;
+        }
         const removed = removeField(selectedPage.id, currentField.id);
         if (removed !== false) {
           setSelectedField(null);
@@ -396,9 +521,17 @@ export const FormArea: React.FC<{
       // Cmd+D / Ctrl+D: duplicate field
       if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
         e.preventDefault();
+        if (isLayoutField(currentField)) {
+          const newId = duplicateGrid(selectedPage.id, currentField.id);
+          if (newId) setSelectedField(newId);
+          return;
+        }
         duplicateField(selectedPage.id, currentField.id);
         return;
       }
+
+      // Grid pages walk the layout tree; grid-less pages keep the flat-list behaviour below unchanged
+      if (hasGrid && handleGridArrowKeys(e, currentField.id)) return;
 
       // Alt+Up / Alt+Down: reorder field
       if (e.altKey && e.key === 'ArrowUp') {
@@ -438,7 +571,10 @@ export const FormArea: React.FC<{
     setSelectedField,
     restoreField,
     duplicateField,
+    duplicateGrid,
     reorderFields,
+    placeField,
+    deleteGridWithUndo,
     t,
   ]);
 
@@ -454,7 +590,10 @@ export const FormArea: React.FC<{
 
   return (
     <div className="flex h-full flex-col min-h-0 bg-[var(--tf-faint)] dark:bg-background">
-      <ScrollArea className="min-h-0 flex-1">
+      {/* Radix sizes the viewport's content box as `display: table`, which grows to the content's
+          intrinsic width instead of the canvas width, so in the 390px phone frame the page card
+          spilled past the frame's right edge. A block box keeps the content at the canvas width. */}
+      <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <div className="p-6 pb-36">
           <div className="max-w-3xl mx-auto">
             {/* Page Header */}

@@ -24,7 +24,7 @@ import * as tagService from '../../../services/tagService.js';
 import * as responseCopyService from '../../../services/responseCopyService.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
 import * as auditLib from '../../../lib/audit.js';
-import { responseRepository, responseGradeRepository, formRepository } from '../../../repositories/index.js';
+import { responseRepository, responseGradeRepository, formRepository, responseDraftRepository } from '../../../repositories/index.js';
 
 // Mock all dependencies
 vi.mock('../../../services/responseService.js');
@@ -420,6 +420,49 @@ describe('Responses Resolvers', () => {
     });
   });
 
+  describe('Query: answeredFieldIds', () => {
+    const args = { formId: 'form-123', fieldIds: ['deleted-1', 'deleted-2'] };
+
+    it('returns the answered subset for a form viewer', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValueOnce({ hasAccess: true } as any);
+      vi.mocked(responseService.getAnsweredFieldIds).mockResolvedValueOnce(['deleted-2']);
+
+      const result = await responsesResolvers.Query.answeredFieldIds({}, args, mockContext);
+
+      expect(result).toEqual(['deleted-2']);
+      expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
+        'user-123',
+        'form-123',
+        formSharingResolvers.PermissionLevel.VIEWER
+      );
+      expect(responseService.getAnsweredFieldIds).toHaveBeenCalledWith('form-123', args.fieldIds);
+    });
+
+    it('denies users without VIEWER access to the form', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValueOnce({ hasAccess: false } as any);
+
+      await expect(
+        responsesResolvers.Query.answeredFieldIds({}, args, mockContext)
+      ).rejects.toThrow('Access denied');
+      expect(responseService.getAnsweredFieldIds).not.toHaveBeenCalled();
+    });
+
+    it('throws when the form does not exist', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(null);
+
+      await expect(
+        responsesResolvers.Query.answeredFieldIds({}, args, mockContext)
+      ).rejects.toThrow('Form not found');
+    });
+  });
+
   describe('Mutation: submitResponse', () => {
     const mockInput = {
       formId: 'form-123',
@@ -542,6 +585,78 @@ describe('Responses Resolvers', () => {
       expect(result.thankYouMessage).toContain('answer1');
     });
 
+    it('clears the respondent draft after submitting an identity-gated form', async () => {
+      vi.mocked(formService.getFormById).mockResolvedValue({
+        ...mockForm,
+        settings: { accessControl: { enabled: true, requireSignIn: true } },
+      } as any);
+
+      await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
+
+      expect(responseDraftRepository.deleteForRespondent).toHaveBeenCalledWith('form-123', 'user-123');
+    });
+
+    describe('one response per respondent', () => {
+      const oncePerPersonForm = {
+        ...mockForm,
+        settings: { accessControl: { enabled: true, requireSignIn: true }, oneResponsePerRespondent: true },
+      };
+
+      beforeEach(() => {
+        vi.mocked(formService.getFormById).mockResolvedValue(oncePerPersonForm as any);
+        vi.mocked(responseService.submitResponseWithLimitChecks).mockResolvedValue({
+          id: 'generated-response-id',
+          formId: 'form-123',
+          data: {},
+          submittedAt: new Date(),
+        } as any);
+      });
+
+      it('routes the submit through the atomic per-respondent check', async () => {
+        await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
+
+        expect(responseService.submitResponseWithLimitChecks).toHaveBeenCalledWith(
+          expect.objectContaining({ respondentUserId: 'user-123' }),
+          { maxResponses: undefined, onePerRespondent: true }
+        );
+        expect(responseService.submitResponse).not.toHaveBeenCalled();
+      });
+
+      it('skips the check for builder previews', async () => {
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({ hasAccess: true } as any);
+
+        await responsesResolvers.Mutation.submitResponse(
+          {},
+          { input: { ...mockInput, isPreview: true } },
+          mockContext
+        );
+
+        expect(responseService.submitResponseWithLimitChecks).not.toHaveBeenCalled();
+      });
+
+      it('rejects outside the time window before storing anything', async () => {
+        vi.mocked(formService.getFormById).mockResolvedValue({
+          ...oncePerPersonForm,
+          settings: {
+            ...oncePerPersonForm.settings,
+            submissionLimits: { timeWindow: { enabled: true, endDate: '2000-01-01' } },
+          },
+        } as any);
+
+        await expect(
+          responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
+        ).rejects.toThrow();
+        expect(responseService.submitResponseWithLimitChecks).not.toHaveBeenCalled();
+        expect(responseService.submitResponse).not.toHaveBeenCalled();
+      });
+    });
+
+    it('never touches drafts on an anonymous form, even for a signed-in caller', async () => {
+      await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
+
+      expect(responseDraftRepository.deleteForRespondent).not.toHaveBeenCalled();
+    });
+
     it('should throw error when form not found', async () => {
       vi.mocked(formService.getFormById).mockResolvedValue(null);
 
@@ -583,7 +698,7 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      vi.mocked(responseService.submitResponseWithMaxLimitCheck).mockRejectedValue(
+      vi.mocked(responseService.submitResponseWithLimitChecks).mockRejectedValue(
         new Error('Form has reached its maximum response limit')
       );
 
@@ -602,7 +717,7 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      vi.mocked(responseService.submitResponseWithMaxLimitCheck).mockResolvedValue({
+      vi.mocked(responseService.submitResponseWithLimitChecks).mockResolvedValue({
         id: 'generated-response-id',
         formId: 'form-123',
         data: {},
@@ -616,9 +731,9 @@ describe('Responses Resolvers', () => {
       );
 
       expect(result).toBeDefined();
-      expect(responseService.submitResponseWithMaxLimitCheck).toHaveBeenCalledWith(
+      expect(responseService.submitResponseWithLimitChecks).toHaveBeenCalledWith(
         expect.objectContaining({ formId: 'form-123' }),
-        10
+        { maxResponses: 10, onePerRespondent: false }
       );
     });
 

@@ -41,6 +41,7 @@ import { initializeAutomationEngine, shutdownAutomationEngine } from './services
 import { initializeAutomationTriggers, initializeAutomationScheduleTrigger } from './services/automation/triggerService.js';
 import { startPeriodicCleanup, tempFilesMockStore } from './services/temporaryFileService.js';
 import { cleanupOldAnalytics } from './services/analyticsService.js';
+import { deleteExpiredDrafts } from './services/responseDraftService.js';
 import { logger } from './lib/logger.js';
 import { deriveGraphQLErrorCode } from './lib/graphqlErrors.js';
 
@@ -479,9 +480,10 @@ async function startServer() {
     // P3-06: Start periodic 30-min cleanup (also runs immediately on startup)
     startPeriodicCleanup();
 
-    // Run analytics cleanup daily (every 24h)
+    // Run analytics and expired-draft cleanup daily (every 24h)
     setInterval(() => {
       cleanupOldAnalytics().catch(err => logger.warn('Analytics cleanup failed:', err));
+      deleteExpiredDrafts().catch(err => logger.warn('Response draft cleanup failed:', err));
     }, 24 * 60 * 60 * 1000).unref(); // .unref() so it doesn't prevent process exit
   });
 }

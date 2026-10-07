@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 interface RespondentBadgeProps {
   /** The signed-in respondent's verified email (from `Form.respondentEmail`). */
@@ -15,6 +15,8 @@ interface RespondentBadgeProps {
    * rather than imply an identity that is still active.
    */
   onSwitchAccount: () => Promise<void>;
+  /** Right-aligned slot, e.g. the save-and-resume status. */
+  trailing?: ReactNode;
 }
 
 function InfoIcon() {
@@ -42,6 +44,7 @@ export default function RespondentBadge({
   imageUrl,
   embedded = false,
   onSwitchAccount,
+  trailing,
 }: RespondentBadgeProps) {
   const [isSwitching, setIsSwitching] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -127,6 +130,8 @@ export default function RespondentBadge({
           </p>
         )}
       </div>
+
+      {trailing}
     </div>
   );
 }

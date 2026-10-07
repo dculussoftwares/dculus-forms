@@ -62,6 +62,13 @@ export function getPixabayApiKey(): string {
 }
 
 /**
+ * Whether grid (multi-column) layout authoring is enabled in the builder
+ */
+export function isGridLayoutEnabled(): boolean {
+  return import.meta.env.VITE_ENABLE_GRID_LAYOUT === 'true';
+}
+
+/**
  * Get the base Form Viewer URL (without trailing slash)
  */
 export function getFormViewerBaseUrl(): string {

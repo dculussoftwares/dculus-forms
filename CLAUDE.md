@@ -57,6 +57,8 @@ The backend uses a layered pattern: **Resolvers → Services → Repositories �
 - `responseEditTrackingService.ts` — tracks field-level diffs on response edits
 - `responseFilterService.ts` + `responseQueryBuilder.ts` — complex response filtering/querying
 - `responseService.ts` — response CRUD
+- `responseDraftService.ts` — save-and-resume drafts for signed-in respondents (`ResponseDraft`, one per form + user, deleted on submit, 30-day expiry)
+- `myResponseService.ts` — respondent self-service: view and edit "my response" on identity-gated forms (edits recorded as `RESPONDENT` in edit history)
 - `templateService.ts` — form template management
 - `temporaryFileService.ts` — temporary export files in private R2 bucket (5h TTL)
 - `unifiedExportService.ts` — Excel/CSV export with plugin columns via ExcelJS

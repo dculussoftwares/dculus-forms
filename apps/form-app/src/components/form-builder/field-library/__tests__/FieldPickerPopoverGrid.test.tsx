@@ -1,0 +1,152 @@
+import * as React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import mockEnFieldLibrary from '../../../../locales/en/fieldLibrary.json';
+import mockEnFieldTypesPanel from '../../../../locales/en/fieldTypesPanel.json';
+
+jest.unmock('@dculus/types');
+
+let FieldPickerPopover: typeof import('../FieldPickerPopover').FieldPickerPopover;
+let GridLayoutFlagContext: typeof import('../../../../contexts/GridLayoutFlagContext').GridLayoutFlagContext;
+let getPaletteFieldTypesConfig: typeof import('../../FieldTypesPanel').getPaletteFieldTypesConfig;
+let getFieldTypesConfig: typeof import('../../FieldTypesPanel').getFieldTypesConfig;
+
+const mockAddField = jest.fn();
+const mockAddFieldAtIndex = jest.fn();
+const mockAddFieldToGrid = jest.fn(() => 'new-child');
+const mockSetSelectedField = jest.fn();
+
+jest.mock('@/store/useFormBuilderStore', () => {
+  const storeInstance = {
+    pages: [{ id: 'page-1', title: 'Page 1', fields: [] }],
+    selectedPageId: 'page-1',
+    addField: mockAddField,
+    addFieldAtIndex: mockAddFieldAtIndex,
+    addFieldToGrid: mockAddFieldToGrid,
+    setSelectedField: mockSetSelectedField,
+  };
+  const useFormBuilderStore: any = () => storeInstance;
+  useFormBuilderStore.getState = () => storeInstance;
+  return { useFormBuilderStore };
+});
+
+jest.mock('@/hooks/useFormPermissions', () => ({
+  useFormPermissions: () => ({ canAddFields: () => true }),
+}));
+
+jest.mock('@/hooks/useTranslation', () => ({
+  useTranslation: (namespace: string) => ({
+    t: (key: string) => {
+      const messages: Record<string, unknown> = {
+        fieldLibrary: mockEnFieldLibrary,
+        fieldTypesPanel: mockEnFieldTypesPanel,
+      };
+      let node: unknown = messages[namespace];
+      for (const segment of key.split('.')) {
+        node = node && typeof node === 'object' ? (node as Record<string, unknown>)[segment] : undefined;
+      }
+      return typeof node === 'string' ? node : key;
+    },
+  }),
+}));
+
+jest.mock('@dculus/ui', () => {
+  const ReactLib = React;
+  const omit = <T extends Record<string, unknown>>(obj: T, keys: string[]) =>
+    Object.fromEntries(Object.entries(obj).filter(([key]) => !keys.includes(key)));
+  const PopoverContext = ReactLib.createContext<{ onOpenChange?: (open: boolean) => void }>({});
+  const PopoverContent = ({ children, ...props }: any) =>
+    ReactLib.createElement('div', omit(props, ['align', 'side', 'sideOffset', 'onOpenAutoFocus']), children);
+  const PopoverTrigger = ({ children }: any) => {
+    const { onOpenChange } = ReactLib.useContext(PopoverContext);
+    const child = ReactLib.Children.only(children);
+    return ReactLib.cloneElement(child, {
+      onClick: (...args: unknown[]) => {
+        (child.props as any).onClick?.(...args);
+        onOpenChange?.(true);
+      },
+    });
+  };
+  const Popover = ({ children, open, onOpenChange }: any) =>
+    ReactLib.createElement(
+      PopoverContext.Provider,
+      { value: { onOpenChange } },
+      ...ReactLib.Children.toArray(children).filter(
+        (child: any) => !(ReactLib.isValidElement(child) && child.type === PopoverContent) || open
+      )
+    );
+  return {
+    Button: ({ children, ...props }: any) => ReactLib.createElement('button', omit(props, ['variant']), children),
+    Input: ReactLib.forwardRef((props: any, ref: any) => ReactLib.createElement('input', { ref, ...props })),
+    Card: ({ children, ...props }: any) => ReactLib.createElement('div', props, children),
+    ScrollArea: ({ children, ...props }: any) => ReactLib.createElement('div', props, children),
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    toast: jest.fn(),
+  };
+});
+
+const identity = (key: string) => key;
+
+const renderPicker = (flag: boolean, props: Partial<React.ComponentProps<typeof FieldPickerPopover>> = {}) =>
+  render(
+    <GridLayoutFlagContext.Provider value={flag}>
+      <FieldPickerPopover pageId="page-1" {...props}>
+        <button data-testid="test-trigger">Add</button>
+      </FieldPickerPopover>
+    </GridLayoutFlagContext.Provider>
+  );
+
+describe('grid layout palette (D7)', () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    ({ FieldPickerPopover } = await import('../FieldPickerPopover'));
+    ({ GridLayoutFlagContext } = await import('../../../../contexts/GridLayoutFlagContext'));
+    ({ getPaletteFieldTypesConfig, getFieldTypesConfig } = await import('../../FieldTypesPanel'));
+  });
+
+  it('flag off: the palette config is exactly today\'s field types', () => {
+    expect(getPaletteFieldTypesConfig(identity, false)).toEqual(getFieldTypesConfig(identity));
+  });
+
+  it('flag on: appends the three layout presets with unique test-id slugs', () => {
+    const layout = getPaletteFieldTypesConfig(identity, true).filter((f) => f.category === 'layout');
+    expect(layout.map((f) => [f.preset?.columns, f.testIdSlug])).toEqual([
+      [1, '1-column'],
+      [2, '2-columns'],
+      [3, '3-columns'],
+    ]);
+  });
+
+  it('flag off: the picker shows no layout tiles', () => {
+    renderPicker(false);
+    fireEvent.click(screen.getByTestId('test-trigger'));
+    expect(screen.queryByTestId('field-type-picker-2-columns')).not.toBeInTheDocument();
+    expect(screen.getByTestId('field-type-picker-email')).toBeInTheDocument();
+  });
+
+  it('flag on: picking "2 Columns" adds a grid with an equal two-column split', () => {
+    renderPicker(true);
+    fireEvent.click(screen.getByTestId('test-trigger'));
+    fireEvent.click(screen.getByTestId('field-type-picker-2-columns'));
+    expect(mockAddField).toHaveBeenCalledWith('page-1', 'grid_field', { columnWidths: [50, 50] });
+  });
+
+  it('flag on: picking "3 Columns" at an insert slot uses addFieldAtIndex', () => {
+    renderPicker(true, { insertIndex: 1 });
+    fireEvent.click(screen.getByTestId('test-trigger'));
+    fireEvent.click(screen.getByTestId('field-type-picker-3-columns'));
+    expect(mockAddFieldAtIndex).toHaveBeenCalledWith('page-1', 'grid_field', { columnWidths: [34, 33, 33] }, 1);
+  });
+
+  it('with a grid target: hides layout tiles and adds into the column', () => {
+    const gridTarget = { gridId: 'g1', column: 1, beforeFieldId: null };
+    renderPicker(true, { gridTarget });
+    fireEvent.click(screen.getByTestId('test-trigger'));
+    expect(screen.queryByTestId('field-type-picker-2-columns')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('field-type-picker-email'));
+    expect(mockAddFieldToGrid).toHaveBeenCalledWith('page-1', 'email_field', expect.any(Object), gridTarget);
+    expect(mockAddField).not.toHaveBeenCalled();
+    expect(mockAddFieldAtIndex).not.toHaveBeenCalled();
+  });
+});

@@ -14,11 +14,15 @@ const RECENT_KEY = 'dculus.fieldLibrary.recent';
 const RECENT_LIMIT = 3;
 const STORAGE_EVENT = 'localStorageChange';
 
-const readBoolean = (key: string): boolean => {
+/** The library starts docked; an explicit choice saved by the pin toggle wins. */
+const PINNED_DEFAULT = true;
+
+const readPinned = (): boolean => {
   try {
-    return localStorage.getItem(key) === 'true';
+    const stored = localStorage.getItem(PINNED_KEY);
+    return stored === null ? PINNED_DEFAULT : stored === 'true';
   } catch {
-    return false;
+    return PINNED_DEFAULT;
   }
 };
 
@@ -48,6 +52,8 @@ export const setFieldLibraryPinned = (pinned: boolean): void => {
 
 /** Records a field type as used; call from every add path (click and drag). */
 export const recordRecentFieldType = (fieldType: FieldType): void => {
+  // Grid tiles differ only by preset, which the recent list (types only) can't tell apart
+  if (fieldType === FieldType.GRID_FIELD) return;
   const next = [fieldType, ...readRecentList().filter((type) => type !== fieldType)].slice(
     0,
     RECENT_LIMIT
@@ -81,7 +87,7 @@ const useStorageSync = <T,>(key: string, read: () => T): T => {
 };
 
 export const useFieldLibraryPinned = (): [boolean, (pinned: boolean) => void] => {
-  const pinned = useStorageSync(PINNED_KEY, () => readBoolean(PINNED_KEY));
+  const pinned = useStorageSync(PINNED_KEY, readPinned);
   const setPinned = useCallback((next: boolean) => setFieldLibraryPinned(next), []);
   return [pinned, setPinned];
 };

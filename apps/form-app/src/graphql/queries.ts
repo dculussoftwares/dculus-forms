@@ -115,6 +115,11 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
           allowedDomains
         }
         collectRespondentEmail
+        saveProgress {
+          enabled
+        }
+        oneResponsePerRespondent
+        allowRespondentEdit
         quiz {
           enabled
           passThresholdPercent
@@ -232,6 +237,14 @@ export const GET_FORM_RESPONSES : TypedDocumentNode<any, any> = gql`
 export const GET_DISTINCT_RESPONSE_FIELD_VALUES : TypedDocumentNode<any, any> = gql`
   query GetDistinctResponseFieldValues($formId: ID!, $fieldId: String!, $search: String, $limit: Int) {
     distinctResponseFieldValues(formId: $formId, fieldId: $fieldId, search: $search, limit: $limit)
+  }
+`;
+
+// Subset of the given field ids that at least one response answered — the
+// responses table uses it to hide deleted-field columns nobody ever answered.
+export const GET_ANSWERED_FIELD_IDS : TypedDocumentNode<any, any> = gql`
+  query GetAnsweredFieldIds($formId: ID!, $fieldIds: [ID!]!) {
+    answeredFieldIds(formId: $formId, fieldIds: $fieldIds)
   }
 `;
 

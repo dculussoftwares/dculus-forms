@@ -1,5 +1,5 @@
 import React from 'react';
-import { Type, FileCode, Upload, Phone, Loader2, Check, AlertCircle, CloudOff } from 'lucide-react';
+import { Type, FileCode, Upload, Phone, Columns2, Loader2, Check, AlertCircle, CloudOff } from 'lucide-react';
 import { FormField, FieldType } from '@dculus/types';
 import { useTranslation } from '../../../hooks';
 import type { FieldSaveStatus } from '../../../hooks/types';
@@ -17,6 +17,7 @@ const FIELD_ICONS: Partial<Record<FieldType, React.ReactNode>> = {
   [FieldType.FORM_FIELD]: <Type className="w-4 h-4" />,
   [FieldType.RICH_TEXT_FIELD]: <FileCode className="w-4 h-4" />,
   [FieldType.FILE_UPLOAD_FIELD]: <Upload className="w-4 h-4" />,
+  [FieldType.GRID_FIELD]: <Columns2 className="w-4 h-4" />,
 };
 
 const getFieldTypeLabels = (t: any) => ({
@@ -32,6 +33,7 @@ const getFieldTypeLabels = (t: any) => ({
   [FieldType.FORM_FIELD]: t('fieldTypes.formField'),
   [FieldType.RICH_TEXT_FIELD]: t('fieldTypes.richText'),
   [FieldType.FILE_UPLOAD_FIELD]: t('fieldTypes.fileUpload'),
+  [FieldType.GRID_FIELD]: t('fieldTypes.columns'),
 });
 
 interface FieldSettingsHeaderProps {
