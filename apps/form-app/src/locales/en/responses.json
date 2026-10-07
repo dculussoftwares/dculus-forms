@@ -155,7 +155,9 @@
       "deleteError": "Failed to delete response"
     },
     "fieldResponses": {
-      "noResponse": "No response"
+      "noResponse": "No response",
+      "deletedBadge": "deleted",
+      "unknownField": "Unknown field"
     },
     "empty": {
       "noFields": "No fields found"

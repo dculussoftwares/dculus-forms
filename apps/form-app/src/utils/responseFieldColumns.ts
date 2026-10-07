@@ -49,5 +49,5 @@ export const planResponseFieldColumns = (
     });
   }
 
-  return { fields: [...activeFields, ...deletedFields], orphanIds: Array.from(orphanIds) };
+  return { fields: [...activeFields, ...deletedFields], orphanIds: Array.from(orphanIds).sort() };
 };

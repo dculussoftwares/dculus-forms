@@ -481,6 +481,24 @@ describe('Unified Export Service', () => {
       expect(addRow.mock.calls[2][0].slice(-4)).toEqual(['Bob', 'Goa', '', '']);
     });
 
+    it('orders orphan columns by id, whatever order responses arrive in', async () => {
+      const orphanResponses = [
+        { id: 'r1', data: { name: 'Ann', 'zz-orphan': 'z' }, submittedAt: 1704067200000, metadata: {} },
+        { id: 'r2', data: { name: 'Bob', 'aa-orphan': 'a' }, submittedAt: 1704067200000, metadata: {} },
+      ];
+
+      const result = await generateExportFile({
+        formTitle: 'Deleted',
+        responses: orphanResponses as any,
+        formSchema: schemaWithDeleted,
+        format: 'csv',
+      });
+
+      const [header, firstRow] = result.buffer.toString('utf-8').split('\n');
+      expect(header.split(',').slice(-2)).toEqual(['Unknown field (deleted)', 'Unknown field (deleted)']);
+      expect(firstRow.split(',').slice(-2)).toEqual(['', 'z']);
+    });
+
     it('drops every deleted column when the exported responses never answered them', async () => {
       const result = await generateExportFile({
         formTitle: 'Deleted',

@@ -155,7 +155,9 @@
       "deleteError": "பதிலை நீக்குவதில் தோல்வி"
     },
     "fieldResponses": {
-      "noResponse": "பதில் இல்லை"
+      "noResponse": "பதில் இல்லை",
+      "deletedBadge": "நீக்கப்பட்டது",
+      "unknownField": "அறியப்படாத புலம்"
     },
     "empty": {
       "noFields": "புலங்கள் எதுவும் இல்லை"

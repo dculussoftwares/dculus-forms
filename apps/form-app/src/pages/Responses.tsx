@@ -172,10 +172,43 @@ const Responses: React.FC = () => {
     setSearchParams(next, { replace: true });
   }, [actualFormId, linkedResponseId, linkedResponseLoading, linkedResponseData]);
 
+  const { fillableFields, deletedFieldIds } = useMemo(() => {
+    const fields: FillableFormField[] = [];
+    const deletedIds: string[] = [];
+    if (formData?.form?.formSchema) {
+      const formSchema: FormSchema = deserializeFormSchema(formData.form.formSchema);
+      formSchema.pages.forEach((page) => {
+        page.fields.forEach((field) => {
+          if (!(field instanceof FillableFormField)) return;
+          if (field.deleted) deletedIds.push(field.id);
+          else fields.push(field);
+        });
+      });
+    }
+    return { fillableFields: fields, deletedFieldIds: deletedIds };
+  }, [formData]);
+
+  // Deleted fields only keep a column when some response (on any page) answered them.
+  const {
+    data: answeredFieldIdsData,
+    loading: answeredFieldIdsLoading,
+    refetch: refetchAnsweredFieldIds,
+  } = useQuery(GET_ANSWERED_FIELD_IDS, {
+    variables: { formId: actualFormId, fieldIds: deletedFieldIds },
+    skip: !actualFormId || deletedFieldIds.length === 0,
+    fetchPolicy: 'cache-and-network',
+  });
+  const answeredDeletedFieldIds = useMemo<ReadonlySet<string> | undefined>(() => {
+    if (deletedFieldIds.length === 0) return new Set();
+    const ids: string[] | undefined = answeredFieldIdsData?.answeredFieldIds;
+    return ids ? new Set(ids) : undefined;
+  }, [deletedFieldIds, answeredFieldIdsData]);
+
   const handleBulkDelete = async () => {
     if (!actualFormId) return;
     try {
       await responsesState.handleBulkDelete(actualFormId);
+      if (deletedFieldIds.length > 0) void refetchAnsweredFieldIds();
       toastSuccess(t('toolbar.bulkActions.deleteSuccess'));
     } catch {
       toastError(t('toolbar.bulkActions.deleteError'));
@@ -220,6 +253,10 @@ const Responses: React.FC = () => {
         quizEnabled,
       },
     },
+    // Removing responses can leave a deleted field with no answers left.
+    ...(deletedFieldIds.length > 0
+      ? [{ query: GET_ANSWERED_FIELD_IDS, variables: { formId: actualFormId, fieldIds: deletedFieldIds } }]
+      : []),
   ];
 
   const [deleteResponseMutation] = useMutation(DELETE_RESPONSE, {
@@ -317,34 +354,6 @@ const Responses: React.FC = () => {
     skip: !actualFormId,
     notifyOnNetworkStatusChange: true,
   });
-
-  const { fillableFields, deletedFieldIds } = useMemo(() => {
-    const fields: FillableFormField[] = [];
-    const deletedIds: string[] = [];
-    if (formData?.form?.formSchema) {
-      const formSchema: FormSchema = deserializeFormSchema(formData.form.formSchema);
-      formSchema.pages.forEach((page) => {
-        page.fields.forEach((field) => {
-          if (!(field instanceof FillableFormField)) return;
-          if (field.deleted) deletedIds.push(field.id);
-          else fields.push(field);
-        });
-      });
-    }
-    return { fillableFields: fields, deletedFieldIds: deletedIds };
-  }, [formData]);
-
-  // Deleted fields only keep a column when some response (on any page) answered them.
-  const { data: answeredFieldIdsData, loading: answeredFieldIdsLoading } = useQuery(GET_ANSWERED_FIELD_IDS, {
-    variables: { formId: actualFormId, fieldIds: deletedFieldIds },
-    skip: !actualFormId || deletedFieldIds.length === 0,
-    fetchPolicy: 'cache-and-network',
-  });
-  const answeredDeletedFieldIds = useMemo<ReadonlySet<string> | undefined>(() => {
-    if (deletedFieldIds.length === 0) return new Set();
-    const ids: string[] | undefined = answeredFieldIdsData?.answeredFieldIds;
-    return ids ? new Set(ids) : undefined;
-  }, [deletedFieldIds, answeredFieldIdsData]);
 
   // Response meta-filters (beyond form fields): quiz grade, submission analytics, respondent
   // identity, edit history, completeness, and — one per configured generator — PDF

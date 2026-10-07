@@ -481,7 +481,7 @@ const createFieldColumns = (
               <FieldIconChip fieldType={field.type} />
               <span className="text-[13px] text-muted-foreground italic truncate">{field.label}</span>
               <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-                deleted
+                {t('table.fieldResponses.deletedBadge')}
               </span>
             </div>
           )
@@ -546,9 +546,9 @@ const createFieldColumns = (
     id: `orphan-${fieldId}`,
     header: () => (
       <span className="text-muted-foreground italic flex items-center gap-1.5">
-        Unknown field
+        {t('table.fieldResponses.unknownField')}
         <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 not-italic">
-          deleted
+          {t('table.fieldResponses.deletedBadge')}
         </span>
       </span>
     ),

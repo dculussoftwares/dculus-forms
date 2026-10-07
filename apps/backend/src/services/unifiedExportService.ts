@@ -508,7 +508,10 @@ const extractFieldInfo = (
       });
     });
 
-    const orphanIds = Array.from(answeredIds).filter((id) => !knownIds.has(id));
+    // Sorted so a filtered export orders orphan columns the same as a full one.
+    const orphanIds = Array.from(answeredIds)
+      .filter((id) => !knownIds.has(id))
+      .sort();
     orphanIds.forEach((id) => {
       fieldInfo[id] = 'Unknown field (deleted)';
     });
