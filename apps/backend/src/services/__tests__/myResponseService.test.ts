@@ -71,6 +71,17 @@ describe('getMyResponse', () => {
     await expect(getMyResponse(form(gated), signedIn)).resolves.toMatchObject({ canEdit: false });
   });
 
+  it('reports canEdit false once the time window has closed, while still returning the response', async () => {
+    const closedWindow: FormSettings = {
+      ...editable,
+      submissionLimits: { timeWindow: { enabled: true, endDate: new Date(Date.now() - 60_000).toISOString() } },
+    };
+    await expect(getMyResponse(form(closedWindow), signedIn)).resolves.toMatchObject({
+      id: 'response-1',
+      canEdit: false,
+    });
+  });
+
   it('is null without a response, on anonymous forms, and for signed-out or rejected callers', async () => {
     vi.mocked(responseRepository.findFirst).mockResolvedValueOnce(null);
     await expect(getMyResponse(form(), signedIn)).resolves.toBeNull();
@@ -100,6 +111,28 @@ describe('editMyResponse', () => {
       organizationId: 'org-1',
       editType: 'RESPONDENT',
     });
+  });
+
+  it('keeps stored answers to fields removed since submission', async () => {
+    vi.mocked(responseRepository.findFirst).mockResolvedValue({ ...stored, data: { name: 'Ada', retired: 'old' } } as any);
+    vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({
+      pages: [
+        {
+          id: 'page-1',
+          title: 'Page 1',
+          order: 0,
+          fields: [{ id: 'name', type: 'text_input_field', label: 'Name' }],
+        },
+      ],
+    } as any);
+
+    await edit({ data: { name: 'Grace' } });
+
+    expect(updateResponse).toHaveBeenCalledWith(
+      'response-1',
+      { retired: 'old', name: 'Grace' },
+      expect.anything()
+    );
   });
 
   it('drops answers the form rules hide', async () => {

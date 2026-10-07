@@ -9,6 +9,7 @@ import * as formSharingResolvers from '../formSharing.js';
 import * as fileUploadService from '../../../services/fileUploadService.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
 import * as usageService from '../../../subscriptions/usageService.js';
+import * as myResponseService from '../../../services/myResponseService.js';
 import { prisma } from '../../../lib/prisma.js';
 import { DEFAULT_QUIZ_SETTINGS } from '@dculus/types';
 
@@ -21,6 +22,7 @@ vi.mock('../formSharing.js');
 vi.mock('../../../services/fileUploadService.js');
 vi.mock('../../../services/hocuspocus.js');
 vi.mock('../../../subscriptions/usageService.js');
+vi.mock('../../../services/myResponseService.js');
 vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
     response: {
@@ -68,6 +70,8 @@ describe('Forms Resolvers', () => {
       isAuthenticated: true,
     },
   };
+
+  const respondentContext = mockContext as any;
 
   const mockForm = {
     id: 'form-123',
@@ -142,10 +146,7 @@ describe('Forms Resolvers', () => {
         emailsExceeded: false,
       });
 
-      const result = await formsResolvers.Query.formByShortUrl(
-        {},
-        { shortUrl: 'abc12345' }
-      );
+      const result = await formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext);
 
       expect(formService.getFormByShortUrl).toHaveBeenCalledWith('abc12345');
       expect(result).toEqual(mockForm);
@@ -155,7 +156,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(formService.getFormByShortUrl).mockResolvedValue(null);
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'invalid' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'invalid' }, respondentContext)
       ).rejects.toThrow('Form not found');
     });
 
@@ -166,7 +167,7 @@ describe('Forms Resolvers', () => {
       } as any);
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow('Form is not published');
     });
 
@@ -179,7 +180,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow("Form view limit exceeded for this organization's subscription plan");
     });
 
@@ -201,7 +202,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(prisma.response.count).mockResolvedValue(100);
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow('Form has reached its maximum response limit');
     });
 
@@ -227,7 +228,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow('Form is not yet open for submissions');
     });
 
@@ -253,7 +254,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow('Form submission period has ended');
     });
 
@@ -279,7 +280,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow('Form is not yet open for submissions');
     });
 
@@ -305,8 +306,35 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow('Form submission period has ended');
+    });
+
+    it('still opens a closed form for a respondent who already answered, flagged as closed', async () => {
+      const closedForm = {
+        ...mockForm,
+        settings: {
+          submissionLimits: {
+            timeWindow: { enabled: true, endDate: new Date(Date.now() - 60_000).toISOString() },
+          },
+        },
+      };
+      vi.mocked(formService.getFormByShortUrl).mockResolvedValue(closedForm as any);
+      vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
+        viewsExceeded: false,
+        submissionsExceeded: false,
+        emailsExceeded: false,
+      });
+      vi.mocked(myResponseService.getMyResponse).mockResolvedValueOnce({
+        id: 'response-1',
+        data: {},
+        submittedAt: '2026-10-01T10:00:00.000Z',
+        canEdit: false,
+      });
+
+      const result = await formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext);
+
+      expect(result).toEqual({ ...closedForm, closedReason: 'FORM_CLOSED' });
     });
 
     it('should allow viewing within a precise start/end date-time window', async () => {
@@ -333,7 +361,7 @@ describe('Forms Resolvers', () => {
         emailsExceeded: false,
       });
 
-      const result = await formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' });
+      const result = await formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext);
 
       expect(result).toEqual(formWithTimeWindow);
     });
@@ -358,7 +386,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow('Form has an invalid start date configured');
     });
 
@@ -382,7 +410,7 @@ describe('Forms Resolvers', () => {
       });
 
       await expect(
-        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' })
+        formsResolvers.Query.formByShortUrl({}, { shortUrl: 'abc12345' }, respondentContext)
       ).rejects.toThrow('Form has an invalid end date configured');
     });
   });
