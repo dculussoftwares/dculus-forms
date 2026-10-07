@@ -1,6 +1,6 @@
 # Grid Layout (Column Containers) — Architecture & Implementation Plan
 
-> Status: **v3 — phases 0b–3b merged; Phase 4 next (2026-10-07). §19 recommendations are implemented as the decisions.**
+> Status: **v3 — phases 0b–4d implemented (2026-10-07); Phase 5/6 next. §19 recommendations are implemented as the decisions.**
 > Scope: form-app (builder), form-viewer (public), `@dculus/types`, `@dculus/ui`, `@dculus/utils`, backend (Hocuspocus + consumers)
 > Reference behaviour: Zoho Forms "Grid" (1 / 2 / 3-column containers, per-column % widths, drag-to-resize divider, floating settings/delete toolbar, drag fields into columns)
 
@@ -13,12 +13,14 @@
 | 1a | `GridField`, `grid.ts` helpers, constants, validation | Merged #382 |
 | 1b | Y.js / CollaborationManager / Hocuspocus plumbing | Merged #383 |
 | 1c | Consumer skips (analytics, PDF, sheets, AI, metadata, conditions) | Merged #384 |
-| 2a | Viewer `GridRenderer` (container queries) | Merged #385 (its `VITE_GRID_RENDER=stack` kill switch is dropped in Phase 4a) |
+| 2a | Viewer `GridRenderer` (container queries) | Merged #385 (its `VITE_GRID_RENDER=stack` kill switch was removed in Phase 4a) |
 | 2b | Viewer validation / submission skips | Merged #388 |
 | 3a | Store grid actions + `involvesGrid` branches + permission wrapper | Merged #389 |
 | 3b | Builder authoring behind `VITE_ENABLE_GRID_LAYOUT` | Merged #391; **browser drag QA still open** (carried into Phase 4 exit gate) |
-| 4a | Drop the `VITE_GRID_RENDER` kill switch; wrap long labels in grid columns (§9.7) | Not started |
-| 4b–4d | Builder polish (§8.7 keyboard, §8.8 rail/counts, grid undo/move/copy, a11y, i18n) | Not started |
+| 4a | Drop the `VITE_GRID_RENDER` kill switch; wrap long labels in grid columns (§9.7) | Done in #396 |
+| 4b | Keyboard model (§8.7), shared grid delete with Undo / "Ungroup instead" | Done in #396 |
+| 4c | Rail grouping and question counts (§8.8), grid move/copy to page from the toolbar | Done in #396 |
+| 4d | "Column N of M" drag announcements, translated grid toasts | Done in #396 |
 | 5 | Integrations (optional) | Not started |
 | 6 | E2E suites, rollout, flag removal, docs | Not started |
 
@@ -29,7 +31,7 @@
 **Known gaps deferred to Phase 4:** the journey rail lists the grid as a flat `grid_field` chip (grouping and `countQuestionFields` counts are §8.8); sidebar/keyboard delete of a grid uses `removeField` (works, but no `restoreGrid` toast yet); dnd announcements ("column N of M").
 
 ### What changed in v3 (2026-10-07)
-- **No viewer kill switch.** `VITE_GRID_RENDER=stack` is removed (code, test, docs). Rollback for a bad grid render is a revert or turning off `VITE_ENABLE_GRID_LAYOUT` for authoring; container-query stacking already covers narrow screens.
+- **No viewer kill switch.** `VITE_GRID_RENDER=stack` is removed in Phase 4a (code, test, docs), shipped in the same PR as this revision. Rollback for a bad grid render is a revert or turning off `VITE_ENABLE_GRID_LAYOUT` for authoring; container-query stacking already covers narrow screens.
 - **Labels must wrap inside columns** (new §9.7, §8.3). Found in review: in the viewer a long single word overflows into the next column and wrapped lines are cramped (`Label` is `leading-none`); in the builder the canvas label is `truncate`, so it never reaches a second line.
 - Phase 4 split into 4a–4d PRs (§16); doc status refreshed.
 
@@ -839,7 +841,7 @@ These three areas are hard constraints. Each phase in §16 has an exit gate that
 | Builder phone frame | `FormArea` (not the renderer) draws the canvas, so `GridBlock` uses the same container-query classes and stacks in the 390 px frame (~322 px inside) without touching the shim. Verified in the frame and in `PreviewTab` (~314 px). |
 | Narrow-cell overflow | Explicit checks for components with fixed widths: `PhoneNumberInput` compact `w-[92px]`, `AffixedInput` prefix/suffix `max-w-[40%]`, `DatePicker` trigger, file-upload drop zone. Columns use `minmax(0, Nfr)` so nothing forces overflow. |
 | Field order on phones | Stacked order = DOM order = column-major canonical order; identical to tab order. |
-| Bad mobile bug after release | No runtime kill switch (removed in v3). Ship a fix or revert the viewer deploy; turning off `VITE_ENABLE_GRID_LAYOUT` stops new grids being authored. Container-query fallback path exists (`useContainerBreakpoint`). |
+| Bad mobile bug after release | No runtime kill switch (removed in Phase 4a). Ship a fix or revert the viewer deploy; turning off `VITE_ENABLE_GRID_LAYOUT` stops new grids being authored. Container-query fallback path exists (`useContainerBreakpoint`). |
 | Long labels in narrow columns | Labels wrap with `[overflow-wrap:anywhere]` and `leading-snug` (§9.7); never truncated, never painted into the next column. |
 
 **Mobile test matrix** (phase 2 gate, re-run in phases 3–4): container widths 320, 360, 375, 390, 414, 768, 1024; viewer, `PreviewTab` mobile frame, builder mobile frame, embed iframe (`embed.feature` widths), layouts L1–L9 (L6 at 704 px, L4/L7 hero variants), light/dark. Pass criteria: no horizontal scroll, no clipped popups, stacked below threshold, side-by-side above it.
@@ -1025,8 +1027,8 @@ Four PRs, in this order. Line numbers are as of `main` @ 5a67554.
 **4c — Rail, counts, grid undo, move/copy (§8.8, §7.4)**
 1. `rail/JourneyRail.tsx` L37 and the counts in `CollaborativeFormBuilder.tsx` L222, `JSONPreview.tsx` L53, `FormArea` `PageHeader`, `PageActionsSelector` → `countQuestionFields`.
 2. `rail/RailPageGroup.tsx`: grid as a collapsible parent chip with child chips; insert zones carry `beforeNodeId`.
-3. Grid delete through `removeGrid`/`restoreGrid` in `PageBuilderFieldCard.tsx` (L667) and `PageBuilderSidebar.tsx` (L75).
-4. Move/copy a whole grid to another page from `PageActionsSelector` and the card `⋯` menu, through store actions.
+3. Grid delete from the field card and sidebar: no change needed. Those paths only ever see questions (a grid uses `GridBlock` and `GridSettings`), and `removeField`/`restoreField` already route a grid through its snapshot branch.
+4. Move/copy a whole grid to another page from a `PageActionsSelector` on the grid toolbar; `moveFieldBetweenPages`/`copyFieldToPage` already carry the children.
 
 **4d — a11y, i18n, visuals**
 1. `accessibility.announcements` on the inner `DndContext` in `PageBuilderTab.tsx` ("column N of M").
