@@ -12,6 +12,7 @@ import { Copy, Trash2, Ungroup } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { FieldSettingsHeader } from '../field-settings';
+import { useDeleteGridWithUndo } from '../tabs/useDeleteGridWithUndo';
 
 interface GridSettingsProps {
   field: GridField;
@@ -36,17 +37,14 @@ const isValidWidths = (widths: number[]): boolean => {
 export const GridSettings: React.FC<GridSettingsProps> = ({ field, isConnected, isReadOnly = false }) => {
   const { t } = useTranslation('gridLayout');
   const isEditable = isConnected && !isReadOnly;
-  const isEditableRef = React.useRef(isEditable);
-  isEditableRef.current = isEditable;
   const {
     pages,
     setGridColumnWidths,
     duplicateGrid,
     ungroupGrid,
-    removeGrid,
-    restoreGrid,
     setSelectedField,
   } = useFormBuilderStore();
+  const deleteGridWithUndo = useDeleteGridWithUndo(isEditable);
 
   const pageId = React.useMemo(
     () => pages.find((page) => page.fields.some((f) => f.id === field.id))?.id,
@@ -90,21 +88,7 @@ export const GridSettings: React.FC<GridSettingsProps> = ({ field, isConnected, 
   };
 
   const handleDelete = () => {
-    if (!isEditable) return;
-    const snapshot = removeGrid(pageId, field.id, { deleteChildren: true });
-    if (!snapshot) return;
-    setSelectedField(null);
-    toast({
-      title: t('settings.deleted'),
-      action: {
-        label: t('settings.undo'),
-        onClick: () => {
-          // Re-check at click time: the toast outlives this panel and editability can change
-          if (!isEditableRef.current || !useFormBuilderStore.getState().isConnected) return;
-          if (restoreGrid(pageId, snapshot)) setSelectedField(field.id);
-        },
-      },
-    });
+    deleteGridWithUndo(pageId, field.id);
   };
 
   return (

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { useNavigate, useParams } from 'react-router';
-import { Zap } from 'lucide-react';
+import { ChevronRight, Zap } from 'lucide-react';
 import { FormField, isLayoutField } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
@@ -14,8 +14,13 @@ interface RailFieldChipProps {
   field: FormField;
   index: number;
   pageId: string;
-  number: number;
+  /** Question number; omitted for a grid, which is a container rather than a question. */
+  number?: number;
   isSelected: boolean;
+  /** A grid chip's expand/collapse control for its child chips. */
+  collapse?: { expanded: boolean; onToggle: () => void };
+  /** Indents a grid child under its grid chip. */
+  nested?: boolean;
 }
 
 /**
@@ -30,6 +35,8 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
   pageId,
   number,
   isSelected,
+  collapse,
+  nested = false,
 }) => {
   const { t } = useTranslation('journeyRail');
   const { t: tGrid } = useTranslation('gridLayout');
@@ -79,6 +86,7 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
       onClick={() => setSelection({ kind: 'field', fieldId: field.id, pageId })}
       className={cn(
         'group flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition-colors',
+        nested && 'pl-6',
         canReorder && 'cursor-grab active:cursor-grabbing',
         isDragging && 'opacity-40',
         isSelected
@@ -86,9 +94,29 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
           : 'text-[var(--tf-muted)] hover:bg-[var(--tf-faint)] hover:text-[var(--tf-dark)]'
       )}
     >
-      <span className="w-4 shrink-0 text-center text-[10px] font-semibold text-[var(--tf-muted)]">
-        {number}
-      </span>
+      {collapse ? (
+        <button
+          type="button"
+          data-testid={`rail-grid-toggle-${field.id}`}
+          aria-expanded={collapse.expanded}
+          aria-label={t(collapse.expanded ? 'grid.collapse' : 'grid.expand')}
+          title={t(collapse.expanded ? 'grid.collapse' : 'grid.expand')}
+          onClick={(e) => {
+            e.stopPropagation();
+            collapse.onToggle();
+          }}
+          // Keep Enter/Space on the toggle from reaching the row's selection or dnd-kit's keyboard drag
+          onKeyDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-[var(--tf-muted)] hover:bg-[var(--tf-border-medium)] hover:text-[var(--tf-dark)]"
+        >
+          <ChevronRight className={cn('h-3 w-3 transition-transform', collapse.expanded && 'rotate-90')} />
+        </button>
+      ) : (
+        <span className="w-4 shrink-0 text-center text-[10px] font-semibold text-[var(--tf-muted)]">
+          {number}
+        </span>
+      )}
       <span
         className={cn(
           'flex h-5 w-5 shrink-0 items-center justify-center rounded-md',

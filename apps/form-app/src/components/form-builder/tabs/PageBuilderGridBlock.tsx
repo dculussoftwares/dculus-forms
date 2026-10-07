@@ -9,15 +9,17 @@ import {
   type GridColumnNode,
   type GridField,
 } from '@dculus/types';
-import { Button, toast } from '@dculus/ui';
+import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
-import { Columns2, Copy, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, Columns2, Copy, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { FieldPickerPopover } from '../field-library/FieldPickerPopover';
+import { PageActionsSelector } from '../PageActionsSelector';
 import { DraggableFieldCard } from './PageBuilderFieldCard';
 import { GRID_COLUMN_DROPPABLE, GRID_DROP_PRIORITY, GRID_SLOT_DROPPABLE } from './gridCollision';
+import { useDeleteGridWithUndo } from './useDeleteGridWithUndo';
 
 /** Gap between columns in px; the divider sits in the middle of it. */
 const COLUMN_GAP = 12;
@@ -350,17 +352,17 @@ export const GridBlock: React.FC<GridBlockProps> = ({
   const { t } = useTranslation('gridLayout');
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
-  const canEditRef = React.useRef(canEdit);
-  canEditRef.current = canEdit;
   const canReorder = permissions.canReorderFields();
   const {
     selectedFieldId,
     setSelectedField,
     setGridColumnWidths,
     duplicateGrid,
-    removeGrid,
-    restoreGrid,
+    pages,
+    moveFieldBetweenPages,
+    copyFieldToPage,
   } = useFormBuilderStore();
+  const deleteGridWithUndo = useDeleteGridWithUndo(canEdit);
   const activeIsGrid = useActiveIsGrid();
 
   const pageIndex = pageFields.findIndex((f) => f.id === grid.id);
@@ -410,21 +412,7 @@ export const GridBlock: React.FC<GridBlockProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!canEdit) return;
-    const snapshot = removeGrid(pageId, grid.id, { deleteChildren: true });
-    if (!snapshot) return;
-    if (isSelected) setSelectedField(null);
-    toast({
-      title: t('block.deleted'),
-      action: {
-        label: t('block.undo'),
-        onClick: () => {
-          // Re-check at click time: the toast outlives this block and editability can change
-          if (!canEditRef.current || !useFormBuilderStore.getState().isConnected) return;
-          if (restoreGrid(pageId, snapshot)) setSelectedField(grid.id);
-        },
-      },
-    });
+    deleteGridWithUndo(pageId, grid.id);
   };
 
   return (
@@ -500,6 +488,25 @@ export const GridBlock: React.FC<GridBlockProps> = ({
               >
                 <Copy className="w-4 h-4" />
               </Button>
+              {/* The store's grid branches move or copy the whole block, questions included (§7.4) */}
+              <PageActionsSelector
+                pages={pages ?? []}
+                currentPageId={pageId}
+                onMoveToPage={(targetPageId) => moveFieldBetweenPages(pageId, targetPageId, grid.id)}
+                onCopyToPage={(targetPageId) => copyFieldToPage(pageId, targetPageId, grid.id)}
+                triggerElement={
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-lg h-auto"
+                    title={t('block.moveOrCopy')}
+                    aria-label={t('block.moveOrCopy')}
+                    data-testid={`grid-page-actions-button-${grid.id}`}
+                  >
+                    <ArrowRightLeft className="w-4 h-4" />
+                  </Button>
+                }
+              />
               <Button
                 variant="ghost"
                 onClick={handleDelete}

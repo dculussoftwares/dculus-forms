@@ -290,6 +290,13 @@ describe('existing actions on a page with a grid (§7.4)', () => {
     expect(layout('p2')).toEqual(['x', { g1: [['a', 'b'], ['c']] }]);
   });
 
+  it('moving a grid keeps a selected child selected, on the destination page', () => {
+    const { store, act } = standard();
+    store.setState({ selectedFieldId: 'b' });
+    act().moveFieldBetweenPages('p1', 'p2', 'g1');
+    expect(act().setSelection).toHaveBeenCalledWith({ kind: 'field', fieldId: 'b', pageId: 'p2' });
+  });
+
   it('moving a child to another page clears its layout keys and lands top-level', () => {
     const { act, layout, byId } = standard();
     act().moveFieldBetweenPages('p1', 'p2', 'a', 0);

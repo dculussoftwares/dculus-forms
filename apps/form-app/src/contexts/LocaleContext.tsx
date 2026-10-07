@@ -1,30 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { availableLocales, defaultLocale, translations, type Locale } from '../locales';
+import { LOCALE_STORAGE_KEY, getStoredLocale, isLocale } from '../locales/storedLocale';
 import { LocaleContext, LocaleContextValue } from './locale-context';
 
-export const LOCALE_STORAGE_KEY = 'dculus.forms.locale';
-
-const isLocale = (value: string | null): value is Locale => {
-  return !!value && availableLocales.includes(value as Locale);
-};
-
-const getInitialLocale = (): Locale => {
-  if (typeof window === 'undefined') {
-    return defaultLocale;
-  }
-
-  const storedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-
-  if (isLocale(storedLocale)) {
-    return storedLocale;
-  }
-
-  return defaultLocale;
-};
+export { LOCALE_STORAGE_KEY };
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+  const [locale, setLocaleState] = useState<Locale>(getStoredLocale);
 
   const setLocale = useCallback((nextLocale: Locale) => {
     setLocaleState(nextLocale);

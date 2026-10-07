@@ -7,5 +7,9 @@
   "fieldCount": {
     "singular": "களம்",
     "plural": "வயல்வெளிகள்"
+  },
+  "actions": {
+    "move": "நகர்த்து",
+    "copy": "நகலெடு"
   }
 }

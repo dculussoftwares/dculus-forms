@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { FormPage } from '@dculus/types';
+import { FormPage, buildPageTree, pageHasGrid, type PageNode } from '@dculus/types';
 import { Button, Input } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { GripVertical, Copy, Trash2, ChevronDown } from 'lucide-react';
@@ -24,16 +24,23 @@ interface RailPageGroupProps {
  * A `field-insert` drop zone between chips (or at the start/end of an empty page),
  * reusing the exact { type: 'field-insert', pageId, insertIndex } shape that
  * PageBuilderTab.handleDragEnd already knows how to interpret for reorder and
- * cross-page moves — see the insert-slot math documented there.
+ * cross-page moves — see the insert-slot math documented there. On grid pages the
+ * zones sit between top-level nodes and also carry `beforeNodeId` (§8.4, §8.8).
  */
-const RailFieldInsertZone: React.FC<{ pageId: string; insertIndex: number }> = ({
-  pageId,
-  insertIndex,
-}) => {
+const RailFieldInsertZone: React.FC<{
+  pageId: string;
+  insertIndex: number;
+  beforeNodeId?: string | null;
+}> = ({ pageId, insertIndex, beforeNodeId }) => {
   const permissions = useFormPermissions();
   const { setNodeRef, isOver } = useDroppable({
     id: `rail-drop-${pageId}-${insertIndex}`,
-    data: { type: 'field-insert', pageId, insertIndex },
+    data: {
+      type: 'field-insert',
+      pageId,
+      insertIndex,
+      ...(beforeNodeId !== undefined && { beforeNodeId }),
+    },
     disabled: !permissions.canEditFields(),
   });
 
@@ -46,6 +53,75 @@ const RailFieldInsertZone: React.FC<{ pageId: string; insertIndex: number }> = (
       )}
     />
   );
+};
+
+const nodeId = (node: PageNode): string => (node.kind === 'field' ? node.field.id : node.grid.id);
+
+/**
+ * Chips for a page holding a grid (§8.8): each grid is a collapsible parent chip with its questions
+ * indented under it, and question numbers skip the grid itself. Insert zones sit between top-level nodes.
+ */
+const RailTreeFields: React.FC<{
+  page: FormPage;
+  startNumber: number;
+  selectedFieldId: string | null;
+}> = ({ page, startNumber, selectedFieldId }) => {
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set());
+  const nodes = useMemo(() => buildPageTree(page.fields), [page.fields]);
+  const indexById = useMemo(() => new Map(page.fields.map((f, i) => [f.id, i])), [page.fields]);
+
+  const toggle = (gridId: string) =>
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      if (!next.delete(gridId)) next.add(gridId);
+      return next;
+    });
+
+  let number = startNumber;
+  let visualIndex = 0;
+  const chip = (field: FormPage['fields'][number], extra: Partial<React.ComponentProps<typeof RailFieldChip>>) => (
+    <RailFieldChip
+      key={field.id}
+      field={field}
+      index={indexById.get(field.id) ?? 0}
+      pageId={page.id}
+      isSelected={selectedFieldId === field.id}
+      {...extra}
+    />
+  );
+
+  const items: React.ReactNode[] = [
+    <RailFieldInsertZone key="start" pageId={page.id} insertIndex={0} beforeNodeId={nodes[0] ? nodeId(nodes[0]) : null} />,
+  ];
+  nodes.forEach((node, n) => {
+    if (node.kind === 'field') {
+      items.push(chip(node.field, { number: number++ }));
+      visualIndex += 1;
+    } else {
+      const children = node.columns.flatMap((column) => column.fields);
+      // A selected question never hides inside a collapsed grid
+      const expanded =
+        !collapsed.has(node.grid.id) || children.some((child) => child.id === selectedFieldId);
+      items.push(chip(node.grid, { collapse: { expanded, onToggle: () => toggle(node.grid.id) } }));
+      if (expanded) {
+        children.forEach((child) => items.push(chip(child, { number: number++, nested: true })));
+      } else {
+        number += children.length;
+      }
+      visualIndex += 1 + children.length;
+    }
+    const next = nodes[n + 1];
+    items.push(
+      <RailFieldInsertZone
+        key={`after-${nodeId(node)}`}
+        pageId={page.id}
+        insertIndex={visualIndex}
+        beforeNodeId={next ? nodeId(next) : null}
+      />
+    );
+  });
+
+  return <>{items}</>;
 };
 
 export const RailPageGroup: React.FC<RailPageGroupProps> = ({
@@ -247,19 +323,25 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
       </div>
 
       <div className="flex min-w-0 flex-col gap-0 px-1 pb-1.5">
-        <RailFieldInsertZone pageId={page.id} insertIndex={0} />
-        {page.fields.map((field, fieldIndex) => (
-          <React.Fragment key={field.id}>
-            <RailFieldChip
-              field={field}
-              index={fieldIndex}
-              pageId={page.id}
-              number={startNumber + fieldIndex}
-              isSelected={selectedFieldId === field.id}
-            />
-            <RailFieldInsertZone pageId={page.id} insertIndex={fieldIndex + 1} />
-          </React.Fragment>
-        ))}
+        {pageHasGrid(page.fields) ? (
+          <RailTreeFields page={page} startNumber={startNumber} selectedFieldId={selectedFieldId} />
+        ) : (
+          <>
+            <RailFieldInsertZone pageId={page.id} insertIndex={0} />
+            {page.fields.map((field, fieldIndex) => (
+              <React.Fragment key={field.id}>
+                <RailFieldChip
+                  field={field}
+                  index={fieldIndex}
+                  pageId={page.id}
+                  number={startNumber + fieldIndex}
+                  isSelected={selectedFieldId === field.id}
+                />
+                <RailFieldInsertZone pageId={page.id} insertIndex={fieldIndex + 1} />
+              </React.Fragment>
+            ))}
+          </>
+        )}
         {page.fields.length === 0 && (
           <p className="px-2 py-1 text-[11px] text-[var(--tf-light-muted)]">
             {t('emptyPage')}

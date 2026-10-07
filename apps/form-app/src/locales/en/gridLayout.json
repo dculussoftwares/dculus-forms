@@ -5,13 +5,15 @@
     "dragHandle": "Drag to move layout",
     "settings": "Layout settings",
     "duplicate": "Duplicate layout",
+    "moveOrCopy": "Move or copy layout to another page",
     "delete": "Delete layout",
     "emptyColumn": "Drag and drop fields here",
     "columnAriaLabel": "Column {{index}} of {{total}}",
     "resizeHandle": "Resize columns {{left}} and {{right}}",
     "moving": "Moving layout",
     "deleted": "Layout deleted",
-    "undo": "Undo"
+    "undo": "Undo",
+    "ungroupInstead": "Ungroup instead"
   },
   "card": {
     "moreActions": "More actions",
@@ -41,5 +43,21 @@
     "columnsMerged": "Questions from removed columns moved to column {{column}}",
     "deleted": "Layout deleted",
     "undo": "Undo"
+  },
+  "errors": {
+    "connectionLost": "Connection lost",
+    "connectionLostHint": "Please wait — reconnecting to the collaboration server.",
+    "cannotConvert": "Cannot change this field type",
+    "cannotConvertHint": "A grid layout cannot be converted to another field type."
+  },
+  "dnd": {
+    "item": "Item",
+    "picked": "Picked up {{label}}.",
+    "overColumn": "{{label}} is over column {{column}} of {{total}}.",
+    "overPage": "{{label}} is over the page.",
+    "notOver": "{{label}} is not over a drop area.",
+    "droppedColumn": "{{label}} was dropped into column {{column}} of {{total}}.",
+    "dropped": "{{label}} was dropped.",
+    "cancelled": "Dragging was cancelled. {{label}} was not moved."
   }
 }

@@ -180,11 +180,11 @@ When('I attach 3 files to the multi-file upload field', async function (this: Cu
 
 /**
  * After attaching 3 files to a maxFiles:2 field, exactly 2 file chips should be visible.
- * FileChip renders a <span class="truncate"> — we count those within the viewer page.
+ * Each FileChip renders its name in [data-testid="file-upload-chip-name"]; we count those.
  */
 Then('only 2 files should be listed in the upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  const chips = this.viewerPage.locator('span.truncate');
+  const chips = this.viewerPage.getByTestId('file-upload-chip-name');
   await expect(chips).toHaveCount(2, { timeout: 5_000 });
 });
 
@@ -237,8 +237,8 @@ When('I attach an oversized file to the size-limited upload field', async functi
  */
 Then('no file should be listed in the upload field', async function (this: CustomWorld) {
   if (!this.viewerPage) throw new Error('Viewer page is not initialized');
-  // FileChip renders span.truncate — there should be none
-  const chips = this.viewerPage.locator('span.truncate');
+  // No FileChip names should be rendered
+  const chips = this.viewerPage.getByTestId('file-upload-chip-name');
   await expect(chips).toHaveCount(0, { timeout: 5_000 });
 });
 
