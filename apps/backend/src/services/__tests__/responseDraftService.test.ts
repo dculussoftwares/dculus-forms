@@ -141,9 +141,10 @@ describe('getResponseDraft', () => {
     });
   });
 
-  it('hides expired drafts that the cleanup job has not purged yet', async () => {
+  it('hides and deletes expired drafts that the cleanup job has not purged yet', async () => {
     repo.findForRespondent.mockResolvedValue(row({ expiresAt: new Date(Date.now() - 1000) }) as any);
     await expect(getResponseDraft('form-1', 'user-1')).resolves.toBeNull();
+    expect(repo.deleteForRespondent).toHaveBeenCalledWith('form-1', 'user-1');
   });
 });
 
@@ -157,7 +158,7 @@ describe('saveResponseDraft', () => {
     const result = await saveResponseDraft({ ...base, baseVersion: null });
 
     expect(result.conflict).toBe(false);
-    expect(result.draft.version).toBe(1);
+    expect(result.draft?.version).toBe(1);
     expect(repo.create).toHaveBeenCalledWith(
       expect.objectContaining({ formId: 'form-1', userId: 'user-1', currentPageId: 'page-2' })
     );
@@ -181,7 +182,18 @@ describe('saveResponseDraft', () => {
     const result = await saveResponseDraft({ ...base, baseVersion: null });
 
     expect(result.conflict).toBe(true);
-    expect(result.draft.version).toBe(3);
+    expect(result.draft?.version).toBe(3);
+  });
+
+  it('replaces an expired draft on a first save instead of reporting a conflict', async () => {
+    repo.findForRespondent.mockResolvedValueOnce(row({ expiresAt: new Date(Date.now() - 1000) }) as any);
+    repo.create.mockResolvedValue(row({ version: 1 }) as any);
+
+    const result = await saveResponseDraft({ ...base, baseVersion: null });
+
+    expect(repo.deleteForRespondent).toHaveBeenCalledWith('form-1', 'user-1');
+    expect(result).toEqual(expect.objectContaining({ conflict: false }));
+    expect(result.draft?.version).toBe(1);
   });
 
   it('updates when the client holds the current version', async () => {
@@ -197,7 +209,7 @@ describe('saveResponseDraft', () => {
       expect.objectContaining({ data: { name: 'Ada' }, currentPageId: 'page-2' })
     );
     expect(result).toEqual(expect.objectContaining({ conflict: false }));
-    expect(result.draft.version).toBe(4);
+    expect(result.draft?.version).toBe(4);
   });
 
   it('reports a conflict when a newer save already landed', async () => {
@@ -207,18 +219,29 @@ describe('saveResponseDraft', () => {
     const result = await saveResponseDraft({ ...base, baseVersion: 3 });
 
     expect(result.conflict).toBe(true);
-    expect(result.draft.version).toBe(5);
+    expect(result.draft?.version).toBe(5);
   });
 
-  it('recreates the draft when it was cleared elsewhere, keeping the respondent work', async () => {
-    repo.updateIfVersion.mockResolvedValue(0);
+  it('never recreates a draft that was submitted or discarded elsewhere', async () => {
     repo.findForRespondent.mockResolvedValue(null);
-    repo.create.mockResolvedValue(row({ version: 1 }) as any);
 
     const result = await saveResponseDraft({ ...base, baseVersion: 3 });
 
-    expect(result.conflict).toBe(false);
-    expect(repo.create).toHaveBeenCalled();
+    expect(result).toEqual({ draft: null, conflict: true });
+    expect(repo.updateIfVersion).not.toHaveBeenCalled();
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it('does not revive an expired draft from a stale version', async () => {
+    repo.findForRespondent
+      .mockResolvedValueOnce(row({ expiresAt: new Date(Date.now() - 1000) }) as any)
+      .mockResolvedValueOnce(null);
+
+    const result = await saveResponseDraft({ ...base, baseVersion: 3 });
+
+    expect(repo.deleteForRespondent).toHaveBeenCalledWith('form-1', 'user-1');
+    expect(result).toEqual({ draft: null, conflict: true });
+    expect(repo.updateIfVersion).not.toHaveBeenCalled();
   });
 
   it('rejects non-object data and oversized payloads', async () => {
@@ -226,6 +249,10 @@ describe('saveResponseDraft', () => {
       extensions: { code: GRAPHQL_ERROR_CODES.BAD_USER_INPUT },
     });
     await expect(saveResponseDraft({ ...base, data: { long: 'x'.repeat(10_001) } })).rejects.toMatchObject({
+      extensions: { code: GRAPHQL_ERROR_CODES.BAD_USER_INPUT },
+    });
+    const nested = { list: Array.from({ length: 600 }, () => 'x'.repeat(10_000)) };
+    await expect(saveResponseDraft({ ...base, data: nested })).rejects.toMatchObject({
       extensions: { code: GRAPHQL_ERROR_CODES.BAD_USER_INPUT },
     });
     expect(repo.create).not.toHaveBeenCalled();
