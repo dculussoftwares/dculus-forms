@@ -268,11 +268,15 @@ export function useResponseDraft({ formId, enabled, applyDraft }: UseResponseDra
     await inFlightRef.current;
   }, []);
 
-  /** Save any pending change now, before the answers on screen are swapped out. */
-  const flush = useCallback(async () => {
+  /**
+   * Save any pending change now, before the answers on screen are swapped
+   * out. Resolves true only when the server holds everything on screen.
+   */
+  const flush = useCallback(async (): Promise<boolean> => {
     while (inFlightRef.current) await inFlightRef.current;
     await save();
-  }, [save]);
+    return !pausedRef.current && pendingChange() === null;
+  }, [pendingChange, save]);
 
   /** Record the page the respondent is on; saved right away so they resume there. */
   const setCurrentPage = useCallback(

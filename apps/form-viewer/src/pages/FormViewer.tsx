@@ -13,6 +13,7 @@ import {
 } from '@dculus/types';
 import type { RespondentGradeView } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { EDIT_MY_RESPONSE, GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE, type MyResponseData } from '../graphql/queries';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
@@ -231,6 +232,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
     !!formSchema &&
     loadedForm?.accessStatus === 'OPEN' &&
     !!loadedForm?.respondentEmail &&
+    !loadedForm?.closedReason &&
     isSaveProgressEnabled(loadedForm?.settings);
   const draftSessionKey = draftsEnabled ? `${loadedForm.id}:${loadedForm.respondentEmail}` : null;
   const [restoredSessionKey, setRestoredSessionKey] = useState<string | null>(null);
@@ -348,6 +350,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
         const result = await withSubmissionTimeout(
           editMyResponse({ variables: { input: { formId, data: processedResponses } } })
         );
+        if (result.error) throw result.error;
         const edited = result.data?.editMyResponse;
         if (!edited) throw new Error('Your changes could not be saved. Please try again.');
         setMyResponseOverride(edited);
@@ -411,7 +414,9 @@ const FormViewer: React.FC<FormViewerProps> = ({
         })
       );
 
-      const submitted = result.data.submitResponse;
+      if (result.error) throw result.error;
+      const submitted = result.data?.submitResponse;
+      if (!submitted) throw new Error('An error occurred while submitting the form. Please try again.');
       const { thankYouMessage, grade } = submitted;
       // Identity-gated forms: the respondent can view (or edit) what they sent.
       if (loadedForm?.respondentEmail) {
@@ -465,6 +470,16 @@ const FormViewer: React.FC<FormViewerProps> = ({
         setSubmissionState('idle');
         setNeedsReauth(true);
         isSubmittingRef.current = false;
+        return;
+      }
+
+      if (errorCode === GRAPHQL_ERROR_CODES.ALREADY_RESPONDED) {
+        // Submitted from another tab or device: re-fetch so the
+        // already-responded screen (with that response) takes over.
+        isSubmittingRef.current = false;
+        setSubmissionState('idle');
+        setMyResponseOverride(undefined);
+        await refetch();
         return;
       }
 
@@ -645,7 +660,12 @@ const FormViewer: React.FC<FormViewerProps> = ({
   // in progress is saved as a draft first, and comes back on cancel.
   const handleStartEditing = async () => {
     if (!myResponse || !formSchema) return;
-    if (draftSessionKey) await responseDraft.flush();
+    // Never replace a new response in progress unless it is safely saved.
+    if (draftSessionKey && !(await responseDraft.flush())) {
+      setSubmissionState('error');
+      setSubmissionMessage(myResponseLabels.saveBeforeEditFailed);
+      return;
+    }
     const store = useFormResponseStore.getState();
     store.clearAllResponses();
     for (const [pageId, responses] of Object.entries(
@@ -677,8 +697,9 @@ const FormViewer: React.FC<FormViewerProps> = ({
 
   const onePerRespondent = isOneResponsePerRespondent(form.settings);
   const onEditResponse = myResponse?.canEdit ? handleStartEditing : undefined;
+  const isClosed = !!form.closedReason;
   const isAlreadyResponded =
-    onePerRespondent && !!myResponse && view === 'form' && submissionState !== 'success';
+    (onePerRespondent || isClosed) && !!myResponse && view === 'form' && submissionState !== 'success';
   const showDraftUi = !!draftSessionKey && view === 'form' && submissionState !== 'success';
 
   const renderResponseNotice = () => {
@@ -832,6 +853,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
       ) : isAlreadyResponded && myResponse ? (
         <AlreadyRespondedScreen
           submittedAt={myResponse.submittedAt}
+          closed={isClosed}
           embedded={embedded}
           onView={() => setView('review')}
           onEdit={onEditResponse}

@@ -76,3 +76,15 @@ export function requireIdentifiedRespondent<F extends RespondentForm>(
 
   return { form, userId: auth.user.id };
 }
+
+/** Non-throwing form of the time-window gate: the form takes submissions right now. */
+export function isWithinTimeWindow(form: RespondentForm): boolean {
+  const timeWindow = form.settings?.submissionLimits?.timeWindow;
+  if (!timeWindow) return true;
+  try {
+    enforceTimeWindow(timeWindow);
+    return true;
+  } catch {
+    return false;
+  }
+}

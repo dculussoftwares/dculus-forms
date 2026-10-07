@@ -46,6 +46,9 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
       myResponse {
         ...MyResponseFields
       }
+      # Set when the form no longer takes new responses but still opens for
+      # this respondent's own answers (FORM_CLOSED, MAX_RESPONSES_REACHED).
+      closedReason
       settings {
         submissionLimits {
           timeWindow {

@@ -7,6 +7,9 @@ export const myResponseLabels = {
   alreadyRespondedTitle: "You've already responded",
   alreadyRespondedDescription: (date: string) =>
     `This form accepts one response per person. You submitted yours on ${date}.`,
+  closedTitle: 'This form is no longer accepting responses',
+  closedDescription: (date: string) => `You submitted your response on ${date}.`,
+  saveBeforeEditFailed: "We couldn't save the answers you're working on, so they were kept. Please try again.",
   respondedOn: (date: string) => `You responded to this form on ${date}.`,
   responseSaved: 'Your response has been saved.',
   changesSaved: 'Your changes have been saved.',

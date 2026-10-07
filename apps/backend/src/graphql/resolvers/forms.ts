@@ -17,6 +17,7 @@ import { createFormFile } from '../../services/formFileService.js';
 import { getResponseCount, countAllResponses, getDashboardResponseCounts } from '../../services/responseService.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { randomUUID } from 'crypto';
+import { GraphQLError } from 'graphql';
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { sanitizeQuizSettings, type FormSettings } from '@dculus/types';
@@ -24,6 +25,8 @@ import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { resolveAccessStatus, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
+import { toRespondentForm } from '../../lib/respondentAccess.js';
+import { getMyResponse } from '../../services/myResponseService.js';
 
 // Sibling field resolvers on `Form` only see the raw `parent` DB row, not
 // each other's resolved output, so both `accessStatus` and
@@ -37,6 +40,27 @@ const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])
 // default accessControl object on every settings save (useFormSettings.ts),
 // so treating "absent" and "default" as different would require OWNER
 // permission for every settings save on every form that predates this field.
+/**
+ * Why the form no longer accepts new responses (maximum reached or outside
+ * its time window), as the error `formByShortUrl` would throw, or null.
+ */
+async function findSubmissionClosure(form: { id: string; settings?: FormSettings | null }) {
+  const limits = form.settings?.submissionLimits;
+  if (!limits) return null;
+  if (limits.maxResponses?.enabled && (await countAllResponses(form.id)) >= limits.maxResponses.limit) {
+    return createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
+  }
+  if (limits.timeWindow) {
+    try {
+      enforceTimeWindow(limits.timeWindow);
+    } catch (error) {
+      if (error instanceof GraphQLError) return error;
+      throw error;
+    }
+  }
+  return null;
+}
+
 function normalizeAccessControlForComparison(accessControl: any) {
   return {
     enabled: !!accessControl?.enabled,
@@ -69,7 +93,7 @@ export const formsResolvers = {
 
       return accessCheck.form;
     },
-    formByShortUrl: async (_: any, { shortUrl }: { shortUrl: string }) => {
+    formByShortUrl: async (_: any, { shortUrl }: { shortUrl: string }, context: { auth: BetterAuthContext }) => {
       const form = await getFormByShortUrl(shortUrl);
       if (!form) throw createGraphQLError("Form not found", GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
       if (!form.isPublished) throw createGraphQLError("Form is not published", GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
@@ -80,26 +104,17 @@ export const formsResolvers = {
         throw createGraphQLError("Form view limit exceeded for this organization's subscription plan", GRAPHQL_ERROR_CODES.VIEW_LIMIT_EXCEEDED);
       }
 
-      // Check submission limits
-      if (form.settings?.submissionLimits) {
-        const limits = form.settings.submissionLimits;
+      const closure = await findSubmissionClosure(form);
+      if (!closure) return form;
 
-        // Check maximum responses limit
-        if (limits.maxResponses?.enabled) {
-          const currentResponseCount = await countAllResponses(form.id);
-
-          if (currentResponseCount >= limits.maxResponses.limit) {
-            throw createGraphQLError("Form has reached its maximum response limit", GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
-          }
-        }
-
-        // Check time window limits
-        if (limits.timeWindow) {
-          enforceTimeWindow(limits.timeWindow);
-        }
+      // A form that stopped taking new responses still opens for a signed-in
+      // respondent who already answered, so they can see (and, while the
+      // window is open, edit) what they sent. `closedReason` tells the viewer
+      // not to offer a new response.
+      if (await getMyResponse(toRespondentForm(form), context.auth)) {
+        return { ...form, closedReason: closure.extensions.code };
       }
-
-      return form;
+      throw closure;
     },
   },
   Form: {

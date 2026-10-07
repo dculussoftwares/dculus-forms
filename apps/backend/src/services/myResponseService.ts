@@ -1,10 +1,11 @@
 import type { Prisma } from '#prisma-client';
-import { isRespondentEditEnabled } from '@dculus/types';
+import { deserializeFormSchema, isRespondentEditEnabled } from '@dculus/types';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { createGraphQLError } from '#graphql-errors';
 import type { BetterAuthContext } from '../middleware/better-auth-middleware.js';
 import {
   isIdentifiedRespondent,
+  isWithinTimeWindow,
   requireIdentifiedRespondent,
   type RespondentForm,
 } from '../lib/respondentAccess.js';
@@ -19,7 +20,7 @@ export interface MyResponseView {
   id: string;
   data: Record<string, unknown>;
   submittedAt: string;
-  /** The form currently lets the respondent edit it (see isRespondentEditEnabled). */
+  /** The form lets the respondent edit it right now: edits are on and its time window is open. */
   canEdit: boolean;
 }
 
@@ -35,6 +36,21 @@ export interface EditMyResponseParams {
   /** Recorded on the edit history row, like a builder edit. */
   ipAddress?: string;
   userAgent?: string;
+}
+
+/**
+ * Stored answers to fields the form no longer has. The respondent never sees
+ * those fields while editing, so an edit keeps their answers as they were
+ * instead of recording them as deletions.
+ */
+function answersToRemovedFields(rawSchema: unknown, stored: Record<string, unknown>): Record<string, unknown> {
+  if (!rawSchema || typeof rawSchema !== 'object') return {};
+  const liveFieldIds = new Set(
+    deserializeFormSchema(rawSchema).pages.flatMap((page) =>
+      page.fields.filter((field) => !field.deleted).map((field) => field.id)
+    )
+  );
+  return Object.fromEntries(Object.entries(stored).filter(([fieldId]) => !liveFieldIds.has(fieldId)));
 }
 
 const findLatestResponse = (formId: string, userId: string) =>
@@ -61,7 +77,7 @@ const toView = (
 export async function getMyResponse(form: RespondentForm, auth: BetterAuthContext): Promise<MyResponseView | null> {
   if (!isIdentifiedRespondent(form, auth)) return null;
   const response = await findLatestResponse(form.id, auth.user!.id);
-  return response ? toView(response, isRespondentEditEnabled(form.settings)) : null;
+  return response ? toView(response, isRespondentEditEnabled(form.settings) && isWithinTimeWindow(form)) : null;
 }
 
 /**
@@ -87,9 +103,16 @@ export async function editMyResponse(params: EditMyResponseParams): Promise<MyRe
 
   // Same conditional-logic enforcement as submitResponse: values the form's
   // rules hide are dropped (and recorded as deletions by the edit tracker).
+  // Answers to fields removed since submission are carried over untouched.
   const schema = (await getFormSchemaFromHocuspocus(editable.id)) ?? editable.formSchema;
+  const submitted = params.data as Record<string, unknown>;
   const data = (
-    schema ? stripConditionallyHiddenValues(schema, params.data as Record<string, unknown>) : params.data
+    schema
+      ? {
+          ...answersToRemovedFields(schema, (existing.data as Record<string, unknown>) ?? {}),
+          ...stripConditionallyHiddenValues(schema, submitted),
+        }
+      : submitted
   ) as Prisma.JsonObject;
 
   const updated = await updateResponse(existing.id, data, {

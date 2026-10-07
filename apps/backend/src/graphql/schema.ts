@@ -245,6 +245,10 @@ export const typeDefs = gql`
     # The signed-in respondent's OWN latest response, or null. Same scoping
     # as myDraft; always null on forms that don't capture respondent identity.
     myResponse: MyResponse
+    # Set only on a form that no longer accepts new responses (an error code
+    # such as FORM_CLOSED or MAX_RESPONSES_REACHED) but still opens for a
+    # signed-in respondent who already responded, so they can see their answers.
+    closedReason: String
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!
