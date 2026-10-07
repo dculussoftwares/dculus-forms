@@ -26,7 +26,7 @@ export const createResponseDraftRepository = (context?: RepositoryContext) => {
     data: Pick<Prisma.ResponseDraftUpdateManyMutationInput, 'data' | 'currentPageId' | 'expiresAt'>
   ) => {
     const result = await prisma.responseDraft.updateMany({
-      where: { formId, userId, version: expectedVersion },
+      where: { formId, userId, version: expectedVersion, expiresAt: { gt: new Date() } },
       data: { ...data, version: { increment: 1 } },
     });
     return result.count;
@@ -37,8 +37,15 @@ export const createResponseDraftRepository = (context?: RepositoryContext) => {
     return result.count;
   };
 
+  const deleteExpiredForRespondent = async (formId: string, userId: string, now: Date) => {
+    const result = await prisma.responseDraft.deleteMany({
+      where: { formId, userId, expiresAt: { lte: now } },
+    });
+    return result.count;
+  };
+
   const deleteExpired = async (now: Date) => {
-    const result = await prisma.responseDraft.deleteMany({ where: { expiresAt: { lt: now } } });
+    const result = await prisma.responseDraft.deleteMany({ where: { expiresAt: { lte: now } } });
     return result.count;
   };
 
@@ -47,6 +54,7 @@ export const createResponseDraftRepository = (context?: RepositoryContext) => {
     create,
     updateIfVersion,
     deleteForRespondent,
+    deleteExpiredForRespondent,
     deleteExpired,
   };
 };

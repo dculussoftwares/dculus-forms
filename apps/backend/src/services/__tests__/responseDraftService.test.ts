@@ -10,6 +10,7 @@ vi.mock('../../repositories/index.js', () => ({
     create: vi.fn(),
     updateIfVersion: vi.fn(),
     deleteForRespondent: vi.fn(),
+    deleteExpiredForRespondent: vi.fn(),
     deleteExpired: vi.fn(),
   },
 }));
@@ -170,6 +171,17 @@ describe('saveResponseDraft', () => {
 
     expect(result).toEqual(expect.objectContaining({ conflict: true }));
     expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it('replaces an expired draft on a first save', async () => {
+    repo.findForRespondent.mockResolvedValue(row({ expiresAt: new Date(Date.now() - 1000) }) as any);
+    repo.create.mockResolvedValue(row({ version: 1 }) as any);
+
+    const result = await saveResponseDraft({ ...base, baseVersion: null });
+
+    expect(result.conflict).toBe(false);
+    expect(repo.deleteExpiredForRespondent).toHaveBeenCalledWith('form-1', 'user-1', expect.any(Date));
+    expect(repo.create).toHaveBeenCalled();
   });
 
   it('reports a conflict when two first saves race on the unique key', async () => {

@@ -44,6 +44,7 @@ const toView = (row: DraftRow): ResponseDraftView => ({
 });
 
 const draftExpiry = (from: Date) => new Date(from.getTime() + DRAFT_TTL_DAYS * 24 * 60 * 60 * 1000);
+const isExpired = (row: DraftRow) => row.expiresAt.getTime() <= Date.now();
 
 const isUniqueViolation = (error: unknown) =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
@@ -107,7 +108,7 @@ export async function getResponseDraft(formId: string, userId: string): Promise<
   const row = await responseDraftRepository.findForRespondent(formId, userId);
   if (!row) return null;
   // Expired rows are purged on a schedule; never hand one back in between.
-  if (row.expiresAt.getTime() < Date.now()) return null;
+  if (isExpired(row)) return null;
   return toView(row);
 }
 
@@ -139,9 +140,14 @@ export async function saveResponseDraft(params: {
       return { draft: toView(created), conflict: false };
     } catch (error) {
       if (!isUniqueViolation(error)) throw error;
-      // Another tab created the draft between our read and insert.
+      // Another tab created the draft between our read and insert. An expired
+      // row may still occupy the unique key until scheduled cleanup runs.
       const current = await responseDraftRepository.findForRespondent(formId, userId);
       if (!current) throw error;
+      if (isExpired(current)) {
+        await responseDraftRepository.deleteExpiredForRespondent(formId, userId, new Date());
+        return createOrReportConflict();
+      }
       return { draft: toView(current), conflict: true };
     }
   };
@@ -150,7 +156,10 @@ export async function saveResponseDraft(params: {
   // another device created after this page loaded.
   if (baseVersion === null || baseVersion === undefined) {
     const existing = await responseDraftRepository.findForRespondent(formId, userId);
-    if (existing) return { draft: toView(existing), conflict: true };
+    if (existing) {
+      if (!isExpired(existing)) return { draft: toView(existing), conflict: true };
+      await responseDraftRepository.deleteExpiredForRespondent(formId, userId, new Date());
+    }
     return createOrReportConflict();
   }
 
@@ -161,8 +170,8 @@ export async function saveResponseDraft(params: {
   });
   const current = await responseDraftRepository.findForRespondent(formId, userId);
 
-  if (written === 1 && current) return { draft: toView(current), conflict: false };
-  if (current) return { draft: toView(current), conflict: true };
+  if (written === 1 && current && !isExpired(current)) return { draft: toView(current), conflict: false };
+  if (current && !isExpired(current)) return { draft: toView(current), conflict: true };
 
   // The draft was discarded or submitted elsewhere while this tab kept
   // typing. Keep the respondent's work rather than dropping it.
