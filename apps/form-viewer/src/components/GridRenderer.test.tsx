@@ -1,7 +1,7 @@
 /**
  * Grid Phase 2a viewer rendering (docs/grid-layout-strategy.md §9.1, §9.2, §15.2).
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // jsdom lacks these; @dculus/ui reads matchMedia at import time and Radix needs ResizeObserver.
 vi.hoisted(() => {
@@ -102,10 +102,6 @@ describe('SinglePageForm grid rendering', () => {
     useFormResponseStore.getState().clearAllResponses();
   });
 
-  afterEach(() => {
-    vi.unstubAllEnvs();
-  });
-
   it('renders a 2-column grid side by side, children in their columns in column-major order', () => {
     const { container } = renderPage(twoColumnPage());
 
@@ -201,16 +197,14 @@ describe('SinglePageForm grid rendering', () => {
     expect(container.querySelector('form.space-y-4 > div.space-y-4')!.children).toHaveLength(2);
   });
 
-  it('stacks every grid into one column when VITE_GRID_RENDER=stack', () => {
-    vi.stubEnv('VITE_GRID_RENDER', 'stack');
-    const { container } = renderPage(twoColumnPage());
+  it('lets a long label wrap inside its column instead of overflowing into the next one', () => {
+    const longWord = 'EmailAddressForCorrespondencePurposesOnly';
+    renderPage(page([new GridField('g1', [50, 50]), inGrid(text('a', longWord), 'g1', 0), inGrid(text('b'), 'g1', 1)]));
 
-    const wrapper = screen.getByTestId('viewer-grid-g1');
-    expect(container.innerHTML).not.toContain('@container');
-    expect(container.innerHTML).not.toContain('@md:');
-    expect(container.innerHTML).not.toContain('--gc');
-    expect(screen.queryByTestId('viewer-grid-column-g1-1')).toBeNull();
-    expect(inputNames(within(wrapper).getByTestId('viewer-grid-column-g1-0'))).toEqual(['a', 'c', 'b', 'd']);
+    const label = within(screen.getByTestId('viewer-grid-column-g1-0')).getByText(longWord);
+    expect(label.className).toContain('[overflow-wrap:anywhere]');
+    expect(label.className).toContain('min-w-0');
+    expect(label.className).not.toContain('leading-none');
   });
 
   it('shows the empty-page message for a page holding only a grid', () => {
