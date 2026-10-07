@@ -25,6 +25,15 @@
     "title": "Let respondents save and resume",
     "description": "Answers are saved automatically while respondents fill out the form, so they can continue later on any device. Drafts are private to each respondent, never appear in your responses, and are deleted 30 days after their last change."
   },
+  "oneResponsePerRespondent": {
+    "title": "Limit to one response per person",
+    "description": "Each signed-in respondent can submit once. When they come back, they can view their earlier response instead of filling the form again."
+  },
+  "allowRespondentEdit": {
+    "title": "Let respondents edit their response",
+    "description": "Respondents can change their latest response after submitting. Every change is recorded in the response's edit history.",
+    "unavailableForQuiz": "Not available on quizzes, because an edit would no longer match the grade."
+  },
   "save": "Save Access Control",
   "saving": "Saving..."
 }
