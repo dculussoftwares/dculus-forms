@@ -122,6 +122,34 @@ export function isSaveProgressEnabled(
   );
 }
 
+type RespondentSettings = Pick<
+  FormSettings,
+  'accessControl' | 'collectRespondentEmail' | 'oneResponsePerRespondent' | 'allowRespondentEdit' | 'quiz'
+>;
+
+/** True when each signed-in respondent may submit this form only once. */
+export function isOneResponsePerRespondent(settings: RespondentSettings | undefined | null): boolean {
+  if (!settings) return false;
+  return (
+    requiresRespondentIdentity(settings.accessControl, settings.collectRespondentEmail) &&
+    settings.oneResponsePerRespondent === true
+  );
+}
+
+/**
+ * True when signed-in respondents may change their answers after submitting.
+ * Never on quiz forms: an edit would leave the stored grade describing
+ * answers that no longer exist.
+ */
+export function isRespondentEditEnabled(settings: RespondentSettings | undefined | null): boolean {
+  if (!settings) return false;
+  return (
+    requiresRespondentIdentity(settings.accessControl, settings.collectRespondentEmail) &&
+    settings.allowRespondentEdit === true &&
+    !settings.quiz?.enabled
+  );
+}
+
 export interface FormSettings {
   submissionLimits?: SubmissionLimitsSettings;
   responseCopy?: ResponseCopySettings;
@@ -133,6 +161,10 @@ export interface FormSettings {
   // Absent = enabled whenever the form captures respondent identity; see
   // isSaveProgressEnabled. Has no effect on anonymous forms.
   saveProgress?: SaveProgressSettings;
+  // Signed-in respondents may submit only once; see isOneResponsePerRespondent.
+  oneResponsePerRespondent?: boolean;
+  // Signed-in respondents may edit their latest response; see isRespondentEditEnabled.
+  allowRespondentEdit?: boolean;
   // Absent or enabled: false = byte-for-byte identical to a non-quiz form
   // (see docs/native-quiz-strategy.md and GitHub issue #289's additive guarantee).
   quiz?: QuizSettings;
@@ -1088,6 +1120,8 @@ export enum EditType {
   MANUAL = 'MANUAL',
   SYSTEM = 'SYSTEM',
   BULK = 'BULK',
+  /** The respondent edited their own submission (see isRespondentEditEnabled). */
+  RESPONDENT = 'RESPONDENT',
 }
 
 export enum ChangeType {

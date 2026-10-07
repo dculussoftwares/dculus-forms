@@ -15,6 +15,9 @@ interface FormSettingsData {
   // Absent = on for identity-gated forms (see isSaveProgressEnabled). Kept
   // absent until the owner flips it, for the same reason as `quiz` below.
   saveProgress?: SaveProgressSettings;
+  // Absent until the owner turns them on, like saveProgress.
+  oneResponsePerRespondent?: boolean;
+  allowRespondentEdit?: boolean;
   // Absent (not `{}`) for a form that has never opened the Quiz panel — see
   // the additive guarantee in epic #289: an unrelated settings save must not
   // introduce a `quiz` key for a form that was never a quiz.
@@ -24,6 +27,11 @@ interface FormSettingsData {
   // not drop it — saves replace the whole JSON column.
   embed?: EmbedSettings;
 }
+
+/** The respondent options in Access Control; see updateRespondentOptions. */
+export type RespondentOptions = Partial<
+  Pick<FormSettingsData, 'saveProgress' | 'oneResponsePerRespondent' | 'allowRespondentEdit'>
+>;
 
 interface UseFormSettingsProps {
   formId: string | undefined;
@@ -94,6 +102,8 @@ export const useFormSettings = ({
         },
         collectRespondentEmail: initialSettings.collectRespondentEmail ?? false,
         saveProgress: initialSettings.saveProgress ?? undefined,
+        oneResponsePerRespondent: initialSettings.oneResponsePerRespondent ?? undefined,
+        allowRespondentEdit: initialSettings.allowRespondentEdit ?? undefined,
         // Preserve absence: `initialSettings.quiz` is `null` (not present in
         // the DB), not `undefined` (GraphQL always resolves the field key) —
         // normalize both to `undefined` so a non-quiz form's state never
@@ -273,9 +283,10 @@ export const useFormSettings = ({
     );
   };
 
-  // Update whether signed-in respondents can save and resume (saved with access control)
-  const updateSaveProgress = (enabled: boolean) => {
-    setSettings(prev => ({ ...prev, saveProgress: { enabled } }));
+  // Update what signed-in respondents can do: save and resume, respond only
+  // once, edit after submitting (saved with access control)
+  const updateRespondentOptions = (patch: RespondentOptions) => {
+    setSettings(prev => ({ ...prev, ...patch }));
   };
 
   // Update quiz settings
@@ -324,7 +335,7 @@ export const useFormSettings = ({
     updateAccessControl,
     saveAccessControlSettings,
     updateCollectRespondentEmail,
-    updateSaveProgress,
+    updateRespondentOptions,
     updateQuizSettings,
     saveQuizSettings,
   };

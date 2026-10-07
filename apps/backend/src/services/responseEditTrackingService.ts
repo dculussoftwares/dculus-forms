@@ -11,6 +11,7 @@ import { responseRepository } from '../repositories/index.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import type { Prisma } from '#prisma-client';
+import type { ResponseEditType } from './responseService.js';
 
 export interface FieldChange {
   fieldId: string;
@@ -26,7 +27,7 @@ export interface EditContext {
   userId: string;
   ipAddress?: string;
   userAgent?: string;
-  editType?: 'MANUAL' | 'SYSTEM' | 'BULK';
+  editType?: ResponseEditType;
   editReason?: string;
 }
 

@@ -3,16 +3,8 @@ import { FieldType, type FormField, type FormSchema } from '@dculus/types';
 export type DraftData = Record<string, unknown>;
 export type PageResponses = Record<string, Record<string, unknown>>;
 
-/**
- * Field types whose answers are never kept in a draft. Files only upload at
- * submit time (a draft would have nothing durable to point at), and the
- * other two hold no answer at all.
- */
-const NON_DRAFTABLE_TYPES = new Set<string>([
-  FieldType.FILE_UPLOAD_FIELD,
-  FieldType.RICH_TEXT_FIELD,
-  FieldType.GRID_FIELD,
-]);
+/** Field types that hold no answer at all. */
+const NON_ANSWER_TYPES = new Set<string>([FieldType.RICH_TEXT_FIELD, FieldType.GRID_FIELD]);
 
 const isPrimitiveAnswer = (value: unknown): value is string | number | boolean =>
   typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
@@ -59,8 +51,14 @@ const hasOptions = (field: FormField): field is FormField & { options: string[] 
  * now: the owner may have deleted the field, changed its type, or removed an
  * option since the draft was saved.
  */
-function restoreAnswer(field: FormField, value: unknown): unknown {
+function restoreAnswer(field: FormField, value: unknown, keepFiles: boolean): unknown {
   switch (field.type) {
+    case FieldType.FILE_UPLOAD_FIELD: {
+      // Stored upload keys. Drafts never hold any: files only upload at submit.
+      if (!keepFiles || !Array.isArray(value)) return undefined;
+      const keys = value.filter((item): item is string => typeof item === 'string');
+      return keys.length > 0 ? keys : undefined;
+    }
     case FieldType.CHECKBOX_FIELD: {
       if (!Array.isArray(value) || !hasOptions(field)) return undefined;
       const kept = value.filter((item) => typeof item === 'string' && field.options.includes(item));
@@ -75,16 +73,22 @@ function restoreAnswer(field: FormField, value: unknown): unknown {
 }
 
 /**
- * Maps a saved draft back onto the form's pages in the shape
- * `useFormResponseStore.setPageResponses` takes, dropping anything stale.
+ * Maps flat saved answers (a draft, or a submitted response being edited)
+ * back onto the form's pages in the shape `useFormResponseStore.setPageResponses`
+ * takes, dropping anything stale. `keepFiles` restores stored upload keys,
+ * which only a submitted response has.
  */
-export function buildDraftPageResponses(schema: FormSchema, data: DraftData): PageResponses {
+export function buildPageResponses(
+  schema: FormSchema,
+  data: DraftData,
+  { keepFiles = false }: { keepFiles?: boolean } = {}
+): PageResponses {
   const pages: PageResponses = {};
   for (const page of schema.pages) {
     for (const field of page.fields) {
-      if (field.deleted || NON_DRAFTABLE_TYPES.has(field.type)) continue;
+      if (field.deleted || NON_ANSWER_TYPES.has(field.type)) continue;
       if (!Object.prototype.hasOwnProperty.call(data, field.id)) continue;
-      const value = restoreAnswer(field, data[field.id]);
+      const value = restoreAnswer(field, data[field.id], keepFiles);
       if (value === undefined) continue;
       (pages[page.id] ??= {})[field.id] = value;
     }

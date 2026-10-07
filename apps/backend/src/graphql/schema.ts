@@ -167,6 +167,10 @@ export const typeDefs = gql`
     accessControl: AccessControlSettings
     collectRespondentEmail: Boolean
     saveProgress: SaveProgressSettings
+    # Identity-gated forms only: each signed-in respondent may submit once.
+    oneResponsePerRespondent: Boolean
+    # Identity-gated, non-quiz forms only: respondents may edit their latest response.
+    allowRespondentEdit: Boolean
     quiz: QuizSettings
     embed: EmbedSettings
   }
@@ -185,6 +189,15 @@ export const typeDefs = gql`
     version: Int!
     startedAt: String!
     updatedAt: String!
+  }
+
+  # A signed-in respondent's own latest submission to an identity-gated form.
+  type MyResponse {
+    id: ID!
+    data: JSON!
+    submittedAt: String!
+    # The form currently lets the respondent edit this response.
+    canEdit: Boolean!
   }
 
   type SaveResponseDraftResult {
@@ -228,6 +241,9 @@ export const typeDefs = gql`
     # The signed-in respondent's OWN saved draft, or null. Only resolved when
     # the caller could submit this form right now and save-and-resume is on.
     myDraft: ResponseDraft
+    # The signed-in respondent's OWN latest response, or null. Same scoping
+    # as myDraft; always null on forms that don't capture respondent identity.
+    myResponse: MyResponse
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!
@@ -424,6 +440,7 @@ export const typeDefs = gql`
     MANUAL
     SYSTEM
     BULK
+    RESPONDENT
   }
 
   enum ChangeType {
@@ -551,12 +568,19 @@ export const typeDefs = gql`
     accessControl: AccessControlSettingsInput
     collectRespondentEmail: Boolean
     saveProgress: SaveProgressSettingsInput
+    oneResponsePerRespondent: Boolean
+    allowRespondentEdit: Boolean
     quiz: QuizSettingsInput
     embed: EmbedSettingsInput
   }
 
   input SaveProgressSettingsInput {
     enabled: Boolean!
+  }
+
+  input EditMyResponseInput {
+    formId: ID!
+    data: JSON!
   }
 
   input SaveResponseDraftInput {
@@ -1746,6 +1770,7 @@ export const typeDefs = gql`
     submitResponse(input: SubmitResponseInput!): FormResponse!
     saveResponseDraft(input: SaveResponseDraftInput!): SaveResponseDraftResult!
     discardResponseDraft(formId: ID!): Boolean!
+    editMyResponse(input: EditMyResponseInput!): MyResponse!
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
     deleteResponses(formId: ID!, ids: [ID!]!): Boolean!
