@@ -56,7 +56,8 @@ interface FieldLibraryProps {
  *
  * Pin state (dculus.fieldLibrary.pinned) is shared via localStorage between this
  * component's two independent mount points (the rail's trigger and PageBuilderTab's
- * docked column) since they sit in different parts of the layout tree.
+ * docked column) since they sit in different parts of the layout tree. It is
+ * pinned by default until the user saves a choice with the pin toggle.
  */
 export const FieldLibrary: React.FC<FieldLibraryProps> = ({ mode }) => {
   const permissions = useFormPermissions();

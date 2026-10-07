@@ -4,14 +4,19 @@ Feature: Field Library — mega-panel + pin-to-dock (Content tab)
   The rail's "+ Add content" button opens the Field Library mega-panel: a searchable
   3-column grid of every field type, grouped Input/Choice/Content/Advanced, with a
   Recently used row. Pinning docks it as a persistent compact column between the rail
-  and the canvas, replacing the old always-visible field-types column. See epic #226,
-  ticket #230.
+  and the canvas, replacing the old always-visible field-types column. The library
+  starts pinned on first launch until the user unpins it. See epic #226, ticket #230.
 
   Background:
     Given I sign in with valid credentials
     When I create a form via GraphQL with conditional logic fields and L1 layout
     And I open the collaborative builder
     And I click the rail page "About"
+
+  @field-library-default-pinned
+  Scenario: The library is docked by default on first launch
+    Then the field library should be docked
+    And I should see the field type "Short Text" in the library
 
   @field-library-megapanel
   Scenario: Opening the library shows every field type at once

@@ -14,6 +14,13 @@ const fieldTypeTestId = (label: string) =>
 
 When('I open the field library', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
+  // The library starts docked, and while docked the rail button unpins rather
+  // than opening the mega-panel, so unpin first to reach the popover.
+  const unpin = this.page.getByTestId('field-library-unpin-button');
+  if (await unpin.isVisible().catch(() => false)) {
+    await unpin.click();
+    await expect(this.page.getByTestId('field-library-docked')).toHaveCount(0);
+  }
   await this.page.getByTestId('rail-add-content-button').click();
 });
 
