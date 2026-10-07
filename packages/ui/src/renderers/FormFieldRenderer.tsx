@@ -429,7 +429,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                   className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
                   style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.12)', color: '#4c414e' }}
                 >
-                  <span className={`min-w-0 ${WRAP_TEXT_CLASS}`}>{name}</span>
+                  <span data-testid="file-upload-chip-name" className={`min-w-0 ${WRAP_TEXT_CLASS}`}>{name}</span>
                   {onRemove && (
                     <button
                       type="button"
