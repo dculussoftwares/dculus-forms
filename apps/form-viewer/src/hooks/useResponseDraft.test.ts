@@ -177,23 +177,4 @@ describe('useResponseDraft', () => {
     // before the store changed again.
     expect(mutate).toHaveBeenCalledTimes(1);
   });
-
-  it('flush() saves a pending change at once, after one already on the wire', async () => {
-    let resolveSave!: (value: unknown) => void;
-    mutate
-      .mockReturnValueOnce(new Promise((resolve) => (resolveSave = resolve)))
-      .mockResolvedValueOnce(saved(2, { name: 'Ab' }));
-    const { result } = setup();
-
-    type('name', 'A');
-    await flush();
-    type('name', 'Ab');
-
-    const flushing = act(() => result.current.flush());
-    resolveSave(saved(1, { name: 'A' }));
-    await flushing;
-
-    expect(mutate).toHaveBeenCalledTimes(2);
-    expect(lastInput()).toMatchObject({ data: { name: 'Ab' }, baseVersion: 1 });
-  });
 });

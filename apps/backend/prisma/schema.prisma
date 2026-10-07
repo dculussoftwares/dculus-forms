@@ -203,7 +203,6 @@ model Response {
   @@index([formId, submittedAt])
   @@index([deletedAt])
   @@index([respondentUserId])
-  @@index([formId, respondentUserId])
   @@map("response")
 }
 
@@ -453,7 +452,7 @@ model ResponseEditHistory {
   responseId     String // Reference to Response
   editedById     String? // User who made the edit (nullable so user deletion is not blocked)
   editedAt       DateTime @default(now())
-  editType       String   @default("MANUAL") // MANUAL, SYSTEM, BULK, RESPONDENT
+  editType       String   @default("MANUAL") // MANUAL, SYSTEM, BULK
   editReason     String? // Optional reason for the edit
   ipAddress      String? // IP address of the editor
   userAgent      String? // User agent of the editor

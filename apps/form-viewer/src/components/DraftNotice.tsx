@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { Button } from '@dculus/ui';
 import { saveProgressLabels as labels } from '../locales/saveProgress';
 import type { DraftSaveStatus } from '../hooks/useResponseDraft';
-import { formatDate, formatTime } from '../lib/dateFormat';
+
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 
 /** Quiet autosave state, shown in the respondent account header. */
 export function DraftSaveStatusText({ status, lastSavedAt }: { status: DraftSaveStatus; lastSavedAt: string | null }) {

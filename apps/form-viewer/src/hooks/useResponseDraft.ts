@@ -188,12 +188,6 @@ export function useResponseDraft({ formId, enabled, applyDraft }: UseResponseDra
     await inFlightRef.current;
   }, []);
 
-  /** Save any pending change now, before the answers on screen are swapped out. */
-  const flush = useCallback(async () => {
-    while (inFlightRef.current) await inFlightRef.current;
-    await save();
-  }, [save]);
-
   /** Record the page the respondent is on; saved right away so they resume there. */
   const setCurrentPage = useCallback(
     (pageId: string) => {
@@ -254,5 +248,5 @@ export function useResponseDraft({ formId, enabled, applyDraft }: UseResponseDra
     await client.mutate({ mutation: DISCARD_RESPONSE_DRAFT, variables: { formId } });
   }, [client, formId, seed, settle]);
 
-  return { status, lastSavedAt, conflict, seed, settle, flush, setCurrentPage, keepMine, acceptOther, discard };
+  return { status, lastSavedAt, conflict, seed, settle, setCurrentPage, keepMine, acceptOther, discard };
 }

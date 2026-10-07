@@ -1,13 +1,10 @@
 import { Prisma } from '#prisma-client';
-import { isSaveProgressEnabled } from '@dculus/types';
+import { isSaveProgressEnabled, type FormSettings } from '@dculus/types';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { createGraphQLError } from '#graphql-errors';
 import type { BetterAuthContext } from '../middleware/better-auth-middleware.js';
-import {
-  isIdentifiedRespondent,
-  requireIdentifiedRespondent,
-  type RespondentForm,
-} from '../lib/respondentAccess.js';
+import { resolveAccessStatus } from '../lib/accessControlEnforcement.js';
+import { enforceTimeWindow } from '../lib/timeWindowEnforcement.js';
 import { assertResponsePayloadWithinLimits } from '../lib/responsePayloadLimits.js';
 import { responseDraftRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
@@ -30,6 +27,12 @@ export interface SaveResponseDraftResult {
   conflict: boolean;
 }
 
+interface DraftableForm {
+  id: string;
+  isPublished: boolean;
+  settings?: FormSettings | null;
+}
+
 type DraftRow = NonNullable<Awaited<ReturnType<typeof responseDraftRepository.findForRespondent>>>;
 
 const toView = (row: DraftRow): ResponseDraftView => ({
@@ -50,21 +53,54 @@ const isUniqueViolation = (error: unknown) =>
  * only ever exposed to a signed-in respondent who could submit this form
  * right now, on a form that has save-and-resume turned on.
  */
-export function canUseDrafts(form: RespondentForm, auth: BetterAuthContext): boolean {
-  return isSaveProgressEnabled(form.settings) && isIdentifiedRespondent(form, auth);
+export function canUseDrafts(form: DraftableForm, auth: BetterAuthContext): boolean {
+  const settings = form.settings ?? undefined;
+  return (
+    form.isPublished &&
+    !!auth.user?.id &&
+    isSaveProgressEnabled(settings) &&
+    resolveAccessStatus(settings?.accessControl, settings?.collectRespondentEmail, auth) === 'OPEN'
+  );
 }
 
 /**
- * The security boundary for the public draft mutations: the respondent
- * gates `submitResponse` applies, plus the form's save-progress setting.
- * Returns the caller's user id, the draft's owner key.
+ * The security boundary for the public draft mutations. Mirrors the gates
+ * `submitResponse` applies (published, access control, time window) so a
+ * draft can only be written by someone who could submit the form. Returns
+ * the caller's user id, the draft's owner key.
  */
-export function requireDraftAccess(form: RespondentForm | null, auth: BetterAuthContext): string {
-  const { form: draftable, userId } = requireIdentifiedRespondent(form, auth);
-  if (!isSaveProgressEnabled(draftable.settings)) {
+export function requireDraftAccess(form: DraftableForm | null, auth: BetterAuthContext): string {
+  if (!form) {
+    throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+  }
+  if (!form.isPublished) {
+    throw createGraphQLError('Form is not published and cannot accept responses', GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
+  }
+  if (!auth.isAuthenticated || !auth.user?.id) {
+    throw createGraphQLError('Sign-in is required to save progress', GRAPHQL_ERROR_CODES.SIGN_IN_REQUIRED);
+  }
+
+  const settings = form.settings ?? undefined;
+  if (!isSaveProgressEnabled(settings)) {
     throw createGraphQLError('Saving progress is not enabled for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
   }
-  return userId;
+
+  const status = resolveAccessStatus(settings?.accessControl, settings?.collectRespondentEmail, auth);
+  if (status === 'SIGN_IN_REQUIRED') {
+    throw createGraphQLError('Sign-in is required to save progress', GRAPHQL_ERROR_CODES.SIGN_IN_REQUIRED);
+  }
+  if (status === 'DOMAIN_REJECTED') {
+    throw createGraphQLError(
+      'Your email domain is not allowed to respond to this form',
+      GRAPHQL_ERROR_CODES.EMAIL_DOMAIN_NOT_ALLOWED
+    );
+  }
+
+  if (settings?.submissionLimits?.timeWindow) {
+    enforceTimeWindow(settings.submissionLimits.timeWindow);
+  }
+
+  return auth.user.id;
 }
 
 export async function getResponseDraft(formId: string, userId: string): Promise<ResponseDraftView | null> {

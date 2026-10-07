@@ -43,9 +43,8 @@ const renderPanel = (overrides: Partial<React.ComponentProps<typeof AccessContro
     isSaving: false,
     onUpdate: jest.fn(),
     onUpdateCollectRespondentEmail: jest.fn(),
-    respondentOptions: { saveProgress: true, oneResponsePerRespondent: false, allowRespondentEdit: false },
-    isQuiz: false,
-    onUpdateRespondentOptions: jest.fn(),
+    saveProgressEnabled: true,
+    onUpdateSaveProgress: jest.fn(),
     onSave: jest.fn(),
     ...overrides,
   };
@@ -53,46 +52,24 @@ const renderPanel = (overrides: Partial<React.ComponentProps<typeof AccessContro
   return props;
 };
 
-const signInRequired = { enabled: true, requireSignIn: true, allowedDomains: [] };
-
-describe('AccessControlSettings — respondent options', () => {
-  it('hides the options on anonymous forms, where respondents are unknown', () => {
+describe('AccessControlSettings — save progress', () => {
+  it('hides the toggle on anonymous forms, where drafts cannot exist', () => {
     renderPanel();
     expect(screen.queryByTestId('save-progress-checkbox')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('one-response-per-respondent-checkbox')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('allow-respondent-edit-checkbox')).not.toBeInTheDocument();
   });
 
   it('shows the effective state once respondents are signed in', () => {
-    renderPanel({
-      collectRespondentEmail: true,
-      respondentOptions: { saveProgress: true, oneResponsePerRespondent: true, allowRespondentEdit: false },
-    });
+    renderPanel({ collectRespondentEmail: true, saveProgressEnabled: true });
     expect(screen.getByTestId('save-progress-checkbox')).toBeChecked();
-    expect(screen.getByTestId('one-response-per-respondent-checkbox')).toBeChecked();
-    expect(screen.getByTestId('allow-respondent-edit-checkbox')).not.toBeChecked();
     expect(screen.getByText(mockEnAccessControl.saveProgress.title)).toBeInTheDocument();
   });
 
-  it('reports each change as a settings patch', () => {
-    const props = renderPanel({ settings: signInRequired });
-    fireEvent.click(screen.getByTestId('save-progress-checkbox'));
-    fireEvent.click(screen.getByTestId('one-response-per-respondent-checkbox'));
-    fireEvent.click(screen.getByTestId('allow-respondent-edit-checkbox'));
-    expect(props.onUpdateRespondentOptions).toHaveBeenNthCalledWith(1, { saveProgress: { enabled: false } });
-    expect(props.onUpdateRespondentOptions).toHaveBeenNthCalledWith(2, { oneResponsePerRespondent: true });
-    expect(props.onUpdateRespondentOptions).toHaveBeenNthCalledWith(3, { allowRespondentEdit: true });
-  });
-
-  it('locks respondent edits off on quiz forms and says why', () => {
-    renderPanel({
-      settings: signInRequired,
-      isQuiz: true,
-      respondentOptions: { saveProgress: true, oneResponsePerRespondent: false, allowRespondentEdit: true },
+  it('reports the new value when toggled off', () => {
+    const props = renderPanel({
+      settings: { enabled: true, requireSignIn: true, allowedDomains: [] },
+      saveProgressEnabled: true,
     });
-    const toggle = screen.getByTestId('allow-respondent-edit-checkbox');
-    expect(toggle).toBeDisabled();
-    expect(toggle).not.toBeChecked();
-    expect(screen.getByText(mockEnAccessControl.allowRespondentEdit.unavailableForQuiz)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('save-progress-checkbox'));
+    expect(props.onUpdateSaveProgress).toHaveBeenCalledWith(false);
   });
 });

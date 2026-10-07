@@ -86,8 +86,6 @@ export const UPDATE_FORM : TypedDocumentNode<any, any> = gql`
         saveProgress {
           enabled
         }
-        oneResponsePerRespondent
-        allowRespondentEdit
         quiz {
           enabled
           passThresholdPercent

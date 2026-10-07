@@ -7,13 +7,12 @@ import {
   iterateResponsesByFormId,
   getAllResponsesByFormId,
   submitResponse,
-  submitResponseWithLimitChecks,
+  submitResponseWithMaxLimitCheck,
   updateResponse,
   deleteResponse,
 } from '../responseService.js';
 import { responseRepository, createResponseRepository } from '../../repositories/index.js';
 import { logger } from '../../lib/logger.js';
-import { prisma } from '../../lib/prisma.js';
 
 import { applyResponseFilters } from '../responseFilterService.js';
 import { ResponseEditTrackingService } from '../responseEditTrackingService.js';
@@ -23,7 +22,7 @@ import { emitResponseEdited } from '../../plugins/core/events.js';
 vi.mock('../../repositories/index.js');
 vi.mock('../responseFilterService.js');
 // Minimal mock Prisma transaction client used by updateResponse (P2-02) and
-// submitResponseWithLimitChecks's Serializable limit-check transaction
+// submitResponseWithMaxLimitCheck's Serializable max-responses transaction
 const mockTxClient = {
   response: {
     update: vi.fn(),
@@ -50,7 +49,6 @@ vi.mock('../responseEditTrackingService.js', () => ({
   },
 }));
 vi.mock('../tagService.js', () => ({
-  PREVIEW_TAG_NAME: '__preview__',
   batchLoadTagsForResponses: vi.fn().mockResolvedValue({}),
 }));
 vi.mock('../../plugins/core/events.js', () => ({
@@ -76,7 +74,7 @@ describe('Response Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Transaction-scoped repository used inside updateResponse's prisma.$transaction (P2-02)
-    // and submitResponseWithLimitChecks's Serializable transaction
+    // and submitResponseWithMaxLimitCheck's Serializable transaction
     vi.mocked(createResponseRepository).mockReturnValue({
       update: mockTxClient.response.update,
       count: mockTxClient.response.count,
@@ -459,7 +457,7 @@ describe('Response Service', () => {
     });
   });
 
-  describe('submitResponseWithLimitChecks', () => {
+  describe('submitResponseWithMaxLimitCheck', () => {
     const responseData = {
       id: 'response-123',
       formId: 'form-123',
@@ -472,7 +470,7 @@ describe('Response Service', () => {
       mockTxClient.response.count.mockResolvedValue(10);
 
       await expect(
-        submitResponseWithLimitChecks(responseData, { maxResponses: 10 })
+        submitResponseWithMaxLimitCheck(responseData, 10)
       ).rejects.toThrow('Form has reached its maximum response limit');
 
       expect(mockTxClient.response.create).not.toHaveBeenCalled();
@@ -490,7 +488,7 @@ describe('Response Service', () => {
         submittedAt: new Date('2024-01-01'),
       });
 
-      const result = await submitResponseWithLimitChecks(responseData, { maxResponses: 10 });
+      const result = await submitResponseWithMaxLimitCheck(responseData, 10);
 
       expect(mockTxClient.response.count).toHaveBeenCalledWith({
         where: { formId: 'form-123' },
@@ -508,70 +506,6 @@ describe('Response Service', () => {
         id: 'response-123',
         formId: 'form-123',
         data: { field1: 'value1' },
-      });
-    });
-
-    describe('one response per respondent', () => {
-      const signedInData = { ...responseData, respondentUserId: 'user-1', respondentEmail: 'a@example.com' };
-
-      it('rejects a respondent who already has a response', async () => {
-        mockTxClient.response.count.mockResolvedValue(1);
-
-        await expect(
-          submitResponseWithLimitChecks(signedInData, { onePerRespondent: true })
-        ).rejects.toMatchObject({ extensions: { code: 'ALREADY_RESPONDED' } });
-
-        expect(mockTxClient.response.count).toHaveBeenCalledWith({
-          where: expect.objectContaining({ formId: 'form-123', respondentUserId: 'user-1', deletedAt: null }),
-        });
-        expect(mockTxClient.response.create).not.toHaveBeenCalled();
-      });
-
-      it('ignores builder previews when counting earlier responses', async () => {
-        mockTxClient.response.count.mockResolvedValue(0);
-        mockTxClient.response.create.mockResolvedValue({ ...mockResponse, submittedAt: new Date() });
-
-        await submitResponseWithLimitChecks(signedInData, { onePerRespondent: true });
-
-        expect(mockTxClient.response.count).toHaveBeenCalledWith({
-          where: expect.objectContaining({
-            tagAssignments: { none: { tag: { name: '__preview__' } } },
-          }),
-        });
-        expect(mockTxClient.response.create).toHaveBeenCalled();
-      });
-
-      it('re-runs the transaction when a concurrent submit aborts it', async () => {
-        const writeConflict = new Error('TransactionWriteConflict', { cause: { kind: 'TransactionWriteConflict' } });
-        vi.mocked(prisma.$transaction).mockRejectedValueOnce(writeConflict);
-        mockTxClient.response.count.mockResolvedValue(1);
-
-        await expect(
-          submitResponseWithLimitChecks(signedInData, { onePerRespondent: true })
-        ).rejects.toMatchObject({ extensions: { code: 'ALREADY_RESPONDED' } });
-        expect(prisma.$transaction).toHaveBeenCalledTimes(2);
-      });
-
-      it('gives up after repeated conflicts', async () => {
-        const writeConflict = new Error('TransactionWriteConflict', { cause: { kind: 'TransactionWriteConflict' } });
-        vi.mocked(prisma.$transaction)
-          .mockRejectedValueOnce(writeConflict)
-          .mockRejectedValueOnce(writeConflict)
-          .mockRejectedValueOnce(writeConflict);
-
-        await expect(
-          submitResponseWithLimitChecks(signedInData, { onePerRespondent: true })
-        ).rejects.toBe(writeConflict);
-        expect(prisma.$transaction).toHaveBeenCalledTimes(3);
-      });
-
-      it('runs both checks in the same transaction', async () => {
-        mockTxClient.response.count.mockResolvedValueOnce(0).mockResolvedValueOnce(10);
-
-        await expect(
-          submitResponseWithLimitChecks(signedInData, { onePerRespondent: true, maxResponses: 10 })
-        ).rejects.toThrow('Form has reached its maximum response limit');
-        expect(mockTxClient.response.count).toHaveBeenCalledTimes(2);
       });
     });
   });

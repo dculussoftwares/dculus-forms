@@ -17,7 +17,6 @@ import { pdfGeneratorsResolvers } from './resolvers/pdfGenerators.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { tagResolvers } from './resolvers/tags.js';
 import { responseDraftsResolvers } from './resolvers/responseDrafts.js';
-import { myResponseResolvers } from './resolvers/myResponse.js';
 import { aiResolvers } from './resolvers/ai.js';
 import { aiChatResolvers } from './resolvers/aiChat.js';
 import { GraphQLJSON } from 'graphql-type-json';
@@ -76,14 +75,12 @@ export const resolvers = {
     ...subscriptionResolvers.Mutation,
     ...tagResolvers.Mutation,
     ...responseDraftsResolvers.Mutation,
-    ...myResponseResolvers.Mutation,
     ...adminResolvers.Mutation,
   },
   Form: {
     ...formsResolvers.Form,
     ...formSharingResolvers.Form,
     ...responseDraftsResolvers.Form,
-    ...myResponseResolvers.Form,
   },
   FormResponse: {
     ...extendedResponsesResolvers.FormResponse,

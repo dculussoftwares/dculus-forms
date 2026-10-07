@@ -3,17 +3,10 @@ import { useParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { CombinedGraphQLErrors } from '@apollo/client';
 import { Button, FormRenderer, useFormResponseStore, LoadingSpinner } from '@dculus/ui';
-import {
-  deserializeFormSchema,
-  extractEmailFields,
-  FieldType,
-  isOneResponsePerRespondent,
-  isRespondentEditEnabled,
-  isSaveProgressEnabled,
-} from '@dculus/types';
+import { deserializeFormSchema, extractEmailFields, FieldType, isSaveProgressEnabled } from '@dculus/types';
 import type { RespondentGradeView } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
-import { EDIT_MY_RESPONSE, GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE, type MyResponseData } from '../graphql/queries';
+import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
 import { useFormSubmissionAnalytics } from '../hooks/useFormSubmissionAnalytics';
 import { getCdnEndpoint, getUploadUrl } from '../lib/config';
@@ -33,12 +26,7 @@ import RespondentBadge from '../components/RespondentBadge';
 import { signOut } from '../lib/auth-client';
 import DraftNotice, { DraftSaveStatusText } from '../components/DraftNotice';
 import { useResponseDraft, type ResponseDraft } from '../hooks/useResponseDraft';
-import { buildPageResponses, resolveResumePageId } from '../lib/draftData';
-import AlreadyRespondedScreen from '../components/AlreadyRespondedScreen';
-import MyResponseNotice from '../components/MyResponseNotice';
-import MyResponseSummary from '../components/MyResponseSummary';
-import { myResponseLabels } from '../locales/myResponse';
-import { formatDate } from '../lib/dateFormat';
+import { buildDraftPageResponses, resolveResumePageId } from '../lib/draftData';
 
 const SUBMISSION_TIMEOUT_MS = 30_000;
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB — matches backend multer limit
@@ -62,10 +50,10 @@ function validateFiles(
   }
 
   for (const [fieldId, value] of Object.entries(responses)) {
-    if (!Array.isArray(value)) continue;
+    if (!Array.isArray(value) || value[0] instanceof File === false) continue;
     const limits = fieldLimits[fieldId];
     const maxBytes = limits ? limits.maxMb * 1024 * 1024 : MAX_FILE_SIZE_BYTES;
-    for (const file of value.filter((item): item is File => item instanceof File)) {
+    for (const file of value as File[]) {
       if (file.size > maxBytes) {
         return `File "${file.name}" exceeds the maximum allowed size of ${limits?.maxMb ?? 50} MB.`;
       }
@@ -106,40 +94,6 @@ async function uploadFormResponseFile(
   return data.key;
 }
 
-/**
- * Uploads every new File in the answers and swaps it for its storage key.
- * A file field can mix new Files with keys already stored on a response
- * that is being edited; those keys pass through untouched.
- */
-async function uploadPendingFiles(
-  responses: Record<string, unknown>,
-  formId: string
-): Promise<Record<string, unknown>> {
-  const uploadUrl = getUploadUrl();
-  const processed: Record<string, unknown> = { ...responses };
-  for (const [fieldId, value] of Object.entries(responses)) {
-    if (!Array.isArray(value) || !value.some((item) => item instanceof File)) continue;
-    processed[fieldId] = await Promise.all(
-      value.map((item) => (item instanceof File ? uploadFormResponseFile(item, formId, uploadUrl) : item))
-    );
-  }
-  return processed;
-}
-
-function withSubmissionTimeout<T>(request: Promise<T>): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error('Request timed out. Please check your connection and try again.')),
-      SUBMISSION_TIMEOUT_MS
-    );
-  });
-  return Promise.race([request, timeout]).finally(() => clearTimeout(timer));
-}
-
-/** What the signed-in respondent is looking at: the form, their response, or an edit of it. */
-type RespondentView = 'form' | 'review' | 'edit';
-
 export interface FormViewerProps {
   /**
    * Form Embed v1 — render for a host page's iframe instead of a full window:
@@ -177,8 +131,6 @@ const FormViewer: React.FC<FormViewerProps> = ({
     message: string;
     copyEmail?: string;
     grade?: RespondentGradeView;
-    /** The respondent saved changes to an earlier response, not a new one. */
-    edited?: boolean;
   } | null>(null);
   const [hasStartedForm, setHasStartedForm] = useState<boolean>(false);
   const [sendResponseCopy, setSendResponseCopy] = useState<boolean>(false);
@@ -195,12 +147,6 @@ const FormViewer: React.FC<FormViewerProps> = ({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [submitResponse] = useMutation(SUBMIT_RESPONSE);
-  const [editMyResponse] = useMutation(EDIT_MY_RESPONSE);
-
-  const [view, setView] = useState<RespondentView>('form');
-  // The respondent's own latest response: from the form query until this
-  // page submits or edits one, then the mutation's copy.
-  const [myResponseOverride, setMyResponseOverride] = useState<MyResponseData | null | undefined>(undefined);
 
   // Track form analytics when form is loaded
   const { trackFormStartTime } = useFormAnalytics({
@@ -225,8 +171,6 @@ const FormViewer: React.FC<FormViewerProps> = ({
   // draft is applied to the response store once per form + account, before
   // FormRenderer mounts, so every page initialises from the restored answers.
   const loadedForm = data?.formByShortUrl;
-  const myResponse: MyResponseData | null =
-    myResponseOverride !== undefined ? myResponseOverride : (loadedForm?.myResponse ?? null);
   const draftsEnabled =
     !!formSchema &&
     loadedForm?.accessStatus === 'OPEN' &&
@@ -247,7 +191,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
       const store = useFormResponseStore.getState();
       store.clearAllResponses();
       if (draft && formSchema) {
-        for (const [pageId, responses] of Object.entries(buildPageResponses(formSchema, draft.data))) {
+        for (const [pageId, responses] of Object.entries(buildDraftPageResponses(formSchema, draft.data))) {
           store.setPageResponses(pageId, responses);
         }
       }
@@ -267,12 +211,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
 
   const responseDraft = useResponseDraft({
     formId: loadedForm?.id ?? '',
-    enabled:
-      isDraftReady &&
-      !!draftSessionKey &&
-      view === 'form' &&
-      submissionState !== 'submitting' &&
-      submissionState !== 'success',
+    enabled: isDraftReady && !!draftSessionKey && submissionState !== 'submitting' && submissionState !== 'success',
     applyDraft: replaceAnswers,
   });
   const seedDraft = responseDraft.seed;
@@ -341,21 +280,23 @@ const FormViewer: React.FC<FormViewerProps> = ({
         }
       }
 
-      const processedResponses = await uploadPendingFiles(responses, formId);
+      // Upload any File[] values (from FILE_UPLOAD_FIELD) before submitting the response
+      const processedResponses: Record<string, unknown> = { ...responses };
+      const uploadUrl = getUploadUrl();
 
-      if (view === 'edit') {
-        const result = await withSubmissionTimeout(
-          editMyResponse({ variables: { input: { formId, data: processedResponses } } })
+      const fileFieldEntries = Object.entries(processedResponses).filter(
+        ([, value]) =>
+          Array.isArray(value) && value.length > 0 && value[0] instanceof File
+      );
+
+      for (const [fieldId, files] of fileFieldEntries) {
+        const keys = await Promise.all(
+          (files as File[]).map((file) =>
+            uploadFormResponseFile(file, formId, uploadUrl)
+          )
         );
-        const edited = result.data?.editMyResponse;
-        if (!edited) throw new Error('Your changes could not be saved. Please try again.');
-        setMyResponseOverride(edited);
-        setView('form');
-        setSubmissionState('success');
-        setThankYouData({ message: `<p>${myResponseLabels.changesSaved}</p>`, edited: true });
-        return;
+        processedResponses[fieldId] = keys;
       }
-
       // Get analytics data for submission tracking
       const analyticsData = getSubmissionAnalyticsData();
 
@@ -389,7 +330,14 @@ const FormViewer: React.FC<FormViewerProps> = ({
       const effectiveSendResponseCopy =
         sendResponseCopy && (!responseCopyEmailFieldId || Boolean(copyRecipientEmail));
 
-      const result = await withSubmissionTimeout(
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Request timed out. Please check your connection and try again.')),
+          SUBMISSION_TIMEOUT_MS
+        )
+      );
+
+      const result = await Promise.race([
         submitResponse({
           variables: {
             input: {
@@ -407,20 +355,11 @@ const FormViewer: React.FC<FormViewerProps> = ({
               }),
             },
           },
-        })
-      );
+        }),
+        timeoutPromise,
+      ]);
 
-      const submitted = result.data.submitResponse;
-      const { thankYouMessage, grade } = submitted;
-      // Identity-gated forms: the respondent can view (or edit) what they sent.
-      if (loadedForm?.respondentEmail) {
-        setMyResponseOverride({
-          id: submitted.id,
-          data: submitted.data,
-          submittedAt: submitted.submittedAt,
-          canEdit: isRespondentEditEnabled(loadedForm.settings),
-        });
-      }
+      const { thankYouMessage, grade } = result.data.submitResponse;
 
       setSubmissionState('success');
       // The server deleted the draft along with storing the response.
@@ -627,8 +566,6 @@ const FormViewer: React.FC<FormViewerProps> = ({
     setHasStartedForm(false);
     setSendResponseCopy(false);
     setNeedsReauth(false);
-    setView('form');
-    setMyResponseOverride(undefined);
     await refetch();
   };
 
@@ -638,75 +575,6 @@ const FormViewer: React.FC<FormViewerProps> = ({
     await responseDraft.discard();
     replaceAnswers(null);
     setRestoredAt(null);
-  };
-
-  // Respondent self-service (identity-gated forms): load the submitted
-  // answers into the form and reopen it from its first page. A new response
-  // in progress is saved as a draft first, and comes back on cancel.
-  const handleStartEditing = async () => {
-    if (!myResponse || !formSchema) return;
-    if (draftSessionKey) await responseDraft.flush();
-    const store = useFormResponseStore.getState();
-    store.clearAllResponses();
-    for (const [pageId, responses] of Object.entries(
-      buildPageResponses(formSchema, myResponse.data, { keepFiles: true })
-    )) {
-      store.setPageResponses(pageId, responses);
-    }
-    setResumePageId(undefined);
-    setRendererKey((key) => key + 1);
-    isSubmittingRef.current = false;
-    setSubmissionState('idle');
-    setThankYouData(null);
-    setView('edit');
-  };
-
-  const handleCancelEditing = async () => {
-    if (draftSessionKey) {
-      // Re-apply the freshly fetched draft (the restore layout effect runs again).
-      await refetch();
-      setRestoredSessionKey(null);
-    } else {
-      useFormResponseStore.getState().clearAllResponses();
-    }
-    setResumePageId(undefined);
-    setRendererKey((key) => key + 1);
-    setSubmissionState('idle');
-    setView('form');
-  };
-
-  const onePerRespondent = isOneResponsePerRespondent(form.settings);
-  const onEditResponse = myResponse?.canEdit ? handleStartEditing : undefined;
-  const isAlreadyResponded =
-    onePerRespondent && !!myResponse && view === 'form' && submissionState !== 'success';
-  const showDraftUi = !!draftSessionKey && view === 'form' && submissionState !== 'success';
-
-  const renderResponseNotice = () => {
-    if (!myResponse || view === 'review' || isAlreadyResponded) return null;
-    if (view === 'edit') {
-      return (
-        <MyResponseNotice
-          message={myResponseLabels.editingTitle}
-          description={myResponseLabels.editingDescription}
-          embedded={embedded}
-          onCancel={handleCancelEditing}
-        />
-      );
-    }
-    const message =
-      submissionState === 'success'
-        ? thankYouData?.edited
-          ? myResponseLabels.changesSaved
-          : myResponseLabels.responseSaved
-        : myResponseLabels.respondedOn(formatDate(myResponse.submittedAt));
-    return (
-      <MyResponseNotice
-        message={message}
-        embedded={embedded}
-        onView={() => setView('review')}
-        onEdit={onEditResponse}
-      />
-    );
   };
 
   if (!isDraftReady) {
@@ -741,16 +609,14 @@ const FormViewer: React.FC<FormViewerProps> = ({
           embedded={embedded}
           onSwitchAccount={handleSwitchAccount}
           trailing={
-            showDraftUi ? (
+            draftSessionKey && submissionState !== 'success' ? (
               <DraftSaveStatusText status={responseDraft.status} lastSavedAt={responseDraft.lastSavedAt} />
             ) : undefined
           }
         />
       )}
 
-      {renderResponseNotice()}
-
-      {showDraftUi && (
+      {draftSessionKey && submissionState !== 'success' && (
         <DraftNotice
           restoredAt={restoredAt}
           hasFileFields={hasFileFields}
@@ -807,56 +673,34 @@ const FormViewer: React.FC<FormViewerProps> = ({
         </div>
       )}
 
-      {view === 'review' && myResponse ? (
-        <MyResponseSummary
-          formTitle={form.title}
-          formSchema={formSchema!}
-          response={myResponse}
-          embedded={embedded}
-          onBack={() => setView('form')}
-          onEdit={onEditResponse}
-        />
-      ) : isAlreadyResponded && myResponse ? (
-        <AlreadyRespondedScreen
-          submittedAt={myResponse.submittedAt}
-          embedded={embedded}
-          onView={() => setView('review')}
-          onEdit={onEditResponse}
-        />
-      ) : (
-        <FormRenderer
-          key={rendererKey}
-          cdnEndpoint={cdnEndpoint}
-          formSchema={formSchema!}
-          mode={RendererMode.SUBMISSION}
-          // `flex-1 min-h-0` (not `h-full`) so the layout fills the space left
-          // under the RespondentBadge banner instead of overflowing past it.
-          className={embedded ? 'w-full' : 'flex-1 min-h-0 w-full'}
-          embedded={embedded}
-          formId={form.id}
-          onFormSubmit={handleFormSubmit}
-          onResponseChange={view === 'edit' ? undefined : handleFirstFormInteraction}
-          initialPageId={resumePageId}
-          onPageChange={showDraftUi ? responseDraft.setCurrentPage : undefined}
-          responseCopySettings={view === 'edit' ? undefined : responseCopySettings}
-          onResponseCopyConsentChange={setSendResponseCopy}
-          screenOverride={submissionState === 'success' ? 'thankYou' : undefined}
-          thankYouMessage={thankYouData?.message}
-          onSubmitAnother={
-            submissionState === 'success' && !onePerRespondent && !thankYouData?.edited
-              ? handleSubmitAnother
-              : undefined
-          }
-          responseCopyNotice={
-            thankYouData?.copyEmail
-              ? `We've sent a copy of your responses to ${thankYouData.copyEmail}.`
-              : undefined
-          }
-          gradeResult={thankYouData?.grade}
-          quizResultLabels={quizResultLabels}
-          resultLink={resultLink}
-        />
-      )}
+      <FormRenderer
+        key={rendererKey}
+        cdnEndpoint={cdnEndpoint}
+        formSchema={formSchema!}
+        mode={RendererMode.SUBMISSION}
+        // `flex-1 min-h-0` (not `h-full`) so the layout fills the space left
+        // under the RespondentBadge banner instead of overflowing past it.
+        className={embedded ? 'w-full' : 'flex-1 min-h-0 w-full'}
+        embedded={embedded}
+        formId={form.id}
+        onFormSubmit={handleFormSubmit}
+        onResponseChange={handleFirstFormInteraction}
+        initialPageId={resumePageId}
+        onPageChange={draftSessionKey ? responseDraft.setCurrentPage : undefined}
+        responseCopySettings={responseCopySettings}
+        onResponseCopyConsentChange={setSendResponseCopy}
+        screenOverride={submissionState === 'success' ? 'thankYou' : undefined}
+        thankYouMessage={thankYouData?.message}
+        onSubmitAnother={submissionState === 'success' ? handleSubmitAnother : undefined}
+        responseCopyNotice={
+          thankYouData?.copyEmail
+            ? `We've sent a copy of your responses to ${thankYouData.copyEmail}.`
+            : undefined
+        }
+        gradeResult={thankYouData?.grade}
+        quizResultLabels={quizResultLabels}
+        resultLink={resultLink}
+      />
 
       {/* Re-auth overlay — token expired/revoked mid-fill. Rendered on top of
           the still-mounted FormRenderer (not an early return) so in-progress
@@ -879,7 +723,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
               <LoadingSpinner fullScreen={false} size="sm" />
               <div>
                 <p className="text-lg font-medium text-foreground">
-                  {view === 'edit' ? myResponseLabels.submitting : 'Submitting...'}
+                  Submitting...
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Please wait while we save your response.

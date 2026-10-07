@@ -1,6 +1,6 @@
+import type { FormSettings } from '@dculus/types';
 import type { BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { getFormById } from '../../services/formService.js';
-import { toRespondentForm } from '../../lib/respondentAccess.js';
 import {
   canUseDrafts,
   discardResponseDraft,
@@ -18,6 +18,11 @@ export interface SaveResponseDraftInput {
 
 type ResolverContext = { auth: BetterAuthContext };
 
+const parseSettings = (settings: unknown): FormSettings | null => {
+  if (!settings) return null;
+  return (typeof settings === 'string' ? JSON.parse(settings) : settings) as FormSettings;
+};
+
 /**
  * Save-and-resume for signed-in respondents. Every operation is scoped to
  * the caller's own draft (keyed on their session's user id, never on
@@ -27,7 +32,7 @@ type ResolverContext = { auth: BetterAuthContext };
 export const responseDraftsResolvers = {
   Form: {
     myDraft: async (parent: any, _args: unknown, context: ResolverContext) => {
-      const form = toRespondentForm(parent);
+      const form = { id: parent.id, isPublished: parent.isPublished, settings: parseSettings(parent.settings) };
       if (!canUseDrafts(form, context.auth)) return null;
       return getResponseDraft(form.id, context.auth.user!.id);
     },

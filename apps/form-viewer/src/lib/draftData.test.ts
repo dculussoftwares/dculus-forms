@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { FieldType, type FormSchema } from '@dculus/types';
-import { buildPageResponses, draftDataKey, pruneDraftData, resolveResumePageId } from './draftData';
+import { buildDraftPageResponses, draftDataKey, pruneDraftData, resolveResumePageId } from './draftData';
 
 const schema = {
   pages: [
@@ -53,9 +53,9 @@ describe('draftDataKey', () => {
   });
 });
 
-describe('buildPageResponses', () => {
+describe('buildDraftPageResponses', () => {
   it('maps saved answers back onto their pages', () => {
-    expect(buildPageResponses(schema, { name: 'Ada', colour: 'Blue', tags: ['b'], age: 36 })).toEqual({
+    expect(buildDraftPageResponses(schema, { name: 'Ada', colour: 'Blue', tags: ['b'], age: 36 })).toEqual({
       p1: { name: 'Ada', colour: 'Blue', tags: ['b'] },
       p2: { age: 36 },
     });
@@ -63,7 +63,7 @@ describe('buildPageResponses', () => {
 
   it('drops answers that no longer fit the form', () => {
     expect(
-      buildPageResponses(schema, {
+      buildDraftPageResponses(schema, {
         colour: 'Green', // option removed
         tags: ['a', 'z'], // one option removed
         gone: 'x', // field deleted
@@ -72,13 +72,6 @@ describe('buildPageResponses', () => {
         name: { not: 'text' }, // type changed
       })
     ).toEqual({ p1: { tags: ['a'] } });
-  });
-
-  it('restores stored upload keys only when asked to', () => {
-    expect(buildPageResponses(schema, { cv: ['forms/f1/cv.pdf'] }, { keepFiles: true })).toEqual({
-      p1: { cv: ['forms/f1/cv.pdf'] },
-    });
-    expect(buildPageResponses(schema, { cv: [{ not: 'a key' }] }, { keepFiles: true })).toEqual({});
   });
 });
 

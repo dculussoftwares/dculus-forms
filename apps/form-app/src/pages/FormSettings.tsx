@@ -50,7 +50,7 @@ const FormSettings: React.FC = () => {
     updateAccessControl,
     saveAccessControlSettings,
     updateCollectRespondentEmail,
-    updateRespondentOptions,
+    updateSaveProgress,
     updateQuizSettings,
     saveQuizSettings,
   } = useFormSettings({
@@ -262,7 +262,7 @@ const FormSettings: React.FC = () => {
           onUpdateAccessControl={updateAccessControl}
           onSaveAccessControlSettings={saveAccessControlSettings}
           onUpdateCollectRespondentEmail={updateCollectRespondentEmail}
-          onUpdateRespondentOptions={updateRespondentOptions}
+          onUpdateSaveProgress={updateSaveProgress}
           onUpdateQuizSettings={updateQuizSettings}
           onSaveQuizSettings={saveQuizSettings}
         />

@@ -1,22 +1,6 @@
 import { gql } from '@apollo/client';
 import type { TypedDocumentNode } from '@apollo/client';
 
-export interface MyResponseData {
-  id: string;
-  data: Record<string, unknown>;
-  submittedAt: string;
-  canEdit: boolean;
-}
-
-const MY_RESPONSE_FIELDS = gql`
-  fragment MyResponseFields on MyResponse {
-    id
-    data
-    submittedAt
-    canEdit
-  }
-`;
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
   query GetFormByShortUrl($shortUrl: String!) {
@@ -40,11 +24,6 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
         version
         startedAt
         updatedAt
-      }
-      # Respondent self-service: the signed-in respondent's own latest
-      # response, or null.
-      myResponse {
-        ...MyResponseFields
       }
       settings {
         submissionLimits {
@@ -72,8 +51,6 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
         saveProgress {
           enabled
         }
-        oneResponsePerRespondent
-        allowRespondentEdit
         # Native Quiz (epic #289, Story 16/#320, D9): lets form-viewer decide
         # whether to offer a "check your result later" link on the post-submit
         # screen — only relevant when the quiz defers release AND the form
@@ -99,7 +76,6 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
       updatedAt
     }
   }
-  ${MY_RESPONSE_FIELDS}
 `;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -214,16 +190,4 @@ export const DISCARD_RESPONSE_DRAFT: TypedDocumentNode<
   mutation DiscardResponseDraft($formId: ID!) {
     discardResponseDraft(formId: $formId)
   }
-`;
-
-export const EDIT_MY_RESPONSE: TypedDocumentNode<
-  { editMyResponse: MyResponseData },
-  { input: { formId: string; data: Record<string, unknown> } }
-> = gql`
-  mutation EditMyResponse($input: EditMyResponseInput!) {
-    editMyResponse(input: $input) {
-      ...MyResponseFields
-    }
-  }
-  ${MY_RESPONSE_FIELDS}
 `;

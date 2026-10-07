@@ -62,8 +62,6 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
         return 'bg-background text-primary border-[var(--tf-border-medium)]';
       case EditType.BULK:
         return 'bg-purple-100 text-purple-800 border-purple-200';
-      case EditType.RESPONDENT:
-        return 'bg-green-100 text-green-800 border-green-200';
       default:
         return 'bg-background text-primary border-[var(--tf-border-medium)]';
     }
@@ -77,8 +75,6 @@ export const EditHistoryTimeline: React.FC<EditHistoryTimelineProps> = ({
         return <UserIcon className="h-4 w-4" />;
       case EditType.BULK:
         return <Edit3 className="h-4 w-4" />;
-      case EditType.RESPONDENT:
-        return <UserIcon className="h-4 w-4" />;
       default:
         return <Edit3 className="h-4 w-4" />;
     }

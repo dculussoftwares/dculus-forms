@@ -596,61 +596,6 @@ describe('Responses Resolvers', () => {
       expect(responseDraftRepository.deleteForRespondent).toHaveBeenCalledWith('form-123', 'user-123');
     });
 
-    describe('one response per respondent', () => {
-      const oncePerPersonForm = {
-        ...mockForm,
-        settings: { accessControl: { enabled: true, requireSignIn: true }, oneResponsePerRespondent: true },
-      };
-
-      beforeEach(() => {
-        vi.mocked(formService.getFormById).mockResolvedValue(oncePerPersonForm as any);
-        vi.mocked(responseService.submitResponseWithLimitChecks).mockResolvedValue({
-          id: 'generated-response-id',
-          formId: 'form-123',
-          data: {},
-          submittedAt: new Date(),
-        } as any);
-      });
-
-      it('routes the submit through the atomic per-respondent check', async () => {
-        await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
-
-        expect(responseService.submitResponseWithLimitChecks).toHaveBeenCalledWith(
-          expect.objectContaining({ respondentUserId: 'user-123' }),
-          { maxResponses: undefined, onePerRespondent: true }
-        );
-        expect(responseService.submitResponse).not.toHaveBeenCalled();
-      });
-
-      it('skips the check for builder previews', async () => {
-        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({ hasAccess: true } as any);
-
-        await responsesResolvers.Mutation.submitResponse(
-          {},
-          { input: { ...mockInput, isPreview: true } },
-          mockContext
-        );
-
-        expect(responseService.submitResponseWithLimitChecks).not.toHaveBeenCalled();
-      });
-
-      it('rejects outside the time window before storing anything', async () => {
-        vi.mocked(formService.getFormById).mockResolvedValue({
-          ...oncePerPersonForm,
-          settings: {
-            ...oncePerPersonForm.settings,
-            submissionLimits: { timeWindow: { enabled: true, endDate: '2000-01-01' } },
-          },
-        } as any);
-
-        await expect(
-          responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
-        ).rejects.toThrow();
-        expect(responseService.submitResponseWithLimitChecks).not.toHaveBeenCalled();
-        expect(responseService.submitResponse).not.toHaveBeenCalled();
-      });
-    });
-
     it('never touches drafts on an anonymous form, even for a signed-in caller', async () => {
       await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
 
@@ -698,7 +643,7 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      vi.mocked(responseService.submitResponseWithLimitChecks).mockRejectedValue(
+      vi.mocked(responseService.submitResponseWithMaxLimitCheck).mockRejectedValue(
         new Error('Form has reached its maximum response limit')
       );
 
@@ -717,7 +662,7 @@ describe('Responses Resolvers', () => {
         },
       };
       vi.mocked(formService.getFormById).mockResolvedValue(formWithLimits as any);
-      vi.mocked(responseService.submitResponseWithLimitChecks).mockResolvedValue({
+      vi.mocked(responseService.submitResponseWithMaxLimitCheck).mockResolvedValue({
         id: 'generated-response-id',
         formId: 'form-123',
         data: {},
@@ -731,9 +676,9 @@ describe('Responses Resolvers', () => {
       );
 
       expect(result).toBeDefined();
-      expect(responseService.submitResponseWithLimitChecks).toHaveBeenCalledWith(
+      expect(responseService.submitResponseWithMaxLimitCheck).toHaveBeenCalledWith(
         expect.objectContaining({ formId: 'form-123' }),
-        { maxResponses: 10, onePerRespondent: false }
+        10
       );
     });
 
