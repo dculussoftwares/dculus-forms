@@ -38,6 +38,7 @@ model User {
   grantedPermissions  FormPermission[]      @relation("GrantedPermissions")
   responseEdits       ResponseEditHistory[]
   aiChatConversations AIChatConversation[]
+  responseDrafts      ResponseDraft[]
 
   @@map("user")
 }
@@ -173,6 +174,7 @@ model Form {
   pdfTemplates        PdfTemplate[]
   pdfGenerators       PdfGenerator[]
   automations         Automation[]
+  responseDrafts      ResponseDraft[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -202,6 +204,31 @@ model Response {
   @@index([deletedAt])
   @@index([respondentUserId])
   @@map("response")
+}
+
+// Save-and-resume: a signed-in respondent's in-progress answers, one per
+// (form, user). Deliberately a separate table rather than a status on
+// Response so analytics, usage counters, plugins, quiz grading and exports
+// can never pick up partial answers. Deleted on submit; expired rows are
+// purged by responseDraftService.deleteExpiredDrafts.
+model ResponseDraft {
+  id            String   @id @default(cuid())
+  formId        String
+  userId        String
+  data          Json // flat fieldId -> value, same shape submitResponse takes
+  currentPageId String? // resume point for multi-page forms
+  version       Int      @default(1) // bumped on every save; optimistic concurrency token
+  startedAt     DateTime @default(now()) // feeds completionTimeSeconds across sessions
+  updatedAt     DateTime @updatedAt
+  expiresAt     DateTime
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, userId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("response_draft")
 }
 
 // Native Quiz (D4, epic #289): grades live in a dedicated 1:1 table rather

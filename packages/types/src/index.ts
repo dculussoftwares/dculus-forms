@@ -102,6 +102,26 @@ export function requiresRespondentIdentity(
   return !!accessControl?.enabled || !!collectRespondentEmail;
 }
 
+export interface SaveProgressSettings {
+  enabled: boolean;
+}
+
+/**
+ * True when signed-in respondents get their in-progress answers autosaved
+ * as a server-side draft. Only identity-gated forms qualify (a draft is keyed
+ * on the respondent's account), and it defaults to on there: `saveProgress`
+ * absent means enabled, so existing gated forms get it without a migration.
+ */
+export function isSaveProgressEnabled(
+  settings: Pick<FormSettings, 'accessControl' | 'collectRespondentEmail' | 'saveProgress'> | undefined | null
+): boolean {
+  if (!settings) return false;
+  return (
+    requiresRespondentIdentity(settings.accessControl, settings.collectRespondentEmail) &&
+    settings.saveProgress?.enabled !== false
+  );
+}
+
 export interface FormSettings {
   submissionLimits?: SubmissionLimitsSettings;
   responseCopy?: ResponseCopySettings;
@@ -110,6 +130,9 @@ export interface FormSettings {
   // (Google/OTP) purely to capture a verified email, without restricting
   // who may respond (no domain allowlist applies to this flag alone).
   collectRespondentEmail?: boolean;
+  // Absent = enabled whenever the form captures respondent identity; see
+  // isSaveProgressEnabled. Has no effect on anonymous forms.
+  saveProgress?: SaveProgressSettings;
   // Absent or enabled: false = byte-for-byte identical to a non-quiz form
   // (see docs/native-quiz-strategy.md and GitHub issue #289's additive guarantee).
   quiz?: QuizSettings;

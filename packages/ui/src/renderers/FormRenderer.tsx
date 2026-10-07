@@ -38,6 +38,8 @@ export interface FormRendererProps {
   onResponseCopyConsentChange?: (consent: boolean) => void;
   /** Page id to open on first render instead of the first page. Falls back to the first page if not found. */
   initialPageId?: string;
+  /** Fires with the visible page's id on first render and on every navigation (e.g. to save a resume point). */
+  onPageChange?: (pageId: string) => void;
   /** Forces which screen the layout shows (intro/pages/thankYou), overriding its own toggle state. */
   screenOverride?: LayoutScreen;
   /** Resolved (mention-substituted) thank-you message. Falls back to `formSchema.layout.thankYouContent` when absent. */
@@ -92,6 +94,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   responseCopySettings,
   onResponseCopyConsentChange,
   initialPageId,
+  onPageChange,
   screenOverride,
   thankYouMessage,
   onSubmitAnother,
@@ -206,12 +209,13 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
     responseId,
     responseCopySettings,
     onResponseCopyConsentChange,
+    onPageChange,
     hiddenFieldIds,
     hiddenPageIds,
     getHiddenFieldIds,
     requiredOverrides,
     getRequiredOverrides,
-  }), [formSchema, mode, onFormSubmit, onResponseUpdate, formId, responseId, responseCopySettings, onResponseCopyConsentChange, hiddenFieldIds, hiddenPageIds, getHiddenFieldIds, requiredOverrides, getRequiredOverrides]);
+  }), [formSchema, mode, onFormSubmit, onResponseUpdate, formId, responseId, responseCopySettings, onResponseCopyConsentChange, onPageChange, hiddenFieldIds, hiddenPageIds, getHiddenFieldIds, requiredOverrides, getRequiredOverrides]);
 
   return (
     <FormResponseContext.Provider value={contextValue}>

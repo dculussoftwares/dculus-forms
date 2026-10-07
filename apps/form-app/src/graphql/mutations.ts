@@ -83,6 +83,9 @@ export const UPDATE_FORM : TypedDocumentNode<any, any> = gql`
           allowedDomains
         }
         collectRespondentEmail
+        saveProgress {
+          enabled
+        }
         quiz {
           enabled
           passThresholdPercent

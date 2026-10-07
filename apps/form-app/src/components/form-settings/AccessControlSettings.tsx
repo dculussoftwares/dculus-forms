@@ -6,7 +6,7 @@ import {
   Input,
   toastError,
 } from '@dculus/ui';
-import { Lock, Save, Globe2, Mail } from 'lucide-react';
+import { Lock, Save, Globe2, Mail, History } from 'lucide-react';
 import type { AccessControlSettings as AccessControlSettingsType } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -16,6 +16,9 @@ interface AccessControlSettingsProps {
   isSaving: boolean;
   onUpdate: (accessControl: AccessControlSettingsType) => void;
   onUpdateCollectRespondentEmail: (collectRespondentEmail: boolean) => void;
+  /** Effective save-and-resume state (absent setting = on for identity-gated forms). */
+  saveProgressEnabled: boolean;
+  onUpdateSaveProgress: (enabled: boolean) => void;
   onSave: () => void;
 }
 
@@ -28,6 +31,8 @@ const AccessControlSettings: React.FC<AccessControlSettingsProps> = ({
   isSaving,
   onUpdate,
   onUpdateCollectRespondentEmail,
+  saveProgressEnabled,
+  onUpdateSaveProgress,
   onSave,
 }) => {
   const { t } = useTranslation('accessControlSettings');
@@ -149,6 +154,29 @@ const AccessControlSettings: React.FC<AccessControlSettingsProps> = ({
           />
         </div>
       </div>
+
+      {/* Save progress — only meaningful when respondents are signed in */}
+      {(settings.enabled || collectRespondentEmail) && (
+        <div className="rounded-xl bg-white dark:bg-card" style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}>
+          <div className="flex items-center gap-3 p-4">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-icon-teal)' }}>
+              <History className="h-4 w-4" style={{ color: 'var(--tf-dark)' }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <Label htmlFor="save-progress-enabled" className="text-sm font-medium text-primary cursor-pointer">
+                {t('saveProgress.title')}
+              </Label>
+              <p className="text-sm text-muted-foreground">{t('saveProgress.description')}</p>
+            </div>
+            <Switch
+              id="save-progress-enabled"
+              data-testid="save-progress-checkbox"
+              checked={saveProgressEnabled}
+              onCheckedChange={onUpdateSaveProgress}
+            />
+          </div>
+        </div>
+      )}
 
       <div>
         <Button onClick={handleSave} disabled={isSaving} data-testid="save-access-control-button">

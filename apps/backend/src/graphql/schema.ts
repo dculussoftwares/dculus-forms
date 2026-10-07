@@ -166,8 +166,33 @@ export const typeDefs = gql`
     responseCopy: ResponseCopySettings
     accessControl: AccessControlSettings
     collectRespondentEmail: Boolean
+    saveProgress: SaveProgressSettings
     quiz: QuizSettings
     embed: EmbedSettings
+  }
+
+  # Save-and-resume for signed-in respondents. Absent = enabled whenever the
+  # form captures respondent identity (sign-in or verified email).
+  type SaveProgressSettings {
+    enabled: Boolean!
+  }
+
+  # A signed-in respondent's own in-progress answers for one form.
+  type ResponseDraft {
+    data: JSON!
+    currentPageId: String
+    # Optimistic-concurrency token: pass it back as baseVersion on the next save.
+    version: Int!
+    startedAt: String!
+    updatedAt: String!
+  }
+
+  type SaveResponseDraftResult {
+    # Null only on a conflict where the draft was submitted or discarded elsewhere.
+    draft: ResponseDraft
+    # True when another tab or device saved, submitted or discarded first;
+    # nothing was written, so the client can offer to keep either copy.
+    conflict: Boolean!
   }
 
   # Whether the current requester can see the form's real content.
@@ -201,6 +226,9 @@ export const typeDefs = gql`
     # e.g. their Google avatar), or null. Same scoping as respondentEmail —
     # purely cosmetic for the account chip.
     respondentImage: String
+    # The signed-in respondent's OWN saved draft, or null. Only resolved when
+    # the caller could submit this form right now and save-and-resume is on.
+    myDraft: ResponseDraft
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!
@@ -523,8 +551,21 @@ export const typeDefs = gql`
     responseCopy: ResponseCopySettingsInput
     accessControl: AccessControlSettingsInput
     collectRespondentEmail: Boolean
+    saveProgress: SaveProgressSettingsInput
     quiz: QuizSettingsInput
     embed: EmbedSettingsInput
+  }
+
+  input SaveProgressSettingsInput {
+    enabled: Boolean!
+  }
+
+  input SaveResponseDraftInput {
+    formId: ID!
+    data: JSON!
+    currentPageId: String
+    # The version this client last saw; null on its first save.
+    baseVersion: Int
   }
 
   input UpdateFormInput {
@@ -1704,6 +1745,8 @@ export const typeDefs = gql`
     regenerateShortUrl(id: ID!): Form!
     duplicateForm(id: ID!): Form!
     submitResponse(input: SubmitResponseInput!): FormResponse!
+    saveResponseDraft(input: SaveResponseDraftInput!): SaveResponseDraftResult!
+    discardResponseDraft(formId: ID!): Boolean!
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
     deleteResponses(formId: ID!, ids: [ID!]!): Boolean!

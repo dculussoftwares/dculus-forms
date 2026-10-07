@@ -24,7 +24,7 @@ import * as tagService from '../../../services/tagService.js';
 import * as responseCopyService from '../../../services/responseCopyService.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
 import * as auditLib from '../../../lib/audit.js';
-import { responseRepository, responseGradeRepository, formRepository } from '../../../repositories/index.js';
+import { responseRepository, responseGradeRepository, formRepository, responseDraftRepository } from '../../../repositories/index.js';
 
 // Mock all dependencies
 vi.mock('../../../services/responseService.js');
@@ -583,6 +583,23 @@ describe('Responses Resolvers', () => {
       );
 
       expect(result.thankYouMessage).toContain('answer1');
+    });
+
+    it('clears the respondent draft after submitting an identity-gated form', async () => {
+      vi.mocked(formService.getFormById).mockResolvedValue({
+        ...mockForm,
+        settings: { accessControl: { enabled: true, requireSignIn: true } },
+      } as any);
+
+      await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
+
+      expect(responseDraftRepository.deleteForRespondent).toHaveBeenCalledWith('form-123', 'user-123');
+    });
+
+    it('never touches drafts on an anonymous form, even for a signed-in caller', async () => {
+      await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
+
+      expect(responseDraftRepository.deleteForRespondent).not.toHaveBeenCalled();
     });
 
     it('should throw error when form not found', async () => {

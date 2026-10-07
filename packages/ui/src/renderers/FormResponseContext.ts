@@ -20,6 +20,8 @@ export interface FormResponseContextValue {
   responseId?: string;
   responseCopySettings?: ResponseCopySettings;
   onResponseCopyConsentChange?: (consent: boolean) => void;
+  /** Fires with the visible page's id on first render and on every navigation. */
+  onPageChange?: (pageId: string) => void;
   // Conditional logic — one evaluation shared by rendering, validation,
   // navigation, and submit (docs/conditional-logic-v1-strategy.md §3.1)
   hiddenFieldIds: ReadonlySet<string>;
