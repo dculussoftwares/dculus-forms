@@ -6,8 +6,9 @@ import {
   getResponsesByFormId,
   getResponsesByOrganizationId,
   submitResponse,
-  submitResponseWithMaxLimitCheck,
+  submitResponseWithLimitChecks,
   updateResponse,
+  type SubmissionLimitChecks,
 } from '../../services/responseService.js';
 import { Prisma } from '#prisma-client';
 import { ResponseFilter } from '../../services/responseFilterService.js';
@@ -23,7 +24,7 @@ import {
   generateId,
   substituteMentions,
 } from '@dculus/utils';
-import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT, isOneResponsePerRespondent } from '@dculus/types';
 import type { RespondentGradeView, QuizGradingMetadata } from '@dculus/types';
 import { pluginTypeFromMetadataKey } from '../../plugins/core/exportRegistry.js';
 import { QUIZ_GRADING_PLUGIN_TYPE } from '../../plugins/quiz/types.js';
@@ -406,7 +407,7 @@ export const responsesResolvers = {
       }
 
       // Pre-assign the response ID so it can be used inside the serializable
-      // transaction (maxResponses path) and also in the normal path below.
+      // transaction (limit-check path) and also in the normal path below.
       const responseId = generateId();
       // Only ever captured when the form's own settings ask for it — never
       // record identity on a form that didn't require sign-in, even if a
@@ -423,37 +424,37 @@ export const responsesResolvers = {
       };
 
       // Track whether the response row has already been created inside a
-      // serializable transaction (maxResponses atomic check-then-insert path).
+      // serializable transaction (atomic limit-check path).
       let response: import('@dculus/types').FormResponse | null = null;
 
-      // Check submission limits if they exist
-      if (form.settings?.submissionLimits) {
-        const limits = form.settings.submissionLimits;
-
-        // Check maximum responses limit — atomic check-then-insert via a
-        // Serializable transaction (responseService.submitResponseWithMaxLimitCheck)
-        // so two concurrent requests cannot both pass the count check and both
-        // insert, exceeding the limit by one.
-        if (limits.maxResponses?.enabled) {
-          response = await submitResponseWithMaxLimitCheck(
-            {
-              id: responseId,
-              formId: input.formId,
-              data: (input.data || {}) as Prisma.InputJsonValue,
-              respondentUserId,
-              respondentEmail,
-            },
-            limits.maxResponses.limit
-          );
-        }
-
-        // Check time window limits
-        if (limits.timeWindow) {
-          enforceTimeWindow(limits.timeWindow);
-        }
+      // Limits that need an atomic check-then-insert: maximum responses, and
+      // one response per signed-in respondent (never applied to builder
+      // previews). Both run in one Serializable transaction
+      // (responseService.submitResponseWithLimitChecks) so two concurrent
+      // requests cannot both pass a check and both insert.
+      const limits = form.settings?.submissionLimits;
+      // Before any insert, so a closed form never stores the response it rejects.
+      if (limits?.timeWindow) {
+        enforceTimeWindow(limits.timeWindow);
+      }
+      const limitChecks: SubmissionLimitChecks = {
+        maxResponses: limits?.maxResponses?.enabled ? limits.maxResponses.limit : undefined,
+        onePerRespondent: isOneResponsePerRespondent(form.settings) && !input.isPreview,
+      };
+      if (limitChecks.maxResponses !== undefined || limitChecks.onePerRespondent) {
+        response = await submitResponseWithLimitChecks(
+          {
+            id: responseId,
+            formId: input.formId,
+            data: (input.data || {}) as Prisma.InputJsonValue,
+            respondentUserId,
+            respondentEmail,
+          },
+          limitChecks
+        );
       }
 
-      // If the response was not already inserted by the atomic maxResponses
+      // If the response was not already inserted by the atomic limit-check
       // transaction above, persist it now via the normal path.
       if (!response) {
         response = await submitResponse(responseData);
