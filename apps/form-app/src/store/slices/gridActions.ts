@@ -7,6 +7,7 @@
  */
 import * as Y from 'yjs';
 import { toastError } from '@dculus/ui';
+import { translateOutsideReact } from '../../locales/storedLocale';
 import {
   FieldType,
   FormField,
@@ -399,7 +400,7 @@ export const createGridActions = (get: StoreGetter) => {
     const { _getYDoc, _isYJSReady } = get() as any;
     const ydoc: Y.Doc | null = _getYDoc();
     if (!ydoc || !_isYJSReady()) {
-      toastError('Connection lost', 'Please wait — reconnecting to the collaboration server.');
+      toastError(translateOutsideReact('gridLayout', 'errors.connectionLost'), translateOutsideReact('gridLayout', 'errors.connectionLostHint'));
       return undefined;
     }
     const pages = pagesArrayOf(ydoc)?.toArray() ?? [];
@@ -761,7 +762,7 @@ export const createGridActions = (get: StoreGetter) => {
         );
       });
       if (rejected) {
-        toastError('Cannot change this field type', 'A grid layout cannot be converted to another field type.');
+        toastError(translateOutsideReact('gridLayout', 'errors.cannotConvert'), translateOutsideReact('gridLayout', 'errors.cannotConvertHint'));
       }
     },
   };

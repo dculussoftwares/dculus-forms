@@ -48,6 +48,7 @@ import { useQuizMode } from '../../../contexts/QuizModeContext';
 import { computeQuizSummary } from '../../../utils/quizGrading';
 import { DesignDrawer } from '../design/DesignDrawer';
 import { MOBILE_CANVAS_CSS } from '../shared/mobileCanvasStyles';
+import { createGridAnnouncements } from './gridAnnouncements';
 import { createGridAwareCollision } from './gridCollision';
 import type { GridTarget } from '../../../store/types/store.types';
 
@@ -140,6 +141,13 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
   const formHasGrid = useMemo(
     () => (pages || []).some((page) => pageHasGrid(page.fields)),
     [pages]
+  );
+  // Announce "column N of M" while dragging on a grid form; others keep dnd-kit's defaults
+  const gridAccessibility = useMemo(
+    () => ({
+      announcements: createGridAnnouncements(tGrid, () => useFormBuilderStore.getState().pages ?? []),
+    }),
+    [tGrid]
   );
 
   // Quiz summary strip — only computed/rendered when quiz mode is on for this form
@@ -532,6 +540,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
         sensors={canEdit ? sensors : []}
         collisionDetection={collisionDetectionStrategy}
         measuring={formHasGrid ? GRID_PAGE_MEASURING : undefined}
+        accessibility={formHasGrid ? gridAccessibility : undefined}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
