@@ -1,12 +1,14 @@
 import {
   deleteResponse,
   deleteResponses,
+  getAnsweredFieldIds,
   getResponseById,
   getResponsesByFormId,
   getResponsesByOrganizationId,
   submitResponse,
-  submitResponseWithMaxLimitCheck,
+  submitResponseWithLimitChecks,
   updateResponse,
+  type SubmissionLimitChecks,
 } from '../../services/responseService.js';
 import { Prisma } from '#prisma-client';
 import { ResponseFilter } from '../../services/responseFilterService.js';
@@ -22,7 +24,7 @@ import {
   generateId,
   substituteMentions,
 } from '@dculus/utils';
-import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT } from '@dculus/types';
+import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT, isOneResponsePerRespondent } from '@dculus/types';
 import type { RespondentGradeView, QuizGradingMetadata } from '@dculus/types';
 import { pluginTypeFromMetadataKey } from '../../plugins/core/exportRegistry.js';
 import { QUIZ_GRADING_PLUGIN_TYPE } from '../../plugins/quiz/types.js';
@@ -50,6 +52,8 @@ import { audit } from '../../lib/audit.js';
 import { upsertPreviewTag, addTagToResponse } from '../../services/tagService.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { enforceAccessControlForSubmission, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
+import { assertResponsePayloadWithinLimits } from '../../lib/responsePayloadLimits.js';
+import { clearDraftAfterSubmit } from '../../services/responseDraftService.js';
 import {
   generateFakeResponsesForForm,
   MAX_FAKE_RESPONSES_PER_REQUEST,
@@ -299,6 +303,28 @@ export const responsesResolvers = {
 
       return getDistinctResponseFieldValues(formId, fieldId, search ?? undefined, limit ?? undefined);
     },
+
+    answeredFieldIds: async (
+      _: any,
+      { formId, fieldIds }: { formId: string; fieldIds: string[] },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const form = await getFormById(formId);
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+
+      await requireOrganizationMembership(context.auth, form.organizationId);
+
+      const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.VIEWER);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need VIEWER access to view this form\'s responses', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      return getAnsweredFieldIds(formId, fieldIds);
+    },
   },
   Mutation: {
     submitResponse: async (_: any, { input }: { input: any }, context: { auth: BetterAuthContext; req?: any }) => {
@@ -348,17 +374,7 @@ export const responsesResolvers = {
       }
 
       // P2-04: Validate response payload size to prevent unbounded writes
-      if (input.data && typeof input.data === 'object') {
-        const keys = Object.keys(input.data as object);
-        if (keys.length > 500) {
-          throw createGraphQLError('Response data cannot contain more than 500 fields', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-        }
-        for (const [key, value] of Object.entries(input.data as object)) {
-          if (typeof value === 'string' && value.length > 10_000) {
-            throw createGraphQLError(`Field "${key}" exceeds the 10,000 character limit`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-          }
-        }
-      }
+      assertResponsePayloadWithinLimits(input.data);
 
       // Live schema for form.id (Hocuspocus, falling back to the DB column),
       // resolved at most once and shared by conditional stripping below and
@@ -391,7 +407,7 @@ export const responsesResolvers = {
       }
 
       // Pre-assign the response ID so it can be used inside the serializable
-      // transaction (maxResponses path) and also in the normal path below.
+      // transaction (limit-check path) and also in the normal path below.
       const responseId = generateId();
       // Only ever captured when the form's own settings ask for it — never
       // record identity on a form that didn't require sign-in, even if a
@@ -408,43 +424,49 @@ export const responsesResolvers = {
       };
 
       // Track whether the response row has already been created inside a
-      // serializable transaction (maxResponses atomic check-then-insert path).
+      // serializable transaction (atomic limit-check path).
       let response: import('@dculus/types').FormResponse | null = null;
 
-      // Check submission limits if they exist
-      if (form.settings?.submissionLimits) {
-        const limits = form.settings.submissionLimits;
-
-        // Check maximum responses limit — atomic check-then-insert via a
-        // Serializable transaction (responseService.submitResponseWithMaxLimitCheck)
-        // so two concurrent requests cannot both pass the count check and both
-        // insert, exceeding the limit by one.
-        if (limits.maxResponses?.enabled) {
-          response = await submitResponseWithMaxLimitCheck(
-            {
-              id: responseId,
-              formId: input.formId,
-              data: (input.data || {}) as Prisma.InputJsonValue,
-              respondentUserId,
-              respondentEmail,
-            },
-            limits.maxResponses.limit
-          );
-        }
-
-        // Check time window limits
-        if (limits.timeWindow) {
-          enforceTimeWindow(limits.timeWindow);
-        }
+      // Limits that need an atomic check-then-insert: maximum responses, and
+      // one response per signed-in respondent (never applied to builder
+      // previews). Both run in one Serializable transaction
+      // (responseService.submitResponseWithLimitChecks) so two concurrent
+      // requests cannot both pass a check and both insert.
+      const limits = form.settings?.submissionLimits;
+      // Before any insert, so a closed form never stores the response it rejects.
+      if (limits?.timeWindow) {
+        enforceTimeWindow(limits.timeWindow);
+      }
+      const limitChecks: SubmissionLimitChecks = {
+        maxResponses: limits?.maxResponses?.enabled ? limits.maxResponses.limit : undefined,
+        onePerRespondent: isOneResponsePerRespondent(form.settings) && !input.isPreview,
+      };
+      if (limitChecks.maxResponses !== undefined || limitChecks.onePerRespondent) {
+        response = await submitResponseWithLimitChecks(
+          {
+            id: responseId,
+            formId: input.formId,
+            data: (input.data || {}) as Prisma.InputJsonValue,
+            respondentUserId,
+            respondentEmail,
+          },
+          limitChecks
+        );
       }
 
-      // If the response was not already inserted by the atomic maxResponses
+      // If the response was not already inserted by the atomic limit-check
       // transaction above, persist it now via the normal path.
       if (!response) {
         response = await submitResponse(responseData);
       }
       // At this point response is guaranteed non-null — both branches above set it.
       const savedResponse = response!;
+
+      // Save-and-resume: the submitted answers supersede the respondent's
+      // draft. Only identity-gated forms ever have one (keyed on the same user).
+      if (respondentUserId && !input.isPreview) {
+        await clearDraftAfterSubmit(form.id, respondentUserId);
+      }
 
       // Native Quiz (D3, epic #289): grade synchronously, here, so the score
       // can be included in this mutation's payload — emitFormSubmitted below

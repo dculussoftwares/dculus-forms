@@ -46,6 +46,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     mode: contextMode,
     responseCopySettings,
     onResponseCopyConsentChange,
+    onPageChange,
     hiddenPageIds,
     formSchema,
   } = useFormResponseContext();
@@ -124,6 +125,11 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     currentPageIdRef.current = visiblePages[target]?.id;
     if (target !== currentPageIndex) setCurrentPageIndex(target);
   }, [visiblePages, currentPageIndex, pages]);
+
+  const currentPageId = currentPage?.id;
+  useEffect(() => {
+    if (currentPageId) onPageChange?.(currentPageId);
+  }, [currentPageId, onPageChange]);
 
   const navigationState: FormNavigationState = useMemo(() => {
     const isFirstPage = currentPageIndex === 0;

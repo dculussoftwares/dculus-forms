@@ -9,18 +9,29 @@ import {
   type GridColumnNode,
   type GridField,
 } from '@dculus/types';
-import { Button, toast } from '@dculus/ui';
+import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
-import { Columns2, Copy, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, Columns2, Copy, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { FieldPickerPopover } from '../field-library/FieldPickerPopover';
+import { PageActionsSelector } from '../PageActionsSelector';
 import { DraggableFieldCard } from './PageBuilderFieldCard';
 import { GRID_COLUMN_DROPPABLE, GRID_DROP_PRIORITY, GRID_SLOT_DROPPABLE } from './gridCollision';
+import { useDeleteGridWithUndo } from './useDeleteGridWithUndo';
 
-/** Gap between columns in px; the divider sits in the middle of it. */
+/** Gap between columns in px (and between stacked columns); the divider sits in the middle of it. */
 const COLUMN_GAP = 12;
+
+/**
+ * The canvas's mobile device frame (`.mobile-preview`, see PageBuilderTab) stacks the columns the
+ * way a phone does in the viewer, and hides the resize dividers there. Pure CSS keyed off the
+ * frame, so toggling Desktop/Mobile re-flows immediately; the Desktop canvas keeps columns side by
+ * side at any canvas width so they stay resizable.
+ */
+const IN_PHONE_FRAME_STACKED = '[.mobile-preview_&]:grid-cols-1';
+const IN_PHONE_FRAME_HIDDEN = '[.mobile-preview_&]:hidden';
 
 /** True when the item being dragged is a grid (palette tile or existing block); grids never nest (I1). */
 const useActiveIsGrid = (): boolean => {
@@ -312,7 +323,10 @@ const ColumnDivider: React.FC<{
       onPointerCancel={finish}
       onKeyDown={handleKeyDown}
       onClick={stopClick}
-      className="absolute top-0 bottom-0 w-3 -ml-1.5 z-10 flex justify-center cursor-col-resize group/divider touch-none focus-visible:outline-none"
+      className={cn(
+        'absolute top-0 bottom-0 w-3 -ml-1.5 z-10 flex justify-center cursor-col-resize group/divider touch-none focus-visible:outline-none',
+        IN_PHONE_FRAME_HIDDEN
+      )}
       style={{
         left: `calc((100% - ${gapsTotal}px) * ${offsetBefore / 100} + ${index * COLUMN_GAP + COLUMN_GAP / 2}px)`,
       }}
@@ -350,17 +364,17 @@ export const GridBlock: React.FC<GridBlockProps> = ({
   const { t } = useTranslation('gridLayout');
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
-  const canEditRef = React.useRef(canEdit);
-  canEditRef.current = canEdit;
   const canReorder = permissions.canReorderFields();
   const {
     selectedFieldId,
     setSelectedField,
     setGridColumnWidths,
     duplicateGrid,
-    removeGrid,
-    restoreGrid,
+    pages,
+    moveFieldBetweenPages,
+    copyFieldToPage,
   } = useFormBuilderStore();
+  const deleteGridWithUndo = useDeleteGridWithUndo(canEdit);
   const activeIsGrid = useActiveIsGrid();
 
   const pageIndex = pageFields.findIndex((f) => f.id === grid.id);
@@ -410,21 +424,7 @@ export const GridBlock: React.FC<GridBlockProps> = ({
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!canEdit) return;
-    const snapshot = removeGrid(pageId, grid.id, { deleteChildren: true });
-    if (!snapshot) return;
-    if (isSelected) setSelectedField(null);
-    toast({
-      title: t('block.deleted'),
-      action: {
-        label: t('block.undo'),
-        onClick: () => {
-          // Re-check at click time: the toast outlives this block and editability can change
-          if (!canEditRef.current || !useFormBuilderStore.getState().isConnected) return;
-          if (restoreGrid(pageId, snapshot)) setSelectedField(grid.id);
-        },
-      },
-    });
+    deleteGridWithUndo(pageId, grid.id);
   };
 
   return (
@@ -500,6 +500,25 @@ export const GridBlock: React.FC<GridBlockProps> = ({
               >
                 <Copy className="w-4 h-4" />
               </Button>
+              {/* The store's grid branches move or copy the whole block, questions included (§7.4) */}
+              <PageActionsSelector
+                pages={pages ?? []}
+                currentPageId={pageId}
+                onMoveToPage={(targetPageId) => moveFieldBetweenPages(pageId, targetPageId, grid.id)}
+                onCopyToPage={(targetPageId) => copyFieldToPage(pageId, targetPageId, grid.id)}
+                triggerElement={
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-lg h-auto"
+                    title={t('block.moveOrCopy')}
+                    aria-label={t('block.moveOrCopy')}
+                    data-testid={`grid-page-actions-button-${grid.id}`}
+                  >
+                    <ArrowRightLeft className="w-4 h-4" />
+                  </Button>
+                }
+              />
               <Button
                 variant="ghost"
                 onClick={handleDelete}
@@ -518,11 +537,8 @@ export const GridBlock: React.FC<GridBlockProps> = ({
       {/* Columns */}
       <div
         ref={columnsRef}
-        className="relative grid"
-        style={{
-          gridTemplateColumns: widths.map((w) => `minmax(0, ${w}fr)`).join(' '),
-          columnGap: COLUMN_GAP,
-        }}
+        className={cn('relative grid [grid-template-columns:var(--gc)]', IN_PHONE_FRAME_STACKED)}
+        style={{ '--gc': widths.map((w) => `minmax(0, ${w}fr)`).join(' '), gap: COLUMN_GAP } as React.CSSProperties}
       >
         {columns.map((column) => (
           <GridColumn

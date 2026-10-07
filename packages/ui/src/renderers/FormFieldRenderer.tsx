@@ -52,6 +52,12 @@ interface FormFieldRendererProps<T extends FieldValues = FieldValues> {
 
 /* ── Error message ── */
 
+/**
+ * Long labels wrap inside their box (a narrow grid column included) instead of painting over the next one;
+ * `overflow-wrap:anywhere` also breaks single long words, and `leading-snug` keeps wrapped lines apart.
+ */
+const WRAP_TEXT_CLASS = 'leading-snug break-words [overflow-wrap:anywhere]';
+
 const ErrorMessage: React.FC<{ message: string }> = ({ message }) => (
   <p className="mt-1.5 text-xs flex items-center gap-1.5" style={{ color: '#ce5d55' }} role="alert">
     <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -97,7 +103,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   /* Container class — from formStyles or default */
   const containerClass = fieldStyles?.container ?? 'mb-5';
   /* Label class — hardcoded to match builder's FieldPreview exactly */
-  const labelClass = 'text-sm font-medium text-gray-900 dark:text-white';
+  const labelClass = `min-w-0 flex-1 text-sm font-medium text-gray-900 dark:text-white ${WRAP_TEXT_CLASS}`;
 
   const isInteractive = mode === RendererMode.PREVIEW || mode === RendererMode.SUBMISSION || mode === RendererMode.EDIT;
 
@@ -129,7 +135,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
 
       {/* ── Field label ── */}
       {fillableField?.label && (
-        <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-start justify-between gap-2 mb-1.5">
           <Label className={labelClass}>
             {fillableField.label}
             {isRequired && (
@@ -144,7 +150,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               render={({ fieldState }) => {
                 if (!fieldState.isTouched) return <span />;
                 return (
-                  <span className="text-xs" style={{ color: fieldState.error ? '#ce5d55' : '#177767' }}>
+                  <span className="shrink-0 text-xs" style={{ color: fieldState.error ? '#ce5d55' : '#177767' }}>
                     {fieldState.error ? '✕' : '✓'}
                   </span>
                 );
@@ -319,7 +325,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                         />
                         <Label
                           htmlFor={`${field.id}-radio-${i}`}
-                          className="text-sm font-normal cursor-pointer"
+                          className={`min-w-0 text-sm font-normal cursor-pointer ${WRAP_TEXT_CLASS}`}
                           style={{ color: '#4c414e' }}
                         >
                           {option}
@@ -357,7 +363,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                           />
                           <Label
                             htmlFor={`${field.id}-cb-${i}`}
-                            className="text-sm font-normal cursor-pointer"
+                            className={`min-w-0 text-sm font-normal cursor-pointer ${WRAP_TEXT_CLASS}`}
                             style={{ color: '#4c414e' }}
                           >
                             {option}
@@ -423,7 +429,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                   className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
                   style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.12)', color: '#4c414e' }}
                 >
-                  <span className="truncate">{name}</span>
+                  <span data-testid="file-upload-chip-name" className={`min-w-0 ${WRAP_TEXT_CLASS}`}>{name}</span>
                   {onRemove && (
                     <button
                       type="button"

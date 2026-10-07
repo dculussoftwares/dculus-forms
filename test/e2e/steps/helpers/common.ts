@@ -70,9 +70,9 @@ export async function dragOnto(source: Locator, target: Locator): Promise<void> 
 /**
  * Adds a field to the current builder page by clicking its tile in the Field
  * Library (ticket #230). The tile only exists in the DOM once the library is
- * visible — either the rail's "+ Add content" mega-panel popover (default) or
- * the docked column if a prior test pinned it — so open the popover first
- * unless the tile is already on screen.
+ * visible — either the docked column (the default) or the rail's
+ * "+ Add content" mega-panel popover once unpinned — so open the popover only
+ * if the tile isn't already on screen.
  */
 export async function addFieldToPage(world: CustomWorld, fieldTestId: string): Promise<void> {
   if (!world.page) throw new Error('Page is not initialized');

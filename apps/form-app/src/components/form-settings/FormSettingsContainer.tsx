@@ -6,7 +6,8 @@ import SubmissionLimitsSettings from './SubmissionLimitsSettings';
 import ResponseCopySettings from './ResponseCopySettings';
 import AccessControlSettings from './AccessControlSettings';
 import QuizSettings from './QuizSettings';
-import { requiresRespondentIdentity, type QuizSettings as QuizSettingsType } from '@dculus/types';
+import { isSaveProgressEnabled, requiresRespondentIdentity, type QuizSettings as QuizSettingsType } from '@dculus/types';
+import type { RespondentOptions } from '../../hooks/useFormSettings';
 
 interface FormSettingsContainerProps {
   form: any;
@@ -23,6 +24,7 @@ interface FormSettingsContainerProps {
   onUpdateAccessControl: (accessControl: any) => void;
   onSaveAccessControlSettings: () => void;
   onUpdateCollectRespondentEmail: (collectRespondentEmail: boolean) => void;
+  onUpdateRespondentOptions: (patch: RespondentOptions) => void;
   onUpdateQuizSettings: (quiz: QuizSettingsType) => void;
   onSaveQuizSettings: () => void;
 }
@@ -32,7 +34,7 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
   onSaveGeneralSettings, onRegenerateShortUrl,
   onUpdateSubmissionLimits, onSaveSubmissionLimits,
   onUpdateResponseCopySetting, onSaveResponseCopySettings,
-  onUpdateAccessControl, onSaveAccessControlSettings, onUpdateCollectRespondentEmail,
+  onUpdateAccessControl, onSaveAccessControlSettings, onUpdateCollectRespondentEmail, onUpdateRespondentOptions,
   onUpdateQuizSettings, onSaveQuizSettings,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -72,6 +74,13 @@ const FormSettingsContainer: React.FC<FormSettingsContainerProps> = ({
             settings={settings.accessControl || {}} collectRespondentEmail={!!settings.collectRespondentEmail} isSaving={isSaving}
             onUpdate={onUpdateAccessControl}
             onUpdateCollectRespondentEmail={onUpdateCollectRespondentEmail}
+            respondentOptions={{
+              saveProgress: isSaveProgressEnabled(settings),
+              oneResponsePerRespondent: !!settings.oneResponsePerRespondent,
+              allowRespondentEdit: !!settings.allowRespondentEdit,
+            }}
+            isQuiz={!!settings.quiz?.enabled}
+            onUpdateRespondentOptions={onUpdateRespondentOptions}
             onSave={onSaveAccessControlSettings}
           />
         );

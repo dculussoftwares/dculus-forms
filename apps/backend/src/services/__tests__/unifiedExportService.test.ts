@@ -394,6 +394,124 @@ describe('Unified Export Service', () => {
     });
   });
 
+  describe('deleted field columns', () => {
+    const textField = (id: string, label: string, deleted = false) =>
+      ({
+        id,
+        type: FieldType.TEXT_INPUT_FIELD,
+        label,
+        defaultValue: '',
+        prefix: '',
+        hint: '',
+        validation: { required: false, type: FieldType.TEXT_INPUT_FIELD },
+        ...(deleted ? { deleted: true } : {}),
+      }) as any;
+
+    // Deleted fields sit between active ones in the schema, as they do after a
+    // field is removed from the middle of a form.
+    const schemaWithDeleted: FormSchema = {
+      ...mockFormSchema,
+      pages: [
+        {
+          id: 'page-1',
+          title: 'Page 1',
+          order: 0,
+          fields: [
+            textField('name', 'Name'),
+            textField('old-answered', 'Old Answered', true),
+            textField('old-empty', 'Old Empty', true),
+            textField('city', 'City'),
+          ],
+        },
+      ],
+    };
+
+    const responses = [
+      {
+        id: 'resp-1',
+        data: { name: 'Ann', 'old-answered': 'legacy', 'old-empty': '', orphan: 'x', city: 'Pune' },
+        submittedAt: 1704067200000,
+        metadata: {},
+      },
+      {
+        id: 'resp-2',
+        data: { name: 'Bob', 'old-empty': null, 'orphan-empty': [], city: 'Goa' },
+        submittedAt: 1704067200000,
+        metadata: {},
+      },
+    ];
+
+    const fieldHeaders = (headers: string[]) =>
+      headers.slice(headers.indexOf('Name'));
+
+    it('places answered deleted columns after all active field columns in CSV', async () => {
+      const result = await generateExportFile({
+        formTitle: 'Deleted',
+        responses: responses as any,
+        formSchema: schemaWithDeleted,
+        format: 'csv',
+      });
+
+      const [header, firstRow] = result.buffer.toString('utf-8').split('\n');
+      expect(fieldHeaders(header.split(','))).toEqual([
+        'Name',
+        'City',
+        'Old Answered (deleted)',
+        'Unknown field (deleted)',
+      ]);
+      expect(firstRow.split(',').slice(-4)).toEqual(['Ann', 'Pune', 'legacy', 'x']);
+    });
+
+    it('applies the same order and omits unanswered deleted columns in Excel', async () => {
+      await generateExportFile({
+        formTitle: 'Deleted',
+        responses: responses as any,
+        formSchema: schemaWithDeleted,
+        format: 'excel',
+      });
+
+      const addRow = getLastWorkbook().worksheets[0].addRow;
+      const headers: string[] = addRow.mock.calls[0][0];
+      expect(fieldHeaders(headers)).toEqual([
+        'Name',
+        'City',
+        'Old Answered (deleted)',
+        'Unknown field (deleted)',
+      ]);
+      expect(addRow.mock.calls[2][0].slice(-4)).toEqual(['Bob', 'Goa', '', '']);
+    });
+
+    it('orders orphan columns by id, whatever order responses arrive in', async () => {
+      const orphanResponses = [
+        { id: 'r1', data: { name: 'Ann', 'zz-orphan': 'z' }, submittedAt: 1704067200000, metadata: {} },
+        { id: 'r2', data: { name: 'Bob', 'aa-orphan': 'a' }, submittedAt: 1704067200000, metadata: {} },
+      ];
+
+      const result = await generateExportFile({
+        formTitle: 'Deleted',
+        responses: orphanResponses as any,
+        formSchema: schemaWithDeleted,
+        format: 'csv',
+      });
+
+      const [header, firstRow] = result.buffer.toString('utf-8').split('\n');
+      expect(header.split(',').slice(-2)).toEqual(['Unknown field (deleted)', 'Unknown field (deleted)']);
+      expect(firstRow.split(',').slice(-2)).toEqual(['', 'z']);
+    });
+
+    it('drops every deleted column when the exported responses never answered them', async () => {
+      const result = await generateExportFile({
+        formTitle: 'Deleted',
+        responses: [responses[1]] as any,
+        formSchema: schemaWithDeleted,
+        format: 'csv',
+      });
+
+      const header = result.buffer.toString('utf-8').split('\n')[0];
+      expect(fieldHeaders(header.split(','))).toEqual(['Name', 'City']);
+    });
+  });
+
   describe('generateExcelFilename', () => {
     it('should generate filename with form title', () => {
       const filename = generateExcelFilename('Contact Form');

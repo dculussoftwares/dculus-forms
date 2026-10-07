@@ -60,12 +60,12 @@ import {
 import {
   deserializeFormSchema,
   FieldType,
-  FillableFormField,
   FormResponse,
   FormSchema,
 } from '@dculus/types';
 import { formatFieldValue as formatFieldValueUtil } from '@dculus/utils';
 import { getPluginColumns, PluginInstance } from '../plugins/core/registry';
+import { planResponseFieldColumns } from './responseFieldColumns';
 import { TagsCell } from '../components/Responses/TagsCell';
 import { PdfGeneratorResultCell } from '../components/Responses/PdfGeneratorResultCell';
 import '../plugins/index';
@@ -109,6 +109,10 @@ interface CreateResponsesColumnsOptions {
   ) => void;
   onDeleteResponse: (responseId: string) => void;
   responses?: FormResponse[];
+  // Soft-deleted field ids that at least one response (across the whole form,
+  // not just this page) answered. Deleted fields outside this set get no
+  // column. Undefined while unknown, which keeps every deleted column.
+  answeredDeletedFieldIds?: ReadonlySet<string>;
   t: (
     key: string,
     options?: {
@@ -448,124 +452,103 @@ function extractFileName(key: string): string {
 /**
  * Create field columns based on form schema — three groups:
  * 1. Active fields (sortable)
- * 2. Soft-deleted fields (amber "deleted" badge, no sort)
- * 3. Orphan field IDs present in response data but absent from schema (historical deletions)
+ * 2. Soft-deleted fields (amber "deleted" badge, no sort), only when answered
+ * 3. Orphan field IDs answered in response data but absent from schema (historical deletions)
  */
 const createFieldColumns = (
   formSchema: FormSchema,
   responses: FormResponse[],
+  answeredDeletedFieldIds: ReadonlySet<string> | undefined,
   t: CreateResponsesColumnsOptions['t']
 ): ColumnDef<FormResponse>[] => {
-  const activeColumns: ColumnDef<FormResponse>[] = [];
-  const deletedColumns: ColumnDef<FormResponse>[] = [];
+  const { fields, orphanIds } = planResponseFieldColumns(
+    formSchema,
+    responses,
+    answeredDeletedFieldIds
+  );
 
-  // --- Group 1: active fields; Group 2: soft-deleted fields ---
-  formSchema.pages.forEach((page) => {
-    page.fields.forEach((field) => {
-      if (!(field instanceof FillableFormField)) return;
+  // --- Groups 1 & 2: active fields, then answered soft-deleted fields ---
+  const schemaColumns = fields.map((field): ColumnDef<FormResponse> => {
+    const isDeleted = field.deleted === true;
 
-      const isDeleted = field.deleted === true;
+    // TFColumnHeader only accepts title: string, so deleted columns use a custom header
+    return {
+      accessorKey: `data.${field.id}`,
+      id: `field-${field.id}`,
+      header: isDeleted
+        ? () => (
+            <div className="flex items-center gap-1.5">
+              <FieldIconChip fieldType={field.type} />
+              <span className="text-[13px] text-muted-foreground italic truncate">{field.label}</span>
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+                {t('table.fieldResponses.deletedBadge')}
+              </span>
+            </div>
+          )
+        : ({ column }) => (
+            <TFColumnHeader
+              column={column}
+              icon={<FieldIconChip fieldType={field.type} />}
+              title={field.label}
+            />
+          ),
+      cell: ({ row }) => {
+        const value = row.original.data[field.id];
 
-      // TFColumnHeader only accepts title: string, so deleted columns use a custom header
-      const col: ColumnDef<FormResponse> = {
-        accessorKey: `data.${field.id}`,
-        id: `field-${field.id}`,
-        header: isDeleted
-          ? () => (
-              <div className="flex items-center gap-1.5">
-                <FieldIconChip fieldType={field.type} />
-                <span className="text-[13px] text-muted-foreground italic truncate">{field.label}</span>
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-                  deleted
-                </span>
-              </div>
-            )
-          : ({ column }) => (
-              <TFColumnHeader
-                column={column}
-                icon={<FieldIconChip fieldType={field.type} />}
-                title={field.label}
-              />
-            ),
-        cell: ({ row }) => {
-          const value = row.original.data[field.id];
-
-          if (field.type === FieldType.FILE_UPLOAD_FIELD) {
-            const keys: string[] = Array.isArray(value) ? value : [];
-            if (keys.length === 0) {
-              return (
-                <div className="flex items-center space-x-2 text-muted-foreground">
-                  <Upload className="h-4 w-4" />
-                  <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
-                </div>
-              );
-            }
-            return (
-              <div className="flex flex-col gap-1">
-                {keys.map((key, idx) => (
-                  <FileDownloadLink key={idx} s3Key={key} />
-                ))}
-              </div>
-            );
-          }
-
-          const formattedValue = formatFieldValueUtil(value, field.type);
-          if (!formattedValue) {
+        if (field.type === FieldType.FILE_UPLOAD_FIELD) {
+          const keys: string[] = Array.isArray(value) ? value : [];
+          if (keys.length === 0) {
             return (
               <div className="flex items-center space-x-2 text-muted-foreground">
-                {getFieldIcon(field.type)}
+                <Upload className="h-4 w-4" />
                 <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
               </div>
             );
           }
           return (
-            <div className="flex items-center space-x-2">
-              <div className="text-muted-foreground">{getFieldIcon(field.type)}</div>
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium truncate block" title={formattedValue}>
-                  {formattedValue}
-                </span>
-              </div>
+            <div className="flex flex-col gap-1">
+              {keys.map((key, idx) => (
+                <FileDownloadLink key={idx} s3Key={key} />
+              ))}
             </div>
           );
-        },
-        enableSorting: !isDeleted,
-        enableHiding: true,
-        size: 200,
-      };
+        }
 
-      if (isDeleted) {
-        deletedColumns.push(col);
-      } else {
-        activeColumns.push(col);
-      }
-    });
+        const formattedValue = formatFieldValueUtil(value, field.type);
+        if (!formattedValue) {
+          return (
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              {getFieldIcon(field.type)}
+              <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
+            </div>
+          );
+        }
+        return (
+          <div className="flex items-center space-x-2">
+            <div className="text-muted-foreground">{getFieldIcon(field.type)}</div>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm font-medium truncate block" title={formattedValue}>
+                {formattedValue}
+              </span>
+            </div>
+          </div>
+        );
+      },
+      enableSorting: !isDeleted,
+      enableHiding: true,
+      size: 200,
+    };
   });
 
   // --- Group 3: orphan field IDs (historical deletions before this feature) ---
-  const knownFieldIds = new Set(
-    formSchema.pages.flatMap((p) => p.fields.map((f) => f.id))
-  );
-
-  // Safety guard: if the schema has no fields at all, it likely hasn't finished
-  // loading yet. Skip orphan detection entirely to prevent all response field IDs
-  // from being incorrectly classified as "Unknown field (deleted)" before the real
-  // schema arrives (race condition between GET_FORM_BY_ID and GET_FORM_RESPONSES).
-  const schemaHasFields = knownFieldIds.size > 0;
-  const orphanIds = new Set(
-    schemaHasFields
-      ? responses.flatMap((r) => Object.keys(r.data)).filter((id) => !knownFieldIds.has(id))
-      : []
-  );
-
-  const orphanColumns: ColumnDef<FormResponse>[] = Array.from(orphanIds).map((fieldId) => ({
+  const orphanColumns: ColumnDef<FormResponse>[] = orphanIds.map((fieldId) => ({
     accessorKey: `data.${fieldId}`,
     id: `orphan-${fieldId}`,
     header: () => (
       <span className="text-muted-foreground italic flex items-center gap-1.5">
-        Unknown field
+        {t('table.fieldResponses.unknownField')}
         <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 not-italic">
-          deleted
+          {t('table.fieldResponses.deletedBadge')}
         </span>
       </span>
     ),
@@ -585,7 +568,7 @@ const createFieldColumns = (
     size: 200,
   }));
 
-  return [...activeColumns, ...deletedColumns, ...orphanColumns];
+  return [...schemaColumns, ...orphanColumns];
 };
 
 const ResponsesActionsCell: React.FC<{
@@ -874,6 +857,7 @@ export const createResponsesColumns = ({
   onPluginClick,
   onDeleteResponse,
   responses = [],
+  answeredDeletedFieldIds,
   showRespondentEmail = false,
   quizEnabled = false,
   quizGradeRelease,
@@ -969,7 +953,7 @@ export const createResponsesColumns = ({
   };
 
   // Field columns
-  const fieldColumns = createFieldColumns(deserializedSchema, responses, t);
+  const fieldColumns = createFieldColumns(deserializedSchema, responses, answeredDeletedFieldIds, t);
 
   // Native Quiz (epic #289, Story 11): Score/Status columns — built ONLY
   // when quizEnabled. Additive guarantee: a non-quiz form gets an empty

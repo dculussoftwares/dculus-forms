@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { UPDATE_FORM } from '../graphql/mutations';
-import { requiresRespondentIdentity, type SubmissionLimitsSettings, type ResponseCopySettings, type AccessControlSettings, type QuizSettings } from '@dculus/types';
+import { requiresRespondentIdentity, type SubmissionLimitsSettings, type ResponseCopySettings, type AccessControlSettings, type QuizSettings, type SaveProgressSettings } from '@dculus/types';
 import type { EmbedSettings } from '@dculus/types/embed.js';
 import { toastSuccess, toastError } from '@dculus/ui';
 import { getErrorDetails } from '../utils/graphqlErrors';
@@ -12,6 +12,12 @@ interface FormSettingsData {
   responseCopy: ResponseCopySettings;
   accessControl: AccessControlSettings;
   collectRespondentEmail: boolean;
+  // Absent = on for identity-gated forms (see isSaveProgressEnabled). Kept
+  // absent until the owner flips it, for the same reason as `quiz` below.
+  saveProgress?: SaveProgressSettings;
+  // Absent until the owner turns them on, like saveProgress.
+  oneResponsePerRespondent?: boolean;
+  allowRespondentEdit?: boolean;
   // Absent (not `{}`) for a form that has never opened the Quiz panel — see
   // the additive guarantee in epic #289: an unrelated settings save must not
   // introduce a `quiz` key for a form that was never a quiz.
@@ -21,6 +27,11 @@ interface FormSettingsData {
   // not drop it — saves replace the whole JSON column.
   embed?: EmbedSettings;
 }
+
+/** The respondent options in Access Control; see updateRespondentOptions. */
+export type RespondentOptions = Partial<
+  Pick<FormSettingsData, 'saveProgress' | 'oneResponsePerRespondent' | 'allowRespondentEdit'>
+>;
 
 interface UseFormSettingsProps {
   formId: string | undefined;
@@ -90,6 +101,9 @@ export const useFormSettings = ({
           allowedDomains: initialSettings.accessControl?.allowedDomains ?? [],
         },
         collectRespondentEmail: initialSettings.collectRespondentEmail ?? false,
+        saveProgress: initialSettings.saveProgress ?? undefined,
+        oneResponsePerRespondent: initialSettings.oneResponsePerRespondent ?? undefined,
+        allowRespondentEdit: initialSettings.allowRespondentEdit ?? undefined,
         // Preserve absence: `initialSettings.quiz` is `null` (not present in
         // the DB), not `undefined` (GraphQL always resolves the field key) —
         // normalize both to `undefined` so a non-quiz form's state never
@@ -269,6 +283,12 @@ export const useFormSettings = ({
     );
   };
 
+  // Update what signed-in respondents can do: save and resume, respond only
+  // once, edit after submitting (saved with access control)
+  const updateRespondentOptions = (patch: RespondentOptions) => {
+    setSettings(prev => ({ ...prev, ...patch }));
+  };
+
   // Update quiz settings
   const updateQuizSettings = (quiz: QuizSettings) => {
     setSettings(prev => ({
@@ -315,6 +335,7 @@ export const useFormSettings = ({
     updateAccessControl,
     saveAccessControlSettings,
     updateCollectRespondentEmail,
+    updateRespondentOptions,
     updateQuizSettings,
     saveQuizSettings,
   };

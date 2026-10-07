@@ -168,6 +168,15 @@ describe('GridBlock', () => {
     expect(mockSetSelectedField).toHaveBeenCalledWith('g1');
   });
 
+  it('stacks its columns and hides the dividers inside the mobile device frame', () => {
+    renderBlock([30, 70]);
+    const columns = screen.getByTestId('grid-column-g1-0').parentElement!;
+    // Keyed off the frame's class in CSS, so a Desktop/Mobile toggle re-flows without a remount
+    expect(columns).toHaveClass('[grid-template-columns:var(--gc)]', '[.mobile-preview_&]:grid-cols-1');
+    expect(columns.style.getPropertyValue('--gc')).toBe('minmax(0, 30fr) minmax(0, 70fr)');
+    expect(screen.getByRole('separator')).toHaveClass('[.mobile-preview_&]:hidden');
+  });
+
   it('exposes an accessible separator per divider', () => {
     renderBlock([30, 70]);
     const divider = screen.getByRole('separator');

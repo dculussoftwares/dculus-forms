@@ -22,5 +22,9 @@
   "logicBadge": {
     "single": "{{count}} logic rule",
     "multiple": "{{count}} logic rules"
+  },
+  "grid": {
+    "expand": "Show questions in this layout",
+    "collapse": "Hide questions in this layout"
   }
 }

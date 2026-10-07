@@ -1,4 +1,4 @@
-import { FormResponse } from '@dculus/types';
+import { FormResponse, type EditType } from '@dculus/types';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { createGraphQLError } from '#graphql-errors';
 import { ResponseFilter, applyResponseFilters } from './responseFilterService.js';
@@ -8,7 +8,7 @@ import {
   canFilterAtDatabase,
   buildJoinClause,
 } from './responseQueryBuilder.js';
-import { batchLoadTagsForResponses } from './tagService.js';
+import { batchLoadTagsForResponses, PREVIEW_TAG_NAME } from './tagService.js';
 import { responseRepository, createResponseRepository } from '../repositories/index.js';
 import { withPrisma } from '../repositories/baseRepository.js';
 import { logger } from '../lib/logger.js';
@@ -16,6 +16,9 @@ import { prisma } from '../lib/prisma.js';
 import { emitResponseEdited } from '../plugins/core/events.js';
 import { Prisma } from '#prisma-client';
 
+
+/** How a response edit was made, as stored in ResponseEditHistory.editType. */
+export type ResponseEditType = `${EditType}`;
 
 export interface GetResponsesByOrganizationIdParams {
   organizationId: string;
@@ -150,9 +153,8 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
  * Count, per fieldId, how many non-deleted responses hold a non-empty value for that field.
  *
  * Used by the AI delete/convert confirmation cards to warn "used in N responses". A field's
- * answer is stored at `data[fieldId]`; we count rows where that key exists and is not null and
- * (for scalar string values) not the empty string. Array/object answers (e.g. checkbox/select)
- * count as present as long as the key exists and is non-null.
+ * answer is stored at `data[fieldId]`; we count rows where that key exists and is not null, not
+ * the empty string and not an empty array (an untouched checkbox or file upload).
  *
  * Returns a map of fieldId → count. Field ids with no responses are included with 0.
  */
@@ -174,6 +176,21 @@ export const countResponsesPerField = async (
     logger.error('Error counting responses per field:', error);
   }
   return result;
+};
+
+/**
+ * The subset of `fieldIds` that at least one non-deleted response answered. Unlike
+ * `countResponsesPerField`, a query failure propagates so callers never mistake it for
+ * "no answers".
+ */
+export const getAnsweredFieldIds = async (
+  formId: string,
+  fieldIds: string[]
+): Promise<string[]> => {
+  if (fieldIds.length === 0) return [];
+  const rows = await responseRepository.countPerFieldRaw(formId, fieldIds);
+  const answered = new Set(rows.filter((row) => Number(row.count) > 0).map((row) => row.field_id));
+  return fieldIds.filter((id) => answered.has(id));
 };
 
 /**
@@ -589,12 +606,44 @@ export const submitResponse = async (responseData: Partial<FormResponse>): Promi
 };
 
 /**
- * Atomic check-then-insert for a form's maximum-responses submission limit.
- * Uses a Serializable transaction so two concurrent submissions cannot both
- * pass the count check and both insert, exceeding the limit by one — do not
- * weaken the isolation level or split the count/insert across transactions.
+ * The responses a signed-in respondent has submitted to a form: their own,
+ * not deleted, and not builder previews (which record the previewing
+ * builder's identity on identity-gated forms).
  */
-export const submitResponseWithMaxLimitCheck = async (
+export const respondentResponsesWhere = (formId: string, respondentUserId: string): Prisma.ResponseWhereInput => ({
+  formId,
+  respondentUserId,
+  deletedAt: null,
+  tagAssignments: { none: { tag: { name: PREVIEW_TAG_NAME } } },
+});
+
+const MAX_SERIALIZABLE_ATTEMPTS = 3;
+
+/**
+ * A Serializable transaction aborted by a concurrent one. The pg driver
+ * adapter raises it as a DriverAdapterError whose cause kind names the
+ * conflict; the query engine raises P2034.
+ */
+const isSerializationFailure = (error: unknown) =>
+  (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034') ||
+  (error instanceof Error &&
+    (error.cause as { kind?: unknown } | undefined)?.kind === 'TransactionWriteConflict');
+
+export interface SubmissionLimitChecks {
+  /** The form's maximum-responses limit, when enabled. */
+  maxResponses?: number;
+  /** Reject a second response from the same signed-in respondent. */
+  onePerRespondent?: boolean;
+}
+
+/**
+ * Atomic check-then-insert for a form's submission limits (maximum
+ * responses, one response per respondent). Uses a Serializable transaction
+ * so two concurrent submissions cannot both pass a check and both insert —
+ * do not weaken the isolation level or split the checks and insert across
+ * transactions.
+ */
+export const submitResponseWithLimitChecks = async (
   responseData: {
     id: string;
     formId: string;
@@ -602,33 +651,56 @@ export const submitResponseWithMaxLimitCheck = async (
     respondentUserId: string | null;
     respondentEmail: string | null;
   },
-  maxAllowed: number
+  checks: SubmissionLimitChecks
 ): Promise<FormResponse> => {
-  const inserted = await prisma.$transaction(
-    async (tx) => {
-      const txRepo = createResponseRepository(withPrisma(tx as any));
+  const checkThenInsert = () =>
+    prisma.$transaction(
+      async (tx) => {
+        const txRepo = createResponseRepository(withPrisma(tx as any));
 
-      const currentCount = await txRepo.count({
-        where: { formId: responseData.formId },
-      });
+        if (checks.onePerRespondent && responseData.respondentUserId) {
+          const previous = await txRepo.count({
+            where: respondentResponsesWhere(responseData.formId, responseData.respondentUserId),
+          });
+          if (previous > 0) {
+            throw createGraphQLError('You have already responded to this form', GRAPHQL_ERROR_CODES.ALREADY_RESPONDED);
+          }
+        }
 
-      if (currentCount >= maxAllowed) {
-        throw createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
-      }
+        if (checks.maxResponses !== undefined) {
+          const currentCount = await txRepo.count({
+            where: { formId: responseData.formId },
+          });
+          if (currentCount >= checks.maxResponses) {
+            throw createGraphQLError('Form has reached its maximum response limit', GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
+          }
+        }
 
-      // Insert atomically within the same transaction
-      return txRepo.create({
-        data: {
-          id: responseData.id,
-          formId: responseData.formId,
-          data: responseData.data,
-          respondentUserId: responseData.respondentUserId,
-          respondentEmail: responseData.respondentEmail,
-        },
-      });
-    },
-    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
-  );
+        // Insert atomically within the same transaction
+        return txRepo.create({
+          data: {
+            id: responseData.id,
+            formId: responseData.formId,
+            data: responseData.data,
+            respondentUserId: responseData.respondentUserId,
+            respondentEmail: responseData.respondentEmail,
+          },
+        });
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
+
+  // Concurrent submits can abort each other under Serializable isolation.
+  // Re-running is safe: the retry sees the committed row, so it
+  // either inserts or reports the limit it now hits.
+  let inserted: Awaited<ReturnType<typeof checkThenInsert>> | undefined;
+  for (let attempt = 1; !inserted; attempt++) {
+    try {
+      inserted = await checkThenInsert();
+    } catch (error) {
+      if (!isSerializationFailure(error) || attempt >= MAX_SERIALIZABLE_ATTEMPTS) throw error;
+    }
+  }
 
   return {
     id: inserted.id,
@@ -650,7 +722,7 @@ export const updateResponse = async (
     editReason?: string;
     /** Required to emit response.edited (#201) — the resolver already has form.organizationId. */
     organizationId?: string;
-    editType?: 'MANUAL' | 'SYSTEM' | 'BULK';
+    editType?: ResponseEditType;
     /**
      * Set by automation action handlers (none exist yet) when an action edits a response —
      * propagated onto the emitted response.edited event so the automation trigger service

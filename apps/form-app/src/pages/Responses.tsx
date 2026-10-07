@@ -27,7 +27,7 @@ import { ResponseDetailPanel } from '../components/Responses/ResponseDetailPanel
 import { GradeDetailDrawer } from '../components/Responses/GradeDetailDrawer';
 import { useResponsesState } from '../hooks/useResponsesState';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
-import { GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS, GET_RESPONSE_BY_ID } from '../graphql/queries';
+import { GET_ANSWERED_FIELD_IDS, GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS, GET_RESPONSE_BY_ID } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
 import { GET_PDF_GENERATORS } from '../graphql/pdfGenerators';
 import {
@@ -172,10 +172,43 @@ const Responses: React.FC = () => {
     setSearchParams(next, { replace: true });
   }, [actualFormId, linkedResponseId, linkedResponseLoading, linkedResponseData]);
 
+  const { fillableFields, deletedFieldIds } = useMemo(() => {
+    const fields: FillableFormField[] = [];
+    const deletedIds: string[] = [];
+    if (formData?.form?.formSchema) {
+      const formSchema: FormSchema = deserializeFormSchema(formData.form.formSchema);
+      formSchema.pages.forEach((page) => {
+        page.fields.forEach((field) => {
+          if (!(field instanceof FillableFormField)) return;
+          if (field.deleted) deletedIds.push(field.id);
+          else fields.push(field);
+        });
+      });
+    }
+    return { fillableFields: fields, deletedFieldIds: deletedIds };
+  }, [formData]);
+
+  // Deleted fields only keep a column when some response (on any page) answered them.
+  const {
+    data: answeredFieldIdsData,
+    loading: answeredFieldIdsLoading,
+    refetch: refetchAnsweredFieldIds,
+  } = useQuery(GET_ANSWERED_FIELD_IDS, {
+    variables: { formId: actualFormId, fieldIds: deletedFieldIds },
+    skip: !actualFormId || deletedFieldIds.length === 0,
+    fetchPolicy: 'cache-and-network',
+  });
+  const answeredDeletedFieldIds = useMemo<ReadonlySet<string> | undefined>(() => {
+    if (deletedFieldIds.length === 0) return new Set();
+    const ids: string[] | undefined = answeredFieldIdsData?.answeredFieldIds;
+    return ids ? new Set(ids) : undefined;
+  }, [deletedFieldIds, answeredFieldIdsData]);
+
   const handleBulkDelete = async () => {
     if (!actualFormId) return;
     try {
       await responsesState.handleBulkDelete(actualFormId);
+      if (deletedFieldIds.length > 0) void refetchAnsweredFieldIds();
       toastSuccess(t('toolbar.bulkActions.deleteSuccess'));
     } catch {
       toastError(t('toolbar.bulkActions.deleteError'));
@@ -220,6 +253,10 @@ const Responses: React.FC = () => {
         quizEnabled,
       },
     },
+    // Removing responses can leave a deleted field with no answers left.
+    ...(deletedFieldIds.length > 0
+      ? [{ query: GET_ANSWERED_FIELD_IDS, variables: { formId: actualFormId, fieldIds: deletedFieldIds } }]
+      : []),
   ];
 
   const [deleteResponseMutation] = useMutation(DELETE_RESPONSE, {
@@ -318,18 +355,6 @@ const Responses: React.FC = () => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const fillableFields = useMemo(() => {
-    if (!formData?.form?.formSchema) return [];
-    const formSchema: FormSchema = deserializeFormSchema(formData.form.formSchema);
-    const fields: FillableFormField[] = [];
-    formSchema.pages.forEach((page) => {
-      page.fields.forEach((field) => {
-        if (field instanceof FillableFormField && !field.deleted) fields.push(field);
-      });
-    });
-    return fields;
-  }, [formData]);
-
   // Response meta-filters (beyond form fields): quiz grade, submission analytics, respondent
   // identity, edit history, completeness, and — one per configured generator — PDF
   // generation status. Gated by quizEnabled / enabledPdfGenerators, both already loaded above.
@@ -354,6 +379,7 @@ const Responses: React.FC = () => {
       formTags: userFormTags,
       generators: enabledPdfGenerators,
       responses,
+      answeredDeletedFieldIds,
       showRespondentEmail: !!(
         formData?.form?.settings?.accessControl?.enabled ||
         formData?.form?.settings?.collectRespondentEmail
@@ -367,7 +393,7 @@ const Responses: React.FC = () => {
       onDeleteResponse: handleDeleteResponse,
       t,
     }),
-    [formData, pluginsData, formTags, enabledPdfGenerators, locale, actualFormId, responses, quizEnabled, quizGradeRelease, t]
+    [formData, pluginsData, formTags, enabledPdfGenerators, locale, actualFormId, responses, answeredDeletedFieldIds, quizEnabled, quizGradeRelease, t]
   );
 
   // Apply stored column order: fixed cols keep their positions; hideable cols are reordered
@@ -392,7 +418,11 @@ const Responses: React.FC = () => {
   // are not found in the (empty) schema, causing them to show as "Unknown field (deleted)".
   // Once we've received data at least once, previousData covers refetches (filter/sort/page
   // changes) so this only gates the true first load — not every subsequent query.
-  const loading = formLoading || (responsesLoading && !responsesData && !previousResponsesData);
+  // Deleted-field answers gate the first load too, so unanswered deleted columns never flash in.
+  const loading =
+    formLoading ||
+    (responsesLoading && !responsesData && !previousResponsesData) ||
+    (answeredFieldIdsLoading && !answeredFieldIdsData);
   const error = formError || responsesError;
   const responsePagination = responsesData?.responsesByForm ?? previousResponsesData?.responsesByForm;
 

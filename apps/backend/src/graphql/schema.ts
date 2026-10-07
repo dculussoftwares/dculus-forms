@@ -166,8 +166,46 @@ export const typeDefs = gql`
     responseCopy: ResponseCopySettings
     accessControl: AccessControlSettings
     collectRespondentEmail: Boolean
+    saveProgress: SaveProgressSettings
+    # Identity-gated forms only: each signed-in respondent may submit once.
+    oneResponsePerRespondent: Boolean
+    # Identity-gated, non-quiz forms only: respondents may edit their latest response.
+    allowRespondentEdit: Boolean
     quiz: QuizSettings
     embed: EmbedSettings
+  }
+
+  # Save-and-resume for signed-in respondents. Absent = enabled whenever the
+  # form captures respondent identity (sign-in or verified email).
+  type SaveProgressSettings {
+    enabled: Boolean!
+  }
+
+  # A signed-in respondent's own in-progress answers for one form.
+  type ResponseDraft {
+    data: JSON!
+    currentPageId: String
+    # Optimistic-concurrency token: pass it back as baseVersion on the next save.
+    version: Int!
+    startedAt: String!
+    updatedAt: String!
+  }
+
+  # A signed-in respondent's own latest submission to an identity-gated form.
+  type MyResponse {
+    id: ID!
+    data: JSON!
+    submittedAt: String!
+    # The form currently lets the respondent edit this response.
+    canEdit: Boolean!
+  }
+
+  type SaveResponseDraftResult {
+    # Null only on a conflict where the draft was submitted or discarded elsewhere.
+    draft: ResponseDraft
+    # True when another tab or device saved, submitted or discarded first;
+    # nothing was written, so the client can offer to keep either copy.
+    conflict: Boolean!
   }
 
   # Whether the current requester can see the form's real content.
@@ -201,6 +239,16 @@ export const typeDefs = gql`
     # e.g. their Google avatar), or null. Same scoping as respondentEmail —
     # purely cosmetic for the account chip.
     respondentImage: String
+    # The signed-in respondent's OWN saved draft, or null. Only resolved when
+    # the caller could submit this form right now and save-and-resume is on.
+    myDraft: ResponseDraft
+    # The signed-in respondent's OWN latest response, or null. Same scoping
+    # as myDraft; always null on forms that don't capture respondent identity.
+    myResponse: MyResponse
+    # Set only on a form that no longer accepts new responses (an error code
+    # such as FORM_CLOSED or MAX_RESPONSES_REACHED) but still opens for a
+    # signed-in respondent who already responded, so they can see their answers.
+    closedReason: String
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!
@@ -397,6 +445,7 @@ export const typeDefs = gql`
     MANUAL
     SYSTEM
     BULK
+    RESPONDENT
   }
 
   enum ChangeType {
@@ -523,8 +572,28 @@ export const typeDefs = gql`
     responseCopy: ResponseCopySettingsInput
     accessControl: AccessControlSettingsInput
     collectRespondentEmail: Boolean
+    saveProgress: SaveProgressSettingsInput
+    oneResponsePerRespondent: Boolean
+    allowRespondentEdit: Boolean
     quiz: QuizSettingsInput
     embed: EmbedSettingsInput
+  }
+
+  input SaveProgressSettingsInput {
+    enabled: Boolean!
+  }
+
+  input EditMyResponseInput {
+    formId: ID!
+    data: JSON!
+  }
+
+  input SaveResponseDraftInput {
+    formId: ID!
+    data: JSON!
+    currentPageId: String
+    # The version this client last saw; null on its first save.
+    baseVersion: Int
   }
 
   input UpdateFormInput {
@@ -1465,6 +1534,10 @@ export const typeDefs = gql`
     # doesn't support suggestions (form fields, or a meta field with no natural value set).
     distinctResponseFieldValues(formId: ID!, fieldId: String!, search: String, limit: Int = 20): [String!]!
 
+    # The subset of fieldIds that at least one live response answered (not null, "" or []).
+    # The responses table uses it to hide deleted-field columns nobody ever answered.
+    answeredFieldIds(formId: ID!, fieldIds: [ID!]!): [ID!]!
+
     # Native Quiz (epic #289, Story 16/#320, D9): lets a signed-in respondent
     # retrieve their OWN deferred-release quiz grade later. Auth-only —
     # deliberately no form-permission check; see resolver for why.
@@ -1700,6 +1773,9 @@ export const typeDefs = gql`
     regenerateShortUrl(id: ID!): Form!
     duplicateForm(id: ID!): Form!
     submitResponse(input: SubmitResponseInput!): FormResponse!
+    saveResponseDraft(input: SaveResponseDraftInput!): SaveResponseDraftResult!
+    discardResponseDraft(formId: ID!): Boolean!
+    editMyResponse(input: EditMyResponseInput!): MyResponse!
     updateResponse(input: UpdateResponseInput!): FormResponse!
     deleteResponse(id: ID!): Boolean!
     deleteResponses(formId: ID!, ids: [ID!]!): Boolean!

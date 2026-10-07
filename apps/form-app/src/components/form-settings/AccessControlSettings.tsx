@@ -6,9 +6,10 @@ import {
   Input,
   toastError,
 } from '@dculus/ui';
-import { Lock, Save, Globe2, Mail } from 'lucide-react';
+import { Lock, Save, Globe2, Mail, History, UserCheck, PencilLine, type LucideIcon } from 'lucide-react';
 import type { AccessControlSettings as AccessControlSettingsType } from '@dculus/types';
 import { useTranslation } from '../../hooks/useTranslation';
+import type { RespondentOptions } from '../../hooks/useFormSettings';
 
 interface AccessControlSettingsProps {
   settings: AccessControlSettingsType;
@@ -16,8 +17,48 @@ interface AccessControlSettingsProps {
   isSaving: boolean;
   onUpdate: (accessControl: AccessControlSettingsType) => void;
   onUpdateCollectRespondentEmail: (collectRespondentEmail: boolean) => void;
+  /** Effective values; saveProgress is on for identity-gated forms unless turned off. */
+  respondentOptions: { saveProgress: boolean; oneResponsePerRespondent: boolean; allowRespondentEdit: boolean };
+  /** Quiz forms never allow respondent edits (see isRespondentEditEnabled). */
+  isQuiz: boolean;
+  onUpdateRespondentOptions: (patch: RespondentOptions) => void;
   onSave: () => void;
 }
+
+interface RespondentOptionRowProps {
+  id: string;
+  icon: LucideIcon;
+  iconBackground: string;
+  title: string;
+  description: string;
+  checked: boolean;
+  disabled?: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}
+
+const RespondentOptionRow: React.FC<RespondentOptionRowProps> = ({
+  id,
+  icon: Icon,
+  iconBackground,
+  title,
+  description,
+  checked,
+  disabled,
+  onCheckedChange,
+}) => (
+  <div className="flex items-center gap-3 p-4">
+    <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: iconBackground }}>
+      <Icon className="h-4 w-4" style={{ color: 'var(--tf-dark)' }} />
+    </div>
+    <div className="flex-1 min-w-0">
+      <Label htmlFor={id} className="text-sm font-medium text-primary cursor-pointer">
+        {title}
+      </Label>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+    <Switch id={id} data-testid={`${id}-checkbox`} checked={checked} disabled={disabled} onCheckedChange={onCheckedChange} />
+  </div>
+);
 
 // Same shape as email addresses' domain part — no leading "@", must contain a dot.
 const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
@@ -28,6 +69,9 @@ const AccessControlSettings: React.FC<AccessControlSettingsProps> = ({
   isSaving,
   onUpdate,
   onUpdateCollectRespondentEmail,
+  respondentOptions,
+  isQuiz,
+  onUpdateRespondentOptions,
   onSave,
 }) => {
   const { t } = useTranslation('accessControlSettings');
@@ -149,6 +193,43 @@ const AccessControlSettings: React.FC<AccessControlSettingsProps> = ({
           />
         </div>
       </div>
+
+      {/* Respondent options — only meaningful when respondents are signed in */}
+      {(settings.enabled || collectRespondentEmail) && (
+        <div
+          className="rounded-xl bg-white dark:bg-card divide-y divide-[var(--tf-border-light)]"
+          style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
+        >
+          <RespondentOptionRow
+            id="save-progress"
+            icon={History}
+            iconBackground="var(--tf-icon-teal)"
+            title={t('saveProgress.title')}
+            description={t('saveProgress.description')}
+            checked={respondentOptions.saveProgress}
+            onCheckedChange={(enabled) => onUpdateRespondentOptions({ saveProgress: { enabled } })}
+          />
+          <RespondentOptionRow
+            id="one-response-per-respondent"
+            icon={UserCheck}
+            iconBackground="var(--tf-icon-lavender)"
+            title={t('oneResponsePerRespondent.title')}
+            description={t('oneResponsePerRespondent.description')}
+            checked={respondentOptions.oneResponsePerRespondent}
+            onCheckedChange={(oneResponsePerRespondent) => onUpdateRespondentOptions({ oneResponsePerRespondent })}
+          />
+          <RespondentOptionRow
+            id="allow-respondent-edit"
+            icon={PencilLine}
+            iconBackground="var(--tf-icon-salmon)"
+            title={t('allowRespondentEdit.title')}
+            description={isQuiz ? t('allowRespondentEdit.unavailableForQuiz') : t('allowRespondentEdit.description')}
+            checked={respondentOptions.allowRespondentEdit && !isQuiz}
+            disabled={isQuiz}
+            onCheckedChange={(allowRespondentEdit) => onUpdateRespondentOptions({ allowRespondentEdit })}
+          />
+        </div>
+      )}
 
       <div>
         <Button onClick={handleSave} disabled={isSaving} data-testid="save-access-control-button">

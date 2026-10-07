@@ -3,6 +3,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { countQuestionFields } from '@dculus/types';
 import { Button, ScrollArea } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { Plus, PanelLeft, PartyPopper } from 'lucide-react';
@@ -34,7 +35,7 @@ export const JourneyRail: React.FC = () => {
     let running = 1;
     for (const page of pages) {
       numbers.push(running);
-      running += page.fields.length;
+      running += countQuestionFields(page.fields);
     }
     return numbers;
   }, [pages]);

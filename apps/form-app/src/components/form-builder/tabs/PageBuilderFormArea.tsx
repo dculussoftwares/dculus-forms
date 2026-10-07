@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { ScrollArea, Button, toast } from '@dculus/ui';
-import { FormPage, FormField, FieldType, buildPageTree, pageHasGrid } from '@dculus/types';
+import { FormPage, FormField, FieldType, buildPageTree, countQuestionFields, isLayoutField, pageHasGrid } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { Plus } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
@@ -14,6 +14,8 @@ import { FieldPickerPopover } from '../field-library/FieldPickerPopover';
 import { getFieldTypesConfig } from '../FieldTypesPanel';
 import { recordRecentFieldType } from '../field-library/fieldLibraryStorage';
 import { isTypingTarget } from '../../../utils/isTypingTarget';
+import { adjacentColumnTarget, horizontalNeighbour, verticalNeighbour, type Step } from './gridNavigation';
+import { useDeleteGridWithUndo } from './useDeleteGridWithUndo';
 
 // =============================================================================
 // ConnectionStatus
@@ -398,14 +400,17 @@ export const PageHeader: React.FC<{
     );
   }
 
+  const questionCount = countQuestionFields(selectedPage.fields);
+
   return (
     <div className="mb-4 flex items-baseline gap-3">
       <h1 className="text-xl font-semibold text-[#3c323e] dark:text-white">
         {selectedPage.title || t('formArea.untitledPage')}
       </h1>
       <span className="text-xs text-[#655d67] dark:text-gray-400">
-        {selectedPage.fields.length}{' '}
-        {selectedPage.fields.length === 1 ? 'field' : 'fields'}
+        {t(questionCount === 1 ? 'formArea.fieldCount' : 'formArea.fieldCount_plural', {
+          values: { count: questionCount },
+        })}
       </span>
     </div>
   );
@@ -434,13 +439,47 @@ export const FormArea: React.FC<{
     removeField,
     restoreField,
     duplicateField,
+    duplicateGrid,
     reorderFields,
+    placeField,
   } = useFormBuilderStore();
+  const deleteGridWithUndo = useDeleteGridWithUndo(permissions.canEditFields());
   const selectedPage = pages.find((p) => p.id === selectedPageId);
 
   // Canvas Keyboard Shortcuts (Cmd+D to duplicate, Delete/Backspace with undo, Arrow nav, Alt+Arrow reorder)
   useEffect(() => {
     if (!permissions.canEditFields() || !selectedPage || !selectedFieldId) return;
+
+    const hasGrid = pageHasGrid(selectedPage.fields);
+    const arrowStep = (key: string): Step | undefined =>
+      key === 'ArrowUp' || key === 'ArrowLeft' ? -1 : key === 'ArrowDown' || key === 'ArrowRight' ? 1 : undefined;
+
+    /** Arrow keys on a grid page (§8.7). Returns true when the key was handled. */
+    const handleGridArrowKeys = (e: KeyboardEvent, fieldId: string): boolean => {
+      const step = arrowStep(e.key);
+      if (step === undefined || e.metaKey || e.ctrlKey || e.shiftKey) return false;
+      const horizontal = e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+
+      if (e.altKey) {
+        // Alt+↑/↓ fall through to reorderFields, whose grid branch owns the column-edge semantics (D10)
+        if (!horizontal) return false;
+        const target = adjacentColumnTarget(selectedPage.fields, fieldId, step);
+        if (target) {
+          e.preventDefault();
+          placeField({ pageId: selectedPage.id, fieldId, target });
+        }
+        return true;
+      }
+
+      const next = horizontal
+        ? horizontalNeighbour(selectedPage.fields, fieldId, step)
+        : verticalNeighbour(selectedPage.fields, fieldId, step);
+      if (next) {
+        e.preventDefault();
+        setSelectedField(next);
+      }
+      return true;
+    };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
@@ -456,6 +495,10 @@ export const FormArea: React.FC<{
           return;
         }
         e.preventDefault();
+        if (isLayoutField(currentField)) {
+          deleteGridWithUndo(selectedPage.id, currentField.id);
+          return;
+        }
         const removed = removeField(selectedPage.id, currentField.id);
         if (removed !== false) {
           setSelectedField(null);
@@ -478,9 +521,17 @@ export const FormArea: React.FC<{
       // Cmd+D / Ctrl+D: duplicate field
       if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
         e.preventDefault();
+        if (isLayoutField(currentField)) {
+          const newId = duplicateGrid(selectedPage.id, currentField.id);
+          if (newId) setSelectedField(newId);
+          return;
+        }
         duplicateField(selectedPage.id, currentField.id);
         return;
       }
+
+      // Grid pages walk the layout tree; grid-less pages keep the flat-list behaviour below unchanged
+      if (hasGrid && handleGridArrowKeys(e, currentField.id)) return;
 
       // Alt+Up / Alt+Down: reorder field
       if (e.altKey && e.key === 'ArrowUp') {
@@ -520,7 +571,10 @@ export const FormArea: React.FC<{
     setSelectedField,
     restoreField,
     duplicateField,
+    duplicateGrid,
     reorderFields,
+    placeField,
+    deleteGridWithUndo,
     t,
   ]);
 
@@ -536,7 +590,10 @@ export const FormArea: React.FC<{
 
   return (
     <div className="flex h-full flex-col min-h-0 bg-[var(--tf-faint)] dark:bg-background">
-      <ScrollArea className="min-h-0 flex-1">
+      {/* Radix sizes the viewport's content box as `display: table`, which grows to the content's
+          intrinsic width instead of the canvas width, so in the 390px phone frame the page card
+          spilled past the frame's right edge. A block box keeps the content at the canvas width. */}
+      <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <div className="p-6 pb-36">
           <div className="max-w-3xl mx-auto">
             {/* Page Header */}

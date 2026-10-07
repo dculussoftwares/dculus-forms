@@ -291,7 +291,7 @@ export const FieldCard: React.FC<{
           <div className="flex items-center gap-1.5 min-w-0">
             {isCompact ? (
               <span
-                className="text-xs font-semibold text-[#3c323e] dark:text-white truncate"
+                className="min-w-0 text-xs font-semibold leading-snug text-[#3c323e] dark:text-white line-clamp-2 break-words [overflow-wrap:anywhere]"
                 title={label}
               >
                 {label}
@@ -455,7 +455,7 @@ export const FieldCard: React.FC<{
                       role={onUpdateLabel ? 'button' : undefined}
                       tabIndex={onUpdateLabel ? 0 : undefined}
                       className={cn(
-                        'text-sm font-medium flex items-center gap-1.5 text-[#4c414e] dark:text-white group/label cursor-text mb-2',
+                        'text-sm font-medium flex items-start gap-1.5 text-[#4c414e] dark:text-white group/label cursor-text mb-2',
                         onUpdateLabel && 'hover:underline decoration-dashed decoration-gray-400 underline-offset-2 focus:outline-none focus:ring-1 focus:ring-primary rounded px-0.5'
                       )}
                       onClick={(e) => {
@@ -477,7 +477,7 @@ export const FieldCard: React.FC<{
                           : undefined
                       }
                     >
-                      <span className="truncate">{label}</span>
+                      <span className="min-w-0 leading-snug break-words [overflow-wrap:anywhere]">{label}</span>
                       {isRequired && (
                         <span
                           className="text-[#ce5d55] text-sm flex-shrink-0"
@@ -487,7 +487,7 @@ export const FieldCard: React.FC<{
                         </span>
                       )}
                       {onUpdateLabel && (
-                        <Pencil className="w-3 h-3 text-[#655d67] opacity-0 group-hover/label:opacity-100 transition-opacity ml-0.5" />
+                        <Pencil className="w-3 h-3 mt-1 flex-shrink-0 text-[#655d67] opacity-0 group-hover/label:opacity-100 transition-opacity ml-0.5" />
                       )}
                     </div>
                   )
