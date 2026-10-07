@@ -14,7 +14,7 @@ import { generateId } from '@dculus/utils';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import { createFormFile } from '../../services/formFileService.js';
-import { getResponseCount, countAllResponses, getDashboardResponseCounts } from '../../services/responseService.js';
+import { getResponseCount, getDashboardResponseCounts } from '../../services/responseService.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { randomUUID } from 'crypto';
 import { createGraphQLError } from '#graphql-errors';
@@ -22,7 +22,6 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { sanitizeQuizSettings, type FormSettings } from '@dculus/types';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
-import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { resolveAccessStatus, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
 
 // Sibling field resolvers on `Form` only see the raw `parent` DB row, not
@@ -78,25 +77,6 @@ export const formsResolvers = {
       const usageExceeded = await checkUsageExceeded(form.organizationId);
       if (usageExceeded.viewsExceeded) {
         throw createGraphQLError("Form view limit exceeded for this organization's subscription plan", GRAPHQL_ERROR_CODES.VIEW_LIMIT_EXCEEDED);
-      }
-
-      // Check submission limits
-      if (form.settings?.submissionLimits) {
-        const limits = form.settings.submissionLimits;
-
-        // Check maximum responses limit
-        if (limits.maxResponses?.enabled) {
-          const currentResponseCount = await countAllResponses(form.id);
-
-          if (currentResponseCount >= limits.maxResponses.limit) {
-            throw createGraphQLError("Form has reached its maximum response limit", GRAPHQL_ERROR_CODES.MAX_RESPONSES_REACHED);
-          }
-        }
-
-        // Check time window limits
-        if (limits.timeWindow) {
-          enforceTimeWindow(limits.timeWindow);
-        }
       }
 
       return form;
