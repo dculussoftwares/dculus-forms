@@ -5,6 +5,7 @@
     "dragHandle": "Drag to move layout",
     "settings": "Layout settings",
     "duplicate": "Duplicate layout",
+    "moveOrCopy": "Move or copy layout to another page",
     "delete": "Delete layout",
     "emptyColumn": "Drag and drop fields here",
     "columnAriaLabel": "Column {{index}} of {{total}}",

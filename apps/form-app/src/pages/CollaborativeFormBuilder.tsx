@@ -24,7 +24,7 @@ import {
   FieldTypeDisplay,
   type FieldTypeConfig,
 } from '../components/form-builder/FieldTypesPanel';
-import { FormField } from '@dculus/types';
+import { FormField, countQuestionFields } from '@dculus/types';
 import { FormBuilderHeader, CompactFieldCard } from '@/components/form-builder';
 import { LoadingState } from '../components/form-builder/LoadingState';
 import { ErrorState } from '../components/form-builder/ErrorState';
@@ -219,7 +219,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
 
   // Builder rail health badges — Build field count, Logic circular-ref warning. See #167.
   const totalFieldCount = useMemo(
-    () => pages.reduce((sum, p) => sum + p.fields.length, 0),
+    () => pages.reduce((sum, p) => sum + countQuestionFields(p.fields), 0),
     [pages]
   );
   const circularRuleIds = useConditionCycles(conditions, pages);

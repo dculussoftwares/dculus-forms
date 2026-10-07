@@ -1,5 +1,5 @@
 import React from 'react';
-import { FormPage } from '@dculus/types';
+import { FormPage, countQuestionFields } from '@dculus/types';
 import {
   Button,
   DropdownMenu,
@@ -69,8 +69,8 @@ export const PageActionsSelector: React.FC<PageActionsSelectorProps> = ({
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {page.fields.length}{' '}
-                    {page.fields.length === 1
+                    {countQuestionFields(page.fields)}{' '}
+                    {countQuestionFields(page.fields) === 1
                       ? t('fieldCount.singular')
                       : t('fieldCount.plural')}
                   </div>

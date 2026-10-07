@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { ScrollArea, Button, toast } from '@dculus/ui';
-import { FormPage, FormField, FieldType, buildPageTree, isLayoutField, pageHasGrid } from '@dculus/types';
+import { FormPage, FormField, FieldType, buildPageTree, countQuestionFields, isLayoutField, pageHasGrid } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { Plus } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
@@ -400,14 +400,17 @@ export const PageHeader: React.FC<{
     );
   }
 
+  const questionCount = countQuestionFields(selectedPage.fields);
+
   return (
     <div className="mb-4 flex items-baseline gap-3">
       <h1 className="text-xl font-semibold text-[#3c323e] dark:text-white">
         {selectedPage.title || t('formArea.untitledPage')}
       </h1>
       <span className="text-xs text-[#655d67] dark:text-gray-400">
-        {selectedPage.fields.length}{' '}
-        {selectedPage.fields.length === 1 ? 'field' : 'fields'}
+        {t(questionCount === 1 ? 'formArea.fieldCount' : 'formArea.fieldCount_plural', {
+          values: { count: questionCount },
+        })}
       </span>
     </div>
   );

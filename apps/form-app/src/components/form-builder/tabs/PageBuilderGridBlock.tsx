@@ -11,11 +11,12 @@ import {
 } from '@dculus/types';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
-import { Columns2, Copy, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
+import { ArrowRightLeft, Columns2, Copy, GripVertical, Plus, Settings, Trash2 } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { FieldPickerPopover } from '../field-library/FieldPickerPopover';
+import { PageActionsSelector } from '../PageActionsSelector';
 import { DraggableFieldCard } from './PageBuilderFieldCard';
 import { GRID_COLUMN_DROPPABLE, GRID_DROP_PRIORITY, GRID_SLOT_DROPPABLE } from './gridCollision';
 import { useDeleteGridWithUndo } from './useDeleteGridWithUndo';
@@ -357,6 +358,9 @@ export const GridBlock: React.FC<GridBlockProps> = ({
     setSelectedField,
     setGridColumnWidths,
     duplicateGrid,
+    pages,
+    moveFieldBetweenPages,
+    copyFieldToPage,
   } = useFormBuilderStore();
   const deleteGridWithUndo = useDeleteGridWithUndo(canEdit);
   const activeIsGrid = useActiveIsGrid();
@@ -484,6 +488,25 @@ export const GridBlock: React.FC<GridBlockProps> = ({
               >
                 <Copy className="w-4 h-4" />
               </Button>
+              {/* The store's grid branches move or copy the whole block, questions included (§7.4) */}
+              <PageActionsSelector
+                pages={pages ?? []}
+                currentPageId={pageId}
+                onMoveToPage={(targetPageId) => moveFieldBetweenPages(pageId, targetPageId, grid.id)}
+                onCopyToPage={(targetPageId) => copyFieldToPage(pageId, targetPageId, grid.id)}
+                triggerElement={
+                  <Button
+                    variant="ghost"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-lg h-auto"
+                    title={t('block.moveOrCopy')}
+                    aria-label={t('block.moveOrCopy')}
+                    data-testid={`grid-page-actions-button-${grid.id}`}
+                  >
+                    <ArrowRightLeft className="w-4 h-4" />
+                  </Button>
+                }
+              />
               <Button
                 variant="ghost"
                 onClick={handleDelete}
