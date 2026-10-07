@@ -74,6 +74,8 @@ jest.mock('@dculus/ui', () => {
   const omit = (obj: Record<string, unknown>, keys: string[]) =>
     Object.fromEntries(Object.entries(obj).filter(([key]) => !keys.includes(key)));
   return {
+    // The real responsive class map, so the tests see the same stacking breakpoints as the viewer
+    ...jest.requireActual('../../../../../../../packages/ui/src/renderers/gridLayoutClasses'),
     Button: ({ children, ...props }: any) =>
       React.createElement('button', omit(props, ['variant', 'size']), children),
     toast: (...args: unknown[]) => mockToast(...args),
@@ -166,6 +168,16 @@ describe('GridBlock', () => {
     renderBlock();
     fireEvent.click(screen.getByTestId('grid-block-g1'));
     expect(mockSetSelectedField).toHaveBeenCalledWith('g1');
+  });
+
+  it('stacks its columns in a narrow container, like the viewer, and hides dividers there', () => {
+    renderBlock([30, 70]);
+    const columns = screen.getByTestId('grid-column-g1-0').parentElement!;
+    // Container queries re-flow live when the canvas switches to the phone frame (no remount needed)
+    expect(columns.parentElement).toHaveClass('@container');
+    expect(columns).toHaveClass('grid-cols-1', '@md:[grid-template-columns:var(--gc)]');
+    expect(columns.style.getPropertyValue('--gc')).toBe('minmax(0, 30fr) minmax(0, 70fr)');
+    expect(screen.getByRole('separator')).toHaveClass('hidden', '@md:flex');
   });
 
   it('exposes an accessible separator per divider', () => {

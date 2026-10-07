@@ -590,7 +590,10 @@ export const FormArea: React.FC<{
 
   return (
     <div className="flex h-full flex-col min-h-0 bg-[var(--tf-faint)] dark:bg-background">
-      <ScrollArea className="min-h-0 flex-1">
+      {/* Radix sizes the viewport's content box as `display: table`, which grows to the content's
+          intrinsic width instead of the canvas width, so in the 390px phone frame the page card
+          spilled past the frame's right edge. A block box keeps the content at the canvas width. */}
+      <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <div className="p-6 pb-36">
           <div className="max-w-3xl mx-auto">
             {/* Page Header */}

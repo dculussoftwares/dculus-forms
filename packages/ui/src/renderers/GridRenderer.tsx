@@ -9,17 +9,9 @@ import type { Control, FieldValues } from 'react-hook-form';
 import { visibleColumns, type PageNode } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { FormFieldRenderer } from './FormFieldRenderer';
+import { GRID_COLUMNS_CLASS_BY_COUNT, gridTemplateColumns } from './gridLayoutClasses';
 
 type GridNode = Extract<PageNode, { kind: 'grid' }>;
-
-// Literal strings so Tailwind's scanner sees every class (interpolated classes are not generated).
-// gap-4 also spaces columns once they stack, matching the page's space-y-4 between fields.
-const GRID_CLASS_BY_COLUMN_COUNT: Record<number, string> = {
-  1: 'grid grid-cols-1',
-  2: 'grid grid-cols-1 gap-4 @md:[grid-template-columns:var(--gc)]',
-  3: 'grid grid-cols-1 gap-4 @lg:[grid-template-columns:var(--gc)]',
-  4: 'grid grid-cols-1 gap-4 @xl:[grid-template-columns:var(--gc)]',
-};
 
 const COLUMN_CLASS = 'min-w-0 space-y-4';
 
@@ -55,13 +47,11 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     />
   );
 
-  const templateColumns = columns.map((column) => `minmax(0, ${column.widthPercent}fr)`).join(' ');
-
   return (
     <div className="@container w-full" data-testid={`viewer-grid-${gridId}`}>
       <div
-        className={GRID_CLASS_BY_COLUMN_COUNT[columns.length]}
-        style={{ '--gc': templateColumns } as React.CSSProperties}
+        className={GRID_COLUMNS_CLASS_BY_COUNT[columns.length]}
+        style={{ '--gc': gridTemplateColumns(columns.map((column) => column.widthPercent)) } as React.CSSProperties}
       >
         {columns.map((column, index) => (
           <div
