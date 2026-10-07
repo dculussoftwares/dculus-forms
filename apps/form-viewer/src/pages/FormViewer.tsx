@@ -1,9 +1,9 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { CombinedGraphQLErrors } from '@apollo/client';
 import { Button, FormRenderer, useFormResponseStore, LoadingSpinner } from '@dculus/ui';
-import { deserializeFormSchema, extractEmailFields, FieldType } from '@dculus/types';
+import { deserializeFormSchema, extractEmailFields, FieldType, isSaveProgressEnabled } from '@dculus/types';
 import type { RespondentGradeView } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE } from '../graphql/queries';
@@ -24,6 +24,9 @@ import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
 import RespondentBadge from '../components/RespondentBadge';
 import { signOut } from '../lib/auth-client';
+import DraftNotice, { DraftSaveStatusText } from '../components/DraftNotice';
+import { useResponseDraft, type ResponseDraft } from '../hooks/useResponseDraft';
+import { buildDraftPageResponses, resolveResumePageId } from '../lib/draftData';
 
 const SUBMISSION_TIMEOUT_MS = 30_000;
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB — matches backend multer limit
@@ -164,6 +167,72 @@ const FormViewer: React.FC<FormViewerProps> = ({
     [rawSchema]
   );
 
+  // Save-and-resume (signed-in respondents on identity-gated forms). The
+  // draft is applied to the response store once per form + account, before
+  // FormRenderer mounts, so every page initialises from the restored answers.
+  const loadedForm = data?.formByShortUrl;
+  const draftsEnabled =
+    !!formSchema &&
+    loadedForm?.accessStatus === 'OPEN' &&
+    !!loadedForm?.respondentEmail &&
+    isSaveProgressEnabled(loadedForm?.settings);
+  const draftSessionKey = draftsEnabled ? `${loadedForm.id}:${loadedForm.respondentEmail}` : null;
+  const [restoredSessionKey, setRestoredSessionKey] = useState<string | null>(null);
+  const [resumePageId, setResumePageId] = useState<string | undefined>(undefined);
+  const [restoredAt, setRestoredAt] = useState<string | null>(null);
+  // Bumped to remount FormRenderer when its answers are replaced wholesale
+  // ("Start over", or taking another device's copy after a conflict).
+  const [rendererKey, setRendererKey] = useState(0);
+  const draftStartedAtRef = useRef<string | null>(null);
+  const isDraftReady = !draftSessionKey || restoredSessionKey === draftSessionKey;
+
+  const applyDraftToStore = useCallback(
+    (draft: ResponseDraft | null) => {
+      const store = useFormResponseStore.getState();
+      store.clearAllResponses();
+      if (draft && formSchema) {
+        for (const [pageId, responses] of Object.entries(buildDraftPageResponses(formSchema, draft.data))) {
+          store.setPageResponses(pageId, responses);
+        }
+      }
+      setResumePageId(formSchema ? resolveResumePageId(formSchema, draft?.currentPageId) : undefined);
+      draftStartedAtRef.current = draft?.startedAt ?? null;
+    },
+    [formSchema]
+  );
+
+  const replaceAnswers = useCallback(
+    (draft: ResponseDraft | null) => {
+      applyDraftToStore(draft);
+      setRendererKey((key) => key + 1);
+    },
+    [applyDraftToStore]
+  );
+
+  const responseDraft = useResponseDraft({
+    formId: loadedForm?.id ?? '',
+    enabled: isDraftReady && !!draftSessionKey && submissionState !== 'submitting' && submissionState !== 'success',
+    applyDraft: replaceAnswers,
+  });
+  const seedDraft = responseDraft.seed;
+
+  useLayoutEffect(() => {
+    if (!draftSessionKey || restoredSessionKey === draftSessionKey) return;
+    const draft = (loadedForm?.myDraft as ResponseDraft | null) ?? null;
+    applyDraftToStore(draft);
+    seedDraft(draft);
+    setRestoredAt(draft?.updatedAt ?? null);
+    setRestoredSessionKey(draftSessionKey);
+  }, [draftSessionKey, restoredSessionKey, loadedForm, applyDraftToStore, seedDraft]);
+
+  const hasFileFields = useMemo(
+    () =>
+      !!formSchema?.pages.some((page) =>
+        page.fields.some((field) => !field.deleted && field.type === FieldType.FILE_UPLOAD_FIELD)
+      ),
+    [formSchema]
+  );
+
   // "Send me a copy of my responses" — only offered when the form owner enabled
   // it AND the configured recipient field still exists on the form (it could
   // have been deleted/renamed since the setting was saved).
@@ -195,6 +264,9 @@ const FormViewer: React.FC<FormViewerProps> = ({
     isSubmittingRef.current = true;
     setSubmissionState('submitting');
     setSubmissionMessage('');
+    // An autosave still on the wire could otherwise land after the submit
+    // deletes the draft and recreate it.
+    await responseDraft.settle();
 
     try {
       // Validate files client-side before uploading to give immediate feedback
@@ -229,8 +301,11 @@ const FormViewer: React.FC<FormViewerProps> = ({
       const analyticsData = getSubmissionAnalyticsData();
 
       // Calculate completion time if we have form start time
-      let completionTimeSeconds = null;
-      if (analyticsData) {
+      let completionTimeSeconds: number | null = null;
+      if (analyticsData && draftStartedAtRef.current) {
+        // Resumed from a draft: time from the first save, across sessions and devices.
+        completionTimeSeconds = Math.round((Date.now() - Date.parse(draftStartedAtRef.current)) / 1000);
+      } else if (analyticsData) {
         const startTimeKey = `form_start_time_${analyticsData.sessionId}_${formId}`;
         const startTimeStr = localStorage.getItem(startTimeKey);
         if (startTimeStr) {
@@ -287,6 +362,10 @@ const FormViewer: React.FC<FormViewerProps> = ({
       const { thankYouMessage, grade } = result.data.submitResponse;
 
       setSubmissionState('success');
+      // The server deleted the draft along with storing the response.
+      seedDraft(null);
+      draftStartedAtRef.current = null;
+      setRestoredAt(null);
       setThankYouData({
         message: thankYouMessage,
         // Optimistic client-side note only — the actual email send is async/
@@ -459,6 +538,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
 
   const handleSubmitAnother = () => {
     useFormResponseStore.getState().clearAllResponses();
+    setResumePageId(undefined);
     isSubmittingRef.current = false;
     setSubmissionState('idle');
     setThankYouData(null);
@@ -476,6 +556,10 @@ const FormViewer: React.FC<FormViewerProps> = ({
   const handleSwitchAccount = async () => {
     await signOut();
     useFormResponseStore.getState().clearAllResponses();
+    // The next account restores its own draft (if any) after the re-fetch.
+    seedDraft(null);
+    setRestoredSessionKey(null);
+    setRestoredAt(null);
     isSubmittingRef.current = false;
     setSubmissionState('idle');
     setThankYouData(null);
@@ -484,6 +568,25 @@ const FormViewer: React.FC<FormViewerProps> = ({
     setNeedsReauth(false);
     await refetch();
   };
+
+  // "Start over" on a restored draft: delete the server copy, then reopen
+  // the form empty from its first screen.
+  const handleStartOver = async () => {
+    await responseDraft.discard();
+    replaceAnswers(null);
+    setRestoredAt(null);
+  };
+
+  if (!isDraftReady) {
+    return (
+      <div
+        className={embedded ? 'w-full min-h-[240px] flex items-center justify-center' : 'h-screen w-full'}
+        data-testid="form-viewer-loading"
+      >
+        <LoadingSpinner fullScreen={!embedded} size="md" />
+      </div>
+    );
+  }
 
   // Render the form in fullscreen mode. After a successful submission, the
   // layout's thank-you screen is shown by forcing `screenOverride` — FormRenderer
@@ -505,6 +608,24 @@ const FormViewer: React.FC<FormViewerProps> = ({
           imageUrl={form.respondentImage}
           embedded={embedded}
           onSwitchAccount={handleSwitchAccount}
+          trailing={
+            draftSessionKey && submissionState !== 'success' ? (
+              <DraftSaveStatusText status={responseDraft.status} lastSavedAt={responseDraft.lastSavedAt} />
+            ) : undefined
+          }
+        />
+      )}
+
+      {draftSessionKey && submissionState !== 'success' && (
+        <DraftNotice
+          restoredAt={restoredAt}
+          hasFileFields={hasFileFields}
+          conflict={responseDraft.conflict}
+          embedded={embedded}
+          onStartOver={handleStartOver}
+          onKeepMine={responseDraft.keepMine}
+          onUseOther={responseDraft.acceptOther}
+          onDismiss={() => setRestoredAt(null)}
         />
       )}
 
@@ -553,6 +674,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
       )}
 
       <FormRenderer
+        key={rendererKey}
         cdnEndpoint={cdnEndpoint}
         formSchema={formSchema!}
         mode={RendererMode.SUBMISSION}
@@ -563,6 +685,8 @@ const FormViewer: React.FC<FormViewerProps> = ({
         formId={form.id}
         onFormSubmit={handleFormSubmit}
         onResponseChange={handleFirstFormInteraction}
+        initialPageId={resumePageId}
+        onPageChange={draftSessionKey ? responseDraft.setCurrentPage : undefined}
         responseCopySettings={responseCopySettings}
         onResponseCopyConsentChange={setSendResponseCopy}
         screenOverride={submissionState === 'success' ? 'thankYou' : undefined}

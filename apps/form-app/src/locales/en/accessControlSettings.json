@@ -21,6 +21,10 @@
     "description": "Ask respondents to sign in with Google or a one-time email code so you can see who submitted each response — without restricting who can respond",
     "impliedByRequireSignIn": "Already collected because sign-in is required above"
   },
+  "saveProgress": {
+    "title": "Let respondents save and resume",
+    "description": "Answers are saved automatically while respondents fill out the form, so they can continue later on any device. Drafts are private to each respondent, never appear in your responses, and are deleted 30 days after their last change."
+  },
   "save": "Save Access Control",
   "saving": "Saving..."
 }

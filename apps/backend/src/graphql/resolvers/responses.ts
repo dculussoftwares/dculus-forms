@@ -51,6 +51,8 @@ import { audit } from '../../lib/audit.js';
 import { upsertPreviewTag, addTagToResponse } from '../../services/tagService.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { enforceAccessControlForSubmission, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
+import { assertResponsePayloadWithinLimits } from '../../lib/responsePayloadLimits.js';
+import { clearDraftAfterSubmit } from '../../services/responseDraftService.js';
 import {
   generateFakeResponsesForForm,
   MAX_FAKE_RESPONSES_PER_REQUEST,
@@ -371,17 +373,7 @@ export const responsesResolvers = {
       }
 
       // P2-04: Validate response payload size to prevent unbounded writes
-      if (input.data && typeof input.data === 'object') {
-        const keys = Object.keys(input.data as object);
-        if (keys.length > 500) {
-          throw createGraphQLError('Response data cannot contain more than 500 fields', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-        }
-        for (const [key, value] of Object.entries(input.data as object)) {
-          if (typeof value === 'string' && value.length > 10_000) {
-            throw createGraphQLError(`Field "${key}" exceeds the 10,000 character limit`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-          }
-        }
-      }
+      assertResponsePayloadWithinLimits(input.data);
 
       // Live schema for form.id (Hocuspocus, falling back to the DB column),
       // resolved at most once and shared by conditional stripping below and
@@ -468,6 +460,12 @@ export const responsesResolvers = {
       }
       // At this point response is guaranteed non-null — both branches above set it.
       const savedResponse = response!;
+
+      // Save-and-resume: the submitted answers supersede the respondent's
+      // draft. Only identity-gated forms ever have one (keyed on the same user).
+      if (respondentUserId && !input.isPreview) {
+        await clearDraftAfterSubmit(form.id, respondentUserId);
+      }
 
       // Native Quiz (D3, epic #289): grade synchronously, here, so the score
       // can be included in this mutation's payload — emitFormSubmitted below

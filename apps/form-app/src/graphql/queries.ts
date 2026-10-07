@@ -115,6 +115,9 @@ export const GET_FORM_BY_ID : TypedDocumentNode<any, any> = gql`
           allowedDomains
         }
         collectRespondentEmail
+        saveProgress {
+          enabled
+        }
         quiz {
           enabled
           passThresholdPercent
