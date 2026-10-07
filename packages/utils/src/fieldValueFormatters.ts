@@ -400,3 +400,14 @@ export const parseFormattedValue = (
       return formattedValue;
   }
 };
+
+/**
+ * Whether a stored response value counts as an answer. `null`, `undefined`,
+ * empty strings and empty arrays (an untouched checkbox or file upload) do not.
+ * Mirrors the emptiness rule of the backend's per-field response count query.
+ */
+export const hasResponseValue = (value: unknown): boolean =>
+  value !== null &&
+  value !== undefined &&
+  value !== '' &&
+  !(Array.isArray(value) && value.length === 0);

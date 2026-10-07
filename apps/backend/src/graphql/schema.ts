@@ -1465,6 +1465,10 @@ export const typeDefs = gql`
     # doesn't support suggestions (form fields, or a meta field with no natural value set).
     distinctResponseFieldValues(formId: ID!, fieldId: String!, search: String, limit: Int = 20): [String!]!
 
+    # The subset of fieldIds that at least one live response answered (not null, "" or []).
+    # The responses table uses it to hide deleted-field columns nobody ever answered.
+    answeredFieldIds(formId: ID!, fieldIds: [ID!]!): [ID!]!
+
     # Native Quiz (epic #289, Story 16/#320, D9): lets a signed-in respondent
     # retrieve their OWN deferred-release quiz grade later. Auth-only —
     # deliberately no form-permission check; see resolver for why.

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   countResponsesPerField,
   countResponsesReferencingAnyField,
+  getAnsweredFieldIds,
 } from '../responseService.js';
 import { responseRepository } from '../../repositories/index.js';
 
@@ -70,5 +71,29 @@ describe('countResponsesReferencingAnyField', () => {
     vi.mocked(responseRepository.countReferencingAnyFieldRaw).mockRejectedValueOnce(new Error('db down'));
     const result = await countResponsesReferencingAnyField('form-1', ['f-1']);
     expect(result).toBe(0);
+  });
+});
+
+describe('getAnsweredFieldIds', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns the requested ids that hold answers, in request order', async () => {
+    vi.mocked(responseRepository.countPerFieldRaw).mockResolvedValueOnce([
+      { field_id: 'f-3', count: BigInt(2) },
+      { field_id: 'f-1', count: BigInt(9) },
+    ] as any);
+
+    expect(await getAnsweredFieldIds('form-1', ['f-1', 'f-2', 'f-3'])).toEqual(['f-1', 'f-3']);
+    expect(responseRepository.countPerFieldRaw).toHaveBeenCalledWith('form-1', ['f-1', 'f-2', 'f-3']);
+  });
+
+  it('returns [] without querying when no field ids are given', async () => {
+    expect(await getAnsweredFieldIds('form-1', [])).toEqual([]);
+    expect(responseRepository.countPerFieldRaw).not.toHaveBeenCalled();
+  });
+
+  it('propagates query failures instead of reporting no answers', async () => {
+    vi.mocked(responseRepository.countPerFieldRaw).mockRejectedValueOnce(new Error('db down'));
+    await expect(getAnsweredFieldIds('form-1', ['f-1'])).rejects.toThrow('db down');
   });
 });

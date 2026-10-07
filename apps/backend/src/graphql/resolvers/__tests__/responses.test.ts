@@ -420,6 +420,49 @@ describe('Responses Resolvers', () => {
     });
   });
 
+  describe('Query: answeredFieldIds', () => {
+    const args = { formId: 'form-123', fieldIds: ['deleted-1', 'deleted-2'] };
+
+    it('returns the answered subset for a form viewer', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValueOnce({ hasAccess: true } as any);
+      vi.mocked(responseService.getAnsweredFieldIds).mockResolvedValueOnce(['deleted-2']);
+
+      const result = await responsesResolvers.Query.answeredFieldIds({}, args, mockContext);
+
+      expect(result).toEqual(['deleted-2']);
+      expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
+        'user-123',
+        'form-123',
+        formSharingResolvers.PermissionLevel.VIEWER
+      );
+      expect(responseService.getAnsweredFieldIds).toHaveBeenCalledWith('form-123', args.fieldIds);
+    });
+
+    it('denies users without VIEWER access to the form', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined as any);
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValueOnce({ hasAccess: false } as any);
+
+      await expect(
+        responsesResolvers.Query.answeredFieldIds({}, args, mockContext)
+      ).rejects.toThrow('Access denied');
+      expect(responseService.getAnsweredFieldIds).not.toHaveBeenCalled();
+    });
+
+    it('throws when the form does not exist', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(formService.getFormById).mockResolvedValue(null);
+
+      await expect(
+        responsesResolvers.Query.answeredFieldIds({}, args, mockContext)
+      ).rejects.toThrow('Form not found');
+    });
+  });
+
   describe('Mutation: submitResponse', () => {
     const mockInput = {
       formId: 'form-123',

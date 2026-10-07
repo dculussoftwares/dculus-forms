@@ -75,8 +75,9 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     });
 
   /**
-   * Per-field count of non-deleted responses holding a non-empty value for
-   * each of the given field ids. One indexed scan via LATERAL jsonb_each.
+   * Per-field count of non-deleted responses holding a non-empty value (not
+   * null, "" or []) for each of the given field ids. One indexed scan via
+   * LATERAL jsonb_each.
    */
   const countPerFieldRaw = (
     formId: string,
@@ -91,6 +92,7 @@ export const createResponseRepository = (context?: RepositoryContext) => {
         AND value IS NOT NULL
         AND value <> 'null'::jsonb
         AND value <> '""'::jsonb
+        AND value <> '[]'::jsonb
       GROUP BY key
     `;
 
@@ -113,6 +115,7 @@ export const createResponseRepository = (context?: RepositoryContext) => {
             AND value IS NOT NULL
             AND value <> 'null'::jsonb
             AND value <> '""'::jsonb
+            AND value <> '[]'::jsonb
         )
     `;
 
