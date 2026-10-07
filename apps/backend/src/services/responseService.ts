@@ -150,9 +150,8 @@ export const getAllResponses = async (organizationId?: string): Promise<FormResp
  * Count, per fieldId, how many non-deleted responses hold a non-empty value for that field.
  *
  * Used by the AI delete/convert confirmation cards to warn "used in N responses". A field's
- * answer is stored at `data[fieldId]`; we count rows where that key exists and is not null and
- * (for scalar string values) not the empty string. Array/object answers (e.g. checkbox/select)
- * count as present as long as the key exists and is non-null.
+ * answer is stored at `data[fieldId]`; we count rows where that key exists and is not null, not
+ * the empty string and not an empty array (an untouched checkbox or file upload).
  *
  * Returns a map of fieldId → count. Field ids with no responses are included with 0.
  */
@@ -174,6 +173,21 @@ export const countResponsesPerField = async (
     logger.error('Error counting responses per field:', error);
   }
   return result;
+};
+
+/**
+ * The subset of `fieldIds` that at least one non-deleted response answered. Unlike
+ * `countResponsesPerField`, a query failure propagates so callers never mistake it for
+ * "no answers".
+ */
+export const getAnsweredFieldIds = async (
+  formId: string,
+  fieldIds: string[]
+): Promise<string[]> => {
+  if (fieldIds.length === 0) return [];
+  const rows = await responseRepository.countPerFieldRaw(formId, fieldIds);
+  const answered = new Set(rows.filter((row) => Number(row.count) > 0).map((row) => row.field_id));
+  return fieldIds.filter((id) => answered.has(id));
 };
 
 /**

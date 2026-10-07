@@ -235,6 +235,14 @@ export const GET_DISTINCT_RESPONSE_FIELD_VALUES : TypedDocumentNode<any, any> = 
   }
 `;
 
+// Subset of the given field ids that at least one response answered — the
+// responses table uses it to hide deleted-field columns nobody ever answered.
+export const GET_ANSWERED_FIELD_IDS : TypedDocumentNode<any, any> = gql`
+  query GetAnsweredFieldIds($formId: ID!, $fieldIds: [ID!]!) {
+    answeredFieldIds(formId: $formId, fieldIds: $fieldIds)
+  }
+`;
+
 // Native Quiz (epic #289, Story 11): full per-question breakdown for the grade
 // detail drawer — kept out of GET_FORM_RESPONSES so the main table query
 // doesn't pull every response's full answer-key JSON on every page load.

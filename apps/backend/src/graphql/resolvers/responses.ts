@@ -1,6 +1,7 @@
 import {
   deleteResponse,
   deleteResponses,
+  getAnsweredFieldIds,
   getResponseById,
   getResponsesByFormId,
   getResponsesByOrganizationId,
@@ -298,6 +299,28 @@ export const responsesResolvers = {
       }
 
       return getDistinctResponseFieldValues(formId, fieldId, search ?? undefined, limit ?? undefined);
+    },
+
+    answeredFieldIds: async (
+      _: any,
+      { formId, fieldIds }: { formId: string; fieldIds: string[] },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      const form = await getFormById(formId);
+      if (!form) {
+        throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+      }
+
+      await requireOrganizationMembership(context.auth, form.organizationId);
+
+      const accessCheck = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.VIEWER);
+      if (!accessCheck.hasAccess) {
+        throw createGraphQLError('Access denied: You need VIEWER access to view this form\'s responses', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      return getAnsweredFieldIds(formId, fieldIds);
     },
   },
   Mutation: {
