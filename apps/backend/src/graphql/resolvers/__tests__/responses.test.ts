@@ -657,14 +657,17 @@ describe('Responses Resolvers', () => {
       expect(responseDraftRepository.deleteForRespondent).toHaveBeenCalledWith('form-123', 'user-123');
     });
 
-    it('leaves drafts alone when save progress is off, for builder previews and for signed-out callers', async () => {
+    it('still clears a draft saved before the owner switched save progress off', async () => {
       vi.mocked(formService.getFormById).mockResolvedValue({
         ...mockForm,
         settings: { saveProgress: { enabled: false } },
       } as any);
       await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
 
-      vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      expect(responseDraftRepository.deleteForRespondent).toHaveBeenCalledWith('form-123', 'user-123');
+    });
+
+    it('leaves drafts alone for builder previews and for signed-out callers', async () => {
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({ hasAccess: true } as any);
       await responsesResolvers.Mutation.submitResponse({}, { input: { ...mockInput, isPreview: true } }, mockContext);
       await responsesResolvers.Mutation.submitResponse(

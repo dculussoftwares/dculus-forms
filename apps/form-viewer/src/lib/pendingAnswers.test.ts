@@ -15,9 +15,16 @@ vi.hoisted(() => {
 });
 
 import { useFormResponseStore } from '@dculus/ui';
-import { readCurrentAnswers, stashPendingAnswers, takePendingAnswers } from './pendingAnswers';
+import {
+  clearPendingAnswers,
+  readCurrentAnswers,
+  readCurrentFileAnswers,
+  stashPendingAnswers,
+  takePendingAnswers,
+} from './pendingAnswers';
 
 beforeEach(() => {
+  vi.useRealTimers();
   sessionStorage.clear();
   useFormResponseStore.getState().clearAllResponses();
 });
@@ -31,6 +38,15 @@ describe('readCurrentAnswers', () => {
     type('p1', 'blank', '');
     type('p2', 'age', 36);
     expect(readCurrentAnswers()).toEqual({ name: 'Ada', age: 36 });
+  });
+});
+
+describe('readCurrentFileAnswers', () => {
+  it('returns only the picked files, by page', () => {
+    const file = new File(['x'], 'cv.pdf');
+    type('p1', 'name', 'Ada');
+    type('p2', 'cv', [file]);
+    expect(readCurrentFileAnswers()).toEqual({ p2: { cv: [file] } });
   });
 });
 
@@ -54,10 +70,27 @@ describe('pending answers', () => {
     expect(sessionStorage.length).toBe(0);
   });
 
+  it('can be dropped once the answers were submitted', () => {
+    type('p1', 'name', 'Ada');
+    stashPendingAnswers('form-1');
+    clearPendingAnswers('form-1');
+    expect(takePendingAnswers('form-1')).toEqual({});
+  });
+
+  it('ignores a stash from an abandoned sign-in', () => {
+    vi.useFakeTimers();
+    type('p1', 'name', 'Ada');
+    stashPendingAnswers('form-1');
+    vi.advanceTimersByTime(16 * 60 * 1000);
+    expect(takePendingAnswers('form-1')).toEqual({});
+  });
+
   it('ignores a corrupted stash', () => {
     sessionStorage.setItem('dculus_pending_answers:form-1', '{not json');
     expect(takePendingAnswers('form-1')).toEqual({});
     sessionStorage.setItem('dculus_pending_answers:form-1', '["a"]');
+    expect(takePendingAnswers('form-1')).toEqual({});
+    sessionStorage.setItem('dculus_pending_answers:form-1', '{"name":"Ada"}');
     expect(takePendingAnswers('form-1')).toEqual({});
   });
 });

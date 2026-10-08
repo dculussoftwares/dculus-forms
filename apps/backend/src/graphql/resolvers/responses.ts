@@ -24,7 +24,7 @@ import {
   generateId,
   substituteMentions,
 } from '@dculus/utils';
-import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT, isOneResponsePerRespondent, isSaveProgressEnabled } from '@dculus/types';
+import { deserializeFormSchema, DEFAULT_THANK_YOU_CONTENT, isOneResponsePerRespondent } from '@dculus/types';
 import type { RespondentGradeView, QuizGradingMetadata } from '@dculus/types';
 import { pluginTypeFromMetadataKey } from '../../plugins/core/exportRegistry.js';
 import { QUIZ_GRADING_PLUGIN_TYPE } from '../../plugins/quiz/types.js';
@@ -465,9 +465,10 @@ export const responsesResolvers = {
       // Save-and-resume: the submitted answers supersede the signed-in
       // respondent's draft. Keyed on the session user, not `respondentUserId`,
       // because a form that doesn't require sign-in records no identity but
-      // can still have a draft.
+      // can still have a draft. Not gated on the current setting: a draft saved
+      // before the owner switched it off must not resurface if it is re-enabled.
       const draftOwnerId = context.auth?.user?.id;
-      if (draftOwnerId && !input.isPreview && isSaveProgressEnabled(form.settings)) {
+      if (draftOwnerId && !input.isPreview) {
         await clearDraftAfterSubmit(form.id, draftOwnerId);
       }
 

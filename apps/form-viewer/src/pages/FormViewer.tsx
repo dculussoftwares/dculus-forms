@@ -36,8 +36,8 @@ import { saveProgressLabels } from '../locales/saveProgress';
 import { signOut } from '../lib/auth-client';
 import DraftNotice, { DraftSaveStatusText } from '../components/DraftNotice';
 import { useResponseDraft, type ResponseDraft } from '../hooks/useResponseDraft';
-import { buildPageResponses, resolveResumePageId, type DraftData } from '../lib/draftData';
-import { readCurrentAnswers, takePendingAnswers } from '../lib/pendingAnswers';
+import { buildPageResponses, resolveResumePageId, type DraftData, type PageResponses } from '../lib/draftData';
+import { clearPendingAnswers, readCurrentAnswers, readCurrentFileAnswers, takePendingAnswers } from '../lib/pendingAnswers';
 import AlreadyRespondedScreen from '../components/AlreadyRespondedScreen';
 import MyResponseNotice from '../components/MyResponseNotice';
 import MyResponseSummary from '../components/MyResponseSummary';
@@ -248,13 +248,19 @@ const FormViewer: React.FC<FormViewerProps> = ({
 
   // `unsaved` are answers typed before the draft could be saved (before
   // signing in); they win over the same fields in an older saved draft.
+  // `files` are picked files from the same moment: drafts never hold files, so
+  // they are put back as they were.
   const applyDraftToStore = useCallback(
-    (draft: ResponseDraft | null, unsaved: DraftData = {}) => {
+    (draft: ResponseDraft | null, unsaved: DraftData = {}, files: PageResponses = {}) => {
       const store = useFormResponseStore.getState();
       store.clearAllResponses();
       if (formSchema) {
         const answers = { ...draft?.data, ...unsaved };
-        for (const [pageId, responses] of Object.entries(buildPageResponses(formSchema, answers))) {
+        const pages = buildPageResponses(formSchema, answers);
+        for (const [pageId, fileAnswers] of Object.entries(files)) {
+          pages[pageId] = { ...pages[pageId], ...fileAnswers };
+        }
+        for (const [pageId, responses] of Object.entries(pages)) {
           store.setPageResponses(pageId, responses);
         }
       }
@@ -288,14 +294,20 @@ const FormViewer: React.FC<FormViewerProps> = ({
   const flushDraft = responseDraft.flush;
   // Answers carried over from before sign-in are not on the server yet.
   const [hasUnsavedAnswers, setHasUnsavedAnswers] = useState(false);
+  // Set only by the optional "save your progress" sign-in, the one flow where
+  // the answers on screen belong to the account that just signed in. Any other
+  // restore (account switch, cancelling an edit) must not merge them in.
+  const carryOverAnswersRef = useRef(false);
 
   useLayoutEffect(() => {
     if (!draftSessionKey || restoredSessionKey === draftSessionKey) return;
     const draft = (loadedForm?.myDraft as ResponseDraft | null) ?? null;
     // Typed before signing in: still in the store after an in-page sign-in,
     // or stashed across Google's redirect.
-    const unsaved = { ...takePendingAnswers(loadedForm.id), ...readCurrentAnswers() };
-    applyDraftToStore(draft, unsaved);
+    const carryOver = carryOverAnswersRef.current;
+    carryOverAnswersRef.current = false;
+    const unsaved = { ...takePendingAnswers(loadedForm.id), ...(carryOver ? readCurrentAnswers() : {}) };
+    applyDraftToStore(draft, unsaved, carryOver ? readCurrentFileAnswers() : {});
     seedDraft(draft);
     setHasUnsavedAnswers(Object.keys(unsaved).length > 0);
     setRestoredAt(draft?.updatedAt ?? null);
@@ -449,6 +461,7 @@ const FormViewer: React.FC<FormViewerProps> = ({
       }
 
       setSubmissionState('success');
+      clearPendingAnswers(formId);
       // The server deleted the draft along with storing the response.
       seedDraft(null);
       draftStartedAtRef.current = null;
@@ -801,7 +814,13 @@ const FormViewer: React.FC<FormViewerProps> = ({
           returning browser can't submit silently under a previous respondent.
           Forms that don't require sign-in instead invite the respondent to
           sign in to save their progress. */}
-      {showSaveProgressPrompt && <SaveProgressPrompt formId={form.id} onSignedIn={() => void refetch()} />}
+      {showSaveProgressPrompt && <SaveProgressPrompt
+          formId={form.id}
+          onSignedIn={() => {
+            carryOverAnswersRef.current = true;
+            void refetch();
+          }}
+        />}
       {accountEmail && (
         <RespondentBadge
           email={accountEmail}
