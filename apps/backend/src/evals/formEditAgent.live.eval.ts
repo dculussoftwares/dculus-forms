@@ -62,7 +62,7 @@ async function runTurn(message: string): Promise<Turn> {
   ];
 
   if (intent === 'question') {
-    const { text } = await generateText({ model: getModelForIntent(intent), system: QUESTION_SYSTEM_PROMPT, messages });
+    const { text } = await generateText({ model: getModelForIntent(intent), instructions: QUESTION_SYSTEM_PROMPT, messages });
     return { intent, calls: [], outputs: {}, text };
   }
 

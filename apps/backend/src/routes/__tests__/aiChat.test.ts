@@ -141,6 +141,11 @@ vi.mock('ai', () => ({
   convertToModelMessages: vi.fn().mockResolvedValue([{ role: 'user', content: 'hi' }]),
   pruneMessages: vi.fn().mockImplementation(({ messages }) => messages), // pass-through
   streamText: vi.fn(),
+  toUIMessageStream: vi.fn(() => 'ui-stream'),
+  pipeUIMessageStreamToResponse: vi.fn(async ({ response }: { response: import('http').ServerResponse }) => {
+    response.writeHead(200, { 'Content-Type': 'text/event-stream' });
+    response.end('data: {"type":"start"}\n\n');
+  }),
   createIdGenerator: vi.fn(() => () => 'msg-generated'),
   wrapLanguageModel: vi.fn(({ model }) => model),
   defaultSettingsMiddleware: vi.fn(() => ({})),
@@ -169,16 +174,18 @@ import {
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { createFormEditAgent } from '../../lib/formEditAgent.js';
 import { findOwnedConversation, saveConversationMessages, truncateToolResults } from '../../services/aiChatService.js';
-import { pruneMessages, validateUIMessages, streamText } from 'ai';
+import { pruneMessages, validateUIMessages, streamText, toUIMessageStream } from 'ai';
 import { requireOrganizationMembership } from '../../middleware/better-auth-middleware.js';
 import { checkFormAccess } from '../../graphql/resolvers/formSharing.js';
 
-/** Stand-in for result.pipeUIMessageStreamToResponse: writes the given SSE chunks and ends. */
-function pipeChunks(chunks: string[] = []) {
-  return vi.fn((res: import('http').ServerResponse) => {
-    res.writeHead(200, { 'Content-Type': 'text/event-stream' });
-    res.end(chunks.join(''));
-  });
+/** Minimal v7 stream result: the route only needs the stream, usage and consumeStream. */
+function streamResult(totalTokens = 5) {
+  return { stream: new ReadableStream(), usage: Promise.resolve({ totalTokens }), consumeStream: vi.fn() };
+}
+
+/** The `onEnd` the route handed to toUIMessageStream on the latest call. */
+function capturedOnEnd(): (args: { responseMessage: any }) => Promise<void> {
+  return vi.mocked(toUIMessageStream).mock.calls.at(-1)![0].onEnd as any;
 }
 
 describe('POST /chat', () => {
@@ -197,11 +204,7 @@ describe('POST /chat', () => {
       .mockResolvedValue({ hasAccess: true, permission: 'OWNER', form: {} } as any);
     // Restore streamText default after clearAllMocks wipes it. The route pipes
     // `webResponse.body` with `for await`, so the body must be a real ReadableStream.
-    vi.mocked(streamText).mockReturnValue({
-      consumeStream: vi.fn(),
-      totalUsage: Promise.resolve({ totalTokens: 5 }),
-      pipeUIMessageStreamToResponse: pipeChunks(['data: {"type":"start"}\n\n']),
-    } as any);
+    vi.mocked(streamText).mockReturnValue(streamResult() as any);
   });
 
   it('returns 401 when not authenticated', async () => {
@@ -292,12 +295,8 @@ describe('POST /chat', () => {
   });
 
   it('pipes UI message stream through to response', async () => {
-    const streamData = 'data: {"type":"text","value":"hello"}\n\n';
     const mockAgent = {
-      stream: vi.fn().mockResolvedValue({
-        consumeStream: vi.fn(),
-        pipeUIMessageStreamToResponse: pipeChunks([streamData]),
-      }),
+      stream: vi.fn().mockResolvedValue(streamResult()),
     };
     (createFormEditAgent as any).mockReturnValue(mockAgent);
 
@@ -314,12 +313,8 @@ describe('POST /chat', () => {
   it('offers plugin tools (canManagePlugins: true) to form owners on complex turns', async () => {
     const { checkFormAccess } = await import('../../graphql/resolvers/formSharing.js');
     vi.mocked(checkFormAccess).mockResolvedValueOnce({ hasAccess: true, permission: 'OWNER', form: {} } as any);
-    const streamData = 'data: {"type":"text","value":"ok"}\n\n';
     const mockAgent = {
-      stream: vi.fn().mockResolvedValue({
-        consumeStream: vi.fn(),
-        pipeUIMessageStreamToResponse: pipeChunks([streamData]),
-      }),
+      stream: vi.fn().mockResolvedValue(streamResult()),
     };
     (createFormEditAgent as any).mockReturnValue(mockAgent);
 
@@ -342,12 +337,8 @@ describe('POST /chat', () => {
   it('withholds plugin tools (canManagePlugins: false) from non-owners on complex turns', async () => {
     const { checkFormAccess } = await import('../../graphql/resolvers/formSharing.js');
     vi.mocked(checkFormAccess).mockResolvedValueOnce({ hasAccess: true, permission: 'EDITOR', form: {} } as any);
-    const streamData = 'data: {"type":"text","value":"ok"}\n\n';
     const mockAgent = {
-      stream: vi.fn().mockResolvedValue({
-        consumeStream: vi.fn(),
-        pipeUIMessageStreamToResponse: pipeChunks([streamData]),
-      }),
+      stream: vi.fn().mockResolvedValue(streamResult()),
     };
     (createFormEditAgent as any).mockReturnValue(mockAgent);
 
@@ -366,12 +357,8 @@ describe('POST /chat', () => {
   });
 
   it('withholds plugin tools from owners on simple (non-full-tier) turns', async () => {
-    const streamData = 'data: {"type":"text","value":"ok"}\n\n';
     const mockAgent = {
-      stream: vi.fn().mockResolvedValue({
-        consumeStream: vi.fn(),
-        pipeUIMessageStreamToResponse: pipeChunks([streamData]),
-      }),
+      stream: vi.fn().mockResolvedValue(streamResult()),
     };
     (createFormEditAgent as any).mockReturnValue(mockAgent);
 
@@ -400,11 +387,9 @@ describe('POST /chat', () => {
 
     expect(res.status).toBe(200);
     expect(vi.mocked(createFormEditAgent)).toHaveBeenCalledTimes(1); // validation tool set only, no agent run
-    expect(vi.mocked(streamText)).toHaveBeenCalledWith(expect.objectContaining({ system: QUESTION_SYSTEM_PROMPT }));
-    const result = vi.mocked(streamText).mock.results[0].value;
-    expect(result.pipeUIMessageStreamToResponse).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ generateMessageId: expect.any(Function), onFinish: expect.any(Function) })
+    expect(vi.mocked(streamText)).toHaveBeenCalledWith(expect.objectContaining({ instructions: QUESTION_SYSTEM_PROMPT }));
+    expect(vi.mocked(toUIMessageStream)).toHaveBeenCalledWith(
+      expect.objectContaining({ generateMessageId: expect.any(Function), onEnd: expect.any(Function) })
     );
   });
 
@@ -437,12 +422,8 @@ describe('POST /chat', () => {
 
   it('falls back to unvalidated messages when validateUIMessages throws', async () => {
     vi.mocked(validateUIMessages).mockRejectedValueOnce(new Error('invalid shape'));
-    const streamData = 'data: {"type":"text","value":"hello"}\n\n';
     (createFormEditAgent as any).mockReturnValue({
-      stream: vi.fn().mockResolvedValue({
-        consumeStream: vi.fn(),
-        pipeUIMessageStreamToResponse: pipeChunks([streamData]),
-      }),
+      stream: vi.fn().mockResolvedValue(streamResult()),
     });
 
     const res = await request(app).post('/chat').send({
@@ -454,19 +435,9 @@ describe('POST /chat', () => {
     expect(res.status).toBe(200);
   });
 
-  it('invokes onFinish to save messages and record usage', async () => {
-    let capturedOnFinish: ((args: { responseMessage: any }) => Promise<void>) | undefined;
-    const totalUsage = Promise.resolve({ totalTokens: 42 });
-
+  it('invokes onEnd to save messages and record usage', async () => {
     (createFormEditAgent as any).mockReturnValue({
-      stream: vi.fn().mockResolvedValue({
-        consumeStream: vi.fn(),
-        totalUsage,
-        pipeUIMessageStreamToResponse: vi.fn((res: import('http').ServerResponse, { onFinish }: any) => {
-          capturedOnFinish = onFinish;
-          res.end();
-        }),
-      }),
+      stream: vi.fn().mockResolvedValue(streamResult(42)),
     });
 
     await request(app).post('/chat').send({
@@ -475,9 +446,8 @@ describe('POST /chat', () => {
       organizationId: 'org-1',
     });
 
-    expect(capturedOnFinish).toBeDefined();
-    const responseMessage = { id: 'msg-generated', role: 'assistant', parts: [{ type: 'text', text: 'Hello!' }] };
-    await capturedOnFinish!({ responseMessage });
+        const responseMessage = { id: 'msg-generated', role: 'assistant', parts: [{ type: 'text', text: 'Hello!' }] };
+    await capturedOnEnd()({ responseMessage });
 
     // Exactly this turn is persisted: the user message, then the assistant reply.
     expect(vi.mocked(saveConversationMessages)).toHaveBeenCalledWith(
@@ -489,19 +459,9 @@ describe('POST /chat', () => {
     expect(vi.mocked(recordAITokenUsage)).toHaveBeenCalledWith('org-1', 42, 'nano');
   });
 
-  it('applies truncateToolResults before saving messages in onFinish', async () => {
-    let capturedOnFinish: ((args: { responseMessage: any }) => Promise<void>) | undefined;
-    const totalUsage = Promise.resolve({ totalTokens: 10 });
-
+  it('applies truncateToolResults before saving messages in onEnd', async () => {
     (createFormEditAgent as any).mockReturnValue({
-      stream: vi.fn().mockResolvedValue({
-        consumeStream: vi.fn(),
-        totalUsage,
-        pipeUIMessageStreamToResponse: vi.fn((res: import('http').ServerResponse, { onFinish }: any) => {
-          capturedOnFinish = onFinish;
-          res.end();
-        }),
-      }),
+      stream: vi.fn().mockResolvedValue(streamResult(10)),
     });
 
     await request(app).post('/chat').send({
@@ -510,7 +470,7 @@ describe('POST /chat', () => {
       organizationId: 'org-1',
     });
 
-    await capturedOnFinish!({ responseMessage: { id: 'a1', role: 'assistant', parts: [] } });
+    await capturedOnEnd()({ responseMessage: { id: 'a1', role: 'assistant', parts: [] } });
 
     expect(vi.mocked(truncateToolResults)).toHaveBeenCalledWith(expect.any(Array));
     expect(vi.mocked(saveConversationMessages)).toHaveBeenCalled();
@@ -530,12 +490,8 @@ describe('context pruning', () => {
   });
 
   it('calls pruneMessages on converted model messages', async () => {
-    const streamData = 'data: {"type":"text","value":"hello"}\n\n';
     const mockAgent = {
-      stream: vi.fn().mockResolvedValue({
-        consumeStream: vi.fn(),
-        pipeUIMessageStreamToResponse: pipeChunks([streamData]),
-      }),
+      stream: vi.fn().mockResolvedValue(streamResult()),
     };
     (createFormEditAgent as any).mockReturnValue(mockAgent);
 

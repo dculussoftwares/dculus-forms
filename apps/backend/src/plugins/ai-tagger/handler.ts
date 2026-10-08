@@ -86,7 +86,7 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
     const { output, usage } = await generateText({
       model: getFastModel(),
       output: Output.object({ schema: TagIdsSchema }),
-      system: `You are a response classifier for a form submission system.
+      instructions: `You are a response classifier for a form submission system.
 Given a form response and a list of tags with definitions, return the IDs of the tags that apply.
 
 Rules:

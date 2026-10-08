@@ -2,11 +2,14 @@ import { Router, type Router as ExpressRouter } from 'express';
 import {
   convertToModelMessages,
   createIdGenerator,
+  pipeUIMessageStreamToResponse,
   pruneMessages,
   streamText,
+  toUIMessageStream,
   validateUIMessages,
+  type LanguageModelUsage,
   type ModelMessage,
-  type StreamTextResult,
+  type TextStreamPart,
   type ToolSet,
   type UIMessage,
 } from 'ai';
@@ -162,7 +165,7 @@ Rules:
 /**
  * The per-turn dynamic context, delivered as a trailing user message placed AFTER conversation
  * history so the cacheable prefix (system + tools + history) stays byte-stable. This message is
- * EPHEMERAL — it must never be persisted to conversation history (see onFinish slice logic).
+ * EPHEMERAL — it must never be persisted to conversation history (see the onEnd persistence logic).
  *
  * Small forms get a full compact snapshot (so the model can act without read round-trips); large
  * forms get only a page-level summary and rely on listFields/getField.
@@ -216,11 +219,13 @@ This turn has NO editing tools. Answer the question from <current_context>. Neve
 // Server-side ids keep persisted messages stable across reloads (AI SDK message-persistence guide).
 const generateMessageId = createIdGenerator({ prefix: 'msg', size: 16 });
 
-// The slice of a streamText / agent.stream result the route needs; both turn paths satisfy it.
-type ChatTurnStream = Pick<
-  StreamTextResult<ToolSet, never>,
-  'consumeStream' | 'totalUsage' | 'pipeUIMessageStreamToResponse'
->;
+// The slice of a streamText / agent.stream result the route needs.
+interface ChatTurnStream<TOOLS extends ToolSet> {
+  stream: ReadableStream<TextStreamPart<TOOLS>>;
+  /** Usage totalled across every step of the turn. */
+  usage: PromiseLike<LanguageModelUsage>;
+  consumeStream(): PromiseLike<void>;
+}
 
 // Bounds a turn so a stalled provider call can't hold the HTTP stream open indefinitely.
 const CHAT_TURN_TIMEOUT = { totalMs: 120_000, stepMs: 60_000 } as const;
@@ -344,48 +349,22 @@ aiChatRouter.post('/chat', async (req, res) => {
     content: buildEphemeralContext(currentPageId, schema),
   };
 
-  // Questions ("what field types do you support?", "how do I...") don't need tools: skip the
-  // ToolLoopAgent and use direct streamText, saving the tool-schema tokens. Every other intent
-  // runs the agent with the tool tier picked above.
-  const startTurn = async (): Promise<ChatTurnStream> => {
-    const messages = [...(await toPrunedModelMessages(validated)), ephemeralContext];
-    if (intent === 'question') {
-      return streamText({
-        model: getModelForIntent(intent),
-        system: QUESTION_SYSTEM_PROMPT,
-        messages,
-        timeout: CHAT_TURN_TIMEOUT,
-      });
-    }
-    // Static system prompt keeps the prefix byte-stable so provider prefix caching hits on
-    // every step and across turns. Plugin (integration) tools are full-tier only and OWNER-gated.
-    const agent = createFormEditAgent(schema, {
-      instructions: STATIC_SYSTEM_PROMPT,
-      cacheKey: conversationId,
-      includeReadTools,
-      formId: conv.formId,
-      modelTier,
-      toolTier,
-      canManagePlugins: toolTier === 'full' && permission === PermissionLevel.OWNER,
-    });
-    return agent.stream({ messages, timeout: CHAT_TURN_TIMEOUT });
-  };
-
-  try {
-    const result = await startTurn();
-
-    // Ensure onFinish fires (and the turn is persisted) even if the client disconnects.
+  // Streams a turn to the client in the UI message stream protocol that useChat's
+  // DefaultChatTransport parses (a plain text stream would be silently dropped), and persists
+  // the turn when the stream ends. Generic so streamText and agent results (different tool
+  // sets) both fit.
+  const respond = async <TOOLS extends ToolSet>(result: ChatTurnStream<TOOLS>): Promise<void> => {
+    // Ensure onEnd fires (and the turn is persisted) even if the client disconnects.
     void result.consumeStream();
 
-    // Both paths answer with the UI message stream protocol that useChat's DefaultChatTransport
-    // parses — a plain text stream would be silently dropped by the client.
-    result.pipeUIMessageStreamToResponse(res, {
+    const uiStream = toUIMessageStream({
+      stream: result.stream,
       originalMessages: validated,
       generateMessageId,
-      onFinish: async ({ responseMessage }) => {
+      onEnd: async ({ responseMessage }) => {
         // Persist exactly this turn: the user message plus the assistant reply. The ephemeral
         // context is not a UI message, so no snapshot leaks into persisted history.
-        const usage = await result.totalUsage;
+        const usage = await result.usage;
         const tokensUsed = usage?.totalTokens ?? 0;
         await saveConversationMessages(conversationId, truncateToolResults([message, responseMessage]), tokensUsed);
         await recordAITokenUsage(organizationId, tokensUsed, modelTier);
@@ -400,6 +379,37 @@ aiChatRouter.post('/chat', async (req, res) => {
         });
       },
     });
+    await pipeUIMessageStreamToResponse({ response: res, stream: uiStream });
+  };
+
+  try {
+    const messages = [...(await toPrunedModelMessages(validated)), ephemeralContext];
+
+    if (intent === 'question') {
+      // Questions ("what field types do you support?", "how do I...") don't need tools: skip the
+      // ToolLoopAgent and use direct streamText, saving the tool-schema tokens.
+      await respond(
+        streamText({
+          model: getModelForIntent(intent),
+          instructions: QUESTION_SYSTEM_PROMPT,
+          messages,
+          timeout: CHAT_TURN_TIMEOUT,
+        })
+      );
+    } else {
+      // Static system prompt keeps the prefix byte-stable so provider prefix caching hits on
+      // every step and across turns. Plugin (integration) tools are full-tier only and OWNER-gated.
+      const agent = createFormEditAgent(schema, {
+        instructions: STATIC_SYSTEM_PROMPT,
+        cacheKey: conversationId,
+        includeReadTools,
+        formId: conv.formId,
+        modelTier,
+        toolTier,
+        canManagePlugins: toolTier === 'full' && permission === PermissionLevel.OWNER,
+      });
+      await respond(await agent.stream({ messages, timeout: CHAT_TURN_TIMEOUT }));
+    }
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     logger.error({ errMsg, conversationId }, 'AI chat stream failed');
