@@ -1,12 +1,14 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
-import type { ListFieldsToolPart } from '../../../lib/aiAgentTypes';
+import { useTranslation } from '../../../hooks/useTranslation';
+import { isToolFailed, type ListFieldsToolPart } from '../../../lib/aiAgentTypes';
 
 interface Props {
   part: ListFieldsToolPart;
 }
 
 const ListFieldsToolPart: React.FC<Props> = ({ part }) => {
+  const { t } = useTranslation('aiEditDrawer');
   const state = (part as any).state as string;
 
   if (state === 'input-streaming' || state === 'input-available') {
@@ -18,7 +20,17 @@ const ListFieldsToolPart: React.FC<Props> = ({ part }) => {
     );
   }
 
-  const pages = part.output?.pages ?? [];
+  // A failed step has no output; an oversized one is persisted truncated (a string) — in both
+  // cases there is no page list to count, so don't claim an empty scan.
+  if (isToolFailed(part) || !Array.isArray(part.output?.pages)) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
+        {isToolFailed(part) ? t('toolFailed') : t('toolStatus.listFieldsDone')}
+      </span>
+    );
+  }
+
+  const pages = part.output.pages;
   const pageCount = pages.length;
 
   // Each page string: `p1 "Title" [id:...]: field1|type|label|req, field2|...`

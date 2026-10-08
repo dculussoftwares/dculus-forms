@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const doGenerate = vi.fn(async (params: unknown) => params);
 const doStream = vi.fn(async (params: unknown) => params);
 const openaiChat = vi.fn((modelId: string) => ({
-  specificationVersion: 'v3',
+  specificationVersion: 'v4',
   provider: 'openai.chat',
   modelId,
   supportedUrls: {},
