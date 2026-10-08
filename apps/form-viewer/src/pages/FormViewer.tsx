@@ -244,6 +244,10 @@ const FormViewer: React.FC<FormViewerProps> = ({
   // ("Start over", or taking another device's copy after a conflict).
   const [rendererKey, setRendererKey] = useState(0);
   const draftStartedAtRef = useRef<string | null>(null);
+  // Only answers from the optional save-progress sign-in flow may cross into
+  // a newly authenticated draft session. Answers from another account must
+  // never be treated as unsaved draft data.
+  const carryOverAnswersRef = useRef(false);
   const isDraftReady = !draftSessionKey || restoredSessionKey === draftSessionKey;
 
   // `unsaved` are answers typed before the draft could be saved (before
@@ -293,8 +297,12 @@ const FormViewer: React.FC<FormViewerProps> = ({
     if (!draftSessionKey || restoredSessionKey === draftSessionKey) return;
     const draft = (loadedForm?.myDraft as ResponseDraft | null) ?? null;
     // Typed before signing in: still in the store after an in-page sign-in,
-    // or stashed across Google's redirect.
-    const unsaved = { ...takePendingAnswers(loadedForm.id), ...readCurrentAnswers() };
+    // or stashed across Google's redirect. Do not carry answers across an
+    // account change during reauthentication.
+    const pending = takePendingAnswers(loadedForm.id);
+    const shouldCarryOver = carryOverAnswersRef.current || Object.keys(pending).length > 0;
+    const unsaved = shouldCarryOver ? { ...pending, ...readCurrentAnswers() } : {};
+    carryOverAnswersRef.current = false;
     applyDraftToStore(draft, unsaved);
     seedDraft(draft);
     setHasUnsavedAnswers(Object.keys(unsaved).length > 0);
@@ -768,8 +776,16 @@ const FormViewer: React.FC<FormViewerProps> = ({
   // session key, which restores that account's own draft instead of letting
   // autosave file the previous account's answers under it.
   const handleReauthenticated = async () => {
+    const previousAccount = form.respondentEmail ?? form.signedInEmail;
     const { data: fresh } = await refetch();
-    if (fresh?.formByShortUrl?.respondentEmail !== form.respondentEmail) {
+    const freshForm = fresh?.formByShortUrl;
+    const freshAccount = freshForm?.respondentEmail ?? freshForm?.signedInEmail;
+    if (freshAccount !== previousAccount) {
+      // The store still contains the previous respondent's answers while the
+      // re-auth overlay is shown. Clear them before the new draft is restored;
+      // unlike the save-progress prompt, reauthentication is not a carry-over.
+      useFormResponseStore.getState().clearAllResponses();
+      setRestoredSessionKey(null);
       setMyResponseOverride(undefined);
       setView('form');
     }
@@ -801,7 +817,17 @@ const FormViewer: React.FC<FormViewerProps> = ({
           returning browser can't submit silently under a previous respondent.
           Forms that don't require sign-in instead invite the respondent to
           sign in to save their progress. */}
-      {showSaveProgressPrompt && <SaveProgressPrompt formId={form.id} onSignedIn={() => void refetch()} />}
+      {showSaveProgressPrompt && (
+        <SaveProgressPrompt
+          formId={form.id}
+          onSignedIn={() => {
+            // Preserve answers typed while signed out for this intentional
+            // save-progress sign-in, but not for an account switch later.
+            carryOverAnswersRef.current = true;
+            void refetch();
+          }}
+        />
+      )}
       {accountEmail && (
         <RespondentBadge
           email={accountEmail}
