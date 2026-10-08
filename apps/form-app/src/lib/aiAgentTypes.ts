@@ -1,6 +1,21 @@
 import type { UIMessage } from 'ai';
 
-export type ToolState = 'input-streaming' | 'input-available' | 'output-available';
+export type ToolState = 'input-streaming' | 'input-available' | 'output-available' | 'output-error';
+
+/** True once a tool step has finished, successfully or not. */
+export function isToolSettled(part: { state?: string }): boolean {
+  return part.state === 'output-available' || part.state === 'output-error';
+}
+
+/**
+ * True when a tool step failed: the SDK reports a thrown error as `output-error`, and the form
+ * tools return `{ error }` (so the model can recover) instead of an operation.
+ */
+export function isToolFailed(part: { state?: string; output?: unknown }): boolean {
+  if (part.state === 'output-error') return true;
+  const output = part.output as { error?: unknown } | undefined;
+  return part.state === 'output-available' && typeof output?.error === 'string';
+}
 
 // Read-only tools
 export interface ListFieldsToolPart {
@@ -184,7 +199,7 @@ export type FormEditToolPart =
 export type FormEditAgentUIMessage = Omit<UIMessage, 'parts'> & {
   parts: Array<
     | { type: 'text'; text: string }
-    | { type: 'reasoning'; reasoning: string }
+    | { type: 'reasoning'; text: string }
     | FormEditToolPart
   >;
 };

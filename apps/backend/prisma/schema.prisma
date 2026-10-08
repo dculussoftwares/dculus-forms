@@ -16,17 +16,19 @@ datasource db {
 // Better Auth Models
 
 model User {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   name          String
-  email         String   @unique
+  email         String    @unique
   emailVerified Boolean?
   image         String?
   // TODO(P3-05): Migrate to enum type — validate existing data first
   // enum UserRole { user admin superAdmin }
-  role          String?  @default("user")
-  banned        Boolean? @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  role          String?   @default("user")
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relations
   accounts            Account[]
@@ -74,6 +76,7 @@ model Session {
   userAgent            String?
   userId               String
   activeOrganizationId String?
+  impersonatedBy       String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -203,6 +206,7 @@ model Response {
   @@index([formId, submittedAt])
   @@index([deletedAt])
   @@index([respondentUserId])
+  @@index([formId, respondentUserId])
   @@map("response")
 }
 
@@ -452,7 +456,7 @@ model ResponseEditHistory {
   responseId     String // Reference to Response
   editedById     String? // User who made the edit (nullable so user deletion is not blocked)
   editedAt       DateTime @default(now())
-  editType       String   @default("MANUAL") // MANUAL, SYSTEM, BULK
+  editType       String   @default("MANUAL") // MANUAL, SYSTEM, BULK, RESPONDENT
   editReason     String? // Optional reason for the edit
   ipAddress      String? // IP address of the editor
   userAgent      String? // User agent of the editor

@@ -23,17 +23,12 @@ describe('extractUsageStats', () => {
     expect(stats.cacheHitRatio).toBeCloseTo(0.6);
   });
 
-  it('falls back to the deprecated cachedInputTokens field', () => {
-    const usage = {
-      inputTokens: 500,
-      outputTokens: 100,
-      totalTokens: 600,
-      cachedInputTokens: 250,
-    } as unknown as LanguageModelUsage;
+  it('reports no cache hits when the provider returns no input token details', () => {
+    const usage = { inputTokens: 500, outputTokens: 100, totalTokens: 600 } as unknown as LanguageModelUsage;
 
     const stats = extractUsageStats(usage);
-    expect(stats.cachedInputTokens).toBe(250);
-    expect(stats.cacheHitRatio).toBeCloseTo(0.5);
+    expect(stats.cachedInputTokens).toBe(0);
+    expect(stats.cacheHitRatio).toBe(0);
   });
 
   it('derives totalTokens when absent and handles zero input (ratio 0, no divide-by-zero)', () => {

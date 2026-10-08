@@ -1,4 +1,4 @@
-import { ToolLoopAgent, InferAgentUIMessage, stepCountIs, pruneMessages, type ModelMessage } from 'ai';
+import { ToolLoopAgent, InferAgentUIMessage, isStepCount, pruneMessages, type ModelMessage } from 'ai';
 import { getRoutedModel, buildPromptCacheOptions } from './ai.js';
 import { createFormEditTools, type ToolTier } from './aiFormEditTools.js';
 
@@ -16,8 +16,8 @@ export interface FormEditAgentOptions {
   formId?: string;
   /**
    * Model tier for two-tier routing:
-   *   'nano' → gpt-5.4-nano, stepCountIs(8)  — simple CRUD ops + questions
-   *   'mini' → gpt-5.4-mini, stepCountIs(15) — complex analysis, remix, bulk edits
+   *   'nano' → gpt-5.4-nano, isStepCount(8)   — simple CRUD ops + questions
+   *   'mini' → gpt-5.4-mini, isStepCount(15) — complex analysis, remix, bulk edits
    * Defaults to 'mini' (existing behaviour) so callers not yet routing remain unaffected.
    */
   modelTier?: 'nano' | 'mini';
@@ -48,7 +48,7 @@ export function createFormEditAgent(
 
   return new ToolLoopAgent({
     model: getRoutedModel(modelTier),
-    stopWhen: stepCountIs(maxSteps),
+    stopWhen: isStepCount(maxSteps),
     tools,
     // Set once on the constructor — the AI SDK merges call-level providerOptions into every
     // step of the tool loop, so the cache key reaches each model call.

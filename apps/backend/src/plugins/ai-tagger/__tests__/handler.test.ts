@@ -12,6 +12,11 @@ vi.mock('../../../lib/ai.js', () => ({
   getFastModel: vi.fn(() => 'mock-model'),
 }));
 
+vi.mock('../../../services/aiUsageService.js', () => ({
+  checkAITokenBudget: vi.fn(),
+  recordAITokenUsage: vi.fn(),
+}));
+
 // Must be mocked: the real module reaches Prisma via collaborativeDocumentRepository,
 // which would attempt an actual database connection during unit tests.
 vi.mock('../../../services/hocuspocus.js', () => ({
@@ -25,8 +30,11 @@ describe('AI Tagger Handler', () => {
   let mockPrisma: any;
   let mockEvent: PluginEvent;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    const { checkAITokenBudget, recordAITokenUsage } = await import('../../../services/aiUsageService.js');
+    vi.mocked(checkAITokenBudget).mockResolvedValue({ allowed: true, used: 0, limit: 200_000 });
+    vi.mocked(recordAITokenUsage).mockResolvedValue(undefined);
 
     mockPrisma = {
       responseTagAssignment: { upsert: vi.fn() },
@@ -120,6 +128,57 @@ describe('AI Tagger Handler', () => {
       update: {},
     });
     expect(mockPrisma.response.update).toHaveBeenCalledOnce();
+  });
+
+  it('charges the tokens it used to the organization as nano-tier AI credits', async () => {
+    const { generateText } = await import('ai');
+    (generateText as any).mockResolvedValue({ output: { tagIds: [] }, usage: { totalTokens: 150 } });
+    mockContext.getResponseById = vi.fn().mockResolvedValue({ id: 'response-1', data: { Issue: 'x' }, metadata: {} });
+
+    const { aiTaggerHandler } = await import('../handler.js');
+    const { recordAITokenUsage } = await import('../../../services/aiUsageService.js');
+    await aiTaggerHandler(
+      { id: TEST_PLUGIN_ID, config: { type: 'ai-tagger', tags: [{ tagId: 'tag-1', name: 'Billing', color: '#3b82f6', definition: 'Billing' }] } as AiTaggerPluginConfig },
+      mockEvent,
+      mockContext
+    );
+
+    expect(recordAITokenUsage).toHaveBeenCalledWith('org-1', 150, 'nano');
+  });
+
+  it('skips the model call when the organization is out of AI credits', async () => {
+    const { generateText } = await import('ai');
+    const { checkAITokenBudget } = await import('../../../services/aiUsageService.js');
+    vi.mocked(checkAITokenBudget).mockResolvedValue({ allowed: false, used: 200_000, limit: 200_000 });
+
+    const { aiTaggerHandler } = await import('../handler.js');
+    const result = await aiTaggerHandler(
+      { id: TEST_PLUGIN_ID, config: { type: 'ai-tagger', tags: [{ tagId: 'tag-1', name: 'Billing', color: '#3b82f6', definition: 'Billing' }] } as AiTaggerPluginConfig },
+      mockEvent,
+      mockContext
+    );
+
+    expect(result).toEqual({ success: false, error: 'AI credit limit reached', tagsApplied: [] });
+    expect(generateText).not.toHaveBeenCalled();
+    expect(mockContext.getResponseById).not.toHaveBeenCalled();
+  });
+
+  it('still reports success when recording AI credit usage fails', async () => {
+    const { generateText } = await import('ai');
+    const { recordAITokenUsage } = await import('../../../services/aiUsageService.js');
+    (generateText as any).mockResolvedValue({ output: { tagIds: ['tag-1'] }, usage: { totalTokens: 90 } });
+    vi.mocked(recordAITokenUsage).mockRejectedValue(new Error('db down'));
+    mockContext.getResponseById = vi.fn().mockResolvedValue({ id: 'response-1', data: { Issue: 'x' }, metadata: {} });
+
+    const { aiTaggerHandler } = await import('../handler.js');
+    const result = await aiTaggerHandler(
+      { id: TEST_PLUGIN_ID, config: { type: 'ai-tagger', tags: [{ tagId: 'tag-1', name: 'Billing', color: '#3b82f6', definition: 'Billing' }] } as AiTaggerPluginConfig },
+      mockEvent,
+      mockContext
+    );
+
+    expect(result.success).toBe(true);
+    expect(mockContext.logger.error).toHaveBeenCalledWith('AI tagger: failed to record AI credit usage', expect.anything());
   });
 
   it('filters out hallucinated tag IDs not present in config', async () => {

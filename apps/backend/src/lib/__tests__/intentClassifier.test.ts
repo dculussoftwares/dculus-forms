@@ -53,11 +53,10 @@ describe('classifyIntent', () => {
       ['edit the options for the dropdown', 'simple'],
       ['add a new page', 'simple'],
       ['rename page 2 to "Contact Info"', 'simple'],
-      ['move the email field to page 2', 'simple'],
-      ['copy this field to the last page', 'simple'],
       ['change the button text', 'simple'],
       ['update the intro header', 'simple'],
       ['modify the CTA label', 'simple'],
+      ['move the phone field above email', 'simple'],
     ])('"%s" → %s', (message, expected) => {
       expect(classifyIntent(message)).toBe(expected);
     });

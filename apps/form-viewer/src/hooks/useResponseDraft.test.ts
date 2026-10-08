@@ -292,4 +292,39 @@ describe('useResponseDraft', () => {
     // before the store changed again.
     expect(mutate).toHaveBeenCalledTimes(1);
   });
+
+  it('flush() saves a pending change at once, after one already on the wire', async () => {
+    let resolveSave!: (value: unknown) => void;
+    mutate
+      .mockReturnValueOnce(new Promise((resolve) => (resolveSave = resolve)))
+      .mockResolvedValueOnce(saved(2, { name: 'Ab' }));
+    const { result } = setup();
+
+    type('name', 'A');
+    await flush();
+    type('name', 'Ab');
+
+    let flushed: boolean | undefined;
+    const flushing = act(async () => {
+      flushed = await result.current.flush();
+    });
+    resolveSave(saved(1, { name: 'A' }));
+    await flushing;
+
+    expect(mutate).toHaveBeenCalledTimes(2);
+    expect(lastInput()).toMatchObject({ data: { name: 'Ab' }, baseVersion: 1 });
+    expect(flushed).toBe(true);
+  });
+
+  it('flush() reports false when the pending change could not be saved', async () => {
+    mutate.mockResolvedValueOnce({ error: new Error('offline') });
+    const { result } = setup();
+    type('name', 'A');
+
+    let flushed: boolean | undefined;
+    await act(async () => {
+      flushed = await result.current.flush();
+    });
+    expect(flushed).toBe(false);
+  });
 });

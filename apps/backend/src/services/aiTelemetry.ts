@@ -9,8 +9,7 @@ import type { TurnTelemetry } from '@dculus/types/ai.js';
  * Pull the cache-aware token breakdown out of an AI SDK usage object.
  *
  * Cached prompt tokens live in `usage.inputTokenDetails.cacheReadTokens` for the OpenAI/Azure
- * chat path (NOT in `providerMetadata.openai.cachedPromptTokens`, which does not exist in
- * @ai-sdk/openai@3). `usage.cachedInputTokens` is the deprecated alias — we fall back to it.
+ * chat path (NOT in `providerMetadata.openai.cachedPromptTokens`).
  */
 export function extractUsageStats(usage: LanguageModelUsage | undefined): {
   inputTokens: number;
@@ -21,8 +20,7 @@ export function extractUsageStats(usage: LanguageModelUsage | undefined): {
 } {
   const inputTokens = usage?.inputTokens ?? 0;
   const outputTokens = usage?.outputTokens ?? 0;
-  const cachedInputTokens =
-    usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens ?? 0;
+  const cachedInputTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
   const totalTokens = usage?.totalTokens ?? inputTokens + outputTokens;
   const cacheHitRatio = inputTokens > 0 ? cachedInputTokens / inputTokens : 0;
   return { inputTokens, outputTokens, cachedInputTokens, totalTokens, cacheHitRatio };

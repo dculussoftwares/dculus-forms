@@ -193,7 +193,7 @@ export async function generateFormWithAI(
   const { output, usage } = await generateText({
     model: getPrimaryModel(),
     output: Output.object({ schema: AIFormSchema }),
-    system: quiz ? MODE_SYSTEM_PROMPTS_QUIZ[mode] : MODE_SYSTEM_PROMPTS[mode],
+    instructions: quiz ? MODE_SYSTEM_PROMPTS_QUIZ[mode] : MODE_SYSTEM_PROMPTS[mode],
     prompt: quiz ? `Create a quiz for: ${prompt}` : `Create a form for: ${prompt}`,
   });
 
@@ -252,7 +252,7 @@ export async function generateAiSampleData(fields: {
   const { output, usage } = await generateText({
     model: getFastModel(),
     output: Output.object({ schema: AISampleAnswersSchema }),
-    system: `You fill forms with realistic sample data for previewing documents.
+    instructions: `You fill forms with realistic sample data for previewing documents.
 Invent ONE consistent fictional persona and answer every field as that persona.
 Rules:
 - Answer in the same language as the field label (e.g. Tamil labels get Tamil answers).
@@ -321,7 +321,7 @@ export async function generateAiFakeResponses(fields: {
   const { output, usage } = await generateText({
     model: getFastModel(),
     output: Output.object({ schema: AIFakeResponsesSchema }),
-    system: `You generate realistic, DIVERSE fake form submissions for testing a form builder.
+    instructions: `You generate realistic, DIVERSE fake form submissions for testing a form builder.
 Invent ${fields.count} DIFFERENT fictional personas — one per response — varying age, background, tone, and answer length. Never repeat the same persona or the same set of answers across responses.
 Rules:
 - Answer in the same language as the field label (e.g. Tamil labels get Tamil answers).

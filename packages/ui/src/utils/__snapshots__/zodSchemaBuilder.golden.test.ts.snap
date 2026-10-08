@@ -342,13 +342,13 @@ exports[`validators per field type (golden) > number required 18-99 1`] = `
   {
     "input": "30",
     "result": [
-      "f: Too big: expected string to have <=0 characters",
+      "f: Too big: expected string to have exactly 0 characters",
     ],
   },
   {
     "input": "abc",
     "result": [
-      "f: Too big: expected string to have <=0 characters",
+      "f: Too big: expected string to have exactly 0 characters",
     ],
   },
   {
