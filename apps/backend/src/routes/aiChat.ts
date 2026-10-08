@@ -366,8 +366,12 @@ aiChatRouter.post('/chat', async (req, res) => {
         // context is not a UI message, so no snapshot leaks into persisted history.
         const usage = await result.usage;
         const tokensUsed = usage?.totalTokens ?? 0;
-        await saveConversationMessages(conversationId, truncateToolResults([message, responseMessage]), tokensUsed);
-        await recordAITokenUsage(organizationId, tokensUsed, modelTier);
+        try {
+          await saveConversationMessages(conversationId, truncateToolResults([message, responseMessage]), tokensUsed);
+        } finally {
+          // The tokens were spent even if persistence failed.
+          await recordAITokenUsage(organizationId, tokensUsed, modelTier);
+        }
         recordTurnTelemetry({
           conversationId,
           formId: conv.formId,

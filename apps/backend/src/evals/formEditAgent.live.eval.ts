@@ -22,7 +22,9 @@ vi.mock('../services/responseService.js', () => ({
   countResponsesReferencingAnyField: async () => 0,
 }));
 
-const configured = Boolean(process.env.AI_PRIMARY_API_KEY && process.env.AI_FAST_API_KEY);
+const configured = ['AI_PRIMARY_BASE_URL', 'AI_PRIMARY_API_KEY', 'AI_FAST_BASE_URL', 'AI_FAST_API_KEY'].every((key) =>
+  Boolean(process.env[key])
+);
 
 const SCHEMA = {
   pages: [

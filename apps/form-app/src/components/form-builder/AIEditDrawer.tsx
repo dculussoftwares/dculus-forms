@@ -210,6 +210,8 @@ function AssistantMessage({
             <div className="flex flex-wrap gap-1.5">
               {message.parts.map((part, i) => {
                 const key = (part as any).toolCallId ?? `${part.type}-${i}`;
+                // A failed step never gets a success/pending chip, whatever its tool.
+                if (part.type.startsWith('tool-') && isToolFailed(part as any)) return <MutationToolPart key={key} part={part as any} />;
                 if (part.type === 'tool-listFields') return <ListFieldsToolPart key={key} part={part as any} />;
                 if (part.type === 'tool-getField') return <GetFieldToolPart key={key} part={part as any} />;
                 if (part.type === 'tool-proposeValidation') {
