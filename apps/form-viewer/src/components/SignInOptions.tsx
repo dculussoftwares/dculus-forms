@@ -28,7 +28,11 @@ export default function SignInOptions({ allowedDomains, onSignedIn, onBeforeGoog
   const handleGoogleSignIn = () => {
     setError(null);
     onBeforeGoogleRedirect?.();
-    sessionStorage.setItem('redirectAfterAuth', window.location.pathname + window.location.search);
+    try {
+      sessionStorage.setItem('redirectAfterAuth', window.location.pathname + window.location.search);
+    } catch {
+      // Storage blocked: the returnTo in the callback URL still brings the respondent back.
+    }
     const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
     authClient.signIn.social({
       provider: 'google',
