@@ -33,6 +33,8 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
       # submit silently under a previous respondent.
       respondentEmail
       respondentImage
+      signedInEmail
+      signedInImage
       # Save-and-resume: the signed-in respondent's own draft, or null.
       myDraft {
         data

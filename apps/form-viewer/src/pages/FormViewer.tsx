@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useRef, useMemo, useCallback, useEffect, useLayoutEffect } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { CombinedGraphQLErrors } from '@apollo/client';
@@ -31,10 +31,13 @@ import {
 import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
 import RespondentBadge from '../components/RespondentBadge';
+import SaveProgressPrompt from '../components/SaveProgressPrompt';
+import { saveProgressLabels } from '../locales/saveProgress';
 import { signOut } from '../lib/auth-client';
 import DraftNotice, { DraftSaveStatusText } from '../components/DraftNotice';
 import { useResponseDraft, type ResponseDraft } from '../hooks/useResponseDraft';
-import { buildPageResponses, resolveResumePageId } from '../lib/draftData';
+import { buildPageResponses, resolveResumePageId, type DraftData } from '../lib/draftData';
+import { readCurrentAnswers, takePendingAnswers } from '../lib/pendingAnswers';
 import AlreadyRespondedScreen from '../components/AlreadyRespondedScreen';
 import MyResponseNotice from '../components/MyResponseNotice';
 import MyResponseSummary from '../components/MyResponseSummary';
@@ -228,13 +231,12 @@ const FormViewer: React.FC<FormViewerProps> = ({
   const loadedForm = data?.formByShortUrl;
   const myResponse: MyResponseData | null =
     myResponseOverride !== undefined ? myResponseOverride : (loadedForm?.myResponse ?? null);
+  // `signedInEmail` is the caller's own account, and only set when the server
+  // would accept a draft from them (published, access rules met, save-and-resume
+  // not turned off). It is also set on forms that don't require sign-in.
   const draftsEnabled =
-    !!formSchema &&
-    loadedForm?.accessStatus === 'OPEN' &&
-    !!loadedForm?.respondentEmail &&
-    !loadedForm?.closedReason &&
-    isSaveProgressEnabled(loadedForm?.settings);
-  const draftSessionKey = draftsEnabled ? `${loadedForm.id}:${loadedForm.respondentEmail}` : null;
+    !!formSchema && loadedForm?.accessStatus === 'OPEN' && !!loadedForm?.signedInEmail && !loadedForm?.closedReason;
+  const draftSessionKey = draftsEnabled ? `${loadedForm.id}:${loadedForm.signedInEmail}` : null;
   const [restoredSessionKey, setRestoredSessionKey] = useState<string | null>(null);
   const [resumePageId, setResumePageId] = useState<string | undefined>(undefined);
   const [restoredAt, setRestoredAt] = useState<string | null>(null);
@@ -244,12 +246,15 @@ const FormViewer: React.FC<FormViewerProps> = ({
   const draftStartedAtRef = useRef<string | null>(null);
   const isDraftReady = !draftSessionKey || restoredSessionKey === draftSessionKey;
 
+  // `unsaved` are answers typed before the draft could be saved (before
+  // signing in); they win over the same fields in an older saved draft.
   const applyDraftToStore = useCallback(
-    (draft: ResponseDraft | null) => {
+    (draft: ResponseDraft | null, unsaved: DraftData = {}) => {
       const store = useFormResponseStore.getState();
       store.clearAllResponses();
-      if (draft && formSchema) {
-        for (const [pageId, responses] of Object.entries(buildPageResponses(formSchema, draft.data))) {
+      if (formSchema) {
+        const answers = { ...draft?.data, ...unsaved };
+        for (const [pageId, responses] of Object.entries(buildPageResponses(formSchema, answers))) {
           store.setPageResponses(pageId, responses);
         }
       }
@@ -267,27 +272,42 @@ const FormViewer: React.FC<FormViewerProps> = ({
     [applyDraftToStore]
   );
 
+  const draftsActive =
+    isDraftReady &&
+    !!draftSessionKey &&
+    view === 'form' &&
+    !needsReauth &&
+    submissionState !== 'submitting' &&
+    submissionState !== 'success';
   const responseDraft = useResponseDraft({
     formId: loadedForm?.id ?? '',
-    enabled:
-      isDraftReady &&
-      !!draftSessionKey &&
-      view === 'form' &&
-      !needsReauth &&
-      submissionState !== 'submitting' &&
-      submissionState !== 'success',
+    enabled: draftsActive,
     applyDraft: replaceAnswers,
   });
   const seedDraft = responseDraft.seed;
+  const flushDraft = responseDraft.flush;
+  // Answers carried over from before sign-in are not on the server yet.
+  const [hasUnsavedAnswers, setHasUnsavedAnswers] = useState(false);
 
   useLayoutEffect(() => {
     if (!draftSessionKey || restoredSessionKey === draftSessionKey) return;
     const draft = (loadedForm?.myDraft as ResponseDraft | null) ?? null;
-    applyDraftToStore(draft);
+    // Typed before signing in: still in the store after an in-page sign-in,
+    // or stashed across Google's redirect.
+    const unsaved = { ...takePendingAnswers(loadedForm.id), ...readCurrentAnswers() };
+    applyDraftToStore(draft, unsaved);
     seedDraft(draft);
+    setHasUnsavedAnswers(Object.keys(unsaved).length > 0);
     setRestoredAt(draft?.updatedAt ?? null);
     setRestoredSessionKey(draftSessionKey);
   }, [draftSessionKey, restoredSessionKey, loadedForm, applyDraftToStore, seedDraft]);
+
+  // Save carried-over answers right away instead of waiting for the next keystroke.
+  useEffect(() => {
+    if (!hasUnsavedAnswers || !draftsActive) return;
+    setHasUnsavedAnswers(false);
+    void flushDraft();
+  }, [hasUnsavedAnswers, draftsActive, flushDraft]);
 
   const hasFileFields = useMemo(
     () =>
@@ -701,6 +721,19 @@ const FormViewer: React.FC<FormViewerProps> = ({
   const isAlreadyResponded =
     (onePerRespondent || isClosed) && !!myResponse && view === 'form' && submissionState !== 'success';
   const showDraftUi = !!draftSessionKey && view === 'form' && submissionState !== 'success';
+  // Identity-gated forms record the account with the response; on other forms
+  // a signed-in account is only used to save progress.
+  const accountEmail = form.respondentEmail ?? form.signedInEmail;
+  // Embedded frames can't count on third-party cookies or a sign-in popup, so
+  // they never prompt (a respondent who is already signed in is still served).
+  const showSaveProgressPrompt =
+    !accountEmail &&
+    !embedded &&
+    !requiresIdentity &&
+    !isClosed &&
+    view === 'form' &&
+    submissionState !== 'success' &&
+    isSaveProgressEnabled(form.settings);
 
   const renderResponseNotice = () => {
     if (!myResponse || view === 'review' || isAlreadyResponded) return null;
@@ -763,17 +796,19 @@ const FormViewer: React.FC<FormViewerProps> = ({
       className={embedded ? 'w-full relative' : 'h-screen w-full flex flex-col'}
       data-testid="form-viewer-renderer"
     >
-      {/* Identity-gated forms: a full-width banner (its own row above the form,
-          not a floating chip) naming the signed-in account and offering a
-          switch — so a shared or returning browser can't submit silently under
-          a previous respondent. `respondentEmail` is null (banner hidden) for
-          forms that don't capture respondent identity. */}
-      {form.respondentEmail && (
+      {/* A full-width banner (its own row above the form, not a floating chip)
+          naming the signed-in account and offering a switch — so a shared or
+          returning browser can't submit silently under a previous respondent.
+          Forms that don't require sign-in instead invite the respondent to
+          sign in to save their progress. */}
+      {showSaveProgressPrompt && <SaveProgressPrompt formId={form.id} onSignedIn={() => void refetch()} />}
+      {accountEmail && (
         <RespondentBadge
-          email={form.respondentEmail}
-          imageUrl={form.respondentImage}
+          email={accountEmail}
+          imageUrl={form.respondentEmail ? form.respondentImage : form.signedInImage}
           embedded={embedded}
           onSwitchAccount={handleSwitchAccount}
+          note={form.respondentEmail ? undefined : saveProgressLabels.accountNote}
           trailing={
             showDraftUi ? (
               <DraftSaveStatusText status={responseDraft.status} lastSavedAt={responseDraft.lastSavedAt} />

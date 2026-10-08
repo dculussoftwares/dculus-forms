@@ -6,7 +6,7 @@ import type { BetterAuthContext } from '../middleware/better-auth-middleware.js'
 import {
   isIdentifiedRespondent,
   isWithinTimeWindow,
-  requireIdentifiedRespondent,
+  requireSignedInRespondent,
   type RespondentForm,
 } from '../lib/respondentAccess.js';
 import { assertResponsePayloadWithinLimits } from '../lib/responsePayloadLimits.js';
@@ -93,7 +93,7 @@ export async function getMyResponse(form: RespondentForm, auth: BetterAuthContex
  * history shows exactly what the respondent changed.
  */
 export async function editMyResponse(params: EditMyResponseParams): Promise<MyResponseView> {
-  const { form: editable, userId } = requireIdentifiedRespondent(params.form, params.auth);
+  const { form: editable, userId } = requireSignedInRespondent(params.form, params.auth);
   if (!isRespondentEditEnabled(editable.settings)) {
     throw createGraphQLError('This form does not allow editing responses', GRAPHQL_ERROR_CODES.NO_ACCESS);
   }

@@ -26,6 +26,7 @@ import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { resolveAccessStatus, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
 import { toRespondentForm } from '../../lib/respondentAccess.js';
 import { getMyResponse } from '../../services/myResponseService.js';
+import { canUseDrafts } from '../../services/responseDraftService.js';
 
 // Sibling field resolvers on `Form` only see the raw `parent` DB row, not
 // each other's resolved output, so both `accessStatus` and
@@ -214,6 +215,13 @@ export const formsResolvers = {
       }
       return context.auth.user?.image ?? null;
     },
+    // The caller's own session account on forms that save progress to it (see
+    // schema), including forms that don't require sign-in. Gated like the
+    // draft itself, so it is null when the caller couldn't save a draft.
+    signedInEmail: (parent: any, _args: any, context: { auth: BetterAuthContext }) =>
+      canUseDrafts(toRespondentForm(parent), context.auth) ? context.auth.user?.email ?? null : null,
+    signedInImage: (parent: any, _args: any, context: { auth: BetterAuthContext }) =>
+      canUseDrafts(toRespondentForm(parent), context.auth) ? context.auth.user?.image ?? null : null,
     settings: (parent: any) => {
       // Parse JSON settings from database or return null if no settings
       if (parent.settings) {

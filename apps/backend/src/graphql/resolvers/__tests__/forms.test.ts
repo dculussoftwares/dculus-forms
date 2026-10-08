@@ -683,6 +683,37 @@ describe('Forms Resolvers', () => {
     });
   });
 
+  describe('Form: signedInEmail and signedInImage', () => {
+    const unauth = { auth: { user: null, session: null, isAuthenticated: false } } as any;
+    const ctx = {
+      auth: { user: { id: 'u1', email: 'a@b.com', image: 'https://img/a.png' }, session: {}, isAuthenticated: true },
+    } as any;
+    const open = { ...mockForm, isPublished: true, settings: JSON.stringify({}) };
+
+    it('returns the caller\'s own account on a form that does not require sign-in', () => {
+      expect(formsResolvers.Form.signedInEmail(open, {}, ctx)).toBe('a@b.com');
+      expect(formsResolvers.Form.signedInImage(open, {}, ctx)).toBe('https://img/a.png');
+    });
+
+    it('is null for signed-out callers', () => {
+      expect(formsResolvers.Form.signedInEmail(open, {}, unauth)).toBeNull();
+      expect(formsResolvers.Form.signedInImage(open, {}, unauth)).toBeNull();
+    });
+
+    it('is null when the owner turned save progress off', () => {
+      const form = { ...open, settings: JSON.stringify({ saveProgress: { enabled: false } }) };
+      expect(formsResolvers.Form.signedInEmail(form, {}, ctx)).toBeNull();
+    });
+
+    it('is null for a caller the form\'s access rules would reject', () => {
+      const form = {
+        ...open,
+        settings: JSON.stringify({ accessControl: { enabled: true, requireSignIn: true, allowedDomains: ['other.com'] } }),
+      };
+      expect(formsResolvers.Form.signedInEmail(form, {}, ctx)).toBeNull();
+    });
+  });
+
   describe('Form: respondentImage', () => {
     const form = { ...mockForm, settings: JSON.stringify({ collectRespondentEmail: true }) };
 

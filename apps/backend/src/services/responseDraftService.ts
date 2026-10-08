@@ -4,8 +4,8 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { createGraphQLError } from '#graphql-errors';
 import type { BetterAuthContext } from '../middleware/better-auth-middleware.js';
 import {
-  isIdentifiedRespondent,
-  requireIdentifiedRespondent,
+  isSignedInRespondent,
+  requireSignedInRespondent,
   type RespondentForm,
 } from '../lib/respondentAccess.js';
 import { assertResponsePayloadWithinLimits } from '../lib/responsePayloadLimits.js';
@@ -61,12 +61,12 @@ const isUniqueViolation = (error: unknown) =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
 
 /**
- * Non-throwing check used by the `Form.myDraft` field resolver: drafts are
- * only ever exposed to a signed-in respondent who could submit this form
- * right now, on a form that has save-and-resume turned on.
+ * Non-throwing check used by the `Form.myDraft` and account field resolvers:
+ * drafts are only ever exposed to a signed-in respondent who could submit
+ * this form right now, on a form that has save-and-resume turned on.
  */
 export function canUseDrafts(form: RespondentForm, auth: BetterAuthContext): boolean {
-  return isSaveProgressEnabled(form.settings) && isIdentifiedRespondent(form, auth);
+  return isSaveProgressEnabled(form.settings) && isSignedInRespondent(form, auth);
 }
 
 /**
@@ -75,7 +75,7 @@ export function canUseDrafts(form: RespondentForm, auth: BetterAuthContext): boo
  * Returns the caller's user id, the draft's owner key.
  */
 export function requireDraftAccess(form: RespondentForm | null, auth: BetterAuthContext): string {
-  const { form: draftable, userId } = requireIdentifiedRespondent(form, auth);
+  const { form: draftable, userId } = requireSignedInRespondent(form, auth);
   if (!isSaveProgressEnabled(draftable.settings)) {
     throw createGraphQLError('Saving progress is not enabled for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
   }

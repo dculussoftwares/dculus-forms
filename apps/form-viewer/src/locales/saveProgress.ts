@@ -23,4 +23,11 @@ export const saveProgressLabels = {
   useOther: 'Use those answers',
   keepMine: 'Keep these answers',
   dismiss: 'Dismiss',
+  promptTitle: 'Sign in to save your progress',
+  promptDescription: 'Optional. Your answers are saved to your account so you can finish later on any device.',
+  promptAction: 'Sign in',
+  dialogTitle: 'Sign in to save your progress',
+  dialogDescription:
+    "You don't need an account to submit this form. Signing in saves your answers as you go, so you can come back and finish on any device. Your account isn't attached to your response.",
+  accountNote: 'Your answers are saved to this account. It is not recorded with your response.',
 };

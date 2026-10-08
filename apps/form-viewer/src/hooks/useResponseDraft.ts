@@ -13,7 +13,8 @@ import {
 } from '../graphql/queries';
 import { getGraphQLUrl } from '../lib/config';
 import { getRespondentToken } from '../lib/respondentAuth';
-import { draftDataKey, pruneDraftData, type DraftData } from '../lib/draftData';
+import { draftDataKey } from '../lib/draftData';
+import { readCurrentAnswers } from '../lib/pendingAnswers';
 
 /** Quiet period after the last keystroke before a save goes out. */
 export const AUTOSAVE_DEBOUNCE_MS = 2_000;
@@ -92,14 +93,6 @@ interface UseResponseDraftOptions {
   applyDraft: (draft: ResponseDraft) => void;
 }
 
-const readAnswers = (): DraftData => {
-  const flat: Record<string, unknown> = {};
-  for (const pageResponses of Object.values(useFormResponseStore.getState().getAllResponses())) {
-    Object.assign(flat, pageResponses);
-  }
-  return pruneDraftData(flat);
-};
-
 const EMPTY_KEY = draftDataKey({});
 
 /**
@@ -135,7 +128,7 @@ export function useResponseDraft({ formId, enabled, applyDraft }: UseResponseDra
 
   /** What a save would send right now, or null when nothing changed. */
   const pendingChange = useCallback(() => {
-    const data = readAnswers();
+    const data = readCurrentAnswers();
     const key = draftDataKey(data);
     const answersChanged = key !== savedKeyRef.current;
     // A page move alone is only worth saving once a draft exists.

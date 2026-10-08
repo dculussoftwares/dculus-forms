@@ -23,17 +23,30 @@ export function toRespondentForm(parent: { id: string; isPublished: boolean; set
 }
 
 /**
- * Non-throwing check for the public `Form` field resolvers: the caller is a
- * signed-in respondent who passes this identity-gated form's access rules
- * (sign-in and email-domain allowlist) right now.
+ * Non-throwing check for the public `Form` field resolvers: the caller is
+ * signed in and the form's access rules (sign-in and email-domain allowlist,
+ * when it has any) let them respond right now. Forms that don't require
+ * sign-in accept any signed-in caller.
  */
-export function isIdentifiedRespondent(form: RespondentForm, auth: BetterAuthContext): boolean {
+export function isSignedInRespondent(form: RespondentForm, auth: BetterAuthContext): boolean {
   const settings = form.settings ?? undefined;
   return (
     form.isPublished &&
     !!auth.user?.id &&
-    requiresRespondentIdentity(settings?.accessControl, settings?.collectRespondentEmail) &&
     resolveAccessStatus(settings?.accessControl, settings?.collectRespondentEmail, auth) === 'OPEN'
+  );
+}
+
+/**
+ * Like `isSignedInRespondent`, for identity-gated forms only: the ones whose
+ * responses are tied to the respondent's account (my response, one response
+ * per person).
+ */
+export function isIdentifiedRespondent(form: RespondentForm, auth: BetterAuthContext): boolean {
+  const settings = form.settings ?? undefined;
+  return (
+    requiresRespondentIdentity(settings?.accessControl, settings?.collectRespondentEmail) &&
+    isSignedInRespondent(form, auth)
   );
 }
 
@@ -44,7 +57,7 @@ export function isIdentifiedRespondent(form: RespondentForm, auth: BetterAuthCon
  * form and the caller's user id, the key every respondent-owned record is
  * scoped by. Callers still check their own feature setting.
  */
-export function requireIdentifiedRespondent<F extends RespondentForm>(
+export function requireSignedInRespondent<F extends RespondentForm>(
   form: F | null,
   auth: BetterAuthContext
 ): { form: F; userId: string } {

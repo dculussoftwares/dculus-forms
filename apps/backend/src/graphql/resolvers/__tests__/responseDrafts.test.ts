@@ -49,8 +49,17 @@ describe('Form.myDraft', () => {
     expect(draftService.getResponseDraft).toHaveBeenCalled();
   });
 
-  it('returns null without a lookup on an anonymous form', async () => {
+  it('looks up the draft on a form that does not require sign-in', async () => {
+    vi.mocked(draftService.getResponseDraft).mockResolvedValue({ version: 1 } as any);
+
     const result = await responseDraftsResolvers.Form.myDraft({ ...gatedForm, settings: {} }, {}, signedIn as any);
+
+    expect(result).toEqual({ version: 1 });
+  });
+
+  it('returns null without a lookup when the owner turned save progress off', async () => {
+    const settings = { saveProgress: { enabled: false } };
+    const result = await responseDraftsResolvers.Form.myDraft({ ...gatedForm, settings }, {}, signedIn as any);
 
     expect(result).toBeNull();
     expect(draftService.getResponseDraft).not.toHaveBeenCalled();
