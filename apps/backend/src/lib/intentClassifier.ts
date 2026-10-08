@@ -16,6 +16,9 @@ import type { IntentTier } from '@dculus/types/ai.js';
 
 // Matches requests that are likely complex multi-step operations requiring the
 // full mini model and all tools (analysis, bulk ops, remixing, merging pages).
+/** Lookahead that rejects messages opening like a question ("how do I…", "can you explain…"). */
+const NOT_A_QUESTION = '^(?!\\s*(how|why|what|explain|can\\s+you\\s+(explain|tell))\\b)';
+
 const COMPLEX_PATTERNS: RegExp[] = [
   /\b(analy[sz]e|review|audit|assess|evaluate)\b/i,
   /\b(remix|transform|redesign|rebuild|rethink|reimagine)\b/i,
@@ -32,13 +35,17 @@ const COMPLEX_PATTERNS: RegExp[] = [
   // ── Edits that only full-tier tools can perform ────────────────────────────
   // The 'core' tier has no upsertConditionRule, proposeFieldTypeChange or relocateField, so
   // routing these as 'simple' leaves the model unable to act (it can only describe the change).
+  // Each pattern starts with NOT_A_QUESTION so "How do I show X only when Y?" stays a question.
   // Conditional logic → upsertConditionRule
-  /\b(show|hide|skip|jump)\b.{0,80}\b(if|when|unless|only\s+(if|when|for))\b/i,
-  /^(?!\s*how\b).*\b(add|create|set\s*up|make|use)\b.{0,30}\b(conditions?|conditional|logic|rules?|branching)\b/i, // "how do I…" stays a question
+  new RegExp(`${NOT_A_QUESTION}.*\\b(show|hide|skip|jump)\\b.{0,80}\\b(if|when|unless|only\\s+(if|when|for))\\b`, 'i'),
+  new RegExp(`${NOT_A_QUESTION}.*\\b(add|create|set\\s*up|make|use)\\b.{0,30}\\b(conditions?|conditional|logic|rules?|branching)\\b`, 'i'),
   // Field type change → proposeFieldTypeChange
-  /\b(change|convert|turn|switch|make)\b.{0,40}\b(field|question|input|it)\b.{0,15}\b(to|into)\s+(an?\s+)?(dropdown|select|radio|checkbox(es)?|multiple[-\s]choice|text\s*area|paragraph|number|date|email|phone|file)\b/i,
+  new RegExp(
+    `${NOT_A_QUESTION}.*\\b(change|convert|turn|switch|make)\\b.{0,40}\\b(field|question|input|it)\\b.{0,15}\\b(to|into)\\s+(an?\\s+)?(dropdown|select|radio|checkbox(es)?|multiple[-\\s]choice|text\\s*area|paragraph|number|date|email|phone|file)\\b`,
+    'i'
+  ),
   // Cross-page move/copy → relocateField (same-page moves stay 'simple' via reorder)
-  /\b(move|copy|duplicate)\b.{0,50}\b(to|onto|into)\b.{0,30}\bpage\b/i,
+  new RegExp(`${NOT_A_QUESTION}.*\\b(move|copy|duplicate)\\b.{0,50}\\b(to|onto|into)\\b.{0,30}\\bpage\\b`, 'i'),
   // ── Automation / integration (plugin) requests ──────────────────────────────
   // Always complex regardless of phrasing simplicity: plugin tools are full-tier only,
   // and automation has external side effects that warrant the mini model. Patterns are

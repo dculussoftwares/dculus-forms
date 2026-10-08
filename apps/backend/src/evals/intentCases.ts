@@ -48,6 +48,7 @@ export const INTENT_CASES: ReadonlyArray<{ message: string; expected: IntentTier
   { message: 'what field types do you support?', expected: 'question' },
   { message: 'How do conditions work?', expected: 'question' },
   { message: 'how do I add conditional logic?', expected: 'question' },
+  { message: 'How do I show a field only when another is Yes?', expected: 'question' },
   { message: 'Can you explain what a hint is?', expected: 'question' },
   { message: 'do you support file uploads?', expected: 'question' },
   { message: "what's the difference between radio and checkbox?", expected: 'question' },
