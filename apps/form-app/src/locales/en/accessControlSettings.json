@@ -23,7 +23,8 @@
   },
   "saveProgress": {
     "title": "Let respondents save and resume",
-    "description": "Answers are saved automatically while respondents fill out the form, so they can continue later on any device. Drafts are private to each respondent, never appear in your responses, and are deleted 30 days after their last change."
+    "description": "Answers are saved automatically while respondents fill out the form, so they can continue later on any device. Drafts are private to each respondent, never appear in your responses, and are deleted 30 days after their last change.",
+    "descriptionOptionalSignIn": "Answers are saved automatically while respondents fill out the form, so they can continue later on any device. Forms that don't require sign-in show an optional \"Sign in to save your progress\" prompt. Drafts are private to each respondent, never appear in your responses, and are deleted 30 days after their last change."
   },
   "oneResponsePerRespondent": {
     "title": "Limit to one response per person",

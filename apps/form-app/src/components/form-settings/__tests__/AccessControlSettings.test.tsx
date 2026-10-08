@@ -56,9 +56,10 @@ const renderPanel = (overrides: Partial<React.ComponentProps<typeof AccessContro
 const signInRequired = { enabled: true, requireSignIn: true, allowedDomains: [] };
 
 describe('AccessControlSettings — respondent options', () => {
-  it('hides the options on anonymous forms, where respondents are unknown', () => {
+  it('offers only save progress on forms that do not require sign-in, where respondents are unknown', () => {
     renderPanel();
-    expect(screen.queryByTestId('save-progress-checkbox')).not.toBeInTheDocument();
+    expect(screen.getByTestId('save-progress-checkbox')).toBeChecked();
+    expect(screen.getByText(mockEnAccessControl.saveProgress.descriptionOptionalSignIn)).toBeInTheDocument();
     expect(screen.queryByTestId('one-response-per-respondent-checkbox')).not.toBeInTheDocument();
     expect(screen.queryByTestId('allow-respondent-edit-checkbox')).not.toBeInTheDocument();
   });

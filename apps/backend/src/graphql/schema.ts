@@ -239,6 +239,13 @@ export const typeDefs = gql`
     # e.g. their Google avatar), or null. Same scoping as respondentEmail —
     # purely cosmetic for the account chip.
     respondentImage: String
+    # The caller's OWN signed-in account when this form saves progress to it,
+    # or null. Unlike respondentEmail it is also set on forms that don't
+    # require sign-in, where the account is only used to save and resume
+    # answers and is never recorded with the response. Session-only, like
+    # respondentEmail.
+    signedInEmail: String
+    signedInImage: String
     # The signed-in respondent's OWN saved draft, or null. Only resolved when
     # the caller could submit this form right now and save-and-resume is on.
     myDraft: ResponseDraft

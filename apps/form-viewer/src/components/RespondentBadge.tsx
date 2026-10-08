@@ -15,6 +15,8 @@ interface RespondentBadgeProps {
    * rather than imply an identity that is still active.
    */
   onSwitchAccount: () => Promise<void>;
+  /** What the account is used for. Defaults to the identity-gated wording. */
+  note?: string;
   /** Right-aligned slot, e.g. the save-and-resume status. */
   trailing?: ReactNode;
 }
@@ -44,6 +46,7 @@ export default function RespondentBadge({
   imageUrl,
   embedded = false,
   onSwitchAccount,
+  note = 'This account is recorded with your response',
   trailing,
 }: RespondentBadgeProps) {
   const [isSwitching, setIsSwitching] = useState(false);
@@ -125,7 +128,7 @@ export default function RespondentBadge({
             </button>
             <span className="inline-flex items-center gap-1">
               <InfoIcon />
-              This account is recorded with your response
+              {note}
             </span>
           </p>
         )}

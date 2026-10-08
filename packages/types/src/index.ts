@@ -108,18 +108,15 @@ export interface SaveProgressSettings {
 
 /**
  * True when signed-in respondents get their in-progress answers autosaved
- * as a server-side draft. Only identity-gated forms qualify (a draft is keyed
- * on the respondent's account), and it defaults to on there: `saveProgress`
- * absent means enabled, so existing gated forms get it without a migration.
+ * as a server-side draft. It is on for every form unless the owner turned it
+ * off: `saveProgress` absent means enabled, so existing forms get it without a
+ * migration. A draft is keyed on the respondent's account, so on a form that
+ * doesn't require sign-in it only applies to visitors who choose to sign in.
  */
 export function isSaveProgressEnabled(
-  settings: Pick<FormSettings, 'accessControl' | 'collectRespondentEmail' | 'saveProgress'> | undefined | null
+  settings: Pick<FormSettings, 'saveProgress'> | undefined | null
 ): boolean {
-  if (!settings) return false;
-  return (
-    requiresRespondentIdentity(settings.accessControl, settings.collectRespondentEmail) &&
-    settings.saveProgress?.enabled !== false
-  );
+  return settings?.saveProgress?.enabled !== false;
 }
 
 type RespondentSettings = Pick<
@@ -158,8 +155,8 @@ export interface FormSettings {
   // (Google/OTP) purely to capture a verified email, without restricting
   // who may respond (no domain allowlist applies to this flag alone).
   collectRespondentEmail?: boolean;
-  // Absent = enabled whenever the form captures respondent identity; see
-  // isSaveProgressEnabled. Has no effect on anonymous forms.
+  // Absent = enabled; see isSaveProgressEnabled. On a form that doesn't
+  // require sign-in, respondents opt in by signing in.
   saveProgress?: SaveProgressSettings;
   // Signed-in respondents may submit only once; see isOneResponsePerRespondent.
   oneResponsePerRespondent?: boolean;

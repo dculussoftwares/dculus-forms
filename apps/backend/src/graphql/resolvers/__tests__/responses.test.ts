@@ -651,8 +651,30 @@ describe('Responses Resolvers', () => {
       });
     });
 
-    it('never touches drafts on an anonymous form, even for a signed-in caller', async () => {
+    it('clears a signed-in respondent\'s draft on a form that does not require sign-in', async () => {
       await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
+
+      expect(responseDraftRepository.deleteForRespondent).toHaveBeenCalledWith('form-123', 'user-123');
+    });
+
+    it('still clears a draft saved before the owner switched save progress off', async () => {
+      vi.mocked(formService.getFormById).mockResolvedValue({
+        ...mockForm,
+        settings: { saveProgress: { enabled: false } },
+      } as any);
+      await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
+
+      expect(responseDraftRepository.deleteForRespondent).toHaveBeenCalledWith('form-123', 'user-123');
+    });
+
+    it('leaves drafts alone for builder previews and for signed-out callers', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({ hasAccess: true } as any);
+      await responsesResolvers.Mutation.submitResponse({}, { input: { ...mockInput, isPreview: true } }, mockContext);
+      await responsesResolvers.Mutation.submitResponse(
+        {},
+        { input: mockInput },
+        { auth: { user: null, session: null, isAuthenticated: false } } as any
+      );
 
       expect(responseDraftRepository.deleteForRespondent).not.toHaveBeenCalled();
     });

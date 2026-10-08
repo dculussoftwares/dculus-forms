@@ -462,10 +462,14 @@ export const responsesResolvers = {
       // At this point response is guaranteed non-null — both branches above set it.
       const savedResponse = response!;
 
-      // Save-and-resume: the submitted answers supersede the respondent's
-      // draft. Only identity-gated forms ever have one (keyed on the same user).
-      if (respondentUserId && !input.isPreview) {
-        await clearDraftAfterSubmit(form.id, respondentUserId);
+      // Save-and-resume: the submitted answers supersede the signed-in
+      // respondent's draft. Keyed on the session user, not `respondentUserId`,
+      // because a form that doesn't require sign-in records no identity but
+      // can still have a draft. Not gated on the current setting: a draft saved
+      // before the owner switched it off must not resurface if it is re-enabled.
+      const draftOwnerId = context.auth?.user?.id;
+      if (draftOwnerId && !input.isPreview) {
+        await clearDraftAfterSubmit(form.id, draftOwnerId);
       }
 
       // Native Quiz (D3, epic #289): grade synchronously, here, so the score

@@ -71,8 +71,9 @@ describe('canUseDrafts', () => {
     expect(canUseDrafts(gatedForm, signedIn)).toBe(true);
   });
 
-  it('is off for anonymous forms even when the caller is signed in', () => {
-    expect(canUseDrafts({ ...gatedForm, settings: {} }, signedIn)).toBe(false);
+  it('allows any signed-in caller on a form that does not require sign-in', () => {
+    expect(canUseDrafts({ ...gatedForm, settings: {} }, signedIn)).toBe(true);
+    expect(canUseDrafts({ ...gatedForm, settings: null }, signedIn)).toBe(true);
   });
 
   it('is off when the owner disabled save progress', () => {
@@ -108,8 +109,13 @@ describe('requireDraftAccess', () => {
     expectGraphQLCode(() => requireDraftAccess(gatedForm, anonymous), GRAPHQL_ERROR_CODES.SIGN_IN_REQUIRED);
   });
 
-  it('rejects forms without save progress', () => {
-    expectGraphQLCode(() => requireDraftAccess({ ...gatedForm, settings: {} }, signedIn), GRAPHQL_ERROR_CODES.NO_ACCESS);
+  it('accepts a signed-in caller on a form that does not require sign-in', () => {
+    expect(requireDraftAccess({ ...gatedForm, settings: {} }, signedIn)).toBe('user-1');
+  });
+
+  it('rejects forms whose owner turned save progress off', () => {
+    const settings = { saveProgress: { enabled: false } };
+    expectGraphQLCode(() => requireDraftAccess({ ...gatedForm, settings }, signedIn), GRAPHQL_ERROR_CODES.NO_ACCESS);
   });
 
   it('rejects callers outside the domain allowlist', () => {

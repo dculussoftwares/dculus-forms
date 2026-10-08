@@ -12,7 +12,7 @@ interface FormSettingsData {
   responseCopy: ResponseCopySettings;
   accessControl: AccessControlSettings;
   collectRespondentEmail: boolean;
-  // Absent = on for identity-gated forms (see isSaveProgressEnabled). Kept
+  // Absent = on (see isSaveProgressEnabled). Kept
   // absent until the owner flips it, for the same reason as `quiz` below.
   saveProgress?: SaveProgressSettings;
   // Absent until the owner turns them on, like saveProgress.

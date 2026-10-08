@@ -15,7 +15,7 @@ const isEmptyAnswer = (value: unknown) =>
   value === '' ||
   (Array.isArray(value) && value.length === 0);
 
-const containsFile = (value: unknown) =>
+export const containsFile = (value: unknown) =>
   typeof File !== 'undefined' &&
   (value instanceof File || (Array.isArray(value) && value.some((item) => item instanceof File)));
 

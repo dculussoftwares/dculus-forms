@@ -17,7 +17,7 @@ interface AccessControlSettingsProps {
   isSaving: boolean;
   onUpdate: (accessControl: AccessControlSettingsType) => void;
   onUpdateCollectRespondentEmail: (collectRespondentEmail: boolean) => void;
-  /** Effective values; saveProgress is on for identity-gated forms unless turned off. */
+  /** Effective values; saveProgress is on unless turned off. */
   respondentOptions: { saveProgress: boolean; oneResponsePerRespondent: boolean; allowRespondentEdit: boolean };
   /** Quiz forms never allow respondent edits (see isRespondentEditEnabled). */
   isQuiz: boolean;
@@ -194,42 +194,49 @@ const AccessControlSettings: React.FC<AccessControlSettingsProps> = ({
         </div>
       </div>
 
-      {/* Respondent options — only meaningful when respondents are signed in */}
-      {(settings.enabled || collectRespondentEmail) && (
-        <div
-          className="rounded-xl bg-white dark:bg-card divide-y divide-[var(--tf-border-light)]"
-          style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
-        >
-          <RespondentOptionRow
-            id="save-progress"
-            icon={History}
-            iconBackground="var(--tf-icon-teal)"
-            title={t('saveProgress.title')}
-            description={t('saveProgress.description')}
-            checked={respondentOptions.saveProgress}
-            onCheckedChange={(enabled) => onUpdateRespondentOptions({ saveProgress: { enabled } })}
-          />
-          <RespondentOptionRow
-            id="one-response-per-respondent"
-            icon={UserCheck}
-            iconBackground="var(--tf-icon-lavender)"
-            title={t('oneResponsePerRespondent.title')}
-            description={t('oneResponsePerRespondent.description')}
-            checked={respondentOptions.oneResponsePerRespondent}
-            onCheckedChange={(oneResponsePerRespondent) => onUpdateRespondentOptions({ oneResponsePerRespondent })}
-          />
-          <RespondentOptionRow
-            id="allow-respondent-edit"
-            icon={PencilLine}
-            iconBackground="var(--tf-icon-salmon)"
-            title={t('allowRespondentEdit.title')}
-            description={isQuiz ? t('allowRespondentEdit.unavailableForQuiz') : t('allowRespondentEdit.description')}
-            checked={respondentOptions.allowRespondentEdit && !isQuiz}
-            disabled={isQuiz}
-            onCheckedChange={(allowRespondentEdit) => onUpdateRespondentOptions({ allowRespondentEdit })}
-          />
-        </div>
-      )}
+      {/* Respondent options. Saving progress works on every form (respondents
+          choose to sign in on open ones); the rest need a known respondent. */}
+      <div
+        className="rounded-xl bg-white dark:bg-card divide-y divide-[var(--tf-border-light)]"
+        style={{ border: '1px solid var(--tf-border-medium)', boxShadow: '0 1px 4px var(--tf-overlay)' }}
+      >
+        <RespondentOptionRow
+          id="save-progress"
+          icon={History}
+          iconBackground="var(--tf-icon-teal)"
+          title={t('saveProgress.title')}
+          description={
+            settings.enabled || collectRespondentEmail
+              ? t('saveProgress.description')
+              : t('saveProgress.descriptionOptionalSignIn')
+          }
+          checked={respondentOptions.saveProgress}
+          onCheckedChange={(enabled) => onUpdateRespondentOptions({ saveProgress: { enabled } })}
+        />
+        {(settings.enabled || collectRespondentEmail) && (
+          <>
+            <RespondentOptionRow
+              id="one-response-per-respondent"
+              icon={UserCheck}
+              iconBackground="var(--tf-icon-lavender)"
+              title={t('oneResponsePerRespondent.title')}
+              description={t('oneResponsePerRespondent.description')}
+              checked={respondentOptions.oneResponsePerRespondent}
+              onCheckedChange={(oneResponsePerRespondent) => onUpdateRespondentOptions({ oneResponsePerRespondent })}
+            />
+            <RespondentOptionRow
+              id="allow-respondent-edit"
+              icon={PencilLine}
+              iconBackground="var(--tf-icon-salmon)"
+              title={t('allowRespondentEdit.title')}
+              description={isQuiz ? t('allowRespondentEdit.unavailableForQuiz') : t('allowRespondentEdit.description')}
+              checked={respondentOptions.allowRespondentEdit && !isQuiz}
+              disabled={isQuiz}
+              onCheckedChange={(allowRespondentEdit) => onUpdateRespondentOptions({ allowRespondentEdit })}
+            />
+          </>
+        )}
+      </div>
 
       <div>
         <Button onClick={handleSave} disabled={isSaving} data-testid="save-access-control-button">
