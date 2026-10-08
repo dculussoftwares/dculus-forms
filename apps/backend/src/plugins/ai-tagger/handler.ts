@@ -2,6 +2,7 @@ import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { createFieldLabelsMap } from '@dculus/utils';
 import { getFastModel } from '../../lib/ai.js';
+import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import type { PluginHandler } from '../core/types.js';
 import type { AiTaggerPluginConfig } from './types.js';
@@ -26,6 +27,17 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
   if (!event.data.responseId) {
     context.logger.warn('AI tagger: no responseId in event data', { formId: event.formId });
     return { success: false, error: 'No response ID', tagsApplied: [] };
+  }
+
+  // Tagging runs on public submissions, so it draws on the org's AI credits like every
+  // other AI feature — and stops once they are used up.
+  const budget = await checkAITokenBudget(event.organizationId);
+  if (!budget.allowed) {
+    context.logger.warn('AI tagger: AI credit limit reached, skipping', {
+      formId: event.formId,
+      organizationId: event.organizationId,
+    });
+    return { success: false, error: 'AI credit limit reached', tagsApplied: [] };
   }
 
   try {
@@ -86,6 +98,15 @@ Rules:
       prompt: `Tags to consider:\n${tagList}\n\nForm response:\n${responseFields}`,
     });
 
+    const tokensUsed = usage?.totalTokens ?? 0;
+    // Billing must not turn a successful tagging into a failure — log and carry on.
+    await recordAITokenUsage(event.organizationId, tokensUsed, 'nano').catch((error: Error) =>
+      context.logger.error('AI tagger: failed to record AI credit usage', {
+        error: error.message,
+        organizationId: event.organizationId,
+      })
+    );
+
     const tagConfigById = new Map(tagsWithDefinitions.map((t) => [t.tagId, t]));
     const confirmedTagIds = (output.tagIds ?? []).filter((id: string) => tagConfigById.has(id));
 
@@ -106,7 +127,7 @@ Rules:
       tagsApplied: confirmedTagIds,
       tagsAppliedNames: appliedTagNames,
       tagsConsidered: tagsWithDefinitions.length,
-      tokensUsed: usage?.totalTokens ?? 0,
+      tokensUsed,
       taggedAt: new Date().toISOString(),
     };
 

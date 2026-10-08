@@ -1,0 +1,68 @@
+name: AI Evals
+
+# Live-model evals for the AI form-editing chat (apps/backend/src/evals/*.live.eval.ts).
+# They call the real Azure OpenAI deployments, so they run nightly and on demand rather than
+# on every PR. Deterministic AI tests (wire protocol, intent routing) already run in the
+# Build Pipeline.
+#
+# Required repository secrets: AI_PRIMARY_BASE_URL, AI_PRIMARY_API_KEY, AI_FAST_BASE_URL,
+# AI_FAST_API_KEY. Optional repository variables: AI_PRIMARY_MODEL, AI_FAST_MODEL.
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # 02:30 UTC daily
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22.14.0'
+
+jobs:
+  live-evals:
+    name: Live model evals
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AI_PRIMARY_BASE_URL: ${{ secrets.AI_PRIMARY_BASE_URL }}
+      AI_PRIMARY_API_KEY: ${{ secrets.AI_PRIMARY_API_KEY }}
+      AI_PRIMARY_MODEL: ${{ vars.AI_PRIMARY_MODEL }}
+      AI_FAST_BASE_URL: ${{ secrets.AI_FAST_BASE_URL }}
+      AI_FAST_API_KEY: ${{ secrets.AI_FAST_API_KEY }}
+      AI_FAST_MODEL: ${{ vars.AI_FAST_MODEL }}
+    steps:
+      # The evals skip themselves without credentials; fail instead so a missing secret
+      # can't pass as a green nightly run.
+      - name: Check AI credentials are configured
+        run: |
+          missing=()
+          for name in AI_PRIMARY_BASE_URL AI_PRIMARY_API_KEY AI_FAST_BASE_URL AI_FAST_API_KEY; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing repository secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          run-prisma-generate: 'true'
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @dculus/types build
+          pnpm --filter @dculus/utils build
+
+      - name: Run live AI evals
+        run: pnpm --filter backend eval:ai
