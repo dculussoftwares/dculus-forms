@@ -1202,6 +1202,60 @@ export const typeDefs = gql`
     filename: String!
   }
 
+  # Respondent-uploaded files, browsable and downloadable as a ZIP
+  enum ResponseFileGrouping {
+    QUESTION
+    RESPONSE
+  }
+
+  type ResponseFile {
+    key: String!
+    responseId: ID!
+    submittedAt: String!
+    respondentEmail: String
+    fieldId: ID!
+    fieldLabel: String!
+    originalName: String!
+    size: Float
+    mimeType: String
+  }
+
+  type ResponseFileQuestion {
+    fieldId: ID!
+    label: String!
+    fileCount: Int!
+  }
+
+  type ResponseFileCatalog {
+    questions: [ResponseFileQuestion!]!
+    files: [ResponseFile!]!
+    totalCount: Int!
+    totalBytes: Float!
+    # True when more files matched than the catalog returns
+    truncated: Boolean!
+  }
+
+  type ResponseFileExport {
+    id: ID!
+    formId: ID!
+    status: String!
+    grouping: ResponseFileGrouping!
+    totalCount: Int!
+    processedCount: Int!
+    totalBytes: Float!
+    filename: String
+    errorMessage: String
+    expired: Boolean!
+    createdAt: String!
+    completedAt: String
+  }
+
+  type ResponseFileExportDownload {
+    downloadUrl: String!
+    filename: String!
+    expiresAt: String!
+  }
+
   input CreatePdfTemplateInput {
     formId: ID!
     name: String!
@@ -1576,8 +1630,16 @@ export const typeDefs = gql`
     # Form File Queries
     getFormFiles(formId: ID!, type: String): [FormFile!]!
 
-    # Response File Download (pre-signed URL for private bucket objects)
-    getResponseFileDownloadUrl(key: String!): String!
+    # Response File Download (pre-signed URL for private bucket objects).
+    # preview: open images/PDFs inline instead of downloading.
+    getResponseFileDownloadUrl(key: String!, preview: Boolean = false): String!
+    responseFiles(
+      formId: ID!
+      filters: [ResponseFilterInput!]
+      filterLogic: FilterLogic = AND
+      responseIds: [ID!]
+    ): ResponseFileCatalog!
+    responseFileExport(id: ID!): ResponseFileExport!
 
     # Admin Queries
     adminOrganizations(limit: Int, offset: Int, search: String): AdminOrganizationsResult!
@@ -1831,6 +1893,17 @@ export const typeDefs = gql`
       # headed by the question label. Ignored for non-quiz forms.
       includeQuizQuestionColumns: Boolean = false
     ): ExportResult!
+
+    # Respondent files as a ZIP (background job, then a short-lived link)
+    startResponseFileExport(
+      formId: ID!
+      grouping: ResponseFileGrouping = QUESTION
+      filters: [ResponseFilterInput!]
+      filterLogic: FilterLogic = AND
+      responseIds: [ID!]
+      fileKeys: [String!]
+    ): ResponseFileExport!
+    responseFileExportDownloadUrl(id: ID!): ResponseFileExportDownload!
 
     # Analytics Mutations
     trackFormView(input: TrackFormViewInput!): TrackFormViewResponse!

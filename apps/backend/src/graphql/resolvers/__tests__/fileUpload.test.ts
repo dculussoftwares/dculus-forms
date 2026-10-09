@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fileUploadResolvers } from '../fileUpload.js';
 import { GraphQLError } from '#graphql-errors';
 import * as fileUploadService from '../../../services/fileUploadService.js';
+import * as responseFileDownloadService from '../../../services/responseFiles/responseFileDownloadService.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingResolvers from '../formSharing.js';
 import { prisma } from '../../../lib/prisma.js';
 
 // Mock all dependencies
 vi.mock('../../../services/fileUploadService.js');
+vi.mock('../../../services/responseFiles/responseFileDownloadService.js');
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../lib/prisma.js', () => ({
@@ -433,13 +435,13 @@ describe('File Upload Resolvers', () => {
         permission: 'VIEWER' as any,
         form: { id: 'form-abc' } as any,
       });
-      vi.mocked(fileUploadService.generatePresignedDownloadUrl).mockResolvedValue(
+      vi.mocked(responseFileDownloadService.createResponseFileDownloadUrl).mockResolvedValue(
         'https://private.example.com/presigned-url'
       );
 
       const result = await fileUploadResolvers.Query.getResponseFileDownloadUrl(
         {},
-        { key: 'files/form-response/form-abc/response-file.pdf' },
+        { key: 'files/form-response/form-abc/response-file.pdf', preview: true },
         mockContext
       );
 
@@ -450,8 +452,10 @@ describe('File Upload Resolvers', () => {
         'form-abc',
         formSharingResolvers.PermissionLevel.VIEWER
       );
-      expect(fileUploadService.generatePresignedDownloadUrl).toHaveBeenCalledWith(
-        'files/form-response/form-abc/response-file.pdf'
+      expect(responseFileDownloadService.createResponseFileDownloadUrl).toHaveBeenCalledWith(
+        'form-abc',
+        'files/form-response/form-abc/response-file.pdf',
+        { preview: true }
       );
     });
 
@@ -487,7 +491,7 @@ describe('File Upload Resolvers', () => {
         )
       ).rejects.toThrow('Access denied: You do not have permission to download files from this form');
 
-      expect(fileUploadService.generatePresignedDownloadUrl).not.toHaveBeenCalled();
+      expect(responseFileDownloadService.createResponseFileDownloadUrl).not.toHaveBeenCalled();
     });
 
     it('should throw BAD_USER_INPUT when the key does not match the expected pattern', async () => {
@@ -502,7 +506,7 @@ describe('File Upload Resolvers', () => {
       ).rejects.toThrow('Only form response files can be accessed via this endpoint');
 
       expect(formSharingResolvers.checkFormAccess).not.toHaveBeenCalled();
-      expect(fileUploadService.generatePresignedDownloadUrl).not.toHaveBeenCalled();
+      expect(responseFileDownloadService.createResponseFileDownloadUrl).not.toHaveBeenCalled();
     });
   });
 

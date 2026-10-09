@@ -97,6 +97,32 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     `;
 
   /**
+   * Whether a live (non-deleted) response of the form still references this
+   * uploaded file key — as a file-field array element or a bare string value.
+   * Stops files of deleted responses (and abandoned uploads) from being served.
+   */
+  const isFileKeyReferencedRaw = async (
+    formId: string,
+    fileKey: string,
+    fileFieldIds: string[]
+  ): Promise<boolean> => {
+    if (fileFieldIds.length === 0) return false;
+    const rows = await prisma.$queryRaw<Array<{ referenced: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1
+        FROM "response" r CROSS JOIN unnest(${fileFieldIds}::text[]) AS field(id)
+        WHERE r."formId" = ${formId}
+          AND r."deletedAt" IS NULL
+          AND (
+            r."data" -> field.id = to_jsonb(${fileKey}::text)
+            OR r."data" -> field.id @> jsonb_build_array(${fileKey}::text)
+          )
+      ) AS referenced
+    `;
+    return rows[0]?.referenced === true;
+  };
+
+  /**
    * Count of distinct non-deleted responses holding a non-empty value for
    * ANY of the given field ids.
    */
@@ -204,6 +230,7 @@ export const createResponseRepository = (context?: RepositoryContext) => {
     listByForm,
     countPerFieldRaw,
     countReferencingAnyFieldRaw,
+    isFileKeyReferencedRaw,
     countFilteredRaw,
     findFilteredRaw,
     softDeleteMany,

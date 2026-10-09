@@ -11,6 +11,7 @@ import path from 'path';
 import { s3Config } from '../lib/env.js';
 import { constructCdnUrl } from '../utils/cdn.js';
 import { logger } from '../lib/logger.js';
+import { contentDisposition } from '../lib/contentDisposition.js';
 
 export interface UploadFileResult {
   key: string;
@@ -388,16 +389,35 @@ export async function deleteFile(s3Key: string): Promise<boolean> {
   }
 }
 
+export interface PresignedDownloadOptions {
+  expiresInSeconds?: number;
+  /**
+   * Forces the browser's handling of the object. `attachment` (with the
+   * original filename) stops respondent-uploaded HTML/SVG from rendering
+   * inline; `inline` is only for previews of types the caller vetted.
+   */
+  disposition?: { type: 'attachment' | 'inline'; filename: string };
+  /** Overrides the stored Content-Type, e.g. to pin a vetted preview type. */
+  contentType?: string;
+}
+
 /**
  * Generate a short-lived pre-signed GET URL for a private R2 object.
  * Only files in the private bucket (form-response path) should use this.
  */
 export async function generatePresignedDownloadUrl(
   s3Key: string,
-  expiresInSeconds = 900 // 15 minutes
+  { expiresInSeconds = 900, disposition, contentType }: PresignedDownloadOptions = {}
 ): Promise<string> {
   const bucket = getBucketForKey(s3Key);
-  const command = new GetObjectCommand({ Bucket: bucket, Key: s3Key });
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: s3Key,
+    ResponseContentDisposition: disposition
+      ? contentDisposition(disposition.type, disposition.filename)
+      : undefined,
+    ResponseContentType: contentType,
+  });
   // `as unknown as` required: @aws-sdk/client-s3@3.859 and @aws-sdk/s3-request-presigner@3.872
   // declare private `handlers` independently, making S3Client structurally incompatible at
   // compile time. They are the same runtime object — the cast is safe.
@@ -406,6 +426,41 @@ export async function generatePresignedDownloadUrl(
     command as unknown as Parameters<typeof getSignedUrl>[1],
     { expiresIn: expiresInSeconds }
   );
+}
+
+/**
+ * Open an R2 object as a web ReadableStream (bucket inferred from key prefix),
+ * for piping large files without buffering them, e.g. into a ZIP.
+ */
+export async function openFileStream(s3Key: string): Promise<ReadableStream<Uint8Array>> {
+  const response = await s3Client.send(
+    new GetObjectCommand({ Bucket: getBucketForKey(s3Key), Key: s3Key })
+  );
+  if (!response.Body) {
+    throw new Error(`Empty response body for key: ${s3Key}`);
+  }
+  return response.Body.transformToWebStream() as ReadableStream<Uint8Array>;
+}
+
+/**
+ * Size and content type of a stored object, or null when it no longer exists
+ * (bucket inferred from key prefix). Used to recover metadata for respondent
+ * uploads that were stored before they were recorded as FormFile rows.
+ */
+export async function getFileMetadata(
+  s3Key: string
+): Promise<{ size: number; contentType: string | null } | null> {
+  try {
+    const head = await s3Client.send(
+      new HeadObjectCommand({ Bucket: getBucketForKey(s3Key), Key: s3Key })
+    );
+    return { size: head.ContentLength ?? 0, contentType: head.ContentType ?? null };
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode;
+    const name = (error as { name?: string })?.name;
+    if (status === 404 || name === 'NotFound') return null;
+    throw error;
+  }
 }
 
 /**

@@ -24,6 +24,8 @@ import enSharing from './en/sharing.json';
 import taSharing from './ta/sharing.json';
 import enResponses from './en/responses.json';
 import taResponses from './ta/responses.json';
+import enResponseFiles from './en/responseFiles.json';
+import taResponseFiles from './ta/responseFiles.json';
 import enFormSettings from './en/formSettings.json';
 import taFormSettings from './ta/formSettings.json';
 import enResponseCopySettings from './en/responseCopySettings.json';
@@ -286,6 +288,7 @@ const enTranslations = {
   formDashboard: enFormDashboard,
   sharing: enSharing,
   responses: enResponses,
+  responseFiles: enResponseFiles,
   formSettings: enFormSettings,
   responseCopySettings: enResponseCopySettings,
   formAnalytics: enFormAnalytics,
@@ -426,6 +429,7 @@ const taTranslations = {
   formDashboard: taFormDashboard,
   sharing: taSharing,
   responses: taResponses,
+  responseFiles: taResponseFiles,
   formSettings: taFormSettings,
   responseCopySettings: taResponseCopySettings,
   formAnalytics: taFormAnalytics,

@@ -119,6 +119,8 @@ interface ResponsesToolbarProps {
   isGeneratingFakeResponses: boolean;
   maxFakeResponses: number;
   onGenerateFakeResponses: (count: number) => void;
+  /** `files` keeps only the response filters, which also scope the Files view. */
+  variant?: 'table' | 'files';
   t: (key: string, options?: { values?: Record<string, string | number>; defaultValue?: string }) => string;
 }
 
@@ -147,8 +149,10 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   isGeneratingFakeResponses,
   maxFakeResponses,
   onGenerateFakeResponses,
+  variant = 'table',
   t,
 }) => {
+  const isTable = variant === 'table';
   const activeFilters = Object.values(filters).filter((f) => f.active);
   const hiddenColumns = columns.filter((col) => col.id && columnVisibility[col.id] === false);
   const [showFakeResponsesDialog, setShowFakeResponsesDialog] = useState(false);
@@ -177,26 +181,28 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
       <div className="flex items-center gap-2 flex-1 min-w-0">
 
         {/* Search */}
-        <div className="relative flex-1 min-w-[100px] sm:w-56 sm:flex-none">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder={t('toolbar.search.placeholder')}
-            value={globalFilter}
-            onChange={(e) => onGlobalFilterChange(e.target.value)}
-            className="h-8 pl-9 pr-8 text-xs"
-          />
-          {globalFilter && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-0 top-0 h-8 w-8 rounded-l-none"
-              onClick={() => onGlobalFilterChange('')}
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-        </div>
+        {isTable && (
+          <div className="relative flex-1 min-w-[100px] sm:w-56 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder={t('toolbar.search.placeholder')}
+              value={globalFilter}
+              onChange={(e) => onGlobalFilterChange(e.target.value)}
+              className="h-8 pl-9 pr-8 text-xs"
+            />
+            {globalFilter && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-8 w-8 rounded-l-none"
+                onClick={() => onGlobalFilterChange('')}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Submitted-date quick filter — hidden on mobile */}
         <div className="hidden sm:block shrink-0">
@@ -301,180 +307,182 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
       </div>
 
       {/* Right: density + column visibility + export */}
-      <div className="flex items-center gap-2 shrink-0">
+      {isTable && (
+        <div className="flex items-center gap-2 shrink-0">
 
-        {/* Row density toggle — hidden on mobile */}
-        <div
-          className="hidden sm:flex items-center rounded-md border overflow-hidden shrink-0"
-          style={{ borderColor: 'var(--tf-border-strong)', height: '32px' }}
-        >
-          {(['compact', 'default', 'comfortable'] as const).map((d, i) => (
-            <button
-              key={d}
-              onClick={() => onRowDensityChange(d)}
-              title={t(`toolbar.density.${d}`)}
-              className="flex items-center justify-center transition-colors"
-              style={{
-                width: '28px',
-                height: '100%',
-                background: rowDensity === d ? 'var(--tf-faint)' : 'transparent',
-                borderRight: i < 2 ? '1px solid var(--tf-border-strong)' : 'none',
-                cursor: 'pointer',
-                border: rowDensity === d ? undefined : 'none',
-              }}
-            >
-              <AlignJustify
-                className="transition-all"
+          {/* Row density toggle — hidden on mobile */}
+          <div
+            className="hidden sm:flex items-center rounded-md border overflow-hidden shrink-0"
+            style={{ borderColor: 'var(--tf-border-strong)', height: '32px' }}
+          >
+            {(['compact', 'default', 'comfortable'] as const).map((d, i) => (
+              <button
+                key={d}
+                onClick={() => onRowDensityChange(d)}
+                title={t(`toolbar.density.${d}`)}
+                className="flex items-center justify-center transition-colors"
                 style={{
-                  width: d === 'compact' ? 12 : d === 'comfortable' ? 16 : 14,
-                  height: d === 'compact' ? 12 : d === 'comfortable' ? 16 : 14,
-                  color: rowDensity === d ? 'var(--tf-dark)' : 'var(--tf-text)',
-                  strokeWidth: d === 'compact' ? 2.5 : d === 'comfortable' ? 1.5 : 2,
+                  width: '28px',
+                  height: '100%',
+                  background: rowDensity === d ? 'var(--tf-faint)' : 'transparent',
+                  borderRight: i < 2 ? '1px solid var(--tf-border-strong)' : 'none',
+                  cursor: 'pointer',
+                  border: rowDensity === d ? undefined : 'none',
                 }}
-              />
-            </button>
-          ))}
-        </div>
-
-        {/* Column visibility + reorder */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
-              <Settings2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{t('toolbar.columns.buttonLabel')}</span>
-              {hiddenColumns.length > 0 && (
-                <span
-                  className="ml-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full"
-                  style={{ backgroundColor: 'var(--tf-faint)', color: 'var(--tf-text)', border: '1px solid var(--tf-border-strong)' }}
-                >
-                  {t('toolbar.columns.hiddenCount', { values: { count: hiddenColumns.length } })}
-                </span>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            <div className="flex flex-col max-h-80">
-              <div
-                className="flex items-center justify-between px-3 py-2.5 text-xs font-medium"
-                style={{ borderBottom: '1px solid var(--tf-border-light)', color: 'var(--tf-dark)' }}
               >
-                <span>{t('toolbar.columns.toggle')}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-1 h-7 px-2 text-[10px]"
-                  onClick={() => {
-                    onColumnVisibilityChange({});
-                    onColumnOrderChange([]);
+                <AlignJustify
+                  className="transition-all"
+                  style={{
+                    width: d === 'compact' ? 12 : d === 'comfortable' ? 16 : 14,
+                    height: d === 'compact' ? 12 : d === 'comfortable' ? 16 : 14,
+                    color: rowDensity === d ? 'var(--tf-dark)' : 'var(--tf-text)',
+                    strokeWidth: d === 'compact' ? 2.5 : d === 'comfortable' ? 1.5 : 2,
                   }}
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  {t('toolbar.columns.reset')}
-                </Button>
-              </div>
-              <div className="overflow-y-auto flex-1 p-1.5">
-                {hideableColumnIds.length === 0 ? (
-                  <div className="text-center text-xs py-4 text-muted-foreground">
-                    {t('toolbar.columns.noColumnsAvailable')}
-                  </div>
-                ) : (
-                  <DndContext
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
+                />
+              </button>
+            ))}
+          </div>
+
+          {/* Column visibility + reorder */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5 shrink-0">
+                <Settings2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t('toolbar.columns.buttonLabel')}</span>
+                {hiddenColumns.length > 0 && (
+                  <span
+                    className="ml-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full"
+                    style={{ backgroundColor: 'var(--tf-faint)', color: 'var(--tf-text)', border: '1px solid var(--tf-border-strong)' }}
                   >
-                    <SortableContext
-                      items={hideableColumnIds}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-0.5">
-                        {hideableColumnIds.map((colId) => {
-                          const isVisible = columnVisibility[colId] !== false;
-                          return (
-                            <SortableColumnItem
-                              key={colId}
-                              columnId={colId}
-                              label={getColumnLabel(colId)}
-                              isVisible={isVisible}
-                              onVisibilityChange={(checked) =>
-                                onColumnVisibilityChange((prev) => ({ ...prev, [colId]: checked }))
-                              }
-                              dragHint={t('toolbar.columns.dragToReorder')}
-                            />
-                          );
-                        })}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
+                    {t('toolbar.columns.hiddenCount', { values: { count: hiddenColumns.length } })}
+                  </span>
                 )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <div className="flex flex-col max-h-80">
+                <div
+                  className="flex items-center justify-between px-3 py-2.5 text-xs font-medium"
+                  style={{ borderBottom: '1px solid var(--tf-border-light)', color: 'var(--tf-dark)' }}
+                >
+                  <span>{t('toolbar.columns.toggle')}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex items-center gap-1 h-7 px-2 text-[10px]"
+                    onClick={() => {
+                      onColumnVisibilityChange({});
+                      onColumnOrderChange([]);
+                    }}
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    {t('toolbar.columns.reset')}
+                  </Button>
+                </div>
+                <div className="overflow-y-auto flex-1 p-1.5">
+                  {hideableColumnIds.length === 0 ? (
+                    <div className="text-center text-xs py-4 text-muted-foreground">
+                      {t('toolbar.columns.noColumnsAvailable')}
+                    </div>
+                  ) : (
+                    <DndContext
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext
+                        items={hideableColumnIds}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-0.5">
+                          {hideableColumnIds.map((colId) => {
+                            const isVisible = columnVisibility[colId] !== false;
+                            return (
+                              <SortableColumnItem
+                                key={colId}
+                                columnId={colId}
+                                label={getColumnLabel(colId)}
+                                isVisible={isVisible}
+                                onVisibilityChange={(checked) =>
+                                  onColumnVisibilityChange((prev) => ({ ...prev, [colId]: checked }))
+                                }
+                                dragHint={t('toolbar.columns.dragToReorder')}
+                              />
+                            );
+                          })}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  )}
+                </div>
               </div>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* Fake Response (AI) */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 shrink-0"
-          disabled={isGeneratingFakeResponses}
-          aria-label={
-            isGeneratingFakeResponses
-              ? t('toolbar.fakeResponses.generating')
-              : t('toolbar.fakeResponses.buttonLabel')
-          }
-          onClick={() => {
-            setFakeResponseCount(Math.min(5, maxFakeResponses));
-            setShowFakeResponsesDialog(true);
-          }}
-        >
-          {isGeneratingFakeResponses ? (
-            <div
-              className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
-              style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
-            />
-          ) : (
-            <Sparkles className="h-3.5 w-3.5" />
-          )}
-          <span className="hidden sm:inline">
-            {isGeneratingFakeResponses
-              ? t('toolbar.fakeResponses.generating')
-              : t('toolbar.fakeResponses.buttonLabel')}
-          </span>
-        </Button>
+          {/* Fake Response (AI) */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 shrink-0"
+            disabled={isGeneratingFakeResponses}
+            aria-label={
+              isGeneratingFakeResponses
+                ? t('toolbar.fakeResponses.generating')
+                : t('toolbar.fakeResponses.buttonLabel')
+            }
+            onClick={() => {
+              setFakeResponseCount(Math.min(5, maxFakeResponses));
+              setShowFakeResponsesDialog(true);
+            }}
+          >
+            {isGeneratingFakeResponses ? (
+              <div
+                className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
+                style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
+              />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            <span className="hidden sm:inline">
+              {isGeneratingFakeResponses
+                ? t('toolbar.fakeResponses.generating')
+                : t('toolbar.fakeResponses.buttonLabel')}
+            </span>
+          </Button>
 
-        {/* Export */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" disabled={isExporting} className="gap-1.5 shrink-0">
-              {isExporting ? (
-                <>
-                  <div
-                    className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
-                    style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
-                  />
-                  {t('toolbar.export.exporting')}
-                </>
-              ) : (
-                <>
-                  <Download className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t('toolbar.export.buttonLabel')}</span>
-                  <ChevronDown className="h-3 w-3 ml-0.5" />
-                </>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              {t('toolbar.export.excel')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onExportCsv} disabled={isExporting}>
-              <FileText className="h-4 w-4 mr-2" />
-              {t('toolbar.export.csv')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          {/* Export */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={isExporting} className="gap-1.5 shrink-0">
+                {isExporting ? (
+                  <>
+                    <div
+                      className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
+                      style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
+                    />
+                    {t('toolbar.export.exporting')}
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">{t('toolbar.export.buttonLabel')}</span>
+                    <ChevronDown className="h-3 w-3 ml-0.5" />
+                  </>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onExportExcel} disabled={isExporting}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                {t('toolbar.export.excel')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportCsv} disabled={isExporting}>
+                <FileText className="h-4 w-4 mr-2" />
+                {t('toolbar.export.csv')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       <Dialog open={showFakeResponsesDialog} onOpenChange={setShowFakeResponsesDialog}>
         <DialogContent className="sm:max-w-md">

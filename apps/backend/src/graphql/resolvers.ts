@@ -14,6 +14,7 @@ import { pluginsResolvers } from './resolvers/plugins.js';
 import { automationsResolvers } from './resolvers/automations.js';
 import { pdfTemplatesResolvers } from './resolvers/pdfTemplates.js';
 import { pdfGeneratorsResolvers } from './resolvers/pdfGenerators.js';
+import { responseFilesResolvers } from './resolvers/responseFiles.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { tagResolvers } from './resolvers/tags.js';
 import { responseDraftsResolvers } from './resolvers/responseDrafts.js';
@@ -54,6 +55,7 @@ export const resolvers = {
     ...automationsResolvers.Query,
     ...pdfTemplatesResolvers.Query,
     ...pdfGeneratorsResolvers.Query,
+    ...responseFilesResolvers.Query,
     ...subscriptionResolvers.Query,
     ...tagResolvers.Query,
   },
@@ -73,6 +75,7 @@ export const resolvers = {
     ...automationsResolvers.Mutation,
     ...pdfTemplatesResolvers.Mutation,
     ...pdfGeneratorsResolvers.Mutation,
+    ...responseFilesResolvers.Mutation,
     ...subscriptionResolvers.Mutation,
     ...tagResolvers.Mutation,
     ...responseDraftsResolvers.Mutation,

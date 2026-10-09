@@ -341,6 +341,7 @@ describe('Upload Routes', () => {
         vi.mocked(prisma.form.findUnique).mockResolvedValue({ ...mockForm, isPublished: true } as any);
         vi.mocked(prisma.formPermission.findUnique).mockResolvedValue(null);
         vi.mocked(prisma.member.findFirst).mockResolvedValue({ role: 'owner' } as any);
+        vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
 
         const mockResult = {
           key: `files/${type.toLowerCase()}/test.jpg`,
@@ -367,6 +368,39 @@ describe('Upload Routes', () => {
         expect(response.status).toBe(200);
         expect(response.body.type).toBe(type);
       }
+    });
+
+    it('records respondent uploads as FormFile rows so their name, size and type stay known', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue({ user: mockUser, session: { id: 'session-123' } } as any);
+      vi.mocked(prisma.form.findUnique).mockResolvedValue({ ...mockForm, isPublished: true } as any);
+      vi.mocked(prisma.formPermission.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.member.findFirst).mockResolvedValue({ role: 'owner' } as any);
+      vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
+      vi.mocked(uploadFile).mockResolvedValue({
+        key: 'files/form-response/form-123/1700000000000-abc-cv.pdf',
+        type: 'FormResponse',
+        url: 'files/form-response/form-123/1700000000000-abc-cv.pdf',
+        originalName: 'cv.pdf',
+        size: 2048,
+        mimeType: 'application/pdf',
+      });
+
+      const response = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormResponse')
+        .field('formId', 'form-123')
+        .attach('file', Buffer.from('test'), 'cv.pdf');
+
+      expect(response.status).toBe(200);
+      expect(prisma.formFile.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          formId: 'form-123',
+          key: 'files/form-response/form-123/1700000000000-abc-cv.pdf',
+          originalName: 'cv.pdf',
+          size: 2048,
+          mimeType: 'application/pdf',
+        }),
+      });
     });
 
     it('should preserve original filename in upload', async () => {
