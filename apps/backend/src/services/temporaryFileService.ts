@@ -1,6 +1,9 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Upload } from '@aws-sdk/lib-storage';
 import { randomUUID } from 'crypto';
+import type { Readable } from 'stream';
+import { contentDisposition } from '../lib/contentDisposition.js';
 import { s3Config } from '../lib/env.js';
 import { logger } from '../lib/logger.js';
 import * as Sentry from '@sentry/node';
@@ -86,6 +89,69 @@ export async function uploadTemporaryFile(
     logger.error('Error uploading temporary file:', error);
     throw new Error(`Failed to upload temporary file: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+const TEMP_FILE_TTL_MS = 5 * 60 * 60 * 1000;
+
+const isMockS3Enabled = (): boolean =>
+  !process.env.VITEST &&
+  (s3Config.endpoint.includes('localhost:9000') || !!process.env.PUBLIC_S3_ENDPOINT?.includes('localhost:9000'));
+
+/**
+ * Stream a temporary file into the private bucket without buffering it: the
+ * body is uploaded in bounded multipart chunks, so memory stays flat no matter
+ * how large the file is. `keyName` must be storage-safe; the user-facing name
+ * is applied at download time by {@link getTemporaryFileDownloadUrl}.
+ */
+export async function uploadTemporaryStream(
+  body: Readable,
+  keyName: string,
+  contentType: string
+): Promise<{ fileKey: string; expiresAt: Date }> {
+  const fileKey = `temp-exports/${Date.now()}-${randomUUID()}-${keyName}`;
+  const expiresAt = new Date(Date.now() + TEMP_FILE_TTL_MS);
+
+  if (isMockS3Enabled()) {
+    const chunks: Buffer[] = [];
+    for await (const chunk of body) chunks.push(Buffer.from(chunk));
+    tempFilesMockStore.set(fileKey, { buffer: Buffer.concat(chunks), contentType, filename: keyName });
+    return { fileKey, expiresAt };
+  }
+
+  await new Upload({
+    client: s3Client as unknown as ConstructorParameters<typeof Upload>[0]['client'],
+    params: {
+      Bucket: s3Config.privateBucketName,
+      Key: fileKey,
+      Body: body,
+      ContentType: contentType,
+      Metadata: { 'expires-at': expiresAt.toISOString(), 'auto-cleanup': 'true' },
+    },
+    queueSize: 2,
+    partSize: 8 * 1024 * 1024,
+  }).done();
+
+  return { fileKey, expiresAt };
+}
+
+/** Short-lived download URL for a temporary file, saved under `filename`. */
+export async function getTemporaryFileDownloadUrl(
+  fileKey: string,
+  filename: string,
+  expiresInSeconds = 300
+): Promise<string> {
+  if (isMockS3Enabled()) {
+    const backendPort = process.env.PORT || '4000';
+    return `http://localhost:${backendPort}/api/temp-files-mock/${encodeURIComponent(fileKey)}`;
+  }
+
+  const command = new GetObjectCommand({
+    Bucket: s3Config.privateBucketName,
+    Key: fileKey,
+    ResponseContentDisposition: contentDisposition('attachment', filename),
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return getSignedUrl(s3Client as any, command as any, { expiresIn: expiresInSeconds });
 }
 
 /**

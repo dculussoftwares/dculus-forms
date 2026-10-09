@@ -3,7 +3,12 @@
     "title": "{{formTitle}} - பதில்கள்",
     "breadcrumbDashboard": "டாஷ்போர்டு",
     "breadcrumbFormDashboard": "படிவம் டாஷ்போர்டு",
-    "breadcrumbResponses": "பதில்கள்"
+    "breadcrumbResponses": "பதில்கள்",
+    "view": {
+      "label": "காட்சி",
+      "table": "அட்டவணை",
+      "files": "கோப்புகள்"
+    }
   },
   "header": {
     "backButton": "மீண்டும்",
@@ -65,7 +70,8 @@
       "releasing": "வெளியிடுகிறது...",
       "releaseSuccess": "{{count}} முடிவு(கள்) வெளியிடப்பட்டன",
       "releaseSuccessWithSkipped": "{{released}} முடிவு(கள்) வெளியிடப்பட்டன, {{skipped}} இன்னும் மதிப்பீடு தேவை",
-      "releaseError": "முடிவுகளை வெளியிட முடியவில்லை"
+      "releaseError": "முடிவுகளை வெளியிட முடியவில்லை",
+      "downloadFiles": "கோப்புகளைப் பதிவிறக்கு"
     },
     "preview": {
       "clearButton": "{{count}} முன்னோட்ட பதில்களை அழிக்கவும்",
@@ -152,7 +158,9 @@
       "deleteConfirmCancel": "ரத்து செய்",
       "deleteConfirmConfirm": "நீக்கு",
       "deleteSuccess": "பதில் வெற்றிகரமாக நீக்கப்பட்டது",
-      "deleteError": "பதிலை நீக்குவதில் தோல்வி"
+      "deleteError": "பதிலை நீக்குவதில் தோல்வி",
+      "downloadFiles_one": "{{count}} கோப்பைப் பதிவிறக்கு",
+      "downloadFiles_other": "{{count}} கோப்புகளைப் பதிவிறக்கு"
     },
     "fieldResponses": {
       "noResponse": "பதில் இல்லை",

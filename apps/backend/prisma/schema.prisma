@@ -41,6 +41,7 @@ model User {
   responseEdits       ResponseEditHistory[]
   aiChatConversations AIChatConversation[]
   responseDrafts      ResponseDraft[]
+  responseFileExports ResponseFileExport[]
 
   @@map("user")
 }
@@ -178,6 +179,7 @@ model Form {
   pdfGenerators       PdfGenerator[]
   automations         Automation[]
   responseDrafts      ResponseDraft[]
+  responseFileExports ResponseFileExport[]
 
   @@index([organizationId])
   @@index([organizationId, createdById])
@@ -233,6 +235,34 @@ model ResponseDraft {
   @@index([userId])
   @@index([expiresAt])
   @@map("response_draft")
+}
+
+// Bulk "download respondent files as a ZIP" jobs. The ZIP is streamed from the
+// private bucket into temp-exports/ by a background loop (same fire-and-forget
+// pattern as PdfGenerationRun); this row tracks progress, scopes the download
+// to its requester, and backs the per-user rate limit.
+model ResponseFileExport {
+  id             String    @id @default(cuid())
+  formId         String
+  requestedById  String
+  status         String // "running" | "completed" | "failed"
+  grouping       String // "question" | "response"
+  totalCount     Int
+  processedCount Int       @default(0)
+  totalBytes     BigInt    @default(0)
+  fileKey        String? // temp-exports/ key of the finished ZIP
+  filename       String?
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  completedAt    DateTime?
+
+  form        Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+  requestedBy User @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([requestedById, createdAt])
+  @@map("response_file_export")
 }
 
 // Native Quiz (D4, epic #289): grades live in a dedicated 1:1 table rather

@@ -1,0 +1,94 @@
+{
+  "groupBy": {
+    "label": "Group by",
+    "question": "Question",
+    "response": "Response"
+  },
+  "folders": {
+    "ariaLabel": "Folders",
+    "all": "All files"
+  },
+  "search": {
+    "placeholder": "Search files"
+  },
+  "summary_one": "{{count}} file · {{size}}",
+  "summary_other": "{{count}} files · {{size}}",
+  "filtered": "Showing files from responses that match your filters.",
+  "truncated": "Showing the first {{shown}} of {{total}} files. Use filters to narrow the list.",
+  "columns": {
+    "name": "Name",
+    "response": "Response",
+    "question": "Question",
+    "size": "Size",
+    "actions": "Actions"
+  },
+  "selection": {
+    "count_one": "{{count}} file selected · {{size}}",
+    "count_other": "{{count}} files selected · {{size}}"
+  },
+  "actions": {
+    "downloadAll": "Download all as ZIP",
+    "downloadFolder": "Download folder as ZIP",
+    "downloadMatching": "Download {{count}} as ZIP",
+    "downloadSelected": "Download selected as ZIP",
+    "clearSelection": "Clear",
+    "selectAll": "Select all files in this list",
+    "selectFile": "Select {{name}}",
+    "preview": "Preview",
+    "download": "Download",
+    "editorsOnly": "Only editors and owners can download files in bulk. You can still download files one at a time."
+  },
+  "empty": {
+    "noFields": {
+      "title": "No file upload questions",
+      "description": "Add a file upload question to your form to collect files from respondents."
+    },
+    "noFiles": {
+      "title": "No files yet",
+      "description": "Files respondents upload will appear here, organised by question."
+    },
+    "noMatches": {
+      "title": "No files match",
+      "description": "Try a different search or folder, or clear your filters."
+    }
+  },
+  "errors": {
+    "load": {
+      "title": "Couldn't load files",
+      "description": "Refresh the page to try again."
+    }
+  },
+  "preview": {
+    "loading": "Loading preview…",
+    "unavailable": "This file can't be previewed. Download it to open it.",
+    "previous": "Previous file",
+    "next": "Next file",
+    "position": "{{index}} of {{total}}"
+  },
+  "export": {
+    "preparing": {
+      "title": "Preparing your ZIP",
+      "progress": "{{processed}} of {{total}} files · {{size}}",
+      "hint": "It downloads automatically when ready. You can keep working."
+    },
+    "hide": "Hide",
+    "ready": {
+      "title": "Download started",
+      "description": "{{filename}} is downloading."
+    },
+    "errors": {
+      "title": "Couldn't prepare the download",
+      "generic": "Something went wrong. Please try again.",
+      "rateLimited": "You've started a lot of downloads recently. Please try again in an hour.",
+      "tooLarge": "That's more than 5,000 files or 5 GB. Narrow it with filters and try again.",
+      "noFiles": "There are no files to download for these responses.",
+      "downloadFailed": "The download link couldn't be created. Please try again."
+    }
+  },
+  "file": {
+    "errors": {
+      "title": "Couldn't download the file",
+      "download": "Please try again. Files of deleted responses are no longer available."
+    }
+  }
+}

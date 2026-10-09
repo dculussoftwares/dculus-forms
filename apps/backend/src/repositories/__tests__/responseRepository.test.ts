@@ -247,6 +247,16 @@ describe('Response Repository', () => {
     });
   });
 
+  describe('isFileKeyReferencedRaw', () => {
+    it('should report whether a live response references the key', async () => {
+      (mockPrisma.$queryRaw as any).mockResolvedValueOnce([{ referenced: true }]);
+      await expect(responseRepository.isFileKeyReferencedRaw('form-123', 'files/form-response/form-123/a.pdf')).resolves.toBe(true);
+
+      (mockPrisma.$queryRaw as any).mockResolvedValueOnce([]);
+      await expect(responseRepository.isFileKeyReferencedRaw('form-123', 'files/form-response/form-123/b.pdf')).resolves.toBe(false);
+    });
+  });
+
   describe('countFilteredRaw', () => {
     it('should count via queryRawUnsafe and coerce bigint to number', async () => {
       (mockPrisma.$queryRawUnsafe as any).mockResolvedValue([{ count: BigInt(12) }]);

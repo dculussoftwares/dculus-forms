@@ -87,6 +87,14 @@
         "EDITOR_ACCESS_REQUIRED": {
             "title": "Editor Access Required",
             "message": "You need editor access to upload files to this form."
+        },
+        "EXPORT_TOO_LARGE": {
+            "title": "Export Too Large",
+            "message": "This export is over the size limit. Narrow it with filters and try again."
+        },
+        "RATE_LIMITED": {
+            "title": "Too Many Requests",
+            "message": "You've done this too often. Please wait a while and try again."
         }
     },
     "defaultTitle": "Error",

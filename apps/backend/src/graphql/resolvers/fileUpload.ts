@@ -4,8 +4,8 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import {
   uploadFile,
   deleteFile,
-  generatePresignedDownloadUrl,
 } from '../../services/fileUploadService.js';
+import { createResponseFileDownloadUrl } from '../../services/responseFiles/responseFileDownloadService.js';
 import { createFormFile, findFormFileByKeyWithForm } from '../../services/formFileService.js';
 import { findUserByImageKey } from '../../services/userService.js';
 import { findOrganizationByLogoKey } from '../../services/organizationService.js';
@@ -59,7 +59,7 @@ export const fileUploadResolvers = {
   Query: {
     getResponseFileDownloadUrl: async (
       _: any,
-      { key }: { key: string },
+      { key, preview }: { key: string; preview?: boolean },
       context: { auth: BetterAuthContext }
     ) => {
       // Must be authenticated
@@ -90,7 +90,7 @@ export const fileUploadResolvers = {
         );
       }
 
-      return generatePresignedDownloadUrl(key);
+      return createResponseFileDownloadUrl(formId, key, { preview: preview ?? false });
     },
   },
   Mutation: {

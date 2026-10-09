@@ -15,6 +15,8 @@ import {
   Button,
   LoadingSpinner,
   EmptyState,
+  ToggleGroup,
+  ToggleGroupItem,
   toastSuccess,
   toastError,
 } from '@dculus/ui';
@@ -26,6 +28,9 @@ import { ResponsesTable } from '../components/Responses/ResponsesTable';
 import { ResponseDetailPanel } from '../components/Responses/ResponseDetailPanel';
 import { GradeDetailDrawer } from '../components/Responses/GradeDetailDrawer';
 import { useResponsesState } from '../hooks/useResponsesState';
+import { useResponseFileExport } from '../hooks/useResponseFileExport';
+import { ResponseFilesView } from '../components/Responses/files/ResponseFilesView';
+import { ResponseFileExportProgress } from '../components/Responses/files/ResponseFileExportProgress';
 import { createResponsesColumns } from '../utils/createResponsesColumns';
 import { GET_ANSWERED_FIELD_IDS, GET_FORM_BY_ID, GET_FORM_RESPONSES, GET_FORM_TAGS, GET_RESPONSE_BY_ID } from '../graphql/queries';
 import { GET_FORM_PLUGINS } from '../graphql/plugins';
@@ -36,8 +41,8 @@ import {
   GENERATE_FAKE_RESPONSES,
   DELETE_AI_GENERATED_RESPONSES,
 } from '../graphql/mutations';
-import { deserializeFormSchema, FillableFormField, FormResponse, FormSchema } from '@dculus/types';
-import { AlertCircle, ArrowLeft, FileSpreadsheet, FileText, RotateCcw, Send, Trash2, X } from 'lucide-react';
+import { deserializeFormSchema, FieldType, FillableFormField, FormResponse, FormSchema } from '@dculus/types';
+import { AlertCircle, ArrowLeft, FileDown, FileSpreadsheet, FileText, FolderOpen, RotateCcw, Send, Table2, Trash2, X } from 'lucide-react';
 
 // Mirrors MAX_FAKE_RESPONSES_PER_REQUEST in the backend's fakeResponseService.ts.
 const MAX_FAKE_RESPONSES = 10;
@@ -53,6 +58,9 @@ interface BulkActionBarProps {
   // Native Quiz — only shown when the form's gradeRelease is 'afterReview'
   onRelease?: () => void;
   isReleasing?: boolean;
+  // Respondent files as a ZIP — only for forms with file uploads, editors and owners
+  onDownloadFiles?: () => void;
+  isDownloadingFiles?: boolean;
   t: (key: string, options?: { values?: Record<string, string | number> }) => string;
 }
 
@@ -66,6 +74,8 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
   isExporting,
   onRelease,
   isReleasing,
+  onDownloadFiles,
+  isDownloadingFiles,
   t,
 }) => (
   <div
@@ -118,6 +128,18 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
         <FileText className="h-3 w-3" />
         {t('toolbar.export.csv')}
       </Button>
+      {onDownloadFiles && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 px-2.5 text-xs gap-1.5"
+          onClick={onDownloadFiles}
+          disabled={isDownloadingFiles}
+        >
+          <FileDown className="h-3 w-3" />
+          {t('toolbar.bulkActions.downloadFiles')}
+        </Button>
+      )}
     </div>
     <Button
       variant="ghost"
@@ -153,6 +175,15 @@ const Responses: React.FC = () => {
   // (used by the automation run history trigger link).
   const [searchParams, setSearchParams] = useSearchParams();
   const linkedResponseId = searchParams.get('responseId');
+  const view: 'table' | 'files' = searchParams.get('view') === 'files' ? 'files' : 'table';
+  const setView = (next: 'table' | 'files') => {
+    const params = new URLSearchParams(searchParams);
+    if (next === 'files') params.set('view', 'files');
+    else params.delete('view');
+    setSearchParams(params, { replace: true });
+  };
+  const fileExport = useResponseFileExport(actualFormId);
+  const [hiddenExportId, setHiddenExportId] = useState<string | null>(null);
   const { data: linkedResponseData, loading: linkedResponseLoading } = useQuery(GET_RESPONSE_BY_ID, {
     variables: { id: linkedResponseId },
     skip: !actualFormId || !linkedResponseId,
@@ -172,20 +203,22 @@ const Responses: React.FC = () => {
     setSearchParams(next, { replace: true });
   }, [actualFormId, linkedResponseId, linkedResponseLoading, linkedResponseData]);
 
-  const { fillableFields, deletedFieldIds } = useMemo(() => {
+  const { fillableFields, deletedFieldIds, hasFileUploadFields } = useMemo(() => {
     const fields: FillableFormField[] = [];
     const deletedIds: string[] = [];
+    let hasFileFields = false;
     if (formData?.form?.formSchema) {
       const formSchema: FormSchema = deserializeFormSchema(formData.form.formSchema);
       formSchema.pages.forEach((page) => {
         page.fields.forEach((field) => {
           if (!(field instanceof FillableFormField)) return;
+          if (field.type === FieldType.FILE_UPLOAD_FIELD) hasFileFields = true;
           if (field.deleted) deletedIds.push(field.id);
           else fields.push(field);
         });
       });
     }
-    return { fillableFields: fields, deletedFieldIds: deletedIds };
+    return { fillableFields: fields, deletedFieldIds: deletedIds, hasFileUploadFields: hasFileFields };
   }, [formData]);
 
   // Deleted fields only keep a column when some response (on any page) answered them.
@@ -529,6 +562,11 @@ const Responses: React.FC = () => {
   }
 
   const form = formData.form;
+  const canBulkDownloadFiles = form.userPermission === 'EDITOR' || form.userPermission === 'OWNER';
+  const showFilesView = hasFileUploadFields && view === 'files';
+  const downloadResponseFiles = canBulkDownloadFiles && hasFileUploadFields
+    ? (responseIds: string[]) => void fileExport.startExport({ responseIds, grouping: 'RESPONSE' })
+    : undefined;
 
   return (
     <MainLayout
@@ -559,6 +597,27 @@ const Responses: React.FC = () => {
           <h1 className="text-sm font-semibold truncate flex-1 min-w-0 text-primary">
             {form.title}
           </h1>
+
+          {hasFileUploadFields && (
+            <ToggleGroup
+              type="single"
+              size="sm"
+              variant="outline"
+              value={view}
+              onValueChange={(value) => value && setView(value as 'table' | 'files')}
+              aria-label={t('layout.view.label')}
+              className="shrink-0"
+            >
+              <ToggleGroupItem value="table" className="h-8 gap-1.5 px-2.5 text-xs" aria-label={t('layout.view.table')}>
+                <Table2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t('layout.view.table')}</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="files" className="h-8 gap-1.5 px-2.5 text-xs" aria-label={t('layout.view.files')}>
+                <FolderOpen className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{t('layout.view.files')}</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          )}
 
           <div className="flex items-center gap-2 shrink-0">
             {responsesLoading && (
@@ -599,7 +658,7 @@ const Responses: React.FC = () => {
         ) : (
           <div className="flex-1 flex flex-col min-h-0 w-full overflow-x-hidden bg-white dark:bg-card">
             {/* Bulk action bar — shown when rows are selected */}
-            {responsesState.selectedResponseIds.length > 0 && (
+            {!showFilesView && responsesState.selectedResponseIds.length > 0 && (
               <div className="flex-shrink-0">
                 <BulkActionBar
                   selectedCount={responsesState.selectedResponseIds.length}
@@ -611,6 +670,10 @@ const Responses: React.FC = () => {
                   isExporting={responsesState.isExporting}
                   onRelease={canReleaseGrades ? handleBulkRelease : undefined}
                   isReleasing={responsesState.isBulkReleasing}
+                  onDownloadFiles={
+                    downloadResponseFiles && (() => downloadResponseFiles(responsesState.selectedResponseIds))
+                  }
+                  isDownloadingFiles={fileExport.isPreparing}
                   t={t}
                 />
               </div>
@@ -674,37 +737,52 @@ const Responses: React.FC = () => {
                 isGeneratingFakeResponses={isGeneratingFakeResponses}
                 maxFakeResponses={MAX_FAKE_RESPONSES}
                 onGenerateFakeResponses={handleGenerateFakeResponses}
+                variant={showFilesView ? 'files' : 'table'}
                 t={t}
               />
             </div>
 
-            {/* Table */}
-            <ResponsesTable
-              columns={orderedColumns}
-              responses={responses}
-              rowSelection={responsesState.rowSelection}
-              onRowSelectionChange={responsesState.setRowSelection}
-              density={responsesState.rowDensity}
-              columnSizing={responsesState.columnSizing}
-              onColumnSizingChange={responsesState.onColumnSizingChange}
-              loading={responsesLoading}
-              currentPage={responsesState.currentPage}
-              pageSize={responsesState.pageSize}
-              totalPages={responsePagination?.totalPages || 0}
-              totalItems={responsePagination?.total || 0}
-              onPageChange={responsesState.handlePageChange}
-              onPageSizeChange={responsesState.handlePageSizeChange}
-              globalFilter={responsesState.globalFilter}
-              columnVisibility={responsesState.columnVisibility}
-              sortBy={responsesState.sortColumnId}
-              sortOrder={responsesState.sortOrder}
-              onSortingChange={responsesState.handleSortingChange}
-              onRowClick={responsesState.openDetailPanel}
-              t={t}
-            />
+            {showFilesView ? (
+              <ResponseFilesView
+                formId={actualFormId!}
+                filters={responsesState.graphqlFilters}
+                filterLogic={responsesState.filterLogic}
+                canBulkDownload={canBulkDownloadFiles}
+                fileExport={fileExport}
+              />
+            ) : (
+              <ResponsesTable
+                columns={orderedColumns}
+                responses={responses}
+                rowSelection={responsesState.rowSelection}
+                onRowSelectionChange={responsesState.setRowSelection}
+                density={responsesState.rowDensity}
+                columnSizing={responsesState.columnSizing}
+                onColumnSizingChange={responsesState.onColumnSizingChange}
+                loading={responsesLoading}
+                currentPage={responsesState.currentPage}
+                pageSize={responsesState.pageSize}
+                totalPages={responsePagination?.totalPages || 0}
+                totalItems={responsePagination?.total || 0}
+                onPageChange={responsesState.handlePageChange}
+                onPageSizeChange={responsesState.handlePageSizeChange}
+                globalFilter={responsesState.globalFilter}
+                columnVisibility={responsesState.columnVisibility}
+                sortBy={responsesState.sortColumnId}
+                sortOrder={responsesState.sortOrder}
+                onSortingChange={responsesState.handleSortingChange}
+                onRowClick={responsesState.openDetailPanel}
+                t={t}
+              />
+            )}
           </div>
         )}
       </div>
+
+      <ResponseFileExportProgress
+        activeExport={fileExport.activeExport?.id === hiddenExportId ? null : fileExport.activeExport}
+        onHide={() => setHiddenExportId(fileExport.activeExport?.id ?? null)}
+      />
 
       {/* Filter Modal */}
       <FilterModal
@@ -731,6 +809,8 @@ const Responses: React.FC = () => {
         }}
         quizEnabled={quizEnabled}
         onViewGrade={responsesState.openGradeDrawer}
+        onDownloadFiles={downloadResponseFiles && ((responseId) => downloadResponseFiles([responseId]))}
+        isDownloadingFiles={fileExport.isPreparing}
         t={t}
       />
 

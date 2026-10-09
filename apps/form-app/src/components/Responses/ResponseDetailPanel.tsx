@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router';
-import { useApolloClient, useQuery } from '@apollo/client/react';
-import { gql } from '@apollo/client';
-import type { TypedDocumentNode } from '@apollo/client';
+import { useQuery } from '@apollo/client/react';
 import {
   Button,
   Sheet,
@@ -12,9 +10,10 @@ import {
 } from '@dculus/ui';
 import { FillableFormField, FormResponse, FieldType } from '@dculus/types';
 import { formatFieldValue } from '@dculus/utils';
-import { Award, Download, Edit2, Trash2 } from 'lucide-react';
+import { Award, Edit2, FileDown, Loader2, Trash2 } from 'lucide-react';
 import { TagsCell } from './TagsCell';
 import { GeneratePdfButton } from './GeneratePdfButton';
+import { ResponseFileLink } from './files/ResponseFileLink';
 import { GET_FORM_TAGS } from '../../graphql/queries';
 
 interface ResponseGradeSummary {
@@ -22,12 +21,6 @@ interface ResponseGradeSummary {
   maxScore: number;
   percentage: number;
 }
-
-const GET_RESPONSE_FILE_DOWNLOAD_URL : TypedDocumentNode<any, any> = gql`
-  query GetResponseFileDownloadUrl($key: String!) {
-    getResponseFileDownloadUrl(key: $key)
-  }
-`;
 
 interface ResponseDetailPanelProps {
   response: FormResponse | null;
@@ -41,46 +34,11 @@ interface ResponseDetailPanelProps {
   // Status columns and "Grade details" menu item).
   quizEnabled?: boolean;
   onViewGrade?: (responseId: string) => void;
+  /** Bulk-download this response's files as a ZIP; omitted when the viewer may not. */
+  onDownloadFiles?: (responseId: string) => void;
+  isDownloadingFiles?: boolean;
   t: (key: string, options?: { values?: Record<string, string | number> }) => string;
 }
-
-const FileDownloadCell: React.FC<{ s3Key: string }> = ({ s3Key }) => {
-  const client = useApolloClient();
-  const [loading, setLoading] = useState(false);
-  const filename = s3Key.split('/').pop() || s3Key;
-
-  const handleClick = async () => {
-    setLoading(true);
-    try {
-      const { data } = await client.query<{ getResponseFileDownloadUrl: string }>({
-        query: GET_RESPONSE_FILE_DOWNLOAD_URL,
-        variables: { key: s3Key },
-        fetchPolicy: 'no-cache',
-      });
-      const a = document.createElement('a');
-      a.href = data?.getResponseFileDownloadUrl ?? '';
-      a.download = filename;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch { /* silent */ } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      className="flex items-center gap-1 text-xs text-blue-600 hover:underline disabled:opacity-50"
-    >
-      <Download className="h-3 w-3" />
-      {filename}
-    </button>
-  );
-};
 
 const FieldValueDisplay: React.FC<{
   field: FillableFormField;
@@ -96,7 +54,7 @@ const FieldValueDisplay: React.FC<{
     return (
       <div className="flex flex-col gap-1">
         {keys.map((key, idx) => (
-          <FileDownloadCell key={idx} s3Key={key} />
+          <ResponseFileLink key={idx} fileKey={key} />
         ))}
       </div>
     );
@@ -115,6 +73,8 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
   onDelete,
   quizEnabled,
   onViewGrade,
+  onDownloadFiles,
+  isDownloadingFiles,
   t,
 }) => {
   const navigate = useNavigate();
@@ -152,6 +112,13 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
     onClose();
     onViewGrade?.(response.id);
   };
+
+  const fileCount = fillableFields
+    .filter((field) => field.type === FieldType.FILE_UPLOAD_FIELD)
+    .reduce((count, field) => {
+      const value = (response.data as Record<string, unknown>)?.[field.id];
+      return count + (Array.isArray(value) ? value.length : value ? 1 : 0);
+    }, 0);
 
   const grade = quizEnabled ? (response as any).responseGrade as ResponseGradeSummary | undefined : undefined;
 
@@ -246,6 +213,18 @@ export const ResponseDetailPanel: React.FC<ResponseDetailPanelProps> = ({
             {t('table.actions.edit')}
           </Button>
           <GeneratePdfButton formId={formId} responseId={response.id} />
+          {onDownloadFiles && fileCount > 1 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDownloadFiles(response.id)}
+              disabled={isDownloadingFiles}
+              className="gap-1.5"
+            >
+              {isDownloadingFiles ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+              {t('table.actions.downloadFiles', { values: { count: fileCount } })}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

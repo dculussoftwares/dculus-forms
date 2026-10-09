@@ -3,7 +3,12 @@
     "title": "{{formTitle}} - Responses",
     "breadcrumbDashboard": "Dashboard",
     "breadcrumbFormDashboard": "Form Dashboard",
-    "breadcrumbResponses": "Responses"
+    "breadcrumbResponses": "Responses",
+    "view": {
+      "label": "View",
+      "table": "Table",
+      "files": "Files"
+    }
   },
   "header": {
     "backButton": "Back",
@@ -65,7 +70,8 @@
       "releasing": "Releasing...",
       "releaseSuccess": "{{count}} result(s) released",
       "releaseSuccessWithSkipped": "{{released}} result(s) released, {{skipped}} still need grading",
-      "releaseError": "Failed to release results"
+      "releaseError": "Failed to release results",
+      "downloadFiles": "Download files"
     },
     "preview": {
       "clearButton": "Clear {{count}} preview responses",
@@ -152,7 +158,9 @@
       "deleteConfirmCancel": "Cancel",
       "deleteConfirmConfirm": "Delete",
       "deleteSuccess": "Response deleted successfully",
-      "deleteError": "Failed to delete response"
+      "deleteError": "Failed to delete response",
+      "downloadFiles_one": "Download {{count}} file",
+      "downloadFiles_other": "Download {{count}} files"
     },
     "fieldResponses": {
       "noResponse": "No response",
