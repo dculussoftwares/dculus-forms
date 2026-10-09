@@ -196,8 +196,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       formId: formId || undefined,
     });
 
-    // If formId is provided and type is FormBackground, save to FormFile table
-    if (formId && type === 'FormBackground') {
+    // Record form-scoped uploads so their original name, size and type stay known
+    if (formId && (type === 'FormBackground' || type === 'FormResponse')) {
       await prisma.formFile.create({
         data: {
           id: randomUUID(),

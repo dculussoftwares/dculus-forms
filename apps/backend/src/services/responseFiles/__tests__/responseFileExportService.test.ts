@@ -8,6 +8,7 @@ vi.mock('../../../repositories/index.js', () => ({
     create: vi.fn(),
     findById: vi.fn(),
     update: vi.fn(),
+    updateIfRunning: vi.fn(),
     countByRequesterSince: vi.fn(),
     findRunning: vi.fn(),
   },
@@ -17,6 +18,11 @@ vi.mock('../../fileUploadService.js', () => ({ openFileStream: vi.fn() }));
 vi.mock('../../temporaryFileService.js', () => ({
   uploadTemporaryStream: vi.fn(),
   getTemporaryFileDownloadUrl: vi.fn(),
+  TEMP_FILE_TTL_MS: 5 * 60 * 60 * 1000,
+  getTemporaryFileExpiry: (key: string) => {
+    const ts = Number(/^temp-exports\/(\d+)-/.exec(key)?.[1]);
+    return ts > 0 ? new Date(ts + 5 * 60 * 60 * 1000) : null;
+  },
 }));
 vi.mock('../../../lib/audit.js', () => ({ audit: vi.fn() }));
 vi.mock('../../../lib/logger.js', () => ({ logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }));
@@ -60,7 +66,7 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   totalCount: 1,
   processedCount: 1,
   totalBytes: BigInt(10),
-  fileKey: 'temp-exports/1-uuid-response-files.zip',
+  fileKey: `temp-exports/${Date.now()}-uuid-response-files.zip`,
   filename: 'Job form files 2026-10-09.zip',
   errorMessage: null,
   createdAt: new Date(),
@@ -102,6 +108,20 @@ describe('startResponseFileExport', () => {
 
     expect(repo.update).toHaveBeenCalledWith('exp-1', expect.objectContaining({ status: 'failed' }));
     expect(result.id).toBe('exp-new');
+  });
+
+  it('resumes the winner when a concurrent request loses the one-running-export race', async () => {
+    const winner = row({ id: 'exp-winner', status: 'running', updatedAt: new Date() });
+    repo.findRunning.mockResolvedValueOnce(null).mockResolvedValueOnce(winner as any);
+    repo.create.mockRejectedValue(Object.assign(new Error('Unique constraint failed'), { code: 'P2002' }));
+
+    await expect(startResponseFileExport(input)).resolves.toBe(winner);
+    expect(openFileStream).not.toHaveBeenCalled();
+  });
+
+  it('rethrows unexpected create failures', async () => {
+    repo.create.mockRejectedValue(new Error('db down'));
+    await expect(startResponseFileExport(input)).rejects.toThrow('db down');
   });
 
   it('rate limits per user', async () => {
@@ -153,6 +173,7 @@ describe('runResponseFileExport', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     repo.update.mockResolvedValue(row() as any);
+    repo.updateIfRunning.mockResolvedValue(true);
   });
 
   it('streams every file and a manifest into one ZIP, marking unreadable files missing', async () => {
@@ -183,7 +204,7 @@ describe('runResponseFileExport', () => {
     expect(manifest).toContain('cv.pdf,included');
     expect(manifest).toContain('gone.pdf,missing');
 
-    expect(repo.update).toHaveBeenLastCalledWith('exp-1', expect.objectContaining({
+    expect(repo.updateIfRunning).toHaveBeenLastCalledWith('exp-1', expect.objectContaining({
       status: 'completed',
       fileKey: 'temp-exports/1-uuid-response-files.zip',
       processedCount: 2,
@@ -196,12 +217,53 @@ describe('runResponseFileExport', () => {
 
     await runResponseFileExport('exp-1', planZipEntries([entry('cv.pdf')], 'question', 'root'), 'root');
 
-    expect(repo.update).toHaveBeenLastCalledWith('exp-1', expect.objectContaining({ status: 'failed' }));
+    expect(repo.updateIfRunning).toHaveBeenLastCalledWith('exp-1', expect.objectContaining({ status: 'failed' }));
+  });
+
+  it('fails the export once the streamed bytes outgrow the cap, whatever sizes were recorded', async () => {
+    // Only byteLength is read before the cap rejects the chunk, so no real 6 GiB is allocated.
+    const chunk = { byteLength: 6 * 1024 ** 3 } as Uint8Array;
+    vi.mocked(openFileStream).mockImplementation(
+      async () =>
+        new ReadableStream<Uint8Array>({
+          pull(controller) {
+            controller.enqueue(chunk);
+          },
+        })
+    );
+    vi.mocked(uploadTemporaryStream).mockImplementation(async (body: Readable) => {
+      body.resume(); // drain; the cap errors the stream mid-way
+      await new Promise((resolve, reject) => body.on('end', resolve).on('error', reject));
+      return { fileKey: 'temp-exports/never.zip', expiresAt: new Date() };
+    });
+
+    await runResponseFileExport('exp-1', planZipEntries([entry('huge.bin', 1)], 'question', 'root'), 'root');
+
+    expect(repo.updateIfRunning).toHaveBeenLastCalledWith('exp-1', expect.objectContaining({ status: 'failed' }));
+  });
+
+  it('keeps the job alive with a time-based heartbeat during a long upload', async () => {
+    vi.useFakeTimers();
+    try {
+      let finish!: () => void;
+      vi.mocked(uploadTemporaryStream).mockImplementation(
+        () => new Promise((resolve) => (finish = () => resolve({ fileKey: 'temp-exports/1-x.zip', expiresAt: new Date() })))
+      );
+      const run = runResponseFileExport('exp-1', [], 'root');
+
+      await vi.advanceTimersByTimeAsync(65_000);
+      expect(repo.updateIfRunning).toHaveBeenCalledWith('exp-1', { updatedAt: expect.any(Date) });
+
+      finish();
+      await run;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('never throws even if the failure cannot be recorded', async () => {
     vi.mocked(uploadTemporaryStream).mockRejectedValue(new Error('R2 down'));
-    repo.update.mockRejectedValue(new Error('row gone'));
+    repo.updateIfRunning.mockRejectedValue(new Error('row gone'));
 
     await expect(runResponseFileExport('exp-1', [], 'root')).resolves.toBeUndefined();
     await flush();
@@ -229,7 +291,7 @@ describe('downloads', () => {
 
     expect(result).toMatchObject({ downloadUrl: 'https://signed-zip', filename: 'Job form files 2026-10-09.zip' });
     expect(getTemporaryFileDownloadUrl).toHaveBeenCalledWith(
-      'temp-exports/1-uuid-response-files.zip',
+      expect.stringMatching(/^temp-exports\/\d+-uuid-response-files\.zip$/),
       'Job form files 2026-10-09.zip',
       300
     );
@@ -243,6 +305,15 @@ describe('downloads', () => {
     });
 
     repo.findById.mockResolvedValue(row({ completedAt: new Date(Date.now() - 6 * 60 * 60 * 1000) }) as any);
+    // ...unless the key says it is still within retention
+    await expect(createResponseFileExportDownload('exp-1', 'user-1')).resolves.toBeDefined();
+
+    // Retention counts from the key's timestamp (upload start), not completion:
+    // a 3h export that finished just now has only 2h left, and one that
+    // started 6h ago is gone even though it completed a minute ago.
+    repo.findById.mockResolvedValue(
+      row({ fileKey: `temp-exports/${Date.now() - 6 * 60 * 60 * 1000}-uuid-response-files.zip`, completedAt: new Date() }) as any
+    );
     await expect(createResponseFileExportDownload('exp-1', 'user-1')).rejects.toThrow('expired');
   });
 });

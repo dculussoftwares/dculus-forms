@@ -30,3 +30,10 @@ DO $$ BEGIN
   ALTER TABLE "response_file_export" ADD CONSTRAINT "response_file_export_requestedById_fkey" FOREIGN KEY ("requestedById") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- At most one running export per person and form. Concurrent requests that lose
+-- the race resume the running job instead of starting another. Partial unique
+-- indexes can't be expressed in schema.prisma, so it lives only in this migration.
+CREATE UNIQUE INDEX IF NOT EXISTS "response_file_export_one_running_idx"
+  ON "response_file_export"("formId", "requestedById")
+  WHERE "status" = 'running';

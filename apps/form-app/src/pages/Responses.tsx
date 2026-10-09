@@ -744,6 +744,7 @@ const Responses: React.FC = () => {
 
             {showFilesView ? (
               <ResponseFilesView
+                key={actualFormId}
                 formId={actualFormId!}
                 filters={responsesState.graphqlFilters}
                 filterLogic={responsesState.filterLogic}

@@ -8,6 +8,7 @@ describe('ResponseFileExport Repository', () => {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       count: vi.fn(),
     },
   };
@@ -28,6 +29,17 @@ describe('ResponseFileExport Repository', () => {
 
     await repository.update('e1', { status: 'completed' });
     expect(mockPrisma.responseFileExport.update).toHaveBeenCalledWith({ where: { id: 'e1' }, data: { status: 'completed' } });
+  });
+
+  it('only updates a job that is still running', async () => {
+    mockPrisma.responseFileExport.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+
+    await expect(repository.updateIfRunning('e1', { status: 'completed' })).resolves.toBe(true);
+    await expect(repository.updateIfRunning('e1', { status: 'completed' })).resolves.toBe(false);
+    expect(mockPrisma.responseFileExport.updateMany).toHaveBeenCalledWith({
+      where: { id: 'e1', status: 'running' },
+      data: { status: 'completed' },
+    });
   });
 
   it('counts a requester’s recent exports for rate limiting', async () => {

@@ -17,12 +17,17 @@ export const useResponseFileUrl = () => {
 
   const getUrl = useCallback(
     async (key: string, preview = false): Promise<string | null> => {
-      const { data, error } = await client.query({
-        query: GET_RESPONSE_FILE_URL,
-        variables: { key, preview },
-        fetchPolicy: 'no-cache',
-      });
-      return error ? null : (data?.getResponseFileDownloadUrl ?? null);
+      try {
+        const { data, error } = await client.query({
+          query: GET_RESPONSE_FILE_URL,
+          variables: { key, preview },
+          fetchPolicy: 'no-cache',
+        });
+        return error ? null : (data?.getResponseFileDownloadUrl ?? null);
+      } catch {
+        // Revoked access, deleted file or a network failure: callers show their "unavailable" state.
+        return null;
+      }
     },
     [client]
   );

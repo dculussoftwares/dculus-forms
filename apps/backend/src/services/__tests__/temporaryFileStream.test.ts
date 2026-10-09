@@ -32,7 +32,9 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { s3Config } from '../../lib/env.js';
 import {
+  TEMP_FILE_TTL_MS,
   getTemporaryFileDownloadUrl,
+  getTemporaryFileExpiry,
   tempFilesMockStore,
   uploadTemporaryStream,
 } from '../temporaryFileService.js';
@@ -89,5 +91,14 @@ describe('temporary file streaming', () => {
     expect(tempFilesMockStore.get(fileKey)?.buffer.toString()).toBe('abc');
     expect(Upload).not.toHaveBeenCalled();
     await expect(getTemporaryFileDownloadUrl(fileKey, 'f.zip')).resolves.toContain('/api/temp-files-mock/');
+  });
+
+  it('derives when the sweep deletes a temp file from the timestamp in its key', () => {
+    const started = Date.UTC(2026, 9, 9, 10, 0, 0);
+    expect(getTemporaryFileExpiry(`temp-exports/${started}-uuid-response-files.zip`)).toEqual(
+      new Date(started + TEMP_FILE_TTL_MS)
+    );
+    expect(getTemporaryFileExpiry('temp-exports/not-a-timestamp.zip')).toBeNull();
+    expect(getTemporaryFileExpiry('somewhere/else.zip')).toBeNull();
   });
 });

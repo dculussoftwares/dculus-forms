@@ -91,7 +91,17 @@ export async function uploadTemporaryFile(
   }
 }
 
-const TEMP_FILE_TTL_MS = 5 * 60 * 60 * 1000;
+export const TEMP_FILE_TTL_MS = 5 * 60 * 60 * 1000;
+
+/**
+ * When the cleanup sweep will delete a temp file: its TTL counted from the
+ * timestamp embedded in the key (the moment the upload started), or null for
+ * a key that doesn't follow the temp-exports/{timestamp}-... format.
+ */
+export const getTemporaryFileExpiry = (fileKey: string): Date | null => {
+  const timestamp = Number(/^temp-exports\/(\d+)-/.exec(fileKey)?.[1]);
+  return Number.isFinite(timestamp) && timestamp > 0 ? new Date(timestamp + TEMP_FILE_TTL_MS) : null;
+};
 
 const isMockS3Enabled = (): boolean =>
   !process.env.VITEST &&

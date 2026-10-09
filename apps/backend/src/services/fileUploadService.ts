@@ -443,6 +443,27 @@ export async function openFileStream(s3Key: string): Promise<ReadableStream<Uint
 }
 
 /**
+ * Size and content type of a stored object, or null when it no longer exists
+ * (bucket inferred from key prefix). Used to recover metadata for respondent
+ * uploads that were stored before they were recorded as FormFile rows.
+ */
+export async function getFileMetadata(
+  s3Key: string
+): Promise<{ size: number; contentType: string | null } | null> {
+  try {
+    const head = await s3Client.send(
+      new HeadObjectCommand({ Bucket: getBucketForKey(s3Key), Key: s3Key })
+    );
+    return { size: head.ContentLength ?? 0, contentType: head.ContentType ?? null };
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode;
+    const name = (error as { name?: string })?.name;
+    if (status === 404 || name === 'NotFound') return null;
+    throw error;
+  }
+}
+
+/**
  * Download an R2 object into a Buffer (bucket inferred from key prefix).
  * Used for server-side processing, e.g. hydrating PDF template base PDFs.
  */

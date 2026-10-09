@@ -1,6 +1,7 @@
 import { FieldType } from '@dculus/types';
 import { logger } from '../../lib/logger.js';
 import { formFileRepository, formRepository, responseRepository } from '../../repositories/index.js';
+import { getFileMetadata } from '../fileUploadService.js';
 import { getFormSchemaFromHocuspocus } from '../hocuspocus.js';
 import { iterateResponsesByFormId } from '../responseService.js';
 import type { ResponseFilter } from '../responseFilterService.js';
@@ -108,11 +109,53 @@ async function* iterateResponses(formId: string, query: ResponseFileQuery): Asyn
 }
 
 const KEY_LOOKUP_CHUNK = 1000;
+const METADATA_LOOKUP_CONCURRENCY = 16;
+
+type FileRecord = { originalName: string; size: number; mimeType: string };
+
+/**
+ * Respondent uploads made before they were recorded as FormFile rows have no
+ * metadata. Recover it from the stored object (size and content type), keep the
+ * name from the key, and save it so each file is only looked up once.
+ */
+const backfillFileRecords = async (formId: string, keys: string[]): Promise<Map<string, FileRecord>> => {
+  const recovered = new Map<string, FileRecord>();
+  let next = 0;
+  const worker = async () => {
+    while (next < keys.length) {
+      const key = keys[next++];
+      try {
+        const metadata = await getFileMetadata(key);
+        if (!metadata) continue;
+        recovered.set(key, {
+          originalName: fileNameFromKey(key),
+          size: metadata.size,
+          mimeType: metadata.contentType || 'application/octet-stream',
+        });
+      } catch (error) {
+        logger.warn(`[Response files] Could not read metadata for ${key}:`, error);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(METADATA_LOOKUP_CONCURRENCY, keys.length) }, worker));
+
+  if (recovered.size > 0) {
+    try {
+      await formFileRepository.createManySkippingDuplicates(
+        [...recovered].map(([key, record]) => ({ key, type: 'FormResponse', formId, url: key, ...record }))
+      );
+    } catch (error) {
+      // Saving is an optimisation; the recovered values are still used for this request.
+      logger.warn('[Response files] Could not save recovered file metadata:', error);
+    }
+  }
+  return recovered;
+};
 
 /** FormFile metadata (original name, size, type) keyed by storage key, looked up in chunks. */
 const loadFileRecords = async (formId: string, keys: string[]) => {
   const unique = [...new Set(keys)];
-  const recordByKey = new Map<string, { originalName: string; size: number; mimeType: string }>();
+  const recordByKey = new Map<string, FileRecord>();
   for (let i = 0; i < unique.length; i += KEY_LOOKUP_CHUNK) {
     const records = await formFileRepository.findMany({
       where: { formId, key: { in: unique.slice(i, i + KEY_LOOKUP_CHUNK) } },
@@ -120,8 +163,15 @@ const loadFileRecords = async (formId: string, keys: string[]) => {
     });
     for (const { key, ...record } of records) recordByKey.set(key, record);
   }
+
+  const unknownKeys = unique.filter((key) => !recordByKey.has(key));
+  for (const [key, record] of await backfillFileRecords(formId, unknownKeys)) recordByKey.set(key, record);
   return recordByKey;
 };
+
+/** Ids of the form's file-upload questions, including ones since removed from the form. */
+export const getFileUploadFieldIds = async (formId: string): Promise<string[]> =>
+  listFileUploadFields(await loadFormSchema(formId)).map((field) => field.id);
 
 export const collectResponseFiles = async (
   formId: string,

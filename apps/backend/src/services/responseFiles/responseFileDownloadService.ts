@@ -2,7 +2,7 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { createGraphQLError } from '../../lib/graphqlErrors.js';
 import { formFileRepository, responseRepository } from '../../repositories/index.js';
 import { generatePresignedDownloadUrl } from '../fileUploadService.js';
-import { fileNameFromKey } from './responseFileCatalog.js';
+import { fileNameFromKey, getFileUploadFieldIds } from './responseFileCatalog.js';
 
 /**
  * Types a browser can safely render inline for a preview. Anything else —
@@ -30,7 +30,8 @@ export const createResponseFileDownloadUrl = async (
   key: string,
   { preview = false }: { preview?: boolean } = {}
 ): Promise<string> => {
-  if (!(await responseRepository.isFileKeyReferencedRaw(formId, key))) {
+  const fileFieldIds = await getFileUploadFieldIds(formId);
+  if (!(await responseRepository.isFileKeyReferencedRaw(formId, key, fileFieldIds))) {
     throw createGraphQLError('File not found', GRAPHQL_ERROR_CODES.NOT_FOUND);
   }
 

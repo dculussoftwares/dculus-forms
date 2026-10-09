@@ -57,6 +57,10 @@ export const createFormFileRepository = (context?: RepositoryContext) => {
   const createFormFile = async (data: Prisma.FormFileCreateArgs['data']) =>
     prisma.formFile.create({ data });
 
+  /** Insert rows, silently skipping keys that are already recorded. */
+  const createManySkippingDuplicates = (data: Prisma.FormFileCreateManyInput[]) =>
+    prisma.formFile.createMany({ data, skipDuplicates: true });
+
   return {
     // Generic operations (used when custom queries are needed)
     findMany,
@@ -70,6 +74,7 @@ export const createFormFileRepository = (context?: RepositoryContext) => {
     listByFormId,
     findById,
     createFormFile,
+    createManySkippingDuplicates,
   };
 };
 

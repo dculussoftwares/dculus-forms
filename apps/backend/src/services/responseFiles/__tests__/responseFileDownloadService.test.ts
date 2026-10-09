@@ -5,9 +5,14 @@ vi.mock('../../../repositories/index.js', () => ({
   responseRepository: { isFileKeyReferencedRaw: vi.fn() },
 }));
 vi.mock('../../fileUploadService.js', () => ({ generatePresignedDownloadUrl: vi.fn() }));
+vi.mock('../responseFileCatalog.js', () => ({
+  getFileUploadFieldIds: vi.fn(),
+  fileNameFromKey: (key: string) => key.split('/').pop()!.replace(/^\d{13}-[0-9a-f-]{36}-/, ''),
+}));
 
 import { formFileRepository, responseRepository } from '../../../repositories/index.js';
 import { generatePresignedDownloadUrl } from '../../fileUploadService.js';
+import { getFileUploadFieldIds } from '../responseFileCatalog.js';
 import { createResponseFileDownloadUrl } from '../responseFileDownloadService.js';
 
 const KEY = 'files/form-response/form-1/1700000000000-11111111-2222-3333-4444-555555555555-cv.pdf';
@@ -15,6 +20,7 @@ const KEY = 'files/form-response/form-1/1700000000000-11111111-2222-3333-4444-55
 describe('createResponseFileDownloadUrl', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getFileUploadFieldIds).mockResolvedValue(['resume']);
     vi.mocked(responseRepository.isFileKeyReferencedRaw).mockResolvedValue(true);
     vi.mocked(generatePresignedDownloadUrl).mockResolvedValue('https://signed');
   });
@@ -23,6 +29,7 @@ describe('createResponseFileDownloadUrl', () => {
     vi.mocked(responseRepository.isFileKeyReferencedRaw).mockResolvedValue(false);
 
     await expect(createResponseFileDownloadUrl('form-1', KEY)).rejects.toThrow('File not found');
+    expect(responseRepository.isFileKeyReferencedRaw).toHaveBeenCalledWith('form-1', KEY, ['resume']);
     expect(generatePresignedDownloadUrl).not.toHaveBeenCalled();
   });
 

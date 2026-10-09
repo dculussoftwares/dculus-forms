@@ -55,12 +55,24 @@ const errorCode = (error: ErrorLike | undefined): string | undefined =>
 export const useResponseFileExport = (formId: string | undefined) => {
   const { t } = useTranslation('responseFiles');
   const client = useApolloClient();
-  const [exportId, setExportId] = useState<string | null>(() => (formId ? readStoredExportId(formId) : null));
+  // The tracked export belongs to one form; navigating to another form must not keep following it.
+  const [tracked, setTracked] = useState<{ formId?: string; id: string | null }>(() => ({
+    formId,
+    id: formId ? readStoredExportId(formId) : null,
+  }));
+  const exportId = tracked.formId === formId ? tracked.id : null;
   const settledRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (tracked.formId !== formId) {
+      settledRef.current = null;
+      setTracked({ formId, id: formId ? readStoredExportId(formId) : null });
+    }
+  }, [formId, tracked.formId]);
 
   const [startMutation, { loading: starting }] = useMutation(START_RESPONSE_FILE_EXPORT);
 
-  const { data } = useQuery(GET_RESPONSE_FILE_EXPORT, {
+  const { data, error: pollError } = useQuery(GET_RESPONSE_FILE_EXPORT, {
     variables: { id: exportId ?? '' },
     skip: !exportId,
     pollInterval: POLL_INTERVAL_MS,
@@ -68,19 +80,26 @@ export const useResponseFileExport = (formId: string | undefined) => {
     notifyOnNetworkStatusChange: false,
   });
   const activeExport: ResponseFileExport | null =
-    exportId && data?.responseFileExport?.id === exportId ? data.responseFileExport : null;
+    exportId && data?.responseFileExport?.id === exportId && data.responseFileExport.formId === formId
+      ? data.responseFileExport
+      : null;
 
   const clear = useCallback(() => {
-    setExportId(null);
+    setTracked({ formId, id: null });
     if (formId) storeExportId(formId, null);
   }, [formId]);
 
+  // A remembered export the server no longer shows to this person (expired, removed,
+  // or a different account on this tab) would otherwise poll forever.
+  useEffect(() => {
+    if (exportId && CombinedGraphQLErrors.is(pollError)) clear();
+  }, [exportId, pollError, clear]);
+
   const downloadExport = useCallback(
     async (id: string) => {
-      const { data: link, error } = await client.mutate({
-        mutation: GET_RESPONSE_FILE_EXPORT_DOWNLOAD_URL,
-        variables: { id },
-      });
+      const { data: link, error } = await client
+        .mutate({ mutation: GET_RESPONSE_FILE_EXPORT_DOWNLOAD_URL, variables: { id } })
+        .catch((thrown: ErrorLike) => ({ data: undefined, error: thrown }));
       const result = link?.responseFileExportDownloadUrl;
       if (error || !result) {
         toastError(t('export.errors.title'), t('export.errors.downloadFailed'));
@@ -113,7 +132,7 @@ export const useResponseFileExport = (formId: string | undefined) => {
           responseIds: request.responseIds,
           fileKeys: request.fileKeys,
         },
-      });
+      }).catch((thrown: ErrorLike) => ({ data: undefined, error: thrown }));
 
       const exportRow = started?.startResponseFileExport;
       if (error || !exportRow) {
@@ -131,7 +150,7 @@ export const useResponseFileExport = (formId: string | undefined) => {
       }
 
       settledRef.current = null;
-      setExportId(exportRow.id);
+      setTracked({ formId, id: exportRow.id });
       storeExportId(formId, exportRow.id);
     },
     [formId, startMutation, t]

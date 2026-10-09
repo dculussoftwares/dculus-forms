@@ -7,7 +7,12 @@ import { audit } from '../../lib/audit.js';
 import { logger } from '../../lib/logger.js';
 import { formRepository, responseFileExportRepository } from '../../repositories/index.js';
 import { openFileStream } from '../fileUploadService.js';
-import { getTemporaryFileDownloadUrl, uploadTemporaryStream } from '../temporaryFileService.js';
+import {
+  TEMP_FILE_TTL_MS,
+  getTemporaryFileDownloadUrl,
+  getTemporaryFileExpiry,
+  uploadTemporaryStream,
+} from '../temporaryFileService.js';
 import { collectResponseFiles, type ResponseFileEntry, type ResponseFileQuery } from './responseFileCatalog.js';
 import {
   archiveRootName,
@@ -28,10 +33,10 @@ import {
 export const MAX_EXPORT_FILES = 5000;
 export const MAX_EXPORT_BYTES = 5 * 1024 ** 3;
 export const MAX_EXPORTS_PER_HOUR = 10;
-// Temp exports are swept after 5h (temporaryFileService.cleanupExpiredFiles).
-const EXPORT_RETENTION_MS = 5 * 60 * 60 * 1000;
-// Progress is written every few files, so a healthy job always refreshes
-// updatedAt well within this window — even while streaming one large file.
+// A running job touches updatedAt on this interval (and on every progress write),
+// so only a job that really died can look this stale — even mid-way through one
+// very large file.
+const HEARTBEAT_INTERVAL_MS = 30 * 1000;
 const STALLED_THRESHOLD_MS = 15 * 60 * 1000;
 const PROGRESS_EVERY_N_FILES = 10;
 const ZIP_KEY_NAME = 'response-files.zip';
@@ -96,15 +101,26 @@ export const startResponseFileExport = async ({
   const form = await formRepository.findUnique({ where: { id: formId }, select: { title: true } });
   const root = archiveRootName(form?.title ?? 'form');
 
-  const row = await responseFileExportRepository.create({
-    formId,
-    requestedById: userId,
-    status: 'running',
-    grouping,
-    totalCount: files.length,
-    totalBytes: BigInt(totalBytes),
-    filename: `${root}.zip`,
-  });
+  let row: ExportRow;
+  try {
+    row = await responseFileExportRepository.create({
+      formId,
+      requestedById: userId,
+      status: 'running',
+      grouping,
+      totalCount: files.length,
+      totalBytes: BigInt(totalBytes),
+      filename: `${root}.zip`,
+    });
+  } catch (error) {
+    // A partial unique index allows one running export per person and form, so
+    // a concurrent request that lost the race resumes the winner's export.
+    const existing = (error as { code?: string })?.code === 'P2002'
+      ? await responseFileExportRepository.findRunning(formId, userId)
+      : null;
+    if (!existing) throw error;
+    return existing;
+  }
 
   await audit('responseFiles.exportRequested', 'Form', formId, userId, {
     exportId: row.id,
@@ -124,12 +140,28 @@ export const startResponseFileExport = async ({
  * (and marked `missing` in the manifest) rather than failing the whole archive;
  * the manifest is appended last so it reflects exactly what was included.
  */
+/** Passes a stream through unchanged, failing it once the export as a whole outgrows the byte cap. */
+const capExportBytes = (input: ReadableStream<Uint8Array>, budget: { streamed: number }) =>
+  input.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        budget.streamed += chunk.byteLength;
+        if (budget.streamed > MAX_EXPORT_BYTES) {
+          controller.error(new Error('Export exceeds the maximum allowed size'));
+          return;
+        }
+        controller.enqueue(chunk);
+      },
+    })
+  );
+
 async function* zipInputs(exportId: string, entries: ZipEntryPlan[], root: string) {
   const missing = new Set<ResponseFileEntry>();
+  const budget = { streamed: 0 };
 
   for (const [index, entry] of entries.entries()) {
     try {
-      const input = await openFileStream(entry.file.key);
+      const input = capExportBytes(await openFileStream(entry.file.key), budget);
       yield { name: entry.path, lastModified: entry.file.submittedAt, input };
     } catch (error) {
       logger.warn(`[Response files] Skipping ${entry.file.key} in export ${exportId}:`, error);
@@ -154,13 +186,23 @@ export const runResponseFileExport = async (
   entries: ZipEntryPlan[],
   root: string
 ): Promise<void> => {
+  // Time-based heartbeat: progress writes only happen between files, so one
+  // large upload could otherwise look stalled while it is working fine.
+  const heartbeat = setInterval(() => {
+    responseFileExportRepository
+      .updateIfRunning(exportId, { updatedAt: new Date() })
+      .catch((error) => logger.warn(`[Response files] Heartbeat for export ${exportId} failed:`, error));
+  }, HEARTBEAT_INTERVAL_MS);
+
   try {
     const zip = downloadZip(zipInputs(exportId, entries, root));
     if (!zip.body) throw new Error('ZIP stream could not be created');
     const body = Readable.fromWeb(zip.body as unknown as NodeWebReadableStream);
     const { fileKey } = await uploadTemporaryStream(body, ZIP_KEY_NAME, 'application/zip');
 
-    await responseFileExportRepository.update(exportId, {
+    // Only settle a job that is still running: if it was already marked failed
+    // (stalled, or someone started a new one), don't resurrect it.
+    await responseFileExportRepository.updateIfRunning(exportId, {
       status: 'completed',
       fileKey,
       processedCount: entries.length,
@@ -172,7 +214,7 @@ export const runResponseFileExport = async (
     // (e.g. the form was deleted mid-export) must not escape as an
     // unhandled rejection.
     try {
-      await responseFileExportRepository.update(exportId, {
+      await responseFileExportRepository.updateIfRunning(exportId, {
         status: 'failed',
         errorMessage: 'Something went wrong while preparing the download. Please try again.',
         completedAt: new Date(),
@@ -180,6 +222,8 @@ export const runResponseFileExport = async (
     } catch (updateError) {
       logger.error(`[Response files] Could not mark export ${exportId} as failed:`, updateError);
     }
+  } finally {
+    clearInterval(heartbeat);
   }
 };
 
@@ -192,8 +236,18 @@ export const getResponseFileExport = async (exportId: string, userId: string): P
   return failStalled(row);
 };
 
-export const isExportExpired = (row: Pick<ExportRow, 'completedAt'>): boolean =>
-  !!row.completedAt && Date.now() - row.completedAt.getTime() > EXPORT_RETENTION_MS;
+/**
+ * Whether the finished ZIP is gone. The cleanup sweep counts its retention from
+ * the moment the upload started (the timestamp in the key), which for a long
+ * export is earlier than completion, so that is the clock to use.
+ */
+export const isExportExpired = (row: Pick<ExportRow, 'completedAt' | 'fileKey'>): boolean => {
+  if (row.fileKey) {
+    const expiry = getTemporaryFileExpiry(row.fileKey);
+    if (expiry) return Date.now() > expiry.getTime();
+  }
+  return !!row.completedAt && Date.now() - row.completedAt.getTime() > TEMP_FILE_TTL_MS;
+};
 
 /**
  * Issue a 5-minute link to a finished export. The caller re-checks form access

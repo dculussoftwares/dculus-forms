@@ -250,10 +250,16 @@ describe('Response Repository', () => {
   describe('isFileKeyReferencedRaw', () => {
     it('should report whether a live response references the key', async () => {
       (mockPrisma.$queryRaw as any).mockResolvedValueOnce([{ referenced: true }]);
-      await expect(responseRepository.isFileKeyReferencedRaw('form-123', 'files/form-response/form-123/a.pdf')).resolves.toBe(true);
+      await expect(responseRepository.isFileKeyReferencedRaw('form-123', 'files/form-response/form-123/a.pdf', ['resume'])).resolves.toBe(true);
 
       (mockPrisma.$queryRaw as any).mockResolvedValueOnce([]);
-      await expect(responseRepository.isFileKeyReferencedRaw('form-123', 'files/form-response/form-123/b.pdf')).resolves.toBe(false);
+      await expect(responseRepository.isFileKeyReferencedRaw('form-123', 'files/form-response/form-123/b.pdf', ['resume'])).resolves.toBe(false);
+    });
+
+    it('is false without querying when the form has no file-upload fields', async () => {
+      (mockPrisma.$queryRaw as any).mockClear();
+      await expect(responseRepository.isFileKeyReferencedRaw('form-123', 'files/form-response/form-123/c.pdf', [])).resolves.toBe(false);
+      expect(mockPrisma.$queryRaw).not.toHaveBeenCalled();
     });
   });
 

@@ -22,7 +22,7 @@ vi.mock('../../lib/env.js', () => ({
 vi.mock('../../utils/cdn.js');
 
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { generatePresignedDownloadUrl, openFileStream } from '../fileUploadService.js';
+import { generatePresignedDownloadUrl, getFileMetadata, openFileStream } from '../fileUploadService.js';
 
 const { __mockSend: mockSend } = (await import('@aws-sdk/client-s3')) as any;
 const KEY = 'files/form-response/form-1/a.pdf';
@@ -64,5 +64,16 @@ describe('fileUploadService downloads', () => {
 
     mockSend.mockResolvedValueOnce({});
     await expect(openFileStream(KEY)).rejects.toThrow('Empty response body');
+  });
+
+  it('reads size and content type of a stored object, and null when it is gone', async () => {
+    mockSend.mockResolvedValueOnce({ ContentLength: 2048, ContentType: 'application/pdf' });
+    await expect(getFileMetadata(KEY)).resolves.toEqual({ size: 2048, contentType: 'application/pdf' });
+
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('nf'), { name: 'NotFound', $metadata: { httpStatusCode: 404 } }));
+    await expect(getFileMetadata(KEY)).resolves.toBeNull();
+
+    mockSend.mockRejectedValueOnce(Object.assign(new Error('denied'), { $metadata: { httpStatusCode: 403 } }));
+    await expect(getFileMetadata(KEY)).rejects.toThrow('denied');
   });
 });
