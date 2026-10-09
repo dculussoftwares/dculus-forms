@@ -100,7 +100,10 @@ export const responseFilesResolvers = {
 
     responseFileExport: async (_: unknown, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
-      return toGraphQLExport(await getResponseFileExport(id, context.auth.user!.id));
+      const row = await getResponseFileExport(id, context.auth.user!.id);
+      // Someone whose access to the form was revoked must not keep seeing its export status.
+      await requireFormAccess(context, row.formId, PermissionLevel.VIEWER, 'view this download');
+      return toGraphQLExport(row);
     },
   },
 

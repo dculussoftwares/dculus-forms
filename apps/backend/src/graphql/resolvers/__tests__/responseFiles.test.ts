@@ -156,7 +156,17 @@ describe('responseFilesResolvers', () => {
       const result = await responseFilesResolvers.Query.responseFileExport(null, { id: 'exp-1' }, context);
 
       expect(getResponseFileExport).toHaveBeenCalledWith('exp-1', 'user-1');
+      expect(checkFormAccess).toHaveBeenCalledWith('user-1', 'form-1', 'VIEWER');
       expect(result.grouping).toBe('QUESTION');
+    });
+
+    it('hides export status once the requester has lost access to the form', async () => {
+      vi.mocked(getResponseFileExport).mockResolvedValue(exportRow as any);
+      vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: false } as any);
+
+      await expect(
+        responseFilesResolvers.Query.responseFileExport(null, { id: 'exp-1' }, context)
+      ).rejects.toMatchObject({ extensions: { code: 'NO_ACCESS' } });
     });
 
     it('re-checks EDITOR access before issuing a download link', async () => {

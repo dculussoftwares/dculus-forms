@@ -30,13 +30,11 @@ const Checkbox = React.forwardRef<
     {...props}
   >
     <CheckboxPrimitive.Indicator
-      className={cn("flex items-center justify-center text-current")}
+      className={cn("group flex items-center justify-center text-current")}
     >
-      {props.checked === "indeterminate" ? (
-        <Minus className="h-3.5 w-3.5" />
-      ) : (
-        <Check className="h-3.5 w-3.5" />
-      )}
+      {/* The indicator's own data-state decides the icon, so controlled and uncontrolled use agree */}
+      <Check className="h-3.5 w-3.5 group-data-[state=indeterminate]:hidden" />
+      <Minus className="hidden h-3.5 w-3.5 group-data-[state=indeterminate]:block" />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
 ))
