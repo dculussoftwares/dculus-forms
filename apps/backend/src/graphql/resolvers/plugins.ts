@@ -4,6 +4,7 @@ import { BetterAuthContext, requireAuth } from '../../middleware/better-auth-mid
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { emitPluginTest } from '../../plugins/core/events.js';
 import { startBackfill, cancelBackfill, getLatestBackfillJob } from '../../plugins/core/backfill.js';
+import { carrySheetColumns } from '../../plugins/core/sheetColumns.js';
 import * as pluginService from '../../services/pluginService.js';
 
 /**
@@ -237,7 +238,12 @@ export const pluginsResolvers = {
       }
 
       // Update plugin
-      const updatedPlugin = await pluginService.updatePlugin(id, input);
+      const updatedPlugin = await pluginService.updatePlugin(
+        id,
+        input.config === undefined
+          ? input
+          : { ...input, config: carrySheetColumns(plugin.config, input.config) }
+      );
 
       return updatedPlugin;
     },

@@ -1,4 +1,5 @@
 import type { PluginConfig } from '../core/types.js';
+import type { SheetColumn } from '../core/sheetColumns.js';
 
 export interface MicrosoftToken {
   accessToken: string;
@@ -17,6 +18,8 @@ export interface MicrosoftSheetsPluginConfig extends PluginConfig {
   workbookUrl?: string;
   /** Target worksheet name (defaults to "Sheet1") */
   worksheetName?: string;
+  /** Persisted column layout of the worksheet; only ever grows (see core/sheetColumns.ts). */
+  sheetColumns?: SheetColumn[];
 }
 
 export interface MicrosoftSheetsResult {

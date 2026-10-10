@@ -31,6 +31,8 @@ const EXTERNALLY_BOUND_CONFIG_KEYS = [
   'workbookId',
   'workbookUrl',
   'worksheetId',
+  // Column layout of the document above — meaningless for a fresh one.
+  'sheetColumns',
   // The OAuth connection itself. Both sheets plugins nest their tokens in an object
   // (GoogleSheetsPluginConfig.googleToken, MicrosoftSheetsPluginConfig.microsoftToken) rather than
   // at the top level, so dropping bare accessToken/refreshToken would miss every real credential.
