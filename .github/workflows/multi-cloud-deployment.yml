@@ -141,6 +141,12 @@ jobs:
             *) echo "❌ Unsupported environment: '$INPUT_ENVIRONMENT' (expected dev or production)"; exit 1 ;;
           esac
 
+          # The `production` environment is unprotected, so keep other refs away from its credentials.
+          if [ "$INPUT_ENVIRONMENT" = "production" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "❌ Production deployments must run from main (got $GITHUB_REF)"
+            exit 1
+          fi
+
           RELEASE_COMMIT="$INPUT_RELEASE_COMMIT"
           if [[ "$INPUT_RELEASE_TAG" =~ ^sha-([0-9a-f]{40})$ ]]; then
             if [ "$INPUT_ENVIRONMENT" = "production" ]; then

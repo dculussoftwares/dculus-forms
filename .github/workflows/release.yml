@@ -92,10 +92,18 @@ jobs:
             exit 1
           fi
 
-          GREEN=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --branch main \
-            --event push --status success --commit "$SRC" --limit 1 --json databaseId --jq 'length')
-          if [ "$GREEN" = "0" ]; then
-            echo "❌ No successful Build Pipeline (build + dev deploy) run for $SRC"
+          GREEN_RUN=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --branch main \
+            --event push --status success --commit "$SRC" --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -z "$GREEN_RUN" ]; then
+            echo "❌ No successful Build Pipeline run for $SRC"
+            exit 1
+          fi
+
+          # Runs built before deploy-dev existed deployed via a separate workflow, so require the job itself.
+          DEV_OK=$(gh run view "$GREEN_RUN" --repo "$GITHUB_REPOSITORY" --json jobs \
+            --jq '[.jobs[] | select((.name | startswith("Deploy to Dev / 8.1.")) and .conclusion == "success")] | length')
+          if [ "$DEV_OK" = "0" ]; then
+            echo "❌ Run $GREEN_RUN has no successful dev deployment + health check for $SRC"
             exit 1
           fi
 
@@ -104,13 +112,13 @@ jobs:
             exit 1
           fi
 
-          ALREADY=$(git tag --points-at "$SRC" --list 'v[0-9]*.[0-9]*.[0-9]*' | head -n1)
+          ALREADY=$(git tag --points-at "$SRC" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
           if [ -n "$ALREADY" ]; then
             echo "❌ $SRC is already released as $ALREADY (use the Multi-Cloud Deployment workflow to redeploy a tag)"
             exit 1
           fi
 
-          PREV=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          PREV=$(git tag --list 'v*' --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
           PREV=${PREV:-v0.0.0}
           IFS=. read -r MAJOR MINOR PATCH <<< "${PREV#v}"
           case "$BUMP" in
