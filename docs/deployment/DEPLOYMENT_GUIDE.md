@@ -571,7 +571,12 @@ Each frontend application requires different environment variables:
 
 ### Form Viewer (`form-viewer`)
 
-The form viewer is designed to work with runtime configuration and typically doesn't require build-time environment variables. It detects the backend URL from the form link.
+**Required:**
+- `VITE_API_URL` - Backend API base URL (e.g., `https://api.your-domain.com`)
+- `VITE_GRAPHQL_URL` - GraphQL endpoint URL (e.g., `https://api.your-domain.com/graphql`)
+
+**Optional:**
+- `VITE_CDN_ENDPOINT` - CDN endpoint for assets
 
 ### Admin App (`admin-app`)
 
@@ -581,47 +586,18 @@ The form viewer is designed to work with runtime configuration and typically doe
 
 ### Setting Environment Variables
 
-**For platforms with native env var support** (Cloudflare Pages, Netlify, Vercel, Azure Static Web Apps):
-- Configure via platform dashboard or CLI
-- Platform will inject vars at build time or runtime
+The release archives are environment-agnostic. Each app reads its settings at runtime from `config.js` in the root of its `dist/` folder (loaded by `index.html` before the app bundle), so you never need to rebuild.
 
-**For static hosting** (S3, GCS, nginx):
-
-**Option 1: Rebuild with your variables**
-```bash
-# Clone repository
-git clone https://github.com/your-org/dculus-forms.git
-cd dculus-forms
-
-# Install dependencies
-pnpm install
-
-# Build with your env vars
-VITE_API_URL=https://api.your-domain.com \
-VITE_GRAPHQL_URL=https://api.your-domain.com/graphql \
-VITE_FORM_VIEWER_URL=https://viewer.your-domain.com \
-pnpm --filter form-app build
-
-# Deploy the dist folder
-```
-
-**Option 2: Runtime configuration file**
-
-Create `config.js` in your build's `dist/` folder:
+Edit `dist/config.js` before uploading it to your host:
 ```javascript
-window.__RUNTIME_CONFIG__ = {
-  VITE_API_URL: 'https://api.your-domain.com',
-  VITE_GRAPHQL_URL: 'https://api.your-domain.com/graphql',
-  VITE_FORM_VIEWER_URL: 'https://viewer.your-domain.com'
+window.__APP_CONFIG__ = {
+  "VITE_API_URL": "https://api.your-domain.com",
+  "VITE_GRAPHQL_URL": "https://api.your-domain.com/graphql",
+  "VITE_FORM_VIEWER_URL": "https://viewer.your-domain.com"
 };
 ```
 
-Then load it in `index.html` before your app bundle:
-```html
-<script src="/config.js"></script>
-```
-
-Update your app code to read from `window.__RUNTIME_CONFIG__` as a fallback.
+Serve `config.js` with `Cache-Control: no-cache` so configuration changes take effect immediately. The platform-level environment variables in the provider sections above only apply if you rebuild from source with `VITE_*` set.
 
 ## Backend Deployment
 

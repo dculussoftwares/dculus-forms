@@ -23,15 +23,12 @@ permissions:
   id-token: write
   contents: write
   packages: write
+  actions: read
 
 env:
   NODE_VERSION: '22.14.0'
   REGISTRY: docker.io
   IMAGE_NAME: dculus/forms-backend
-  # Backend URL for production builds
-  BACKEND_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
-  # Viewer URL used for linking out of the builder
-  FORM_VIEWER_URL: https://dculus-forms-viewer-app.pages.dev
   # Azure Configuration
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -152,7 +149,7 @@ jobs:
         with:
           name: backend-dist-${{ github.sha }}
           path: apps/backend/dist
-          retention-days: 1
+          retention-days: 30
 
   unit-tests-backend:
     name: Backend Unit Tests
@@ -339,13 +336,8 @@ jobs:
           name: packages-dist
           path: packages
 
-      - name: Build form-app with environment variables
-        env:
-          VITE_CDN_ENDPOINT: ${{ secrets.VITE_CDN_ENDPOINT }}
-          VITE_PIXABAY_API_KEY: ${{ secrets.VITE_PIXABAY_API_KEY }}
-          VITE_API_URL: ${{ env.BACKEND_URL }}
-          VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
-          VITE_FORM_VIEWER_URL: ${{ env.FORM_VIEWER_URL }}
+      # Environment values come from /config.js at deploy time, so one build serves every environment.
+      - name: Build form-app
         run: pnpm --filter form-app build
 
       - name: Upload form-app dist
@@ -353,7 +345,7 @@ jobs:
         with:
           name: form-app-dist-${{ github.sha }}
           path: apps/form-app/dist
-          retention-days: 1
+          retention-days: 30
 
   build-form-viewer:
     name: Build Form Viewer
@@ -387,7 +379,7 @@ jobs:
         with:
           name: form-viewer-dist-${{ github.sha }}
           path: apps/form-viewer/dist
-          retention-days: 1
+          retention-days: 30
 
   build-admin-app:
     name: Build Admin App
@@ -410,10 +402,7 @@ jobs:
           name: packages-dist
           path: packages
 
-      - name: Build admin-app with environment variables
-        env:
-          VITE_API_URL: ${{ env.BACKEND_URL }}
-          VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
+      - name: Build admin-app
         run: pnpm --filter admin-app build
 
       - name: Upload admin-app dist
@@ -421,7 +410,7 @@ jobs:
         with:
           name: admin-app-dist-${{ github.sha }}
           path: apps/admin-app/dist
-          retention-days: 1
+          retention-days: 30
 
   e2e-local:
     name: E2E Tests (Local Runner, ${{ matrix.shard }})
@@ -726,6 +715,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      actions: read
     uses: ./.github/workflows/multi-cloud-deployment.yml
     secrets: inherit
     with:

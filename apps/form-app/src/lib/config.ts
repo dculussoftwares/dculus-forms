@@ -1,27 +1,30 @@
 /**
  * Configuration utilities for form-app
- * Reads from Vite environment variables with fallback defaults
+ * Reads deploy-time values from /config.js (window.__APP_CONFIG__), falling back to
+ * Vite environment variables and defaults for local development
  */
 
+import { getRuntimeConfig } from '@dculus/utils';
+
 /**
- * Get the base API URL from Vite environment variables
+ * Get the base API URL
  */
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  return getRuntimeConfig('VITE_API_URL', import.meta.env.VITE_API_URL) || 'http://localhost:4000';
 }
 
 /**
  * Get the GraphQL endpoint URL
  */
 export function getGraphQLUrl(): string {
-  return import.meta.env.VITE_GRAPHQL_URL || `${getApiBaseUrl()}/graphql`;
+  return getRuntimeConfig('VITE_GRAPHQL_URL', import.meta.env.VITE_GRAPHQL_URL) || `${getApiBaseUrl()}/graphql`;
 }
 
 /**
  * Get the GraphQL WebSocket endpoint URL
  */
 export function getGraphQLWsUrl(): string {
-  const url = import.meta.env.VITE_GRAPHQL_WS_URL;
+  const url = getRuntimeConfig('VITE_GRAPHQL_WS_URL', import.meta.env.VITE_GRAPHQL_WS_URL);
   if (!url) {
     // Derive WS URL from the HTTP GraphQL URL as fallback
     const httpUrl = getGraphQLUrl();
@@ -51,28 +54,28 @@ export function getUploadUrl(): string {
  * Get the CDN endpoint for images
  */
 export function getCdnEndpoint(): string {
-  return import.meta.env.VITE_CDN_ENDPOINT || '';
+  return getRuntimeConfig('VITE_CDN_ENDPOINT', import.meta.env.VITE_CDN_ENDPOINT) || '';
 }
 
 /**
  * Get the Pixabay API key
  */
 export function getPixabayApiKey(): string {
-  return import.meta.env.VITE_PIXABAY_API_KEY || '';
+  return getRuntimeConfig('VITE_PIXABAY_API_KEY', import.meta.env.VITE_PIXABAY_API_KEY) || '';
 }
 
 /**
  * Whether grid (multi-column) layout authoring is enabled in the builder
  */
 export function isGridLayoutEnabled(): boolean {
-  return import.meta.env.VITE_ENABLE_GRID_LAYOUT === 'true';
+  return getRuntimeConfig('VITE_ENABLE_GRID_LAYOUT', import.meta.env.VITE_ENABLE_GRID_LAYOUT) === 'true';
 }
 
 /**
  * Get the base Form Viewer URL (without trailing slash)
  */
 export function getFormViewerBaseUrl(): string {
-  const baseUrl = import.meta.env.VITE_FORM_VIEWER_URL || 'http://localhost:5173';
+  const baseUrl = getRuntimeConfig('VITE_FORM_VIEWER_URL', import.meta.env.VITE_FORM_VIEWER_URL) || 'http://localhost:5173';
   return baseUrl.replace(/\/$/, '');
 }
 

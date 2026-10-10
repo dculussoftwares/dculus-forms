@@ -20,7 +20,7 @@ import {
   Unlink,
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
-import { getApiBaseUrl } from '../../lib/config';
+import { getApiBaseUrl, getFormViewerUrl } from '../../lib/config';
 import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
 import { stashPendingConfigFields, consumePendingConfigFields } from '../../lib/pendingConfigFields';
 import type { ConfigFormProps } from '../core/registry';
@@ -221,7 +221,7 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
               </div>
               {form.shortUrl && (
                 <a
-                  href={`${import.meta.env.VITE_FORM_VIEWER_URL}/f/${form.shortUrl}`}
+                  href={getFormViewerUrl(form.shortUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs hover:underline shrink-0"

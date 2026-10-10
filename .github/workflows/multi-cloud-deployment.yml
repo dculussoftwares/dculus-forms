@@ -65,6 +65,7 @@ on:
 
 permissions:
   contents: read # Required for checking out code
+  actions: read # Download frontend build artifacts from the Build Pipeline run
   # id-token: write (Azure OIDC) is granted per-job, only on jobs that call azure/login
 
 # Prevent overlapping Terraform applies against the same environment's state.
@@ -916,53 +917,23 @@ jobs:
           echo "RELEASE_COMMIT=${{ needs.determine-environment.outputs.release_commit }}" >> $GITHUB_ENV
           echo "📦 Deploying tag: ${{ needs.determine-environment.outputs.release_tag }}"
 
-      - name: Checkout source code
+      - name: Checkout deploy tooling
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.determine-environment.outputs.release_commit }}
-          path: source
+          sparse-checkout: |
+            .github/actions
+            scripts
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Fetch form-app build
+        uses: ./.github/actions/fetch-frontend-build
         with:
-          node-version: "22.14.0"
+          app: form-app
+          release_tag: ${{ needs.determine-environment.outputs.release_tag }}
+          output_dir: ${{ github.workspace }}/dist/form-app
+          github_token: ${{ github.token }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: "8.15.0"
-
-      - name: Get pnpm store directory
-        id: pnpm-store
-        shell: bash
-        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Restore pnpm store cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('source/**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        working-directory: ./source
-        run: |
-          echo "📦 Installing dependencies..."
-          pnpm install --frozen-lockfile
-          echo "✅ Dependencies installed"
-
-      - name: Build shared packages
-        working-directory: ./source
-        run: |
-          echo "🔨 Building shared packages..."
-          pnpm --filter @dculus/types build
-          pnpm --filter @dculus/utils build
-          pnpm --filter @dculus/ui build
-          echo "✅ Shared packages built"
-
-      - name: Build form-app with environment-specific variables
-        working-directory: ./source
+      - name: Write runtime config (form-app)
         env:
           VITE_GRAPHQL_URL: https://${{
             needs.terraform-cloudflare-service-domain.outputs.service_domain
@@ -972,23 +943,12 @@ jobs:
           VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
           VITE_PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           VITE_FORM_VIEWER_URL: ${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}
-        run: |
-          echo "🔨 Building form-app for environment: ${{ needs.determine-environment.outputs.environment }}"
-          echo "Backend URL: $VITE_API_URL"
-          echo "GraphQL URL: $VITE_GRAPHQL_URL"
-          echo "CDN Endpoint: $VITE_CDN_ENDPOINT"
-          echo "Form Viewer URL: $VITE_FORM_VIEWER_URL"
-
-          pnpm --filter form-app build
-
-          echo "✅ form-app build completed"
-          ls -la apps/form-app/dist/
+        run: ./scripts/write-runtime-config.sh "$GITHUB_WORKSPACE/dist/form-app" VITE_API_URL VITE_GRAPHQL_URL VITE_FORM_VIEWER_URL
 
       - name: Install wrangler
         run: npm install -g wrangler
 
       - name: Deploy to Cloudflare Pages
-        working-directory: ./source
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -998,7 +958,7 @@ jobs:
           echo "🚀 Deploying to Cloudflare Pages..."
           echo "Project: form-app-${{ needs.determine-environment.outputs.environment }}"
 
-          wrangler pages deploy apps/form-app/dist \
+          wrangler pages deploy "$GITHUB_WORKSPACE/dist/form-app" \
             --project-name=form-app-${{ needs.determine-environment.outputs.environment }} \
             --branch=main \
             --commit-hash=${RELEASE_COMMIT} \
@@ -1195,53 +1155,23 @@ jobs:
           echo "RELEASE_COMMIT=${{ needs.determine-environment.outputs.release_commit }}" >> $GITHUB_ENV
           echo "📦 Deploying tag: ${{ needs.determine-environment.outputs.release_tag }}"
 
-      - name: Checkout source code
+      - name: Checkout deploy tooling
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.determine-environment.outputs.release_commit }}
-          path: source
+          sparse-checkout: |
+            .github/actions
+            scripts
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Fetch admin-app build
+        uses: ./.github/actions/fetch-frontend-build
         with:
-          node-version: "22.14.0"
+          app: admin-app
+          release_tag: ${{ needs.determine-environment.outputs.release_tag }}
+          output_dir: ${{ github.workspace }}/dist/admin-app
+          github_token: ${{ github.token }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: "8.15.0"
-
-      - name: Get pnpm store directory
-        id: pnpm-store
-        shell: bash
-        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Restore pnpm store cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('source/**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        working-directory: ./source
-        run: |
-          echo "📦 Installing dependencies..."
-          pnpm install --frozen-lockfile
-          echo "✅ Dependencies installed"
-
-      - name: Build shared packages
-        working-directory: ./source
-        run: |
-          echo "🔨 Building shared packages..."
-          pnpm --filter @dculus/types build
-          pnpm --filter @dculus/utils build
-          pnpm --filter @dculus/ui build
-          echo "✅ Shared packages built"
-
-      - name: Build admin-app with environment-specific variables
-        working-directory: ./source
+      - name: Write runtime config (admin-app)
         env:
           VITE_GRAPHQL_URL: https://${{
             needs.terraform-cloudflare-service-domain.outputs.service_domain
@@ -1249,22 +1179,12 @@ jobs:
           VITE_API_URL: https://${{
             needs.terraform-cloudflare-service-domain.outputs.service_domain }}
           VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
-        run: |
-          echo "🔨 Building admin-app for environment: ${{ needs.determine-environment.outputs.environment }}"
-          echo "Backend URL: $VITE_API_URL"
-          echo "GraphQL URL: $VITE_GRAPHQL_URL"
-          echo "CDN Endpoint: $VITE_CDN_ENDPOINT"
-
-          pnpm --filter admin-app build
-
-          echo "✅ admin-app build completed"
-          ls -la apps/admin-app/dist/
+        run: ./scripts/write-runtime-config.sh "$GITHUB_WORKSPACE/dist/admin-app" VITE_API_URL VITE_GRAPHQL_URL
 
       - name: Install wrangler
         run: npm install -g wrangler
 
       - name: Deploy to Cloudflare Pages
-        working-directory: ./source
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -1274,7 +1194,7 @@ jobs:
           echo "🚀 Deploying to Cloudflare Pages..."
           echo "Project: form-admin-app-${{ needs.determine-environment.outputs.environment }}"
 
-          wrangler pages deploy apps/admin-app/dist \
+          wrangler pages deploy "$GITHUB_WORKSPACE/dist/admin-app" \
             --project-name=form-admin-app-${{ needs.determine-environment.outputs.environment }} \
             --branch=main \
             --commit-hash=${RELEASE_COMMIT} \
@@ -1471,53 +1391,23 @@ jobs:
           echo "RELEASE_COMMIT=${{ needs.determine-environment.outputs.release_commit }}" >> $GITHUB_ENV
           echo "📦 Deploying tag: ${{ needs.determine-environment.outputs.release_tag }}"
 
-      - name: Checkout source code
+      - name: Checkout deploy tooling
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.determine-environment.outputs.release_commit }}
-          path: source
+          sparse-checkout: |
+            .github/actions
+            scripts
+          persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Fetch form-viewer build
+        uses: ./.github/actions/fetch-frontend-build
         with:
-          node-version: "22.14.0"
+          app: form-viewer
+          release_tag: ${{ needs.determine-environment.outputs.release_tag }}
+          output_dir: ${{ github.workspace }}/dist/form-viewer
+          github_token: ${{ github.token }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: "8.15.0"
-
-      - name: Get pnpm store directory
-        id: pnpm-store
-        shell: bash
-        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Restore pnpm store cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('source/**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        working-directory: ./source
-        run: |
-          echo "📦 Installing dependencies..."
-          pnpm install --frozen-lockfile
-          echo "✅ Dependencies installed"
-
-      - name: Build shared packages
-        working-directory: ./source
-        run: |
-          echo "🔨 Building shared packages..."
-          pnpm --filter @dculus/types build
-          pnpm --filter @dculus/utils build
-          pnpm --filter @dculus/ui build
-          echo "✅ Shared packages built"
-
-      - name: Build form-viewer with environment-specific variables
-        working-directory: ./source
+      - name: Write runtime config (form-viewer)
         env:
           VITE_GRAPHQL_URL: https://${{
             needs.terraform-cloudflare-service-domain.outputs.service_domain
@@ -1525,22 +1415,12 @@ jobs:
           VITE_API_URL: https://${{
             needs.terraform-cloudflare-service-domain.outputs.service_domain }}
           VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
-        run: |
-          echo "🔨 Building form-viewer for environment: ${{ needs.determine-environment.outputs.environment }}"
-          echo "Backend URL: $VITE_API_URL"
-          echo "GraphQL URL: $VITE_GRAPHQL_URL"
-          echo "CDN Endpoint: $VITE_CDN_ENDPOINT"
-
-          pnpm --filter form-viewer build
-
-          echo "✅ form-viewer build completed"
-          ls -la apps/form-viewer/dist/
+        run: ./scripts/write-runtime-config.sh "$GITHUB_WORKSPACE/dist/form-viewer" VITE_API_URL VITE_GRAPHQL_URL
 
       - name: Install wrangler
         run: npm install -g wrangler
 
       - name: Deploy to Cloudflare Pages
-        working-directory: ./source
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -1550,7 +1430,7 @@ jobs:
           echo "🚀 Deploying to Cloudflare Pages..."
           echo "Project: viewer-app-${{ needs.determine-environment.outputs.environment }}"
 
-          wrangler pages deploy apps/form-viewer/dist \
+          wrangler pages deploy "$GITHUB_WORKSPACE/dist/form-viewer" \
             --project-name=viewer-app-${{ needs.determine-environment.outputs.environment }} \
             --branch=main \
             --commit-hash=${RELEASE_COMMIT} \

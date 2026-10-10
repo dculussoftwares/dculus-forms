@@ -40,6 +40,10 @@
   Content-Type: application/javascript; charset=utf-8
   X-Content-Type-Options: nosniff
 
+/config.js
+  # Overwritten at deploy time with environment values; must never be served stale.
+  Cache-Control: no-cache
+
 /embed/*
   # Drop the frame-ancestors 'self' inherited from /* before setting ours.
   # This block is last so the `!` actually has that value to remove.

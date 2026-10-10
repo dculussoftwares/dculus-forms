@@ -4,6 +4,7 @@ import { Button } from '@dculus/ui';
 import { FieldType } from '@dculus/types';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks/useTranslation';
+import { getApiBaseUrl } from '../../../lib/config';
 import type { DestructiveAction } from '../../../store/types/store.types';
 
 // AI short field-type tokens → FieldType enum (for conversion).
@@ -58,7 +59,7 @@ const DestructiveActionCard: React.FC = () => {
 
     // Real mutation happened — refresh the AI's cached schema (fire-and-forget).
     if (formId) {
-      const apiUrl = import.meta.env.VITE_API_URL as string;
+      const apiUrl = getApiBaseUrl();
       fetch(`${apiUrl}/api/ai/invalidate-schema`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
