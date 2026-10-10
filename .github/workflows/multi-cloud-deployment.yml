@@ -10,10 +10,9 @@ on:
         type: choice
         options:
           - dev
-          - staging
           - production
       release_tag:
-        description: "Git tag/version to deploy (e.g., v1.2.3)"
+        description: "Version tag (v1.2.3) or sha-<full commit SHA> (dev only)"
         required: true
         type: string
       deploy_cloudflare:
@@ -27,25 +26,42 @@ on:
         type: boolean
         default: true
 
+  # Called by build.yml (dev, on every main build) and release.yml (production).
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment to deploy (dev or production)"
+        required: true
+        type: string
+      release_tag:
+        description: "Version tag (v1.2.3) or sha-<full commit SHA> (dev only)"
+        required: true
+        type: string
+      release_commit:
+        description: "Commit SHA to build frontends from; resolved from the tag when empty"
+        required: false
+        type: string
+        default: ""
+      deploy_cloudflare:
+        required: false
+        type: boolean
+        default: true
+      deploy_azure:
+        required: false
+        type: boolean
+        default: true
+      approved:
+        description: "Caller already collected production approval (release.yml); skips the gate prompt"
+        required: false
+        type: boolean
+        default: false
+
   pull_request:
     branches:
       - main
     paths:
       - "infrastructure/multi-cloud/terraform/**"
       - ".github/workflows/multi-cloud-deployment.yml"
-  # NOTE: `workflow_run` only supports `branches`/`branches-ignore` filters — there is
-  # no `tags:` key for this event type. A `branches: [main]` filter here would also be
-  # wrong: for a Build Pipeline run triggered by a version-tag push, GitHub reports
-  # `head_branch` as the TAG NAME (e.g. "v1.2.3"), not "main" — verified against this
-  # repo's actual run history, where every workflow_run-triggered deployment run has
-  # head_branch=main and tag-triggered runs never reach this trigger at all. So no
-  # branch filter is applied here; dev vs production is decided entirely in the
-  # `determine-environment` job below, by regex-matching `head_branch` against
-  # `^v[0-9]+\.[0-9]+` for production, "main" for dev, anything else is skipped.
-  workflow_run:
-    workflows: [ "Build Pipeline" ]
-    types:
-      - completed
 
 permissions:
   contents: read # Required for checking out code
@@ -55,7 +71,7 @@ permissions:
 # Grouped by trigger-time context only (job outputs like `determine-environment`
 # aren't available at this scope).
 concurrency:
-  group: multi-cloud-deploy-${{ github.event.workflow_run.head_branch || github.event.inputs.environment || github.ref_name }}
+  group: multi-cloud-deploy-${{ inputs.environment || github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -99,82 +115,58 @@ jobs:
 
       - name: Determine environment
         id: set-env
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GITHUB_SHA_VALUE: ${{ github.sha }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+          INPUT_RELEASE_COMMIT: ${{ inputs.release_commit }}
+          INPUT_DEPLOY_CLOUDFLARE: ${{ inputs.deploy_cloudflare }}
+          INPUT_DEPLOY_AZURE: ${{ inputs.deploy_azure }}
         run: |
-          # For manual workflow dispatch
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-            echo "should_deploy=true" >> $GITHUB_OUTPUT
-            echo "deploy_cloudflare=${{ github.event.inputs.deploy_cloudflare }}" >> $GITHUB_OUTPUT
-            echo "deploy_azure=${{ github.event.inputs.deploy_azure }}" >> $GITHUB_OUTPUT
-            echo "release_tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # For workflow_run (triggered by Build Pipeline)
-          if [ "${{ github.event_name }}" = "workflow_run" ]; then
-            echo "ℹ️ Triggered by Build Pipeline completion"
-            
-            # Check if build was successful
-            if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
-              echo "❌ Build Pipeline failed. Skipping deployment."
-              exit 1
-            fi
-            
-            # Determine tag/commit
-            HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
-            HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
-            
-            echo "Branch: $HEAD_BRANCH"
-            echo "SHA: $HEAD_SHA"
-            
-            if [ "$HEAD_BRANCH" = "main" ]; then
-              # For main branch, deploy to dev with SHA tag
-              echo "environment=dev" >> $GITHUB_OUTPUT
-              echo "should_deploy=true" >> $GITHUB_OUTPUT
-              echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
-              echo "deploy_azure=true" >> $GITHUB_OUTPUT
-              echo "release_tag=sha-${HEAD_SHA}" >> $GITHUB_OUTPUT
-              echo "release_commit=${HEAD_SHA}" >> $GITHUB_OUTPUT
-            elif [[ "$HEAD_BRANCH" =~ ^v[0-9]+\.[0-9]+ ]]; then
-              # For version tags (v*), auto-deploy to production
-              echo "🚀 Version tag detected: $HEAD_BRANCH — deploying to production"
-              echo "environment=production" >> $GITHUB_OUTPUT
-              echo "should_deploy=true" >> $GITHUB_OUTPUT
-              echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
-              echo "deploy_azure=true" >> $GITHUB_OUTPUT
-              echo "release_tag=${HEAD_BRANCH}" >> $GITHUB_OUTPUT
-              echo "release_commit=${HEAD_SHA}" >> $GITHUB_OUTPUT
-            else
-               echo "⚠️ Triggered by non-main branch: $HEAD_BRANCH. Skipping auto-deployment."
-               echo "should_deploy=false" >> $GITHUB_OUTPUT
-            fi
-            exit 0
-          fi
-
-          # For pull requests, only plan (no deploy)
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          # Pull requests only plan (no deploy)
+          if [ "$EVENT_NAME" = "pull_request" ]; then
             echo "environment=dev" >> $GITHUB_OUTPUT
             echo "should_deploy=false" >> $GITHUB_OUTPUT
             echo "deploy_cloudflare=true" >> $GITHUB_OUTPUT
             echo "deploy_azure=true" >> $GITHUB_OUTPUT
-            echo "release_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "release_commit=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "release_tag=${GITHUB_SHA_VALUE}" >> $GITHUB_OUTPUT
+            echo "release_commit=${GITHUB_SHA_VALUE}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-      - name: Validate release tag
-        id: resolve-release
-        if: github.event_name == 'workflow_dispatch'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="${{ steps.set-env.outputs.release_tag }}"
+          # workflow_dispatch (manual / rollback) and workflow_call (build.yml, release.yml)
+          case "$INPUT_ENVIRONMENT" in
+            dev|production) ;;
+            *) echo "❌ Unsupported environment: '$INPUT_ENVIRONMENT' (expected dev or production)"; exit 1 ;;
+          esac
 
-          if [ -z "$TAG" ]; then
-            echo "❌ Release tag input is required."
+          RELEASE_COMMIT="$INPUT_RELEASE_COMMIT"
+          if [[ "$INPUT_RELEASE_TAG" =~ ^sha-([0-9a-f]{40})$ ]]; then
+            if [ "$INPUT_ENVIRONMENT" = "production" ]; then
+              echo "❌ Production only deploys version tags (vX.Y.Z), got '$INPUT_RELEASE_TAG'"
+              exit 1
+            fi
+            RELEASE_COMMIT="${BASH_REMATCH[1]}"
+          elif [[ ! "$INPUT_RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid release tag '$INPUT_RELEASE_TAG' (expected vX.Y.Z or sha-<40 hex>)"
             exit 1
           fi
 
+          echo "environment=${INPUT_ENVIRONMENT}" >> $GITHUB_OUTPUT
+          echo "should_deploy=true" >> $GITHUB_OUTPUT
+          echo "deploy_cloudflare=${INPUT_DEPLOY_CLOUDFLARE:-true}" >> $GITHUB_OUTPUT
+          echo "deploy_azure=${INPUT_DEPLOY_AZURE:-true}" >> $GITHUB_OUTPUT
+          echo "release_tag=${INPUT_RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "release_commit=${RELEASE_COMMIT}" >> $GITHUB_OUTPUT
+
+      - name: Validate release tag
+        id: resolve-release
+        if: github.event_name != 'pull_request' && steps.set-env.outputs.release_commit == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.set-env.outputs.release_tag }}
+        run: |
           echo "🔍 Validating release tag: $TAG"
 
           REF_JSON=$(gh api repos/${{ github.repository }}/git/ref/tags/${TAG} 2>/tmp/ref_error || true)
@@ -209,6 +201,24 @@ jobs:
           echo "🔀 Event: ${{ github.event_name }}"
           echo "📌 Ref: ${{ github.ref }}"
 
+  # The only manual approval point. Production binds to the protected
+  # `production-approval` environment unless the caller already collected approval;
+  # every other case binds to the unprotected environment of the same name, so this
+  # job always succeeds and nothing downstream is skipped. The deploy jobs use the
+  # unprotected `production` environment (secrets only), so reviewers are prompted
+  # exactly once.
+  approval-gate:
+    name: 1.1a. Approval Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: determine-environment
+    if: needs.determine-environment.outputs.should_deploy == 'true'
+    environment: ${{ needs.determine-environment.outputs.environment == 'production' && !inputs.approved && 'production-approval' || needs.determine-environment.outputs.environment }}
+    steps:
+      - name: Deployment approved
+        run: |
+          echo "✅ Approved: deploying ${{ needs.determine-environment.outputs.release_tag }} to ${{ needs.determine-environment.outputs.environment }}"
+
   setup-azure-backend:
     name: 1.2. Setup Azure Terraform Backend
     runs-on: ubuntu-latest
@@ -216,7 +226,7 @@ jobs:
     permissions:
       id-token: write # Required for OIDC authentication with Azure
       contents: read
-    needs: determine-environment
+    needs: [ determine-environment, approval-gate ]
     if: needs.determine-environment.outputs.should_deploy == 'true'
     environment: ${{ needs.determine-environment.outputs.environment }}
     steps:
@@ -391,7 +401,7 @@ jobs:
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "❌ Docker image does not exist or cannot be accessed: ${IMAGE_NAME}:${TAG}"
-            echo "⚠️  Please run the build.yml workflow with tag ${TAG} to build the image first"
+            echo "⚠️  Image missing. sha-<commit> images come from the Build Pipeline on main; vX.Y.Z images are created by the Release workflow."
             echo "exists=false" >> $GITHUB_OUTPUT
             exit 1
           fi

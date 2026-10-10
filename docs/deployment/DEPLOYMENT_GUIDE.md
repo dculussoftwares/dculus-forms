@@ -39,23 +39,21 @@ Each release includes ZIP archives containing optimized, minified production bui
 
 ## Creating a Release
 
-Build artifacts are automatically created when you push a version tag to the repository:
+Releases are created from the **Release** workflow (Actions → Release → Run workflow) on `main`:
 
-```bash
-# Create and push a version tag
-git tag v1.0.0
-git push origin v1.0.0
-```
+1. Pick the version bump: `patch` (fixes), `minor` (new features) or `major` (breaking changes).
+2. Optionally set `source_sha`; by default the latest `main` commit with a green Build Pipeline (which already deployed to dev) is released. Use `dry_run` to preview the version.
+3. Approve the run once (reviewers on the `production-approval` environment).
 
-The GitHub Actions workflow will:
-1. Build all three frontend applications
-2. Create ZIP archives for each app
-3. Create a GitHub Release with the archives attached
-4. Build and push the backend Docker image to Docker Hub
+The workflow will:
+1. Retag the Docker image already built for that commit (`sha-<commit>` → `vX.Y.Z`, `vX.Y`, `vX`); nothing is rebuilt
+2. Create the `vX.Y.Z` tag and a GitHub Release with generated notes
+3. Attach ZIP archives for the backend and the three frontend apps
+4. Deploy the release to production
 
 **Tag Format**: `v{major}.{minor}.{patch}` (e.g., `v1.0.0`, `v2.1.3`)
 
-**Pre-release Tags**: Tags containing `alpha`, `beta`, or `rc` will be marked as pre-releases (e.g., `v1.0.0-beta`, `v2.0.0-rc1`)
+To redeploy or roll back, run **Multi-Cloud Deployment** manually with the environment and an existing `vX.Y.Z` tag.
 
 ## Downloading Build Artifacts
 
