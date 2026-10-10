@@ -3,7 +3,6 @@ name: Build Pipeline
 on:
   push:
     branches: [ main, develop, release ]
-    tags: [ 'v*' ]
     paths-ignore:
       - '**.md'
       - 'docs/**'
@@ -596,332 +595,10 @@ jobs:
           path: test-results/e2e/screenshots/
           if-no-files-found: ignore
 
-  create-release-artifacts:
-    name: Create Release Artifacts
-    runs-on: ubuntu-latest
-    needs: [build-form-app, build-form-viewer, build-admin-app, build-backend]
-    if: startsWith(github.ref, 'refs/tags/v')
-    timeout-minutes: 15
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Download form-app dist
-        uses: actions/download-artifact@v4
-        with:
-          name: form-app-dist-${{ github.sha }}
-          path: apps/form-app/dist
-
-      - name: Download form-viewer dist
-        uses: actions/download-artifact@v4
-        with:
-          name: form-viewer-dist-${{ github.sha }}
-          path: apps/form-viewer/dist
-
-      - name: Download admin-app dist
-        uses: actions/download-artifact@v4
-        with:
-          name: admin-app-dist-${{ github.sha }}
-          path: apps/admin-app/dist
-
-      - name: Download backend dist
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-dist-${{ github.sha }}
-          path: apps/backend/dist
-
-      - name: Extract version from tag
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Packaging release artifacts for version: $VERSION"
-
-      - name: Create backend release directory
-        run: |
-          echo "Preparing backend release package..."
-          mkdir -p backend-release
-
-          # Copy built files
-          cp -r apps/backend/dist backend-release/
-          cp -r apps/backend/prisma backend-release/
-          cp apps/backend/package.json backend-release/
-          cp apps/backend/.env.example backend-release/
-          cp apps/backend/README-DEPLOYMENT.md backend-release/
-
-          # Copy node_modules (production only)
-          cd apps/backend
-          pnpm install --prod --frozen-lockfile
-          cd ../..
-          cp -r apps/backend/node_modules backend-release/
-
-          echo "Backend release package prepared"
-          du -sh backend-release/
-
-      - name: Create backend ZIP archive
-        run: |
-          cd backend-release
-          zip -r ../backend-build-v${{ steps.version.outputs.version }}.zip .
-          cd ..
-          ls -lh backend-build-v${{ steps.version.outputs.version }}.zip
-          echo "Backend ZIP size: $(du -h backend-build-v${{ steps.version.outputs.version }}.zip | cut -f1)"
-
-      - name: Create form-app ZIP archive
-        run: |
-          cd apps/form-app
-          zip -r ../../form-app-build-v${{ steps.version.outputs.version }}.zip dist/
-          cd ../..
-          ls -lh form-app-build-v${{ steps.version.outputs.version }}.zip
-
-      - name: Create form-viewer ZIP archive
-        run: |
-          cd apps/form-viewer
-          zip -r ../../form-viewer-build-v${{ steps.version.outputs.version }}.zip dist/
-          cd ../..
-          ls -lh form-viewer-build-v${{ steps.version.outputs.version }}.zip
-
-      - name: Create admin-app ZIP archive
-        run: |
-          cd apps/admin-app
-          zip -r ../../admin-app-build-v${{ steps.version.outputs.version }}.zip dist/
-          cd ../..
-          ls -lh admin-app-build-v${{ steps.version.outputs.version }}.zip
-
-      - name: Upload form-app artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: form-app-build-v${{ steps.version.outputs.version }}
-          path: form-app-build-v${{ steps.version.outputs.version }}.zip
-          retention-days: 90
-
-      - name: Upload form-viewer artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: form-viewer-build-v${{ steps.version.outputs.version }}
-          path: form-viewer-build-v${{ steps.version.outputs.version }}.zip
-          retention-days: 90
-
-      - name: Upload admin-app artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: admin-app-build-v${{ steps.version.outputs.version }}
-          path: admin-app-build-v${{ steps.version.outputs.version }}.zip
-          retention-days: 90
-
-      - name: Upload backend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-build-v${{ steps.version.outputs.version }}
-          path: backend-build-v${{ steps.version.outputs.version }}.zip
-          retention-days: 90
-
-      - name: Artifact Summary
-        run: |
-          echo "## 📦 Release Artifacts Created!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Version**: v${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Build Artifacts:" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ backend-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ form-app-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ form-viewer-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ admin-app-build-v${{ steps.version.outputs.version }}.zip" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "These artifacts will be attached to the GitHub Release." >> $GITHUB_STEP_SUMMARY
-
-  create-github-release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    needs: create-release-artifacts
-    if: startsWith(github.ref, 'refs/tags/v')
-    permissions:
-      contents: write
-    timeout-minutes: 10
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Extract version from tag
-        id: version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
-      - name: Download form-app artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: form-app-build-v${{ steps.version.outputs.version }}
-
-      - name: Download form-viewer artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: form-viewer-build-v${{ steps.version.outputs.version }}
-
-      - name: Download admin-app artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: admin-app-build-v${{ steps.version.outputs.version }}
-
-      - name: Download backend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-build-v${{ steps.version.outputs.version }}
-
-      - name: Verify downloaded artifacts
-        run: |
-          echo "Verifying downloaded artifacts..."
-          ls -lh *.zip
-          echo "All artifacts downloaded successfully!"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.version.outputs.tag_name }}
-          name: Release ${{ steps.version.outputs.tag_name }}
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.tag_name, 'alpha') || contains(steps.version.outputs.tag_name, 'beta') || contains(steps.version.outputs.tag_name, 'rc') }}
-          generate_release_notes: true
-          files: |
-            backend-build-v${{ steps.version.outputs.version }}.zip
-            form-app-build-v${{ steps.version.outputs.version }}.zip
-            form-viewer-build-v${{ steps.version.outputs.version }}.zip
-            admin-app-build-v${{ steps.version.outputs.version }}.zip
-          body: |
-            ## 🚀 Dculus Forms Release ${{ steps.version.outputs.tag_name }}
-
-            ### 📦 Build Artifacts
-
-            This release includes production-ready build artifacts for all applications:
-
-            **Backend:**
-            - **backend-build-v${{ steps.version.outputs.version }}.zip** - Backend API (Node.js)
-              - Includes compiled code, dependencies, and deployment documentation
-              - Alternative to Docker for direct Node.js deployment
-              - See included `README-DEPLOYMENT.md` for setup instructions
-
-            **Frontend Applications:**
-            - **form-app-build-v${{ steps.version.outputs.version }}.zip** - Form Builder Application
-            - **form-viewer-build-v${{ steps.version.outputs.version }}.zip** - Form Viewer Application
-            - **admin-app-build-v${{ steps.version.outputs.version }}.zip** - Admin Dashboard Application
-
-            > **⚠️ IMPORTANT: Security Notice**
-            >
-            > These build artifacts are **generic builds without hardcoded secrets or API keys**.
-            > You MUST configure environment variables in your hosting provider before deployment.
-            > Never commit secrets to version control or include them in public releases.
-
-            ### 📋 Deployment Instructions
-
-            **Backend Deployment (Choose One):**
-
-            **Option 1: Docker (Recommended)**
-            ```bash
-            # Pull using version tag with v prefix
-            docker pull dculus/forms-backend:v${{ steps.version.outputs.version }}
-
-            # Or pull latest
-            docker pull dculus/forms-backend:latest
-
-            # Run with environment file
-            docker run -d -p 4000:4000 --env-file .env dculus/forms-backend:v${{ steps.version.outputs.version }}
-            ```
-
-            **Available Docker Tags for this Release:**
-            - `dculus/forms-backend:v${{ steps.version.outputs.version }}` (e.g., v1.2.3)
-            - `dculus/forms-backend:v{{ steps.version.outputs.major }}.{{ steps.version.outputs.minor }}` (e.g., v1.2)
-            - `dculus/forms-backend:v{{ steps.version.outputs.major }}` (e.g., v1)
-            - `dculus/forms-backend:latest` (always points to the most recent stable release)
-
-            **Option 2: Node.js Direct**
-            ```bash
-            unzip backend-build-v${{ steps.version.outputs.version }}.zip
-            cd backend-build-v${{ steps.version.outputs.version }}
-            cp .env.example .env
-            # Edit .env with your values
-            node dist/apps/backend/src/index.js
-            ```
-
-            See included `README-DEPLOYMENT.md` for detailed backend deployment instructions including PM2, systemd, and production best practices.
-
-            **Frontend Deployment:**
-
-            1. Download the desired application ZIP file from the assets below
-            2. Extract: `unzip <app-name>.zip`
-            3. **Configure environment variables** in your hosting provider (see below)
-            4. Deploy the `dist/` folder:
-               - **Cloudflare Pages**: `wrangler pages deploy dist/`
-               - **Netlify**: `netlify deploy --prod --dir=dist`
-               - **Vercel**: `vercel --prod dist/`
-               - **AWS S3**: `aws s3 sync dist/ s3://bucket --acl public-read`
-               - **nginx**: Copy `dist/` to web root
-
-            ### 🔧 Environment Variables Configuration
-
-            **⚠️ REQUIRED:** Configure these in your hosting provider or .env file:
-
-            **Backend** (see `.env.example`):
-            - `DATABASE_URL` - MongoDB connection string
-            - `BETTER_AUTH_SECRET` - Min 32 character secret
-            - `BETTER_AUTH_URL` - Public API URL
-            - `CORS_ORIGINS` - Allowed frontend URLs
-            - `S3_*` - S3 storage configuration
-            - Full list in `README-DEPLOYMENT.md`
-
-            **Form App:**
-            - `VITE_API_URL` - Backend API URL
-            - `VITE_GRAPHQL_URL` - GraphQL endpoint
-            - `VITE_FORM_VIEWER_URL` - Base URL for the public form viewer
-            - `VITE_CDN_ENDPOINT` - CDN endpoint
-            - `VITE_PIXABAY_API_KEY` - Pixabay key
-
-            **Admin App:**
-            - `VITE_API_URL` - Backend API URL
-            - `VITE_GRAPHQL_URL` - GraphQL endpoint
-
-            **Form Viewer:**
-            - No build-time env vars needed
-
-            ### 📚 Documentation
-
-            For detailed deployment guides and documentation, visit the repository README.
-
-      - name: Release Summary
-        run: |
-          echo "## 🎉 GitHub Release Created!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Release**: ${{ steps.version.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**URL**: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Attached Artifacts:" >> $GITHUB_STEP_SUMMARY
-          echo "- backend-build-v${{ steps.version.outputs.version }}.zip (Backend API)" >> $GITHUB_STEP_SUMMARY
-          echo "- form-app-build-v${{ steps.version.outputs.version }}.zip (Form Builder)" >> $GITHUB_STEP_SUMMARY
-          echo "- form-viewer-build-v${{ steps.version.outputs.version }}.zip (Form Viewer)" >> $GITHUB_STEP_SUMMARY
-          echo "- admin-app-build-v${{ steps.version.outputs.version }}.zip (Admin Dashboard)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🚀 Deployment Options:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Backend**: Docker image or Node.js ZIP artifact" >> $GITHUB_STEP_SUMMARY
-          echo "- **Frontend**: Deploy to Cloudflare, Netlify, Vercel, AWS, Azure, or nginx" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Visit the release page to download artifacts and follow deployment instructions." >> $GITHUB_STEP_SUMMARY
-
   build-and-push:
     needs: [lint-and-type-check, build-backend, unit-tests-backend, integration-tests]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
@@ -1030,6 +707,32 @@ jobs:
           echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
+  # Deploys the image built above (sha-<commit>) to dev. Production is promoted
+  # from this same image by release.yml.
+  deploy-dev:
+    name: Deploy to Dev
+    needs:
+      - security-scan
+      - lint-and-type-check
+      - build-backend
+      - unit-tests-backend
+      - integration-tests
+      - build-form-app
+      - build-form-viewer
+      - build-admin-app
+      - e2e-local
+      - build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/multi-cloud-deployment.yml
+    secrets: inherit
+    with:
+      environment: dev
+      release_tag: sha-${{ github.sha }}
+      release_commit: ${{ github.sha }}
+
   build-summary:
     name: Build Summary
     runs-on: ubuntu-latest
@@ -1050,14 +753,14 @@ jobs:
           echo "| Backend Unit Tests | ${{ needs.unit-tests-backend.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Integration Tests | ${{ needs.integration-tests.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| E2E Tests (Local) | ${{ needs.e2e-local.result == 'success' && '✅' || needs.e2e-local.result == 'skipped' && '⏭️' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker Build & Push | ${{ needs.build-and-push.result == 'success' && '✅' || needs.build-and-push.result == 'skipped' && '⏭️ Skipped (tags only)' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker Build & Push | ${{ needs.build-and-push.result == 'success' && '✅' || needs.build-and-push.result == 'skipped' && '⏭️ Skipped (main only)' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [[ "${{ needs.build-and-push.result }}" == "success" ]]; then
             echo "### 🐳 Docker Image Built" >> $GITHUB_STEP_SUMMARY
             echo "✅ Backend Docker image built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
-            echo "📦 Ready for deployment via multi-cloud-deployment.yml workflow" >> $GITHUB_STEP_SUMMARY
+            echo "📦 Deployed to dev via multi-cloud-deployment.yml; promote to production with the Release workflow" >> $GITHUB_STEP_SUMMARY
           elif [[ "${{ needs.build-and-push.result }}" == "skipped" ]]; then
             echo "### ℹ️ Docker Build Skipped" >> $GITHUB_STEP_SUMMARY
-            echo "Docker images are only built on version tags (e.g., v1.2.3) or main branch" >> $GITHUB_STEP_SUMMARY
+            echo "Docker images are only built on the main branch" >> $GITHUB_STEP_SUMMARY
           fi
