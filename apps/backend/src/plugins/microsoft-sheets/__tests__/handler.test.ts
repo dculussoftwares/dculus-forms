@@ -12,6 +12,11 @@ import { deserializeFormSchema, FieldType } from '@dculus/types';
 
 const originalFetch = global.fetch;
 
+const FIXED_COLUMNS = [
+  { id: '__submittedAt', label: 'Submitted At' },
+  { id: '__responseId', label: 'Response ID' },
+];
+
 describe('Microsoft Sheets Handler', () => {
   let mockContext: PluginContext;
   let mockEvent: PluginEvent;
@@ -43,6 +48,7 @@ describe('Microsoft Sheets Handler', () => {
       },
       workbookId: 'workbook-1',
       workbookUrl: 'https://onedrive.example.com/workbook-1',
+      sheetColumns: [...FIXED_COLUMNS],
     };
 
     vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
@@ -242,6 +248,7 @@ describe('Microsoft Sheets Handler', () => {
 
     it('auto-creates a workbook and writes the header row when workbookId is not yet configured', async () => {
       config.workbookId = undefined;
+      config.sheetColumns = undefined;
       vi.mocked(mockContext.getResponseById).mockResolvedValue({
         id: 'response-1',
         data: { name: 'Ada' },
@@ -352,6 +359,12 @@ describe('Microsoft Sheets Handler', () => {
         { id: 'attachment', label: 'Attachment', type: 'file_upload_field' },
       ];
       vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields }] } as any);
+      config.sheetColumns = [
+        { id: 'color', label: 'Favorite Color' },
+        { id: 'toppings', label: 'Toppings' },
+        { id: 'attachment', label: 'Attachment' },
+        ...FIXED_COLUMNS,
+      ];
       vi.mocked(mockContext.getResponseById).mockResolvedValue({
         id: 'response-1',
         data: {
@@ -378,6 +391,7 @@ describe('Microsoft Sheets Handler', () => {
 
     it('skips a grid layout field in both the header row and the data row so columns stay aligned', async () => {
       config.workbookId = undefined;
+      config.sheetColumns = undefined;
       const mockEvent: PluginEvent = {
         type: 'form.submitted',
         formId: 'form-1',
@@ -421,6 +435,127 @@ describe('Microsoft Sheets Handler', () => {
       const row = JSON.parse((appendCall?.[1] as RequestInit).body as string).values[0];
       expect(headers).toEqual(['Name', 'Email', 'Submitted At', 'Response ID']);
       expect(row).toEqual(['Ada', 'ada@example.com', '2026-01-01T00:00:00.000Z', 'response-1']);
+    });
+  });
+
+  describe('column layout when the form changes after the workbook was created', () => {
+    const event: PluginEvent = {
+      type: 'form.submitted',
+      formId: 'form-1',
+      organizationId: 'org-1',
+      timestamp: new Date('2026-01-01T00:00:00.000Z'),
+      data: { responseId: 'response-1' },
+    };
+
+    const patches = () =>
+      vi.mocked(global.fetch).mock.calls.filter(([, opts]) => (opts as RequestInit)?.method === 'PATCH');
+    const headerValues = () =>
+      JSON.parse(
+        (patches().find(([url]) => (url as string).includes("address='A1:"))?.[1] as RequestInit).body as string
+      ).values[0];
+    const rowValues = () =>
+      JSON.parse(
+        (patches().find(([url]) => !(url as string).includes("address='A1:"))?.[1] as RequestInit).body as string
+      ).values[0];
+
+    it('appends a new field at the right end, rewrites the header and fills its value', async () => {
+      config.sheetColumns = [{ id: 'name', label: 'Name' }, ...FIXED_COLUMNS];
+      vi.mocked(deserializeFormSchema).mockReturnValue({
+        pages: [{ fields: [
+          { id: 'name', label: 'Name', type: 'text_input_field' },
+          { id: 'city', label: 'City', type: 'text_input_field' },
+        ] }],
+      } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({
+        id: 'response-1',
+        data: { name: 'Ada', city: 'Pune', submittedAt: '2026-01-01T00:00:00.000Z' },
+      } as any);
+
+      const result = await microsoftSheetsHandler({ id: 'plugin-1', config }, event, mockContext);
+
+      expect(result.success).toBe(true);
+      expect(headerValues()).toEqual(['Name', 'Submitted At', 'Response ID', 'City']);
+      expect(rowValues()).toEqual(['Ada', '2026-01-01T00:00:00.000Z', 'response-1', 'Pune']);
+      expect(mockContext.updatePluginConfig).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sheetColumns: [
+            { id: 'name', label: 'Name' },
+            ...FIXED_COLUMNS,
+            { id: 'city', label: 'City' },
+          ],
+        })
+      );
+    });
+
+    it('keeps a soft-deleted field in its column and marks it deleted', async () => {
+      config.sheetColumns = [
+        { id: 'name', label: 'Name' },
+        { id: 'old', label: 'Old' },
+        ...FIXED_COLUMNS,
+      ];
+      vi.mocked(deserializeFormSchema).mockReturnValue({
+        pages: [{ fields: [
+          { id: 'name', label: 'Name', type: 'text_input_field' },
+          { id: 'old', label: 'Old', type: 'text_input_field', deleted: true },
+        ] }],
+      } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({
+        id: 'response-1',
+        data: { name: 'Ada', old: 'legacy', submittedAt: '2026-01-01T00:00:00.000Z' },
+      } as any);
+
+      await microsoftSheetsHandler({ id: 'plugin-1', config }, event, mockContext);
+
+      expect(headerValues()).toEqual(['Name', 'Old (deleted)', 'Submitted At', 'Response ID']);
+      expect(rowValues()).toEqual(['Ada', 'legacy', '2026-01-01T00:00:00.000Z', 'response-1']);
+    });
+
+    it('does not touch the header when the layout is already current', async () => {
+      config.sheetColumns = [{ id: 'name', label: 'Name' }, ...FIXED_COLUMNS];
+      vi.mocked(deserializeFormSchema).mockReturnValue({
+        pages: [{ fields: [{ id: 'name', label: 'Name', type: 'text_input_field' }] }],
+      } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({
+        id: 'response-1',
+        data: { name: 'Ada', submittedAt: '2026-01-01T00:00:00.000Z' },
+      } as any);
+
+      await microsoftSheetsHandler({ id: 'plugin-1', config }, event, mockContext);
+
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockContext.updatePluginConfig).not.toHaveBeenCalled();
+    });
+
+    it('recovers the layout of a workbook created before layouts were stored, then appends new fields', async () => {
+      config.sheetColumns = undefined;
+      vi.mocked(deserializeFormSchema).mockReturnValue({
+        pages: [{ fields: [
+          { id: 'name', label: 'Name', type: 'text_input_field' },
+          { id: 'city', label: 'City', type: 'text_input_field' },
+        ] }],
+      } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({
+        id: 'response-1',
+        data: { name: 'Ada', city: 'Pune', submittedAt: '2026-01-01T00:00:00.000Z' },
+      } as any);
+      global.fetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes("range(address='A1:ZZ1')")) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ values: [['Name', 'Removed', 'Submitted At', 'Response ID', '']] }),
+            text: async () => '',
+          });
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({ rowCount: 1 }), text: async () => '' });
+      }) as any;
+
+      const result = await microsoftSheetsHandler({ id: 'plugin-1', config }, event, mockContext);
+
+      expect(result.success).toBe(true);
+      expect(headerValues()).toEqual(['Name', 'Removed', 'Submitted At', 'Response ID', 'City']);
+      // The unmatched legacy column stays blank so nothing after it shifts.
+      expect(rowValues()).toEqual(['Ada', '', '2026-01-01T00:00:00.000Z', 'response-1', 'Pune']);
     });
   });
 });

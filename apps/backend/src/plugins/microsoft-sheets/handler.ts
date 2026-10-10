@@ -1,11 +1,21 @@
 import ExcelJS from 'exceljs';
-import { deserializeFormSchema, isLayoutField } from '@dculus/types';
+import { deserializeFormSchema } from '@dculus/types';
 import type { PluginHandler } from '../core/types.js';
 import type {
   MicrosoftSheetsPluginConfig,
   MicrosoftSheetsResult,
   MicrosoftToken,
 } from './types.js';
+import {
+  bootstrapColumnsFromHeader,
+  buildInitialColumns,
+  buildRowFromColumns,
+  collectAnsweredIds,
+  collectSchemaFields,
+  columnHeaders,
+  reconcileColumns,
+  type SheetColumn,
+} from '../core/sheetColumns.js';
 
 /** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
 interface DigestResponseEntry {
@@ -169,10 +179,38 @@ const writeHeaderRow = async (
     }),
   });
 
+  if (response.status === 404) throw new WorkbookNotFoundError();
+
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`Failed to write header row: ${response.status} ${body}`);
   }
+};
+
+/**
+ * Reads the header row (row 1) of the worksheet, with trailing empty cells dropped.
+ */
+const readHeaderRow = async (
+  workbookId: string,
+  worksheetName: string,
+  accessToken: string
+): Promise<string[]> => {
+  const url = `${GRAPH_BASE}/me/drive/items/${workbookId}/workbook/worksheets('${encodeURIComponent(worksheetName)}')/range(address='A1:ZZ1')?$select=values`;
+
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+
+  if (response.status === 404) throw new WorkbookNotFoundError();
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Failed to read header row: ${response.status} ${body}`);
+  }
+
+  const data = await response.json() as any;
+  const cells: unknown[] = Array.isArray(data?.values?.[0]) ? data.values[0] : [];
+  const header = cells.map((cell) => String(cell ?? ''));
+  while (header.length > 0 && header[header.length - 1] === '') header.pop();
+  return header;
 };
 
 /**
@@ -291,44 +329,6 @@ const resolveFieldValue = (field: any, rawValue: any): string => {
   return String(rawValue);
 };
 
-/**
- * Builds one worksheet row's values for a single response, in the same field order as
- * `buildHeaders()`'s column headers. Shared by both the single-response path (form.submitted /
- * response.edited) and the digest batch path (schedule automation, #automations-digest).
- */
-const buildRowValues = (
-  responseData: Record<string, any>,
-  formSchema: ReturnType<typeof deserializeFormSchema> | null,
-  responseId: string,
-  submittedAt: string,
-  fallbackKeys: string[] = []
-): string[] => {
-  const rowValues: string[] = [];
-
-  if (formSchema?.pages) {
-    for (const page of formSchema.pages) {
-      for (const field of page.fields ?? []) {
-        // Must match buildHeaders exactly, or every later column shifts
-        if (!field?.id || isLayoutField(field)) continue;
-        const raw = responseData[field.id];
-        rowValues.push(resolveFieldValue(field, raw));
-      }
-    }
-  } else {
-    // `fallbackKeys` is derived ONCE (from a sample response) and reused for every row, matching
-    // buildHeaders()'s no-schema column order. Iterating `Object.entries(responseData)` per row
-    // instead would misalign columns whenever a digest batch's responses have differing key sets
-    // or insertion order (e.g. an optional field present on some submissions but not others).
-    for (const key of fallbackKeys) {
-      rowValues.push(String(responseData[key] ?? ''));
-    }
-  }
-
-  rowValues.push(submittedAt);
-  rowValues.push(responseId);
-  return rowValues;
-};
-
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
 export const microsoftSheetsHandler: PluginHandler = async (plugin, event, context) => {
@@ -396,19 +396,18 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       }
     }
 
-    // Fixed key order for buildHeaders()'s no-schema fallback, derived ONCE as the union of keys
-    // across EVERY response in this batch (not just the first) and reused by every row
-    // (buildRowValues) — see buildRowValues's no-schema comment. Deriving from only the first
-    // response would silently drop a column for any optional field a later digest response has
-    // but the first one lacks.
+    // Response data of every row this call will write.
+    const batchResponseData: Record<string, any>[] = digestResponses
+      ? digestResponses.map((r) => r.data ?? {})
+      : [(singleResponse?.data as Record<string, any>) ?? {}];
+
+    // Column keys for the no-schema fallback: the union of keys across EVERY response in the
+    // batch, so an optional field only a later digest response has is not silently dropped.
     const fallbackKeys: string[] = (() => {
       const skipKeys = new Set(['responseId', 'submittedAt']);
-      const allResponseData: Record<string, any>[] = digestResponses
-        ? digestResponses.map((r) => r.data ?? {})
-        : [(singleResponse?.data as Record<string, any>) ?? {}];
       const seen = new Set<string>();
       const keys: string[] = [];
-      for (const data of allResponseData) {
+      for (const data of batchResponseData) {
         for (const key of Object.keys(data)) {
           if (skipKeys.has(key) || seen.has(key)) continue;
           seen.add(key);
@@ -424,19 +423,11 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     const form = await context.getFormById(event.formId);
     const formSchema = form?.formSchema ? deserializeFormSchema(form.formSchema) : null;
 
-    const buildHeaders = (): string[] => {
-      const fieldHeaders: string[] = [];
-      if (formSchema?.pages) {
-        for (const page of formSchema.pages) {
-          for (const field of page.fields ?? []) {
-            if (field?.id && !isLayoutField(field)) fieldHeaders.push((field as any).label ?? field.id);
-          }
-        }
-      } else {
-        fieldHeaders.push(...fallbackKeys);
-      }
-      return [...fieldHeaders, 'Submitted At', 'Response ID'];
-    };
+    const schemaFields = collectSchemaFields(formSchema, fallbackKeys);
+    const fieldsById = new Map(schemaFields.map((f) => [f.id, f.field]));
+    const answeredIds = collectAnsweredIds(batchResponseData);
+    // Settled before any row is built: rows are laid out strictly by this list.
+    let columns: SheetColumn[] = config.sheetColumns ?? [];
 
     const initWorkbook = async (): Promise<{ workbookId: string; workbookUrl: string }> => {
       const formTitle = form?.title?.trim() || 'Form Responses';
@@ -458,13 +449,17 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       });
 
       const created = await createWorkbook(workbookTitle, worksheetName, accessToken);
-      await writeHeaderRow(created.workbookId, worksheetName, buildHeaders(), accessToken);
+      // A recreated workbook keeps the layout already settled for this run so the rows built
+      // from it still line up; only a first-ever creation starts from the schema.
+      if (columns.length === 0) columns = buildInitialColumns(schemaFields, answeredIds);
+      await writeHeaderRow(created.workbookId, worksheetName, columnHeaders(columns), accessToken);
 
       await context.updatePluginConfig({
         ...config,
         microsoftToken: freshToken,
         workbookId: created.workbookId,
         workbookUrl: created.workbookUrl,
+        sheetColumns: columns,
       });
 
       context.logger.info('Microsoft Sheets: workbook created and header row written', {
@@ -475,13 +470,64 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       return created;
     };
 
+    // Brings an existing workbook's layout in line with the form schema: new fields get a
+    // column appended at the right end and the header row is rewritten; existing columns never
+    // move. A workbook that predates persisted layouts has its layout recovered from its header.
+    const syncColumnLayout = async (): Promise<void> => {
+      let stored: SheetColumn[] | undefined = columns.length > 0 ? columns : undefined;
+      let recovered = false;
+
+      if (!stored) {
+        const header = await readHeaderRow(workbookId!, worksheetName, accessToken);
+        if (header.length > 0) {
+          stored = bootstrapColumnsFromHeader(header, schemaFields);
+          recovered = true;
+        }
+      }
+
+      if (!stored) {
+        columns = buildInitialColumns(schemaFields, answeredIds);
+        await writeHeaderRow(workbookId!, worksheetName, columnHeaders(columns), accessToken);
+        await context.updatePluginConfig({ ...config, microsoftToken: freshToken, sheetColumns: columns });
+        return;
+      }
+
+      const reconciled = reconcileColumns(stored, schemaFields, answeredIds);
+      columns = reconciled.columns;
+      if (reconciled.changed) {
+        await writeHeaderRow(workbookId!, worksheetName, columnHeaders(columns), accessToken);
+        context.logger.info('Microsoft Sheets: column layout updated', {
+          pluginId: plugin.id,
+          workbookId,
+          columnCount: columns.length,
+        });
+      }
+      if (reconciled.changed || recovered) {
+        await context.updatePluginConfig({ ...config, microsoftToken: freshToken, sheetColumns: columns });
+      }
+    };
+
     if (!workbookId) {
       const created = await initWorkbook();
       workbookId = created.workbookId;
+    } else {
+      try {
+        await syncColumnLayout();
+      } catch (err) {
+        if (!(err instanceof WorkbookNotFoundError)) throw err;
+        context.logger.warn('Microsoft Sheets: workbook was deleted — recreating', { pluginId: plugin.id });
+        const recreated = await initWorkbook();
+        workbookId = recreated.workbookId;
+      }
     }
 
-    // 5. Build and append the data row(s), recreating the workbook once (and retrying) if it
-    // was deleted out from under this plugin.
+    const resolveValue = (fieldId: string, raw: any): string =>
+      resolveFieldValue(fieldsById.get(fieldId), raw);
+    const buildRow = (data: Record<string, any>, responseId: string, submittedAt: string): string[] =>
+      buildRowFromColumns(columns, data, responseId, submittedAt, resolveValue);
+
+    // Appends row(s), recreating the workbook once (and retrying) if it was deleted out from
+    // under this plugin.
     const appendRowsWithRecovery = async (rows: string[][]): Promise<void> => {
       try {
         await appendDataRows(workbookId!, worksheetName, rows, accessToken);
@@ -536,7 +582,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
 
     if (digestResponses) {
       const rows = digestResponses.map((digestResponse) =>
-        buildRowValues(digestResponse.data ?? {}, formSchema, digestResponse.id, digestResponse.submittedAt, fallbackKeys)
+        buildRow(digestResponse.data ?? {}, digestResponse.id, digestResponse.submittedAt)
       );
       // Chunked into MAX_ROWS_PER_APPEND_REQUEST-row used-range-lookup+PATCH pairs, not one
       // pair per response.
@@ -561,7 +607,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     const submittedAt = String(
       responseData.submittedAt ?? (singleResponse as any).createdAt?.toISOString?.() ?? new Date().toISOString()
     );
-    const rowValues = buildRowValues(responseData, formSchema, event.data.responseId, submittedAt, fallbackKeys);
+    const rowValues = buildRow(responseData, event.data.responseId, submittedAt);
     await appendRowsWithRecovery([rowValues]);
 
     context.logger.info('Microsoft Sheets: row appended', {

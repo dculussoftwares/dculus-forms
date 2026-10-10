@@ -1,4 +1,5 @@
 import type { PluginConfig } from '../core/types.js';
+import type { SheetColumn } from '../core/sheetColumns.js';
 
 export interface GoogleToken {
   accessToken: string;
@@ -12,6 +13,8 @@ export interface GoogleSheetsPluginConfig extends PluginConfig {
   googleToken?: GoogleToken;
   spreadsheetId?: string;
   spreadsheetUrl?: string;
+  /** Persisted column layout of the spreadsheet; only ever grows (see core/sheetColumns.ts). */
+  sheetColumns?: SheetColumn[];
 }
 
 export interface GoogleSheetsResult {

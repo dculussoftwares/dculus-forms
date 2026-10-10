@@ -1,6 +1,16 @@
-import { deserializeFormSchema, isLayoutField } from '@dculus/types';
+import { deserializeFormSchema } from '@dculus/types';
 import type { PluginHandler } from '../core/types.js';
 import type { GoogleSheetsPluginConfig, GoogleSheetsResult, GoogleToken } from './types.js';
+import {
+  bootstrapColumnsFromHeader,
+  buildInitialColumns,
+  buildRowFromColumns,
+  collectAnsweredIds,
+  collectSchemaFields,
+  columnHeaders,
+  reconcileColumns,
+  type SheetColumn,
+} from '../core/sheetColumns.js';
 
 /** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
 interface DigestResponseEntry {
@@ -148,10 +158,34 @@ const writeHeaderRow = async (
     body: JSON.stringify({ values: [headers] }),
   });
 
+  if (response.status === 404) throw new SpreadsheetNotFoundError();
+
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`Failed to write header row: ${response.status} ${body}`);
   }
+};
+
+/**
+ * Reads the header row (row 1) of Sheet1, with trailing empty cells dropped.
+ */
+const readHeaderRow = async (spreadsheetId: string, accessToken: string): Promise<string[]> => {
+  const url = `${SHEETS_API_BASE}/spreadsheets/${spreadsheetId}/values/Sheet1!1:1`;
+
+  const response = await fetch(url, { headers: authHeaders(accessToken) });
+
+  if (response.status === 404) throw new SpreadsheetNotFoundError();
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Failed to read header row: ${response.status} ${body}`);
+  }
+
+  const data = await response.json() as any;
+  const cells: unknown[] = Array.isArray(data?.values?.[0]) ? data.values[0] : [];
+  const header = cells.map((cell) => String(cell ?? ''));
+  while (header.length > 0 && header[header.length - 1] === '') header.pop();
+  return header;
 };
 
 /**
@@ -245,44 +279,6 @@ const resolveFieldValue = (field: any, rawValue: any): string => {
   return String(rawValue);
 };
 
-/**
- * Builds one spreadsheet row's values for a single response, in the same field order as
- * `buildHeaders()`'s column headers. Shared by both the single-response path (form.submitted /
- * response.edited) and the digest batch path (schedule automation, #automations-digest) so a
- * row always lines up with its headers regardless of which path produced it.
- */
-const buildRowValues = (
-  responseData: Record<string, any>,
-  formSchema: ReturnType<typeof deserializeFormSchema> | null,
-  responseId: string,
-  submittedAt: string,
-  fallbackKeys: string[] = []
-): string[] => {
-  const rowValues: string[] = [];
-
-  if (formSchema?.pages) {
-    for (const page of formSchema.pages) {
-      for (const field of page.fields ?? []) {
-        // Must match buildHeaders exactly, or every later column shifts
-        if (!field?.id || isLayoutField(field)) continue;
-        const raw = responseData[field.id];
-        rowValues.push(resolveFieldValue(field, raw));
-      }
-    }
-  } else {
-    // `fallbackKeys` is derived ONCE (from a sample response) and reused for every row, matching
-    // buildHeaders()'s no-schema column order. Iterating `Object.entries(responseData)` per row
-    // instead would misalign columns whenever a digest batch's responses have differing key sets
-    // or insertion order (e.g. an optional field present on some submissions but not others).
-    for (const key of fallbackKeys) {
-      rowValues.push(String(responseData[key] ?? ''));
-    }
-  }
-
-  rowValues.push(submittedAt);
-  rowValues.push(responseId);
-  return rowValues;
-};
 
 export const googleSheetsHandler: PluginHandler = async (plugin, event, context) => {
   const syncedAt = new Date().toISOString();
@@ -348,19 +344,18 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       }
     }
 
-    // Fixed key order for buildHeaders()'s no-schema fallback, derived ONCE as the union of keys
-    // across EVERY response in this batch (not just the first) and reused by every row
-    // (buildRowValues) — see buildRowValues's no-schema comment. Deriving from only the first
-    // response would silently drop a column for any optional field a later digest response has
-    // but the first one lacks.
+    // Response data of every row this call will write.
+    const batchResponseData: Record<string, any>[] = digestResponses
+      ? digestResponses.map((r) => r.data ?? {})
+      : [(singleResponse?.data as Record<string, any>) ?? {}];
+
+    // Column keys for the no-schema fallback: the union of keys across EVERY response in the
+    // batch, so an optional field only a later digest response has is not silently dropped.
     const fallbackKeys: string[] = (() => {
       const skipKeys = new Set(['responseId', 'submittedAt']);
-      const allResponseData: Record<string, any>[] = digestResponses
-        ? digestResponses.map((r) => r.data ?? {})
-        : [(singleResponse?.data as Record<string, any>) ?? {}];
       const seen = new Set<string>();
       const keys: string[] = [];
-      for (const data of allResponseData) {
+      for (const data of batchResponseData) {
         for (const key of Object.keys(data)) {
           if (skipKeys.has(key) || seen.has(key)) continue;
           seen.add(key);
@@ -376,19 +371,11 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     const form = await context.getFormById(event.formId);
     const formSchema = form?.formSchema ? deserializeFormSchema(form.formSchema) : null;
 
-    const buildHeaders = (): string[] => {
-      const fieldHeaders: string[] = [];
-      if (formSchema?.pages) {
-        for (const page of formSchema.pages) {
-          for (const field of page.fields ?? []) {
-            if (field?.id && !isLayoutField(field)) fieldHeaders.push((field as any).label ?? field.id);
-          }
-        }
-      } else {
-        fieldHeaders.push(...fallbackKeys);
-      }
-      return [...fieldHeaders, 'Submitted At', 'Response ID'];
-    };
+    const schemaFields = collectSchemaFields(formSchema, fallbackKeys);
+    const fieldsById = new Map(schemaFields.map((f) => [f.id, f.field]));
+    const answeredIds = collectAnsweredIds(batchResponseData);
+    // Settled before any row is built: rows are laid out strictly by this list.
+    let columns: SheetColumn[] = config.sheetColumns ?? [];
 
     const initSpreadsheet = async (): Promise<{ spreadsheetId: string; spreadsheetUrl: string }> => {
       const formTitle = form?.title?.trim() || 'Form Responses';
@@ -409,13 +396,17 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       });
 
       const created = await createSpreadsheet(sheetTitle, accessToken);
-      await writeHeaderRow(created.spreadsheetId, buildHeaders(), accessToken);
+      // A recreated spreadsheet keeps the layout already settled for this run so the rows built
+      // from it still line up; only a first-ever creation starts from the schema.
+      if (columns.length === 0) columns = buildInitialColumns(schemaFields, answeredIds);
+      await writeHeaderRow(created.spreadsheetId, columnHeaders(columns), accessToken);
 
       await context.updatePluginConfig({
         ...config,
         googleToken: freshToken,
         spreadsheetId: created.spreadsheetId,
         spreadsheetUrl: created.spreadsheetUrl,
+        sheetColumns: columns,
       });
 
       context.logger.info('Google Sheets: spreadsheet created and header row written', {
@@ -426,10 +417,61 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       return created;
     };
 
+    // Brings an existing spreadsheet's layout in line with the form schema: new fields get a
+    // column appended at the right end and the header row is rewritten; existing columns never
+    // move. A sheet that predates persisted layouts has its layout recovered from its header row.
+    const syncColumnLayout = async (): Promise<void> => {
+      let stored: SheetColumn[] | undefined = columns.length > 0 ? columns : undefined;
+      let recovered = false;
+
+      if (!stored) {
+        const header = await readHeaderRow(spreadsheetId!, accessToken);
+        if (header.length > 0) {
+          stored = bootstrapColumnsFromHeader(header, schemaFields);
+          recovered = true;
+        }
+      }
+
+      if (!stored) {
+        columns = buildInitialColumns(schemaFields, answeredIds);
+        await writeHeaderRow(spreadsheetId!, columnHeaders(columns), accessToken);
+        await context.updatePluginConfig({ ...config, googleToken: freshToken, sheetColumns: columns });
+        return;
+      }
+
+      const reconciled = reconcileColumns(stored, schemaFields, answeredIds);
+      columns = reconciled.columns;
+      if (reconciled.changed) {
+        await writeHeaderRow(spreadsheetId!, columnHeaders(columns), accessToken);
+        context.logger.info('Google Sheets: column layout updated', {
+          pluginId: plugin.id,
+          spreadsheetId,
+          columnCount: columns.length,
+        });
+      }
+      if (reconciled.changed || recovered) {
+        await context.updatePluginConfig({ ...config, googleToken: freshToken, sheetColumns: columns });
+      }
+    };
+
     if (!spreadsheetId) {
       const created = await initSpreadsheet();
       spreadsheetId = created.spreadsheetId;
+    } else {
+      try {
+        await syncColumnLayout();
+      } catch (err) {
+        if (!(err instanceof SpreadsheetNotFoundError)) throw err;
+        context.logger.warn('Google Sheets: spreadsheet was deleted — recreating', { pluginId: plugin.id });
+        const recreated = await initSpreadsheet();
+        spreadsheetId = recreated.spreadsheetId;
+      }
     }
+
+    const resolveValue = (fieldId: string, raw: any): string =>
+      resolveFieldValue(fieldsById.get(fieldId), raw);
+    const buildRow = (data: Record<string, any>, responseId: string, submittedAt: string): string[] =>
+      buildRowFromColumns(columns, data, responseId, submittedAt, resolveValue);
 
     // Appends row(s), recreating the spreadsheet once (and retrying) if it was deleted out from
     // under this plugin — same recovery the single-response path always had.
@@ -491,7 +533,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
 
     if (digestResponses) {
       const rows = digestResponses.map((digestResponse) =>
-        buildRowValues(digestResponse.data ?? {}, formSchema, digestResponse.id, digestResponse.submittedAt, fallbackKeys)
+        buildRow(digestResponse.data ?? {}, digestResponse.id, digestResponse.submittedAt)
       );
       // Chunked into MAX_ROWS_PER_APPEND_REQUEST-row requests (not one call per response) — a
       // 1000-response digest would otherwise be 1000 sequential HTTP calls, risking the Sheets
@@ -517,7 +559,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     const submittedAt = String(
       responseData.submittedAt ?? (singleResponse as any).createdAt?.toISOString?.() ?? new Date().toISOString()
     );
-    const rowValues = buildRowValues(responseData, formSchema, event.data.responseId, submittedAt, fallbackKeys);
+    const rowValues = buildRow(responseData, event.data.responseId, submittedAt);
     const rowNumber = await appendRowsWithRecovery([rowValues]);
 
     context.logger.info('Google Sheets: row appended', {
