@@ -1,7 +1,7 @@
 name: Fetch frontend build
 description: >
   Downloads the already-built dist of one frontend app: from the GitHub Release assets for
-  a vX.Y.Z tag, or from the Build Pipeline artifacts for a sha-<commit> tag.
+  a vX.Y.Z tag, or from the current Build Pipeline run's artifacts for a sha-<commit> tag.
 
 inputs:
   app:
@@ -14,13 +14,21 @@ inputs:
     description: Directory that receives the app's dist contents
     required: true
   github_token:
-    description: Token with contents:read and actions:read
+    description: Token with contents:read
     required: true
 
 runs:
   using: composite
   steps:
-    - name: Download dist
+    - name: Download dist from this run's artifacts
+      if: startsWith(inputs.release_tag, 'sha-')
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.app }}-dist-${{ substring(inputs.release_tag, 4, 40) }}
+        path: ${{ inputs.output_dir }}
+
+    - name: Download dist from the release assets
+      if: startsWith(inputs.release_tag, 'v')
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github_token }}
@@ -29,26 +37,24 @@ runs:
         OUT: ${{ inputs.output_dir }}
       run: |
         set -euo pipefail
+        [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "❌ Invalid release tag '$TAG'"; exit 1; }
         mkdir -p "$OUT"
         tmp=$(mktemp -d)
+        gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "${APP}-build-${TAG}.zip" --dir "$tmp"
+        unzip -q "$tmp/${APP}-build-${TAG}.zip" -d "$tmp/unzipped"
+        cp -R "$tmp/unzipped/dist/." "$OUT/"
 
-        if [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "${APP}-build-${TAG}.zip" --dir "$tmp"
-          unzip -q "$tmp/${APP}-build-${TAG}.zip" -d "$tmp/unzipped"
-          cp -R "$tmp/unzipped/dist/." "$OUT/"
-        elif [[ "$TAG" =~ ^sha-([0-9a-f]{40})$ ]]; then
-          SHA="${BASH_REMATCH[1]}"
-          # The calling Build Pipeline run (deploy-dev) still has the artifact in this run; otherwise find the run for the commit.
-          if ! gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" -n "${APP}-dist-${SHA}" -D "$OUT" 2>/dev/null; then
-            RUN_ID=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --branch main --event push \
-              --status success --commit "$SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty')
-            [ -n "$RUN_ID" ] || { echo "❌ No successful Build Pipeline run found for $SHA"; exit 1; }
-            gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" -n "${APP}-dist-${SHA}" -D "$OUT"
-          fi
-        else
-          echo "❌ Unsupported release tag '$TAG'"
+    - name: Verify the build is runtime-configurable
+      shell: bash
+      env:
+        OUT: ${{ inputs.output_dir }}
+        APP: ${{ inputs.app }}
+        TAG: ${{ inputs.release_tag }}
+      run: |
+        set -euo pipefail
+        # Builds that predate runtime config bake in URLs and would silently point at the wrong backend.
+        if [ ! -f "$OUT/index.html" ] || ! grep -q '/config.js' "$OUT/index.html"; then
+          echo "❌ ${APP} build for ${TAG} does not load /config.js (built before runtime config existed?)"
           exit 1
         fi
-
-        [ -f "$OUT/index.html" ] || { echo "❌ No index.html in downloaded ${APP} build"; exit 1; }
         echo "✅ Fetched ${APP} build for ${TAG}"

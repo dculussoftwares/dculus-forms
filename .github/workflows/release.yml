@@ -293,7 +293,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      actions: read
     uses: ./.github/workflows/multi-cloud-deployment.yml
     secrets: inherit
     with:

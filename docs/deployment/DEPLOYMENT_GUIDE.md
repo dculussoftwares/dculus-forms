@@ -279,12 +279,16 @@ aws s3 website s3://dculus-form-app \
 aws s3 sync . s3://dculus-form-app \
   --acl public-read \
   --cache-control "public,max-age=31536000,immutable" \
-  --exclude "index.html"
+  --exclude "index.html" \
+  --exclude "config.js"
 
-# Upload index.html without cache (for SPA routing)
+# Upload index.html and config.js without cache (SPA routing and runtime config)
 aws s3 cp index.html s3://dculus-form-app/index.html \
   --acl public-read \
   --cache-control "public,max-age=0,must-revalidate"
+aws s3 cp config.js s3://dculus-form-app/config.js \
+  --acl public-read \
+  --cache-control "no-cache"
 ```
 
 **Step 4: Create CloudFront distribution (optional but recommended)**
@@ -545,6 +549,8 @@ gsutil -m setmeta -h "Cache-Control:public,max-age=31536000,immutable" \
   gs://dculus-form-app/**.js
 gsutil -m setmeta -h "Cache-Control:public,max-age=31536000,immutable" \
   gs://dculus-form-app/**.css
+gsutil -m setmeta -h "Cache-Control:no-cache" \
+  gs://dculus-form-app/config.js
 ```
 
 **Step 5: Configure Cloud CDN (optional)**
@@ -586,7 +592,7 @@ Each frontend application requires different environment variables:
 
 ### Setting Environment Variables
 
-The release archives are environment-agnostic. Each app reads its settings at runtime from `config.js` in the root of its `dist/` folder (loaded by `index.html` before the app bundle), so you never need to rebuild.
+The release archives are environment-agnostic. Each app reads its settings at runtime from `config.js` in the root of its `dist/` folder (loaded by `index.html` before the app bundle), so you do not need to rebuild to change them. The one exception is `VITE_CHARGEBEE_SITE` in the admin app, which is still read at build time.
 
 Edit `dist/config.js` before uploading it to your host:
 ```javascript

@@ -12,7 +12,7 @@ on:
           - dev
           - production
       release_tag:
-        description: "Version tag (v1.2.3) or sha-<full commit SHA> (dev only)"
+        description: "Version tag to deploy (v1.2.3)"
         required: true
         type: string
       deploy_cloudflare:
@@ -65,7 +65,6 @@ on:
 
 permissions:
   contents: read # Required for checking out code
-  actions: read # Download frontend build artifacts from the Build Pipeline run
   # id-token: write (Azure OIDC) is granted per-job, only on jobs that call azure/login
 
 # Prevent overlapping Terraform applies against the same environment's state.
@@ -152,6 +151,10 @@ jobs:
           if [[ "$INPUT_RELEASE_TAG" =~ ^sha-([0-9a-f]{40})$ ]]; then
             if [ "$INPUT_ENVIRONMENT" = "production" ]; then
               echo "❌ Production only deploys version tags (vX.Y.Z), got '$INPUT_RELEASE_TAG'"
+              exit 1
+            fi
+            if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+              echo "❌ sha-<commit> builds are only deployed by the Build Pipeline; re-run it instead, or deploy a vX.Y.Z tag"
               exit 1
             fi
             RELEASE_COMMIT="${BASH_REMATCH[1]}"

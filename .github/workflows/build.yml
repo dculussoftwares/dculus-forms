@@ -23,7 +23,6 @@ permissions:
   id-token: write
   contents: write
   packages: write
-  actions: read
 
 env:
   NODE_VERSION: '22.14.0'
@@ -715,7 +714,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      actions: read
     uses: ./.github/workflows/multi-cloud-deployment.yml
     secrets: inherit
     with:
