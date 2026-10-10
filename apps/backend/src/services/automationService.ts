@@ -15,6 +15,7 @@ import { isValidCronExpression, isValidTimezone } from './automation/cronValidat
 import { isAutomationEngineEnabled } from './automation/boss.js';
 import { AUTOMATION_TEMPLATE_IDS, getAutomationTemplate } from './automation/templates.js';
 import { copyAutomation } from './automation/copyAutomation.js';
+import { carrySheetColumnsInGraph } from '../plugins/core/sheetColumns.js';
 import type { AutomationGraph, AutomationRunContext } from './automation/types.js';
 
 /**
@@ -179,7 +180,10 @@ export async function updateAutomation(
   automation: { id: string; status: string; triggerType: string; graph: unknown },
   updates: { name?: string; graph?: any; triggerConfig?: any }
 ) {
-  const { name, graph, triggerConfig } = updates;
+  const { name, triggerConfig } = updates;
+  // The builder saves the whole graph, including the sheet layout it loaded; keep the latest one.
+  const graph =
+    updates.graph === undefined ? undefined : carrySheetColumnsInGraph(automation.graph, updates.graph);
   const data: Record<string, any> = { updatedAt: new Date() };
 
   if (name !== undefined) data.name = name;

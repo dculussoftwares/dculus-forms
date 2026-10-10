@@ -176,7 +176,6 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         googleToken,
         spreadsheetId,
         spreadsheetUrl,
-        sheetColumns: initialData?.config?.sheetColumns,
       },
       events: ['form.submitted'],
     });

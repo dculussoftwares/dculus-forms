@@ -94,36 +94,41 @@ export const buildInitialColumns = (
 
 /**
  * Recovers a layout for a sheet created before layouts were persisted, from its header row.
- * Cells are matched to schema fields by label; anything unmatched keeps its column but is never
- * filled, so later columns do not shift.
+ * The fixed columns are the last cells with their labels (a form field may share those labels);
+ * the rest are matched to schema fields by label, but only when the label identifies exactly one
+ * column and one field. Anything else keeps its column and is never filled, so later columns do
+ * not shift and no answer is put under a guessed field.
  */
 export const bootstrapColumnsFromHeader = (
   header: string[],
   fields: SchemaFieldInfo[]
 ): SheetColumn[] => {
+  const cells = header.map((cell) => String(cell ?? ''));
+  const submittedAtIndex = cells.lastIndexOf(SUBMITTED_AT_LABEL);
+  const responseIdIndex = cells.lastIndexOf(RESPONSE_ID_LABEL);
+
+  const labelCounts = new Map<string, number>();
+  cells.forEach((label, index) => {
+    if (index === submittedAtIndex || index === responseIdIndex) return;
+    labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
+  });
+
   const used = new Set<string>();
-  let hasSubmittedAt = false;
-  let hasResponseId = false;
 
-  return header.map((cell, index) => {
-    const label = String(cell ?? '');
+  return cells.map((label, index) => {
+    if (index === submittedAtIndex) return { id: SUBMITTED_AT_COLUMN_ID, label };
+    if (index === responseIdIndex) return { id: RESPONSE_ID_COLUMN_ID, label };
 
-    if (!hasSubmittedAt && label === SUBMITTED_AT_LABEL) {
-      hasSubmittedAt = true;
-      return { id: SUBMITTED_AT_COLUMN_ID, label };
-    }
-    if (!hasResponseId && label === RESPONSE_ID_LABEL) {
-      hasResponseId = true;
-      return { id: RESPONSE_ID_COLUMN_ID, label };
-    }
-
+    const candidates = fields.filter(
+      (f) => !used.has(f.id) && (f.label === label || columnLabel(f) === label)
+    );
     // Active fields win over deleted ones that happen to share a label.
-    const match =
-      fields.find((f) => !used.has(f.id) && !f.deleted && f.label === label) ??
-      fields.find((f) => !used.has(f.id) && f.deleted && (f.label === label || columnLabel(f) === label));
-    if (match) {
-      used.add(match.id);
-      return { id: match.id, label };
+    const active = candidates.filter((f) => !f.deleted);
+    const pool = active.length > 0 ? active : candidates;
+
+    if (labelCounts.get(label) === 1 && pool.length === 1) {
+      used.add(pool[0].id);
+      return { id: pool[0].id, label };
     }
 
     return { id: `${UNKNOWN_COLUMN_PREFIX}${index}`, label };
@@ -187,3 +192,49 @@ export const buildRowFromColumns = (
     if (column.id.startsWith(UNKNOWN_COLUMN_PREFIX)) return '';
     return resolveValue(column.id, responseData[column.id]);
   });
+
+type ConfigRecord = Record<string, unknown>;
+
+const documentKey = (config: ConfigRecord): string =>
+  [config.spreadsheetId, config.workbookId, String(config.worksheetName ?? '').trim() || 'Sheet1'].join('|');
+
+/**
+ * `sheetColumns` is owned by the sheet handlers, not by the config forms: a form saves whatever
+ * layout it loaded, which may predate columns a later run added. When a saved config carries no
+ * layout, keep the persisted one — but only for the same document and worksheet, since a layout
+ * describes one header row.
+ */
+export const carrySheetColumns = (existing: unknown, next: unknown): unknown => {
+  if (!existing || typeof existing !== 'object' || !next || typeof next !== 'object') return next;
+  const previous = existing as ConfigRecord;
+  const incoming = next as ConfigRecord;
+
+  if (!Array.isArray(previous.sheetColumns) || incoming.sheetColumns) return next;
+  if (!previous.spreadsheetId && !previous.workbookId) return next;
+  if (documentKey(previous) !== documentKey(incoming)) return next;
+
+  return { ...incoming, sheetColumns: previous.sheetColumns };
+};
+
+interface GraphWithNodes {
+  nodes?: Array<{ id?: string; type?: string; data?: { config?: unknown } & ConfigRecord }>;
+}
+
+/** {@link carrySheetColumns} for every action node of a graph being saved over an existing one. */
+export const carrySheetColumnsInGraph = <T>(existingGraph: unknown, nextGraph: T): T => {
+  const existingNodes = (existingGraph as GraphWithNodes | null)?.nodes;
+  const nextNodes = (nextGraph as GraphWithNodes | null)?.nodes;
+  if (!Array.isArray(existingNodes) || !Array.isArray(nextNodes)) return nextGraph;
+
+  let changed = false;
+  const nodes = nextNodes.map((node) => {
+    if (node?.type !== 'action' || !node.data?.config) return node;
+    const previous = existingNodes.find((n) => n?.id === node.id);
+    const config = carrySheetColumns(previous?.data?.config, node.data.config);
+    if (config === node.data.config) return node;
+    changed = true;
+    return { ...node, data: { ...node.data, config } };
+  });
+
+  return changed ? ({ ...nextGraph, nodes } as T) : nextGraph;
+};
