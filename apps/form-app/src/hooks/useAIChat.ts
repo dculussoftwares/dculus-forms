@@ -13,11 +13,12 @@ import {
   RENAME_AI_CHAT_CONVERSATION,
 } from '../graphql/aiChat';
 import { applyAIOp } from '../lib/applyAIOp';
+import { getApiBaseUrl } from '../lib/config';
 import { useYjsUndoManager } from './useYjsUndoManager';
 import { MUTATION_TOOL_NAMES, PROPOSAL_TOOL_NAMES, type FormEditAgentUIMessage } from '../lib/aiAgentTypes';
 import type { AskAIBuilderContext } from '../lib/askAIContext';
 
-const API_URL = import.meta.env.VITE_API_URL as string;
+const API_URL = getApiBaseUrl();
 
 export function buildOpLabel(op: Record<string, unknown>): string {
   switch (op?.type) {

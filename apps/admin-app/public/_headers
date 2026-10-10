@@ -1,0 +1,3 @@
+# Overwritten at deploy time with environment values; must never be served stale.
+/config.js
+  Cache-Control: no-cache

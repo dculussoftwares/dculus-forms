@@ -49,6 +49,7 @@ jobs:
       version: ${{ steps.plan.outputs.version }}
       previous: ${{ steps.plan.outputs.previous }}
       source_sha: ${{ steps.plan.outputs.source_sha }}
+      build_run_id: ${{ steps.plan.outputs.build_run_id }}
     steps:
       - name: Require main branch
         run: |
@@ -107,6 +108,18 @@ jobs:
             exit 1
           fi
 
+          # Frontends are promoted from this run's artifacts, so they must exist and be runtime-configurable.
+          if ! git cat-file -e "${SRC}:scripts/write-runtime-config.sh" 2>/dev/null; then
+            echo "❌ $SRC predates runtime frontend config; release a newer commit"
+            exit 1
+          fi
+          LIVE=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GREEN_RUN}/artifacts?per_page=100" \
+            --jq "[.artifacts[] | select(.expired == false and (.name | test(\"^(backend|form-app|form-viewer|admin-app)-dist-${SRC}\$\")))] | length")
+          if [ "$LIVE" != "4" ]; then
+            echo "❌ Expected 4 unexpired build artifacts for $SRC, found $LIVE (artifacts expire after 30 days)"
+            exit 1
+          fi
+
           if ! docker manifest inspect "${IMAGE}:sha-${SRC}" > /dev/null 2>&1; then
             echo "❌ Image ${IMAGE}:sha-${SRC} not found on Docker Hub"
             exit 1
@@ -138,6 +151,7 @@ jobs:
             echo "version=${NEXT}"
             echo "previous=${PREV}"
             echo "source_sha=${SRC}"
+            echo "build_run_id=${GREEN_RUN}"
           } >> "$GITHUB_OUTPUT"
 
           {
@@ -213,18 +227,17 @@ jobs:
           gh release create "$VERSION" "${ARGS[@]}" \
             --notes "Backend image: \`${IMAGE}:${VERSION}\` (promoted from the build verified on dev)."
 
-  # Self-hosting archives documented in docs/deployment/DEPLOYMENT_GUIDE.md. Not used by
-  # the production deploy, so a failure here does not block or roll back it.
+  # Zips the builds produced by the verified Build Pipeline run (no rebuild) and attaches them to
+  # the release. Production frontends deploy from these assets, and they are the self-hosting
+  # archives documented in docs/deployment/DEPLOYMENT_GUIDE.md.
   package-assets:
-    name: Attach Self-Hosting Archives
+    name: Attach Build Archives
     needs: [prepare, publish]
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     permissions:
       contents: write
-    env:
-      BACKEND_URL: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
-      FORM_VIEWER_URL: https://dculus-forms-viewer-app.pages.dev
+      actions: read
     steps:
       - name: Checkout release commit
         uses: actions/checkout@v4
@@ -232,27 +245,25 @@ jobs:
           ref: ${{ needs.prepare.outputs.source_sha }}
           persist-credentials: false
 
-      - uses: ./.github/actions/setup
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '22.14.0'
-          run-prisma-generate: 'true'
 
-      - name: Build packages, backend and frontends
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Download builds from the Build Pipeline run
         env:
-          VITE_CDN_ENDPOINT: ${{ secrets.VITE_CDN_ENDPOINT }}
-          VITE_PIXABAY_API_KEY: ${{ secrets.VITE_PIXABAY_API_KEY }}
-          VITE_API_URL: ${{ env.BACKEND_URL }}
-          VITE_GRAPHQL_URL: ${{ env.BACKEND_URL }}/graphql
-          VITE_FORM_VIEWER_URL: ${{ env.FORM_VIEWER_URL }}
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ needs.prepare.outputs.build_run_id }}
+          SRC: ${{ needs.prepare.outputs.source_sha }}
         run: |
           set -euo pipefail
-          pnpm --filter @dculus/types build
-          pnpm --filter @dculus/utils build
-          pnpm --filter @dculus/ui build
-          pnpm --filter backend build
-          pnpm --filter form-app build
-          pnpm --filter form-viewer build
-          pnpm --filter admin-app build
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" -n "backend-dist-${SRC}" -D apps/backend/dist
+          for app in form-app form-viewer admin-app; do
+            gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" -n "${app}-dist-${SRC}" -D "apps/${app}/dist"
+          done
 
       - name: Create archives
         env:
@@ -278,7 +289,7 @@ jobs:
 
   deploy:
     name: Deploy to Production
-    needs: [prepare, publish]
+    needs: [prepare, publish, package-assets]
     permissions:
       id-token: write
       contents: read

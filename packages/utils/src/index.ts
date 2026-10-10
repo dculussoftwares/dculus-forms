@@ -287,3 +287,6 @@ export * from './fieldValueFormatters.js';
 
 // Re-export email recipient-list helpers
 export * from './emailList.js';
+
+// Re-export deploy-time runtime config reader
+export * from './runtimeConfig.js';

@@ -1,9 +1,11 @@
+import { getRuntimeConfig } from '@dculus/utils';
+
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  return getRuntimeConfig('VITE_API_URL', import.meta.env.VITE_API_URL) || 'http://localhost:4000';
 }
 
 export function getGraphQLUrl(): string {
-  return import.meta.env.VITE_GRAPHQL_URL || `${getApiBaseUrl()}/graphql`;
+  return getRuntimeConfig('VITE_GRAPHQL_URL', import.meta.env.VITE_GRAPHQL_URL) || `${getApiBaseUrl()}/graphql`;
 }
 
 export function getUploadUrl(): string {
@@ -11,5 +13,5 @@ export function getUploadUrl(): string {
 }
 
 export function getCdnEndpoint(): string {
-  return import.meta.env.VITE_CDN_ENDPOINT || '';
+  return getRuntimeConfig('VITE_CDN_ENDPOINT', import.meta.env.VITE_CDN_ENDPOINT) || '';
 }

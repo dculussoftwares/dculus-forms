@@ -3,14 +3,16 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { ApolloProvider } from '@apollo/client/react';
 import * as Sentry from '@sentry/react';
+import { getRuntimeConfig } from '@dculus/utils';
 import App from './App';
 import { client } from './services/apolloClient';
 import './index.css';
 import './styles.css';
 
-if (import.meta.env.VITE_SENTRY_DSN) {
+const sentryDsn = getRuntimeConfig('VITE_SENTRY_DSN', import.meta.env.VITE_SENTRY_DSN);
+if (sentryDsn) {
   Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN,
+    dsn: sentryDsn,
     environment: import.meta.env.MODE,
     integrations: [Sentry.browserTracingIntegration()],
     tracesSampleRate: 0.1,
