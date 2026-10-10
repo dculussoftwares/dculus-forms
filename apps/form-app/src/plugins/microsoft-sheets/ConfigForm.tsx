@@ -189,7 +189,6 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         microsoftToken,
         workbookId: initialData?.config?.workbookId,
         workbookUrl: initialData?.config?.workbookUrl,
-        sheetColumns: initialData?.config?.sheetColumns,
         worksheetName: worksheetName.trim() || 'Sheet1',
       },
       events: ['form.submitted'],

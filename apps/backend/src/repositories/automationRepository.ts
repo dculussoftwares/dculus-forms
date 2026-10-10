@@ -53,8 +53,55 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
   const createAutomation = async (data: Prisma.AutomationCreateArgs['data']) =>
     prisma.automation.create({ data });
 
-  const updateAutomation = async (id: string, data: Prisma.AutomationUpdateArgs['data']) =>
-    prisma.automation.update({ where: { id }, data });
+  /**
+   * Updates an automation graph without allowing a stale editor snapshot to overwrite the
+   * backend-owned sheet layout. Runtime handlers update sheetColumns in-place while a form can
+   * remain open, so the current row must be locked and read immediately before the editor write.
+   */
+  const updateAutomation = async (id: string, data: Prisma.AutomationUpdateArgs['data']) => {
+    if (data.graph === undefined) {
+      return prisma.automation.update({ where: { id }, data });
+    }
+
+    return prisma.$transaction(async (tx) => {
+      await tx.$queryRaw(Prisma.sql`
+        SELECT 1 FROM ${Prisma.raw('"automation"')}
+        WHERE id = ${id}
+        FOR UPDATE
+      `);
+
+      const current = await tx.automation.findUnique({
+        where: { id },
+        select: { graph: true },
+      });
+      const currentNodes = ((current?.graph as { nodes?: Array<{ id?: string; data?: { config?: Record<string, any> } }> } | null)
+        ?.nodes ?? []);
+      const currentById = new Map(currentNodes.map((node) => [node.id, node]));
+      const nextGraph = data.graph as { nodes?: Array<{ id?: string; data?: { config?: Record<string, any> } }> };
+
+      // sheetColumns belong to the action runtime, not to the editor. Preserve them even when
+      // the editor submitted the older config it captured when the panel was opened.
+      const mergedGraph = {
+        ...nextGraph,
+        nodes: (nextGraph.nodes ?? []).map((node) => {
+          const persistedConfig = currentById.get(node.id)?.data?.config;
+          if (persistedConfig?.sheetColumns === undefined) return node;
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              config: { ...node.data?.config, sheetColumns: persistedConfig.sheetColumns },
+            },
+          };
+        }),
+      };
+
+      return tx.automation.update({
+        where: { id },
+        data: { ...data, graph: mergedGraph },
+      });
+    });
+  };
 
   const deleteAutomation = async (id: string) => prisma.automation.delete({ where: { id } });
 
