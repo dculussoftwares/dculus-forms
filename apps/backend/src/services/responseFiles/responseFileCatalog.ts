@@ -111,7 +111,7 @@ async function* iterateResponses(formId: string, query: ResponseFileQuery): Asyn
 const KEY_LOOKUP_CHUNK = 1000;
 const METADATA_LOOKUP_CONCURRENCY = 16;
 
-type FileRecord = { originalName: string; size: number; mimeType: string };
+export type FileRecord = { originalName: string; size: number; mimeType: string };
 
 /**
  * Respondent uploads made before they were recorded as FormFile rows have no
@@ -153,7 +153,7 @@ const backfillFileRecords = async (formId: string, keys: string[]): Promise<Map<
 };
 
 /** FormFile metadata (original name, size, type) keyed by storage key, looked up in chunks. */
-const loadFileRecords = async (formId: string, keys: string[]) => {
+export const loadFileRecords = async (formId: string, keys: string[]): Promise<Map<string, FileRecord>> => {
   const unique = [...new Set(keys)];
   const recordByKey = new Map<string, FileRecord>();
   for (let i = 0; i < unique.length; i += KEY_LOOKUP_CHUNK) {

@@ -38,6 +38,14 @@ vi.mock('../emailFieldAnalytics.js', () => ({
   processEmailFieldAnalytics: vi.fn(),
 }));
 
+vi.mock('../../responseFiles/responseFileCatalog.js', () => ({
+  isResponseFileKeyForForm: vi.fn((key: unknown, formId: string) =>
+    typeof key === 'string' && key.startsWith(`files/form-response/${formId}/`)
+  ),
+  loadFileRecords: vi.fn(async () => new Map()),
+  fileNameFromKey: (key: string) => key.split('/').pop() ?? key,
+}));
+
 import { formRepository } from '../../../repositories/index.js';
 import { getFormSchemaFromHocuspocus } from '../../hocuspocus.js';
 import { getFormResponses, extractFieldValues } from '../base.js';
@@ -47,6 +55,7 @@ import { processSelectionFieldAnalytics } from '../selectionFieldAnalytics.js';
 import { processCheckboxFieldAnalytics } from '../checkboxFieldAnalytics.js';
 import { processDateFieldAnalytics } from '../dateFieldAnalytics.js';
 import { processEmailFieldAnalytics } from '../emailFieldAnalytics.js';
+import { loadFileRecords } from '../../responseFiles/responseFileCatalog.js';
 import { getFieldAnalytics, getAllFieldsAnalytics } from '../index.js';
 
 const mockResponses = [{ responseId: 'r1', data: {}, submittedAt: new Date() }];
@@ -174,6 +183,17 @@ describe('getFieldAnalytics', () => {
       const r = result as any;
       const unknownEntry = r.extensionDistribution.find((e: any) => e.extension === 'unknown');
       expect(unknownEntry?.count).toBe(1);
+    });
+
+    it('only looks up storage metadata for keys under the form prefix', async () => {
+      const ownKey = 'files/form-response/form-1/1700000000000-11111111-1111-1111-1111-111111111111-cv.pdf';
+      vi.mocked(extractFieldValues).mockReturnValue([
+        { value: [ownKey, 'files/form-response/other-form/x.pdf'], submittedAt: new Date(), responseId: 'r1' },
+      ] as any);
+
+      await getFieldAnalytics('form-1', 'f1', FieldType.FILE_UPLOAD_FIELD, 'Upload');
+
+      expect(loadFileRecords).toHaveBeenCalledWith('form-1', [ownKey]);
     });
 
     it('returns zero counts when there are no file responses', async () => {

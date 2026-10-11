@@ -23,10 +23,8 @@ import { NumberFieldAnalytics } from '../NumberFieldAnalytics';
 import { SelectionFieldAnalytics } from '../SelectionFieldAnalytics';
 import { CheckboxFieldAnalytics } from '../CheckboxFieldAnalytics';
 import { DateFieldAnalytics } from '../DateFieldAnalytics';
-import {
-  EmailFieldAnalytics,
-  FileUploadFieldAnalytics,
-} from '../EmailFieldAnalytics';
+import { EmailFieldAnalytics } from '../EmailFieldAnalytics';
+import { FileUploadFieldAnalytics } from '../FileUploadFieldAnalytics';
 import { AnalyticsRegistry } from './types';
 
 /**
