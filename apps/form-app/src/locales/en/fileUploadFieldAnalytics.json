@@ -1,0 +1,87 @@
+{
+  "emptyState": {
+    "title": "No files uploaded yet",
+    "subtitle": "File upload analytics will appear here once respondents start uploading files."
+  },
+  "stats": {
+    "totalFiles": "Total Files",
+    "perResponse": "{{average}} per response",
+    "totalStorage": "Total Storage",
+    "averageSize": "{{size}} average file size",
+    "noSizeData": "No size data",
+    "largestFile": "Largest File",
+    "responsesWithFiles": "Responses with Files",
+    "ofResponses": "of {{total}} responses"
+  },
+  "coverage": {
+    "title": "Upload Coverage",
+    "summary": "{{withFiles}} of {{total}} responses include uploaded files"
+  },
+  "fileTypes": {
+    "title": "File Type Distribution",
+    "categoryTitle": "File Categories",
+    "categories": {
+      "image": "Images",
+      "pdf": "PDFs",
+      "document": "Documents",
+      "spreadsheet": "Spreadsheets",
+      "presentation": "Presentations",
+      "archive": "Archives",
+      "audio": "Audio",
+      "video": "Video",
+      "text": "Text files",
+      "other": "Other"
+    }
+  },
+  "sizes": {
+    "title": "File Size Distribution",
+    "buckets": {
+      "lt100kb": "< 100 KB",
+      "lt1mb": "100 KB – 1 MB",
+      "lt5mb": "1 – 5 MB",
+      "lt25mb": "5 – 25 MB",
+      "gte25mb": "25 MB +"
+    },
+    "unknownNote_one": "Size is unavailable for {{count}} file, so it is left out of the size statistics.",
+    "unknownNote_other": "Size is unavailable for {{count}} files, so they are left out of the size statistics."
+  },
+  "perResponse": {
+    "title": "Files per Response",
+    "none": "No files",
+    "count_one": "{{count}} file",
+    "count_other": "{{count}} files"
+  },
+  "trend": {
+    "title": "Upload Trend",
+    "files": "Files",
+    "storageMb": "Storage (MB)",
+    "storageKb": "Storage (KB)",
+    "show": {
+      "files": "Files",
+      "storage": "Storage"
+    }
+  },
+  "limits": {
+    "title": "Upload Limits",
+    "maxFileSize": "Max file size",
+    "maxFiles": "Max files per response",
+    "mostInOneResponse": "Most files in one response",
+    "allowedTypes": "Allowed types",
+    "anyType": "Any type",
+    "notSet": "Not set",
+    "megabytes": "{{count}} MB",
+    "insights": {
+      "nearSize_one": "{{count}} file is within 10% of the {{max}} MB size limit. Consider raising the limit if respondents are being blocked.",
+      "nearSize_other": "{{count}} files are within 10% of the {{max}} MB size limit. Consider raising the limit if respondents are being blocked.",
+      "atFileLimit_one": "{{count}} response used the full {{max}}-file allowance. Consider allowing more files per response.",
+      "atFileLimit_other": "{{count}} responses used the full {{max}}-file allowance. Consider allowing more files per response.",
+      "outsideTypes_one": "{{count}} file does not match the allowed file types. It was likely uploaded before the restriction changed.",
+      "outsideTypes_other": "{{count}} files do not match the allowed file types. They were likely uploaded before the restriction changed.",
+      "healthy": "Uploads are comfortably within the configured limits."
+    }
+  },
+  "recent": {
+    "title": "Recent Uploads",
+    "description": "The latest files uploaded to this question."
+  }
+}

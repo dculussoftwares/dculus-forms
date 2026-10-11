@@ -656,6 +656,10 @@ export class DateField extends FillableFormField {
   }
 }
 
+// Limits the form renderer enforces when a file upload field does not set its own.
+export const FILE_UPLOAD_DEFAULT_MAX_FILES = 1;
+export const FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB = 5;
+
 export class FileUploadField extends FillableFormField {
   allowedMimeTypes?: string[];
   maxFileSizeMb?: number;

@@ -1156,6 +1156,60 @@ export const typeDefs = gql`
     extensionDistribution: [FileExtensionStats!]!
     responsesWithFiles: Int!
     responsesWithoutFiles: Int!
+    totalBytes: Float!
+    averageFileSize: Float!
+    filesWithKnownSize: Int!
+    largestFile: UploadedFileSummary
+    sizeDistribution: [FileSizeBucketStats!]!
+    categoryDistribution: [FileCategoryStats!]!
+    filesPerResponseDistribution: [FilesPerResponseStats!]!
+    uploadTrend: [FileUploadTrendPoint!]!
+    recentFiles: [UploadedFileSummary!]!
+    limits: FileUploadLimitsInsight!
+  }
+
+  type UploadedFileSummary {
+    key: String!
+    responseId: ID!
+    submittedAt: String!
+    originalName: String!
+    size: Float
+    mimeType: String
+  }
+
+  type FileSizeBucketStats {
+    bucket: String!
+    count: Int!
+    percentage: Float!
+  }
+
+  type FileCategoryStats {
+    category: String!
+    count: Int!
+    bytes: Float!
+    percentage: Float!
+  }
+
+  type FilesPerResponseStats {
+    fileCount: Int!
+    responseCount: Int!
+    percentage: Float!
+  }
+
+  type FileUploadTrendPoint {
+    date: String!
+    files: Int!
+    bytes: Float!
+  }
+
+  type FileUploadLimitsInsight {
+    maxFileSizeMb: Float!
+    maxFiles: Int!
+    allowedMimeTypes: [String!]!
+    maxFilesInSingleResponse: Int!
+    filesNearSizeLimit: Int!
+    responsesAtFileLimit: Int!
+    filesOutsideAllowedTypes: Int!
   }
 
   type FileExtensionStats {

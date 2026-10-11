@@ -10,12 +10,7 @@ import { formRepository } from '../../repositories/index.js';
 import { getFormSchemaFromHocuspocus } from '../hocuspocus.js';
 
 // Import types
-import {
-  FieldAnalytics,
-  FieldAnalyticsBase,
-  FileUploadFieldAnalytics,
-  FieldResponse,
-} from './types.js';
+import { FieldAnalytics, FileUploadFieldConfig } from './types.js';
 
 // Import base utilities
 import { getFormResponses, extractFieldValues } from './base.js';
@@ -27,67 +22,11 @@ import { processSelectionFieldAnalytics } from './selectionFieldAnalytics.js';
 import { processCheckboxFieldAnalytics } from './checkboxFieldAnalytics.js';
 import { processDateFieldAnalytics } from './dateFieldAnalytics.js';
 import { processEmailFieldAnalytics } from './emailFieldAnalytics.js';
-
-/**
- * Process file upload field analytics
- * Values stored as arrays of R2 file keys (strings)
- */
-const processFileUploadFieldAnalytics = (
-  fieldResponses: FieldResponse[],
-  fieldId: string,
-  fieldLabel: string,
-  totalFormResponses: number
-): FieldAnalyticsBase & FileUploadFieldAnalytics => {
-  const totalResponses = fieldResponses.length;
-  const responsesWithFiles = fieldResponses.filter(
-    (r) => Array.isArray(r.value) && r.value.length > 0
-  ).length;
-  const responsesWithoutFiles = totalResponses - responsesWithFiles;
-
-  // Collect all file keys
-  const allKeys: string[] = fieldResponses.flatMap((r) =>
-    Array.isArray(r.value) ? (r.value as string[]) : []
-  );
-  const totalFilesUploaded = allKeys.length;
-  const averageFilesPerResponse =
-    totalResponses > 0 ? totalFilesUploaded / totalResponses : 0;
-
-  // Extension distribution derived from R2 key path
-  const extCounts = new Map<string, number>();
-  allKeys.forEach((key) => {
-    const filename = key.split('/').pop() || '';
-    const dotIdx = filename.lastIndexOf('.');
-    const ext =
-      dotIdx >= 0 ? filename.slice(dotIdx + 1).toLowerCase() : 'unknown';
-    extCounts.set(ext, (extCounts.get(ext) || 0) + 1);
-  });
-
-  const extensionDistribution = Array.from(extCounts.entries())
-    .map(([extension, count]) => ({
-      extension,
-      count,
-      percentage:
-        totalFilesUploaded > 0 ? (count / totalFilesUploaded) * 100 : 0,
-    }))
-    .sort((a, b) => b.count - a.count);
-
-  const responseRate =
-    totalFormResponses > 0 ? (totalResponses / totalFormResponses) * 100 : 0;
-
-  return {
-    fieldId,
-    fieldType: FieldType.FILE_UPLOAD_FIELD,
-    fieldLabel,
-    totalResponses,
-    responseRate,
-    lastUpdated: new Date(),
-    totalFilesUploaded,
-    averageFilesPerResponse,
-    extensionDistribution,
-    responsesWithFiles,
-    responsesWithoutFiles,
-  };
-};
+import { processFileUploadFieldAnalytics } from './fileUploadFieldAnalytics.js';
+import {
+  isResponseFileKeyForForm,
+  loadFileRecords,
+} from '../responseFiles/responseFileCatalog.js';
 
 /**
  * Main function to get field analytics for any field type
@@ -96,7 +35,8 @@ export const getFieldAnalytics = async (
   formId: string,
   fieldId: string,
   fieldType: FieldType,
-  fieldLabel: string
+  fieldLabel: string,
+  fileUploadConfig?: FileUploadFieldConfig
 ): Promise<FieldAnalytics> => {
   // Get all form responses
   const responses = await getFormResponses(formId);
@@ -175,14 +115,26 @@ export const getFieldAnalytics = async (
       ) as FieldAnalytics;
       break;
 
-    case FieldType.FILE_UPLOAD_FIELD:
+    case FieldType.FILE_UPLOAD_FIELD: {
+      // Same rule as the Files view: keys outside this form's own prefix are ignored.
+      const formFileResponses = fieldResponses.map((r) => ({
+        ...r,
+        value: Array.isArray(r.value)
+          ? r.value.filter((key: unknown) => isResponseFileKeyForForm(key, formId))
+          : [],
+      }));
+      const keys = formFileResponses.flatMap((r) => r.value as string[]);
+      const fileRecords = await loadFileRecords(formId, keys);
       result = processFileUploadFieldAnalytics(
-        fieldResponses,
+        formFileResponses,
         fieldId,
         fieldLabel,
-        totalFormResponses
+        totalFormResponses,
+        fileRecords,
+        fileUploadConfig
       ) as FieldAnalytics;
       break;
+    }
 
     default:
       throw new Error(`Unsupported field type: ${fieldType}`);
@@ -231,7 +183,12 @@ export const getAllFieldsAnalytics = async (
   const totalResponses = responses.length;
 
   // Extract all fields from all pages
-  const allFields: Array<{ id: string; type: FieldType; label: string }> = [];
+  const allFields: Array<{
+    id: string;
+    type: FieldType;
+    label: string;
+    fileUploadConfig?: FileUploadFieldConfig;
+  }> = [];
 
   if (formSchema.pages) {
     formSchema.pages.forEach((page: any) => {
@@ -250,6 +207,13 @@ export const getAllFieldsAnalytics = async (
               id: field.id,
               type: field.type,
               label: fieldLabel,
+              ...(field.type === FieldType.FILE_UPLOAD_FIELD && {
+                fileUploadConfig: {
+                  maxFileSizeMb: field.maxFileSizeMb,
+                  maxFiles: field.maxFiles,
+                  allowedMimeTypes: field.allowedMimeTypes,
+                },
+              }),
             });
           }
         });
@@ -265,7 +229,9 @@ export const getAllFieldsAnalytics = async (
     const batch = allFields.slice(i, i + batchSize);
     const batchResults = await Promise.all(
       batch.map((field) =>
-        getFieldAnalytics(formId, field.id, field.type, field.label)
+        field.fileUploadConfig
+          ? getFieldAnalytics(formId, field.id, field.type, field.label, field.fileUploadConfig)
+          : getFieldAnalytics(formId, field.id, field.type, field.label)
       )
     );
     fieldAnalytics.push(...batchResults);

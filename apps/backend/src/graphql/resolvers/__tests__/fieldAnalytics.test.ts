@@ -481,6 +481,58 @@ describe('Field Analytics Resolvers', () => {
       expect(result.textAnalytics.averageLength).toBe(150.5);
     });
 
+    it('should return file upload analytics and pass the field limits to the service', async () => {
+      const submittedAt = new Date('2024-02-01T10:00:00Z');
+      const file = { key: 'files/form-response/form-123/a.pdf', responseId: 'resp-1', submittedAt, originalName: 'a.pdf', size: 2048, mimeType: 'application/pdf' };
+      const mockFileAnalytics = {
+        fieldId: 'field-file-1',
+        fieldType: FieldType.FILE_UPLOAD_FIELD,
+        fieldLabel: 'Resume',
+        totalResponses: 1,
+        responseRate: 100,
+        lastUpdated: new Date('2024-02-01'),
+        totalFilesUploaded: 1,
+        averageFilesPerResponse: 1,
+        extensionDistribution: [{ extension: 'pdf', count: 1, percentage: 100 }],
+        responsesWithFiles: 1,
+        responsesWithoutFiles: 0,
+        totalBytes: 2048,
+        averageFileSize: 2048,
+        filesWithKnownSize: 1,
+        largestFile: file,
+        sizeDistribution: [],
+        categoryDistribution: [],
+        filesPerResponseDistribution: [],
+        uploadTrend: [],
+        recentFiles: [file],
+        limits: { maxFileSizeMb: 5, maxFiles: 2, allowedMimeTypes: [], maxFilesInSingleResponse: 1, filesNearSizeLimit: 0, responsesAtFileLimit: 0, filesOutsideAllowedTypes: 0 },
+      };
+      const schemaWithFile = {
+        pages: [{ id: 'page-1', fields: [{ id: 'field-file-1', type: FieldType.FILE_UPLOAD_FIELD, label: 'Resume', maxFileSizeMb: 5, maxFiles: 2 }] }],
+      };
+
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(schemaWithFile);
+      vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockFileAnalytics as any);
+
+      const result = await fieldAnalyticsResolvers.Query.fieldAnalytics(
+        {},
+        { formId: 'form-123', fieldId: 'field-file-1' },
+        mockContext
+      );
+
+      expect(fieldAnalyticsService.getFieldAnalytics).toHaveBeenCalledWith(
+        'form-123',
+        'field-file-1',
+        FieldType.FILE_UPLOAD_FIELD,
+        'Resume',
+        { maxFileSizeMb: 5, maxFiles: 2, allowedMimeTypes: undefined }
+      );
+      expect(result.fileUploadAnalytics.totalBytes).toBe(2048);
+      expect(result.fileUploadAnalytics.recentFiles[0].submittedAt).toBe(submittedAt.toISOString());
+      expect(result.fileUploadAnalytics.largestFile.originalName).toBe('a.pdf');
+    });
+
     it('should throw error when user is not authenticated', async () => {
       const unauthenticatedContext = { auth: { user: null, session: null, isAuthenticated: false } };
 

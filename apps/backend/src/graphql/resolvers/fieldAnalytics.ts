@@ -5,6 +5,8 @@ import {
   getFieldAnalytics,
   getAllFieldsAnalytics,
   type FieldAnalytics,
+  type FileUploadFieldConfig,
+  type UploadedFileSummary,
 } from '../../services/fieldAnalytics/index.js';
 import { requireAuth, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { getFormById } from '../../services/formService.js';
@@ -18,7 +20,7 @@ import { checkFormAccess, PermissionLevel } from './formSharing.js';
 const getFieldInfo = (
   formSchema: any,
   fieldId: string
-): { type: FieldType; label: string } | null => {
+): { type: FieldType; label: string; fileUploadConfig?: FileUploadFieldConfig } | null => {
   if (!formSchema.pages) return null;
 
   for (const page of formSchema.pages) {
@@ -28,6 +30,13 @@ const getFieldInfo = (
         return {
           type: field.type as FieldType,
           label: field.label || `Field ${fieldId}`,
+          ...(field.type === FieldType.FILE_UPLOAD_FIELD && {
+            fileUploadConfig: {
+              maxFileSizeMb: field.maxFileSizeMb,
+              maxFiles: field.maxFiles,
+              allowedMimeTypes: field.allowedMimeTypes,
+            },
+          }),
         };
       }
     }
@@ -36,6 +45,11 @@ const getFieldInfo = (
   logger.info('❌ Field not found:', fieldId);
   return null;
 };
+
+const toUploadedFile = (file: UploadedFileSummary) => ({
+  ...file,
+  submittedAt: file.submittedAt.toISOString(),
+});
 
 /**
  * Transform analytics data to match GraphQL schema structure
@@ -154,6 +168,16 @@ const transformAnalyticsToGraphQL = (analytics: FieldAnalytics) => {
           extensionDistribution: analytics.extensionDistribution,
           responsesWithFiles: analytics.responsesWithFiles,
           responsesWithoutFiles: analytics.responsesWithoutFiles,
+          totalBytes: analytics.totalBytes,
+          averageFileSize: analytics.averageFileSize,
+          filesWithKnownSize: analytics.filesWithKnownSize,
+          largestFile: analytics.largestFile && toUploadedFile(analytics.largestFile),
+          sizeDistribution: analytics.sizeDistribution,
+          categoryDistribution: analytics.categoryDistribution,
+          filesPerResponseDistribution: analytics.filesPerResponseDistribution,
+          uploadTrend: analytics.uploadTrend,
+          recentFiles: analytics.recentFiles.map(toUploadedFile),
+          limits: analytics.limits,
         };
       }
       break;
@@ -261,6 +285,7 @@ export const fieldAnalyticsResolvers = {
         FieldType.DATE_FIELD,
         FieldType.EMAIL_FIELD,
         FieldType.PHONE_NUMBER_FIELD,
+        FieldType.FILE_UPLOAD_FIELD,
       ];
 
       if (!supportedTypes.includes(fieldInfo.type)) {
@@ -275,7 +300,8 @@ export const fieldAnalyticsResolvers = {
           formId,
           fieldId,
           fieldInfo.type,
-          fieldInfo.label
+          fieldInfo.label,
+          ...(fieldInfo.fileUploadConfig ? [fieldInfo.fileUploadConfig] : [])
         );
 
         return transformAnalyticsToGraphQL(analytics);

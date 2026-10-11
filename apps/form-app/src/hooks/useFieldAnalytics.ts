@@ -5,6 +5,68 @@ import { useQuery } from '@apollo/client/react';
 import { usePerformanceMonitor } from './usePerformanceMonitor';
 
 // GraphQL queries for field analytics
+const FILE_UPLOAD_ANALYTICS_FRAGMENT = gql`
+  fragment FileUploadAnalyticsFields on FileUploadFieldAnalytics {
+    totalFilesUploaded
+    averageFilesPerResponse
+    extensionDistribution {
+      extension
+      count
+      percentage
+    }
+    responsesWithFiles
+    responsesWithoutFiles
+    totalBytes
+    averageFileSize
+    filesWithKnownSize
+    largestFile {
+      ...UploadedFileSummaryFields
+    }
+    sizeDistribution {
+      bucket
+      count
+      percentage
+    }
+    categoryDistribution {
+      category
+      count
+      bytes
+      percentage
+    }
+    filesPerResponseDistribution {
+      fileCount
+      responseCount
+      percentage
+    }
+    uploadTrend {
+      date
+      files
+      bytes
+    }
+    recentFiles {
+      ...UploadedFileSummaryFields
+    }
+    limits {
+      maxFileSizeMb
+      maxFiles
+      allowedMimeTypes
+      maxFilesInSingleResponse
+      filesNearSizeLimit
+      responsesAtFileLimit
+      filesOutsideAllowedTypes
+    }
+  }
+
+  fragment UploadedFileSummaryFields on UploadedFileSummary {
+    key
+    responseId
+    submittedAt
+    originalName
+    size
+    mimeType
+  }
+`;
+
 const GET_FIELD_ANALYTICS : TypedDocumentNode<any, any> = gql`
   query GetFieldAnalytics($formId: ID!, $fieldId: ID!) {
     fieldAnalytics(formId: $formId, fieldId: $fieldId) {
@@ -157,18 +219,11 @@ const GET_FIELD_ANALYTICS : TypedDocumentNode<any, any> = gql`
       }
 
       fileUploadAnalytics {
-        totalFilesUploaded
-        averageFilesPerResponse
-        extensionDistribution {
-          extension
-          count
-          percentage
-        }
-        responsesWithFiles
-        responsesWithoutFiles
+        ...FileUploadAnalyticsFields
       }
     }
   }
+  ${FILE_UPLOAD_ANALYTICS_FRAGMENT}
 `;
 
 const GET_ALL_FIELDS_ANALYTICS : TypedDocumentNode<any, any> = gql`
@@ -326,19 +381,12 @@ const GET_ALL_FIELDS_ANALYTICS : TypedDocumentNode<any, any> = gql`
         }
 
         fileUploadAnalytics {
-          totalFilesUploaded
-          averageFilesPerResponse
-          extensionDistribution {
-            extension
-            count
-            percentage
-          }
-          responsesWithFiles
-          responsesWithoutFiles
+          ...FileUploadAnalyticsFields
         }
       }
     }
   }
+  ${FILE_UPLOAD_ANALYTICS_FRAGMENT}
 `;
 
 // TypeScript types
@@ -459,6 +507,15 @@ export interface EmailFieldAnalyticsData {
   }>;
 }
 
+export interface UploadedFileSummaryData {
+  key: string;
+  responseId: string;
+  submittedAt: string;
+  originalName: string;
+  size: number | null;
+  mimeType: string | null;
+}
+
 export interface FileUploadFieldAnalyticsData {
   totalFilesUploaded: number;
   averageFilesPerResponse: number;
@@ -469,6 +526,33 @@ export interface FileUploadFieldAnalyticsData {
   }>;
   responsesWithFiles: number;
   responsesWithoutFiles: number;
+  totalBytes: number;
+  averageFileSize: number;
+  filesWithKnownSize: number;
+  largestFile: UploadedFileSummaryData | null;
+  sizeDistribution: Array<{ bucket: string; count: number; percentage: number }>;
+  categoryDistribution: Array<{
+    category: string;
+    count: number;
+    bytes: number;
+    percentage: number;
+  }>;
+  filesPerResponseDistribution: Array<{
+    fileCount: number;
+    responseCount: number;
+    percentage: number;
+  }>;
+  uploadTrend: Array<{ date: string; files: number; bytes: number }>;
+  recentFiles: UploadedFileSummaryData[];
+  limits: {
+    maxFileSizeMb: number;
+    maxFiles: number;
+    allowedMimeTypes: string[];
+    maxFilesInSingleResponse: number;
+    filesNearSizeLimit: number;
+    responsesAtFileLimit: number;
+    filesOutsideAllowedTypes: number;
+  };
 }
 
 export interface AllFieldsAnalyticsData {

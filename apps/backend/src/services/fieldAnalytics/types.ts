@@ -111,6 +111,29 @@ export interface DateFieldAnalytics {
   }>;
 }
 
+export type FileCategory =
+  | 'image'
+  | 'pdf'
+  | 'document'
+  | 'spreadsheet'
+  | 'presentation'
+  | 'archive'
+  | 'audio'
+  | 'video'
+  | 'text'
+  | 'other';
+
+export type FileSizeBucket = 'lt100kb' | 'lt1mb' | 'lt5mb' | 'lt25mb' | 'gte25mb';
+
+export interface UploadedFileSummary {
+  key: string;
+  responseId: string;
+  submittedAt: Date;
+  originalName: string;
+  size: number | null;
+  mimeType: string | null;
+}
+
 export interface FileUploadFieldAnalytics {
   totalResponses: number;
   totalFilesUploaded: number;
@@ -122,6 +145,45 @@ export interface FileUploadFieldAnalytics {
   }>;
   responsesWithFiles: number;
   responsesWithoutFiles: number;
+  /** Sum of known file sizes in bytes (files with no recorded size are skipped). */
+  totalBytes: number;
+  averageFileSize: number;
+  filesWithKnownSize: number;
+  largestFile: UploadedFileSummary | null;
+  sizeDistribution: Array<{
+    bucket: FileSizeBucket;
+    count: number;
+    percentage: number;
+  }>;
+  categoryDistribution: Array<{
+    category: FileCategory;
+    count: number;
+    bytes: number;
+    percentage: number;
+  }>;
+  filesPerResponseDistribution: Array<{
+    fileCount: number;
+    responseCount: number;
+    percentage: number;
+  }>;
+  /** Daily uploads, oldest first, capped to the most recent 90 days with uploads. */
+  uploadTrend: Array<{ date: string; files: number; bytes: number }>;
+  recentFiles: UploadedFileSummary[];
+  limits: {
+    maxFileSizeMb: number;
+    maxFiles: number;
+    allowedMimeTypes: string[];
+    maxFilesInSingleResponse: number;
+    filesNearSizeLimit: number;
+    responsesAtFileLimit: number;
+    filesOutsideAllowedTypes: number;
+  };
+}
+
+export interface FileUploadFieldConfig {
+  maxFileSizeMb?: number;
+  maxFiles?: number;
+  allowedMimeTypes?: string[];
 }
 
 export interface EmailFieldAnalytics {

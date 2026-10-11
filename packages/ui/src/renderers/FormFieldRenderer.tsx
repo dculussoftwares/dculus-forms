@@ -11,6 +11,8 @@ import { Controller, Control, FieldValues, Path } from 'react-hook-form';
 import {
   FormField,
   FieldType,
+  FILE_UPLOAD_DEFAULT_MAX_FILES,
+  FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB,
   FillableFormField,
   TextFieldValidation,
   RichTextFormField,
@@ -408,8 +410,8 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               const raw: (string | File)[] = Array.isArray(cf.value) ? cf.value : [];
               const existing: string[] = raw.filter((v): v is string => typeof v === 'string');
               const pending: File[] = raw.filter((v): v is File => v instanceof File);
-              const maxFiles: number = fuf.maxFiles || 1;
-              const maxMb: number = fuf.maxFileSizeMb || 5;
+              const maxFiles: number = fuf.maxFiles || FILE_UPLOAD_DEFAULT_MAX_FILES;
+              const maxMb: number = fuf.maxFileSizeMb || FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB;
               const mimes: string[] = fuf.allowedMimeTypes || [];
               const total = existing.length + pending.length;
 

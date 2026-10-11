@@ -191,6 +191,8 @@ import enDateFieldAnalytics from './en/dateFieldAnalytics.json';
 import taDateFieldAnalytics from './ta/dateFieldAnalytics.json';
 import enEmailFieldAnalytics from './en/emailFieldAnalytics.json';
 import taEmailFieldAnalytics from './ta/emailFieldAnalytics.json';
+import enFileUploadFieldAnalytics from './en/fileUploadFieldAnalytics.json';
+import taFileUploadFieldAnalytics from './ta/fileUploadFieldAnalytics.json';
 import enSubmissionLimitsSettings from './en/submissionLimitsSettings.json';
 import taSubmissionLimitsSettings from './ta/submissionLimitsSettings.json';
 import enAccessControlSettings from './en/accessControlSettings.json';
@@ -374,6 +376,7 @@ const enTranslations = {
   checkboxFieldAnalytics: enCheckboxFieldAnalytics,
   dateFieldAnalytics: enDateFieldAnalytics,
   emailFieldAnalytics: enEmailFieldAnalytics,
+  fileUploadFieldAnalytics: enFileUploadFieldAnalytics,
   submissionLimitsSettings: enSubmissionLimitsSettings,
   accessControlSettings: enAccessControlSettings,
   quizSettings: enQuizSettings,
@@ -515,6 +518,7 @@ const taTranslations = {
   checkboxFieldAnalytics: taCheckboxFieldAnalytics,
   dateFieldAnalytics: taDateFieldAnalytics,
   emailFieldAnalytics: taEmailFieldAnalytics,
+  fileUploadFieldAnalytics: taFileUploadFieldAnalytics,
   submissionLimitsSettings: taSubmissionLimitsSettings,
   accessControlSettings: taAccessControlSettings,
   quizSettings: taQuizSettings,
