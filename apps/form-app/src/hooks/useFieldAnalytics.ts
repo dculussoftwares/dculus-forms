@@ -545,8 +545,8 @@ export interface FileUploadFieldAnalyticsData {
   uploadTrend: Array<{ date: string; files: number; bytes: number }>;
   recentFiles: UploadedFileSummaryData[];
   limits: {
-    maxFileSizeMb: number | null;
-    maxFiles: number | null;
+    maxFileSizeMb: number;
+    maxFiles: number;
     allowedMimeTypes: string[];
     maxFilesInSingleResponse: number;
     filesNearSizeLimit: number;

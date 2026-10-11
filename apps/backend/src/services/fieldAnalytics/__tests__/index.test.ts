@@ -157,8 +157,8 @@ describe('getFieldAnalytics', () => {
   describe('FILE_UPLOAD_FIELD', () => {
     it('calculates extension distribution from R2 keys', async () => {
       vi.mocked(extractFieldValues).mockReturnValue([
-        { value: ['temp/uuid1/doc.pdf', 'temp/uuid2/photo.png'], submittedAt: new Date(), responseId: 'r1' },
-        { value: ['temp/uuid3/report.pdf'], submittedAt: new Date(), responseId: 'r2' },
+        { value: ['files/form-response/form-1/doc.pdf', 'files/form-response/form-1/photo.png'], submittedAt: new Date(), responseId: 'r1' },
+        { value: ['files/form-response/form-1/report.pdf'], submittedAt: new Date(), responseId: 'r2' },
         { value: [], submittedAt: new Date(), responseId: 'r3' },
       ] as any);
 
@@ -175,7 +175,7 @@ describe('getFieldAnalytics', () => {
 
     it('assigns "unknown" extension for keys without a dot', async () => {
       vi.mocked(extractFieldValues).mockReturnValue([
-        { value: ['temp/uuid1/nodot'], submittedAt: new Date(), responseId: 'r1' },
+        { value: ['files/form-response/form-1/nodot'], submittedAt: new Date(), responseId: 'r1' },
       ] as any);
 
       const result = await getFieldAnalytics('form-1', 'f1', FieldType.FILE_UPLOAD_FIELD, 'Upload');
@@ -191,9 +191,12 @@ describe('getFieldAnalytics', () => {
         { value: [ownKey, 'files/form-response/other-form/x.pdf'], submittedAt: new Date(), responseId: 'r1' },
       ] as any);
 
-      await getFieldAnalytics('form-1', 'f1', FieldType.FILE_UPLOAD_FIELD, 'Upload');
+      const result = await getFieldAnalytics('form-1', 'f1', FieldType.FILE_UPLOAD_FIELD, 'Upload');
 
       expect(loadFileRecords).toHaveBeenCalledWith('form-1', [ownKey]);
+      // Foreign keys are also left out of the counts and the recent uploads list
+      expect((result as any).totalFilesUploaded).toBe(1);
+      expect((result as any).recentFiles.map((f: any) => f.key)).toEqual([ownKey]);
     });
 
     it('returns zero counts when there are no file responses', async () => {

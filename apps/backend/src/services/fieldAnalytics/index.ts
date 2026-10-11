@@ -116,13 +116,17 @@ export const getFieldAnalytics = async (
       break;
 
     case FieldType.FILE_UPLOAD_FIELD: {
-      // Only keys under this form's own prefix are looked up in storage.
-      const keys = fieldResponses
-        .flatMap((r) => (Array.isArray(r.value) ? r.value : []))
-        .filter((key): key is string => isResponseFileKeyForForm(key, formId));
+      // Same rule as the Files view: keys outside this form's own prefix are ignored.
+      const formFileResponses = fieldResponses.map((r) => ({
+        ...r,
+        value: Array.isArray(r.value)
+          ? r.value.filter((key: unknown) => isResponseFileKeyForForm(key, formId))
+          : [],
+      }));
+      const keys = formFileResponses.flatMap((r) => r.value as string[]);
       const fileRecords = await loadFileRecords(formId, keys);
       result = processFileUploadFieldAnalytics(
-        fieldResponses,
+        formFileResponses,
         fieldId,
         fieldLabel,
         totalFormResponses,

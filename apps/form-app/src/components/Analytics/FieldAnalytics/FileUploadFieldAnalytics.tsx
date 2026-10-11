@@ -29,6 +29,7 @@ import { FileKindIcon } from '../../Responses/files/FileKindIcon';
 import { ResponseFilePreviewDialog } from '../../Responses/files/ResponseFilePreviewDialog';
 
 const MB = 1024 * 1024;
+const KB = 1024;
 const TREND_METRICS = ['files', 'storage'] as const;
 type TrendMetric = (typeof TREND_METRICS)[number];
 
@@ -223,6 +224,12 @@ export const FileUploadFieldAnalytics: React.FC<FileUploadFieldAnalyticsProps> =
     [data?.filesPerResponseDistribution, t]
   );
 
+  // Small daily totals would round to 0 MB, so plot in KB until a day reaches 1 MB.
+  const storageUnit = useMemo(
+    () => ((data?.uploadTrend ?? []).some((point) => point.bytes >= MB) ? MB : KB),
+    [data?.uploadTrend]
+  );
+
   const trendData = useMemo(
     () =>
       (data?.uploadTrend ?? []).map((point) => ({
@@ -231,9 +238,9 @@ export const FileUploadFieldAnalytics: React.FC<FileUploadFieldAnalyticsProps> =
           day: 'numeric',
           timeZone: 'UTC',
         }),
-        value: trendMetric === 'files' ? point.files : Number((point.bytes / MB).toFixed(2)),
+        value: trendMetric === 'files' ? point.files : Number((point.bytes / storageUnit).toFixed(2)),
       })),
-    [data?.uploadTrend, trendMetric, locale]
+    [data?.uploadTrend, trendMetric, locale, storageUnit]
   );
 
   if (loading) return <FieldAnalyticsLoader />;
@@ -393,7 +400,7 @@ export const FileUploadFieldAnalytics: React.FC<FileUploadFieldAnalyticsProps> =
             data={trendData}
             title={t('trend.title')}
             height={280}
-            yAxisLabel={trendMetric === 'files' ? t('trend.files') : t('trend.storage')}
+            yAxisLabel={trendMetric === 'files' ? t('trend.files') : t(storageUnit === MB ? 'trend.storageMb' : 'trend.storageKb')}
             showDots={trendData.length <= 31}
           />
         </div>

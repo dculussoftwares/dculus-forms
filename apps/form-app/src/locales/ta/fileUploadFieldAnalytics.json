@@ -54,7 +54,8 @@
   "trend": {
     "title": "பதிவேற்றப் போக்கு",
     "files": "கோப்புகள்",
-    "storage": "சேமிப்பு (MB)",
+    "storageMb": "சேமிப்பு (MB)",
+    "storageKb": "சேமிப்பு (KB)",
     "show": {
       "files": "கோப்புகள்",
       "storage": "சேமிப்பு"

@@ -5,7 +5,11 @@
  * FormFile records (see responseFileCatalog.loadFileRecords).
  */
 
-import { FieldType } from '@dculus/types';
+import {
+  FieldType,
+  FILE_UPLOAD_DEFAULT_MAX_FILES,
+  FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB,
+} from '@dculus/types';
 import { fileNameFromKey } from '../responseFiles/responseFileCatalog.js';
 import type { FileRecord } from '../responseFiles/responseFileCatalog.js';
 import {
@@ -182,10 +186,10 @@ export const processFileUploadFieldAnalytics = (
     .slice(0, RECENT_FILES_LIMIT)
     .map(toSummary);
 
-  const maxFileSizeMb = config.maxFileSizeMb ?? null;
-  const maxFiles = config.maxFiles ?? null;
+  const maxFileSizeMb = config.maxFileSizeMb || FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB;
+  const maxFiles = config.maxFiles || FILE_UPLOAD_DEFAULT_MAX_FILES;
   const allowedMimeTypes = config.allowedMimeTypes ?? [];
-  const maxBytes = maxFileSizeMb ? maxFileSizeMb * MB : null;
+  const maxBytes = maxFileSizeMb * MB;
 
   return {
     fieldId,
@@ -212,11 +216,12 @@ export const processFileUploadFieldAnalytics = (
       maxFileSizeMb,
       maxFiles,
       allowedMimeTypes,
-      maxFilesInSingleResponse: Math.max(0, ...filesPerResponse),
-      filesNearSizeLimit: maxBytes
-        ? sized.filter((file) => file.size >= maxBytes * NEAR_LIMIT_RATIO).length
-        : 0,
-      responsesAtFileLimit: maxFiles ? filesPerResponse.filter((count) => count >= maxFiles).length : 0,
+      maxFilesInSingleResponse: filesPerResponse.reduce((max, count) => Math.max(max, count), 0),
+      // Files above the limit predate a lowered limit, so they are not "near" it.
+      filesNearSizeLimit: sized.filter(
+        (file) => file.size >= maxBytes * NEAR_LIMIT_RATIO && file.size <= maxBytes
+      ).length,
+      responsesAtFileLimit: filesPerResponse.filter((count) => count >= maxFiles).length,
       filesOutsideAllowedTypes:
         allowedMimeTypes.length > 0
           ? files.filter((file) => file.mimeType && !matchesAllowedType(file.mimeType, allowedMimeTypes)).length

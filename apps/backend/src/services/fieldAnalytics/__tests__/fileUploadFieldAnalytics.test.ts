@@ -96,21 +96,29 @@ describe('processFileUploadFieldAnalytics', () => {
 
     expect(limits.maxFilesInSingleResponse).toBe(2);
     expect(limits.responsesAtFileLimit).toBe(1);
-    // 4.8MB is within 10% of the 5MB limit, and the 30MB zip is over it
-    expect(limits.filesNearSizeLimit).toBe(2);
+    // Only the 4.8MB file is within 10% of the 5MB limit; the 30MB zip is over it, not near it
+    expect(limits.filesNearSizeLimit).toBe(1);
     expect(limits.filesOutsideAllowedTypes).toBe(1);
   });
 
-  it('skips limit insights when the field has no limits', () => {
+  it('falls back to the limits respondents face when the field sets none', () => {
     const { limits } = run();
 
     expect(limits).toMatchObject({
-      maxFileSizeMb: null,
-      maxFiles: null,
-      filesNearSizeLimit: 0,
-      responsesAtFileLimit: 0,
+      maxFileSizeMb: 5,
+      maxFiles: 1,
+      filesNearSizeLimit: 1,
+      responsesAtFileLimit: 3,
       filesOutsideAllowedTypes: 0,
     });
+  });
+
+  it('handles a very large number of responses', () => {
+    const many = Array.from({ length: 200_000 }, (_, i) => response(`r${i}`, ['k/a.pdf'], '2026-01-01T10:00:00Z'));
+
+    const result = processFileUploadFieldAnalytics(many, 'f1', 'Upload', many.length, records);
+
+    expect(result.limits.maxFilesInSingleResponse).toBe(1);
   });
 
   it('excludes files without a recorded size from size statistics', () => {

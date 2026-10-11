@@ -1203,8 +1203,8 @@ export const typeDefs = gql`
   }
 
   type FileUploadLimitsInsight {
-    maxFileSizeMb: Float
-    maxFiles: Int
+    maxFileSizeMb: Float!
+    maxFiles: Int!
     allowedMimeTypes: [String!]!
     maxFilesInSingleResponse: Int!
     filesNearSizeLimit: Int!

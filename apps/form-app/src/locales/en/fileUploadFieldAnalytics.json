@@ -54,7 +54,8 @@
   "trend": {
     "title": "Upload Trend",
     "files": "Files",
-    "storage": "Storage (MB)",
+    "storageMb": "Storage (MB)",
+    "storageKb": "Storage (KB)",
     "show": {
       "files": "Files",
       "storage": "Storage"
