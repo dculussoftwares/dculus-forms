@@ -54,7 +54,20 @@ export const getFieldAnalytics = async (
     // adding a bespoke by-country analytics shape.
     case FieldType.TEXT_INPUT_FIELD:
     case FieldType.TEXT_AREA_FIELD:
+      result = {
+        ...processTextFieldAnalytics(
+          fieldResponses,
+          fieldId,
+          fieldLabel,
+          totalFormResponses
+        ),
+        fieldType,
+      } as FieldAnalytics;
+      break;
+
     case FieldType.PHONE_NUMBER_FIELD:
+      // Phone values use the text analytics shape so previews can display
+      // recent phone numbers without introducing a second analytics format.
       result = {
         ...processTextFieldAnalytics(
           fieldResponses,
