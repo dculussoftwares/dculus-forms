@@ -160,9 +160,13 @@ const Responses: React.FC = () => {
   const actualFormId = formId || id;
   const responsesState = useResponsesState({ formId: actualFormId });
 
+  // cache-and-network: the builder edits the form schema over Y.js and never writes it
+  // back to this Apollo cache entry, so a cache-first read would show the schema as it
+  // was when the builder first loaded (stale column headers after navigating here).
   const { data: formData, loading: formLoading, error: formError } = useQuery(GET_FORM_BY_ID, {
     variables: { id: actualFormId },
     skip: !actualFormId,
+    fetchPolicy: 'cache-and-network',
   });
 
   // Native Quiz (epic #289, Story 11): additive guarantee — quizEnabled stays
