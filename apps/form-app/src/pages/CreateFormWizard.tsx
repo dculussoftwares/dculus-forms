@@ -322,9 +322,11 @@ const CreateFormWizard: React.FC = () => {
   const [pexelsVideoLoading, setPexelsVideoLoading] = useState(false);
   const [pixabayVideoLoading, setPixabayVideoLoading] = useState(false);
   const [isCreatingForm, setIsCreatingForm] = useState(false);
+  const [mediaSearchInput, setMediaSearchInput] = useState('');
+  const [mediaSearchQuery, setMediaSearchQuery] = useState('');
   // Prevent duplicate image/video fetches across re-renders
-  const imageFetchedForTitle = useRef('');
-  const videoFetchedForTitle = useRef('');
+  const imageFetchedForKeyword = useRef('');
+  const videoFetchedForKeyword = useRef('');
 
   // Template step
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
@@ -353,48 +355,53 @@ const CreateFormWizard: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // Debounced so Pexels/Pixabay are not queried on every keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setMediaSearchQuery(mediaSearchInput.trim()), 500);
+    return () => clearTimeout(timer);
+  }, [mediaSearchInput]);
+
+  // Typed search wins; otherwise fall back to the keyword derived from the AI title.
+  const mediaKeyword = mediaSearchQuery || (aiSuggestedTitle ? extractSearchKeyword(aiSuggestedTitle) : '');
+
   // ── Image search for appearance step ─────────────────────────────────────
   useEffect(() => {
-    if (step !== 'appearance' || !aiSuggestedTitle) return;
-    if (imageFetchedForTitle.current === aiSuggestedTitle) return;
-    imageFetchedForTitle.current = aiSuggestedTitle;
-
-    const keyword = extractSearchKeyword(aiSuggestedTitle);
+    if (step !== 'appearance' || !mediaKeyword) return;
+    if (imageFetchedForKeyword.current === mediaKeyword) return;
+    imageFetchedForKeyword.current = mediaKeyword;
 
     setPexelsLoading(true);
-    searchPexelsImages(keyword, 1, 9)
+    searchPexelsImages(mediaKeyword, 1, 9)
       .then(res => setPexelsImages(res.photos ?? []))
       .catch(() => setPexelsImages([]))
       .finally(() => setPexelsLoading(false));
 
     setPixabayLoading(true);
-    searchPixabayImages(keyword, 1, 9)
+    searchPixabayImages(mediaKeyword, 1, 9)
       .then(res => setPixabayImages(res.hits ?? []))
       .catch(() => setPixabayImages([]))
       .finally(() => setPixabayLoading(false));
-  }, [step, aiSuggestedTitle]);
+  }, [step, mediaKeyword]);
 
   // Video search is fetched lazily — only once the user switches to the Videos
   // tab — so we don't burn Pexels/Pixabay video quota on every wizard run.
   useEffect(() => {
-    if (step !== 'appearance' || !aiSuggestedTitle || mediaType !== 'video') return;
-    if (videoFetchedForTitle.current === aiSuggestedTitle) return;
-    videoFetchedForTitle.current = aiSuggestedTitle;
-
-    const keyword = extractSearchKeyword(aiSuggestedTitle);
+    if (step !== 'appearance' || !mediaKeyword || mediaType !== 'video') return;
+    if (videoFetchedForKeyword.current === mediaKeyword) return;
+    videoFetchedForKeyword.current = mediaKeyword;
 
     setPexelsVideoLoading(true);
-    searchPexelsVideos(keyword, 1, 9)
+    searchPexelsVideos(mediaKeyword, 1, 9)
       .then(res => setPexelsVideos(res.videos ?? []))
       .catch(() => setPexelsVideos([]))
       .finally(() => setPexelsVideoLoading(false));
 
     setPixabayVideoLoading(true);
-    searchPixabayVideos(keyword, 1, 9)
+    searchPixabayVideos(mediaKeyword, 1, 9)
       .then(res => setPixabayVideos(res.hits ?? []))
       .catch(() => setPixabayVideos([]))
       .finally(() => setPixabayVideoLoading(false));
-  }, [step, aiSuggestedTitle, mediaType]);
+  }, [step, mediaKeyword, mediaType]);
 
   // ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -997,6 +1004,19 @@ const CreateFormWizard: React.FC = () => {
                     {t('appearance.mediaLabel')}
                   </h2>
                   <span className="text-xs text-muted-foreground">{t('appearance.optional')}</span>
+                </div>
+
+                {/* Free-text media search */}
+                <div className="relative mb-3">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    type="search"
+                    placeholder={t('appearance.searchPlaceholder')}
+                    aria-label={t('appearance.searchPlaceholder')}
+                    value={mediaSearchInput}
+                    onChange={e => setMediaSearchInput(e.target.value)}
+                    className="pl-9 h-9"
+                  />
                 </div>
 
                 {/* Media type toggle */}

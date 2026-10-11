@@ -97,6 +97,7 @@
     "optional": "Optional",
     "noImages": "No images found for this topic",
     "noVideos": "No videos found for this topic",
+    "searchPlaceholder": "Search photos and videos…",
     "imageSelected": "Image selected",
     "videoSelected": "Video selected",
     "videoAlt": "Pexels video {{id}}",
