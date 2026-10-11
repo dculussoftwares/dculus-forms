@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createPluginContext } from '../context.js';
 import { prisma } from '../../../lib/prisma.js';
 import { getFormById } from '../../../services/formService.js';
+import { getFormSchemaFromHocuspocus } from '../../../services/hocuspocus.js';
 import { getResponseById, getAllResponsesByFormId } from '../../../services/responseService.js';
 import { sendEmail } from '../../../services/emailService.js';
 import { logger } from '../../../lib/logger.js';
@@ -19,6 +20,10 @@ vi.mock('../../../lib/prisma.js', () => ({
 
 vi.mock('../../../services/formService.js', () => ({
   getFormById: vi.fn(),
+}));
+
+vi.mock('../../../services/hocuspocus.js', () => ({
+  getFormSchemaFromHocuspocus: vi.fn(),
 }));
 
 vi.mock('../../../services/responseService.js', () => ({
@@ -68,8 +73,36 @@ describe('context', () => {
     it('includes form service function', () => {
       const context = createPluginContext();
 
-      expect(context.getFormById).toBe(getFormById);
       expect(typeof context.getFormById).toBe('function');
+    });
+
+    it('returns the live (collaborative) schema instead of the stale stored one', async () => {
+      const live = { pages: [{ id: 'p1', fields: [{ id: 'new-field' }] }] };
+      vi.mocked(getFormById).mockResolvedValue({ id: 'form-1', formSchema: { pages: [] } } as any);
+      vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce(live);
+
+      const form = await createPluginContext().getFormById('form-1');
+
+      expect(getFormSchemaFromHocuspocus).toHaveBeenCalledWith('form-1');
+      expect(form?.formSchema).toBe(live);
+    });
+
+    it('falls back to the stored schema when there is no live document or reading it fails', async () => {
+      const stored = { pages: [] };
+      vi.mocked(getFormById).mockResolvedValue({ id: 'form-1', formSchema: stored } as any);
+
+      vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce(null);
+      expect((await createPluginContext().getFormById('form-1'))?.formSchema).toBe(stored);
+
+      vi.mocked(getFormSchemaFromHocuspocus).mockRejectedValueOnce(new Error('y.js down'));
+      expect((await createPluginContext().getFormById('form-1'))?.formSchema).toBe(stored);
+    });
+
+    it('returns null for an unknown form without reading the live schema', async () => {
+      vi.mocked(getFormById).mockResolvedValue(null);
+
+      expect(await createPluginContext().getFormById('missing')).toBeNull();
+      expect(getFormSchemaFromHocuspocus).not.toHaveBeenCalled();
     });
 
     it('includes response service functions', () => {

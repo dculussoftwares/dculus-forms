@@ -48,7 +48,7 @@ describe('Microsoft Sheets Handler', () => {
       },
       workbookId: 'workbook-1',
       workbookUrl: 'https://onedrive.example.com/workbook-1',
-      sheetColumns: [...FIXED_COLUMNS],
+      sheetColumns: [{ id: 'name', label: 'name' }, ...FIXED_COLUMNS],
     };
 
     vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
@@ -508,6 +508,23 @@ describe('Microsoft Sheets Handler', () => {
 
       expect(headerValues()).toEqual(['Name', 'Old (deleted)', 'Submitted At', 'Response ID']);
       expect(rowValues()).toEqual(['Ada', 'legacy', '2026-01-01T00:00:00.000Z', 'response-1']);
+    });
+
+    it('gives answers for fields the schema no longer has at all a column at the right end', async () => {
+      config.sheetColumns = [{ id: 'name', label: 'Name' }, ...FIXED_COLUMNS];
+      vi.mocked(deserializeFormSchema).mockReturnValue({
+        pages: [{ fields: [{ id: 'name', label: 'Name', type: 'text_input_field' }] }],
+      } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({
+        id: 'response-1',
+        data: { name: 'Ada', oldField: 'legacy answer' },
+        submittedAt: new Date('2026-01-01T00:00:00.000Z'),
+      } as any);
+
+      await microsoftSheetsHandler({ id: 'plugin-1', config }, event, mockContext);
+
+      expect(headerValues()).toEqual(['Name', 'Submitted At', 'Response ID', 'Field oldField (deleted)']);
+      expect(rowValues()).toEqual(['Ada', expect.any(String), 'response-1', 'legacy answer']);
     });
 
     it('does not touch the header when the layout is already current', async () => {

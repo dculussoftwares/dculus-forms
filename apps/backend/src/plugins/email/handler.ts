@@ -6,6 +6,7 @@ import type { EmailAttachment } from '../../services/emailService.js';
 import { resolveResponsePdfAttachment } from '../../services/pdfTemplateService.js';
 import { checkUsageExceeded, getRemainingEmailQuota } from '../../subscriptions/usageService.js';
 import { emitEmailSent } from '../../subscriptions/events.js';
+import { buildFieldColumns, collectAnsweredIds, collectSchemaFields } from '../core/sheetColumns.js';
 
 /** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
 interface DigestResponseEntry {
@@ -76,16 +77,14 @@ function buildDigestResponseTable(
   const responses = allResponses.slice(0, EMAIL_DIGEST_TABLE_ROW_CAP);
   const omitted = allResponses.length - responses.length;
 
-  const fieldEntries: Array<{ id: string; label: string }> = [];
-  if (formSchema?.pages) {
-    for (const page of formSchema.pages) {
-      for (const field of page.fields ?? []) {
-        if (field instanceof FillableFormField && field.label) {
-          fieldEntries.push({ id: field.id, label: field.label });
-        }
-      }
-    }
-  }
+  const answeredIds = collectAnsweredIds(responses.map((r) => r.data ?? {}));
+  // Answers for fields the schema no longer has still get a column (marked deleted), at the right end.
+  const fieldEntries = buildFieldColumns(
+    collectSchemaFields(formSchema, [], answeredIds).filter(
+      (f) => !f.field || (f.field instanceof FillableFormField && !!f.field.label)
+    ),
+    answeredIds
+  );
 
   // Fallback key order is fixed ONCE — as the union of keys across EVERY response in this batch,
   // not just the first — and reused for every row below. Object.keys/Object.values on each row's

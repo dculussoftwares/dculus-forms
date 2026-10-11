@@ -371,9 +371,9 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     const form = await context.getFormById(event.formId);
     const formSchema = form?.formSchema ? deserializeFormSchema(form.formSchema) : null;
 
-    const schemaFields = collectSchemaFields(formSchema, fallbackKeys);
-    const fieldsById = new Map(schemaFields.map((f) => [f.id, f.field]));
     const answeredIds = collectAnsweredIds(batchResponseData);
+    const schemaFields = collectSchemaFields(formSchema, fallbackKeys, answeredIds);
+    const fieldsById = new Map(schemaFields.map((f) => [f.id, f.field]));
     // Settled before any row is built: rows are laid out strictly by this list.
     let columns: SheetColumn[] = config.sheetColumns ?? [];
 

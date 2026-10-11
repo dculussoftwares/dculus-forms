@@ -47,7 +47,7 @@ describe('Google Sheets Handler', () => {
       },
       spreadsheetId: 'sheet-1',
       spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/sheet-1',
-      sheetColumns: [...FIXED_COLUMNS],
+      sheetColumns: [{ id: 'name', label: 'name' }, ...FIXED_COLUMNS],
     };
 
     vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
@@ -499,6 +499,28 @@ describe('Google Sheets Handler', () => {
 
       expect(bodyOf(isHeaderWrite)[0]).toEqual(['Name', 'Old (deleted)', 'Submitted At', 'Response ID']);
       expect(bodyOf((url) => isAppend(url))[0]).toEqual(['Ada', 'legacy', '2026-01-01T00:00:00.000Z', 'response-1']);
+    });
+
+    it('gives answers for fields the schema no longer has at all a column at the right end', async () => {
+      config.sheetColumns = [{ id: 'name', label: 'Name' }, ...FIXED_COLUMNS];
+      vi.mocked(deserializeFormSchema).mockReturnValue({
+        pages: [{ fields: [{ id: 'name', label: 'Name', type: 'text_input_field' }] }],
+      } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({
+        id: 'response-1',
+        data: { name: 'Ada', oldField: 'legacy answer' },
+        submittedAt: new Date('2026-01-01T00:00:00.000Z'),
+      } as any);
+
+      await googleSheetsHandler({ id: 'plugin-1', config }, event, mockContext);
+
+      expect(bodyOf(isHeaderWrite)[0]).toEqual(['Name', 'Submitted At', 'Response ID', 'Field oldField (deleted)']);
+      expect(bodyOf((url) => isAppend(url))[0]).toEqual([
+        'Ada',
+        expect.any(String),
+        'response-1',
+        'legacy answer',
+      ]);
     });
 
     it('adds a column for a deleted field only when a response answered it', async () => {

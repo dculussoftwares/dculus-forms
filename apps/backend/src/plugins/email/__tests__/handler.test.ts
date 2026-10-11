@@ -415,6 +415,46 @@ describe('Email Handler', () => {
       );
     });
 
+    it('adds a column for answers whose field is no longer in the schema, after the current fields', async () => {
+      const { TextInputField, TextFieldValidation } = await vi.importActual<typeof import('@dculus/types')>(
+        '@dculus/types'
+      );
+
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'admin@example.com',
+        subject: 'Weekly digest',
+        message: '<p>New responses below.</p>',
+        includeDigestTable: true,
+      };
+
+      const nameField = new TextInputField('field-name', 'Full Name', '', '', '', '', new TextFieldValidation(false));
+
+      const scheduleEvent: PluginEvent = {
+        type: 'schedule',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2026-01-01T09:00:00Z'),
+        data: {
+          __digestResponses: [
+            { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { 'old-field': 'Legacy answer' } },
+          ],
+        },
+      };
+
+      const mockForm = { id: 'form-123', formSchema: { pages: [{ fields: [nameField] }] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [nameField] }] } as any);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      await emailHandler({ id: 'test-plugin', config }, scheduleEvent, mockContext);
+
+      const sentHtml = vi.mocked(mockContext.sendEmail).mock.calls[0][0].html;
+      expect(sentHtml).toContain('Field old-field (deleted)');
+      expect(sentHtml).toContain('Legacy answer');
+      expect(sentHtml.indexOf('Full Name')).toBeLessThan(sentHtml.indexOf('Field old-field (deleted)'));
+    });
+
     it('caps the email table at 100 rows and adds a truncation note, independent of the digest node\'s own (up to 1000) cap', async () => {
       const config: ValidatedEmailConfig = {
         type: 'email',

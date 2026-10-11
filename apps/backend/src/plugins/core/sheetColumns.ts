@@ -32,6 +32,9 @@ export interface SchemaFieldInfo {
 const columnLabel = (field: SchemaFieldInfo): string =>
   field.deleted ? `${field.label} (deleted)` : field.label;
 
+/** Event keys that are not answers. */
+const RESERVED_DATA_KEYS = new Set(['responseId', 'submittedAt']);
+
 const hasValue = (value: unknown): boolean =>
   value !== null &&
   value !== undefined &&
@@ -48,19 +51,25 @@ export const collectAnsweredIds = (responses: Record<string, unknown>[]): Set<st
   return ids;
 };
 
-/** Every answerable field in schema order, soft-deleted ones included and flagged. */
+/**
+ * Every answerable field in schema order, soft-deleted ones included and flagged. Answered ids the
+ * schema no longer knows at all (fields removed outright, e.g. when a form was rebuilt) are
+ * appended as flagged-deleted fields, so their answers still get a column — same rule as the
+ * Excel/CSV export. A form with no fields yet falls back to the keys present in the responses.
+ */
 export const collectSchemaFields = (
   formSchema: Pick<FormSchema, 'pages'> | null,
-  fallbackKeys: string[]
+  fallbackKeys: string[],
+  answeredIds: Set<string> = new Set()
 ): SchemaFieldInfo[] => {
-  if (!formSchema?.pages) {
-    return fallbackKeys.map((key) => ({ id: key, label: key, deleted: false }));
-  }
-
   const fields: SchemaFieldInfo[] = [];
-  for (const page of formSchema.pages) {
+  const knownIds = new Set<string>();
+
+  for (const page of formSchema?.pages ?? []) {
     for (const field of page.fields ?? []) {
-      if (!field?.id || isLayoutField(field)) continue;
+      if (!field?.id) continue;
+      knownIds.add(field.id);
+      if (isLayoutField(field)) continue;
       fields.push({
         id: field.id,
         label: (field as { label?: string }).label ?? field.id,
@@ -69,6 +78,18 @@ export const collectSchemaFields = (
       });
     }
   }
+
+  if (knownIds.size === 0) {
+    return fallbackKeys.map((key) => ({ id: key, label: key, deleted: false }));
+  }
+
+  const orphanIds = [...answeredIds]
+    .filter((id) => !knownIds.has(id) && !RESERVED_DATA_KEYS.has(id))
+    .sort();
+  for (const id of orphanIds) {
+    fields.push({ id, label: `Field ${id}`, deleted: true });
+  }
+
   return fields;
 };
 
@@ -76,6 +97,19 @@ const fixedColumns = (): [SheetColumn, SheetColumn] => [
   { id: SUBMITTED_AT_COLUMN_ID, label: SUBMITTED_AT_LABEL },
   { id: RESPONSE_ID_COLUMN_ID, label: RESPONSE_ID_LABEL },
 ];
+
+/**
+ * Field-only columns for a one-off table (no persisted layout, e.g. an email digest): active
+ * fields in schema order, then deleted/unknown fields that have answers.
+ */
+export const buildFieldColumns = (
+  fields: SchemaFieldInfo[],
+  answeredIds: Set<string>
+): SheetColumn[] =>
+  [
+    ...fields.filter((f) => !f.deleted),
+    ...fields.filter((f) => f.deleted && answeredIds.has(f.id)),
+  ].map((f) => ({ id: f.id, label: columnLabel(f) }));
 
 /**
  * Layout for a brand-new sheet: active fields, the two fixed columns, then soft-deleted fields

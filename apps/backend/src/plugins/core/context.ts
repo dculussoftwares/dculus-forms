@@ -1,6 +1,7 @@
 import type { PrismaClient } from '#prisma-client';
 import { prisma } from '../../lib/prisma.js';
 import { getFormById } from '../../services/formService.js';
+import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 import {
   getResponseById,
   getAllResponsesByFormId,
@@ -53,6 +54,24 @@ export interface PluginContext {
   };
 }
 
+/**
+ * The builder edits fields in the collaborative (Y.js) document, and `Form.formSchema` in the DB
+ * lags behind it — sometimes entirely. A plugin reading the stored column therefore sees fields
+ * that were since deleted and misses the ones added after, so every handler gets the live schema.
+ */
+const getFormWithLiveSchema: typeof getFormById = async (id) => {
+  const form = await getFormById(id);
+  if (!form) return form;
+
+  try {
+    const liveSchema = await getFormSchemaFromHocuspocus(id);
+    if (liveSchema) return { ...form, formSchema: liveSchema };
+  } catch (error) {
+    logger.warn(`[Plugin Warning] Live schema unavailable for form ${id}, using stored schema`, error);
+  }
+  return form;
+};
+
 export const createPluginContext = (
   updatePluginConfig: (config: PluginConfig) => Promise<void> = async () => {
     throw new Error(
@@ -62,7 +81,7 @@ export const createPluginContext = (
   idempotencyKey?: string
 ): PluginContext => ({
   prisma,
-  getFormById,
+  getFormById: getFormWithLiveSchema,
   getResponseById,
   getResponsesByFormId: getAllResponsesByFormId,
 
