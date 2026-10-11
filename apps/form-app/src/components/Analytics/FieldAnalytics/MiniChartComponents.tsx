@@ -174,6 +174,20 @@ export const MiniPieChart: React.FC<{ data: Array<{ name: string; value: number 
 };
 
 /**
+ * Mini Recent Values Component
+ * Lists the latest raw answers, for fields where counts or charts say little (e.g. phone numbers)
+ */
+export const MiniRecentList: React.FC<{ values: string[] }> = ({ values }) => (
+  <ul className="h-full w-full flex flex-col justify-center gap-1.5 p-4">
+    {values.map((value, index) => (
+      <li key={`${value}-${index}`} className="text-sm font-mono text-foreground truncate" title={value}>
+        {value}
+      </li>
+    ))}
+  </ul>
+);
+
+/**
  * Mini Preview Chart Router
  * Determines which chart type to show based on field type and available data
  */
@@ -257,6 +271,27 @@ export const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ fiel
         }
         break;
 
+      case 'phone_number_field':
+        if (field.textAnalytics?.recentResponses && field.textAnalytics.recentResponses.length > 0) {
+          return {
+            type: 'list' as const,
+            data: field.textAnalytics.recentResponses.slice(0, 4).map(item => item.value)
+          };
+        }
+        break;
+
+      case 'file_upload_field':
+        if (field.fileUploadAnalytics?.extensionDistribution && field.fileUploadAnalytics.extensionDistribution.length > 0) {
+          return {
+            type: 'bar' as const,
+            data: field.fileUploadAnalytics.extensionDistribution.slice(0, 5).map(item => ({
+              name: `.${item.extension}`,
+              value: item.count
+            }))
+          };
+        }
+        break;
+
       default:
         return null;
     }
@@ -279,6 +314,8 @@ export const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ fiel
       return <MiniBarChart data={previewData.data as Array<{ name: string; value: number }>} />;
     case 'pie':
       return <MiniPieChart data={previewData.data as Array<{ name: string; value: number }>} />;
+    case 'list':
+      return <MiniRecentList values={previewData.data as string[]} />;
     default:
       return null;
   }
