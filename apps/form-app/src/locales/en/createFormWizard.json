@@ -1,6 +1,11 @@
 {
   "back": "Back",
   "choice": {
+    "blank": {
+      "title": "Blank form",
+      "description": "Start from scratch and add your own fields",
+      "defaultTitle": "Untitled form"
+    },
     "heading": "How do you want to start?",
     "subheading": "Build something great",
     "ai": {

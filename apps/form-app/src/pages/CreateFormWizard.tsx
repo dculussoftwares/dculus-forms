@@ -59,7 +59,10 @@ import { GradientSparkles } from '../components/form-builder/GradientSparkles.js
 type Step = 'choice' | 'ai' | 'appearance' | 'template' | 'quiz';
 type AIMode = 'quick' | 'standard' | 'professional';
 type PageMode = 'single' | 'multi';
-type CreationSource = 'ai' | 'quiz';
+type CreationSource = 'ai' | 'quiz' | 'blank';
+
+// Where "Back" from the appearance step returns to, per creation source.
+const APPEARANCE_BACK_STEP: Record<CreationSource, Step> = { ai: 'ai', quiz: 'quiz', blank: 'choice' };
 type QuizStartMode = 'blank' | 'ai';
 
 interface AIField {
@@ -483,6 +486,15 @@ const CreateFormWizard: React.FC = () => {
     }
   }, [quizTitle, quizPassThreshold, quizStartMode, quizPrompt, aiMode, organizationId, generateForm, t, tErr]);
 
+  const handleStartBlank = useCallback(() => {
+    setAiGeneratedFields([]);
+    setAiSuggestedTitle(t('choice.blank.defaultTitle'));
+    setAiGeneratedLayout(null);
+    setSelectedMedia(null);
+    setCreationSource('blank');
+    setStep('appearance');
+  }, [t]);
+
   const handleCreateFormWithAppearance = useCallback(async () => {
     setIsCreatingForm(true);
 
@@ -584,7 +596,7 @@ const CreateFormWizard: React.FC = () => {
     if (step === 'choice') {
       navigate('/forms');
     } else if (step === 'appearance') {
-      setStep(creationSource === 'quiz' ? 'quiz' : 'ai');
+      setStep(APPEARANCE_BACK_STEP[creationSource]);
     } else {
       setStep('choice');
     }
@@ -655,7 +667,7 @@ const CreateFormWizard: React.FC = () => {
               </h1>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {/* AI Card — highlighted, blue (matches AI accent used across the app) */}
               <button
                 type="button"
@@ -711,6 +723,23 @@ const CreateFormWizard: React.FC = () => {
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {t('choice.quiz.description')}
+                </p>
+              </button>
+
+              {/* Blank Card — neutral, starts with an empty form */}
+              <button
+                type="button"
+                onClick={handleStartBlank}
+                className="relative group text-left p-7 rounded-2xl border-2 border-border bg-card hover:border-primary/40 hover:bg-muted/50 transition-all hover:shadow-lg hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <div className="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-xl bg-muted">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">
+                  {t('choice.blank.title')}
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t('choice.blank.description')}
                 </p>
               </button>
             </div>
