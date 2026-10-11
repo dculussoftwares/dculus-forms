@@ -79,6 +79,13 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
   const metricLabel =
     dataMode === 'submissions' ? t('submissions') : t('views');
 
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({});
+  const isSectionExpanded = (key: string) => Boolean(expandedSections[key]);
+  const toggleSection = (key: string) =>
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
+
   const sections: Array<{
     key: string;
     title: string;
@@ -129,7 +136,10 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
               <p className="text-sm text-muted-foreground">{t('breakdown.empty')}</p>
             ) : (
               <div className="space-y-3">
-                {section.data.slice(0, 5).map((entry, index) => {
+                {(isSectionExpanded(section.key)
+                  ? section.data
+                  : section.data.slice(0, 5)
+                ).map((entry, index) => {
                   const meta = section.formatMeta
                     ? section.formatMeta(entry)
                     : undefined;
@@ -158,11 +168,18 @@ const GeographicBreakdown: React.FC<GeographicBreakdownProps> = ({
                   );
                 })}
                 {section.data.length > 5 && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    {t('breakdown.more', {
-                      values: { count: section.data.length - 5 },
-                    })}
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.key)}
+                    aria-expanded={isSectionExpanded(section.key)}
+                    className="w-full text-xs text-muted-foreground hover:text-primary text-center"
+                  >
+                    {isSectionExpanded(section.key)
+                      ? t('showLess')
+                      : t('breakdown.more', {
+                          values: { count: section.data.length - 5 },
+                        })}
+                  </button>
                 )}
               </div>
             )}
@@ -219,6 +236,7 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
   const { t } = useTranslation('geographicChart');
   const [viewType, setViewType] = useState<ViewType>('map');
   const [dataMode, setDataMode] = useState<DataMode>('views');
+  const [showAllChartCountries, setShowAllChartCountries] = useState(false);
   // Get current data based on mode
   const currentData = dataMode === 'submissions' ? submissionData : data;
   const currentRegions =
@@ -424,7 +442,10 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
 
           {/* Countries List */}
           <div className="mt-4 space-y-2">
-            {currentData.slice(0, 5).map((country, index) => (
+            {(showAllChartCountries
+              ? currentData
+              : currentData.slice(0, 5)
+            ).map((country, index) => (
               <div
                 key={country.code || country.name}
                 className="flex items-center justify-between py-1"
@@ -449,9 +470,18 @@ export const GeographicChart: React.FC<GeographicChartProps> = ({
 
             {currentData.length > 5 && (
               <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground text-center">
-                  +{currentData.length - 5} more countries
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowAllChartCountries((prev) => !prev)}
+                  aria-expanded={showAllChartCountries}
+                  className="w-full text-xs text-muted-foreground hover:text-primary text-center"
+                >
+                  {showAllChartCountries
+                    ? t('showLess')
+                    : t('moreCountries', {
+                        values: { count: currentData.length - 5 },
+                      })}
+                </button>
               </div>
             )}
           </div>

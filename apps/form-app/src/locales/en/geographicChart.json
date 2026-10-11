@@ -14,5 +14,7 @@
     "cities": "City Breakdown",
     "empty": "Data will appear once we have enough sessions for this location.",
     "more": "+{{count}} more locations"
-  }
+  },
+  "showLess": "Show less",
+  "moreCountries": "+{{count}} more countries"
 }

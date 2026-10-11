@@ -21,5 +21,6 @@
   "countryBreakdown": "Country Breakdown",
   "totalLabel": "{{count}} total",
   "ofTotal": "of total",
-  "showMoreCountries": "Show {{count}} more countries"
+  "showMoreCountries": "Show {{count}} more countries",
+  "showLessCountries": "Show less"
 }

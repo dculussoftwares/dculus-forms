@@ -21,5 +21,6 @@
   "countryBreakdown": "நாடு முறிவு",
   "totalLabel": "{{count}} மொத்தம்",
   "ofTotal": "மொத்தம்",
-  "showMoreCountries": "மேலும் {{count}} நாடுகளைக் காட்டு"
+  "showMoreCountries": "மேலும் {{count}} நாடுகளைக் காட்டு",
+  "showLessCountries": "குறைவாகக் காட்டு"
 }

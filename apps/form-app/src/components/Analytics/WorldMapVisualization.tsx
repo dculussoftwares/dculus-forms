@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import WorldMap, { type ISOCode } from 'react-svg-worldmap';
 import {
   Card,
@@ -47,6 +47,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
   headerActions = null,
 }) => {
   const { t } = useTranslation('worldMapVisualization');
+  const [showAllCountries, setShowAllCountries] = useState(false);
 
   // Get current data based on mode
   const currentData = dataMode === 'submissions' ? submissionData : data;
@@ -160,7 +161,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
       <CardContent>
         {/* World Map */}
         <div className="relative mb-6 bg-gradient-to-br from-blue-50 to-slate-50 rounded-lg border p-4">
-          <div className="w-full h-80 flex items-center justify-center">
+          <div className="w-full h-80 flex items-center justify-center [&_figure]:mx-auto [&_figure]:w-fit">
             <WorldMap
               color={dataMode === 'submissions' ? '#D97706' : '#7C3AAE'}
               title=""
@@ -282,7 +283,7 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           </div>
 
           <div className="space-y-3">
-            {currentData.slice(0, 5).map((country, index) => {
+            {(showAllCountries ? currentData : currentData.slice(0, 5)).map((country, index) => {
               const intensity = Math.max(0.2, country.count / maxValue);
               const isTopCountry = index === 0;
 
@@ -367,13 +368,18 @@ export const WorldMapVisualization: React.FC<WorldMapVisualizationProps> = ({
           {currentData.length > 5 && (
             <div className="pt-4 mt-4 border-t border-[var(--tf-border-medium)]">
               <Button
+                type="button"
                 variant="ghost"
+                onClick={() => setShowAllCountries((prev) => !prev)}
+                aria-expanded={showAllCountries}
                 className="w-full text-sm hover:text-[#7C3AAE] flex items-center justify-center gap-1"
               >
                 <span>
-                  {t('showMoreCountries', {
-                    values: { count: currentData.length - 5 },
-                  })}
+                  {showAllCountries
+                    ? t('showLessCountries')
+                    : t('showMoreCountries', {
+                        values: { count: currentData.length - 5 },
+                      })}
                 </span>
                 <TrendingUp className="h-3 w-3" />
               </Button>
