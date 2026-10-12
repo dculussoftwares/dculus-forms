@@ -555,7 +555,7 @@ const Responses: React.FC = () => {
     }
 
     const swapWithPrimary = (targetId: string) => {
-      const ids = orderedColumns.filter((c) => c.enableHiding !== false).map((c) => c.id!);
+      const ids = orderedColumns.filter((c) => c.id && c.enableHiding !== false).map((c) => c.id!);
       const from = ids.indexOf(primary.id!);
       const to = ids.indexOf(targetId);
       if (from === -1 || to === -1) return;
