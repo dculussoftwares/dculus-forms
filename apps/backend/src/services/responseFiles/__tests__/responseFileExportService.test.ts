@@ -196,10 +196,10 @@ describe('runResponseFileExport', () => {
 
     const zip = await JSZip.loadAsync(archive!);
     expect(Object.keys(zip.files).filter((name) => !zip.files[name].dir).sort()).toEqual([
-      `${root}/01 Resume/2026-10-08 111111 - cv.pdf`,
+      `${root}/01 Resume/2026-10-08 resp_aaaaaaaa11111111 - cv.pdf`,
       `${root}/manifest.csv`,
     ]);
-    expect(await zip.file(`${root}/01 Resume/2026-10-08 111111 - cv.pdf`)!.async('string')).toBe('%PDF-1.7 hello');
+    expect(await zip.file(`${root}/01 Resume/2026-10-08 resp_aaaaaaaa11111111 - cv.pdf`)!.async('string')).toBe('%PDF-1.7 hello');
     const manifest = await zip.file(`${root}/manifest.csv`)!.async('string');
     expect(manifest).toContain('cv.pdf,included');
     expect(manifest).toContain('gone.pdf,missing');
