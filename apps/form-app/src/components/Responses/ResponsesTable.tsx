@@ -47,6 +47,9 @@ interface ResponsesTableProps {
   columnSizing?: ColumnSizingState;
   onColumnSizingChange?: OnChangeFn<ColumnSizingState>;
 
+  // Columns frozen to the left while scrolling horizontally
+  stickyColumnIds?: string[];
+
   // Handlers
   onRowClick?: (row: FormResponse) => void;
 
@@ -74,6 +77,7 @@ export const ResponsesTable: React.FC<ResponsesTableProps> = ({
   density,
   columnSizing,
   onColumnSizingChange,
+  stickyColumnIds,
   onRowClick,
   t,
 }) => {
@@ -132,6 +136,7 @@ export const ResponsesTable: React.FC<ResponsesTableProps> = ({
         density={density}
         columnSizing={columnSizing}
         onColumnSizingChange={onColumnSizingChange}
+        stickyColumnIds={stickyColumnIds}
       />
     </div>
   );

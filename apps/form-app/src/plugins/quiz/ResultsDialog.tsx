@@ -57,7 +57,7 @@ export const QuizResultsDialog: React.FC<QuizResultsDialogProps> = ({
             <div>
               <DialogTitle>{t('title')}</DialogTitle>
               <DialogDescription>
-                {responseId && `${t('response')} ${responseId.slice(-6)} • `}
+                {responseId && `${t('response')} ${responseId} • `}
                 {t('graded')} {new Date(metadata.gradedAt).toLocaleDateString()}
               </DialogDescription>
             </div>

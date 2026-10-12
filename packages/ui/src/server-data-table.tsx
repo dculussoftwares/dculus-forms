@@ -48,6 +48,8 @@ interface ServerDataTableProps<TData, TValue> {
   // Controlled column sizing (optional — falls back to internal state for persistence)
   columnSizing?: ColumnSizingState
   onColumnSizingChange?: OnChangeFn<ColumnSizingState>
+  // Leading columns frozen to the left edge while scrolling horizontally, in display order
+  stickyColumnIds?: string[]
 }
 
 export function ServerDataTable<TData, TValue>({
@@ -77,6 +79,7 @@ export function ServerDataTable<TData, TValue>({
   density = 'default',
   columnSizing: controlledColumnSizing,
   onColumnSizingChange,
+  stickyColumnIds,
 }: ServerDataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -151,6 +154,17 @@ export function ServerDataTable<TData, TValue>({
     manualFiltering: true,
   })
 
+  // Left offset of each sticky column = total width of the sticky columns before it
+  const stickyOffsets = new Map<string, number>()
+  let stickyLeft = 0
+  for (const column of table.getVisibleLeafColumns()) {
+    if (!stickyColumnIds?.includes(column.id)) continue
+    stickyOffsets.set(column.id, stickyLeft)
+    stickyLeft += column.getSize()
+  }
+  const lastStickyId = [...stickyOffsets.keys()].pop()
+  const stickyShadow = '2px 0 4px -2px rgba(86, 82, 90, 0.18)'
+
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Table Container - Only this part scrolls horizontally */}
@@ -172,6 +186,7 @@ export function ServerDataTable<TData, TValue>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
+                    const stickyOffset = stickyOffsets.get(header.column.id)
                     return (
                       <th
                         key={header.id}
@@ -183,8 +198,13 @@ export function ServerDataTable<TData, TValue>({
                           fontSize: '14px',
                           fontWeight: 700,
                           color: '#3c323e',
-                          boxShadow: 'rgba(86, 82, 90, 0.08) 0px -1px 0px 0px inset',
+                          boxShadow: header.column.id === lastStickyId
+                            ? `${stickyShadow}, rgba(86, 82, 90, 0.08) 0px -1px 0px 0px inset`
+                            : 'rgba(86, 82, 90, 0.08) 0px -1px 0px 0px inset',
                           borderRight: '1px solid rgba(86, 82, 90, 0.08)',
+                          ...(stickyOffset !== undefined
+                            ? { position: 'sticky' as const, left: stickyOffset, zIndex: 30 }
+                            : {}),
                         }}
                       >
                         <div className="flex items-center justify-between h-full">
@@ -250,28 +270,44 @@ export function ServerDataTable<TData, TValue>({
                     )}
                     onClick={() => !loading && onRowClick?.(row.original)}
                   >
-                    {row.getVisibleCells().map((cell) => (
-                      <td
-                        key={cell.id}
-                        className="align-middle [&:has([role=checkbox])]:pr-0"
-                        style={{
-                          width: cell.column.getSize(),
-                          height: `${rowHeight}px`,
-                          padding: density === 'compact' ? '4px 10px' : density === 'comfortable' ? '12px 10px' : '8px 10px',
-                          fontSize: '14px',
-                          color: '#4c414e',
-                          borderBottom: '1px solid rgba(86, 82, 90, 0.08)',
-                          borderRight: '1px solid rgba(86, 82, 90, 0.08)',
-                        }}
-                      >
-                        <div className="break-words">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
+                    {row.getVisibleCells().map((cell) => {
+                      const stickyOffset = stickyOffsets.get(cell.column.id)
+                      const isSticky = stickyOffset !== undefined
+                      return (
+                        <td
+                          key={cell.id}
+                          className={cn(
+                            "align-middle [&:has([role=checkbox])]:pr-0",
+                            // Opaque so scrolled content never shows through the frozen cells
+                            isSticky && "bg-white group-hover:bg-[#f7f7f8] group-data-[state=selected]:bg-[#e8f1ef]"
                           )}
-                        </div>
-                      </td>
-                    ))}
+                          style={{
+                            width: cell.column.getSize(),
+                            height: `${rowHeight}px`,
+                            padding: density === 'compact' ? '4px 10px' : density === 'comfortable' ? '12px 10px' : '8px 10px',
+                            fontSize: '14px',
+                            color: '#4c414e',
+                            borderBottom: '1px solid rgba(86, 82, 90, 0.08)',
+                            borderRight: '1px solid rgba(86, 82, 90, 0.08)',
+                            ...(isSticky
+                              ? {
+                                  position: 'sticky' as const,
+                                  left: stickyOffset,
+                                  zIndex: 10,
+                                  ...(cell.column.id === lastStickyId ? { boxShadow: stickyShadow } : {}),
+                                }
+                              : {}),
+                          }}
+                        >
+                          <div className="break-words">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </div>
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))
               ) : loading ? (

@@ -364,7 +364,7 @@ const ResponseEdit: React.FC = () => {
         </Button>
         <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--tf-border)' }} />
         <h1 className="text-sm font-semibold truncate flex-1 text-primary">
-          {t('header.editingResponse', { values: { responseId: response.id.slice(-6) } })}
+          {t('header.editingResponse', { values: { responseId: response.id } })}
         </h1>
       </div>
 
