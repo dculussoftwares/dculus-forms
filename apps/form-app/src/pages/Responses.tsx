@@ -541,7 +541,9 @@ const Responses: React.FC = () => {
     if (!primary?.id) return { tableColumns: orderedColumns, stickyColumnIds: ['select'] };
 
     const options = visibleData.filter((c) => isSwappable(c.id)).map((c) => ({ id: c.id!, label: getColumnLabel(c.id!) }));
-    if (!isSwappable(primary.id) || options.length < 2) {
+    // A first column that can't be swapped (e.g. tags from an old saved order) stays unfrozen
+    if (!isSwappable(primary.id)) return { tableColumns: orderedColumns, stickyColumnIds: ['select'] };
+    if (options.length < 2) {
       return { tableColumns: orderedColumns, stickyColumnIds: ['select', primary.id] };
     }
 

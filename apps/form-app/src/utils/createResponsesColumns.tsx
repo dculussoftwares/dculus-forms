@@ -228,6 +228,7 @@ const createBaseColumns = (
 ): ColumnDef<FormResponse>[] => {
   return [
     {
+      id: 'submittedAt',
       accessorKey: 'submittedAt',
       header: ({ column }) => (
         <TFColumnHeader
@@ -275,6 +276,7 @@ const createBaseColumns = (
       size: 180,
     },
     {
+      id: 'hasBeenEdited',
       accessorKey: 'hasBeenEdited',
       header: ({ column }) => (
         <TFColumnHeader
