@@ -281,8 +281,8 @@ export const ResponseFilesView: React.FC<ResponseFilesViewProps> = ({
         )}
 
         {selectedFiles.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 text-xs font-medium bg-[#f0f7ff] border-b border-[rgb(189,221,249)]">
-            <span className="text-[#01487f]">
+          <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 text-xs font-medium bg-[var(--tf-green-bg)] border-b border-[var(--tf-green-bg-md)]">
+            <span className="text-[var(--tf-green)]">
               {t('selection.count', { values: { count: selectedFiles.length, size: formatBytes(sumBytes(selectedFiles), locale) } })}
             </span>
             <BulkButton disabledReason={bulkDisabledReason}>
@@ -398,7 +398,7 @@ const FileRow: React.FC<{
     <tr
       className={cn(
         'group border-b transition-colors hover:bg-[var(--tf-faint)]',
-        selected && 'bg-[#f6fafd]'
+        selected && 'bg-[var(--tf-green-bg)]'
       )}
       style={{ borderColor: 'var(--tf-border-light)' }}
     >

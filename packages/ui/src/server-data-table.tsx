@@ -244,7 +244,7 @@ export function ServerDataTable<TData, TValue>({
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     className={cn(
-                      "group bg-white transition-colors hover:bg-[#f7f7f8] data-[state=selected]:bg-blue-50",
+                      "group bg-white transition-colors hover:bg-[#f7f7f8] data-[state=selected]:bg-[var(--tf-green-bg,rgba(23,119,103,0.08))]",
                       onRowClick && "cursor-pointer",
                       loading && "opacity-40"
                     )}

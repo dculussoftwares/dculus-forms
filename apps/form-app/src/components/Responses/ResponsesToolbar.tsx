@@ -19,6 +19,10 @@ import {
   DropdownMenuTrigger,
   Input,
   Label,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
   type DateTimeRangeValue,
 } from '@dculus/ui';
 import {
@@ -38,6 +42,7 @@ import {
 } from 'lucide-react';
 import { FilterState } from '../Filters';
 import { FillableFormField } from '@dculus/types';
+import { GoogleSheetsIcon, MicrosoftExcelIcon } from './SheetsBrandIcons';
 
 interface SortableColumnItemProps {
   columnId: string;
@@ -116,6 +121,12 @@ interface ResponsesToolbarProps {
   isExporting: boolean;
   onExportExcel: () => void;
   onExportCsv: () => void;
+  /** Opens the matching integration (existing one, or its setup page). */
+  onSyncTo: (pluginType: 'google-sheets' | 'microsoft-sheets') => void;
+  /** Rendered at the start of the toolbar (view switch). */
+  leadingSlot?: React.ReactNode;
+  /** Rendered at the far right of the toolbar (loading spinner, count). */
+  trailingSlot?: React.ReactNode;
   isGeneratingFakeResponses: boolean;
   maxFakeResponses: number;
   onGenerateFakeResponses: (count: number) => void;
@@ -146,6 +157,9 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
   isExporting,
   onExportExcel,
   onExportCsv,
+  onSyncTo,
+  leadingSlot,
+  trailingSlot,
   isGeneratingFakeResponses,
   maxFakeResponses,
   onGenerateFakeResponses,
@@ -179,6 +193,7 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
     >
       {/* Left: search + filter */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
+        {leadingSlot}
 
         {/* Search */}
         {isTable && (
@@ -481,8 +496,38 @@ export const ResponsesToolbar: React.FC<ResponsesToolbarProps> = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Sync — hands off to the existing Google Sheets / Excel integrations */}
+          <TooltipProvider delayDuration={200}>
+            {(
+              [
+                { type: 'google-sheets', key: 'googleSheets', Icon: GoogleSheetsIcon },
+                { type: 'microsoft-sheets', key: 'microsoftExcel', Icon: MicrosoftExcelIcon },
+              ] as const
+            ).map(({ type, key, Icon }) => (
+              <Tooltip key={type}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="h-9 w-9 p-0 shrink-0"
+                    aria-label={t(`toolbar.sync.${key}.title`)}
+                    onClick={() => onSyncTo(type)}
+                  >
+                    <Icon className="h-6 w-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs space-y-1">
+                  <p className="font-medium">{t(`toolbar.sync.${key}.title`)}</p>
+                  <p className="text-xs text-muted-foreground">{t(`toolbar.sync.${key}.description`)}</p>
+                  <p className="text-xs text-muted-foreground">{t('toolbar.sync.hint')}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </TooltipProvider>
         </div>
       )}
+
+      {trailingSlot && <div className="flex items-center gap-2 shrink-0">{trailingSlot}</div>}
 
       <Dialog open={showFakeResponsesDialog} onOpenChange={setShowFakeResponsesDialog}>
         <DialogContent className="sm:max-w-md">

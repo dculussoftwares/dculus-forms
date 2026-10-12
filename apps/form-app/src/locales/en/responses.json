@@ -43,6 +43,17 @@
       "excel": "Export as Excel",
       "csv": "Export as CSV"
     },
+    "sync": {
+      "googleSheets": {
+        "title": "Sync to Google Sheets",
+        "description": "Automatically add new responses as rows in a Google spreadsheet."
+      },
+      "microsoftExcel": {
+        "title": "Sync to Microsoft Excel",
+        "description": "Automatically add new responses as rows in an Excel workbook on OneDrive."
+      },
+      "hint": "Opens the integration — connect it, or back-fill existing responses."
+    },
     "dateRange": {
       "placeholder": "All time",
       "allTime": "All time",

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import {
   Button,
   toastSuccess,
@@ -72,7 +72,17 @@ export const PluginCard: React.FC<PluginCardProps> = ({
   const navigate = useNavigate();
   const manifest = allPluginManifests.find((m) => m.id === plugin.type);
   const isDeprecated = manifest?.deprecated === true;
-  const [showDashboard, setShowDashboard] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Deep link from the Responses page: ?open=<pluginId> opens this plugin's dashboard.
+  const [showDashboard, setShowDashboard] = useState(() => searchParams.get('open') === plugin.id);
+  const handleDashboardOpenChange = (open: boolean) => {
+    setShowDashboard(open);
+    if (!open && searchParams.get('open') === plugin.id) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('open');
+      setSearchParams(next, { replace: true });
+    }
+  };
   const [isTogglingEnabled, setIsTogglingEnabled] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -290,7 +300,7 @@ export const PluginCard: React.FC<PluginCardProps> = ({
         plugin={plugin}
         form={form}
         open={showDashboard}
-        onOpenChange={setShowDashboard}
+        onOpenChange={handleDashboardOpenChange}
         onDeleted={onDeleted}
         onUpdated={onUpdated}
       />
