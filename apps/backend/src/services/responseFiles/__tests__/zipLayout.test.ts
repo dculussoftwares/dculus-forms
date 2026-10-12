@@ -65,22 +65,22 @@ describe('planZipEntries', () => {
       root
     );
     expect(entries.map((e) => e.path)).toEqual([
-      `${root}/01 Resume/2026-10-08 111111 - cv.pdf`,
-      `${root}/02 Photo ID/2026-10-08 111111 - id.png`,
+      `${root}/01 Resume/2026-10-08 resp_aaaaaaaa11111111 - cv.pdf`,
+      `${root}/02 Photo ID/2026-10-08 resp_aaaaaaaa11111111 - id.png`,
     ]);
   });
 
   it('groups by response with question-prefixed names', () => {
     const entries = planZipEntries([file()], 'response', root);
-    expect(entries[0].path).toBe(`${root}/2026-10-08 111111/Resume - cv.pdf`);
+    expect(entries[0].path).toBe(`${root}/2026-10-08 resp_aaaaaaaa11111111/Resume - cv.pdf`);
   });
 
   it('de-duplicates names within a folder case-insensitively', () => {
     const entries = planZipEntries([file(), file({ originalName: 'CV.pdf' }), file()], 'question', root);
     expect(entries.map((e) => e.path.split('/').pop())).toEqual([
-      '2026-10-08 111111 - cv.pdf',
-      '2026-10-08 111111 - CV (2).pdf',
-      '2026-10-08 111111 - cv (3).pdf',
+      '2026-10-08 resp_aaaaaaaa11111111 - cv.pdf',
+      '2026-10-08 resp_aaaaaaaa11111111 - CV (2).pdf',
+      '2026-10-08 resp_aaaaaaaa11111111 - cv (3).pdf',
     ]);
   });
 
@@ -90,14 +90,14 @@ describe('planZipEntries', () => {
       'question',
       root
     );
-    expect(entry.path).toBe(`${root}/01 .._secrets/2026-10-08 111111 - .._.._evil.sh`);
+    expect(entry.path).toBe(`${root}/01 .._secrets/2026-10-08 resp_aaaaaaaa11111111 - .._.._evil.sh`);
     expect(entry.path.split('/')).not.toContain('..');
   });
 });
 
 describe('labels', () => {
   it('builds a stable response label and archive root', () => {
-    expect(responseLabel('resp_aaaaaaaa11111111', new Date('2026-01-02T23:00:00Z'))).toBe('2026-01-02 111111');
+    expect(responseLabel('resp_aaaaaaaa11111111', new Date('2026-01-02T23:00:00Z'))).toBe('2026-01-02 resp_aaaaaaaa11111111');
     expect(archiveRootName('Hiring: 2026/Q4', new Date('2026-10-09T00:00:00Z'))).toBe('Hiring_ 2026_Q4 files 2026-10-09');
   });
 });
@@ -112,7 +112,7 @@ describe('buildManifestCsv', () => {
     expect(csv.startsWith('﻿path,status,response_id')).toBe(true);
     const lines = csv.trim().split('\r\n');
     expect(lines).toHaveLength(3);
-    expect(lines[1]).toContain('01 Resume/2026-10-08 111111 - cv.pdf,included,resp_aaaaaaaa11111111');
+    expect(lines[1]).toContain('01 Resume/2026-10-08 resp_aaaaaaaa11111111 - cv.pdf,included,resp_aaaaaaaa11111111');
     expect(lines[2]).toContain(',missing,');
     expect(lines[2]).toContain(`"'=HYPERLINK(""x"")"`);
     expect(lines[2]).toContain('a@b.co');

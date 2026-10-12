@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
+import type { ColumnDef } from '@tanstack/react-table';
 import { CombinedGraphQLErrors } from '@apollo/client';
 import { useTranslation } from '../hooks/useTranslation';
 import {
@@ -25,6 +26,7 @@ import { FilterModal, buildMetaFilterFields } from '../components/Filters';
 import { QuizResultsDialog } from '../plugins/quiz/ResultsDialog';
 import { ResponsesToolbar } from '../components/Responses/ResponsesToolbar';
 import { ResponsesTable } from '../components/Responses/ResponsesTable';
+import { PrimaryColumnHeader } from '../components/Responses/PrimaryColumnHeader';
 import { ResponseDetailPanel } from '../components/Responses/ResponseDetailPanel';
 import { GradeDetailDrawer } from '../components/Responses/GradeDetailDrawer';
 import { useResponsesState } from '../hooks/useResponsesState';
@@ -521,12 +523,57 @@ const Responses: React.FC = () => {
       }
     } else if (columnId.startsWith('orphan-')) {
       return 'Unknown field (deleted)';
-    } else if (columnId === 'id') return t('table.columns.responseId');
-    else if (columnId === 'submittedAt') return t('table.columns.submittedAt');
+    } else if (columnId === 'submittedAt') return t('table.columns.submittedAt');
     else if (columnId === 'hasBeenEdited') return t('table.columns.editStatus');
     else if (columnId === 'respondentEmail') return t('table.columns.respondentEmail');
     return columnId;
   };
+
+  // The first visible data column is frozen next to the checkbox; its header is a
+  // dropdown that swaps another answer column into that slot.
+  const { tableColumns, stickyColumnIds } = useMemo(() => {
+    const isSwappable = (id?: string) =>
+      !!id && (id.startsWith('field-') || id === 'submittedAt' || id === 'respondentEmail');
+    const visibleData = orderedColumns.filter(
+      (c) => c.id !== 'select' && c.id !== 'actions' && responsesState.columnVisibility[c.id!] !== false
+    );
+    const primary = visibleData[0];
+    if (!primary?.id) return { tableColumns: orderedColumns, stickyColumnIds: ['select'] };
+
+    const options = visibleData.filter((c) => isSwappable(c.id)).map((c) => ({ id: c.id!, label: getColumnLabel(c.id!) }));
+    if (!isSwappable(primary.id) || options.length < 2) {
+      return { tableColumns: orderedColumns, stickyColumnIds: ['select', primary.id] };
+    }
+
+    const swapWithPrimary = (targetId: string) => {
+      const ids = orderedColumns.filter((c) => c.enableHiding !== false).map((c) => c.id!);
+      const from = ids.indexOf(primary.id!);
+      const to = ids.indexOf(targetId);
+      if (from === -1 || to === -1) return;
+      [ids[from], ids[to]] = [ids[to], ids[from]];
+      responsesState.setColumnOrder(ids);
+    };
+
+    return {
+      stickyColumnIds: ['select', primary.id],
+      tableColumns: orderedColumns.map((c) =>
+        c.id === primary.id
+          ? {
+              ...c,
+              enableSorting: false,
+              header: () => (
+                <PrimaryColumnHeader
+                  value={primary.id!}
+                  options={options}
+                  onChange={swapWithPrimary}
+                  ariaLabel={t('table.columns.primaryColumn')}
+                />
+              ),
+            } as ColumnDef<FormResponse>
+          : c
+      ),
+    };
+  }, [orderedColumns, responsesState.columnVisibility, formData, t]);
 
   if (loading) {
     return (
@@ -757,7 +804,8 @@ const Responses: React.FC = () => {
               />
             ) : (
               <ResponsesTable
-                columns={orderedColumns}
+                columns={tableColumns}
+                stickyColumnIds={stickyColumnIds}
                 responses={responses}
                 rowSelection={responsesState.rowSelection}
                 onRowSelectionChange={responsesState.setRowSelection}

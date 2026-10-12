@@ -112,6 +112,7 @@
   "table": {
     "columns": {
       "responseId": "Response ID",
+      "primaryColumn": "First column",
       "submittedAt": "Submitted At",
       "editStatus": "Edit Status",
       "tags": "Tags",

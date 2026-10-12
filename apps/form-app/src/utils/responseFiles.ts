@@ -55,9 +55,9 @@ export const fileNameFromKey = (key: string): string => {
   return segment.replace(/^\d{13}-[0-9a-f-]{36}-/, '') || segment;
 };
 
-/** Short response label, matching ZIP folder names and the table's short response ID. */
+/** Response label matching ZIP folder names: submission date plus the full response ID. */
 export const responseLabel = (responseId: string, submittedAt: string): string =>
-  `${submittedAt.slice(0, 10)} ${responseId.slice(-6)}`;
+  `${submittedAt.slice(0, 10)} ${responseId}`;
 
 /** Start a browser download for a (pre-signed) URL without leaving the page. */
 export const triggerDownload = (url: string, filename?: string): void => {

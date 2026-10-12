@@ -112,6 +112,7 @@
   "table": {
     "columns": {
       "responseId": "பதில் ஐடி",
+      "primaryColumn": "முதல் நெடுவரிசை",
       "submittedAt": "சமர்ப்பிக்கப்பட்டது",
       "editStatus": "நிலையை திருத்தவும்",
       "tags": "குறிச்சொற்கள்",

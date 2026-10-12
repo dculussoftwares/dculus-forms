@@ -70,12 +70,9 @@ const claimUniqueName = (name: string, taken: Set<string>): string => {
 
 const formatDate = (date: Date): string => date.toISOString().slice(0, 10);
 
-/**
- * Short, stable label for a response, e.g. `2026-10-08 k2p9qa`. The ID suffix
- * matches the short response ID shown in the responses table.
- */
+/** Stable label for a response: submission date plus the full response ID. */
 export const responseLabel = (responseId: string, submittedAt: Date): string =>
-  `${formatDate(submittedAt)} ${responseId.slice(-6)}`;
+  `${formatDate(submittedAt)} ${responseId}`;
 
 const questionFolder = (file: ResponseFileEntry): string => {
   const order = String(file.fieldOrder + 1).padStart(2, '0');

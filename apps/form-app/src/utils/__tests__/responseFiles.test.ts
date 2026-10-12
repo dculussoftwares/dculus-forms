@@ -40,7 +40,7 @@ describe('responseFiles utils', () => {
 
   it('recovers names and labels', () => {
     expect(fileNameFromKey('files/form-response/f1/1700000000000-11111111-2222-3333-4444-555555555555-cv.pdf')).toBe('cv.pdf');
-    expect(responseLabel('resp_aaaaaaaa11111111', '2026-10-08T10:00:00.000Z')).toBe('2026-10-08 111111');
+    expect(responseLabel('resp_aaaaaaaa11111111', '2026-10-08T10:00:00.000Z')).toBe('2026-10-08 resp_aaaaaaaa11111111');
   });
 
   it('builds one folder per question in form order, keeping empty ones', () => {
@@ -63,8 +63,8 @@ describe('responseFiles utils', () => {
     const folders = buildFileFolders(files, [], 'RESPONSE');
 
     expect(folders.map((f) => [f.label, f.detail, f.files.length])).toEqual([
-      ['2026-10-09 000002', 'a@b.co', 1],
-      ['2026-10-01 000001', null, 2],
+      ['2026-10-09 new_00000002', 'a@b.co', 1],
+      ['2026-10-01 old_00000001', null, 2],
     ]);
   });
 });
