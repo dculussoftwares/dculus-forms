@@ -45,8 +45,8 @@ variable "manage_embed_framing" {
     must own it (true here, false in the others). A single-environment
     deployment can leave the default.
   EOT
-  type    = bool
-  default = true
+  type        = bool
+  default     = true
 }
 
 variable "viewer_embed_framing_hosts" {
@@ -59,6 +59,16 @@ variable "viewer_embed_framing_hosts" {
   ]
 }
 
+variable "form_app_referrer_policy_hosts" {
+  description = "form-app hostnames (all environments — zone-wide rule) that must send a cross-origin Referer. The Google Picker (docs.google.com) checks the API key's website restriction against it."
+  type        = list(string)
+  default = [
+    "forms.dculus.com",            # production
+    "form-app-staging.dculus.com", # staging
+    "form-app-dev.dculus.com",     # dev
+  ]
+}
+
 locals {
   # Cloudflare Rules list literal: {"a" "b" "c"} (space-separated, quoted).
   embed_framing_expression = format(
@@ -67,6 +77,17 @@ locals {
   )
 }
 
+locals {
+  form_app_referrer_expression = format(
+    "(http.host in {%s})",
+    join(" ", [for h in var.form_app_referrer_policy_hosts : jsonencode(h)])
+  )
+}
+
+# The same Managed Transform also stamps `Referrer-Policy: same-origin` on every response, so the
+# Google Picker iframe (docs.google.com) gets no Referer and rejects the key's website restriction
+# ("The API developer key is invalid"). Pages `_headers` cannot undo it for the same reason as XFO.
+# This rule lives in the same ruleset because a zone holds one entrypoint per phase.
 resource "cloudflare_ruleset" "embed_framing" {
   # One environment owns the zone singleton — see the note above.
   count = var.manage_embed_framing ? 1 : 0
@@ -90,6 +111,19 @@ resource "cloudflare_ruleset" "embed_framing" {
         "Content-Security-Policy" = {
           operation = "set"
           value     = "frame-ancestors *"
+        }
+      }
+    }
+    }, {
+    ref         = "form_app_cross_origin_referrer"
+    description = "form-app sends its origin cross-origin (Google Picker API key check)"
+    expression  = local.form_app_referrer_expression
+    action      = "rewrite"
+    action_parameters = {
+      headers = {
+        "Referrer-Policy" = {
+          operation = "set"
+          value     = "strict-origin-when-cross-origin"
         }
       }
     }
