@@ -220,7 +220,7 @@ const getFieldIcon = (fieldType: FieldType) => {
 };
 
 /**
- * Create base columns (ID, Submitted At, Edit Status)
+ * Create base columns (Submitted At, Edit Status)
  */
 const createBaseColumns = (
   locale: string,
@@ -228,30 +228,7 @@ const createBaseColumns = (
 ): ColumnDef<FormResponse>[] => {
   return [
     {
-      accessorKey: 'id',
-      header: ({ column }) => (
-        <TFColumnHeader
-          column={column}
-          icon={<BaseIconChip bg="#dedcde" color="#655d67"><Hash className="h-4 w-4" /></BaseIconChip>}
-          title={t('table.columns.responseId')}
-        />
-      ),
-      cell: ({ row }) => {
-        const id = row.getValue('id') as string;
-        return (
-          <div className="flex items-center space-x-2">
-            <Hash className="h-4 w-4 text-muted-foreground" />
-            <span className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium bg-slate-100/80 text-slate-800 border border-[var(--tf-border-medium)]/60 rounded-lg">
-              {id?.slice(-6) || 'N/A'}
-            </span>
-          </div>
-        );
-      },
-      enableSorting: true,
-      enableHiding: false,
-      size: 140,
-    },
-    {
+      id: 'submittedAt',
       accessorKey: 'submittedAt',
       header: ({ column }) => (
         <TFColumnHeader
@@ -299,6 +276,7 @@ const createBaseColumns = (
       size: 180,
     },
     {
+      id: 'hasBeenEdited',
       accessorKey: 'hasBeenEdited',
       header: ({ column }) => (
         <TFColumnHeader
@@ -792,7 +770,7 @@ export const createResponsesColumns = ({
 
   const deserializedSchema: FormSchema = deserializeFormSchema(formSchema);
 
-  const [idColumn, ...metaColumns] = createBaseColumns(locale, t);
+  const metaColumns = createBaseColumns(locale, t);
 
   const selectColumn: ColumnDef<FormResponse> = {
     id: 'select',
@@ -927,17 +905,16 @@ export const createResponsesColumns = ({
   // Actions column
   const actionsColumn = createActionsColumn(formId, onDeleteResponse, quizEnabled, onViewGrade, t);
 
-  // Checkbox first, then Response ID, tags, respondent email, field/plugin/generator columns, Submitted At + Edit Status, actions
+  // Checkbox first, then respondent email, field/plugin/generator columns, Submitted At + Edit Status, tags, actions
   return [
     selectColumn,
-    idColumn,
-    tagsColumn,
     ...(showRespondentEmail ? [respondentEmailColumn] : []),
     ...fieldColumns,
     ...pluginColumns,
     ...generatorColumns,
     ...gradeColumns,
     ...metaColumns,
+    tagsColumn,
     actionsColumn,
   ];
 };
