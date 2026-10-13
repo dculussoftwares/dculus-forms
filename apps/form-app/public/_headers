@@ -1,3 +1,9 @@
+# The Google Picker (docs.google.com) validates the API key's website restriction against the
+# Referer it receives. Cloudflare Pages defaults to `same-origin`, which sends none, and the
+# picker fails with "The API developer key is invalid".
+/*
+  Referrer-Policy: strict-origin-when-cross-origin
+
 # Overwritten at deploy time with environment values; must never be served stale.
 /config.js
   Cache-Control: no-cache
