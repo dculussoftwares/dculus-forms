@@ -9,6 +9,7 @@ import {
   Input,
   Label,
   toastSuccess,
+  toastError,
 } from '@dculus/ui';
 import {
   FileSpreadsheet,
@@ -23,6 +24,14 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl, getFormViewerUrl } from '../../lib/config';
 import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
 import { stashPendingConfigFields, consumePendingConfigFields } from '../../lib/pendingConfigFields';
+import {
+  createOneDrivePickerSession,
+  isOneDrivePickerConfigured,
+  type OneDrivePickerSession,
+  type PickedFolder,
+} from '../../lib/oneDrivePicker';
+import { DestinationFolderField } from '../../components/plugins/shared/DestinationFolderField';
+import { OneDriveFolderPicker } from '../../components/plugins/shared/OneDriveFolderPicker';
 import type { ConfigFormProps } from '../core/registry';
 
 interface MicrosoftToken {
@@ -44,7 +53,12 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   submitLabelOverride,
 }) => {
   const { t } = useTranslation('pluginMicrosoftSheets');
+  const { t: tDestination } = useTranslation('pluginDestination');
 
+  const [destinationFolder, setDestinationFolder] = useState<PickedFolder | undefined>(
+    initialData?.config?.destinationFolder
+  );
+  const [pickerSession, setPickerSession] = useState<OneDrivePickerSession | null>(null);
   const [pluginName, setPluginName] = useState<string>(
     initialData?.name ?? 'Microsoft Excel'
   );
@@ -62,6 +76,7 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   // fresh from `initialData`, so this was display-only staleness (the "Open in..." link could
   // point at a sibling node's workbook after switching without saving), not a persisted leak.
   const workbookUrl = initialData?.config?.workbookUrl;
+  const workbookId = initialData?.config?.workbookId;
 
   // NodeConfigPanel (the automation builder's host for this form) passes a brand-new
   // `initialData` object literal on every render, not just when the selected node changes —
@@ -147,6 +162,12 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
     }
   }, [initialData, instanceKey]);
 
+  // Keyed on the saved value so an unsaved pick survives parent re-renders that rebuild `initialData`.
+  const savedFolderKey = JSON.stringify(initialData?.config?.destinationFolder ?? null);
+  useEffect(() => {
+    setDestinationFolder(initialData?.config?.destinationFolder);
+  }, [savedFolderKey, instanceKey]);
+
   const handleConnectMicrosoft = () => {
     // Stash whatever's currently typed into "Plugin Name"/"Worksheet Name" — they're only
     // local React state until Save is clicked, and the redirect below fully reloads the page,
@@ -162,10 +183,21 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
 
   const handleDisconnect = () => {
     setMicrosoftToken(undefined);
+    // A folder belongs to the disconnected account and would not exist for the next one.
+    if (!workbookId) setDestinationFolder(undefined);
     toastSuccess(
       t('toasts.disconnectedTitle'),
       t('toasts.disconnectedDescription')
     );
+  };
+
+  const handlePickFolder = async () => {
+    if (!microsoftToken) return;
+    try {
+      setPickerSession(await createOneDrivePickerSession(microsoftToken.email));
+    } catch (e) {
+      toastError(tDestination('errors.pickFailed'), e instanceof Error ? e.message : '');
+    }
   };
 
   const handleSave = async () => {
@@ -189,6 +221,7 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         microsoftToken,
         workbookId: initialData?.config?.workbookId,
         workbookUrl: initialData?.config?.workbookUrl,
+        destinationFolder,
         worksheetName: worksheetName.trim() || 'Sheet1',
       },
       events: ['form.submitted'],
@@ -339,6 +372,27 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {microsoftToken && (
+        <>
+          <DestinationFolderField
+            provider="microsoft"
+            folder={destinationFolder}
+            locked={!!workbookId}
+            pickerAvailable={isOneDrivePickerConfigured()}
+            onPick={handlePickFolder}
+            onClear={() => setDestinationFolder(undefined)}
+          />
+          <OneDriveFolderPicker
+            session={pickerSession}
+            onClose={() => setPickerSession(null)}
+            onPicked={(folder) => {
+              setDestinationFolder(folder);
+              setPickerSession(null);
+            }}
+          />
+        </>
+      )}
 
       {/* How it works */}
       <Card>

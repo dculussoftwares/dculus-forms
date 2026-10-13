@@ -44,7 +44,7 @@ import {
   DELETE_AI_GENERATED_RESPONSES,
 } from '../graphql/mutations';
 import { deserializeFormSchema, FieldType, FillableFormField, FormResponse, FormSchema } from '@dculus/types';
-import { AlertCircle, ArrowLeft, FileDown, FileSpreadsheet, FileText, FolderOpen, RotateCcw, Send, Table2, Trash2, X } from 'lucide-react';
+import { AlertCircle, FileDown, FileSpreadsheet, FileText, FolderOpen, RotateCcw, Send, Table2, Trash2, X } from 'lucide-react';
 
 // Mirrors MAX_FAKE_RESPONSES_PER_REQUEST in the backend's fakeResponseService.ts.
 const MAX_FAKE_RESPONSES = 10;
@@ -82,9 +82,9 @@ const BulkActionBar: React.FC<BulkActionBarProps> = ({
 }) => (
   <div
     className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium"
-    style={{ background: '#f0f7ff', borderBottom: '1px solid rgb(189,221,249)' }}
+    style={{ background: 'var(--tf-green-bg)', borderBottom: '1px solid var(--tf-green-bg-md)' }}
   >
-    <span className="text-xs font-semibold shrink-0" style={{ color: '#01487f' }}>
+    <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--tf-green)' }}>
       {t('toolbar.bulkActions.selected', { values: { count: selectedCount } })}
     </span>
     <div className="flex flex-wrap items-center gap-1.5">
@@ -351,10 +351,21 @@ const Responses: React.FC = () => {
     }
   };
 
-  const { data: pluginsData } = useQuery(GET_FORM_PLUGINS, {
+  const { data: pluginsData, loading: pluginsLoading } = useQuery(GET_FORM_PLUGINS, {
     variables: { formId: actualFormId },
     skip: !actualFormId,
   });
+
+  // Existing integration → open its dashboard (has "Backfill existing responses"); otherwise → setup page.
+  const handleSyncTo = (pluginType: 'google-sheets' | 'microsoft-sheets') => {
+    // Before the list resolves, an existing integration would look like none and open a duplicate setup.
+    if (pluginsLoading || !pluginsData) return;
+    const matches = (pluginsData?.formPlugins ?? []).filter((p: any) => p.type === pluginType);
+    const base = `/dashboard/form/${actualFormId}/integrations`;
+    if (matches.length === 0) navigate(`${base}/configure/${pluginType}`);
+    else if (matches.length === 1) navigate(`${base}?open=${matches[0].id}`);
+    else navigate(base);
+  };
 
   const { data: pdfGeneratorsData } = useQuery(GET_PDF_GENERATORS, {
     variables: { formId: actualFormId },
@@ -632,63 +643,6 @@ const Responses: React.FC = () => {
     >
       <div className="flex flex-col h-full w-full gap-0 overflow-x-hidden">
 
-        {/* ── Typeform-style compact page header ── */}
-        <div
-          className="flex items-center gap-3 pb-4 mb-2 flex-shrink-0"
-          style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
-        >
-          <Button
-            onClick={() => navigate(`/dashboard/form/${actualFormId}`)}
-            variant="ghost"
-            className="h-8 w-8 flex items-center justify-center rounded-lg shrink-0 p-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-
-          <div className="w-px h-5 shrink-0" style={{ backgroundColor: 'var(--tf-border)' }} />
-
-          <h1 className="text-sm font-semibold truncate flex-1 min-w-0 text-primary">
-            {form.title}
-          </h1>
-
-          {hasFileUploadFields && (
-            <ToggleGroup
-              type="single"
-              size="sm"
-              variant="outline"
-              value={view}
-              onValueChange={(value) => value && setView(value as 'table' | 'files')}
-              aria-label={t('layout.view.label')}
-              className="shrink-0"
-            >
-              <ToggleGroupItem value="table" className="h-8 gap-1.5 px-2.5 text-xs" aria-label={t('layout.view.table')}>
-                <Table2 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{t('layout.view.table')}</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="files" className="h-8 gap-1.5 px-2.5 text-xs" aria-label={t('layout.view.files')}>
-                <FolderOpen className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{t('layout.view.files')}</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-          )}
-
-          <div className="flex items-center gap-2 shrink-0">
-            {responsesLoading && (
-              <div
-                className="w-4 h-4 rounded-full border-2 animate-spin"
-                style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
-              />
-            )}
-            {/* Response count badge — Typeform exact: #f6fafd bg, #01487f text */}
-            <span
-              className="px-2.5 py-0.5 text-xs font-medium rounded-full"
-              style={{ backgroundColor: '#f6fafd', color: '#01487f', border: '1px solid rgb(189,221,249)' }}
-            >
-              {responsePagination?.total ?? 0}
-            </span>
-          </div>
-        </div>
-
         {/* ── Main content — white table on #f7f7f8 bg ── */}
         {responsesError ? (
           <EmptyState
@@ -787,6 +741,47 @@ const Responses: React.FC = () => {
                 isExporting={responsesState.isExporting}
                 onExportExcel={responsesState.exportToExcel}
                 onExportCsv={responsesState.exportToCsv}
+                onSyncTo={handleSyncTo}
+                leadingSlot={
+                  <>
+                    {hasFileUploadFields && (
+                      <ToggleGroup
+                        type="single"
+                        size="sm"
+                        variant="outline"
+                        value={view}
+                        onValueChange={(value) => value && setView(value as 'table' | 'files')}
+                        aria-label={t('layout.view.label')}
+                        className="shrink-0"
+                      >
+                        <ToggleGroupItem value="table" className="h-8 gap-1.5 px-2.5 text-xs" aria-label={t('layout.view.table')}>
+                          <Table2 className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">{t('layout.view.table')}</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="files" className="h-8 gap-1.5 px-2.5 text-xs" aria-label={t('layout.view.files')}>
+                          <FolderOpen className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">{t('layout.view.files')}</span>
+                        </ToggleGroupItem>
+                      </ToggleGroup>
+                    )}
+                  </>
+                }
+                trailingSlot={
+                  <>
+                    {responsesLoading && (
+                      <div
+                        className="w-4 h-4 rounded-full border-2 animate-spin shrink-0"
+                        style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }}
+                      />
+                    )}
+                    <span
+                      className="px-2.5 py-0.5 text-xs font-medium rounded-full shrink-0"
+                      style={{ backgroundColor: '#f6fafd', color: '#01487f', border: '1px solid rgb(189,221,249)' }}
+                    >
+                      {responsePagination?.total ?? 0}
+                    </span>
+                  </>
+                }
                 isGeneratingFakeResponses={isGeneratingFakeResponses}
                 maxFakeResponses={MAX_FAKE_RESPONSES}
                 onGenerateFakeResponses={handleGenerateFakeResponses}

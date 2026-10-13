@@ -25,12 +25,12 @@
     "connectButton": "Connect Microsoft Account",
     "disconnectButton": "Disconnect",
     "openWorkbook": "Open in Excel Online",
-    "notConnectedHint": "Connect your Microsoft 365 account to start syncing responses to an Excel workbook. A new workbook will be created automatically on the first submission.",
+    "notConnectedHint": "Connect your Microsoft 365 account to start syncing responses to an Excel workbook. A new workbook is created automatically, in the folder you choose.",
     "authFailed": "Microsoft authentication failed. Please try connecting again."
   },
   "howItWorks": {
     "title": "How It Works",
-    "step1": "On the first form submission, a new Excel workbook is created automatically in your OneDrive.",
+    "step1": "A new Excel workbook is created automatically in your OneDrive, in the folder you choose (the OneDrive root by default).",
     "step2": "A header row is written with all form field names, submission time, and response ID.",
     "step3": "Every subsequent submission appends a new row to the configured worksheet."
   },

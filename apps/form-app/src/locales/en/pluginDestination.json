@@ -1,0 +1,26 @@
+{
+  "title": "Destination folder",
+  "hint": {
+    "google": "The spreadsheet is created in this folder when you save. The folder can't be changed afterwards.",
+    "microsoft": "The workbook is created in this folder when you save. The folder can't be changed afterwards."
+  },
+  "lockedHint": "The file already exists, so its folder can't be changed.",
+  "locked": "Locked",
+  "root": {
+    "google": "My Drive",
+    "microsoft": "My files (OneDrive)"
+  },
+  "choose": "Choose folder",
+  "change": "Change folder",
+  "clear": "Use the default location",
+  "oneDrive": {
+    "title": "Choose a OneDrive folder",
+    "signInHint": "Sign in to Microsoft to browse your OneDrive folders.",
+    "signInButton": "Sign in"
+  },
+  "errors": {
+    "pickFailed": "Could not open the folder picker",
+    "tokenExpired": "Your connection has expired. Reconnect your account to choose a folder.",
+    "notAvailable": "Folder selection is not available."
+  }
+}

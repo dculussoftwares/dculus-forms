@@ -38,6 +38,7 @@ function isValidDigestResponseEntry(entry: unknown): entry is DigestResponseEntr
 }
 
 const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4';
+const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 const TOKEN_REFRESH_URL = 'https://oauth2.googleapis.com/token';
 
 class SpreadsheetNotFoundError extends Error {
@@ -119,12 +120,25 @@ const authHeaders = (accessToken: string): Record<string, string> => ({
 });
 
 /**
- * Creates a new Google Spreadsheet and returns the spreadsheet ID and URL.
+ * Creates a new Google Spreadsheet and returns the spreadsheet ID and URL. The Sheets API can only
+ * create in My Drive, so a chosen folder is applied by moving the file afterwards (the default
+ * worksheet is then always "Sheet1", unlike a Drive-created sheet which follows the user's locale).
  */
 const createSpreadsheet = async (
   title: string,
-  accessToken: string
+  accessToken: string,
+  folderId?: string
 ): Promise<{ spreadsheetId: string; spreadsheetUrl: string }> => {
+  // Checked first so an inaccessible folder fails before a file exists that nothing would track.
+  if (folderId) {
+    const check = await fetch(`${DRIVE_API_BASE}/files/${encodeURIComponent(folderId)}?fields=id`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!check.ok) {
+      throw new Error(`Destination folder is not accessible (${check.status}). Choose the folder again.`);
+    }
+  }
+
   const response = await fetch(`${SHEETS_API_BASE}/spreadsheets`, {
     method: 'POST',
     headers: authHeaders(accessToken),
@@ -139,7 +153,41 @@ const createSpreadsheet = async (
   const data = await response.json() as any;
   const spreadsheetId: string = data.spreadsheetId;
   const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
+
+  if (folderId) {
+    // Best-effort cleanup: otherwise the retry would leave this sheet untracked in My Drive and create another.
+    try {
+      await moveToFolder(spreadsheetId, folderId, accessToken);
+    } catch (error) {
+      await fetch(`${DRIVE_API_BASE}/files/${spreadsheetId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
+
   return { spreadsheetId, spreadsheetUrl };
+};
+
+const moveToFolder = async (fileId: string, folderId: string, accessToken: string): Promise<void> => {
+  const headers = { Authorization: `Bearer ${accessToken}` };
+  const parentsRes = await fetch(`${DRIVE_API_BASE}/files/${fileId}?fields=parents`, { headers });
+  if (!parentsRes.ok) {
+    throw new Error(`Failed to read spreadsheet location: ${parentsRes.status} ${await parentsRes.text()}`);
+  }
+  const parents: string[] = ((await parentsRes.json()) as any).parents ?? [];
+
+  const params = new URLSearchParams({ addParents: folderId, fields: 'id' });
+  if (parents.length > 0) params.set('removeParents', parents.join(','));
+  const moveRes = await fetch(`${DRIVE_API_BASE}/files/${fileId}?${params.toString()}`, {
+    method: 'PATCH',
+    headers: authHeaders(accessToken),
+    body: '{}',
+  });
+  if (!moveRes.ok) {
+    throw new Error(`Failed to move spreadsheet into the destination folder: ${moveRes.status} ${await moveRes.text()}`);
+  }
 };
 
 /**
@@ -312,7 +360,9 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     // Fetch the response(s) to build row values. A digest batch (schedule automation with an
     // upstream digest node, #automations-digest) carries zero-to-many responses in
     // event.data.__digestResponses instead of exactly one event.data.responseId.
-    const rawDigestResponses = (event.data as Record<string, any>).__digestResponses;
+    // `plugin.provision` only creates/syncs the spreadsheet so its link exists before any response.
+    const isProvision = event.type === 'plugin.provision';
+    const rawDigestResponses = isProvision ? undefined : (event.data as Record<string, any>).__digestResponses;
     const digestResponses = Array.isArray(rawDigestResponses)
       ? (rawDigestResponses as unknown[]).filter(isValidDigestResponseEntry)
       : null;
@@ -325,7 +375,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     }
 
     let singleResponse: Awaited<ReturnType<typeof context.getResponseById>> | null = null;
-    if (!digestResponses) {
+    if (!digestResponses && !isProvision) {
       if (!event.data.responseId) {
         return {
           success: false,
@@ -345,9 +395,11 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     }
 
     // Response data of every row this call will write.
-    const batchResponseData: Record<string, any>[] = digestResponses
-      ? digestResponses.map((r) => r.data ?? {})
-      : [(singleResponse?.data as Record<string, any>) ?? {}];
+    const batchResponseData: Record<string, any>[] = isProvision
+      ? []
+      : digestResponses
+        ? digestResponses.map((r) => r.data ?? {})
+        : [(singleResponse?.data as Record<string, any>) ?? {}];
 
     // Column keys for the no-schema fallback: the union of keys across EVERY response in the
     // batch, so an optional field only a later digest response has is not silently dropped.
@@ -395,7 +447,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
         title: sheetTitle,
       });
 
-      const created = await createSpreadsheet(sheetTitle, accessToken);
+      const created = await createSpreadsheet(sheetTitle, accessToken, config.destinationFolder?.id);
       // A recreated spreadsheet keeps the layout already settled for this run so the rows built
       // from it still line up; only a first-ever creation starts from the schema.
       if (columns.length === 0) columns = buildInitialColumns(schemaFields, answeredIds);
@@ -466,6 +518,10 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
         const recreated = await initSpreadsheet();
         spreadsheetId = recreated.spreadsheetId;
       }
+    }
+
+    if (isProvision) {
+      return { success: true, spreadsheetId, syncedAt } satisfies GoogleSheetsResult;
     }
 
     const resolveValue = (fieldId: string, raw: any): string =>

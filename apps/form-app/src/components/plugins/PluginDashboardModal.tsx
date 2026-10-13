@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { allPluginManifests } from '@dculus/plugins';
@@ -39,6 +39,7 @@ import {
   XCircle,
   Clock,
   ChevronDown,
+  ExternalLink,
   Power,
   PowerOff,
   PlayCircle,
@@ -173,6 +174,15 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
       stopBackfillPolling();
     }
   }, [open, isBackfillActive, startBackfillPolling, stopBackfillPolling]);
+
+  // A backfill can create the sheet/workbook, so the cached plugin (and its link) is stale once it ends.
+  const wasBackfillActiveRef = useRef(false);
+  useEffect(() => {
+    if (wasBackfillActiveRef.current && !isBackfillActive) onUpdated();
+    wasBackfillActiveRef.current = isBackfillActive;
+  }, [isBackfillActive, onUpdated]);
+  const rawDocumentUrl: string | undefined = plugin.config?.workbookUrl ?? plugin.config?.spreadsheetUrl;
+  const documentUrl = typeof rawDocumentUrl === 'string' && /^https:\/\//i.test(rawDocumentUrl) ? rawDocumentUrl : undefined;
 
   const [startBackfillMutation, { loading: isStartingBackfill }] = useMutation(START_PLUGIN_BACKFILL);
   const [cancelBackfillMutation, { loading: isCancellingBackfill }] = useMutation(CANCEL_PLUGIN_BACKFILL);
@@ -499,6 +509,18 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
                         {backfillJob.status === 'failed' &&
                           t('backfill.terminal.failed', { values: { error: backfillJob.errorMessage ?? '' } })}
                       </p>
+                      {documentUrl && (
+                        <a
+                          href={documentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs hover:underline shrink-0 ml-3"
+                          style={{ color: 'var(--tf-green)' }}
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          {t('backfill.terminal.openFile')}
+                        </a>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"

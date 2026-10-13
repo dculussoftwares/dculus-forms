@@ -40,6 +40,7 @@
       "completed": "Backfill complete: {{succeeded}} succeeded, {{failed}} failed",
       "cancelled": "Backfill cancelled: {{succeeded}} succeeded, {{failed}} failed",
       "failed": "Backfill failed: {{error}}",
+      "openFile": "Open file",
       "retryButton": "Backfill existing responses"
     },
     "toasts": {

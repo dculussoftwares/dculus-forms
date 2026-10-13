@@ -18,6 +18,7 @@
   "dependencies": {
     "@ai-sdk/react": "4.0.136",
     "@apollo/client": "^4.3.1",
+    "@azure/msal-browser": "^5.25.0",
     "@dagrejs/dagre": "^3.1.1",
     "@dculus/plugins": "workspace:*",
     "@dculus/types": "workspace:*",

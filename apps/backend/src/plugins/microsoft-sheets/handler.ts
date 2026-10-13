@@ -119,21 +119,26 @@ const authHeaders = (accessToken: string): Record<string, string> => ({
 });
 
 /**
- * Creates a new Excel workbook in the user's OneDrive root and returns
+ * Creates a new Excel workbook in the chosen OneDrive folder (or the root) and returns
  * the item ID and the permanent web URL.
  * Uses ExcelJS to produce a valid .xlsx buffer so the file opens correctly.
  */
 const createWorkbook = async (
   title: string,
   worksheetName: string,
-  accessToken: string
+  accessToken: string,
+  folderId?: string
 ): Promise<{ workbookId: string; workbookUrl: string }> => {
   const wb = new ExcelJS.Workbook();
   wb.addWorksheet(worksheetName);
   const buffer = await wb.xlsx.writeBuffer();
 
   const filename = `${title}.xlsx`;
-  const createUrl = `${GRAPH_BASE}/me/drive/root:/${encodeURIComponent(filename)}:/content`;
+  const parent = folderId ? `items/${encodeURIComponent(folderId)}:` : 'root:';
+  // `rename` so a same-named file already in the folder is never overwritten.
+  const createUrl =
+    `${GRAPH_BASE}/me/drive/${parent}/${encodeURIComponent(filename)}:/content` +
+    '?@microsoft.graph.conflictBehavior=rename';
 
   const response = await fetch(createUrl, {
     method: 'PUT',
@@ -364,7 +369,9 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     // 3. Fetch the response(s) to build row values. A digest batch (schedule automation with an
     // upstream digest node, #automations-digest) carries zero-to-many responses in
     // event.data.__digestResponses instead of exactly one event.data.responseId.
-    const rawDigestResponses = (event.data as Record<string, any>).__digestResponses;
+    // `plugin.provision` only creates/syncs the workbook so its link exists before any response.
+    const isProvision = event.type === 'plugin.provision';
+    const rawDigestResponses = isProvision ? undefined : (event.data as Record<string, any>).__digestResponses;
     const digestResponses = Array.isArray(rawDigestResponses)
       ? (rawDigestResponses as unknown[]).filter(isValidDigestResponseEntry)
       : null;
@@ -377,7 +384,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     }
 
     let singleResponse: Awaited<ReturnType<typeof context.getResponseById>> | null = null;
-    if (!digestResponses) {
+    if (!digestResponses && !isProvision) {
       if (!event.data.responseId) {
         return {
           success: false,
@@ -397,9 +404,11 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     }
 
     // Response data of every row this call will write.
-    const batchResponseData: Record<string, any>[] = digestResponses
-      ? digestResponses.map((r) => r.data ?? {})
-      : [(singleResponse?.data as Record<string, any>) ?? {}];
+    const batchResponseData: Record<string, any>[] = isProvision
+      ? []
+      : digestResponses
+        ? digestResponses.map((r) => r.data ?? {})
+        : [(singleResponse?.data as Record<string, any>) ?? {}];
 
     // Column keys for the no-schema fallback: the union of keys across EVERY response in the
     // batch, so an optional field only a later digest response has is not silently dropped.
@@ -448,7 +457,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
         title: workbookTitle,
       });
 
-      const created = await createWorkbook(workbookTitle, worksheetName, accessToken);
+      const created = await createWorkbook(workbookTitle, worksheetName, accessToken, config.destinationFolder?.id);
       // A recreated workbook keeps the layout already settled for this run so the rows built
       // from it still line up; only a first-ever creation starts from the schema.
       if (columns.length === 0) columns = buildInitialColumns(schemaFields, answeredIds);
@@ -519,6 +528,10 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
         const recreated = await initWorkbook();
         workbookId = recreated.workbookId;
       }
+    }
+
+    if (isProvision) {
+      return { success: true, workbookId, syncedAt } satisfies MicrosoftSheetsResult;
     }
 
     const resolveValue = (fieldId: string, raw: any): string =>

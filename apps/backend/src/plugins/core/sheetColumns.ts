@@ -232,22 +232,53 @@ type ConfigRecord = Record<string, unknown>;
 const documentKey = (config: ConfigRecord): string =>
   [config.spreadsheetId, config.workbookId, String(config.worksheetName ?? '').trim() || 'Sheet1'].join('|');
 
+const DOCUMENT_IDENTITY_KEYS = ['spreadsheetId', 'spreadsheetUrl', 'workbookId', 'workbookUrl'] as const;
+
 /**
- * `sheetColumns` is owned by the sheet handlers, not by the config forms: a form saves whatever
- * layout it loaded, which may predate columns a later run added. When a saved config carries no
- * layout, keep the persisted one — but only for the same document and worksheet, since a layout
- * describes one header row.
+ * The document, its location and `sheetColumns` are owned by the sheet handlers, not by the
+ * config forms: a form saves whatever it loaded, which may predate the file a later run (or a
+ * backfill) created and the columns it added.
+ *
+ * - A save that names no document keeps the persisted one, so a stale form can never orphan it.
+ * - Once a document exists its destination folder is fixed, whatever the form sends.
+ * - A save with no layout keeps the persisted one — but only for the same document and
+ *   worksheet, since a layout describes one header row.
  */
 export const carrySheetColumns = (existing: unknown, next: unknown): unknown => {
   if (!existing || typeof existing !== 'object' || !next || typeof next !== 'object') return next;
   const previous = existing as ConfigRecord;
-  const incoming = next as ConfigRecord;
+  let incoming = next as ConfigRecord;
 
-  if (!Array.isArray(previous.sheetColumns) || incoming.sheetColumns) return next;
-  if (!previous.spreadsheetId && !previous.workbookId) return next;
-  if (documentKey(previous) !== documentKey(incoming)) return next;
+  const hasDocument = (config: ConfigRecord): boolean => !!(config.spreadsheetId || config.workbookId);
+  if (!hasDocument(previous)) return next;
 
-  return { ...incoming, sheetColumns: previous.sheetColumns };
+  if (!hasDocument(incoming) && previous.type === incoming.type) {
+    const identity = Object.fromEntries(
+      DOCUMENT_IDENTITY_KEYS.filter((key) => previous[key] !== undefined).map((key) => [key, previous[key]])
+    );
+    incoming = { ...incoming, ...identity };
+  }
+
+  if (hasDocument(incoming)) {
+    const sameDocument =
+      incoming.spreadsheetId === previous.spreadsheetId && incoming.workbookId === previous.workbookId;
+
+    if (sameDocument && JSON.stringify(incoming.destinationFolder) !== JSON.stringify(previous.destinationFolder)) {
+      incoming = { ...incoming };
+      if (previous.destinationFolder === undefined) delete incoming.destinationFolder;
+      else incoming.destinationFolder = previous.destinationFolder;
+    }
+
+    if (
+      Array.isArray(previous.sheetColumns) &&
+      !incoming.sheetColumns &&
+      documentKey(previous) === documentKey(incoming)
+    ) {
+      incoming = { ...incoming, sheetColumns: previous.sheetColumns };
+    }
+  }
+
+  return incoming;
 };
 
 interface GraphWithNodes {
