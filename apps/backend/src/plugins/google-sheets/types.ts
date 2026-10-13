@@ -13,6 +13,8 @@ export interface GoogleSheetsPluginConfig extends PluginConfig {
   googleToken?: GoogleToken;
   spreadsheetId?: string;
   spreadsheetUrl?: string;
+  /** Drive folder the spreadsheet is created in; fixed once the spreadsheet exists. */
+  destinationFolder?: { id: string; name: string };
   /** Persisted column layout of the spreadsheet; only ever grows (see core/sheetColumns.ts). */
   sheetColumns?: SheetColumn[];
 }

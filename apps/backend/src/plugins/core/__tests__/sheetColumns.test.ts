@@ -60,6 +60,42 @@ describe('carrySheetColumns', () => {
 
     expect(carrySheetColumns(existing, incoming)).toBe(incoming);
   });
+
+  it('keeps the created document when a stale form saves without one', () => {
+    const existing = { type: 'microsoft-sheets', workbookId: 'w1', workbookUrl: 'u1', sheetColumns: layout };
+    const incoming = { type: 'microsoft-sheets', worksheetName: 'Sheet1' };
+
+    expect(carrySheetColumns(existing, incoming)).toEqual({ ...existing, worksheetName: 'Sheet1' });
+  });
+
+  it('does not carry a document across plugin types', () => {
+    const existing = { type: 'google-sheets', spreadsheetId: 's1' };
+    const incoming = { type: 'microsoft-sheets' };
+
+    expect(carrySheetColumns(existing, incoming)).toBe(incoming);
+  });
+
+  it('fixes the destination folder once the document exists', () => {
+    const folder = { id: 'f1', name: 'Reports' };
+    const existing = { spreadsheetId: 's1', destinationFolder: folder };
+
+    expect(carrySheetColumns(existing, { spreadsheetId: 's1', destinationFolder: { id: 'f2', name: 'Other' } }))
+      .toEqual(existing);
+    expect(carrySheetColumns(existing, { spreadsheetId: 's1' })).toEqual(existing);
+  });
+
+  it('ignores a folder added after the document was created in the root', () => {
+    const existing = { spreadsheetId: 's1' };
+    const incoming = { spreadsheetId: 's1', destinationFolder: { id: 'f2', name: 'Other' } };
+
+    expect(carrySheetColumns(existing, incoming)).toEqual({ spreadsheetId: 's1' });
+  });
+
+  it('accepts a folder while no document exists yet', () => {
+    const incoming = { destinationFolder: { id: 'f1', name: 'Reports' } };
+
+    expect(carrySheetColumns({ type: 'google-sheets' }, incoming)).toBe(incoming);
+  });
 });
 
 describe('carrySheetColumnsInGraph', () => {

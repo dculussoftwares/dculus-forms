@@ -9,6 +9,7 @@ import {
   Input,
   Label,
   toastSuccess,
+  toastError,
 } from '@dculus/ui';
 import {
   TableProperties,
@@ -23,6 +24,8 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl, getFormViewerUrl } from '../../lib/config';
 import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
 import { stashPendingConfigFields, consumePendingConfigFields } from '../../lib/pendingConfigFields';
+import { isGoogleFolderPickerConfigured, pickGoogleDriveFolder, type PickedFolder } from '../../lib/googlePicker';
+import { DestinationFolderField } from '../../components/plugins/shared/DestinationFolderField';
 import type { ConfigFormProps } from '../core/registry';
 
 interface GoogleToken {
@@ -43,9 +46,13 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   submitLabelOverride,
 }) => {
   const { t } = useTranslation('pluginGoogleSheets');
+  const { t: tDestination } = useTranslation('pluginDestination');
 
   const [pluginName, setPluginName] = useState<string>(
     initialData?.name ?? 'Google Sheets'
+  );
+  const [destinationFolder, setDestinationFolder] = useState<PickedFolder | undefined>(
+    initialData?.config?.destinationFolder
   );
   const [nameError, setNameError] = useState<string>('');
   const [connectionError, setConnectionError] = useState<string>('');
@@ -132,6 +139,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
     if (initialData && !justConnectedRef.current) {
       setPluginName(initialData.name ?? 'Google Sheets');
       setGoogleToken(initialData.config?.googleToken);
+      setDestinationFolder(initialData.config?.destinationFolder);
     }
   }, [initialData, instanceKey]);
 
@@ -149,10 +157,27 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
 
   const handleDisconnect = () => {
     setGoogleToken(undefined);
+    // A folder belongs to the disconnected account and would not exist for the next one.
+    if (!spreadsheetId) setDestinationFolder(undefined);
     toastSuccess(
       t('toasts.disconnectedTitle'),
       t('toasts.disconnectedDescription')
     );
+  };
+
+  const handlePickFolder = async () => {
+    if (!googleToken) return;
+    // The picker needs a live access token; one saved earlier may have expired.
+    if (new Date(googleToken.expiresAt).getTime() < Date.now() + 30_000) {
+      toastError(tDestination('errors.pickFailed'), tDestination('errors.tokenExpired'));
+      return;
+    }
+    try {
+      const picked = await pickGoogleDriveFolder(googleToken.accessToken, tDestination('choose'));
+      if (picked) setDestinationFolder(picked);
+    } catch (e) {
+      toastError(tDestination('errors.pickFailed'), e instanceof Error ? e.message : '');
+    }
   };
 
   const handleSave = async () => {
@@ -176,6 +201,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         googleToken,
         spreadsheetId,
         spreadsheetUrl,
+        destinationFolder,
       },
       events: ['form.submitted'],
     });
@@ -311,6 +337,17 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {googleToken && (
+        <DestinationFolderField
+          provider="google"
+          folder={destinationFolder}
+          locked={!!spreadsheetId}
+          pickerAvailable={isGoogleFolderPickerConfigured()}
+          onPick={handlePickFolder}
+          onClear={() => setDestinationFolder(undefined)}
+        />
+      )}
 
       {/* How it works */}
       <Card>

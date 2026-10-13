@@ -16,6 +16,8 @@ export interface MicrosoftSheetsPluginConfig extends PluginConfig {
   workbookId?: string;
   /** Permanent web URL of the workbook, set after first submission */
   workbookUrl?: string;
+  /** OneDrive folder the workbook is created in; fixed once the workbook exists. */
+  destinationFolder?: { id: string; name: string };
   /** Target worksheet name (defaults to "Sheet1") */
   worksheetName?: string;
   /** Persisted column layout of the worksheet; only ever grows (see core/sheetColumns.ts). */

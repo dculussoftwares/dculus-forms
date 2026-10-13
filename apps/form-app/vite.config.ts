@@ -1,10 +1,21 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { pdfmeWorkerAssetFallbackPlugin } from './vite-pdfme-worker-fallback';
 
+// MSAL popup sign-in returns to /redirect; Cloudflare Pages serves redirect.html there, Vite needs a rewrite.
+const msalRedirectPagePlugin = (): Plugin => ({
+  name: 'msal-redirect-page',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (req.url && /^\/redirect(\?|#|$)/.test(req.url)) req.url = req.url.replace('/redirect', '/redirect.html');
+      next();
+    });
+  },
+});
+
 export default defineConfig({
-  plugins: [react(), pdfmeWorkerAssetFallbackPlugin()],
+  plugins: [react(), pdfmeWorkerAssetFallbackPlugin(), msalRedirectPagePlugin()],
   resolve: {
     alias: [
       { find: '@', replacement: path.resolve(__dirname, './src') },
@@ -47,6 +58,10 @@ export default defineConfig({
     // to stop Rollup warning about it.
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        redirect: path.resolve(__dirname, 'redirect.html'),
+      },
       output: {
         // P2-20: Split heavy third-party libraries into named chunks to improve
         // caching and reduce initial bundle size.

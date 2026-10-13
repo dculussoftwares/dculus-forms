@@ -22,13 +22,13 @@
     "disconnectButton": "Disconnect",
     "connectedAs": "Connected as {{email}}",
     "openSheet": "Open in Google Sheets",
-    "notConnectedHint": "Connect your Google account to start syncing responses to a spreadsheet. A new spreadsheet will be created automatically on the first submission.",
+    "notConnectedHint": "Connect your Google account to start syncing responses to a spreadsheet. A new spreadsheet is created automatically, in the folder you choose.",
     "popupBlocked": "Could not open the Google login popup. Please allow popups for this site and try again.",
     "authFailed": "Google authentication failed. Please try connecting again."
   },
   "howItWorks": {
     "title": "How It Works",
-    "step1": "On the first form submission, a new Google Sheet is created automatically in your Google Drive.",
+    "step1": "A new Google Sheet is created automatically in your Google Drive, in the folder you choose (My Drive by default).",
     "step2": "A header row is written with all form field names, submission time, and response ID.",
     "step3": "Every subsequent submission appends a new row to the sheet."
   },

@@ -945,8 +945,13 @@ jobs:
             needs.terraform-cloudflare-service-domain.outputs.service_domain }}
           VITE_CDN_ENDPOINT: ${{ needs.terraform-infrastructure-deploy.outputs.public_cdn_url }}
           VITE_PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          VITE_GOOGLE_PICKER_API_KEY: ${{ secrets.GOOGLE_PICKER_API_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           VITE_FORM_VIEWER_URL: ${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}
-        run: ./scripts/write-runtime-config.sh "$GITHUB_WORKSPACE/dist/form-app" VITE_API_URL VITE_GRAPHQL_URL VITE_FORM_VIEWER_URL
+        run: |
+          # The numeric prefix of a Google OAuth client ID is the Cloud project number (Picker App ID).
+          export VITE_GOOGLE_APP_ID="${GOOGLE_CLIENT_ID%%-*}"
+          ./scripts/write-runtime-config.sh "$GITHUB_WORKSPACE/dist/form-app" VITE_API_URL VITE_GRAPHQL_URL VITE_FORM_VIEWER_URL
 
       - name: Install wrangler
         run: npm install -g wrangler

@@ -343,6 +343,62 @@ describe('Microsoft Sheets Handler', () => {
     });
   });
 
+  describe('destination folder and provisioning', () => {
+    const provisionEvent = (): PluginEvent => ({
+      type: 'plugin.provision',
+      formId: 'form-1',
+      organizationId: 'org-1',
+      timestamp: new Date('2026-01-01T00:00:00.000Z'),
+      data: {},
+    });
+
+    const createFetch = (urls: string[]) =>
+      vi.fn().mockImplementation((url: string, opts: RequestInit = {}) => {
+        urls.push(url);
+        if (url.includes(':/content') && opts.method === 'PUT') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ id: 'new-workbook', webUrl: 'https://onedrive.example.com/new-workbook' }),
+            text: async () => '',
+          });
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}), text: async () => '' });
+      }) as any;
+
+    beforeEach(() => {
+      config.workbookId = undefined;
+      config.workbookUrl = undefined;
+      config.sheetColumns = undefined;
+    });
+
+    it('creates the workbook in the OneDrive root without any response', async () => {
+      const urls: string[] = [];
+      global.fetch = createFetch(urls);
+
+      const result = await microsoftSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      expect(result).toMatchObject({ success: true, workbookId: 'new-workbook' });
+      expect(mockContext.getResponseById).not.toHaveBeenCalled();
+      expect(mockContext.updatePluginConfig).toHaveBeenCalledWith(
+        expect.objectContaining({ workbookUrl: 'https://onedrive.example.com/new-workbook' })
+      );
+      expect(urls.find((u) => u.includes(':/content'))).toContain('/me/drive/root:/');
+    });
+
+    it('creates the workbook inside the chosen folder without overwriting a same-named file', async () => {
+      config.destinationFolder = { id: 'folder-1', name: 'Reports' };
+      const urls: string[] = [];
+      global.fetch = createFetch(urls);
+
+      await microsoftSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      const createUrl = urls.find((u) => u.includes(':/content'))!;
+      expect(createUrl).toContain('/me/drive/items/folder-1:/');
+      expect(createUrl).toContain('conflictBehavior=rename');
+    });
+  });
+
   describe('resolveFieldValue via a real form schema', () => {
     it('resolves select/radio option labels, joins checkbox selections, and joins file arrays', async () => {
       const mockEvent: PluginEvent = {

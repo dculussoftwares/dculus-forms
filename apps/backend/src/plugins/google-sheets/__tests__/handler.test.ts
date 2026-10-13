@@ -340,6 +340,76 @@ describe('Google Sheets Handler', () => {
     });
   });
 
+  describe('destination folder and provisioning', () => {
+    const provisionEvent = (): PluginEvent => ({
+      type: 'plugin.provision',
+      formId: 'form-1',
+      organizationId: 'org-1',
+      timestamp: new Date('2026-01-01T00:00:00.000Z'),
+      data: {},
+    });
+
+    const driveAwareFetch = (calls: string[]) =>
+      vi.fn().mockImplementation((url: string, opts: RequestInit = {}) => {
+        calls.push(`${opts.method ?? 'GET'} ${url}`);
+        if (url.endsWith('/spreadsheets') && opts.method === 'POST') {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ spreadsheetId: 'new-sheet' }), text: async () => '' });
+        }
+        if (url.includes('fields=parents')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ parents: ['root-id'] }), text: async () => '' });
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}), text: async () => '' });
+      }) as any;
+
+    beforeEach(() => {
+      config.spreadsheetId = undefined;
+      config.spreadsheetUrl = undefined;
+      config.sheetColumns = undefined;
+    });
+
+    it('creates the spreadsheet without any response and returns its id', async () => {
+      const calls: string[] = [];
+      global.fetch = driveAwareFetch(calls);
+
+      const result = await googleSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      expect(result).toMatchObject({ success: true, spreadsheetId: 'new-sheet' });
+      expect(mockContext.getResponseById).not.toHaveBeenCalled();
+      expect(mockContext.updatePluginConfig).toHaveBeenCalledWith(
+        expect.objectContaining({ spreadsheetId: 'new-sheet', spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/new-sheet' })
+      );
+      expect(calls.some((c) => c.includes('/drive/v3'))).toBe(false);
+    });
+
+    it('moves the new spreadsheet into the chosen folder', async () => {
+      config.destinationFolder = { id: 'folder-1', name: 'Reports' };
+      const calls: string[] = [];
+      global.fetch = driveAwareFetch(calls);
+
+      const result = await googleSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      expect(result.success).toBe(true);
+      const move = calls.find((c) => c.startsWith('PATCH') && c.includes('/drive/v3/files/new-sheet'));
+      expect(move).toContain('addParents=folder-1');
+      expect(move).toContain('removeParents=root-id');
+    });
+
+    it('fails before creating any file when the folder is not accessible', async () => {
+      config.destinationFolder = { id: 'folder-1', name: 'Reports' };
+      const calls: string[] = [];
+      global.fetch = vi.fn().mockImplementation((url: string, opts: RequestInit = {}) => {
+        calls.push(`${opts.method ?? 'GET'} ${url}`);
+        return Promise.resolve({ ok: false, status: 404, json: async () => ({}), text: async () => 'nope' });
+      }) as any;
+
+      const result = await googleSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Destination folder is not accessible');
+      expect(calls.some((c) => c.startsWith('POST'))).toBe(false);
+    });
+  });
+
   describe('resolveFieldValue via a real form schema', () => {
     it('resolves select/radio option labels, joins checkbox selections, and joins file arrays', async () => {
       const mockEvent: PluginEvent = {
