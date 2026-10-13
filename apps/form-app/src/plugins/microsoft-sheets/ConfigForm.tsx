@@ -159,9 +159,14 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
       setPluginName(initialData.name ?? 'Microsoft Excel');
       setWorksheetName(initialData.config?.worksheetName ?? 'Sheet1');
       setMicrosoftToken(initialData.config?.microsoftToken);
-      setDestinationFolder(initialData.config?.destinationFolder);
     }
   }, [initialData, instanceKey]);
+
+  // Keyed on the saved value so an unsaved pick survives parent re-renders that rebuild `initialData`.
+  const savedFolderKey = JSON.stringify(initialData?.config?.destinationFolder ?? null);
+  useEffect(() => {
+    setDestinationFolder(initialData?.config?.destinationFolder);
+  }, [savedFolderKey, instanceKey]);
 
   const handleConnectMicrosoft = () => {
     // Stash whatever's currently typed into "Plugin Name"/"Worksheet Name" — they're only

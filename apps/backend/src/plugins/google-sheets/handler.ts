@@ -154,7 +154,18 @@ const createSpreadsheet = async (
   const spreadsheetId: string = data.spreadsheetId;
   const spreadsheetUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}`;
 
-  if (folderId) await moveToFolder(spreadsheetId, folderId, accessToken);
+  if (folderId) {
+    // Best-effort cleanup: otherwise the retry would leave this sheet untracked in My Drive and create another.
+    try {
+      await moveToFolder(spreadsheetId, folderId, accessToken);
+    } catch (error) {
+      await fetch(`${DRIVE_API_BASE}/files/${spreadsheetId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }).catch(() => undefined);
+      throw error;
+    }
+  }
 
   return { spreadsheetId, spreadsheetUrl };
 };

@@ -351,13 +351,15 @@ const Responses: React.FC = () => {
     }
   };
 
-  const { data: pluginsData } = useQuery(GET_FORM_PLUGINS, {
+  const { data: pluginsData, loading: pluginsLoading } = useQuery(GET_FORM_PLUGINS, {
     variables: { formId: actualFormId },
     skip: !actualFormId,
   });
 
   // Existing integration → open its dashboard (has "Backfill existing responses"); otherwise → setup page.
   const handleSyncTo = (pluginType: 'google-sheets' | 'microsoft-sheets') => {
+    // Before the list resolves, an existing integration would look like none and open a duplicate setup.
+    if (pluginsLoading || !pluginsData) return;
     const matches = (pluginsData?.formPlugins ?? []).filter((p: any) => p.type === pluginType);
     const base = `/dashboard/form/${actualFormId}/integrations`;
     if (matches.length === 0) navigate(`${base}/configure/${pluginType}`);

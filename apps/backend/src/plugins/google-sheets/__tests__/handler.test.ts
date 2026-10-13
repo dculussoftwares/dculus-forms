@@ -408,6 +408,30 @@ describe('Google Sheets Handler', () => {
       expect(result.error).toContain('Destination folder is not accessible');
       expect(calls.some((c) => c.startsWith('POST'))).toBe(false);
     });
+
+    it('deletes the new spreadsheet when moving it into the folder fails', async () => {
+      config.destinationFolder = { id: 'folder-1', name: 'Reports' };
+      const calls: string[] = [];
+      global.fetch = vi.fn().mockImplementation((url: string, opts: RequestInit = {}) => {
+        calls.push(`${opts.method ?? 'GET'} ${url}`);
+        if (url.endsWith('/spreadsheets') && opts.method === 'POST') {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ spreadsheetId: 'new-sheet' }), text: async () => '' });
+        }
+        if (url.includes('fields=parents')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ parents: ['root-id'] }), text: async () => '' });
+        }
+        if (opts.method === 'PATCH') {
+          return Promise.resolve({ ok: false, status: 403, json: async () => ({}), text: async () => 'denied' });
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}), text: async () => '' });
+      }) as any;
+
+      const result = await googleSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      expect(result.success).toBe(false);
+      expect(calls).toContain('DELETE https://www.googleapis.com/drive/v3/files/new-sheet');
+      expect(mockContext.updatePluginConfig).not.toHaveBeenCalled();
+    });
   });
 
   describe('resolveFieldValue via a real form schema', () => {

@@ -139,9 +139,14 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
     if (initialData && !justConnectedRef.current) {
       setPluginName(initialData.name ?? 'Google Sheets');
       setGoogleToken(initialData.config?.googleToken);
-      setDestinationFolder(initialData.config?.destinationFolder);
     }
   }, [initialData, instanceKey]);
+
+  // Keyed on the saved value so an unsaved pick survives parent re-renders that rebuild `initialData`.
+  const savedFolderKey = JSON.stringify(initialData?.config?.destinationFolder ?? null);
+  useEffect(() => {
+    setDestinationFolder(initialData?.config?.destinationFolder);
+  }, [savedFolderKey, instanceKey]);
 
   const handleConnectGoogle = () => {
     // Stash whatever's currently typed into "Plugin Name" — it's only local React state until

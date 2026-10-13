@@ -181,7 +181,8 @@ export const PluginDashboardModal: React.FC<PluginDashboardModalProps> = ({
     if (wasBackfillActiveRef.current && !isBackfillActive) onUpdated();
     wasBackfillActiveRef.current = isBackfillActive;
   }, [isBackfillActive, onUpdated]);
-  const documentUrl: string | undefined = plugin.config?.workbookUrl ?? plugin.config?.spreadsheetUrl;
+  const rawDocumentUrl: string | undefined = plugin.config?.workbookUrl ?? plugin.config?.spreadsheetUrl;
+  const documentUrl = typeof rawDocumentUrl === 'string' && /^https:\/\//i.test(rawDocumentUrl) ? rawDocumentUrl : undefined;
 
   const [startBackfillMutation, { loading: isStartingBackfill }] = useMutation(START_PLUGIN_BACKFILL);
   const [cancelBackfillMutation, { loading: isCancellingBackfill }] = useMutation(CANCEL_PLUGIN_BACKFILL);
