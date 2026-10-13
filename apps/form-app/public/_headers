@@ -1,6 +1,9 @@
 # The Google Picker (docs.google.com) validates the API key's website restriction against the
-# Referer it receives. Cloudflare Pages defaults to `same-origin`, which sends none, and the
-# picker fails with "The API developer key is invalid".
+# Referer it receives; with `Referrer-Policy: same-origin` it gets none and fails with
+# "The API developer key is invalid". The zone's "Add security headers" Managed Transform stamps
+# `same-origin` after Pages, so this rule alone does not win on deployed hosts: the effective
+# override is the zone rule in infrastructure/multi-cloud/terraform/cloudflare/embed-framing.tf.
+# Kept here so the intent also holds for self-hosted/Pages-only deployments.
 /*
   Referrer-Policy: strict-origin-when-cross-origin
 
