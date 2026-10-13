@@ -947,6 +947,7 @@ jobs:
           VITE_PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
           VITE_GOOGLE_PICKER_API_KEY: ${{ secrets.GOOGLE_PICKER_API_KEY }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          VITE_MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
           VITE_FORM_VIEWER_URL: ${{ needs.terraform-cloudflare-pages-viewer.outputs.custom_domain }}
         run: |
           # The numeric prefix of a Google OAuth client ID is the Cloud project number (Picker App ID).
