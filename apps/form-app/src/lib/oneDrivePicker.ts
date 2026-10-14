@@ -40,11 +40,17 @@ const createMsalClient = async (authority: string, loginHint?: string) => {
   });
   await app.initialize();
 
-  return async (scopes: string[], interactive: boolean) => {
-    const account = app.getActiveAccount() ?? app.getAllAccounts()[0];
+  type Acquire = (scopes: string[], interactive: boolean, forceRefresh?: boolean) => Promise<{ accessToken: string }>;
+
+  const acquire: Acquire = async (scopes, interactive, forceRefresh = false) => {
+    // Prefer the account the plugin is connected as; a stale cached account would give a token for another user.
+    const hinted = loginHint
+      ? app.getAllAccounts().find((candidate) => candidate.username.toLowerCase() === loginHint.toLowerCase())
+      : undefined;
+    const account = hinted ?? app.getActiveAccount() ?? app.getAllAccounts()[0];
     if (account) {
       try {
-        return await app.acquireTokenSilent({ scopes, account });
+        return await app.acquireTokenSilent({ scopes, account, forceRefresh });
       } catch (error) {
         if (!interactive || !(error instanceof InteractionRequiredAuthError)) throw error;
       }
@@ -55,17 +61,22 @@ const createMsalClient = async (authority: string, loginHint?: string) => {
     app.setActiveAccount(result.account);
     return result;
   };
+  return acquire;
 };
 
 export const createOneDrivePickerSession = async (loginHint?: string): Promise<OneDrivePickerSession> => {
   const acquire = await createMsalClient('common', loginHint);
 
-  const graphToken = await acquire(['Files.Read'], true);
-
   // Graph's driveType is authoritative; a personal drive's webUrl host is not a SharePoint resource.
-  const driveResponse = await fetch(`${GRAPH_BASE}/me/drive?$select=webUrl,driveType`, {
-    headers: { Authorization: `Bearer ${graphToken.accessToken}` },
-  });
+  const fetchDrive = async (forceRefresh: boolean) => {
+    const graphToken = await acquire(['Files.Read'], true, forceRefresh);
+    return fetch(`${GRAPH_BASE}/me/drive?$select=webUrl,driveType`, {
+      headers: { Authorization: `Bearer ${graphToken.accessToken}` },
+    });
+  };
+  // A token cached in sessionStorage by an earlier page load can be rejected; renew it once.
+  let driveResponse = await fetchDrive(false);
+  if (driveResponse.status === 401) driveResponse = await fetchDrive(true);
   if (!driveResponse.ok) throw new Error(`Could not find your OneDrive (${driveResponse.status})`);
   const drive = (await driveResponse.json()) as { webUrl: string; driveType: string };
 
