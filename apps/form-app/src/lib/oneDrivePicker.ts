@@ -109,5 +109,8 @@ export const buildPickerUrl = (session: OneDrivePickerSession, channelId: string
     title,
   };
   const query = new URLSearchParams({ filePicker: JSON.stringify(options), locale: 'en-us' });
-  return `${session.baseUrl}/_layouts/15/FilePicker.aspx?${query.toString()}`;
+  // OneDrive personal serves the picker at /picker itself; only SharePoint/OneDrive for Business
+  // host it at /_layouts/15/FilePicker.aspx (the wrong path shows "This item might not exist").
+  const pickerPath = session.baseUrl === CONSUMER_PICKER_URL ? '' : '/_layouts/15/FilePicker.aspx';
+  return `${session.baseUrl}${pickerPath}?${query.toString()}`;
 };
