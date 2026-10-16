@@ -13,7 +13,7 @@
     "test:unit:watch": "vitest"
   },
   "dependencies": {
-    "@apollo/client": "^4.3.1",
+    "@apollo/client": "^4.3.3",
     "@dculus/types": "workspace:*",
     "@dculus/ui": "workspace:*",
     "@dculus/utils": "workspace:*",
@@ -39,11 +39,11 @@
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^16.5.0",
     "jsdom": "29.1.1",
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.29",
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "1.0.7",
     "typescript": "~5.8.3",
-    "typescript-eslint": "^8.71.0",
+    "typescript-eslint": "^8.71.1",
     "vite": "^7.3.5",
     "vitest": "^4.1.11"
   }
