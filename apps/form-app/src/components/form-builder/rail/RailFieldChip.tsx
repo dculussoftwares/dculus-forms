@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { useNavigate, useParams } from 'react-router';
 import { ChevronRight, Zap } from 'lucide-react';
-import { FormField, isLayoutField } from '@dculus/types';
-import { cn } from '@dculus/utils';
+import { FormField, FieldType, RichTextFormField, isLayoutField } from '@dculus/types';
+import { cn, stripHtmlAndTruncate } from '@dculus/utils';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useTranslation } from '../../../hooks/useTranslation';
@@ -48,6 +48,12 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
   const setSelection = useFormBuilderStore((state) => state.setSelection);
   const conditions = useFormBuilderStore((state) => state.conditions);
   const { icon: Icon, category } = getFieldTypeConfig(field.type);
+  const displayLabel = isGrid
+    ? tGrid('block.title', { values: { count: field.columnWidths.length } })
+    : field instanceof RichTextFormField
+      ? (field.content && stripHtmlAndTruncate(field.content, 30)) || t('richTextFallback')
+      : ('label' in field && typeof field.label === 'string' && field.label) ||
+        (field.type === FieldType.RICH_TEXT_FIELD ? t('richTextFallback') : field.type);
 
   const ruleCount = useMemo(
     () => getRulesForField(conditions, field.id).length,
@@ -125,11 +131,7 @@ export const RailFieldChip: React.FC<RailFieldChipProps> = ({
       >
         <Icon className="h-3 w-3" />
       </span>
-      <span className="min-w-0 flex-1 truncate">
-        {isGrid
-          ? tGrid('block.title', { values: { count: field.columnWidths.length } })
-          : ('label' in field && typeof field.label === 'string' && field.label) || field.type}
-      </span>
+      <span className="min-w-0 flex-1 truncate">{displayLabel}</span>
       {ruleCount > 0 && (
         <button
           type="button"

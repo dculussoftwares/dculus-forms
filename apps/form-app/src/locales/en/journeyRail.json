@@ -1,6 +1,7 @@
 {
   "untitledPage": "Untitled Page",
   "emptyPage": "No fields yet",
+  "richTextFallback": "Rich Text",
   "intro": {
     "sectionTitle": "Intro",
     "cardLabel": "Welcome screen"
