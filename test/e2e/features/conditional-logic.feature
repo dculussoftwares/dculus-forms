@@ -110,6 +110,31 @@ Feature: Conditional Logic (show/hide fields and pages)
     Then I should see the conditions empty state
 
   @builder-ux
+  Scenario: Unsaved rule drafts are guarded and never auto-persisted
+    Given I sign in with valid credentials
+    When I create a form via GraphQL with conditional logic fields
+    And I open the collaborative builder
+    And I open the conditions tab
+    When I click add rule
+    And I close the condition inspector
+    Then the condition inspector should be closed
+    And I should see the conditions empty state
+    When I start a new rule with trigger "Show bonus field?"
+    Then the condition save status should be "incomplete"
+    When I close the condition inspector
+    Then I should see the discard changes dialog
+    When I keep editing the condition
+    Then the condition inspector should be open
+    When I open the page builder tab
+    And I open the conditions tab
+    Then I should see the restored draft banner
+    And I should see the conditions empty state
+    When I close the condition inspector
+    And I confirm discarding the condition changes
+    Then the condition inspector should be closed
+    And I should see the conditions empty state
+
+  @builder-ux
   Scenario: Broken-reference badge (field)
     Given I sign in with valid credentials
     When I create a form via GraphQL with conditional logic fields

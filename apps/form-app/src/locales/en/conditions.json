@@ -163,12 +163,51 @@
       "enterValue": "Enter a value to compare against.",
       "enterNumber": "Enter a number to compare against.",
       "selectPage": "Choose a page for this action.",
-      "selectTarget": "Choose at least one field for this action."
+      "selectTarget": "Choose at least one field for this action.",
+      "missingPage": "This page was deleted. Choose another page.",
+      "missingTarget": "One or more fields here were deleted. Remove them or choose others."
     },
     "page": "Page {{number}}",
     "pageWithTitle": "Page {{number}} — {{title}}",
-    "save": "Save rule",
-    "cancel": "Cancel"
+    "createRule": "Create rule",
+    "saveChanges": "Save changes",
+    "recreateRule": "Re-create rule",
+    "revert": "Discard changes",
+    "close": "Close editor",
+    "shortcutHint": "⌘/Ctrl + Enter to save",
+    "discardTitle": "Discard unsaved changes?",
+    "discardMessage": "Your changes to this condition haven't been saved. Discard them?",
+    "discardMessageIncomplete": "This condition is incomplete, so it hasn't been saved. Closing now will discard it.",
+    "discardConfirm": "Discard changes",
+    "keepEditing": "Keep editing",
+    "cancel": "Cancel",
+    "status": {
+      "readOnly": "You have view-only access to this form.",
+      "offline": "Offline — your changes are kept here. Save once reconnected.",
+      "error": "Couldn't save. Your changes are kept here — try again once reconnected.",
+      "deleted": "This rule was deleted. Re-create it or discard your changes.",
+      "conflict": "Changed by a collaborator — saving will replace their version.",
+      "createIdle": "Build the rule, then create it.",
+      "clean": "No unsaved changes",
+      "dirty": "Unsaved changes",
+      "incomplete": "Unsaved — finish the rule to save it.",
+      "invalid": "Complete the highlighted rows to save.",
+      "reconnectToEdit": "Reconnect to make changes"
+    },
+    "banner": {
+      "restoredTitle": "Unsaved changes restored",
+      "restoredMessage": "We kept the rule you were editing. Save it or discard it.",
+      "discard": "Discard",
+      "dismiss": "Dismiss",
+      "conflictTitle": "A collaborator changed this rule",
+      "conflictMessage": "Saving will replace their version with yours.",
+      "loadTheirs": "Load their version",
+      "deletedTitle": "This rule was deleted",
+      "deletedMessage": "Someone deleted this rule while you were editing it.",
+      "brokenRefs": "This rule points to deleted fields or pages.",
+      "removeBrokenRefs": "Remove broken references",
+      "lostAccess": "You no longer have edit access, so these changes can't be saved."
+    }
   },
   "actions": {
     "showField": "Show field(s)",
@@ -193,8 +232,13 @@
     "before": "is before",
     "after": "is after"
   },
+  "announce": {
+    "ruleSaved": "Condition saved"
+  },
   "toast": {
     "ruleSaved": "Condition saved",
+    "ruleCreated": "Condition created",
+    "offlineTitle": "You're offline",
     "ruleDuplicated": "Condition duplicated",
     "ruleDeleted": "Condition deleted",
     "ruleCleaned": "Broken references removed"

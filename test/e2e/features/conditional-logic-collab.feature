@@ -50,9 +50,17 @@ Feature: Real-time Collaboration for Condition Rules
     And In session "A" I update the rule terms at index 0 to field "Show bonus field?", operator "equals", value "No"
     And In session "B" I update the rule terms at index 0 to field "Show bonus field?", operator "notEquals", value "Yes"
     And In session "A" I save the condition rule
-    And In session "B" I save the condition rule
+    Then In session "B" I should see the condition conflict banner
+    When In session "B" I save the condition rule
     Then In both sessions there should be exactly one condition rule card for "Show bonus field?"
     And In both sessions that rule card's summary should equal session B's write
+
+  Scenario: Rule deleted by a collaborator while open
+    When In session "A" I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"
+    Then In session "B" I should see a condition rule card for "Show bonus field?"
+    When In session "A" I edit the condition rule for "Show bonus field?"
+    And In session "B" I delete the condition rule for "Show bonus field?"
+    Then In session "A" I should see the condition deleted banner
 
   Scenario: Cross-session broken reference
     When In session "A" I add a rule showing "cond-bonus" when "Show bonus field?" is equal to "Yes"

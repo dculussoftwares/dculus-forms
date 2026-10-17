@@ -1,7 +1,19 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useSearchParams } from 'react-router';
 import { GitBranch, GripHorizontal, Sparkles } from 'lucide-react';
-import { Button, Input, ScrollArea, toastSuccess } from '@dculus/ui';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  ScrollArea,
+  toastError,
+  toastSuccess,
+} from '@dculus/ui';
 import { ConditionAction, ConditionalRule } from '@dculus/types';
 import { generateId, cn } from '@dculus/utils';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
@@ -11,7 +23,16 @@ import { cleanupRuleReferences, useLogicHealth } from '../../../hooks/useLogicHe
 import { getRulesForField } from '../../../utils/getRulesForField';
 import { ConfirmationDialog } from '../ConfirmationDialog';
 import { ConditionRuleCard } from './ConditionRuleCard';
-import { RuleInspector, type RuleDraftSeed } from './RuleInspector';
+import { RuleInspector, type RuleCommitPayload } from './RuleInspector';
+import type { RuleDraftSeed } from './ruleDraft';
+import { planCommit } from './ruleDraft';
+import {
+  clearLogicDraft,
+  readLogicDraft,
+  writeLogicDraft,
+  type LogicDraftStash,
+} from './logicDraftStorage';
+import { isIntentionalNavigationPending } from '../../../lib/intentionalNavigation';
 import { LogicRail, type RuleFilter } from './LogicRail';
 import { LogicHealthPanel } from './LogicHealthPanel';
 import { LogicSimulator } from './LogicSimulator';
@@ -20,11 +41,22 @@ import { fieldDisplayLabel } from './conditionFieldConfig';
 import { buildLogicIndex, ruleActionTypes, ruleTriggerPageId } from './logicVisuals';
 import { buildRuleSentence } from './ruleSentence';
 
-/** Panel-open state: a rule being edited, a brand-new draft, or nothing. */
+/**
+ * Panel-open state: a rule being edited, a brand-new draft, or nothing. `edit`
+ * holds only the id — the inspector reads the live rule, so a collaborator's
+ * change or deletion is visible to it. `restored` carries a draft recovered
+ * from an earlier visit.
+ */
 type InspectorState =
   | { mode: 'closed' }
-  | { mode: 'edit'; rule: ConditionalRule }
-  | { mode: 'create'; seed: RuleDraftSeed | null };
+  | { mode: 'edit'; ruleId: string; restored?: LogicDraftStash }
+  | { mode: 'create'; draftId: string; seed: RuleDraftSeed | null; restored?: LogicDraftStash };
+
+const isSameTarget = (a: InspectorState, b: InspectorState): boolean =>
+  a.mode === b.mode &&
+  (a.mode === 'closed' ||
+    (a.mode === 'edit' && b.mode === 'edit' && a.ruleId === b.ruleId) ||
+    (a.mode === 'create' && b.mode === 'create' && a.draftId === b.draftId));
 
 /**
  * The Logic workspace.
@@ -53,8 +85,28 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
 
   const permissions = useFormPermissions();
   const canEdit = permissions.canEditFields();
+  const isConnected = useFormBuilderStore((state) => state.isConnected);
+  // Composing works offline; anything that writes to the shared document does not.
+  const canWrite = canEdit && isConnected;
+  const { formId } = useParams<{ formId: string }>();
 
-  const [inspector, setInspector] = useState<InspectorState>({ mode: 'closed' });
+  // A draft left behind by a tab switch, back navigation or reload comes back here.
+  const [inspector, setInspector] = useState<InspectorState>(() => {
+    const stash = formId ? readLogicDraft(formId) : null;
+    if (!stash) return { mode: 'closed' };
+    return stash.mode === 'edit'
+      ? { mode: 'edit', ruleId: stash.ruleId, restored: stash }
+      : { mode: 'create', draftId: stash.ruleId, seed: null, restored: stash };
+  });
+  const [inspectorDirty, setInspectorDirty] = useState(false);
+  const [pendingTransition, setPendingTransition] = useState<InspectorState | null>(null);
+  const [announcement, setAnnouncement] = useState('');
+  const dirtyRef = useRef(false);
+  const draftCompleteRef = useRef(false);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const focusAfterSaveRef = useRef<string | null>(null);
+  const previousModeRef = useRef(inspector.mode);
+  const keepEditingRef = useRef<HTMLButtonElement>(null);
   const [description, setDescription] = useState('');
   const [pendingDelete, setPendingDelete] = useState<ConditionalRule | null>(null);
   const [inspectorWidth, setInspectorWidth] = useState(400);
@@ -143,19 +195,117 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
     };
   }, [conditions, health, index]);
 
+  // ── Inspector lifecycle ──────────────────────────────────────────────────
+  const resetDraftTracking = useCallback(() => {
+    dirtyRef.current = false;
+    setInspectorDirty(false);
+    if (formId) clearLogicDraft(formId);
+  }, [formId]);
+
+  const handleDraftChange = useCallback(
+    ({ stash, isComplete }: { stash: LogicDraftStash | null; isComplete: boolean }) => {
+      dirtyRef.current = stash !== null;
+      draftCompleteRef.current = isComplete;
+      setInspectorDirty(stash !== null);
+      if (!formId) return;
+      if (stash) writeLogicDraft(formId, stash);
+      else clearLogicDraft(formId);
+    },
+    [formId]
+  );
+
+  const openInspector = useCallback(
+    (next: InspectorState) => {
+      if (next.mode === 'closed') resetDraftTracking();
+      setInspector(next);
+    },
+    [resetDraftTracking]
+  );
+
+  /** Every in-tab exit goes through here so unsaved work is never dropped silently. */
+  const requestInspector = useCallback(
+    (next: InspectorState) => {
+      if (isSameTarget(inspector, next)) return;
+      if (inspector.mode === 'closed') {
+        const active = document.activeElement;
+        returnFocusRef.current = active instanceof HTMLElement ? active : null;
+      }
+      if (dirtyRef.current) setPendingTransition(next);
+      else openInspector(next);
+    },
+    [inspector, openInspector]
+  );
+
+  const openCreate = (seed: RuleDraftSeed | null) =>
+    requestInspector({ mode: 'create', draftId: generateId(), seed });
+
+  // Return focus when the panel closes: the saved card, else where the user came from.
+  useEffect(() => {
+    const wasOpen = previousModeRef.current !== 'closed';
+    previousModeRef.current = inspector.mode;
+    if (!wasOpen || inspector.mode !== 'closed') return;
+    const savedId = focusAfterSaveRef.current;
+    focusAfterSaveRef.current = null;
+    const target =
+      (savedId &&
+        document.querySelector<HTMLElement>(`[data-testid="condition-edit-${savedId}"]`)) ||
+      (returnFocusRef.current && document.contains(returnFocusRef.current)
+        ? returnFocusRef.current
+        : null) ||
+      document.querySelector<HTMLElement>('[data-testid="condition-add-rule"]');
+    target?.scrollIntoView?.({ block: 'nearest' });
+    target?.focus();
+  }, [inspector.mode]);
+
+  // Reload / tab close: the draft is stashed, but warn so nobody loses it by accident.
+  useEffect(() => {
+    if (!inspectorDirty) return;
+    const handler = (event: BeforeUnloadEvent) => {
+      if (isIntentionalNavigationPending()) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [inspectorDirty]);
+
+  // The live region is cleared after a moment so a repeat save announces again.
+  useEffect(() => {
+    if (!announcement) return;
+    const timer = setTimeout(() => setAnnouncement(''), 3000);
+    return () => clearTimeout(timer);
+  }, [announcement]);
+
   // ── Mutations ────────────────────────────────────────────────────────────
-  const handleSave = (rule: ConditionalRule) => {
-    if (inspector.mode === 'edit') updateCondition(rule.id, rule);
-    else addCondition(rule);
-    toastSuccess(t('toast.ruleSaved'));
+  const handleCommit = (payload: RuleCommitPayload): 'ok' | 'deleted' | 'failed' => {
+    const store = useFormBuilderStore.getState();
+    const plan = planCommit({ ...payload, liveRules: store.conditions });
+    if (plan.kind === 'blocked') return 'deleted';
+    const written =
+      plan.kind === 'add'
+        ? store.addCondition(plan.rule)
+        : store.updateCondition(plan.rule.id, plan.rule);
+    if (!written) return useFormBuilderStore.getState().isConnected ? 'deleted' : 'failed';
+
+    resetDraftTracking();
+    focusAfterSaveRef.current = plan.rule.id;
     setInspector({ mode: 'closed' });
+    if (payload.intent === 'update') setAnnouncement(t('announce.ruleSaved'));
+    else toastSuccess(t('toast.ruleCreated'));
+    return 'ok';
+  };
+
+  const confirmDiscard = () => {
+    const next = pendingTransition;
+    setPendingTransition(null);
+    if (next) openInspector(next);
   };
 
   const handleDuplicate = (rule: ConditionalRule) => {
     // Deep-copy terms and actions, including each action's nested fieldIds
     // array — a spread alone leaves the copy sharing that array with the
     // original, and both rules are written straight into the Y.js document.
-    addCondition({
+    const written = addCondition({
       ...rule,
       id: generateId(),
       terms: rule.terms.map((term) => ({ ...term })),
@@ -163,14 +313,19 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
         'fieldIds' in action ? { ...action, fieldIds: [...action.fieldIds] } : { ...action }
       ),
     });
-    toastSuccess(t('toast.ruleDuplicated'));
+    if (written) toastSuccess(t('toast.ruleDuplicated'));
   };
 
   const confirmDelete = () => {
     if (!pendingDelete) return;
-    removeCondition(pendingDelete.id);
-    if (inspector.mode === 'edit' && inspector.rule.id === pendingDelete.id) {
-      setInspector({ mode: 'closed' });
+    if (!removeCondition(pendingDelete.id)) {
+      toastError(t('toast.offlineTitle'), t('editor.status.offline'));
+      setPendingDelete(null);
+      return;
+    }
+    // Deleting is itself the explicit decision, so the open draft needs no second prompt.
+    if (inspector.mode === 'edit' && inspector.ruleId === pendingDelete.id) {
+      openInspector({ mode: 'closed' });
     }
     setPendingDelete(null);
     toastSuccess(t('toast.ruleDeleted'));
@@ -185,10 +340,11 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
 
   const selectRuleById = useCallback(
     (ruleId: string) => {
-      const rule = conditions.find((candidate) => candidate.id === ruleId);
-      if (rule) setInspector({ mode: 'edit', rule });
+      if (conditions.some((candidate) => candidate.id === ruleId)) {
+        requestInspector({ mode: 'edit', ruleId });
+      }
     },
-    [conditions]
+    [conditions, requestInspector]
   );
 
   const handleCleanupRule = useCallback(
@@ -202,14 +358,14 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
         setPendingDelete(rule);
         return;
       }
-      updateCondition(ruleId, cleaned);
-      toastSuccess(t('toast.ruleCleaned'));
+      if (updateCondition(ruleId, cleaned)) toastSuccess(t('toast.ruleCleaned'));
     },
     [conditions, pages, updateCondition, t]
   );
 
   const allVisibleEnabled = visibleRules.length > 0 && visibleRules.every((rule) => rule.enabled);
   const toggleAllVisible = () => {
+    if (!isConnected) return;
     for (const rule of visibleRules) setConditionEnabled(rule.id, !allVisibleEnabled);
   };
 
@@ -261,7 +417,7 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
         onClearFieldFilter={clearFieldFilter}
         counts={counts}
         pages={pages}
-        onAddRule={() => setInspector({ mode: 'create', seed: null })}
+        onAddRule={() => openCreate(null)}
       />
 
       {/* ── Canvas ──────────────────────────────────────────────────────── */}
@@ -340,12 +496,19 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  disabled={!canEdit}
+                  disabled={!canWrite}
                   onClick={() => {
-                    if (!canEdit) return;
+                    if (!canWrite) return;
                     const accepted = acceptConditionSuggestion(suggestion.id);
-                    if (accepted) addCondition(accepted.rule);
+                    if (!accepted) return;
+                    // An upsert, so a suggestion reusing an existing rule id can't duplicate it.
+                    const exists = useFormBuilderStore
+                      .getState()
+                      .conditions.some((rule) => rule.id === accepted.rule.id);
+                    if (exists) updateCondition(accepted.rule.id, accepted.rule);
+                    else addCondition(accepted.rule);
                   }}
+                  title={!isConnected ? t('editor.status.reconnectToEdit') : undefined}
                   data-testid={`condition-suggestion-accept-${suggestion.id}`}
                 >
                   {t('ai.accept')}
@@ -371,7 +534,7 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
               <RecipeGallery
                 pages={pages}
                 canEdit={canEdit}
-                onPick={(seed) => setInspector({ mode: 'create', seed })}
+                onPick={(seed) => openCreate(seed)}
               />
             </div>
           ) : visibleRules.length === 0 ? (
@@ -414,6 +577,7 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
                     size="sm"
                     className="h-7 px-2 text-[11px] text-[var(--tf-muted)]"
                     onClick={toggleAllVisible}
+                    disabled={!isConnected}
                     data-testid="logic-bulk-toggle"
                   >
                     {t(allVisibleEnabled ? 'rail.turnAllOff' : 'rail.turnAllOn', {
@@ -430,10 +594,11 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
                     pages={pages}
                     index={index}
                     canEdit={canEdit}
+                    writeDisabled={!isConnected}
                     isCircular={health.circularRuleIds.has(rule.id)}
-                    isSelected={inspector.mode === 'edit' && inspector.rule.id === rule.id}
+                    isSelected={inspector.mode === 'edit' && inspector.ruleId === rule.id}
                     showPageNumbers={pages.length > 1}
-                    onEdit={() => setInspector({ mode: 'edit', rule })}
+                    onEdit={() => requestInspector({ mode: 'edit', ruleId: rule.id })}
                     onDelete={() => setPendingDelete(rule)}
                     onDuplicate={() => handleDuplicate(rule)}
                     onToggleEnabled={(enabled) => setConditionEnabled(rule.id, enabled)}
@@ -469,7 +634,7 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
               health={health}
               index={index}
               rules={conditions}
-              canEdit={canEdit}
+              canEdit={canWrite}
               onSelectRule={selectRuleById}
               onCleanupRule={handleCleanupRule}
             />
@@ -478,16 +643,77 @@ export const ConditionsTab: React.FC<{ onDescribeWithAI: (description: string) =
         ) : (
           <RuleInspector
             // Remount on target change so the draft state re-seeds cleanly.
-            key={inspector.mode === 'edit' ? inspector.rule.id : 'new-rule'}
+            key={inspector.mode === 'edit' ? `edit:${inspector.ruleId}` : `create:${inspector.draftId}`}
             pages={pages}
-            initialRule={inspector.mode === 'edit' ? inspector.rule : null}
+            mode={inspector.mode}
+            ruleId={inspector.mode === 'edit' ? inspector.ruleId : inspector.draftId}
+            liveRule={
+              inspector.mode === 'edit'
+                ? conditions.find((rule) => rule.id === inspector.ruleId)
+                : undefined
+            }
             seed={inspector.mode === 'create' ? inspector.seed : null}
+            restored={inspector.restored}
             canEdit={canEdit}
-            onSave={handleSave}
-            onClose={() => setInspector({ mode: 'closed' })}
+            isConnected={isConnected}
+            onCommit={handleCommit}
+            onRequestClose={() => requestInspector({ mode: 'closed' })}
+            onDiscard={() => openInspector({ mode: 'closed' })}
+            onDraftChange={handleDraftChange}
           />
         )}
       </div>
+
+      {/* Screen-reader confirmation for saves, which close the panel silently otherwise. */}
+      <div
+        role="status"
+        aria-live="polite"
+        className="sr-only"
+        data-testid="logic-live-region"
+      >
+        {announcement}
+      </div>
+
+      <Dialog
+        open={pendingTransition !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingTransition(null);
+        }}
+      >
+        <DialogContent
+          data-testid="condition-discard-dialog"
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            keepEditingRef.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>{t('editor.discardTitle')}</DialogTitle>
+            <DialogDescription>
+              {draftCompleteRef.current
+                ? t('editor.discardMessage')
+                : t('editor.discardMessageIncomplete')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              ref={keepEditingRef}
+              variant="outline"
+              onClick={() => setPendingTransition(null)}
+              data-testid="condition-discard-cancel"
+            >
+              {t('editor.keepEditing')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDiscard}
+              data-testid="condition-discard-confirm"
+            >
+              {t('editor.discardConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationDialog
         isOpen={pendingDelete !== null}

@@ -23,14 +23,14 @@ const cloneRule = (rule: ConditionalRule): ConditionalRule =>
 export const createConditionsSlice: SliceCreator<ConditionsSlice> = (set, get) => {
   /**
    * Run a mutation against the 'conditions' Y.Array (created on first write).
-   * No-ops when collaboration isn't ready — mirroring how the other slices
-   * guard their Y.js writes; local state still updates so the UI stays
-   * responsive and re-syncs from Y.js on reconnect.
+   * Returns false without touching anything when collaboration isn't ready —
+   * callers must not update local state then, or the next Y.js sync silently
+   * discards the "saved" change.
    */
-  const withConditionsArray = (mutate: (arr: Y.Array<unknown>) => void) => {
+  const withConditionsArray = (mutate: (arr: Y.Array<unknown>) => void): boolean => {
     const { _getYDoc, _isYJSReady } = get() as any;
     const ydoc: Y.Doc | null = _getYDoc();
-    if (!ydoc || !_isYJSReady()) return;
+    if (!ydoc || !_isYJSReady()) return false;
 
     const formSchemaMap = ydoc.getMap('formSchema');
     let conditionsArray = formSchemaMap.get('conditions');
@@ -39,6 +39,7 @@ export const createConditionsSlice: SliceCreator<ConditionsSlice> = (set, get) =
       formSchemaMap.set('conditions', conditionsArray);
     }
     ydoc.transact(() => mutate(conditionsArray as Y.Array<unknown>));
+    return true;
   };
 
   const indexOfRule = (arr: Y.Array<unknown>, ruleId: string): number =>
@@ -48,46 +49,59 @@ export const createConditionsSlice: SliceCreator<ConditionsSlice> = (set, get) =
     // Initial state
     conditions: [],
 
-    addCondition: (rule: ConditionalRule) => {
-      set({ conditions: [...get().conditions, rule] });
-      withConditionsArray((arr) => {
+    addCondition: (rule: ConditionalRule): boolean => {
+      const written = withConditionsArray((arr) => {
         if (indexOfRule(arr, rule.id) >= 0) return; // already synced from elsewhere
         arr.push([cloneRule(rule)]);
       });
+      if (!written) return false;
+      const current = get().conditions;
+      set({
+        conditions: current.some((existing: ConditionalRule) => existing.id === rule.id)
+          ? current
+          : [...current, rule],
+      });
+      return true;
     },
 
-    updateCondition: (ruleId: string, rule: ConditionalRule) => {
+    updateCondition: (ruleId: string, rule: ConditionalRule): boolean => {
+      let found = false;
+      const written = withConditionsArray((arr) => {
+        const index = indexOfRule(arr, ruleId);
+        if (index < 0) return;
+        found = true;
+        arr.delete(index, 1);
+        arr.insert(index, [cloneRule(rule)]);
+      });
+      if (!written || !found) return false;
       set({
         conditions: get().conditions.map((existing: ConditionalRule) =>
           existing.id === ruleId ? rule : existing
         ),
       });
-      withConditionsArray((arr) => {
-        const index = indexOfRule(arr, ruleId);
-        if (index < 0) return;
-        arr.delete(index, 1);
-        arr.insert(index, [cloneRule(rule)]);
-      });
+      return true;
     },
 
-    removeCondition: (ruleId: string) => {
+    removeCondition: (ruleId: string): boolean => {
+      const written = withConditionsArray((arr) => {
+        const index = indexOfRule(arr, ruleId);
+        if (index >= 0) arr.delete(index, 1);
+      });
+      if (!written) return false;
       set({
         conditions: get().conditions.filter(
           (existing: ConditionalRule) => existing.id !== ruleId
         ),
       });
-      withConditionsArray((arr) => {
-        const index = indexOfRule(arr, ruleId);
-        if (index >= 0) arr.delete(index, 1);
-      });
+      return true;
     },
 
-    setConditionEnabled: (ruleId: string, enabled: boolean) => {
+    setConditionEnabled: (ruleId: string, enabled: boolean): boolean => {
       const existing = get().conditions.find(
         (rule: ConditionalRule) => rule.id === ruleId
       );
-      if (!existing) return;
-      get().updateCondition(ruleId, { ...existing, enabled });
+      if (!existing) return false;
+      return get().updateCondition(ruleId, { ...existing, enabled });
     },
   };
 };

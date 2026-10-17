@@ -20,6 +20,8 @@ interface ConditionRuleCardProps {
   pages: FormPage[];
   index: LogicIndex;
   canEdit: boolean;
+  /** Blocks toggle/duplicate/delete while the collaboration connection is down. */
+  writeDisabled?: boolean;
   isCircular?: boolean;
   isSelected?: boolean;
   /** Suppresses per-chip page numbers on single-page forms, where they're noise. */
@@ -46,6 +48,7 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
   pages,
   index,
   canEdit,
+  writeDisabled = false,
   isCircular,
   isSelected,
   showPageNumbers = true,
@@ -113,7 +116,7 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
         <div className="flex shrink-0 items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
           <Switch
             checked={rule.enabled}
-            disabled={!canEdit}
+            disabled={!canEdit || writeDisabled}
             onCheckedChange={onToggleEnabled}
             aria-label={t(rule.enabled ? 'card.disableRule' : 'card.enableRule', {
               values: { rule: sentence },
@@ -127,8 +130,9 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
                 size="icon"
                 className="h-7 w-7 text-[var(--tf-light-muted)] opacity-70 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
                 onClick={onDuplicate}
+                disabled={writeDisabled}
                 aria-label={t('card.duplicate')}
-                title={t('card.duplicate')}
+                title={writeDisabled ? t('editor.status.reconnectToEdit') : t('card.duplicate')}
                 data-testid={`condition-duplicate-${rule.id}`}
               >
                 <Copy className="h-3.5 w-3.5" />
@@ -149,8 +153,9 @@ export const ConditionRuleCard: React.FC<ConditionRuleCardProps> = ({
                 size="icon"
                 className="h-7 w-7 text-destructive opacity-70 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
                 onClick={onDelete}
+                disabled={writeDisabled}
                 aria-label={t('card.delete')}
-                title={t('card.delete')}
+                title={writeDisabled ? t('editor.status.reconnectToEdit') : t('card.delete')}
                 data-testid={`condition-delete-${rule.id}`}
               >
                 <Trash2 className="h-3.5 w-3.5" />

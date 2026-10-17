@@ -163,10 +163,11 @@ export interface ConditionsSlice {
   conditions: ConditionalRule[];
 
   // Actions
-  addCondition: (rule: ConditionalRule) => void;
-  updateCondition: (ruleId: string, rule: ConditionalRule) => void;
-  removeCondition: (ruleId: string) => void;
-  setConditionEnabled: (ruleId: string, enabled: boolean) => void;
+  /** Write actions return false when nothing was written (offline, or the rule is gone). */
+  addCondition: (rule: ConditionalRule) => boolean;
+  updateCondition: (ruleId: string, rule: ConditionalRule) => boolean;
+  removeCondition: (ruleId: string) => boolean;
+  setConditionEnabled: (ruleId: string, enabled: boolean) => boolean;
 }
 
 /**

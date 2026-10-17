@@ -1186,6 +1186,70 @@ When(
   }
 );
 
+// Unsaved-draft guard steps. Rule edits are explicit-save, so these drive the
+// paths where a draft is abandoned instead of saved.
+When('I click add rule', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await this.page.getByTestId('condition-add-rule').click();
+});
+
+When(
+  'I start a new rule with trigger {string}',
+  async function (this: CustomWorld, triggerLabel: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await this.page.getByTestId('condition-add-rule').click();
+    await this.page.getByTestId('condition-term-field-0').click();
+    await this.page.getByRole('option', { name: triggerLabel }).click();
+  }
+);
+
+When('I close the condition inspector', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await this.page.getByTestId('condition-inspector-close').click();
+});
+
+When('I keep editing the condition', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await this.page.getByTestId('condition-discard-cancel').click();
+});
+
+When('I confirm discarding the condition changes', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await this.page.getByTestId('condition-discard-confirm').click();
+});
+
+Then('I should see the discard changes dialog', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('condition-discard-dialog')).toBeVisible({ timeout: 5_000 });
+});
+
+Then('the condition inspector should be open', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('condition-save')).toBeVisible({ timeout: 5_000 });
+});
+
+Then('the condition inspector should be closed', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('condition-save')).toHaveCount(0, { timeout: 5_000 });
+});
+
+Then(
+  'the condition save status should be {string}',
+  async function (this: CustomWorld, state: string) {
+    if (!this.page) throw new Error('Page is not initialized');
+    await expect(this.page.getByTestId('condition-save-status')).toHaveAttribute(
+      'data-state',
+      state,
+      { timeout: 5_000 }
+    );
+  }
+);
+
+Then('I should see the restored draft banner', async function (this: CustomWorld) {
+  if (!this.page) throw new Error('Page is not initialized');
+  await expect(this.page.getByTestId('condition-restored-banner')).toBeVisible({ timeout: 5_000 });
+});
+
 Then(
   'the condition card for {string} should show {string} in its summary',
   async function (this: CustomWorld, triggerLabel: string, expectedText: string) {

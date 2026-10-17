@@ -97,9 +97,12 @@ export const cleanupRuleReferences = (
         ? { ...action, fieldIds: action.fieldIds.filter((id) => liveFieldIds.has(id)) }
         : action
     )
-    .filter((action) =>
-      'fieldIds' in action ? action.fieldIds.length > 0 : livePageIds.has(action.pageId)
-    );
+    .filter((action) => {
+      if ('fieldIds' in action) return action.fieldIds.length > 0;
+      // Action shapes from newer clients carry no pageId and are kept untouched.
+      const pageId = (action as { pageId?: unknown }).pageId;
+      return typeof pageId === 'string' ? livePageIds.has(pageId) : true;
+    });
 
   return {
     rule: { ...rule, terms, actions },

@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Sparkles, X } from 'lucide-react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { AlertCircle, Check, CloudOff, Eye, Plus, Sparkles, X } from 'lucide-react';
 import {
   Button,
   DatePicker,
@@ -11,14 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@dculus/ui';
-import {
-  ConditionAction,
-  ConditionOperator,
-  ConditionTerm,
-  ConditionalRule,
-  FormPage,
-} from '@dculus/types';
-import { generateId, parseCalendarDate, formatCalendarDate, cn } from '@dculus/utils';
+import { ConditionAction, ConditionOperator, ConditionTerm, ConditionalRule, FormPage } from '@dculus/types';
+import { parseCalendarDate, formatCalendarDate, cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 import {
   TRIGGER_OPERATORS,
@@ -30,124 +24,197 @@ import { FieldPicker } from './FieldPicker';
 import { TargetFieldPicker } from './TargetFieldPicker';
 import { ACTION_TONE, actionToneClass, buildLogicIndex } from './logicVisuals';
 import { buildRuleSentence } from './ruleSentence';
+import type { LogicDraftStash } from './logicDraftStorage';
+import {
+  ACTION_TYPES,
+  cleanupDraftReferences,
+  deriveSaveStatus,
+  draftSignature,
+  draftToRule,
+  emptyAction,
+  emptyTerm,
+  getDraftIssues,
+  initialDraftFor,
+  preservedActions,
+  reconcileWithLive,
+  ruleSignature,
+  type CommitIntent,
+  type EditorAction,
+  type EditorActionType,
+  type RuleDraft,
+  type RuleDraftSeed,
+  type SaveStatus,
+} from './ruleDraft';
 
-type EditorActionType =
-  | 'showField'
-  | 'hideField'
-  | 'hidePage'
-  | 'skipToPage'
-  | 'requireField'
-  | 'unrequireField';
+export type { RuleDraftSeed } from './ruleDraft';
 
-interface EditorAction {
-  type: EditorActionType;
-  fieldIds: string[];
-  pageId: string;
-}
-
-const ACTION_TYPES: EditorActionType[] = [
-  'showField',
-  'hideField',
-  'requireField',
-  'unrequireField',
-  'hidePage',
-  'skipToPage',
-];
-
-/** A stored number, or a numeric string the editor is willing to coerce. */
-const isFiniteNumeric = (value: unknown): boolean =>
-  (typeof value === 'number' && Number.isFinite(value)) ||
-  (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)));
-
-const emptyTerm = (): ConditionTerm => ({ fieldId: '', operator: 'equals' });
-const emptyAction = (): EditorAction => ({ type: 'showField', fieldIds: [], pageId: '' });
-
-// Actions this editor can't edit (showPage from newer clients) are preserved
-// verbatim on save rather than silently dropped.
-const preservedActions = (rule: ConditionalRule | null): ConditionAction[] =>
-  (rule?.actions ?? []).filter(
-    (action) =>
-      !('fieldIds' in action) && action.type !== 'hidePage' && action.type !== 'skipToPage'
-  );
-
-const toEditorActions = (rule: ConditionalRule | null): EditorAction[] => {
-  if (!rule) return [emptyAction()];
-  const actions: EditorAction[] = [];
-  for (const action of rule.actions) {
-    if ('fieldIds' in action) {
-      actions.push({ type: action.type, fieldIds: [...action.fieldIds], pageId: '' });
-    } else if (action.type === 'hidePage' || action.type === 'skipToPage') {
-      actions.push({ type: action.type, fieldIds: [], pageId: action.pageId });
-    }
-  }
-  // A rule holding only preserved actions must stay savable — start with no
-  // editable rows instead of an unsatisfiable empty placeholder.
-  if (actions.length === 0 && preservedActions(rule).length > 0) return [];
-  return actions.length > 0 ? actions : [emptyAction()];
-};
-
-export interface RuleDraftSeed {
-  terms?: ConditionTerm[];
-  actions?: Array<Partial<EditorAction> & { type: EditorActionType }>;
-  combinator?: 'any' | 'all';
+export interface RuleCommitPayload {
+  intent: CommitIntent;
+  ruleId: string;
+  draft: RuleDraft;
+  baseEnabled: boolean;
+  basePreserved: ConditionAction[];
 }
 
 interface RuleInspectorProps {
   pages: FormPage[];
-  /** null = authoring a new rule */
-  initialRule: ConditionalRule | null;
+  mode: 'create' | 'edit';
+  /** The rule id when editing, the provisional draft id when creating. */
+  ruleId: string;
+  /** Current store version of the rule being edited; undefined once it is deleted. */
+  liveRule: ConditionalRule | undefined;
   /** Pre-fills a new rule's shape when launched from a recipe. */
   seed?: RuleDraftSeed | null;
+  /** An unsaved draft recovered from an earlier visit. */
+  restored?: LogicDraftStash;
   canEdit: boolean;
-  onSave: (rule: ConditionalRule) => void;
-  onClose: () => void;
+  isConnected: boolean;
+  /** Writes the rule; the inspector stays mounted on anything but 'ok'. */
+  onCommit: (payload: RuleCommitPayload) => 'ok' | 'deleted' | 'failed';
+  /** Guarded close — the parent decides whether to confirm discarding. */
+  onRequestClose: () => void;
+  /** Close without a guard (user already chose to discard). */
+  onDiscard: () => void;
+  onDraftChange: (state: { stash: LogicDraftStash | null; isComplete: boolean }) => void;
 }
+
+const STATUS_STYLE: Record<SaveStatus, string> = {
+  readOnly: 'text-[var(--tf-muted)] dark:text-gray-400',
+  offline: 'text-amber-700 dark:text-amber-400',
+  error: 'text-[var(--tf-error)] dark:text-red-400',
+  deleted: 'text-amber-700 dark:text-amber-400',
+  conflict: 'text-amber-700 dark:text-amber-400',
+  createIdle: 'text-[var(--tf-muted)] dark:text-gray-400',
+  clean: 'text-[var(--tf-muted)] dark:text-gray-400',
+  invalid: 'text-amber-700 dark:text-amber-400',
+  incomplete: 'text-[var(--tf-muted)] dark:text-gray-400',
+  dirty: 'text-[var(--tf-muted)] dark:text-gray-400',
+};
+
+const StatusIcon: React.FC<{ status: SaveStatus }> = ({ status }) => {
+  const className = 'mt-0.5 h-3.5 w-3.5 shrink-0';
+  switch (status) {
+    case 'readOnly':
+      return <Eye className={className} aria-hidden="true" />;
+    case 'offline':
+      return <CloudOff className={className} aria-hidden="true" />;
+    case 'error':
+    case 'invalid':
+    case 'deleted':
+    case 'conflict':
+      return <AlertCircle className={className} aria-hidden="true" />;
+    case 'clean':
+      return <Check className={cn(className, 'text-green-600')} aria-hidden="true" />;
+    case 'dirty':
+      return <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />;
+    default:
+      return null;
+  }
+};
+
+const InspectorBanner: React.FC<{
+  testId: string;
+  tone: 'info' | 'warn';
+  title: string;
+  message?: string;
+  onDismiss?: () => void;
+  dismissLabel?: string;
+  bannerRef?: React.Ref<HTMLDivElement>;
+  children?: React.ReactNode;
+}> = ({ testId, tone, title, message, onDismiss, dismissLabel, bannerRef, children }) => (
+  <div
+    ref={bannerRef}
+    tabIndex={-1}
+    role="group"
+    aria-label={title}
+    data-testid={testId}
+    className={cn(
+      'space-y-1.5 rounded-lg border p-3 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring',
+      tone === 'warn'
+        ? 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200'
+        : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200'
+    )}
+  >
+    <div className="flex items-start justify-between gap-2">
+      <p className="font-semibold">{title}</p>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label={dismissLabel}
+          className="shrink-0 rounded p-0.5 hover:bg-black/5 dark:hover:bg-white/10"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+    {message && <p className="leading-relaxed">{message}</p>}
+    {children && <div className="flex flex-wrap gap-2 pt-0.5">{children}</div>}
+  </div>
+);
 
 /**
  * The rule editor, as an inline panel rather than a modal dialog.
  *
- * The dialog it replaces hid the rest of the rule list while you worked, so you
- * could not check an existing rule's wording or spot that you were duplicating
- * one. It also scrolled its own footer out of view on multi-action rules
- * (`max-h-[85vh] overflow-y-auto` on the whole dialog), and communicated an
- * incomplete row only by silently disabling Save. Here the body scrolls under a
- * fixed header and footer, each row states what it is missing, and a live
- * sentence reads the rule back to the author.
- *
- * The term/action state machine, validity rules, and the `preservedActions`
- * forward-compatibility behavior are carried over unchanged.
+ * Edits live in a local draft and reach the shared Y.js document only on an
+ * explicit Create/Save: a rule is a compound statement, so any intermediate
+ * "valid" state would otherwise go live to collaborators and respondents of a
+ * published form. Unsaved work is guarded by the parent (in-tab exits) and
+ * stashed by it (route changes, reload). The draft is compared against a `base`
+ * snapshot, so remote edits are rebased, flagged as a conflict, or reported as
+ * a deletion instead of being silently overwritten.
  */
 export const RuleInspector: React.FC<RuleInspectorProps> = ({
   pages,
-  initialRule,
+  mode,
+  ruleId,
+  liveRule,
   seed,
+  restored,
   canEdit,
-  onSave,
-  onClose,
+  isConnected,
+  onCommit,
+  onRequestClose,
+  onDiscard,
+  onDraftChange,
 }) => {
   const { t } = useTranslation('conditions');
-  const [terms, setTerms] = useState<ConditionTerm[]>([emptyTerm()]);
-  const [actions, setActions] = useState<EditorAction[]>([emptyAction()]);
-  const [combinator, setCombinator] = useState<'any' | 'all'>('all');
-  const [showErrors, setShowErrors] = useState(false);
 
-  // Re-seed the draft whenever the panel switches to a different rule.
-  useEffect(() => {
-    setShowErrors(false);
-    if (initialRule) {
-      setTerms(initialRule.terms.map((term) => ({ ...term })));
-      setActions(toEditorActions(initialRule));
-      setCombinator(initialRule.combinator ?? 'all');
-      return;
+  const [startDraft] = useState<RuleDraft>(
+    () => restored?.draft ?? initialDraftFor(mode === 'edit' ? (liveRule ?? null) : null, seed)
+  );
+  const [terms, setTerms] = useState<ConditionTerm[]>(startDraft.terms);
+  const [actions, setActions] = useState<EditorAction[]>(startDraft.actions);
+  const [combinator, setCombinator] = useState<'any' | 'all'>(startDraft.combinator);
+
+  // The version the draft is measured against; dirtiness and conflicts derive from it.
+  const [base, setBase] = useState(() => {
+    if (restored) {
+      return {
+        signature: restored.baseSignature,
+        enabled: restored.baseEnabled,
+        preserved: restored.basePreserved,
+      };
     }
-    setTerms(seed?.terms?.length ? seed.terms.map((term) => ({ ...term })) : [emptyTerm()]);
-    setActions(
-      seed?.actions?.length
-        ? seed.actions.map((action) => ({ ...emptyAction(), ...action }))
-        : [emptyAction()]
-    );
-    setCombinator(seed?.combinator ?? 'all');
-  }, [initialRule, seed]);
+    if (mode === 'edit' && liveRule) {
+      return {
+        signature: ruleSignature(liveRule),
+        enabled: liveRule.enabled,
+        preserved: preservedActions(liveRule),
+      };
+    }
+    return { signature: draftSignature(startDraft), enabled: true, preserved: [] as ConditionAction[] };
+  });
+
+  const [showErrors, setShowErrors] = useState(false);
+  const [writeFailed, setWriteFailed] = useState(false);
+  const [restoredDismissed, setRestoredDismissed] = useState(false);
+  const [focusIssueTick, setFocusIssueTick] = useState(0);
+  const committingRef = useRef(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const restoredBannerRef = useRef<HTMLDivElement>(null);
+  const headingId = useId();
 
   const triggerOptions = useMemo(() => getTriggerFieldOptions(pages), [pages]);
   const targetOptions = useMemo(() => getTargetFieldOptions(pages, t('chip.untitledField')), [pages, t]);
@@ -157,11 +224,125 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
     () => new Map(triggerOptions.map((option) => [option.field.id, option.field])),
     [triggerOptions]
   );
+  const existingFieldIds = useMemo(
+    () => new Set(pages.flatMap((page) => page.fields.map((field) => field.id))),
+    [pages]
+  );
+  const existingPageIds = useMemo(() => new Set(pages.map((page) => page.id)), [pages]);
 
-  const pageLabel = (page: FormPage, index: number) =>
-    page.title
-      ? t('editor.pageWithTitle', { values: { number: index + 1, title: page.title } })
-      : t('editor.page', { values: { number: index + 1 } });
+  const draft = useMemo<RuleDraft>(
+    () => ({ terms, actions, combinator }),
+    [terms, actions, combinator]
+  );
+  const signature = useMemo(() => draftSignature(draft), [draft]);
+  const isDirty = signature !== base.signature;
+
+  const issues = useMemo(
+    () =>
+      getDraftIssues(draft, {
+        triggerFieldById: fieldById,
+        existingFieldIds,
+        existingPageIds,
+        preservedCount: base.preserved.length,
+      }),
+    [draft, fieldById, existingFieldIds, existingPageIds, base.preserved.length]
+  );
+  const isComplete = issues.count === 0;
+
+  const remote = reconcileWithLive({
+    mode,
+    baseSignature: base.signature,
+    draftSignature: signature,
+    liveRule,
+  });
+
+  const hasBrokenRefs = useMemo(
+    () =>
+      cleanupDraftReferences(draft, {
+        existingFieldIds,
+        existingPageIds,
+        preservedCount: base.preserved.length,
+      }).removed > 0,
+    [draft, existingFieldIds, existingPageIds, base.preserved.length]
+  );
+
+  const status = deriveSaveStatus({
+    canEdit,
+    isConnected,
+    mode,
+    isDirty,
+    isComplete,
+    showErrors,
+    remote,
+    writeFailed,
+  });
+
+  const applyDraft = (next: RuleDraft) => {
+    setTerms(next.terms);
+    setActions(next.actions);
+    setCombinator(next.combinator);
+  };
+
+  const adoptLive = (rule: ConditionalRule) => {
+    applyDraft(initialDraftFor(rule));
+    setBase({
+      signature: ruleSignature(rule),
+      enabled: rule.enabled,
+      preserved: preservedActions(rule),
+    });
+  };
+
+  // A clean draft (or one that matches) follows collaborators' changes.
+  useEffect(() => {
+    if (committingRef.current || remote !== 'rebase' || !liveRule) return;
+    adoptLive(liveRule);
+  }, [remote, liveRule]);
+
+  const onDraftChangeRef = useRef(onDraftChange);
+  onDraftChangeRef.current = onDraftChange;
+  useEffect(() => {
+    onDraftChangeRef.current({
+      stash: isDirty
+        ? {
+            v: 1,
+            mode,
+            ruleId,
+            baseSignature: base.signature,
+            baseEnabled: base.enabled,
+            basePreserved: base.preserved,
+            draft: { terms, actions, combinator },
+            savedAt: Date.now(),
+          }
+        : null,
+      isComplete,
+    });
+  }, [isDirty, isComplete, base, mode, ruleId, terms, actions, combinator]);
+
+  useEffect(() => {
+    setWriteFailed(false);
+  }, [isConnected, signature]);
+
+  // Mount-only: an existing rule that is already invalid shows its problems
+  // straight away (they aren't mid-composition), and focus lands on the first
+  // row for a new rule or the heading otherwise.
+  useEffect(() => {
+    if (mode === 'edit' && !restored && issues.count > 0) setShowErrors(true);
+    if (restored) restoredBannerRef.current?.focus();
+    else if (mode === 'create') {
+      rootRef.current
+        ?.querySelector<HTMLElement>('[data-testid="condition-term-field-0"]')
+        ?.focus();
+    } else headingRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (focusIssueTick === 0) return;
+    rootRef.current
+      ?.querySelector<HTMLElement>(
+        '[data-issue="true"] button, [data-issue="true"] input, [data-issue="true"] [tabindex]'
+      )
+      ?.focus();
+  }, [focusIssueTick]);
 
   const updateTerm = (index: number, updates: Partial<ConditionTerm>) => {
     setTerms((current) => current.map((term, i) => (i === index ? { ...term, ...updates } : term)));
@@ -173,73 +354,75 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
     );
   };
 
-  /** Which requirement a term row is failing — drives the inline message. */
-  const termError = (term: ConditionTerm): string | null => {
-    const field = fieldById.get(term.fieldId);
-    if (!field) return t('editor.errors.selectField');
-    if (!(TRIGGER_OPERATORS[field.type] ?? []).includes(term.operator))
-      return t('editor.errors.selectOperator');
-    const kind = getValueInputKind(field.type, term.operator);
-    if (kind === 'none') return null;
-    // Accept the same shapes the number input renders — it tolerates a numeric
-    // string (e.g. an AI-authored rule), so rejecting one here would show
-    // "enter a number" against a field already displaying one.
-    if (kind === 'number') return isFiniteNumeric(term.value) ? null : t('editor.errors.enterNumber');
-    return typeof term.value === 'string' && term.value.trim() !== ''
-      ? null
-      : t('editor.errors.enterValue');
-  };
+  const pageLabel = (page: FormPage, index: number) =>
+    page.title
+      ? t('editor.pageWithTitle', { values: { number: index + 1, title: page.title } })
+      : t('editor.page', { values: { number: index + 1 } });
 
-  const actionError = (action: EditorAction): string | null => {
-    if (action.type === 'hidePage' || action.type === 'skipToPage') {
-      return action.pageId !== '' ? null : t('editor.errors.selectPage');
-    }
-    return action.fieldIds.length > 0 ? null : t('editor.errors.selectTarget');
-  };
-
-  const preserved = useMemo(() => preservedActions(initialRule), [initialRule]);
-
-  const termErrors = terms.map(termError);
-  const actionErrors = actions.map(actionError);
-  const canSave =
-    canEdit &&
-    terms.length > 0 &&
-    termErrors.every((error) => error === null) &&
-    actions.length + preserved.length > 0 &&
-    actionErrors.every((error) => error === null);
+  const termErrors = issues.terms.map((issue) => (issue ? t(`editor.errors.${issue}`) : null));
+  const actionErrors = issues.actions.map((issue) => (issue ? t(`editor.errors.${issue}`) : null));
 
   // Preview the draft exactly as the rule card will render it once saved.
-  const draftRule: ConditionalRule = useMemo(
-    () => ({
-      id: initialRule?.id ?? 'draft',
-      enabled: initialRule?.enabled ?? true,
-      combinator,
-      terms,
-      actions: actions.map((action) =>
-        action.type === 'hidePage' || action.type === 'skipToPage'
-          ? ({ type: action.type, pageId: action.pageId } as ConditionAction)
-          : ({ type: action.type, fieldIds: action.fieldIds } as ConditionAction)
-      ),
-    }),
-    [initialRule, combinator, terms, actions]
-  );
   const sentence = useMemo(
-    () => buildRuleSentence(draftRule, logicIndex, t),
-    [draftRule, logicIndex, t]
+    () => buildRuleSentence(draftToRule(draft, ruleId, base.enabled, []), logicIndex, t),
+    [draft, ruleId, base.enabled, logicIndex, t]
   );
 
   const handleSave = () => {
-    if (!canSave) {
+    if (!canEdit || committingRef.current) return;
+    const intent: CommitIntent =
+      remote === 'deleted' ? 'recreate' : mode === 'create' ? 'create' : 'update';
+    if (intent === 'update' && !isDirty) return;
+    if (!isComplete) {
       setShowErrors(true);
+      setFocusIssueTick((tick) => tick + 1);
       return;
     }
-    onSave({
-      id: initialRule?.id ?? generateId(),
-      enabled: initialRule?.enabled ?? true,
-      combinator,
-      terms: terms.map((term) => ({ ...term })),
-      actions: [...draftRule.actions, ...preserved],
+    if (!isConnected) return;
+
+    committingRef.current = true;
+    const result = onCommit({
+      intent,
+      ruleId,
+      draft,
+      baseEnabled: base.enabled,
+      basePreserved: base.preserved,
     });
+    if (result !== 'ok') {
+      committingRef.current = false;
+      if (result === 'failed') setWriteFailed(true);
+    }
+  };
+
+  const handleRevert = () => {
+    if (liveRule) adoptLive(liveRule);
+    setShowErrors(false);
+  };
+
+  const handleRemoveBrokenRefs = () => {
+    const cleaned = cleanupDraftReferences(draft, {
+      existingFieldIds,
+      existingPageIds,
+      preservedCount: base.preserved.length,
+    });
+    applyDraft(cleaned.draft);
+    setShowErrors(true);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    // Portalled dropdown content bubbles through React but isn't inside this DOM subtree.
+    if (!rootRef.current?.contains(event.target as Node)) return;
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      if (event.nativeEvent.isComposing) return;
+      event.preventDefault();
+      handleSave();
+      return;
+    }
+    // Dropdowns dismiss themselves on Escape and mark the event handled.
+    if (event.key === 'Escape' && !event.defaultPrevented) {
+      event.preventDefault();
+      onRequestClose();
+    }
   };
 
   const renderValueInput = (term: ConditionTerm, index: number) => {
@@ -343,23 +526,53 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
     showErrors && error ? (
       <p className="text-xs text-[var(--tf-error)] dark:text-red-400">{error}</p>
     ) : null;
+  const rowIssueAttr = (error: string | null) => (showErrors && error ? 'true' : undefined);
+
+  const primaryLabel =
+    remote === 'deleted'
+      ? t('editor.recreateRule')
+      : mode === 'create'
+        ? t('editor.createRule')
+        : t('editor.saveChanges');
+  const primaryInert = !isConnected || (remote !== 'deleted' && mode === 'edit' && !isDirty);
+
+  const showRestored = Boolean(restored) && !restoredDismissed;
+  const showLostAccess = !canEdit && (isDirty || Boolean(restored));
+  const showBrokenRefs = hasBrokenRefs && canEdit;
+  const hasBanners =
+    showRestored ||
+    remote === 'conflict' ||
+    remote === 'deleted' ||
+    showBrokenRefs ||
+    showLostAccess;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {/* Header — fixed, so Save is never scrolled away like it was in the dialog. */}
+    <div
+      ref={rootRef}
+      role="region"
+      aria-labelledby={headingId}
+      className="flex h-full min-h-0 flex-col"
+      onKeyDown={handleKeyDown}
+    >
+      {/* Header — fixed, so the controls are never scrolled away. */}
       <div
         className="flex shrink-0 items-center justify-between gap-2 px-5 py-4"
         style={{ borderBottom: '1px solid var(--tf-border)' }}
       >
-        <h3 className="text-base font-semibold text-[var(--tf-dark)] dark:text-gray-100">
-          {initialRule ? t('editor.editTitle') : t('editor.createTitle')}
+        <h3
+          id={headingId}
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-base font-semibold text-[var(--tf-dark)] outline-none dark:text-gray-100"
+        >
+          {mode === 'edit' ? t('editor.editTitle') : t('editor.createTitle')}
         </h3>
         <Button
           variant="ghost"
           size="icon"
           className="h-7 w-7"
-          onClick={onClose}
-          aria-label={t('editor.cancel')}
+          onClick={onRequestClose}
+          aria-label={t('editor.close')}
           data-testid="condition-inspector-close"
         >
           <X className="h-4 w-4" />
@@ -367,6 +580,87 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
       </div>
 
       <div className="min-h-0 flex-1 space-y-7 overflow-y-auto px-5 py-5">
+        {hasBanners && (
+          <div className="space-y-2">
+            {showRestored && (
+              <InspectorBanner
+                testId="condition-restored-banner"
+                tone="info"
+                title={t('editor.banner.restoredTitle')}
+                message={t('editor.banner.restoredMessage')}
+                onDismiss={() => setRestoredDismissed(true)}
+                dismissLabel={t('editor.banner.dismiss')}
+                bannerRef={restoredBannerRef}
+              >
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={onDiscard}
+                  data-testid="condition-restored-discard"
+                >
+                  {t('editor.banner.discard')}
+                </Button>
+              </InspectorBanner>
+            )}
+            {remote === 'conflict' && (
+              <InspectorBanner
+                testId="condition-conflict-banner"
+                tone="warn"
+                title={t('editor.banner.conflictTitle')}
+                message={t('editor.banner.conflictMessage')}
+              >
+                {liveRule && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      adoptLive(liveRule);
+                      setShowErrors(false);
+                    }}
+                    data-testid="condition-load-theirs"
+                  >
+                    {t('editor.banner.loadTheirs')}
+                  </Button>
+                )}
+              </InspectorBanner>
+            )}
+            {remote === 'deleted' && (
+              <InspectorBanner
+                testId="condition-deleted-banner"
+                tone="warn"
+                title={t('editor.banner.deletedTitle')}
+                message={t('editor.banner.deletedMessage')}
+              />
+            )}
+            {showBrokenRefs && (
+              <InspectorBanner
+                testId="condition-broken-refs-banner"
+                tone="warn"
+                title={t('editor.banner.brokenRefs')}
+              >
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={handleRemoveBrokenRefs}
+                  data-testid="condition-remove-broken-refs"
+                >
+                  {t('editor.banner.removeBrokenRefs')}
+                </Button>
+              </InspectorBanner>
+            )}
+            {showLostAccess && (
+              <InspectorBanner
+                testId="condition-readonly-banner"
+                tone="warn"
+                title={t('editor.banner.lostAccess')}
+              />
+            )}
+          </div>
+        )}
+
         {/* ── WHEN ───────────────────────────────────────────────────────── */}
         <section className="space-y-2">
           <Label className="text-xs font-semibold uppercase tracking-wider text-[var(--tf-muted)] dark:text-gray-400">
@@ -378,9 +672,7 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
             const operators = field ? (TRIGGER_OPERATORS[field.type] ?? []) : [];
             return (
               <React.Fragment key={index}>
-                {/* The combinator sits between the rows it joins, and toggles in
-                    place — it used to be a dropdown in the section header, far
-                    from the rows whose relationship it described. */}
+                {/* The combinator sits between the rows it joins, and toggles in place. */}
                 {index > 0 && (
                   <div className="flex items-center gap-2 py-0.5">
                     <button
@@ -399,7 +691,7 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
                   </div>
                 )}
 
-                <div className="space-y-2">
+                <div className="space-y-2" data-issue={rowIssueAttr(termErrors[index])}>
                   <div className="flex items-start gap-2">
                     <div className="min-w-0 flex-1 space-y-2">
                       <FieldPicker
@@ -503,12 +795,12 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
           {actions.map((action, index) => (
             <div
               key={index}
+              data-issue={rowIssueAttr(actionErrors[index])}
               className={cn(
                 'space-y-2',
                 // One hairline between consecutive actions, rather than a full
                 // border around each — the panel already has an edge.
-                index > 0 &&
-                  'border-t border-[var(--tf-border-faint)] pt-4 dark:border-gray-800'
+                index > 0 && 'border-t border-[var(--tf-border-faint)] pt-4 dark:border-gray-800'
               )}
             >
               <div className="flex items-start gap-2">
@@ -623,26 +915,55 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
         </section>
       </div>
 
-      {canEdit && (
-        <div
-          className="flex shrink-0 items-center justify-end gap-2 px-5 py-4"
-          style={{ borderTop: '1px solid var(--tf-border)' }}
+      <div
+        className="flex shrink-0 flex-col gap-3 px-5 py-4"
+        style={{ borderTop: '1px solid var(--tf-border)' }}
+      >
+        <p
+          className={cn('flex items-start gap-1.5 text-xs', STATUS_STYLE[status])}
+          data-testid="condition-save-status"
+          data-state={status}
+          role="status"
+          aria-live="polite"
         >
-          <Button variant="outline" onClick={onClose}>
-            {t('editor.cancel')}
-          </Button>
-          {/* Deliberately never `disabled`: an incomplete rule now reports which
-              row is at fault on click, instead of leaving a dead button. */}
-          <Button
-            onClick={handleSave}
-            aria-disabled={!canSave}
-            className={cn(!canSave && 'opacity-50')}
-            data-testid="condition-save"
-          >
-            {t('editor.save')}
-          </Button>
-        </div>
-      )}
+          <StatusIcon status={status} />
+          <span>{t(`editor.status.${status}`)}</span>
+        </p>
+
+        {canEdit && (
+          <div className="flex flex-wrap justify-end gap-2">
+            {mode === 'create' ? (
+              <Button variant="outline" onClick={onRequestClose} data-testid="condition-cancel">
+                {t('editor.cancel')}
+              </Button>
+            ) : remote === 'deleted' ? (
+              <Button variant="outline" onClick={onDiscard} data-testid="condition-deleted-discard">
+                {t('editor.revert')}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={handleRevert}
+                disabled={!isDirty}
+                data-testid="condition-revert"
+              >
+                {t('editor.revert')}
+              </Button>
+            )}
+            {/* Never `disabled`: an incomplete rule reports which row is at
+                fault on click, instead of leaving a dead button. */}
+            <Button
+              onClick={handleSave}
+              aria-disabled={primaryInert}
+              title={t('editor.shortcutHint')}
+              className={cn(primaryInert && 'opacity-50')}
+              data-testid="condition-save"
+            >
+              {primaryLabel}
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

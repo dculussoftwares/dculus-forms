@@ -214,6 +214,25 @@ Then(
 );
 
 /**
+ * Assert the open editor flags that a collaborator changed or deleted its rule
+ */
+Then(
+  'In session {string} I should see the condition conflict banner',
+  async function (this: CustomWorld, session: string) {
+    const page = getSessionPage(this, session);
+    await expect(page.getByTestId('condition-conflict-banner')).toBeVisible({ timeout: 15_000 });
+  }
+);
+
+Then(
+  'In session {string} I should see the condition deleted banner',
+  async function (this: CustomWorld, session: string) {
+    const page = getSessionPage(this, session);
+    await expect(page.getByTestId('condition-deleted-banner')).toBeVisible({ timeout: 15_000 });
+  }
+);
+
+/**
  * Edit condition rule in specified session
  */
 When(
