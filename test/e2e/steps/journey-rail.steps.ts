@@ -124,7 +124,11 @@ When(
     const source = railPageGroupByTitle(this.page, sourceTitle).locator(
       '[data-testid^="rail-page-drag-handle-"]'
     );
-    const target = railPageGroupByTitle(this.page, targetTitle);
+    // Drop on the header: the rail collapses every page's field list once a page
+    // drag starts, so the group's pre-drag center no longer lines up with it.
+    const target = railPageGroupByTitle(this.page, targetTitle).locator(
+      '[data-testid^="rail-page-header-"]'
+    );
     await dragOnto(source, target);
   }
 );
