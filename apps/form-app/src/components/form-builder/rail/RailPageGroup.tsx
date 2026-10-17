@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { FormPage, buildPageTree, pageHasGrid, type PageNode } from '@dculus/types';
-import { Button, Input } from '@dculus/ui';
+import { Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { GripVertical, Copy, Trash2, ChevronDown } from 'lucide-react';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
@@ -222,6 +222,8 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
         data-testid={`rail-page-header-${index}`}
         onClick={() => setSelection({ kind: 'page', pageId: page.id })}
         onKeyDown={(e) => {
+          // Keys typed in the rename input bubble here; don't swallow them (e.g. Space)
+          if (e.target !== e.currentTarget) return;
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setSelection({ kind: 'page', pageId: page.id });
@@ -267,22 +269,30 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
               data-testid={`rail-page-title-input-${index}`}
             />
           ) : (
-            <span
-              onClick={(e) => {
-                if (canEditTitle) {
-                  e.stopPropagation();
-                  setIsEditingTitle(true);
-                }
-              }}
-              title={canEditTitle ? tPage('editTitle') : undefined}
-              className={cn(
-                'truncate text-xs font-semibold text-[var(--tf-dark)]',
-                canEditTitle && 'cursor-text hover:underline'
-              )}
-              data-testid={`rail-page-title-${index}`}
-            >
-              {page.title || t('untitledPage')}
-            </span>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    onClick={(e) => {
+                      if (canEditTitle) {
+                        e.stopPropagation();
+                        setIsEditingTitle(true);
+                      }
+                    }}
+                    className={cn(
+                      'truncate text-xs font-semibold text-[var(--tf-dark)]',
+                      canEditTitle && 'cursor-text hover:underline'
+                    )}
+                    data-testid={`rail-page-title-${index}`}
+                  >
+                    {page.title || t('untitledPage')}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-xs break-words text-xs">
+                  {page.title || t('untitledPage')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
 
