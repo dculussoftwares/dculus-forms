@@ -95,6 +95,37 @@ describe('reasoningEffort default', () => {
   });
 });
 
+describe('withDefaultReasoningNone', () => {
+  const fetchMock = vi.fn(async () => new Response('{}'));
+  beforeEach(() => {
+    vi.resetModules();
+    fetchMock.mockClear();
+    vi.stubGlobal('fetch', fetchMock);
+  });
+
+  async function sentBody(body: unknown) {
+    const { withDefaultReasoningNone } = await import('../ai.js');
+    await withDefaultReasoningNone('https://x', { method: 'POST', body: JSON.stringify(body) });
+    return JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+  }
+
+  it('adds reasoning_effort none when tools are present and no effort is set', async () => {
+    expect(await sentBody({ model: 'm', tools: [{ type: 'function' }] })).toMatchObject({
+      reasoning_effort: 'none',
+    });
+  });
+
+  it('keeps an explicit reasoning_effort', async () => {
+    expect(
+      await sentBody({ model: 'm', tools: [{ type: 'function' }], reasoning_effort: 'low' }),
+    ).toMatchObject({ reasoning_effort: 'low' });
+  });
+
+  it('does not add reasoning_effort to requests without tools', async () => {
+    expect(await sentBody({ model: 'm' })).not.toHaveProperty('reasoning_effort');
+  });
+});
+
 describe('getFastModel', () => {
   beforeEach(() => { vi.resetModules(); clearEnv(); });
 

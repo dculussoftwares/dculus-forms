@@ -18,9 +18,28 @@ function env(key: string): string | undefined {
 // uses the newer Responses API (/responses) which Azure does not support.
 // gpt-6-luna rejects function tools on /chat/completions unless reasoning_effort
 // is 'none', so it is set as a default for every call (callers can override).
+//
+// The AI SDK only recognises 'none' for the exact ids gpt-6-sol / gpt-6-luna and silently
+// drops it for deployment names like gpt-6-luna-fast, so the request then fails on tools.
+// withDefaultReasoningNone adds it at the HTTP layer when the request carries tools and
+// no reasoning_effort.
+export const withDefaultReasoningNone: typeof fetch = async (input, init) => {
+  if (typeof init?.body === 'string') {
+    try {
+      const body = JSON.parse(init.body);
+      if (body && Array.isArray(body.tools) && body.tools.length > 0 && body.reasoning_effort == null) {
+        return fetch(input, { ...init, body: JSON.stringify({ ...body, reasoning_effort: 'none' }) });
+      }
+    } catch {
+      // non-JSON body — pass through untouched
+    }
+  }
+  return fetch(input, init);
+};
+
 function buildModel(baseUrl: string, apiKey: string, model: string): LanguageModel {
   return wrapLanguageModel({
-    model: createOpenAI({ baseURL: baseUrl, apiKey }).chat(model),
+    model: createOpenAI({ baseURL: baseUrl, apiKey, fetch: withDefaultReasoningNone }).chat(model),
     middleware: defaultSettingsMiddleware({
       settings: { providerOptions: { openai: { reasoningEffort: 'none' } } },
     }),
