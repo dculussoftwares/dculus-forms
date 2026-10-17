@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -40,9 +40,21 @@ export const JourneyRail: React.FC = () => {
     return numbers;
   }, [pages]);
 
+  const pagesListRef = useRef<HTMLDivElement>(null);
+  const pendingScrollPageId = useRef<string | null>(null);
+
+  // The new page renders after the store update, so scroll once it appears in the list
+  useEffect(() => {
+    const pageId = pendingScrollPageId.current;
+    if (!pageId || !pages.some((p) => p.id === pageId)) return;
+    pendingScrollPageId.current = null;
+    const el = pagesListRef.current?.querySelector(`[data-page-id="${pageId}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [pages]);
+
   const handleAddPage = () => {
     if (permissions.canAddPages()) {
-      addEmptyPage();
+      pendingScrollPageId.current = addEmptyPage() ?? null;
     }
   };
 
@@ -103,7 +115,7 @@ export const JourneyRail: React.FC = () => {
               items={pages.map((p) => p.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="flex min-w-0 flex-col gap-1.5" data-testid="pages-list">
+              <div ref={pagesListRef} className="flex min-w-0 select-none flex-col gap-1.5" data-testid="pages-list">
                 {pages.map((page, index) => (
                   <RailPageGroup
                     key={page.id}

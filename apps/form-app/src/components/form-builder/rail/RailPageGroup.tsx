@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
-import { useDroppable } from '@dnd-kit/core';
+import { useDndContext, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { FormPage, buildPageTree, pageHasGrid, type PageNode } from '@dculus/types';
 import { Button, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@dculus/ui';
@@ -194,11 +194,16 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
     transition,
   };
 
+  // Collapse every page's field list while reordering pages so the rows stay small
+  const { active } = useDndContext();
+  const isReorderingPages = active?.data.current?.type === 'page-item';
+
   return (
     <div
       ref={setSortableRef}
       style={style}
       data-testid={`rail-page-${index}`}
+      data-page-id={page.id}
       aria-selected={isSelected}
       className={cn(
         'group min-w-0 overflow-hidden rounded-xl border bg-white dark:bg-card transition-all',
@@ -265,7 +270,7 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
                   handleCancelEdit();
                 }
               }}
-              className="h-6 px-1 py-0 text-xs font-semibold"
+              className="h-6 select-text px-1 py-0 text-xs font-semibold"
               data-testid={`rail-page-title-input-${index}`}
             />
           ) : (
@@ -332,6 +337,7 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
         )}
       </div>
 
+      {!isReorderingPages && (
       <div className="flex min-w-0 flex-col gap-0 px-1 pb-1.5">
         {pageHasGrid(page.fields) ? (
           <RailTreeFields page={page} startNumber={startNumber} selectedFieldId={selectedFieldId} />
@@ -358,6 +364,7 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
           </p>
         )}
       </div>
+      )}
 
       <ConfirmationDialog
         isOpen={showDeleteDialog}
