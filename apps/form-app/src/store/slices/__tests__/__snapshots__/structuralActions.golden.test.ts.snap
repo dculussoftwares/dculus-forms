@@ -360,7 +360,7 @@ exports[`structural store actions on a grid-less form (golden): addEmptyPage 1`]
       "id": "p000000007",
       "order": 2,
       "showPageName": true,
-      "title": "New Page 3",
+      "title": "Page 3",
     },
   ],
 }
@@ -1091,7 +1091,7 @@ exports[`structural store actions on a grid-less form (golden): addPageAtPositio
       "id": "p000000007",
       "order": 3,
       "showPageName": true,
-      "title": "New Page 3",
+      "title": "Page 3",
     },
   ],
 }
@@ -1995,7 +1995,7 @@ exports[`structural store actions on a grid-less form (golden): duplicatePage 1`
       "id": "p000000007",
       "order": 4,
       "showPageName": true,
-      "title": "New Page 3",
+      "title": "Page 3",
     },
   ],
 }
@@ -2690,7 +2690,7 @@ exports[`structural store actions on a grid-less form (golden): removePage 1`] =
       "id": "p000000007",
       "order": 3,
       "showPageName": true,
-      "title": "New Page 3",
+      "title": "Page 3",
     },
   ],
 }
@@ -3180,7 +3180,7 @@ exports[`structural store actions on a grid-less form (golden): reorderPages 1`]
       "id": "p000000007",
       "order": 4,
       "showPageName": true,
-      "title": "New Page 3",
+      "title": "Page 3",
     },
   ],
 }
@@ -3673,7 +3673,7 @@ exports[`structural store actions on a grid-less form (golden): updatePageTitle 
       "id": "p000000007",
       "order": 4,
       "showPageName": true,
-      "title": "New Page 3",
+      "title": "Page 3",
     },
   ],
 }

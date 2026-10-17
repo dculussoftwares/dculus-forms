@@ -56,7 +56,7 @@ export const createPagesSlice: SliceCreator<PagesSlice> = (set, get) => {
       const fieldsArray = new Y.Array();
 
       pageMap.set('id', newPageId);
-      pageMap.set('title', `New Page ${pagesArray.length + 1}`);
+      pageMap.set('title', `Page ${pagesArray.length + 1}`);
       pageMap.set('order', pagesArray.length);
       pageMap.set('showPageName', true);
       pageMap.set('fields', fieldsArray);
