@@ -67,11 +67,12 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
     setValue('options', [...currentOptions, ''], { shouldDirty: true });
   }, [getValues, setValue]);
 
+
   const updateOption = useCallback((index: number, value: string) => {
     const currentOptions = getValues('options') || [];
     const newOptions = [...currentOptions];
     newOptions[index] = value;
-    setValue('options', newOptions, { shouldDirty: true });
+    setValue('options', newOptions, { shouldDirty: true, shouldValidate: true });
   }, [getValues, setValue]);
 
   const removeOption = useCallback((index: number) => {
@@ -81,7 +82,7 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
     if (newOptions.length === 0) {
       newOptions.push('');
     }
-    setValue('options', newOptions, { shouldDirty: true });
+    setValue('options', newOptions, { shouldDirty: true, shouldValidate: true });
   }, [getValues, setValue]);
 
   if (!field) {
@@ -285,14 +286,6 @@ const SelectionFieldSettings: React.FC<SelectionFieldSettingsProps> = ({
                 updateOption={updateOption}
                 removeOption={removeOption}
               />
-              
-              {/* Show validation error for empty options */}
-              {errors.options && (
-                <div className="text-sm text-destructive mt-2 p-3 bg-destructive/10 rounded-lg border border-destruct ive/20">
-                  <p className="font-medium">⚠️ Options Error:</p>
-                  <p>{errors.options.message}</p>
-                </div>
-              )}
             </div>
 
             {/* Selection Limits (for checkbox fields) */}

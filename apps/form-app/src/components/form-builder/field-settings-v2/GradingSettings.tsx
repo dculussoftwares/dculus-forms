@@ -30,7 +30,7 @@ import {
 } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
-import { useFieldSettingsConstants } from '../field-settings';
+import { ErrorMessage, useFieldSettingsConstants } from '../field-settings';
 
 // =============================================================================
 // Helpers
@@ -153,11 +153,7 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
         }}
         className="w-28"
       />
-      {gradingErrors?.pointValue && (
-        <p className="text-sm text-destructive dark:text-red-400">
-          {String(gradingErrors.pointValue.message)}
-        </p>
-      )}
+      <ErrorMessage error={gradingErrors?.pointValue} />
     </div>
   );
 
@@ -310,9 +306,7 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
         )}
 
         {gradingErrors?.acceptedAnswers && !Array.isArray(gradingErrors.acceptedAnswers) && (
-          <p className="text-sm text-destructive dark:text-red-400">
-            {String(gradingErrors.acceptedAnswers.message)}
-          </p>
+          <ErrorMessage error={gradingErrors.acceptedAnswers} />
         )}
 
         {staleAnswers.length > 0 && (
@@ -434,11 +428,7 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
                     {t('text.removeAnswer')}
                   </button>
                 </div>
-                {acceptedAnswersError?.[index] && (
-                  <p className="text-sm text-destructive dark:text-red-400">
-                    {String(acceptedAnswersError[index].message)}
-                  </p>
-                )}
+                <ErrorMessage error={acceptedAnswersError?.[index]} />
               </div>
             ))}
           </div>
@@ -450,11 +440,7 @@ export const GradingSettings: React.FC<GradingSettingsProps> = ({
           >
             + {t('text.addAnswer')}
           </button>
-          {acceptedAnswersGlobalError && (
-            <p className="text-sm text-destructive dark:text-red-400">
-              {String(acceptedAnswersGlobalError.message)}
-            </p>
-          )}
+          <ErrorMessage error={acceptedAnswersGlobalError} />
         </div>
 
         <div className="flex items-center justify-between">
