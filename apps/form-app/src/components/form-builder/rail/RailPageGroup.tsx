@@ -359,9 +359,14 @@ export const RailPageGroup: React.FC<RailPageGroupProps> = ({
           </>
         )}
         {page.fields.length === 0 && (
-          <p className="px-2 py-1 text-[11px] text-[var(--tf-light-muted)]">
+          <button
+            type="button"
+            data-testid={`rail-page-empty-${index}`}
+            onClick={() => setSelection({ kind: 'page', pageId: page.id })}
+            className="w-full cursor-pointer rounded px-2 py-1 text-left text-[11px] text-[var(--tf-light-muted)] hover:bg-[var(--tf-faint)] hover:text-[var(--tf-dark)]"
+          >
             {t('emptyPage')}
-          </p>
+          </button>
         )}
       </div>
       )}
