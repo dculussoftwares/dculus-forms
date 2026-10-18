@@ -12,7 +12,6 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
-  toastError,
 } from '@dculus/ui';
 import { Check, Plus, Sparkles, Tag, X } from 'lucide-react';
 import { FormResponse } from '@dculus/types';
@@ -126,41 +125,22 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
     !SYSTEM_TAG_NAMES.includes(trimmed) &&
     !formTags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase());
 
-  const reportFailure = (error: unknown) =>
-    toastError(t('table.tags.updateError'), error instanceof Error ? error.message : undefined);
-
-  const handleRemove = async (tagId: string) => {
-    try {
-      await removeTag({ variables: { responseId: response.id, tagId } });
-    } catch (error) {
-      reportFailure(error);
-    }
-  };
-
   const handleToggle = async (tag: ResponseTagItem) => {
-    try {
-      if (assignedIds.has(tag.id)) {
-        await removeTag({ variables: { responseId: response.id, tagId: tag.id } });
-      } else {
-        await addTag({ variables: { responseId: response.id, tagId: tag.id } });
-      }
-    } catch (error) {
-      reportFailure(error);
+    if (assignedIds.has(tag.id)) {
+      await removeTag({ variables: { responseId: response.id, tagId: tag.id } });
+    } else {
+      await addTag({ variables: { responseId: response.id, tagId: tag.id } });
     }
   };
 
   const handleCreate = async () => {
     if (!trimmed) return;
-    try {
-      const { data } = await createTag({ variables: { formId, name: trimmed, color: selectedColor } });
-      if (data?.createTag?.id) {
-        await addTag({ variables: { responseId: response.id, tagId: data.createTag.id } });
-      }
-      setSearch('');
-      setSelectedColor(PRESET_COLORS[0]);
-    } catch (error) {
-      reportFailure(error);
+    const { data } = await createTag({ variables: { formId, name: trimmed, color: selectedColor } });
+    if (data?.createTag?.id) {
+      await addTag({ variables: { responseId: response.id, tagId: data.createTag.id } });
     }
+    setSearch('');
+    setSelectedColor(PRESET_COLORS[0]);
   };
 
   const tags = response.tags ?? [];
@@ -203,7 +183,7 @@ export const TagsCell: React.FC<TagsCellProps> = ({ response, formId, formTags, 
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleRemove(tag.id);
+                removeTag({ variables: { responseId: response.id, tagId: tag.id } });
               }}
               className="ml-0.5 opacity-70 hover:opacity-100 transition-opacity"
               disabled={loading}

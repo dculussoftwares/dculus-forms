@@ -18,6 +18,10 @@ declare module '@apollo/client' {
       interface Query {
         errorPolicy: 'all';
       }
+      // Affects client.mutate()
+      interface Mutate {
+        errorPolicy: 'all';
+      }
     }
   }
 }

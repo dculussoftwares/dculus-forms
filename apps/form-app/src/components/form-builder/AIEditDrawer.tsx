@@ -23,7 +23,6 @@ import { GradientSparkles } from './GradientSparkles.js';
 import { cn } from '@dculus/utils';
 import {
   Button,
-  toastError,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -348,8 +347,6 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chips = useAIChips();
-  const reportFailure = (error: unknown) =>
-    toastError(t('genericError'), error instanceof Error ? error.message : undefined);
 
   const {
     conversations,
@@ -378,7 +375,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
   useEffect(() => {
     if (!isOpen || conversationsLoading) return;
     if (conversations.length === 0) {
-      createConversation().catch(reportFailure);
+      createConversation();
     } else if (!activeConversationId && conversations.length > 0) {
       selectConversation(conversations[0].id);
     }
@@ -453,7 +450,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem
               className="gap-2 text-xs"
-              onClick={() => createConversation().catch(reportFailure)}
+              onClick={() => createConversation()}
             >
               <Plus className="h-3.5 w-3.5" />
               {t('newChat')}
@@ -473,7 +470,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
                   className="ml-2 rounded p-0.5 opacity-0 group-hover:opacity-100 hover:text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
-                    deleteConversation(conv.id).catch(reportFailure);
+                    deleteConversation(conv.id);
                   }}
                 >
                   <Trash2 className="h-3 w-3" />

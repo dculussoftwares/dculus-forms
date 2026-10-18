@@ -3,8 +3,7 @@
     "formIdRequired": "படிவம் ஐடி தேவை",
     "formIdRequiredDescription": "தொடர சரியான படிவ ஐடியை வழங்கவும்.",
     "errorLoadingForm": "படிவத்தை ஏற்றுவதில் பிழை",
-    "errorLoadingFormDescription": "படிவத் தரவை ஏற்ற முடியவில்லை.",
-    "publishFailed": "வெளியீட்டு நிலையைப் புதுப்பிக்க முடியவில்லை"
+    "errorLoadingFormDescription": "படிவத் தரவை ஏற்ற முடியவில்லை."
   },
   "loading": {
     "loadingFormData": "படிவத் தரவை ஏற்றுகிறது...",

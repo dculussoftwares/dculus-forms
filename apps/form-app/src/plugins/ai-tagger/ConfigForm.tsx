@@ -112,20 +112,12 @@ export const AiTaggerConfigForm: React.FC<ConfigFormProps> = ({
     }
     if (!form?.id) return;
     setCreateError('');
-    try {
-      await createTag({ variables: { formId: form.id, name: trimmed, color: newTagColor } });
-    } catch {
-      // surfaced via the mutation's onError handler
-    }
+    await createTag({ variables: { formId: form.id, name: trimmed, color: newTagColor } });
   };
 
   const handleDeleteTag = async (tagId: string) => {
     if (!form?.id) return;
-    try {
-      await deleteTag({ variables: { id: tagId, formId: form.id } });
-    } catch {
-      return; // surfaced via the mutation's onError handler
-    }
+    await deleteTag({ variables: { id: tagId, formId: form.id } });
     setDefinitions((prev) => {
       const next = { ...prev };
       delete next[tagId];

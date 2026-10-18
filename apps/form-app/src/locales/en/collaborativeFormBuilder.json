@@ -3,8 +3,7 @@
     "formIdRequired": "Form ID Required",
     "formIdRequiredDescription": "Please provide a valid form ID to continue.",
     "errorLoadingForm": "Error Loading Form",
-    "errorLoadingFormDescription": "Failed to load form data.",
-    "publishFailed": "Couldn't update publish status"
+    "errorLoadingFormDescription": "Failed to load form data."
   },
   "loading": {
     "loadingFormData": "Loading form data...",
