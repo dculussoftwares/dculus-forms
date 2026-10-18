@@ -22,7 +22,12 @@ import {
 import { CREATE_AUTOMATION, GET_FORM_AUTOMATIONS } from '../../graphql/automations';
 import { useTranslation } from '../../hooks/useTranslation';
 import { SUPPORTED_TRIGGER_TYPES, triggerTypeI18nKey } from './triggerTypes';
-import { AUTOMATION_TEMPLATE_OPTIONS, BLANK_TEMPLATE_ID } from './automationTemplates';
+import {
+  AUTOMATION_TEMPLATE_OPTIONS,
+  BLANK_TEMPLATE_ID,
+  CUSTOM_AUTOMATION_OPTION,
+  type AutomationTemplateOption,
+} from './automationTemplates';
 
 interface CreateAutomationDialogProps {
   formId: string;
@@ -59,10 +64,43 @@ export const CreateAutomationDialog: React.FC<CreateAutomationDialogProps> = ({
     const suggested = id === BLANK_TEMPLATE_ID ? '' : t(`createDialog.templates.${id}.name`);
     setName((current) => {
       const wasSuggested = AUTOMATION_TEMPLATE_OPTIONS.some(
-        (option) => option.id !== BLANK_TEMPLATE_ID && current === t(`createDialog.templates.${option.id}.name`)
+        (option) => current === t(`createDialog.templates.${option.id}.name`)
       );
       return current === '' || wasSuggested ? suggested : current;
     });
+  };
+
+  // Shared by the custom start above and the template list below, so both render as the same card.
+  const renderOptionCard = (option: AutomationTemplateOption) => {
+    const Icon = option.icon;
+    const selected = option.id === templateId;
+    return (
+      <button
+        key={option.id}
+        type="button"
+        onClick={() => handleSelectTemplate(option.id)}
+        data-testid={`automation-template-${option.id}`}
+        className="flex items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
+        style={{
+          border: selected
+            ? '1px solid var(--tf-green)'
+            : '1px solid var(--tf-border-medium)',
+          backgroundColor: selected ? 'var(--tf-green-bg)' : undefined,
+        }}
+      >
+        <div className="mt-0.5 shrink-0">
+          <Icon className="h-4 w-4" style={{ color: selected ? 'var(--tf-green)' : 'var(--tf-muted)' }} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-primary">
+            {t(`createDialog.templates.${option.id}.name`)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {t(`createDialog.templates.${option.id}.description`)}
+          </p>
+        </div>
+      </button>
+    );
   };
 
   const handleCreate = async () => {
@@ -90,49 +128,16 @@ export const CreateAutomationDialog: React.FC<CreateAutomationDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(next) : resetAndClose())}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('createDialog.title')}</DialogTitle>
           <DialogDescription>{t('createDialog.description')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>{t('createDialog.templateLabel')}</Label>
-            <div className="grid gap-2 max-h-[280px] overflow-y-auto pr-1">
-              {AUTOMATION_TEMPLATE_OPTIONS.map((option) => {
-                const Icon = option.icon;
-                const selected = option.id === templateId;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => handleSelectTemplate(option.id)}
-                    data-testid={`automation-template-${option.id}`}
-                    className="flex items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-colors"
-                    style={{
-                      border: selected
-                        ? '1px solid var(--tf-green)'
-                        : '1px solid var(--tf-border-medium)',
-                      backgroundColor: selected ? 'var(--tf-green-bg)' : undefined,
-                    }}
-                  >
-                    <div className="mt-0.5 shrink-0">
-                      <Icon className="h-4 w-4" style={{ color: selected ? 'var(--tf-green)' : 'var(--tf-muted)' }} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-primary">
-                        {t(`createDialog.templates.${option.id}.name`)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t(`createDialog.templates.${option.id}.description`)}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          {/* The custom start leads the dialog: an empty flow is the default, and the named
+              templates at the bottom are shortcuts for it, not the other way round. */}
+          <div className="grid gap-2">{renderOptionCard(CUSTOM_AUTOMATION_OPTION)}</div>
 
           <div className="space-y-2">
             <Label htmlFor="automation-name-input">{t('createDialog.nameLabel')}</Label>
@@ -178,6 +183,13 @@ export const CreateAutomationDialog: React.FC<CreateAutomationDialogProps> = ({
               })}
             </p>
           )}
+
+          <div className="space-y-2">
+            <Label>{t('createDialog.templateLabel')}</Label>
+            <div className="grid gap-2 max-h-[280px] overflow-y-auto pr-1">
+              {AUTOMATION_TEMPLATE_OPTIONS.map((option) => renderOptionCard(option))}
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
