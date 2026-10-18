@@ -123,6 +123,7 @@ export const PublishControls: React.FC<PublishControlsProps> = ({ automation, fl
 
   const runPublish = async (activate: boolean) => {
     const before = useAutomationBuilderStore.getState();
+    before.setPublishing(true);
     try {
       const result = await publishMutation({
         variables: { id: automation.id, baseRevision: before.serverDraftRevision, activate },
@@ -151,6 +152,8 @@ export const PublishControls: React.FC<PublishControlsProps> = ({ automation, fl
       if (reportConflict(error)) return;
       if (reportValidation(error, 'builder.header.publishErrorTitle', 'builder.header.publishInvalidMessage')) return;
       toastError(t('builder.header.publishErrorTitle'), error instanceof Error ? error.message : String(error));
+    } finally {
+      useAutomationBuilderStore.getState().setPublishing(false);
     }
   };
 

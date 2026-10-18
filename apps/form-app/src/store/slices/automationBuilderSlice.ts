@@ -91,6 +91,8 @@ export interface AutomationBuilderState {
   /** The server holds changes that are not yet published (optimistically true after any local edit). */
   hasUnpublishedChanges: boolean;
   conflict: DraftConflictInfo | null;
+  /** A publish is in flight: autosave holds off so it can't race the revision the publish bumps. */
+  isPublishing: boolean;
   isReadOnly: boolean;
   validationErrorsByNode: Record<string, ValidationErrorEntry[]>;
   structuralErrors: ValidationErrorEntry[];
@@ -147,6 +149,7 @@ export interface AutomationBuilderState {
     issues: ValidationErrorEntry[];
   }) => void;
   setSaveState: (saveState: SaveState) => void;
+  setPublishing: (isPublishing: boolean) => void;
   setConflict: (conflict: DraftConflictInfo) => void;
   getSerializableGraph: () => SerializedGraph;
   /** Clears the session draft/selection for the current automation — called when the user explicitly discards unsaved changes. */
@@ -228,6 +231,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   lastSavedAt: null,
   hasUnpublishedChanges: false,
   conflict: null,
+  isPublishing: false,
   isReadOnly: false,
   validationErrorsByNode: {},
   structuralErrors: [],
@@ -291,6 +295,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       lastSavedAt: null,
       hasUnpublishedChanges: Boolean(draft) || hasUnpublishedChanges,
       conflict: null,
+      isPublishing: false,
       isReadOnly,
       validationErrorsByNode: {},
       structuralErrors: [],
@@ -578,6 +583,8 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   },
 
   setSaveState: (saveState) => set({ saveState }),
+
+  setPublishing: (isPublishing) => set({ isPublishing }),
 
   setConflict: (conflict) => set({ conflict, saveState: 'conflict' }),
 

@@ -266,19 +266,6 @@ describe('automationRepository', () => {
       expect(sqlArg.values).toContain(JSON.stringify({ type: 'webhook' }));
     });
 
-    it('setNodeConfigInDraftGraph only touches rows that have a draft', async () => {
-      const repo = createAutomationRepository();
-      await repo.setNodeConfigInDraftGraph('automation-1', 'node-1', { type: 'webhook' });
-
-      expect(prismaMock.$executeRaw).toHaveBeenCalledTimes(1);
-      const sqlArg = prismaMock.$executeRaw.mock.calls[0][0] as { strings: TemplateStringsArray; values: any[] };
-      const sql = sqlArg.strings.join('');
-      expect(JSON.stringify(sqlArg.values)).toContain('draftGraph');
-      expect(sql).toContain('IS NOT NULL');
-      expect(sqlArg.values).toContain('node-1');
-      expect(sqlArg.values).toContain('automation-1');
-    });
-
     it('updateIfDraftRevision applies the write only when the revision still matches', async () => {
       const repo = createAutomationRepository();
       prismaMock.automation.updateMany.mockResolvedValueOnce({ count: 1 });

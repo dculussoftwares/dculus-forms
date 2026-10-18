@@ -219,6 +219,18 @@ function stableStringify(value: unknown): string {
   );
 }
 
+/**
+ * The builder serializes every node with a `data` object, while server-built graphs (the default
+ * `end` node) may omit it. Treat the two as equal, or a draft identical to the live graph would
+ * never normalise back to "no unpublished changes" and the first publish would bump the version
+ * for no semantic change.
+ */
+function comparableGraph(graph: unknown): unknown {
+  const nodes = (graph as { nodes?: unknown })?.nodes;
+  if (!Array.isArray(nodes)) return graph;
+  return { ...(graph as object), nodes: nodes.map((node) => ({ ...node, data: node?.data ?? {} })) };
+}
+
 const isGraphShape = (graph: unknown): graph is AutomationGraph =>
   !!graph &&
   typeof graph === 'object' &&
@@ -243,6 +255,15 @@ function collectPublishIssues(graph: unknown, triggerConfig: unknown, triggerTyp
   }
 
   return issues;
+}
+
+/** A failed compare-and-swap means a newer draft exists — or the automation was deleted meanwhile. */
+async function conflictOrNotFound(automationId: string) {
+  const latest = (await automationRepository.findById(automationId)) as DraftAwareAutomation | null;
+  if (!latest) {
+    return createGraphQLError('Automation not found', GRAPHQL_ERROR_CODES.AUTOMATION_NOT_FOUND);
+  }
+  return draftConflictError(latest);
 }
 
 function draftConflictError(latest: DraftAwareAutomation | null) {
@@ -297,7 +318,7 @@ export async function saveAutomationDraft(
 
   // A draft equal to the live version is stored as null, so undoing every edit clears the
   // "unpublished changes" state instead of leaving a redundant copy behind.
-  const graphMatchesLive = stableStringify(nextGraph) === stableStringify(automation.graph);
+  const graphMatchesLive = stableStringify(comparableGraph(nextGraph)) === stableStringify(comparableGraph(automation.graph));
   const triggerMatchesLive = stableStringify(nextTrigger) === stableStringify(automation.triggerConfig);
   const issues = collectPublishIssues(nextGraph, nextTrigger, automation.triggerType);
 
@@ -316,7 +337,7 @@ export async function saveAutomationDraft(
   );
 
   if (!updated) {
-    throw draftConflictError((await automationRepository.findById(automation.id)) as DraftAwareAutomation | null);
+    throw await conflictOrNotFound(automation.id);
   }
 
   return { automation: updated, validationErrors: issues };
@@ -351,7 +372,7 @@ export async function publishAutomation(
   }
 
   const changed =
-    stableStringify(candidateGraph) !== stableStringify(automation.graph) ||
+    stableStringify(comparableGraph(candidateGraph)) !== stableStringify(comparableGraph(automation.graph)) ||
     stableStringify(candidateTrigger) !== stableStringify(automation.triggerConfig);
   const activate = input.activate === true;
   const digestWatermark = activate
@@ -380,7 +401,7 @@ export async function publishAutomation(
   });
 
   if (!updated) {
-    throw draftConflictError((await automationRepository.findById(automation.id)) as DraftAwareAutomation | null);
+    throw await conflictOrNotFound(automation.id);
   }
 
   // boss.schedule upserts by (queue, key), so a changed cron/timezone replaces the old schedule.
@@ -505,13 +526,30 @@ function resolveActivationDigestWatermark(automation: {
 export async function setAutomationStatus(
   automation: {
     id: string;
+    status?: string;
     triggerType: string;
     graph: unknown;
     triggerConfig: unknown;
     lastDigestedAt?: Date | null;
+    draftGraph?: unknown;
+    draftTriggerConfig?: unknown;
   },
   status: string
 ) {
+  // A never-published automation's live graph is just the placeholder it was created with; the real
+  // work sits in the draft. Activating "what is live" would silently run the placeholder, so
+  // leaving DRAFT has to go through publishAutomation.
+  if (
+    status === 'ACTIVE' &&
+    automation.status === 'DRAFT' &&
+    (automation.draftGraph != null || automation.draftTriggerConfig != null)
+  ) {
+    throw createGraphQLError(
+      'This automation has unpublished changes — publish it to activate it',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
   if (!AUTOMATION_STATUSES.includes(status as (typeof AUTOMATION_STATUSES)[number])) {
     throw createGraphQLError(
       `Invalid status: ${status}. Supported statuses: ${AUTOMATION_STATUSES.join(', ')}`,

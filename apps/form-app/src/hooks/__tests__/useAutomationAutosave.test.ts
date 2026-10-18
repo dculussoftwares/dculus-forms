@@ -291,6 +291,38 @@ describe('useAutomationAutosave', () => {
     expect(saveMock.mock.calls[0][0].variables.graph.nodes.find((n: any) => n.id === 'delay').data.amount).toBe(9);
   });
 
+  test('holds autosave while a publish is in flight and saves the edit once it ends', async () => {
+    renderHook(() => useAutomationAutosave({ enabled: true }));
+
+    act(() => store().setPublishing(true));
+    edit(2);
+    await advance(AUTOSAVE_MAX_WAIT_MS * 2);
+    expect(saveMock).not.toHaveBeenCalled();
+
+    act(() => store().setPublishing(false));
+    await advance(AUTOSAVE_DEBOUNCE_MS);
+    expect(saveMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('a forced save keeps overwriting when it has to be retried after a network failure', async () => {
+    saveMock.mockRejectedValueOnce(
+      new FakeCombinedGraphQLErrors([{ extensions: { code: 'AUTOMATION_DRAFT_CONFLICT', draftRevision: 7 } }])
+    );
+    const { result } = renderHook(() => useAutomationAutosave({ enabled: true }));
+    edit(2);
+    await advance(AUTOSAVE_DEBOUNCE_MS);
+    expect(store().saveState).toBe('conflict');
+
+    saveMock.mockRejectedValueOnce(new Error('Failed to fetch'));
+    saveMock.mockResolvedValueOnce(savedResponse(8));
+    await act(async () => { void result.current.overwriteWithMine(); });
+    await advance(AUTOSAVE_RETRY_DELAYS_MS[0]);
+
+    const calls = saveMock.mock.calls.map((c) => c[0].variables.force);
+    expect(calls.slice(1)).toEqual([true, true]);
+    expect(store().saveState).toBe('saved');
+  });
+
   test('a stale response after the builder was reloaded is ignored', async () => {
     let release!: (value: unknown) => void;
     saveMock.mockImplementationOnce(() => new Promise((resolve) => { release = resolve; }));

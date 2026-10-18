@@ -224,6 +224,14 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   }, [canEdit, flush]);
 
   const handleBack = async () => {
+    // In a conflict the local edits can't be re-based onto the newer server draft later, so leaving
+    // would lose them for good — make that an explicit choice.
+    if (
+      useAutomationBuilderStore.getState().saveState === 'conflict' &&
+      !window.confirm(t('builder.conflict.leaveConfirm'))
+    ) {
+      return;
+    }
     if (useAutomationBuilderStore.getState().isDirty) {
       const saved = await Promise.race([
         flush(),
@@ -403,7 +411,11 @@ const AutomationBuilder: React.FC = () => {
   const form = formData?.form;
   const automation = automationData?.automation;
 
-  if (formLoading || automationLoading) {
+  // Only block on the very first load. A background revalidation (cache-and-network) must not swap
+  // the builder for a spinner: remounting would reload it from the Apollo cache, whose `draftGraph`
+  // is as old as the initial fetch even though `draftRevision` is current — and the next autosave
+  // would then overwrite the real draft with that stale copy.
+  if ((formLoading && !formData) || (automationLoading && !automationData)) {
     return (
       <div className="flex justify-center items-center h-full">
         <LoadingSpinner fullScreen={false} />

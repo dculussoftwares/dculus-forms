@@ -6,6 +6,7 @@ import {
   publishAutomation,
   discardAutomationDraft,
   duplicateAutomation,
+  setAutomationStatus,
 } from '../automationService.js';
 import { automationRepository } from '../../repositories/index.js';
 import { getAvailablePluginTypes } from '../../plugins/core/registry.js';
@@ -310,6 +311,58 @@ describe('automation draft / publish', () => {
         publishAutomation(automation({ triggerType: 'schedule' }) as any, { baseRevision: 5 }, 'u'),
         'AUTOMATION_INVALID_GRAPH'
       );
+    });
+  });
+
+  describe('conflict vs deleted', () => {
+    it('reports AUTOMATION_NOT_FOUND, not a conflict, when the row vanished', async () => {
+      vi.mocked(automationRepository.updateIfDraftRevision).mockResolvedValue(null);
+      vi.mocked(automationRepository.findById).mockResolvedValue(null);
+
+      await expectGraphQLCode(
+        saveAutomationDraft(automation() as any, { graph: editedGraph, baseRevision: 5 }, 'u'),
+        'AUTOMATION_NOT_FOUND'
+      );
+    });
+  });
+
+  describe('graph comparison', () => {
+    it('treats a node with no data and one with empty data as equal (draft normalises to null)', async () => {
+      const serverShaped = { nodes: [{ id: 't', type: 'trigger', data: {} }, { id: 'e', type: 'end' }], edges: [] };
+      const clientShaped = { nodes: [{ id: 't', type: 'trigger', data: {} }, { id: 'e', type: 'end', data: {} }], edges: [] };
+
+      await saveAutomationDraft(automation({ graph: serverShaped, draftGraph: editedGraph }) as any, { graph: clientShaped, baseRevision: 5 }, 'u');
+
+      expect(vi.mocked(automationRepository.updateIfDraftRevision).mock.calls[0][2]).toMatchObject({
+        draftGraph: Prisma.DbNull,
+      });
+    });
+
+    it('does not bump the version on first publish when only that serialization differs', async () => {
+      const serverShaped = { nodes: [{ id: 't', type: 'trigger', data: {} }, { id: 'e', type: 'end' }], edges: [] };
+      const clientShaped = { nodes: [{ id: 't', type: 'trigger', data: {} }, { id: 'e', type: 'end', data: {} }], edges: [] };
+
+      await publishAutomation(automation({ graph: serverShaped, draftGraph: clientShaped }) as any, { baseRevision: 5 }, 'u');
+
+      expect(vi.mocked(automationRepository.updateIfDraftRevision).mock.calls[0][2]).not.toHaveProperty('version');
+    });
+  });
+
+  describe('setAutomationStatus guard', () => {
+    it('refuses to activate a never-published automation that has an unpublished draft', async () => {
+      await expectGraphQLCode(
+        setAutomationStatus({ ...(automation({ status: 'DRAFT', draftGraph: editedGraph }) as any) }, 'ACTIVE'),
+        'BAD_USER_INPUT'
+      );
+      expect(automationRepository.updateAutomation).not.toHaveBeenCalled();
+    });
+
+    it('still allows resuming a paused automation that has a draft (resumes the live version)', async () => {
+      vi.mocked(automationRepository.updateAutomation).mockResolvedValue({ id: 'automation-1', status: 'ACTIVE' } as any);
+
+      await setAutomationStatus({ ...(automation({ status: 'PAUSED', draftGraph: editedGraph }) as any) }, 'ACTIVE');
+
+      expect(automationRepository.updateAutomation).toHaveBeenCalled();
     });
   });
 

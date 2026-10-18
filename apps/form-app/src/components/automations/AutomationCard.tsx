@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useMutation } from '@apollo/client/react';
+import { useApolloClient, useMutation } from '@apollo/client/react';
 import {
   Button,
   Input,
@@ -100,6 +100,8 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) =>
   const [duplicateAutomation] = useMutation(DUPLICATE_AUTOMATION);
   const [publishAutomation] = useMutation(PUBLISH_AUTOMATION);
   const [discardAutomationDraft] = useMutation(DISCARD_AUTOMATION_DRAFT);
+  const client = useApolloClient();
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
@@ -129,6 +131,9 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) =>
           : t('builder.header.publishedToastMessage')
       );
     } catch (error: any) {
+      // The list can be stale (another editor saved/published since it loaded) — pull a fresh one
+      // so the next attempt uses the current draft revision instead of failing identically.
+      void client.refetchQueries({ include: [GET_FORM_AUTOMATIONS] });
       const issues = extractValidationErrors(error);
       toastError(
         t('builder.header.publishErrorTitle'),
@@ -139,14 +144,15 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) =>
     }
   };
 
-  const handleDiscard = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDiscard = async () => {
+    setShowDiscardDialog(false);
     setIsDiscarding(true);
     try {
       const result = await discardAutomationDraft({ variables: { id: automation.id }, refetchQueries });
       if (result.error) throw result.error;
       toastSuccess(t('builder.header.discardedToastTitle'), t('builder.header.discardedToastMessage'));
     } catch (error: any) {
+      void client.refetchQueries({ include: [GET_FORM_AUTOMATIONS] });
       toastError(t('builder.header.discardErrorTitle'), error.message);
     } finally {
       setIsDiscarding(false);
@@ -354,7 +360,10 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) =>
                         {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
                         {t('card.actions.publish')}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDiscard} disabled={isDiscarding}>
+                      <DropdownMenuItem
+                        onClick={(e) => { e.stopPropagation(); setShowDiscardDialog(true); }}
+                        disabled={isDiscarding}
+                      >
                         {isDiscarding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
                         {t('card.actions.discard')}
                       </DropdownMenuItem>
@@ -417,6 +426,24 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) =>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Discard unpublished changes — the draft is the only copy, so confirm like Delete does */}
+      <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('builder.discardDialog.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('builder.discardDialog.description', { values: { version: automation.version } })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('builder.discardDialog.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDiscard} variant="destructive">
+              {t('builder.discardDialog.confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

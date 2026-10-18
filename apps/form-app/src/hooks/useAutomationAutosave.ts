@@ -65,7 +65,7 @@ export function useAutomationAutosave({ enabled }: UseAutomationAutosaveOptions)
 
   const runSave = useCallback((): Promise<void> => {
     const store = useAutomationBuilderStore.getState();
-    if (!enabled || paused.current || !store.isDirty) return Promise.resolve();
+    if (!enabled || paused.current || !store.isDirty || store.isPublishing) return Promise.resolve();
 
     const payload = store.getDraftPayload();
     if (!payload) return Promise.resolve();
@@ -123,6 +123,8 @@ export function useAutomationAutosave({ enabled }: UseAutomationAutosaveOptions)
         if (isNetworkFailure && retryCount.current < AUTOSAVE_RETRY_DELAYS_MS.length) {
           const delay = AUTOSAVE_RETRY_DELAYS_MS[retryCount.current];
           retryCount.current += 1;
+          // The retry must still overwrite, or a "keep my version" would turn back into a conflict.
+          forceNext.current = force;
           current.setSaveState('pending');
           retryTimer.current = setTimeout(() => {
             retryTimer.current = null;
@@ -145,7 +147,7 @@ export function useAutomationAutosave({ enabled }: UseAutomationAutosaveOptions)
   runSaveRef.current = runSave;
 
   const schedule = useCallback(() => {
-    if (!enabled || paused.current) return;
+    if (!enabled || paused.current || useAutomationBuilderStore.getState().isPublishing) return;
     // A backoff retry is already queued.
     if (retryTimer.current) return;
     // A request is in flight: pick the edits it didn't cover up as soon as it settles.
@@ -203,10 +205,12 @@ export function useAutomationAutosave({ enabled }: UseAutomationAutosaveOptions)
   const isDirty = useAutomationBuilderStore((s) => s.isDirty);
   const loadEpoch = useAutomationBuilderStore((s) => s.loadEpoch);
   const saveState = useAutomationBuilderStore((s) => s.saveState);
+  const isPublishing = useAutomationBuilderStore((s) => s.isPublishing);
 
+  // Re-evaluated when a publish ends too, so edits made during it are picked up straight after.
   useEffect(() => {
-    if (isDirty && saveState === 'pending') schedule();
-  }, [localRevision, isDirty, saveState, schedule]);
+    if (isDirty && saveState === 'pending' && !isPublishing) schedule();
+  }, [localRevision, isDirty, saveState, isPublishing, schedule]);
 
   // A reload of the builder (load latest, discard, another automation) clears any conflict pause.
   useEffect(() => {
@@ -230,7 +234,9 @@ export function useAutomationAutosave({ enabled }: UseAutomationAutosaveOptions)
     () => () => {
       clearTimers();
       const state = useAutomationBuilderStore.getState();
-      if (state.isDirty && !paused.current) void runSave();
+      // A request already in flight covers (or will conflict with) these edits; a second one with
+      // the same base revision would only race it.
+      if (state.isDirty && !paused.current && !inFlight.current) void runSave();
     },
     []
   );

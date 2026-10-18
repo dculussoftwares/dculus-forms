@@ -334,7 +334,8 @@
       "anotherEditor": "Another editor",
       "loadLatest": "Load latest",
       "keepMine": "Keep my version",
-      "loadErrorTitle": "Couldn't load the latest version"
+      "loadErrorTitle": "Couldn't load the latest version",
+      "leaveConfirm": "This automation was edited elsewhere, so your latest edits can't be saved. If you leave now they will be lost. Leave anyway?"
     },
     "readOnlyDraftNotice": "An editor has unpublished changes to this automation."
   },
