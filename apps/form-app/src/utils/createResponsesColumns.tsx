@@ -400,12 +400,7 @@ const createFieldColumns = (
         if (field.type === FieldType.FILE_UPLOAD_FIELD) {
           const keys: string[] = Array.isArray(value) ? value : [];
           if (keys.length === 0) {
-            return (
-              <div className="flex items-center space-x-2 text-muted-foreground">
-                <Upload className="h-4 w-4" />
-                <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
-              </div>
-            );
+            return null;
           }
           return (
             <div className="flex flex-col gap-1">
@@ -418,12 +413,7 @@ const createFieldColumns = (
 
         const formattedValue = formatFieldValueUtil(value, field.type);
         if (!formattedValue) {
-          return (
-            <div className="flex items-center space-x-2 text-muted-foreground">
-              {getFieldIcon(field.type)}
-              <span className="text-sm italic">{t('table.fieldResponses.noResponse')}</span>
-            </div>
-          );
+          return null;
         }
         return (
           <div className="flex items-center space-x-2">
