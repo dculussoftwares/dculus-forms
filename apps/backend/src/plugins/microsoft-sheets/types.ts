@@ -16,6 +16,10 @@ export interface MicrosoftSheetsPluginConfig extends PluginConfig {
   workbookId?: string;
   /** Permanent web URL of the workbook, set after first submission */
   workbookUrl?: string;
+  /** File name for the workbook (without .xlsx); when blank the form title is used. Renamed in OneDrive when changed. */
+  workbookName?: string;
+  /** Web URL of the folder the workbook was created in, so it can be opened without a live token. */
+  workbookFolderUrl?: string;
   /** OneDrive folder the workbook is created in; fixed once the workbook exists. */
   destinationFolder?: { id: string; name: string };
   /** Target worksheet name (defaults to "Sheet1") */

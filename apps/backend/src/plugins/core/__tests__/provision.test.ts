@@ -85,12 +85,24 @@ describe('syncSheetPluginName', () => {
     ['the name is unchanged', row(withFile), { type: 'google-sheets', spreadsheetName: ' Leads ' }],
     ['the name is blank', row({ ...withFile, spreadsheetName: '  ' }), { type: 'google-sheets' }],
     ['there is no file yet', row({ ...connected, spreadsheetName: 'Leads' }), undefined],
-    ['it is another plugin type', row(withFile, { type: 'microsoft-sheets' }), undefined],
+    ['it is another plugin type', row(withFile, { type: 'webhook' }), undefined],
   ])('does nothing when %s', async (_label, plugin, previous) => {
     vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(plugin);
 
     await expect(syncSheetPluginName('p1', previous as any)).resolves.toBe(false);
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('renames a Microsoft workbook using its own name and id fields', async () => {
+    const msConfig = { type: 'microsoft-sheets', microsoftToken: { accessToken: 't' }, workbookId: 'w1', workbookName: 'Leads' };
+    vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(row(msConfig, { type: 'microsoft-sheets' }));
+
+    await expect(syncSheetPluginName('p1', { type: 'microsoft-sheets', workbookName: 'Old' })).resolves.toBe(true);
+    expect(handler).toHaveBeenCalledWith(
+      { id: 'p1', config: msConfig },
+      expect.objectContaining({ type: 'plugin.rename' }),
+      expect.anything()
+    );
   });
 
   it('reports failure without throwing when the handler fails or throws', async () => {

@@ -16,6 +16,7 @@ import {
   reconcileColumns,
   type SheetColumn,
 } from '../core/sheetColumns.js';
+import { toOneDriveFileName } from '../core/fileName.js';
 
 /** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
 interface DigestResponseEntry {
@@ -128,7 +129,7 @@ const createWorkbook = async (
   worksheetName: string,
   accessToken: string,
   folderId?: string
-): Promise<{ workbookId: string; workbookUrl: string }> => {
+): Promise<{ workbookId: string; workbookUrl: string; workbookFolderUrl?: string }> => {
   const wb = new ExcelJS.Workbook();
   wb.addWorksheet(worksheetName);
   const buffer = await wb.xlsx.writeBuffer();
@@ -157,7 +158,33 @@ const createWorkbook = async (
   const data = await response.json() as any;
   const workbookId: string = data.id;
   const workbookUrl: string = data.webUrl ?? '';
-  return { workbookId, workbookUrl };
+  const workbookFolderUrl = await fetchFolderWebUrl(data.parentReference?.id, accessToken);
+  return { workbookId, workbookUrl, workbookFolderUrl };
+};
+
+/** Best effort: the link to the folder is a convenience, never a reason to fail the sync. */
+const fetchFolderWebUrl = async (folderId: string | undefined, accessToken: string): Promise<string | undefined> => {
+  if (!folderId) return undefined;
+  try {
+    const response = await fetch(`${GRAPH_BASE}/me/drive/items/${encodeURIComponent(folderId)}?$select=webUrl`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) return undefined;
+    return ((await response.json()) as { webUrl?: string }).webUrl || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+const renameWorkbook = async (workbookId: string, name: string, accessToken: string): Promise<void> => {
+  const response = await fetch(`${GRAPH_BASE}/me/drive/items/${encodeURIComponent(workbookId)}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: `${name}.xlsx` }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to rename workbook: ${response.status} ${await response.text()}`);
+  }
 };
 
 /**
@@ -366,6 +393,16 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
 
     const accessToken = freshToken.accessToken;
 
+    if (event.type === 'plugin.rename') {
+      const name = toOneDriveFileName(config.workbookName);
+      if (!config.workbookId || !name) {
+        return { success: false, error: 'Nothing to rename', syncedAt } satisfies MicrosoftSheetsResult;
+      }
+      await renameWorkbook(config.workbookId, name, accessToken);
+      context.logger.info('Microsoft Sheets: workbook renamed', { pluginId: plugin.id, workbookId: config.workbookId });
+      return { success: true, workbookId: config.workbookId, syncedAt } satisfies MicrosoftSheetsResult;
+    }
+
     // 3. Fetch the response(s) to build row values. A digest batch (schedule automation with an
     // upstream digest node, #automations-digest) carries zero-to-many responses in
     // event.data.__digestResponses instead of exactly one event.data.responseId.
@@ -438,7 +475,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
     // Settled before any row is built: rows are laid out strictly by this list.
     let columns: SheetColumn[] = config.sheetColumns ?? [];
 
-    const initWorkbook = async (): Promise<{ workbookId: string; workbookUrl: string }> => {
+    const initWorkbook = async (): Promise<{ workbookId: string; workbookUrl: string; workbookFolderUrl?: string }> => {
       const formTitle = form?.title?.trim() || 'Form Responses';
       // Append a distinguishing suffix so two Microsoft Excel actions on the same form (e.g. a
       // condition's "Yes" and "No" branches) don't create identically-titled files that are
@@ -450,7 +487,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
       // use a plain FormPlugin id with no colon, so this is a no-op there.
       const idParts = plugin.id.split(':');
       const idSuffix = (idParts[idParts.length - 1] || plugin.id).slice(0, 8);
-      const workbookTitle = `${formTitle} — Responses (${idSuffix})`;
+      const workbookTitle = toOneDriveFileName(config.workbookName) || `${formTitle} — Responses (${idSuffix})`;
 
       context.logger.info('Microsoft Sheets: creating new workbook', {
         pluginId: plugin.id,
@@ -468,6 +505,7 @@ export const microsoftSheetsHandler: PluginHandler = async (plugin, event, conte
         microsoftToken: freshToken,
         workbookId: created.workbookId,
         workbookUrl: created.workbookUrl,
+        workbookFolderUrl: created.workbookFolderUrl,
         sheetColumns: columns,
       });
 

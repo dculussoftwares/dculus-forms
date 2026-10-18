@@ -19,6 +19,7 @@ import {
   ExternalLink,
   CheckCircle2,
   Unlink,
+  FolderOpen,
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl, getFormViewerUrl } from '../../lib/config';
@@ -32,6 +33,7 @@ import {
 } from '../../lib/oneDrivePicker';
 import { DestinationFolderField } from '../../components/plugins/shared/DestinationFolderField';
 import { OneDriveFolderPicker } from '../../components/plugins/shared/OneDriveFolderPicker';
+import { createOneDriveFolder, fetchOneDriveParentFolderUrl } from '../../lib/oneDriveFolders';
 import type { ConfigFormProps } from '../core/registry';
 
 interface MicrosoftToken {
@@ -41,6 +43,14 @@ interface MicrosoftToken {
   email: string;
   displayName: string;
 }
+
+/** An access token past (or about to pass) its expiry can't be used for direct OneDrive calls. */
+const isTokenUsable = (token: MicrosoftToken | undefined): token is MicrosoftToken =>
+  !!token && new Date(token.expiresAt).getTime() > Date.now() + 30_000;
+
+/** What the file name input starts as: the saved name, else blank for an existing file (keep its name), else the plugin name. */
+const initialWorkbookName = (config: Record<string, any> | undefined, pluginName: string): string =>
+  config?.workbookName ?? (config?.workbookId ? '' : pluginName);
 
 export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   form,
@@ -62,6 +72,14 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   const [pluginName, setPluginName] = useState<string>(
     initialData?.name ?? 'Microsoft Excel'
   );
+  // Follows the plugin name until the user types their own, so the default is never a surprise.
+  const [workbookName, setWorkbookName] = useState<string>(() =>
+    initialWorkbookName(initialData?.config, initialData?.name ?? 'Microsoft Excel')
+  );
+  const [workbookNameTouched, setWorkbookNameTouched] = useState<boolean>(
+    !!initialData?.config?.workbookName || !!initialData?.config?.workbookId
+  );
+  const [liveFolderUrl, setLiveFolderUrl] = useState<string | null>(null);
   const [worksheetName, setWorksheetName] = useState<string>(
     initialData?.config?.worksheetName ?? 'Sheet1'
   );
@@ -116,11 +134,15 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         // were never saved, so the full-page redirect would otherwise silently revert them.
         // Checked by key presence, not truthiness: clearing either field to '' before Connect
         // is a valid edit that a truthiness check would fail to restore.
-        const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string }>(
+        const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string; workbookName?: string; workbookNameTouched?: boolean }>(
           'microsoft-sheets'
         );
         if (pending && 'pluginName' in pending) setPluginName(pending.pluginName ?? '');
         if (pending && 'worksheetName' in pending) setWorksheetName(pending.worksheetName ?? '');
+        if (pending && 'workbookName' in pending) {
+          setWorkbookName(pending.workbookName ?? '');
+          setWorkbookNameTouched(!!pending.workbookNameTouched);
+        }
         justConnectedRef.current = true;
         window.history.replaceState(
           null,
@@ -136,11 +158,15 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         new URLSearchParams(hash.slice(1)).get('microsoft_oauth_error') ?? '';
       console.warn('[MicrosoftSheets Config] OAuth error from redirect:', error);
       setConnectionError(t('connection.authFailed'));
-      const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string }>(
+      const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string; workbookName?: string; workbookNameTouched?: boolean }>(
         'microsoft-sheets'
       );
       if (pending && 'pluginName' in pending) setPluginName(pending.pluginName ?? '');
       if (pending && 'worksheetName' in pending) setWorksheetName(pending.worksheetName ?? '');
+      if (pending && 'workbookName' in pending) {
+        setWorkbookName(pending.workbookName ?? '');
+        setWorkbookNameTouched(!!pending.workbookNameTouched);
+      }
       if (pending) justConnectedRef.current = true;
       window.history.replaceState(
         null,
@@ -157,10 +183,27 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
     }
     if (initialData && !justConnectedRef.current) {
       setPluginName(initialData.name ?? 'Microsoft Excel');
+      setWorkbookName(initialWorkbookName(initialData.config, initialData.name ?? 'Microsoft Excel'));
+      setWorkbookNameTouched(!!initialData.config?.workbookName || !!initialData.config?.workbookId);
       setWorksheetName(initialData.config?.worksheetName ?? 'Sheet1');
       setMicrosoftToken(initialData.config?.microsoftToken);
     }
   }, [initialData, instanceKey]);
+
+  // The file may have been moved since it was created, so ask OneDrive where it is now.
+  const savedFolderUrl = initialData?.config?.workbookFolderUrl as string | undefined;
+  useEffect(() => {
+    setLiveFolderUrl(null);
+    if (!workbookId || !isTokenUsable(microsoftToken)) return;
+    let cancelled = false;
+    void fetchOneDriveParentFolderUrl(microsoftToken.accessToken, workbookId).then((url) => {
+      if (!cancelled) setLiveFolderUrl(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [workbookId, microsoftToken?.accessToken]);
+  const folderUrl = liveFolderUrl ?? savedFolderUrl;
 
   // Keyed on the saved value so an unsaved pick survives parent re-renders that rebuild `initialData`.
   const savedFolderKey = JSON.stringify(initialData?.config?.destinationFolder ?? null);
@@ -172,7 +215,7 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
     // Stash whatever's currently typed into "Plugin Name"/"Worksheet Name" — they're only
     // local React state until Save is clicked, and the redirect below fully reloads the page,
     // discarding them otherwise.
-    stashPendingConfigFields('microsoft-sheets', { pluginName, worksheetName });
+    stashPendingConfigFields('microsoft-sheets', { pluginName, worksheetName, workbookName, workbookNameTouched });
     // Mark this navigation as intentional first so the automation builder's beforeunload
     // guard (which would otherwise treat this like an accidental tab close) lets it through
     // unprompted.
@@ -200,6 +243,25 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
     }
   };
 
+  const handleCreateFolder = async (name: string): Promise<boolean> => {
+    if (!isTokenUsable(microsoftToken)) {
+      toastError(tDestination('errors.createFailed'), tDestination('errors.tokenExpired'));
+      return false;
+    }
+    try {
+      setDestinationFolder(await createOneDriveFolder(microsoftToken.accessToken, name, destinationFolder?.id));
+      return true;
+    } catch (e) {
+      toastError(tDestination('errors.createFailed'), e instanceof Error ? e.message : '');
+      return false;
+    }
+  };
+
+  const handlePluginNameChange = (value: string) => {
+    setPluginName(value);
+    if (!workbookNameTouched) setWorkbookName(value);
+  };
+
   const handleSave = async () => {
     if (!pluginName.trim()) {
       setNameError(t('validation.nameRequired'));
@@ -221,6 +283,8 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
         microsoftToken,
         workbookId: initialData?.config?.workbookId,
         workbookUrl: initialData?.config?.workbookUrl,
+        workbookFolderUrl: savedFolderUrl,
+        workbookName: workbookName.trim() || undefined,
         destinationFolder,
         worksheetName: worksheetName.trim() || 'Sheet1',
       },
@@ -283,12 +347,33 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
             <Input
               id="plugin-name"
               value={pluginName}
-              onChange={(e) => setPluginName(e.target.value)}
+              onChange={(e) => handlePluginNameChange(e.target.value)}
               placeholder={t('basicSettings.name.placeholder')}
             />
             {nameError && <p className="text-sm text-destructive">{nameError}</p>}
             <p className="text-xs text-muted-foreground">
               {t('basicSettings.name.hint')}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="workbook-name">{t('basicSettings.workbookName.label')}</Label>
+            <Input
+              id="workbook-name"
+              value={workbookName}
+              onChange={(e) => {
+                setWorkbookName(e.target.value);
+                setWorkbookNameTouched(true);
+              }}
+              maxLength={200}
+              placeholder={
+                workbookId && !initialData?.config?.workbookName
+                  ? t('basicSettings.workbookName.keepCurrentPlaceholder')
+                  : t('basicSettings.workbookName.placeholder')
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              {t('basicSettings.workbookName.hint')}
             </p>
           </div>
 
@@ -327,16 +412,30 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
               </div>
               <div className="flex items-center justify-between gap-4">
                 {workbookUrl ? (
-                  <a
-                    href={workbookUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm hover:underline"
-                    style={{ color: '#217346' }}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {t('connection.openWorkbook')}
-                  </a>
+                  <div className="flex items-center gap-4">
+                    <a
+                      href={workbookUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm hover:underline"
+                      style={{ color: '#217346' }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {t('connection.openWorkbook')}
+                    </a>
+                    {folderUrl && (
+                      <a
+                        href={folderUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm hover:underline"
+                        style={{ color: '#217346' }}
+                      >
+                        <FolderOpen className="h-3.5 w-3.5" />
+                        {tDestination('openFolderOneDrive')}
+                      </a>
+                    )}
+                  </div>
                 ) : (
                   <span />
                 )}
@@ -382,6 +481,7 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
             pickerAvailable={isOneDrivePickerConfigured()}
             onPick={handlePickFolder}
             onClear={() => setDestinationFolder(undefined)}
+            onCreate={handleCreateFolder}
           />
           <OneDriveFolderPicker
             session={pickerSession}

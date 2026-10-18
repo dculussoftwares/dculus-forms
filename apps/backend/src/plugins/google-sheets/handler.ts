@@ -11,6 +11,7 @@ import {
   reconcileColumns,
   type SheetColumn,
 } from '../core/sheetColumns.js';
+import { normalizeFileName } from '../core/fileName.js';
 
 /** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
 interface DigestResponseEntry {
@@ -169,12 +170,6 @@ const createSpreadsheet = async (
 
   return { spreadsheetId, spreadsheetUrl };
 };
-
-const MAX_SPREADSHEET_NAME_LENGTH = 200;
-
-/** The user's chosen file name, or '' when none was set. */
-export const normalizeSpreadsheetName = (name: string | undefined): string =>
-  (name ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_SPREADSHEET_NAME_LENGTH);
 
 const renameSpreadsheet = async (spreadsheetId: string, name: string, accessToken: string): Promise<void> => {
   const response = await fetch(`${DRIVE_API_BASE}/files/${encodeURIComponent(spreadsheetId)}?fields=id`, {
@@ -375,7 +370,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     const accessToken = freshToken.accessToken;
 
     if (event.type === 'plugin.rename') {
-      const name = normalizeSpreadsheetName(config.spreadsheetName);
+      const name = normalizeFileName(config.spreadsheetName);
       if (!config.spreadsheetId || !name) {
         return { success: false, error: 'Nothing to rename', syncedAt } satisfies GoogleSheetsResult;
       }
@@ -467,7 +462,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       // FormPlugin id with no colon, so this is a no-op there.
       const idParts = plugin.id.split(':');
       const idSuffix = (idParts[idParts.length - 1] || plugin.id).slice(0, 8);
-      const sheetTitle = normalizeSpreadsheetName(config.spreadsheetName) || `${formTitle} — Responses (${idSuffix})`;
+      const sheetTitle = normalizeFileName(config.spreadsheetName) || `${formTitle} — Responses (${idSuffix})`;
 
       context.logger.info('Google Sheets: creating new spreadsheet', {
         pluginId: plugin.id,

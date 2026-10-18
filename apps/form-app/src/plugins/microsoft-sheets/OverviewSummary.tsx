@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ExternalLink, FolderOpen } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
 interface MicrosoftSheetsOverviewSummaryProps {
@@ -78,17 +78,32 @@ export const MicrosoftSheetsOverviewSummary: React.FC<MicrosoftSheetsOverviewSum
           >
             {t('pluginSummary.microsoftSheets.workbook')}
           </p>
-          <a
-            href={config.workbookUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs hover:underline"
-            style={{ color: 'rgb(37,99,235)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ExternalLink className="h-3 w-3" />
-            {t('pluginSummary.microsoftSheets.openWorkbook')}
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href={config.workbookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs hover:underline"
+              style={{ color: 'rgb(37,99,235)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="h-3 w-3" />
+              {t('pluginSummary.microsoftSheets.openWorkbook')}
+            </a>
+            {config.workbookFolderUrl && (
+              <a
+                href={config.workbookFolderUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs hover:underline"
+                style={{ color: 'rgb(37,99,235)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <FolderOpen className="h-3 w-3" />
+                {t('pluginSummary.microsoftSheets.openFolder')}
+              </a>
+            )}
+          </div>
         </div>
       )}
       {config.worksheetName && config.worksheetName !== 'Sheet1' && (

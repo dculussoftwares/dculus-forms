@@ -30,6 +30,7 @@ const EXTERNALLY_BOUND_CONFIG_KEYS = [
   'spreadsheetUrl',
   'workbookId',
   'workbookUrl',
+  'workbookFolderUrl',
   'worksheetId',
   // Column layout of the document above — meaningless for a fresh one.
   'sheetColumns',

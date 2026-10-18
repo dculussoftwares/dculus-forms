@@ -397,6 +397,88 @@ describe('Microsoft Sheets Handler', () => {
       expect(createUrl).toContain('/me/drive/items/folder-1:/');
       expect(createUrl).toContain('conflictBehavior=rename');
     });
+
+    it('names the workbook with the chosen file name, made safe for OneDrive', async () => {
+      config.workbookName = ' Sales: Leads? ';
+      const urls: string[] = [];
+      global.fetch = createFetch(urls);
+
+      await microsoftSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      expect(urls.find((u) => u.includes(':/content'))).toContain(`/${encodeURIComponent('Sales- Leads-.xlsx')}:/`);
+    });
+
+    it('falls back to the form-based name when no file name is chosen', async () => {
+      const urls: string[] = [];
+      global.fetch = createFetch(urls);
+
+      await microsoftSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      expect(decodeURIComponent(urls.find((u) => u.includes(':/content'))!)).toContain('My Form — Responses (');
+    });
+
+    it('stores the web URL of the folder the workbook landed in', async () => {
+      global.fetch = vi.fn().mockImplementation((url: string, opts: RequestInit = {}) => {
+        if (url.includes(':/content') && opts.method === 'PUT') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ id: 'new-workbook', webUrl: 'https://x/wb', parentReference: { id: 'parent-1' } }),
+            text: async () => '',
+          });
+        }
+        if (url.includes('/me/drive/items/parent-1?$select=webUrl')) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ webUrl: 'https://x/folder' }), text: async () => '' });
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}), text: async () => '' });
+      }) as any;
+
+      await microsoftSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      expect(mockContext.updatePluginConfig).toHaveBeenCalledWith(
+        expect.objectContaining({ workbookFolderUrl: 'https://x/folder' })
+      );
+    });
+  });
+
+  describe('renaming an existing workbook', () => {
+    const renameEvent = (): PluginEvent => ({
+      type: 'plugin.rename',
+      formId: 'form-1',
+      organizationId: 'org-1',
+      timestamp: new Date('2026-01-01T00:00:00.000Z'),
+      data: {},
+    });
+
+    it('renames the OneDrive file and touches nothing else', async () => {
+      config.workbookName = 'Sales Leads';
+
+      const result = await microsoftSheetsHandler({ id: 'plugin-1', config }, renameEvent(), mockContext);
+
+      expect(result).toMatchObject({ success: true, workbookId: 'workbook-1' });
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      const [url, opts] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('https://graph.microsoft.com/v1.0/me/drive/items/workbook-1');
+      expect(opts.method).toBe('PATCH');
+      expect(JSON.parse(opts.body as string)).toEqual({ name: 'Sales Leads.xlsx' });
+    });
+
+    it('does nothing when there is no name', async () => {
+      const result = await microsoftSheetsHandler({ id: 'plugin-1', config }, renameEvent(), mockContext);
+
+      expect(result).toMatchObject({ success: false, error: 'Nothing to rename' });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('returns a failure result when OneDrive rejects the rename', async () => {
+      config.workbookName = 'Sales Leads';
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 409, json: async () => ({}), text: async () => 'exists' }) as any;
+
+      const result = await microsoftSheetsHandler({ id: 'plugin-1', config }, renameEvent(), mockContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Failed to rename workbook');
+    });
   });
 
   describe('resolveFieldValue via a real form schema', () => {

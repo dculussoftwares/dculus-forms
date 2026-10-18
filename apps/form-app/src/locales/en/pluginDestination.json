@@ -23,6 +23,7 @@
     "submit": "Create folder"
   },
   "openFolder": "Open folder in Drive",
+  "openFolderOneDrive": "Open folder in OneDrive",
   "oneDrive": {
     "title": "Choose a OneDrive folder",
     "signInHint": "Sign in to Microsoft to browse your OneDrive folders.",

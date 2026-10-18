@@ -126,6 +126,7 @@
       "connectedAs": "Connected as",
       "workbook": "Workbook",
       "openWorkbook": "Open in Excel Online",
+      "openFolder": "Open folder",
       "worksheet": "Worksheet",
       "notConnected": "Not connected",
       "notConnectedHint": "Open Settings to connect your Microsoft 365 account."
