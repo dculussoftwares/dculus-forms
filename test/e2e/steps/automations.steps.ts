@@ -119,24 +119,21 @@ When('I close the node config panel', async function (this: CustomWorld) {
   await expect(this.page.getByTestId('automation-node-config-panel')).not.toBeVisible({ timeout: 5_000 });
 });
 
-When('I save the automation graph', async function (this: CustomWorld) {
+When('the automation changes are autosaved', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  const saveButton = this.page.getByRole('button', { name: 'Save', exact: true });
-  await saveButton.click();
-  // toBeDisabled() alone can't distinguish "already clean" from "save in flight" —
-  // the success toast is the actual signal that updateAutomation resolved.
-  await expect(this.page.getByText('Automation saved', { exact: true })).toBeVisible({ timeout: 10_000 });
-  await expect(saveButton).toBeDisabled({ timeout: 10_000 });
+  // There is no Save button: edits autosave to the draft after a short debounce. The status
+  // indicator only reports "saved" once the server has acknowledged everything on screen.
+  await expect(this.page.getByTestId('automation-save-status')).toHaveAttribute('data-state', 'saved', {
+    timeout: 15_000,
+  });
 });
 
 When('I try to activate the automation', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
   await this.page.getByRole('button', { name: 'Activate', exact: true }).click();
-  // Wait for the setStatus mutation's rejection toast rather than a fixed sleep —
-  // this is the actual signal that the AUTOMATION_INVALID_GRAPH rejection landed.
-  await expect(
-    this.page.getByText("Automation isn't ready to activate", { exact: true })
-  ).toBeVisible({ timeout: 10_000 });
+  // Publishing is refused client-side while the draft has validation issues; the issues list opens
+  // and says why. (The server-side AUTOMATION_INVALID_GRAPH check is covered by backend tests.)
+  await expect(this.page.getByText(/Fix \d+ issue\(s\) before publishing/)).toBeVisible({ timeout: 10_000 });
 });
 
 Then('the automation should still be in Draft status', async function (this: CustomWorld) {
@@ -153,7 +150,7 @@ When('I configure the webhook action with a test delivery URL', async function (
 
   await panel.locator('#name').fill('Welcome flow webhook');
   await panel.locator('#url').fill(WEBHOOK_TEST_URL);
-  await panel.getByRole('button', { name: 'Save action', exact: true }).click();
+  await panel.getByRole('button', { name: 'Apply', exact: true }).click();
   await expect(panel).not.toBeVisible({ timeout: 5_000 });
 });
 
@@ -164,7 +161,8 @@ When('I activate the automation', async function (this: CustomWorld) {
 
 Then('the automation status should be Active', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
-  await expect(this.page.getByText('Active', { exact: true })).toBeVisible({ timeout: 10_000 });
+  // The badge reads "Active · v<n>" once published.
+  await expect(this.page.getByText(/^Active · v\d+$/)).toBeVisible({ timeout: 10_000 });
   await expect(this.page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible({ timeout: 10_000 });
 });
 
@@ -180,6 +178,11 @@ When('I fill and submit the automations happy path form', async function (this: 
 
 When('I open the automation runs view', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
+  // The Activate/Publish success toast renders over the header's Runs button, and a resting mouse
+  // pointer hovering that toast keeps it open indefinitely. Move the pointer off it and let the
+  // toast dismiss before clicking, as a person would.
+  await this.page.mouse.move(0, 0);
+  await expect(this.page.locator('[data-sonner-toast]')).toHaveCount(0, { timeout: 20_000 });
   await this.page.getByRole('button', { name: 'Runs', exact: true }).click();
   await expect(this.page).toHaveURL(/\/runs$/, { timeout: 15_000 });
 });

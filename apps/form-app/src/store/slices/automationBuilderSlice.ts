@@ -25,6 +25,32 @@ import {
   type SerializedGraph,
 } from '../../components/automations/builder/draftStorage';
 
+/**
+ * Where the builder's working copy stands relative to the server's draft:
+ *  saved    — the server has everything on screen
+ *  pending  — edits made, waiting out the autosave debounce
+ *  saving   — a save request is in flight
+ *  offline  — saves are failing because the browser is offline; edits are kept locally
+ *  error    — saving failed for another reason (or retries ran out)
+ *  conflict — the server draft changed elsewhere; autosave is paused until the user chooses
+ */
+export type SaveState = 'saved' | 'pending' | 'saving' | 'offline' | 'error' | 'conflict';
+
+export interface DraftConflictInfo {
+  draftRevision: number | null;
+  draftUpdatedAt: string | null;
+  draftUpdatedById: string | null;
+}
+
+export interface DraftPayload {
+  automationId: string;
+  loadEpoch: number;
+  graph: SerializedGraph;
+  triggerConfig: Record<string, any> | null;
+  localRevision: number;
+  baseRevision: number;
+}
+
 export interface AutomationBuilderState {
   automationId: string | null;
   formTitle: string;
@@ -52,7 +78,21 @@ export interface AutomationBuilderState {
   nodes: AutomationNode[];
   edges: AutomationEdge[];
   selectedNodeId: string | null;
+  /** True while edits exist that the server has not acknowledged (drives autosave). */
   isDirty: boolean;
+  /** Monotonic edit counter — lets an in-flight save tell which edits it actually covered. */
+  localRevision: number;
+  /** Bumped by every loadGraph, so a save started before a reload can't ack into the new state. */
+  loadEpoch: number;
+  /** The server's `draftRevision` this client last saw; sent back as `baseRevision`. */
+  serverDraftRevision: number;
+  saveState: SaveState;
+  lastSavedAt: number | null;
+  /** The server holds changes that are not yet published (optimistically true after any local edit). */
+  hasUnpublishedChanges: boolean;
+  conflict: DraftConflictInfo | null;
+  /** A publish is in flight: autosave holds off so it can't race the revision the publish bumps. */
+  isPublishing: boolean;
   isReadOnly: boolean;
   validationErrorsByNode: Record<string, ValidationErrorEntry[]>;
   structuralErrors: ValidationErrorEntry[];
@@ -66,6 +106,9 @@ export interface AutomationBuilderState {
     triggerConfig?: Record<string, any> | null;
     graph: { nodes: any[]; edges: any[] };
     isReadOnly: boolean;
+    /** Server `draftRevision`; a stored local draft is only restored when it was based on this one. */
+    draftRevision?: number;
+    hasUnpublishedChanges?: boolean;
   }) => void;
   /** Updates the PDF-generators mirror independently of loadGraph's once-per-automationId
    * call — GET_PDF_GENERATORS is a separate query with its own loading/error lifecycle, so
@@ -90,11 +133,28 @@ export interface AutomationBuilderState {
   removeNode: (nodeId: string) => void;
   setValidationErrors: (errors: ValidationErrorEntry[]) => void;
   clearValidationErrors: () => void;
-  markSaved: () => void;
+  /** Snapshot of what an autosave should send, tagged so its ack can be matched back to it. */
+  getDraftPayload: () => DraftPayload | null;
+  /**
+   * Records a server-acknowledged save (or publish). Only edits up to `sentLocalRevision` count as
+   * saved — anything typed while the request was in flight stays pending for the next save.
+   * Ignored when the builder has since been reloaded or switched to another automation.
+   */
+  ackSave: (params: {
+    automationId: string;
+    loadEpoch: number;
+    sentLocalRevision: number;
+    draftRevision: number;
+    hasUnpublishedChanges: boolean;
+    issues: ValidationErrorEntry[];
+  }) => void;
+  setSaveState: (saveState: SaveState) => void;
+  setPublishing: (isPublishing: boolean) => void;
+  setConflict: (conflict: DraftConflictInfo) => void;
   getSerializableGraph: () => SerializedGraph;
   /** Clears the session draft/selection for the current automation — called when the user explicitly discards unsaved changes. */
   discardDraft: () => void;
-  /** Updates the local triggerConfig mirror after a successful updateAutomation save (#201). */
+  /** Edits the draft schedule config (#201); autosaved with the graph and applied on Publish. */
   setTriggerConfig: (triggerConfig: Record<string, any> | null) => void;
 }
 
@@ -139,6 +199,16 @@ function collectDownstreamNodeIds(
   }
 }
 
+/** A fresh edit only moves a settled state to `pending`; offline/error/conflict/saving keep their meaning. */
+const stateAfterEdit = (current: SaveState): SaveState => (current === 'saved' ? 'pending' : current);
+
+const editedFlags = (state: Pick<AutomationBuilderState, 'saveState' | 'localRevision'>) => ({
+  isDirty: true,
+  localRevision: state.localRevision + 1,
+  saveState: stateAfterEdit(state.saveState),
+  hasUnpublishedChanges: true,
+});
+
 type Get = () => AutomationBuilderState;
 type SetState = (partial: Partial<AutomationBuilderState> | ((state: AutomationBuilderState) => Partial<AutomationBuilderState>)) => void;
 
@@ -154,17 +224,40 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
   edges: [],
   selectedNodeId: null,
   isDirty: false,
+  localRevision: 0,
+  loadEpoch: 0,
+  serverDraftRevision: 0,
+  saveState: 'saved',
+  lastSavedAt: null,
+  hasUnpublishedChanges: false,
+  conflict: null,
+  isPublishing: false,
   isReadOnly: false,
   validationErrorsByNode: {},
   structuralErrors: [],
 
-  loadGraph: ({ automationId, formTitle, formFields, quizEnabled, triggerType, triggerConfig, graph, isReadOnly }) => {
-    // A session draft (see draftStorage.ts) means there are unsaved edits that survived a
-    // same-tab reload — e.g. the full-page OAuth redirect from a Google/Microsoft Sheets
-    // "Connect" click. Prefer it over the server's last-Saved graph when present.
-    const draft = readDraftGraph(automationId);
-    const sourceNodes = draft?.nodes ?? graph.nodes ?? [];
-    const sourceEdges = draft?.edges ?? graph.edges ?? [];
+  loadGraph: ({
+    automationId,
+    formTitle,
+    formFields,
+    quizEnabled,
+    triggerType,
+    triggerConfig,
+    graph,
+    isReadOnly,
+    draftRevision = 0,
+    hasUnpublishedChanges = false,
+  }) => {
+    // A local draft (see draftStorage.ts) means there are edits the server never acknowledged —
+    // e.g. made offline, or lost to the full-page OAuth redirect from a Google/Microsoft Sheets
+    // "Connect" click. It only wins while the server draft is still the one it was based on;
+    // otherwise another tab saved since, and the server has the newer truth.
+    const stored = readDraftGraph(automationId);
+    const draft = stored && !isReadOnly && stored.baseRevision === draftRevision ? stored : null;
+    if (stored && !draft) clearDraftGraph(automationId);
+    const effectiveTriggerConfig = draft ? draft.triggerConfig : triggerConfig ?? null;
+    const sourceNodes = draft?.graph.nodes ?? graph.nodes ?? [];
+    const sourceEdges = draft?.graph.edges ?? graph.edges ?? [];
 
     const nodes: AutomationNode[] = sourceNodes.map(
       (n: any) =>
@@ -190,11 +283,19 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       formFields: formFields ?? [],
       quizEnabled: quizEnabled ?? false,
       triggerType,
-      triggerConfig: triggerConfig ?? null,
+      triggerConfig: effectiveTriggerConfig,
       nodes: layoutedNodes,
       edges: layoutedEdges,
       selectedNodeId,
       isDirty: Boolean(draft),
+      localRevision: draft ? 1 : 0,
+      loadEpoch: get().loadEpoch + 1,
+      serverDraftRevision: draftRevision,
+      saveState: draft ? 'pending' : 'saved',
+      lastSavedAt: null,
+      hasUnpublishedChanges: Boolean(draft) || hasUnpublishedChanges,
+      conflict: null,
+      isPublishing: false,
       isReadOnly,
       validationErrorsByNode: {},
       structuralErrors: [],
@@ -303,7 +404,11 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
     const { nodes: layoutedNodes, edges: layoutedEdges } = layoutAutomationGraph(nextNodes, nextEdges);
 
     if (automationId) {
-      persistDraftGraph(automationId, serializeGraph(layoutedNodes, layoutedEdges));
+      persistDraftGraph(automationId, {
+        graph: serializeGraph(layoutedNodes, layoutedEdges),
+        triggerConfig: get().triggerConfig,
+        baseRevision: get().serverDraftRevision,
+      });
       persistSelectedNodeId(automationId, newNodeId);
     }
 
@@ -311,7 +416,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
       nodes: layoutedNodes,
       edges: layoutedEdges,
       selectedNodeId: newNodeId,
-      isDirty: true,
+      ...editedFlags(get()),
     });
 
     return newNodeId;
@@ -324,12 +429,16 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
     );
 
     if (automationId) {
-      persistDraftGraph(automationId, serializeGraph(nextNodes, edges));
+      persistDraftGraph(automationId, {
+        graph: serializeGraph(nextNodes, edges),
+        triggerConfig: get().triggerConfig,
+        baseRevision: get().serverDraftRevision,
+      });
     }
 
     set({
       nodes: nextNodes,
-      isDirty: true,
+      ...editedFlags(get()),
     });
   },
 
@@ -396,7 +505,11 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
     const nextSelectedNodeId = deletedNodeIds.has(selectedNodeId ?? '') ? null : selectedNodeId;
 
     if (automationId) {
-      persistDraftGraph(automationId, serializeGraph(layoutedNodes, layoutedEdges));
+      persistDraftGraph(automationId, {
+        graph: serializeGraph(layoutedNodes, layoutedEdges),
+        triggerConfig: get().triggerConfig,
+        baseRevision: get().serverDraftRevision,
+      });
       persistSelectedNodeId(automationId, nextSelectedNodeId);
     }
 
@@ -408,7 +521,7 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
         nodes: layoutedNodes,
         edges: layoutedEdges,
         selectedNodeId: nextSelectedNodeId,
-        isDirty: true,
+        ...editedFlags(state),
         validationErrorsByNode: restErrors,
       };
     });
@@ -429,13 +542,51 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
 
   clearValidationErrors: () => set({ validationErrorsByNode: {}, structuralErrors: [] }),
 
-  markSaved: () => {
-    // The server now matches local state — the session draft (if any) is stale, drop it so
-    // a later reload restores from the server graph again instead of this now-redundant copy.
-    const { automationId } = get();
-    if (automationId) clearDraftGraph(automationId);
-    set({ isDirty: false });
+  getDraftPayload: () => {
+    const { automationId, loadEpoch, nodes, edges, triggerConfig, localRevision, serverDraftRevision } = get();
+    if (!automationId) return null;
+    return {
+      automationId,
+      loadEpoch,
+      graph: serializeGraph(nodes, edges),
+      triggerConfig,
+      localRevision,
+      baseRevision: serverDraftRevision,
+    };
   },
+
+  ackSave: ({ automationId, loadEpoch, sentLocalRevision, draftRevision, hasUnpublishedChanges, issues }) => {
+    const state = get();
+    if (state.automationId !== automationId || state.loadEpoch !== loadEpoch) return;
+
+    const stillDirty = state.localRevision !== sentLocalRevision;
+    if (stillDirty) {
+      // Re-base the local copy on the revision the server now has, or a reload would discard it.
+      persistDraftGraph(automationId, {
+        graph: serializeGraph(state.nodes, state.edges),
+        triggerConfig: state.triggerConfig,
+        baseRevision: draftRevision,
+      });
+    } else {
+      clearDraftGraph(automationId);
+    }
+
+    set({
+      serverDraftRevision: draftRevision,
+      isDirty: stillDirty,
+      saveState: stillDirty ? 'pending' : 'saved',
+      lastSavedAt: Date.now(),
+      hasUnpublishedChanges: stillDirty ? true : hasUnpublishedChanges,
+      conflict: null,
+    });
+    get().setValidationErrors(issues);
+  },
+
+  setSaveState: (saveState) => set({ saveState }),
+
+  setPublishing: (isPublishing) => set({ isPublishing }),
+
+  setConflict: (conflict) => set({ conflict, saveState: 'conflict' }),
 
   getSerializableGraph: () => {
     const { nodes, edges } = get();
@@ -450,7 +601,17 @@ export const createAutomationBuilderSlice = (set: SetState, get: Get): Automatio
     }
   },
 
-  setTriggerConfig: (triggerConfig) => set({ triggerConfig }),
+  setTriggerConfig: (triggerConfig) => {
+    const { automationId, nodes, edges, serverDraftRevision } = get();
+    if (automationId) {
+      persistDraftGraph(automationId, {
+        graph: serializeGraph(nodes, edges),
+        triggerConfig,
+        baseRevision: serverDraftRevision,
+      });
+    }
+    set({ triggerConfig, ...editedFlags(get()) });
+  },
 
   setPdfGenerators: (pdfGenerators) => set({ pdfGenerators }),
 });

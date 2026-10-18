@@ -1,5 +1,4 @@
-import React, { useMemo, useState } from 'react';
-import { useMutation } from '@apollo/client/react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   Input,
@@ -18,14 +17,11 @@ import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
-  toastSuccess,
-  toastError,
 } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useAutomationBuilderStore } from '../../../store/useAutomationBuilderStore';
-import { UPDATE_AUTOMATION } from '../../../graphql/automations';
 import { isValidCronExpression, isValidTimezone } from './scheduleCronValidation';
 
 /** IANA timezone identifiers, with a hand-rolled fallback for runtimes without Intl.supportedValuesOf. */
@@ -120,15 +116,13 @@ function buildCron(preset: Preset, time: string, weekday: number, dayOfMonth: nu
 }
 
 interface ScheduleTriggerEditorProps {
-  automationId: string;
   disabled: boolean;
 }
 
-export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ automationId, disabled }) => {
+export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ disabled }) => {
   const { t } = useTranslation('automations');
   const triggerConfig = useAutomationBuilderStore((s) => s.triggerConfig);
   const setTriggerConfig = useAutomationBuilderStore((s) => s.setTriggerConfig);
-  const [updateAutomation, { loading }] = useMutation(UPDATE_AUTOMATION);
 
   const initial = useMemo(() => parseCron(triggerConfig?.cron), [triggerConfig?.cron]);
   const [preset, setPreset] = useState<Preset>(initial.preset);
@@ -152,28 +146,25 @@ export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ au
   const cronValid = isValidCronExpression(builtCron);
   const timezoneValid = !timezone || isValidTimezone(timezone);
 
-  const handleSave = async () => {
-    if (!cronValid) {
-      toastError(t('builder.panel.schedule.saveErrorTitle'), t('builder.panel.schedule.invalidCron'));
+  // The schedule is part of the autosaved draft: every change goes to the store (and from there to
+  // the server) and only takes effect on Publish. An invalid value is kept rather than dropped, so
+  // half-typed input survives and surfaces as a publish-blocking issue instead of vanishing.
+  const lastPushed = useRef<string | null>(null);
+  useEffect(() => {
+    if (disabled) return;
+    const next = { cron: builtCron, timezone: timezone || undefined };
+    const key = JSON.stringify(next);
+    if (lastPushed.current === null) {
+      // First render: nothing to push if the draft already holds exactly what is displayed. A
+      // brand-new schedule has no config yet, though, so persist the defaults the user is looking at.
+      lastPushed.current = key;
+      if (triggerConfig) return;
+    } else if (lastPushed.current === key) {
       return;
     }
-    if (!timezoneValid) {
-      toastError(t('builder.panel.schedule.saveErrorTitle'), t('builder.panel.schedule.invalidTimezone'));
-      return;
-    }
-
-    try {
-      const nextTriggerConfig = { cron: builtCron, timezone: timezone || undefined };
-      const result = await updateAutomation({
-        variables: { id: automationId, triggerConfig: nextTriggerConfig },
-      });
-      if (result.error) throw result.error;
-      setTriggerConfig(nextTriggerConfig);
-      toastSuccess(t('builder.panel.schedule.saveSuccessTitle'), t('builder.panel.schedule.saveSuccessMessage'));
-    } catch (error: any) {
-      toastError(t('builder.panel.schedule.saveErrorTitle'), error.message);
-    }
-  };
+    lastPushed.current = key;
+    setTriggerConfig(next);
+  }, [builtCron, timezone, disabled]);
 
   return (
     <fieldset disabled={disabled} className="space-y-4">
@@ -297,10 +288,7 @@ export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ au
       </div>
 
       <p className="text-xs text-muted-foreground">{t('builder.panel.schedule.hint')}</p>
-
-      <Button size="sm" onClick={handleSave} disabled={loading || !cronValid || !timezoneValid}>
-        {loading ? t('builder.panel.schedule.saving') : t('builder.panel.schedule.saveButton')}
-      </Button>
+      <p className="text-xs text-muted-foreground">{t('builder.panel.schedule.appliesOnPublish')}</p>
     </fieldset>
   );
 };

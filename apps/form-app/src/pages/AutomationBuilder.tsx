@@ -1,21 +1,28 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useApolloClient, useQuery, useMutation } from '@apollo/client/react';
 import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dculus/types';
 import { useTranslation } from '../hooks/useTranslation';
 import { Button, Input, Badge, LoadingSpinner, EmptyState, Tooltip, TooltipContent, TooltipTrigger, toastSuccess, toastError } from '@dculus/ui';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_PDF_GENERATORS } from '../graphql/pdfGenerators';
-import { GET_AUTOMATION, UPDATE_AUTOMATION, SET_AUTOMATION_STATUS } from '../graphql/automations';
-import { AlertCircle, ArrowLeft, FlaskConical, History, Pencil, Play, Loader2 } from 'lucide-react';
+import { GET_AUTOMATION, UPDATE_AUTOMATION } from '../graphql/automations';
+import { AlertCircle, ArrowLeft, History, Pencil } from 'lucide-react';
 import { AutomationCanvas } from '../components/automations/builder/AutomationCanvas';
 import { useAutomationBuilderStore } from '../store/useAutomationBuilderStore';
 import { FormPermissionProvider, type PermissionLevel } from '../contexts/FormPermissionContext';
 import { useFormPermissions } from '../hooks/useFormPermissions';
-import { useTestAutomation } from '../hooks/useTestAutomation';
-import { extractValidationErrors } from '../components/automations/builder/validation';
+import { useAutomationAutosave } from '../hooks/useAutomationAutosave';
+import { SaveStatusIndicator } from '../components/automations/builder/SaveStatusIndicator';
+import { IssuesPill } from '../components/automations/builder/IssuesPill';
+import { PublishControls } from '../components/automations/builder/PublishControls';
+import { DraftConflictBanner } from '../components/automations/builder/DraftConflictBanner';
+import { formatRelativeTime } from '../components/automations/relativeTime';
 import { isIntentionalNavigationPending } from '../lib/intentionalNavigation';
 import { CombinedGraphQLErrors } from '@apollo/client';
+
+/** Longest Back/leave will wait for a pending autosave before moving on (the edit stays on this device). */
+const LEAVE_FLUSH_TIMEOUT_MS = 3000;
 
 function getErrorMessage(error: unknown): string {
   if (CombinedGraphQLErrors.is(error)) return error.message;
@@ -30,8 +37,9 @@ function getErrorMessage(error: unknown): string {
 }
 
 const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ form, automation }) => {
-  const { t } = useTranslation('automations');
+  const { t, locale } = useTranslation('automations');
   const navigate = useNavigate();
+  const client = useApolloClient();
   const { canEdit } = useFormPermissions();
 
   const automationId = automation.id;
@@ -39,12 +47,8 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
 
   const loadGraph = useAutomationBuilderStore((s) => s.loadGraph);
   const setPdfGenerators = useAutomationBuilderStore((s) => s.setPdfGenerators);
-  const isDirty = useAutomationBuilderStore((s) => s.isDirty);
+  const hasUnpublishedChanges = useAutomationBuilderStore((s) => s.hasUnpublishedChanges);
   const structuralErrors = useAutomationBuilderStore((s) => s.structuralErrors);
-  const setValidationErrors = useAutomationBuilderStore((s) => s.setValidationErrors);
-  const clearValidationErrors = useAutomationBuilderStore((s) => s.clearValidationErrors);
-  const getSerializableGraph = useAutomationBuilderStore((s) => s.getSerializableGraph);
-  const markSaved = useAutomationBuilderStore((s) => s.markSaved);
   const discardDraft = useAutomationBuilderStore((s) => s.discardDraft);
 
   // Fillable fields for the condition rule editor's field picker (#200) — same extraction
@@ -96,24 +100,38 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     setPdfGenerators([]);
   }, [formId, setPdfGenerators]);
 
+  // Loads a server snapshot into the builder. The builder works on the autosaved draft when one
+  // exists, so what an editor sees is what they last left — but viewers get no draft from the
+  // server and so see exactly what runs.
+  const loadFromServer = useCallback(
+    (source: any) => {
+      loadGraph({
+        automationId,
+        formTitle: form.title,
+        formFields,
+        quizEnabled: !!form.settings?.quiz?.enabled,
+        triggerType: automation.triggerType,
+        triggerConfig: source.draftTriggerConfig ?? source.triggerConfig,
+        graph: source.draftGraph ?? source.graph,
+        isReadOnly: !canEdit,
+        draftRevision: source.draftRevision ?? 0,
+        hasUnpublishedChanges: !!source.hasUnpublishedChanges,
+      });
+    },
+    [automationId, automation.triggerType, form.title, form.settings?.quiz?.enabled, formFields, canEdit, loadGraph]
+  );
+
   // Only (re)load the graph into the store when the automation actually changes — the cache
-  // updates `automation` after every Save/Activate mutation (same id), and re-running loadGraph
+  // updates `automation` after every autosave/Publish mutation (same id), and re-running loadGraph
   // then would stomp on in-progress local edits with what we just persisted.
   const loadedAutomationIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (loadedAutomationIdRef.current === automationId) return;
     loadedAutomationIdRef.current = automationId;
-    loadGraph({
-      automationId,
-      formTitle: form.title,
-      formFields,
-      quizEnabled: !!form.settings?.quiz?.enabled,
-      triggerType: automation.triggerType,
-      triggerConfig: automation.triggerConfig,
-      graph: automation.graph,
-      isReadOnly: !canEdit,
-    });
-  }, [automationId, automation.graph, automation.triggerType, automation.triggerConfig, form.title, form.settings?.quiz?.enabled, formFields, canEdit, loadGraph]);
+    loadFromServer(automation);
+  }, [automationId, automation, loadFromServer]);
+
+  const { flush, retry, overwriteWithMine } = useAutomationAutosave({ enabled: canEdit });
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(automation.name);
@@ -121,13 +139,7 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     setNameDraft(automation.name);
   }, [automation.name]);
 
-  const [updateAutomation, { loading: isSavingGraph }] = useMutation(UPDATE_AUTOMATION);
   const [renameAutomation, { loading: isRenaming }] = useMutation(UPDATE_AUTOMATION);
-  const [setStatus, { loading: isActivating }] = useMutation(SET_AUTOMATION_STATUS);
-  const { runTest: handleTest, isTesting } = useTestAutomation(formId, automationId);
-  // A schedule automation has no triggering response — its data comes from its Filter Responses
-  // step — so it is testable even on a form that has never been submitted.
-  const canTest = (form.responseCount ?? 0) > 0 || automation.triggerType === 'schedule';
 
   const handleCommitName = async () => {
     setIsEditingName(false);
@@ -146,81 +158,90 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
     }
   };
 
-  const handleSave = async () => {
+  const [issuesOpen, setIssuesOpen] = useState(false);
+  const [issuesBlockingPublish, setIssuesBlockingPublish] = useState(false);
+  const openBlockingIssues = () => {
+    setIssuesBlockingPublish(true);
+    setIssuesOpen(true);
+  };
+
+  // Another editor (or another tab) saved since this tab last synced. "Load latest" refetches and
+  // replaces the builder with the server draft; "Keep my version" re-saves over it.
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+  const handleLoadLatest = async () => {
+    setIsResolvingConflict(true);
     try {
-      const graph = getSerializableGraph();
-      const result = await updateAutomation({ variables: { id: automationId, graph } });
-      // Apollo Client v4's mutate() resolves (doesn't reject) when the response contains
-      // GraphQL-level errors — only network/execution failures throw. AUTOMATION_INVALID_GRAPH
-      // (an active automation's edited graph failing re-validation) is a GraphQL error, so it
-      // must be read off the resolved result, not caught.
-      if (result.error) throw result.error;
-      markSaved();
-      clearValidationErrors();
-      toastSuccess(t('builder.header.saveSuccessTitle'), t('builder.header.saveSuccessMessage'));
+      const { data, error } = await client.query({ query: GET_AUTOMATION, variables: { id: automationId }, fetchPolicy: 'network-only' });
+      if (error || !data?.automation) throw error ?? new Error('Automation not found');
+      discardDraft();
+      loadFromServer(data.automation);
     } catch (error: unknown) {
-      const validationErrors = CombinedGraphQLErrors.is(error) ? extractValidationErrors(error) : undefined;
-      if (validationErrors) {
-        setValidationErrors(validationErrors);
-        toastError(t('builder.header.saveErrorTitle'), t('builder.header.saveInvalidMessage'));
-      } else {
-        toastError(t('builder.header.saveErrorTitle'), getErrorMessage(error));
-      }
+      toastError(t('builder.conflict.loadErrorTitle'), getErrorMessage(error));
+    } finally {
+      setIsResolvingConflict(false);
+    }
+  };
+  const handleKeepMine = async () => {
+    // Nothing of mine to keep (the conflict came from a publish) — just take the latest.
+    if (!useAutomationBuilderStore.getState().isDirty) return handleLoadLatest();
+    setIsResolvingConflict(true);
+    try {
+      await overwriteWithMine();
+    } finally {
+      setIsResolvingConflict(false);
     }
   };
 
-  const handleActivateToggle = async () => {
-    const nextStatus = automation.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
-    try {
-      const result = await setStatus({ variables: { id: automationId, status: nextStatus } });
-      // Apollo Client v4's mutate() resolves (doesn't reject) when the response contains
-      // GraphQL-level errors — only network/execution failures throw. AUTOMATION_INVALID_GRAPH
-      // is a GraphQL error, so it must be read off the resolved result, not caught.
-      if (result.error) throw result.error;
-      clearValidationErrors();
-      toastSuccess(
-        nextStatus === 'ACTIVE' ? t('toasts.activatedTitle') : t('toasts.pausedTitle'),
-        nextStatus === 'ACTIVE'
-          ? t('toasts.activatedMessage', { values: { name: automation.name } })
-          : t('toasts.pausedMessage', { values: { name: automation.name } })
-      );
-    } catch (error: unknown) {
-      const validationErrors = CombinedGraphQLErrors.is(error) ? extractValidationErrors(error) : undefined;
-      if (validationErrors) {
-        setValidationErrors(validationErrors);
-        toastError(t('builder.header.activateInvalidTitle'), t('builder.header.activateInvalidMessage'));
-      } else {
-        toastError(t('toasts.statusErrorTitle'), getErrorMessage(error));
-      }
-    }
-  };
-
-  // Warn on tab close/refresh while there are unsaved graph changes. Skipped when the
-  // navigation is one the app itself intentionally triggered and already knows is safe —
+  // Warn on tab close/refresh only while edits are not yet on the server. Once autosave has
+  // acknowledged them there is nothing to lose, so the common case closes silently. Skipped when
+  // the navigation is one the app itself intentionally triggered and already knows is safe —
   // e.g. the Google/Microsoft Sheets "Connect" buttons redirect this same tab to the OAuth
-  // provider, and the graph draft is already persisted to sessionStorage before that redirect
-  // fires (see draftStorage.ts) — without this check the browser's native "leave site?"
-  // prompt intercepts that redirect before the user ever reaches the sign-in page.
+  // provider, and the unsynced edits are already mirrored to sessionStorage (see
+  // draftStorage.ts) — without this check the browser's native "leave site?" prompt intercepts
+  // that redirect before the user ever reaches the sign-in page.
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (!isDirty || isIntentionalNavigationPending()) return;
+      if (!useAutomationBuilderStore.getState().isDirty || isIntentionalNavigationPending()) return;
       e.preventDefault();
       e.returnValue = '';
     };
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
-  }, [isDirty]);
+  }, []);
 
-  const handleBack = () => {
-    if (isDirty) {
-      if (!window.confirm(t('builder.header.unsavedChangesConfirm'))) return;
-      // User explicitly chose to leave without saving — drop the session draft so it
-      // doesn't reappear if they come back to this automation later in the session.
-      discardDraft();
+  // Cmd/Ctrl+S: there is no Save button any more, but people press it anyway — flush instead of
+  // letting the browser open its "save page" dialog.
+  useEffect(() => {
+    if (!canEdit) return undefined;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        void flush();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [canEdit, flush]);
+
+  const handleBack = async () => {
+    // In a conflict the local edits can't be re-based onto the newer server draft later, so leaving
+    // would lose them for good — make that an explicit choice.
+    const inConflict = useAutomationBuilderStore.getState().saveState === 'conflict';
+    if (inConflict && !window.confirm(t('builder.conflict.leaveConfirm'))) return;
+    // After confirming the loss there is nothing left to flush, and "kept on this device" would be untrue.
+    if (!inConflict && useAutomationBuilderStore.getState().isDirty) {
+      const saved = await Promise.race([
+        flush(),
+        new Promise<boolean>((resolve) => setTimeout(() => resolve(false), LEAVE_FLUSH_TIMEOUT_MS)),
+      ]);
+      // The edit is still mirrored in sessionStorage and re-sent from there on return.
+      if (!saved) toastError(t('builder.header.saveErrorTitle'), t('builder.header.leaveSaveFailed'));
     }
     navigate(`/dashboard/form/${formId}/builder/automations`);
   };
 
+  const isNeverPublished = automation.status === 'DRAFT';
+  const showUnpublishedChip = hasUnpublishedChanges && !isNeverPublished;
   const isActive = automation.status === 'ACTIVE';
 
   return (
@@ -265,15 +286,46 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
             className={`shrink-0 text-[10px] ${isActive ? 'border-[var(--tf-green-bg-md)] bg-[var(--tf-green-bg)] text-[var(--tf-green)]' : ''}`}
           >
             {t(`statuses.${automation.status}`)}
+            {!isNeverPublished && ` · ${t('card.version', { values: { version: automation.version } })}`}
           </Badge>
-          {isDirty && (
-            <span className="text-xs shrink-0" style={{ color: 'var(--tf-light-muted)' }}>
-              {t('builder.header.unsavedIndicator')}
-            </span>
+          {showUnpublishedChip && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                  style={{ backgroundColor: 'rgba(190,153,58,0.08)', color: '#9c7818', border: '1px solid rgba(190,153,58,0.16)' }}
+                  data-testid="automation-unpublished-chip"
+                >
+                  {t('builder.header.unpublishedChip')}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                {automation.draftUpdatedAt
+                  ? t('builder.header.unpublishedTooltip', {
+                      values: {
+                        time: formatRelativeTime(automation.draftUpdatedAt, locale),
+                        name: automation.draftUpdatedBy?.name ?? t('card.meta.unknownEditor'),
+                        version: automation.version,
+                      },
+                    })
+                  : t('builder.header.unpublishedTooltipGeneric', { values: { version: automation.version } })}
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
+          {canEdit && <SaveStatusIndicator onRetry={() => void retry()} />}
+          {canEdit && (
+            <IssuesPill
+              open={issuesOpen}
+              onOpenChange={(open) => {
+                setIssuesOpen(open);
+                if (!open) setIssuesBlockingPublish(false);
+              }}
+              blockingPublish={issuesBlockingPublish}
+            />
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -283,68 +335,28 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
             <History className="h-3.5 w-3.5" />
             {t('builder.header.runsButton')}
           </Button>
-
           {canEdit && (
-            canTest ? (
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleTest()} disabled={isTesting}>
-                {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
-                {t('builder.header.testButton')}
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button variant="outline" size="sm" className="gap-1.5" disabled>
-                      <FlaskConical className="h-3.5 w-3.5" />
-                      {t('builder.header.testButton')}
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>{t('builder.header.testDisabledNoResponses')}</TooltipContent>
-              </Tooltip>
-            )
+            <PublishControls
+              automation={automation}
+              flush={flush}
+              onDiscarded={(restored) => {
+                discardDraft();
+                loadFromServer(restored);
+              }}
+              onBlockedByIssues={openBlockingIssues}
+            />
           )}
         </div>
-
-        {canEdit && (
-          <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={handleSave} disabled={!isDirty || isSavingGraph}>
-              {isSavingGraph && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
-              {t('builder.header.saveButton')}
-            </Button>
-            {/* Activate always acts on the last-Saved graph on the server — disable it while
-                dirty so it can never silently activate a version older than what's on screen. */}
-            {isDirty ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button size="sm" disabled>
-                      <Play className="h-3.5 w-3.5 mr-1.5" />
-                      {isActive ? t('builder.header.pauseButton') : t('builder.header.activateButton')}
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>{t('builder.header.activateDisabledUnsaved')}</TooltipContent>
-              </Tooltip>
-            ) : (
-              <Button size="sm" onClick={handleActivateToggle} disabled={isActivating}>
-                {isActivating ? (
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <Play className="h-3.5 w-3.5 mr-1.5" />
-                )}
-                {isActive ? t('builder.header.pauseButton') : t('builder.header.activateButton')}
-              </Button>
-            )}
-          </div>
-        )}
       </div>
 
       {!canEdit && (
         <p className="text-xs text-muted-foreground px-1 pb-2" data-testid="automation-builder-readonly-notice">
           {t('builder.readOnlyNotice')}
+          {automation.hasUnpublishedChanges && ` ${t('builder.readOnlyDraftNotice')}`}
         </p>
       )}
+
+      {canEdit && <DraftConflictBanner onLoadLatest={handleLoadLatest} onKeepMine={handleKeepMine} busy={isResolvingConflict} />}
 
       {structuralErrors.length > 0 && (
         <div
@@ -388,12 +400,19 @@ const AutomationBuilder: React.FC = () => {
   } = useQuery(GET_AUTOMATION, {
     variables: { id: automationId },
     skip: !automationId,
+    // The builder seeds itself from `draftGraph`; a cached copy from an earlier visit (or from a
+    // draft this session has since discarded/published) would silently resurrect stale edits.
+    fetchPolicy: 'network-only',
   });
 
   const form = formData?.form;
   const automation = automationData?.automation;
 
-  if (formLoading || automationLoading) {
+  // Only block on the very first load. A background revalidation (cache-and-network) must not swap
+  // the builder for a spinner: remounting would reload it from the Apollo cache, whose `draftGraph`
+  // is as old as the initial fetch even though `draftRevision` is current — and the next autosave
+  // would then overwrite the real draft with that stale copy.
+  if ((formLoading && !formData) || (automationLoading && !automationData)) {
     return (
       <div className="flex justify-center items-center h-full">
         <LoadingSpinner fullScreen={false} />

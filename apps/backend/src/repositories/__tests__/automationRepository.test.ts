@@ -266,6 +266,36 @@ describe('automationRepository', () => {
       expect(sqlArg.values).toContain(JSON.stringify({ type: 'webhook' }));
     });
 
+    it('updateIfDraftRevision applies the write only when the revision still matches', async () => {
+      const repo = createAutomationRepository();
+      prismaMock.automation.updateMany.mockResolvedValueOnce({ count: 1 });
+      prismaMock.automation.findUnique.mockResolvedValueOnce({ id: 'automation-1' });
+
+      const result = await repo.updateIfDraftRevision('automation-1', 4, { draftRevision: { increment: 1 } });
+
+      expect(prismaMock.automation.updateMany).toHaveBeenCalledWith({
+        where: { id: 'automation-1', draftRevision: 4 },
+        data: { draftRevision: { increment: 1 } },
+      });
+      expect(result).toEqual({ id: 'automation-1' });
+    });
+
+    it('updateIfDraftRevision returns null when another writer got there first', async () => {
+      const repo = createAutomationRepository();
+      prismaMock.automation.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      expect(await repo.updateIfDraftRevision('automation-1', 4, {})).toBeNull();
+    });
+
+    it('updateIfDraftRevision skips the revision check when forced (null base)', async () => {
+      const repo = createAutomationRepository();
+      prismaMock.automation.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      await repo.updateIfDraftRevision('automation-1', null, {});
+
+      expect(prismaMock.automation.updateMany).toHaveBeenCalledWith({ where: { id: 'automation-1' }, data: {} });
+    });
+
     it('setNodeConfigInRunSnapshot issues a single $executeRaw scoped to the run id', async () => {
       const repo = createAutomationRepository();
       await repo.setNodeConfigInRunSnapshot('run-1', 'node-1', { type: 'webhook' });

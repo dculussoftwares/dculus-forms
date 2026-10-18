@@ -260,6 +260,23 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
       WHERE id = ${automationId}
     `);
 
+  /**
+   * Compare-and-swap on the draft revision: applies `data` only if `draftRevision` still equals
+   * `baseRevision` (pass null to skip the check — a forced overwrite). Returns the updated row, or
+   * null when another writer got there first.
+   */
+  const updateIfDraftRevision = async (
+    id: string,
+    baseRevision: number | null,
+    data: Prisma.AutomationUpdateManyMutationInput
+  ) => {
+    const { count } = await prisma.automation.updateMany({
+      where: baseRevision === null ? { id } : { id, draftRevision: baseRevision },
+      data,
+    });
+    return count === 0 ? null : prisma.automation.findUnique({ where: { id } });
+  };
+
   /** Same as {@link setNodeConfigInGraph}, scoped to a single run's frozen `graphSnapshot`. */
   const setNodeConfigInRunSnapshot = async (
     runId: string,
@@ -326,6 +343,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     // Transaction-participating raw writes (see engine.ts updateAutomationNodeConfig)
     setNodeConfigInGraph,
     setNodeConfigInRunSnapshot,
+    updateIfDraftRevision,
   };
 };
 

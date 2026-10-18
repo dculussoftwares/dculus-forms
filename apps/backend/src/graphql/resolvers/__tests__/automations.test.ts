@@ -93,7 +93,89 @@ describe('Automations Resolvers', () => {
         formSharingResolvers.PermissionLevel.VIEWER
       );
       expect(automationService.listAutomationsByForm).toHaveBeenCalledWith('form-123');
-      expect(result).toEqual([mockAutomation]);
+      expect(result).toEqual([expect.objectContaining({ id: 'automation-123', draftGraph: null })]);
+    });
+
+    it('formAutomations: returns the draft untouched to an EDITOR', async () => {
+      grantAccess('EDITOR');
+      const withDraft = { ...mockAutomation, draftGraph: mockGraph };
+      vi.mocked(automationService.listAutomationsByForm).mockResolvedValue([withDraft] as any);
+
+      const result = await automationsResolvers.Query.formAutomations({}, { formId: 'form-123' }, mockContext);
+
+      expect(result).toEqual([withDraft]);
+    });
+
+    it('automation: hides the draft from a VIEWER but still reports that one exists', async () => {
+      grantAccess('VIEWER');
+      vi.mocked(automationService.getAutomationById).mockResolvedValue({
+        ...mockAutomation,
+        draftGraph: mockGraph,
+        draftTriggerConfig: null,
+      } as any);
+
+      const result: any = await automationsResolvers.Query.automation({}, { id: 'automation-123' }, mockContext);
+
+      expect(result.draftGraph).toBeNull();
+      expect(automationsResolvers.Automation.hasUnpublishedChanges(result)).toBe(true);
+    });
+
+    it('hasUnpublishedChanges: derives from the draft columns', () => {
+      expect(automationsResolvers.Automation.hasUnpublishedChanges({ draftGraph: null, draftTriggerConfig: null })).toBe(false);
+      expect(automationsResolvers.Automation.hasUnpublishedChanges({ draftGraph: mockGraph })).toBe(true);
+      expect(automationsResolvers.Automation.hasUnpublishedChanges({ draftTriggerConfig: { cron: '* * * * *' } })).toBe(true);
+    });
+
+    it.each([
+      ['saveAutomationDraft', { id: 'automation-123', graph: mockGraph, baseRevision: 0 }],
+      ['publishAutomation', { id: 'automation-123', baseRevision: 0 }],
+      ['discardAutomationDraft', { id: 'automation-123' }],
+    ] as const)('%s: requires EDITOR access', async (name, args) => {
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+      grantAccess('VIEWER');
+      // checkFormAccess is what enforces the level; a VIEWER result reports hasAccess false for EDITOR.
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: false,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+
+      await expect((automationsResolvers.Mutation as any)[name]({}, args, mockContext)).rejects.toThrow(GraphQLError);
+      expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
+        'user-123',
+        'form-123',
+        formSharingResolvers.PermissionLevel.EDITOR
+      );
+    });
+
+    it('saveAutomationDraft / publishAutomation / discardAutomationDraft delegate to the service with the caller id', async () => {
+      vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+      grantAccess('EDITOR');
+
+      await automationsResolvers.Mutation.saveAutomationDraft(
+        {},
+        { id: 'automation-123', graph: mockGraph, baseRevision: 2, force: true },
+        mockContext
+      );
+      expect(automationService.saveAutomationDraft).toHaveBeenCalledWith(
+        mockAutomation,
+        { graph: mockGraph, triggerConfig: undefined, baseRevision: 2, force: true },
+        'user-123'
+      );
+
+      await automationsResolvers.Mutation.publishAutomation(
+        {},
+        { id: 'automation-123', baseRevision: 3, activate: true },
+        mockContext
+      );
+      expect(automationService.publishAutomation).toHaveBeenCalledWith(
+        mockAutomation,
+        { baseRevision: 3, activate: true },
+        'user-123'
+      );
+
+      await automationsResolvers.Mutation.discardAutomationDraft({}, { id: 'automation-123' }, mockContext);
+      expect(automationService.discardAutomationDraft).toHaveBeenCalledWith(mockAutomation);
     });
 
     it('formAutomations: throws 403-style error when user lacks any access', async () => {

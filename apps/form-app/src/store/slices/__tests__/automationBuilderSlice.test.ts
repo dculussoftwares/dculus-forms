@@ -306,3 +306,182 @@ describe('automationBuilderSlice — setPdfGenerators (#347 review regression)',
     expect(useAutomationBuilderStore.getState().pdfGenerators).toEqual([{ id: 'gen1', name: 'Certificate' }]);
   });
 });
+
+describe('automationBuilderSlice — autosave bookkeeping', () => {
+  const baseGraph = [
+    { id: 'trigger', type: 'trigger', data: { triggerType: 'form.submitted' } },
+    { id: 'delay', type: 'delay', data: { amount: 1, unit: 'hours' } },
+    { id: 'end', type: 'end' },
+  ];
+  const baseEdges = [
+    { id: 'e1', source: 'trigger', target: 'delay' },
+    { id: 'e2', source: 'delay', target: 'end' },
+  ];
+  const load = (extra: Record<string, unknown> = {}) =>
+    useAutomationBuilderStore.getState().loadGraph({
+      automationId: 'automation-save',
+      formTitle: 'Form',
+      triggerType: 'form.submitted',
+      graph: { nodes: baseGraph, edges: baseEdges },
+      isReadOnly: false,
+      ...extra,
+    });
+  const ack = (overrides: Record<string, unknown> = {}) => {
+    const s = useAutomationBuilderStore.getState();
+    s.ackSave({
+      automationId: 'automation-save',
+      loadEpoch: s.loadEpoch,
+      sentLocalRevision: s.localRevision,
+      draftRevision: 3,
+      hasUnpublishedChanges: true,
+      issues: [],
+      ...overrides,
+    } as any);
+  };
+
+  test('every edit bumps the local revision and moves a saved builder to pending', () => {
+    load();
+    const before = useAutomationBuilderStore.getState();
+    expect(before.saveState).toBe('saved');
+    expect(before.isDirty).toBe(false);
+
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 5 });
+
+    const after = useAutomationBuilderStore.getState();
+    expect(after.localRevision).toBe(before.localRevision + 1);
+    expect(after.saveState).toBe('pending');
+    expect(after.isDirty).toBe(true);
+    expect(after.hasUnpublishedChanges).toBe(true);
+  });
+
+  test('an edit during a save keeps its "saving" state instead of regressing to pending', () => {
+    load();
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 2 });
+    useAutomationBuilderStore.getState().setSaveState('saving');
+
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 3 });
+
+    expect(useAutomationBuilderStore.getState().saveState).toBe('saving');
+  });
+
+  test('ackSave only covers the edits that were sent; later ones stay pending', () => {
+    load();
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 2 });
+    const sent = useAutomationBuilderStore.getState().localRevision;
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 3 });
+
+    ack({ sentLocalRevision: sent });
+
+    const state = useAutomationBuilderStore.getState();
+    expect(state.isDirty).toBe(true);
+    expect(state.saveState).toBe('pending');
+    expect(state.serverDraftRevision).toBe(3);
+    // The unsynced copy is re-based on the new server revision so a reload still restores it.
+    expect(JSON.parse(sessionStorage.getItem('dculus:automation-builder:draft:automation-save')!).baseRevision).toBe(3);
+  });
+
+  test('ackSave with nothing newer marks everything saved and drops the local mirror', () => {
+    load();
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 2 });
+
+    ack();
+
+    const state = useAutomationBuilderStore.getState();
+    expect(state.isDirty).toBe(false);
+    expect(state.saveState).toBe('saved');
+    expect(state.lastSavedAt).not.toBeNull();
+    expect(sessionStorage.getItem('dculus:automation-builder:draft:automation-save')).toBeNull();
+  });
+
+  test('ackSave reports the server\'s unpublished-changes flag (an undo back to live clears it)', () => {
+    load();
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 2 });
+
+    ack({ hasUnpublishedChanges: false });
+
+    expect(useAutomationBuilderStore.getState().hasUnpublishedChanges).toBe(false);
+  });
+
+  test('ackSave feeds the returned issues into the per-node and structural errors', () => {
+    load();
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 2 });
+
+    ack({
+      issues: [
+        { nodeId: 'delay', code: 'INVALID_DELAY', message: 'bad delay' },
+        { code: 'MISSING_TRIGGER', message: 'no trigger' },
+      ],
+    });
+
+    const state = useAutomationBuilderStore.getState();
+    expect(state.validationErrorsByNode.delay).toHaveLength(1);
+    expect(state.structuralErrors).toHaveLength(1);
+  });
+
+  test('an ack from before a reload is ignored', () => {
+    load();
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 2 });
+    const staleEpoch = useAutomationBuilderStore.getState().loadEpoch;
+    load({ draftRevision: 9 });
+
+    useAutomationBuilderStore.getState().ackSave({
+      automationId: 'automation-save',
+      loadEpoch: staleEpoch,
+      sentLocalRevision: 1,
+      draftRevision: 2,
+      hasUnpublishedChanges: true,
+      issues: [],
+    });
+
+    expect(useAutomationBuilderStore.getState().serverDraftRevision).toBe(9);
+  });
+
+  test('loadGraph restores a local draft only when it was based on the server draft revision', () => {
+    load({ draftRevision: 4 });
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 8 });
+
+    load({ draftRevision: 4 });
+    expect(useAutomationBuilderStore.getState().isDirty).toBe(true);
+    expect(useAutomationBuilderStore.getState().saveState).toBe('pending');
+    expect((useAutomationBuilderStore.getState().nodes.find((n) => n.id === 'delay')!.data as any).amount).toBe(8);
+
+    // Another tab saved since (revision moved on): the server copy wins and the stale mirror is dropped.
+    load({ draftRevision: 6 });
+    const state = useAutomationBuilderStore.getState();
+    expect(state.isDirty).toBe(false);
+    expect((state.nodes.find((n) => n.id === 'delay')!.data as any).amount).toBe(1);
+    expect(sessionStorage.getItem('dculus:automation-builder:draft:automation-save')).toBeNull();
+  });
+
+  test('loadGraph never restores a local draft for a read-only viewer', () => {
+    load();
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 8 });
+
+    load({ isReadOnly: true });
+
+    expect(useAutomationBuilderStore.getState().isDirty).toBe(false);
+  });
+
+  test('setTriggerConfig is an autosaved edit and is carried in the local mirror', () => {
+    load({ triggerType: 'schedule' });
+
+    useAutomationBuilderStore.getState().setTriggerConfig({ cron: '0 9 * * *', timezone: 'UTC' });
+
+    const state = useAutomationBuilderStore.getState();
+    expect(state.isDirty).toBe(true);
+    expect(state.getDraftPayload()!.triggerConfig).toEqual({ cron: '0 9 * * *', timezone: 'UTC' });
+    expect(JSON.parse(sessionStorage.getItem('dculus:automation-builder:draft:automation-save')!).triggerConfig).toEqual({
+      cron: '0 9 * * *',
+      timezone: 'UTC',
+    });
+  });
+
+  test('setConflict flips the state to conflict and edits keep it there', () => {
+    load();
+    useAutomationBuilderStore.getState().setConflict({ draftRevision: 2, draftUpdatedAt: null, draftUpdatedById: 'x' });
+
+    useAutomationBuilderStore.getState().updateNodeData('delay', { amount: 4 });
+
+    expect(useAutomationBuilderStore.getState().saveState).toBe('conflict');
+  });
+});

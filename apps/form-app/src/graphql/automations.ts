@@ -6,6 +6,24 @@ import type { TypedDocumentNode } from '@apollo/client';
  * Follows apps/form-app/src/graphql/plugins.ts conventions.
  */
 
+// Draft/publish bookkeeping shared by the queries and mutations. Deliberately excludes draftGraph:
+// autosave responses carry only these, so a save never rewrites the whole graph in the Apollo cache.
+const DRAFT_STATUS_FIELDS = `
+  draftRevision
+  draftUpdatedAt
+  draftUpdatedBy {
+    id
+    name
+  }
+  draftIssueCount
+  hasUnpublishedChanges
+  publishedAt
+  publishedBy {
+    id
+    name
+  }
+`;
+
 // ============================================================================
 // QUERIES
 // ============================================================================
@@ -24,6 +42,7 @@ export const GET_FORM_AUTOMATIONS: TypedDocumentNode<any, any> = gql`
       lastRunStatus
       lastRunAt
       consecutiveFailureCount
+      ${DRAFT_STATUS_FIELDS}
     }
   }
 `;
@@ -38,9 +57,12 @@ export const GET_AUTOMATION: TypedDocumentNode<any, any> = gql`
       triggerType
       triggerConfig
       graph
+      draftGraph
+      draftTriggerConfig
       version
       createdAt
       updatedAt
+      ${DRAFT_STATUS_FIELDS}
     }
   }
 `;
@@ -124,6 +146,56 @@ export const UPDATE_AUTOMATION: TypedDocumentNode<any, any> = gql`
   }
 `;
 
+export const SAVE_AUTOMATION_DRAFT: TypedDocumentNode<any, any> = gql`
+  mutation SaveAutomationDraft($id: ID!, $graph: JSON, $triggerConfig: JSON, $baseRevision: Int!, $force: Boolean) {
+    saveAutomationDraft(id: $id, graph: $graph, triggerConfig: $triggerConfig, baseRevision: $baseRevision, force: $force) {
+      automation {
+        id
+        ${DRAFT_STATUS_FIELDS}
+      }
+      validationErrors {
+        nodeId
+        code
+        message
+      }
+    }
+  }
+`;
+
+export const PUBLISH_AUTOMATION: TypedDocumentNode<any, any> = gql`
+  mutation PublishAutomation($id: ID!, $baseRevision: Int!, $activate: Boolean) {
+    publishAutomation(id: $id, baseRevision: $baseRevision, activate: $activate) {
+      id
+      formId
+      name
+      status
+      triggerType
+      triggerConfig
+      graph
+      draftGraph
+      draftTriggerConfig
+      version
+      updatedAt
+      ${DRAFT_STATUS_FIELDS}
+    }
+  }
+`;
+
+export const DISCARD_AUTOMATION_DRAFT: TypedDocumentNode<any, any> = gql`
+  mutation DiscardAutomationDraft($id: ID!) {
+    discardAutomationDraft(id: $id) {
+      id
+      triggerConfig
+      graph
+      draftGraph
+      draftTriggerConfig
+      version
+      updatedAt
+      ${DRAFT_STATUS_FIELDS}
+    }
+  }
+`;
+
 export const SET_AUTOMATION_STATUS: TypedDocumentNode<any, any> = gql`
   mutation SetAutomationStatus($id: ID!, $status: String!) {
     setAutomationStatus(id: $id, status: $status) {
@@ -151,22 +223,6 @@ export const DUPLICATE_AUTOMATION: TypedDocumentNode<any, any> = gql`
       id
       name
       status
-    }
-  }
-`;
-
-export const TEST_AUTOMATION: TypedDocumentNode<any, any> = gql`
-  mutation TestAutomation($id: ID!, $responseId: ID) {
-    testAutomation(id: $id, responseId: $responseId) {
-      id
-      automationId
-      responseId
-      automationVersion
-      status
-      currentNodeId
-      context
-      startedAt
-      completedAt
     }
   }
 `;

@@ -31,7 +31,6 @@
     "createButton": "Create automation"
   },
   "card": {
-    "updatedAt": "Updated {{date}}",
     "version": "v{{version}}",
     "health": {
       "failing": "Last {{count}} run(s) failed",
@@ -40,12 +39,22 @@
     "actions": {
       "open": "Open builder",
       "runHistory": "Run history",
-      "test": "Test",
       "activate": "Activate",
       "pause": "Pause",
       "rename": "Rename",
       "delete": "Delete",
-      "duplicate": "Duplicate"
+      "duplicate": "Duplicate",
+      "publish": "Publish changes",
+      "discard": "Discard changes",
+      "resumeVersion": "Resume (v{{version}})",
+      "resumeVersionHint": "Unpublished changes aren't included",
+      "fixIssuesToActivate": "Open the builder to fix {{count}} issue(s)"
+    },
+    "meta": {
+      "edited": "Edited {{date}}",
+      "published": "Published v{{version}} · {{date}}",
+      "publishedEdited": "Published v{{version}} · Edited {{time}} by {{name}}",
+      "unknownEditor": "someone"
     }
   },
   "createDialog": {
@@ -121,21 +130,32 @@
     "backButton": "Back to automations",
     "readOnlyNotice": "You have view-only access to this automation. Editing and activation are disabled.",
     "header": {
-      "saveButton": "Save",
-      "saveSuccessTitle": "Automation saved",
-      "saveSuccessMessage": "Your changes have been saved.",
       "saveErrorTitle": "Couldn't save automation",
-      "saveInvalidMessage": "Fix the highlighted steps and try again.",
       "activateButton": "Activate",
       "pauseButton": "Pause",
       "activateInvalidTitle": "Automation isn't ready to activate",
       "activateInvalidMessage": "Fix the highlighted steps and try again.",
-      "activateDisabledUnsaved": "Save your changes before activating",
-      "unsavedIndicator": "Unsaved changes",
-      "unsavedChangesConfirm": "You have unsaved changes. Leave without saving?",
       "runsButton": "Runs",
-      "testButton": "Test automation",
-      "testDisabledNoResponses": "This form has no responses yet — submit one to test this automation."
+      "unpublishedChip": "Unpublished changes",
+      "unpublishedTooltip": "Edited {{time}} by {{name}}. The live automation still runs v{{version}}.",
+      "unpublishedTooltipGeneric": "The live automation still runs v{{version}}.",
+      "publishButton": "Publish changes",
+      "publishAndResumeButton": "Publish & resume",
+      "publishWithoutResume": "Publish without resuming",
+      "resumeButton": "Resume",
+      "discardButton": "Discard changes",
+      "moreActions": "More actions",
+      "issuesPill": "{{count}} issue(s)",
+      "issuesBlockingTitle": "Fix {{count}} issue(s) before publishing",
+      "publishedToastTitle": "Published v{{version}}",
+      "publishedToastMessage": "New runs will use this version.",
+      "publishErrorTitle": "Couldn't publish",
+      "publishInvalidMessage": "Fix the highlighted steps and try again.",
+      "publishSaveFailedMessage": "Your latest edits couldn't be saved yet. Try again in a moment.",
+      "leaveSaveFailed": "Your latest edit couldn't be saved. It's kept on this device and will sync when you return.",
+      "discardedToastTitle": "Changes discarded",
+      "discardedToastMessage": "The builder is back to the live version.",
+      "discardErrorTitle": "Couldn't discard changes"
     },
     "nodes": {
       "removeStep": "Remove step",
@@ -243,18 +263,18 @@
         "invalidCron": "Enter a valid 5-field cron expression, e.g. \"0 9 * * *\".",
         "invalidTimezone": "Enter a valid IANA timezone, e.g. \"America/Chicago\".",
         "hint": "Times are evaluated in the timezone above (defaults to UTC if left blank).",
-        "saveButton": "Save schedule",
-        "saving": "Saving...",
-        "saveSuccessTitle": "Schedule saved",
-        "saveSuccessMessage": "This automation's schedule has been updated.",
-        "saveErrorTitle": "Couldn't save schedule"
+        "appliesOnPublish": "Changes are saved automatically and take effect when you publish."
       },
       "end": {
         "description": "The automation finishes here — nothing runs after this step."
       },
       "action": {
         "noConfigForm": "This action can't be configured yet.",
-        "saveButton": "Save action"
+        "applyButton": "Apply",
+        "unappliedTitle": "Apply changes to this step?",
+        "unappliedDescription": "You've edited this step but haven't applied the changes.",
+        "keepEditing": "Keep editing",
+        "discardEdits": "Discard"
       },
       "delay": {
         "amountLabel": "Amount",
@@ -282,7 +302,42 @@
         "removeRule": "Remove rule",
         "noRulesHint": "Add at least one rule. Responses matching it follow the Yes branch; everything else follows No."
       }
-    }
+    },
+    "saveStatus": {
+      "saved": "Saved",
+      "savedJustNow": "Saved · just now",
+      "savedAt": "Saved at {{time}}",
+      "pending": "Editing…",
+      "saving": "Saving…",
+      "offline": "Offline. Changes kept on this device.",
+      "error": "Couldn't save",
+      "retry": "Retry",
+      "conflict": "Edited elsewhere"
+    },
+    "discardDialog": {
+      "title": "Discard unpublished changes?",
+      "description": "The builder will reset to the live version (v{{version}}). This can't be undone.",
+      "cancel": "Keep editing",
+      "confirm": "Discard"
+    },
+    "publishDialog": {
+      "title": "Publish these changes?",
+      "scheduleChanged": "The schedule changes to: {{schedule}}.",
+      "removedSteps": "These steps will stop running: {{names}}.",
+      "cancel": "Cancel",
+      "confirm": "Publish"
+    },
+    "conflict": {
+      "title": "This automation was edited elsewhere",
+      "description": "{{name}} saved changes {{time}}.",
+      "youInAnotherTab": "You (in another tab)",
+      "anotherEditor": "Another editor",
+      "loadLatest": "Load latest",
+      "keepMine": "Keep my version",
+      "loadErrorTitle": "Couldn't load the latest version",
+      "leaveConfirm": "This automation was edited elsewhere, so your latest edits can't be saved. If you leave now they will be lost. Leave anyway?"
+    },
+    "readOnlyDraftNotice": "An editor has unpublished changes to this automation."
   },
   "runs": {
     "title": "Run history",
@@ -348,9 +403,6 @@
       "nodeId": "Node ID"
     },
     "toasts": {
-      "testTriggeredTitle": "Test run started",
-      "testTriggeredMessage": "Opening the run...",
-      "testErrorTitle": "Couldn't start test run",
       "cancelledTitle": "Run cancelled",
       "cancelledMessage": "The run has been cancelled.",
       "retriedTitle": "Retrying run",
