@@ -112,7 +112,10 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
     const nextStatus = automation.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
     setIsTogglingStatus(true);
     try {
-      await setAutomationStatus({ variables: { id: automation.id, status: nextStatus }, refetchQueries });
+      const result = await setAutomationStatus({ variables: { id: automation.id, status: nextStatus }, refetchQueries });
+      // Apollo Client v4's mutate() resolves (doesn't reject) on GraphQL-level errors, so a
+      // failed activation (e.g. an invalid graph) must be read off the result.
+      if (result.error) throw result.error;
       toastSuccess(
         nextStatus === 'ACTIVE' ? t('toasts.activatedTitle') : t('toasts.pausedTitle'),
         nextStatus === 'ACTIVE'
@@ -130,7 +133,8 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
     e.stopPropagation();
     setIsDuplicating(true);
     try {
-      const { data } = await duplicateAutomation({ variables: { id: automation.id }, refetchQueries });
+      const { data, error } = await duplicateAutomation({ variables: { id: automation.id }, refetchQueries });
+      if (error) throw error;
       toastSuccess(
         t('toasts.duplicatedTitle'),
         // Apollo can resolve with `data` undefined (a partial GraphQL error, say). Reading through
@@ -155,7 +159,8 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
     }
     setIsRenaming(true);
     try {
-      await updateAutomation({ variables: { id: automation.id, name: trimmed }, refetchQueries });
+      const result = await updateAutomation({ variables: { id: automation.id, name: trimmed }, refetchQueries });
+      if (result.error) throw result.error;
       toastSuccess(t('toasts.renamedTitle'), t('toasts.renamedMessage', { values: { name: trimmed } }));
       setShowRenameDialog(false);
     } catch (error: any) {
@@ -169,7 +174,8 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
     setShowDeleteDialog(false);
     setIsDeleting(true);
     try {
-      await deleteAutomation({ variables: { id: automation.id }, refetchQueries });
+      const result = await deleteAutomation({ variables: { id: automation.id }, refetchQueries });
+      if (result.error) throw result.error;
       toastSuccess(t('toasts.deletedTitle'), t('toasts.deletedMessage', { values: { name: automation.name } }));
     } catch (error: any) {
       toastError(t('toasts.deleteErrorTitle'), error.message);
