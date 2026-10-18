@@ -12,6 +12,52 @@ const hasConnection = (config: PluginConfig): boolean =>
 const hasDocument = (config: PluginConfig): boolean =>
   !!(config.spreadsheetId || config.workbookId);
 
+const sheetName = (config: PluginConfig | undefined): string =>
+  typeof config?.spreadsheetName === 'string' ? config.spreadsheetName.replace(/\s+/g, ' ').trim() : '';
+
+/**
+ * Renames an existing Google spreadsheet in Drive after the user changed its file name. Best
+ * effort: a failure is logged and the name in Drive simply stays as it was. Resolves true only
+ * when the file was renamed.
+ */
+export const syncSheetPluginName = async (pluginId: string, previousConfig: PluginConfig | undefined): Promise<boolean> => {
+  try {
+    const plugin = await prisma.formPlugin.findUnique({ where: { id: pluginId }, include: { form: true } });
+    if (!plugin || plugin.type !== 'google-sheets') return false;
+
+    const config = plugin.config as PluginConfig;
+    const name = sheetName(config);
+    if (!config.googleToken || !config.spreadsheetId || !name || name === sheetName(previousConfig)) return false;
+
+    const handler = getPluginHandler(plugin.type);
+    if (!handler) return false;
+
+    const context = createPluginContext(async (next) => {
+      await prisma.formPlugin.update({ where: { id: pluginId }, data: { config: next as any } });
+    }, `${pluginId}:rename`);
+
+    const result = await handler(
+      { id: pluginId, config },
+      {
+        type: 'plugin.rename',
+        formId: plugin.formId,
+        organizationId: plugin.form.organizationId,
+        data: {},
+        timestamp: new Date(),
+      },
+      context
+    );
+
+    if (!result?.success) {
+      logger.warn(`[Plugin Rename] ${pluginId} not renamed: ${result?.error ?? 'unknown error'}`);
+    }
+    return !!result?.success;
+  } catch (error) {
+    logger.warn(`[Plugin Rename] ${pluginId} failed`, error);
+    return false;
+  }
+};
+
 /**
  * Creates a sheet plugin's spreadsheet/workbook (in its chosen folder) ahead of the first
  * response, so its link exists as soon as the integration is saved. Best effort: a failure is

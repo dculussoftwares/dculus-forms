@@ -1,6 +1,7 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, AlertCircle, ExternalLink, FolderOpen } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { getDriveFolderUrl } from '../../lib/googleDrive';
 
 interface GoogleSheetsOverviewSummaryProps {
   config: Record<string, any>;
@@ -53,17 +54,30 @@ export const GoogleSheetsOverviewSummary: React.FC<GoogleSheetsOverviewSummaryPr
           <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--tf-light-muted)' }}>
             {t('pluginSummary.googleSheets.spreadsheet')}
           </p>
-          <a
-            href={config.spreadsheetUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs hover:underline"
-            style={{ color: 'var(--tf-green)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ExternalLink className="h-3 w-3" />
-            {t('pluginSummary.googleSheets.openSheet')}
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href={config.spreadsheetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs hover:underline"
+              style={{ color: 'var(--tf-green)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="h-3 w-3" />
+              {t('pluginSummary.googleSheets.openSheet')}
+            </a>
+            <a
+              href={getDriveFolderUrl(config.destinationFolder?.id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs hover:underline"
+              style={{ color: 'var(--tf-green)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <FolderOpen className="h-3 w-3" />
+              {t('pluginSummary.googleSheets.openFolder')}
+            </a>
+          </div>
         </div>
       )}
     </div>

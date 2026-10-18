@@ -170,6 +170,23 @@ const createSpreadsheet = async (
   return { spreadsheetId, spreadsheetUrl };
 };
 
+const MAX_SPREADSHEET_NAME_LENGTH = 200;
+
+/** The user's chosen file name, or '' when none was set. */
+export const normalizeSpreadsheetName = (name: string | undefined): string =>
+  (name ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_SPREADSHEET_NAME_LENGTH);
+
+const renameSpreadsheet = async (spreadsheetId: string, name: string, accessToken: string): Promise<void> => {
+  const response = await fetch(`${DRIVE_API_BASE}/files/${encodeURIComponent(spreadsheetId)}?fields=id`, {
+    method: 'PATCH',
+    headers: authHeaders(accessToken),
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to rename spreadsheet: ${response.status} ${await response.text()}`);
+  }
+};
+
 const moveToFolder = async (fileId: string, folderId: string, accessToken: string): Promise<void> => {
   const headers = { Authorization: `Bearer ${accessToken}` };
   const parentsRes = await fetch(`${DRIVE_API_BASE}/files/${fileId}?fields=parents`, { headers });
@@ -357,6 +374,16 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
 
     const accessToken = freshToken.accessToken;
 
+    if (event.type === 'plugin.rename') {
+      const name = normalizeSpreadsheetName(config.spreadsheetName);
+      if (!config.spreadsheetId || !name) {
+        return { success: false, error: 'Nothing to rename', syncedAt } satisfies GoogleSheetsResult;
+      }
+      await renameSpreadsheet(config.spreadsheetId, name, accessToken);
+      context.logger.info('Google Sheets: spreadsheet renamed', { pluginId: plugin.id, spreadsheetId: config.spreadsheetId });
+      return { success: true, spreadsheetId: config.spreadsheetId, syncedAt } satisfies GoogleSheetsResult;
+    }
+
     // Fetch the response(s) to build row values. A digest batch (schedule automation with an
     // upstream digest node, #automations-digest) carries zero-to-many responses in
     // event.data.__digestResponses instead of exactly one event.data.responseId.
@@ -440,7 +467,7 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
       // FormPlugin id with no colon, so this is a no-op there.
       const idParts = plugin.id.split(':');
       const idSuffix = (idParts[idParts.length - 1] || plugin.id).slice(0, 8);
-      const sheetTitle = `${formTitle} — Responses (${idSuffix})`;
+      const sheetTitle = normalizeSpreadsheetName(config.spreadsheetName) || `${formTitle} — Responses (${idSuffix})`;
 
       context.logger.info('Google Sheets: creating new spreadsheet', {
         pluginId: plugin.id,

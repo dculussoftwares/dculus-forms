@@ -13,6 +13,16 @@
   "choose": "Choose folder",
   "change": "Change folder",
   "clear": "Use the default location",
+  "create": {
+    "button": "New folder",
+    "title": "Create a new folder",
+    "description": "The folder is created in \"{{parent}}\" and used as the destination.",
+    "nameLabel": "Folder name",
+    "namePlaceholder": "e.g., Form responses",
+    "cancel": "Cancel",
+    "submit": "Create folder"
+  },
+  "openFolder": "Open folder in Drive",
   "oneDrive": {
     "title": "Choose a OneDrive folder",
     "signInHint": "Sign in to Microsoft to browse your OneDrive folders.",
@@ -21,6 +31,7 @@
   "errors": {
     "pickFailed": "Could not open the folder picker",
     "tokenExpired": "Your connection has expired. Reconnect your account to choose a folder.",
+    "createFailed": "Could not create the folder",
     "notAvailable": "Folder selection is not available."
   }
 }

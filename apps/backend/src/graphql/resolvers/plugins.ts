@@ -5,7 +5,8 @@ import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { emitPluginTest } from '../../plugins/core/events.js';
 import { startBackfill, cancelBackfill, getLatestBackfillJob } from '../../plugins/core/backfill.js';
 import { carrySheetColumns } from '../../plugins/core/sheetColumns.js';
-import { provisionSheetPlugin } from '../../plugins/core/provision.js';
+import type { PluginConfig } from '../../plugins/core/types.js';
+import { provisionSheetPlugin, syncSheetPluginName } from '../../plugins/core/provision.js';
 import * as pluginService from '../../services/pluginService.js';
 
 /**
@@ -248,6 +249,7 @@ export const pluginsResolvers = {
       );
 
       const provisioned = await provisionSheetPlugin(id);
+      await syncSheetPluginName(id, plugin.config as PluginConfig | undefined);
       return provisioned ? ((await pluginService.getPluginById(id)) ?? updatedPlugin) : updatedPlugin;
     },
 

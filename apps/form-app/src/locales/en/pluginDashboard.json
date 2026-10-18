@@ -114,6 +114,7 @@
       "connectedAs": "Connected as",
       "spreadsheet": "Spreadsheet",
       "openSheet": "Open sheet",
+      "openFolder": "Open folder",
       "notConnected": "Not connected",
       "notConnectedHint": "Open Settings to connect your Google account."
     },

@@ -12,6 +12,12 @@
       "label": "Plugin Name",
       "placeholder": "e.g., Sales Leads Sheet",
       "hint": "A descriptive name to identify this integration"
+    },
+    "sheetName": {
+      "label": "Spreadsheet file name",
+      "placeholder": "e.g., Sales Leads",
+      "hint": "The name of the file in Google Drive. Starts as the plugin name; changing it renames the file.",
+      "keepCurrentPlaceholder": "Leave blank to keep the current file name"
     }
   },
   "connection": {

@@ -19,12 +19,14 @@ import {
   ExternalLink,
   CheckCircle2,
   Unlink,
+  FolderOpen,
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl, getFormViewerUrl } from '../../lib/config';
 import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
 import { stashPendingConfigFields, consumePendingConfigFields } from '../../lib/pendingConfigFields';
 import { isGoogleFolderPickerConfigured, pickGoogleDriveFolder, type PickedFolder } from '../../lib/googlePicker';
+import { createGoogleDriveFolder, fetchGoogleDriveParentId, getDriveFolderUrl } from '../../lib/googleDrive';
 import { DestinationFolderField } from '../../components/plugins/shared/DestinationFolderField';
 import type { ConfigFormProps } from '../core/registry';
 
@@ -34,6 +36,14 @@ interface GoogleToken {
   expiresAt: string;
   email: string;
 }
+
+/** An access token past (or about to pass) its expiry can't be used for direct Drive calls. */
+const isTokenUsable = (token: GoogleToken | undefined): token is GoogleToken =>
+  !!token && new Date(token.expiresAt).getTime() > Date.now() + 30_000;
+
+/** What the file name input starts as: the saved name, else blank for an existing file (keep its name), else the plugin name. */
+const initialSheetName = (config: Record<string, any> | undefined, pluginName: string): string =>
+  config?.spreadsheetName ?? (config?.spreadsheetId ? '' : pluginName);
 
 export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   form,
@@ -51,6 +61,14 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   const [pluginName, setPluginName] = useState<string>(
     initialData?.name ?? 'Google Sheets'
   );
+  // Follows the plugin name until the user types their own, so the default is never a surprise.
+  const [sheetName, setSheetName] = useState<string>(() =>
+    initialSheetName(initialData?.config, initialData?.name ?? 'Google Sheets')
+  );
+  const [sheetNameTouched, setSheetNameTouched] = useState<boolean>(
+    !!initialData?.config?.spreadsheetName || !!initialData?.config?.spreadsheetId
+  );
+  const [liveFolderId, setLiveFolderId] = useState<string | null>(null);
   const [destinationFolder, setDestinationFolder] = useState<PickedFolder | undefined>(
     initialData?.config?.destinationFolder
   );
@@ -109,8 +127,12 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         // full-page redirect would otherwise silently revert it back to the last-saved name.
         // Checked by key presence, not truthiness: clearing the name to '' before Connect is
         // a valid edit that a truthiness check would fail to restore.
-        const pending = consumePendingConfigFields<{ pluginName?: string }>('google-sheets');
+        const pending = consumePendingConfigFields<{ pluginName?: string; sheetName?: string; sheetNameTouched?: boolean }>('google-sheets');
         if (pending && 'pluginName' in pending) setPluginName(pending.pluginName ?? '');
+        if (pending && 'sheetName' in pending) {
+          setSheetName(pending.sheetName ?? '');
+          setSheetNameTouched(!!pending.sheetNameTouched);
+        }
         justConnectedRef.current = true;
         // Clean hash from URL without triggering a navigation
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -122,9 +144,13 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
       const error = new URLSearchParams(hash.slice(1)).get('google_oauth_error') ?? '';
       console.warn('[GSheets Config] OAuth error from redirect:', error);
       setConnectionError(t('connection.authFailed'));
-      const pending = consumePendingConfigFields<{ pluginName?: string }>('google-sheets');
+      const pending = consumePendingConfigFields<{ pluginName?: string; sheetName?: string; sheetNameTouched?: boolean }>('google-sheets');
       if (pending && 'pluginName' in pending) {
         setPluginName(pending.pluginName ?? '');
+        if ('sheetName' in pending) {
+          setSheetName(pending.sheetName ?? '');
+          setSheetNameTouched(!!pending.sheetNameTouched);
+        }
         justConnectedRef.current = true;
       }
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -138,9 +164,25 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
     }
     if (initialData && !justConnectedRef.current) {
       setPluginName(initialData.name ?? 'Google Sheets');
+      setSheetName(initialSheetName(initialData.config, initialData.name ?? 'Google Sheets'));
+      setSheetNameTouched(!!initialData.config?.spreadsheetName || !!initialData.config?.spreadsheetId);
       setGoogleToken(initialData.config?.googleToken);
     }
   }, [initialData, instanceKey]);
+
+  // The file may have been moved in Drive since it was created, so ask Drive where it is now.
+  const savedFolderId = initialData?.config?.destinationFolder?.id as string | undefined;
+  useEffect(() => {
+    setLiveFolderId(null);
+    if (!spreadsheetId || !isTokenUsable(googleToken)) return;
+    let cancelled = false;
+    void fetchGoogleDriveParentId(googleToken.accessToken, spreadsheetId).then((id) => {
+      if (!cancelled) setLiveFolderId(id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [spreadsheetId, googleToken?.accessToken]);
 
   // Keyed on the saved value so an unsaved pick survives parent re-renders that rebuild `initialData`.
   const savedFolderKey = JSON.stringify(initialData?.config?.destinationFolder ?? null);
@@ -151,7 +193,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   const handleConnectGoogle = () => {
     // Stash whatever's currently typed into "Plugin Name" — it's only local React state until
     // Save is clicked, and the redirect below fully reloads the page, discarding it otherwise.
-    stashPendingConfigFields('google-sheets', { pluginName });
+    stashPendingConfigFields('google-sheets', { pluginName, sheetName, sheetNameTouched });
     // Redirect the current tab — avoids all popup/COOP/BroadcastChannel issues. Mark this
     // navigation as intentional first so the automation builder's beforeunload guard (which
     // would otherwise treat this like an accidental tab close) lets it through unprompted.
@@ -185,6 +227,26 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
     }
   };
 
+  const handleCreateFolder = async (name: string): Promise<boolean> => {
+    if (!isTokenUsable(googleToken)) {
+      toastError(tDestination('errors.createFailed'), tDestination('errors.tokenExpired'));
+      return false;
+    }
+    try {
+      // Nested under the folder already chosen; `drive.file` can't see anywhere else but the root.
+      setDestinationFolder(await createGoogleDriveFolder(googleToken.accessToken, name, destinationFolder?.id));
+      return true;
+    } catch (e) {
+      toastError(tDestination('errors.createFailed'), e instanceof Error ? e.message : '');
+      return false;
+    }
+  };
+
+  const handlePluginNameChange = (value: string) => {
+    setPluginName(value);
+    if (!sheetNameTouched) setSheetName(value);
+  };
+
   const handleSave = async () => {
     if (!pluginName.trim()) {
       setNameError(t('validation.nameRequired'));
@@ -206,6 +268,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         googleToken,
         spreadsheetId,
         spreadsheetUrl,
+        spreadsheetName: sheetName.trim() || undefined,
         destinationFolder,
       },
       events: ['form.submitted'],
@@ -265,7 +328,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
             <Input
               id="plugin-name"
               value={pluginName}
-              onChange={(e) => setPluginName(e.target.value)}
+              onChange={(e) => handlePluginNameChange(e.target.value)}
               placeholder={t('basicSettings.name.placeholder')}
             />
             {nameError && (
@@ -273,6 +336,26 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
             )}
             <p className="text-xs text-muted-foreground">
               {t('basicSettings.name.hint')}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sheet-name">{t('basicSettings.sheetName.label')}</Label>
+            <Input
+              id="sheet-name"
+              value={sheetName}
+              onChange={(e) => {
+                setSheetName(e.target.value);
+                setSheetNameTouched(true);
+              }}
+              maxLength={200}
+              placeholder={
+                spreadsheetId && !initialData?.config?.spreadsheetName
+                  ? t('basicSettings.sheetName.keepCurrentPlaceholder')
+                  : t('basicSettings.sheetName.placeholder')
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              {t('basicSettings.sheetName.hint')}
             </p>
           </div>
         </CardContent>
@@ -297,16 +380,28 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
               </div>
               <div className="flex items-center justify-between gap-4">
                 {spreadsheetUrl ? (
-                  <a
-                    href={spreadsheetUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm hover:underline"
-                    style={{ color: '#1a7340' }}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {t('connection.openSheet')}
-                  </a>
+                  <div className="flex items-center gap-4">
+                    <a
+                      href={spreadsheetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm hover:underline"
+                      style={{ color: '#1a7340' }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {t('connection.openSheet')}
+                    </a>
+                    <a
+                      href={getDriveFolderUrl(liveFolderId ?? savedFolderId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm hover:underline"
+                      style={{ color: '#1a7340' }}
+                    >
+                      <FolderOpen className="h-3.5 w-3.5" />
+                      {tDestination('openFolder')}
+                    </a>
+                  </div>
                 ) : (
                   <span />
                 )}
@@ -351,6 +446,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
           pickerAvailable={isGoogleFolderPickerConfigured()}
           onPick={handlePickFolder}
           onClear={() => setDestinationFolder(undefined)}
+          onCreate={handleCreateFolder}
         />
       )}
 

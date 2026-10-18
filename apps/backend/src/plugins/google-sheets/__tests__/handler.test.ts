@@ -381,6 +381,27 @@ describe('Google Sheets Handler', () => {
       expect(calls.some((c) => c.includes('/drive/v3'))).toBe(false);
     });
 
+    it('titles the new spreadsheet with the chosen file name', async () => {
+      config.spreadsheetName = '  Sales   Leads ';
+      const calls: string[] = [];
+      global.fetch = driveAwareFetch(calls);
+
+      await googleSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      const create = vi.mocked(global.fetch).mock.calls.find(([url]) => (url as string).endsWith('/spreadsheets'));
+      expect(JSON.parse((create![1] as RequestInit).body as string)).toEqual({ properties: { title: 'Sales Leads' } });
+    });
+
+    it('falls back to the form-based title when no file name is chosen', async () => {
+      const calls: string[] = [];
+      global.fetch = driveAwareFetch(calls);
+
+      await googleSheetsHandler({ id: 'plugin-1', config }, provisionEvent(), mockContext);
+
+      const create = vi.mocked(global.fetch).mock.calls.find(([url]) => (url as string).endsWith('/spreadsheets'));
+      expect(JSON.parse((create![1] as RequestInit).body as string).properties.title).toMatch(/^My Form — Responses \(/);
+    });
+
     it('moves the new spreadsheet into the chosen folder', async () => {
       config.destinationFolder = { id: 'folder-1', name: 'Reports' };
       const calls: string[] = [];
@@ -431,6 +452,47 @@ describe('Google Sheets Handler', () => {
       expect(result.success).toBe(false);
       expect(calls).toContain('DELETE https://www.googleapis.com/drive/v3/files/new-sheet');
       expect(mockContext.updatePluginConfig).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('renaming an existing spreadsheet', () => {
+    const renameEvent = (): PluginEvent => ({
+      type: 'plugin.rename',
+      formId: 'form-1',
+      organizationId: 'org-1',
+      timestamp: new Date('2026-01-01T00:00:00.000Z'),
+      data: {},
+    });
+
+    it('renames the Drive file and touches nothing else', async () => {
+      config.spreadsheetName = 'Sales Leads';
+
+      const result = await googleSheetsHandler({ id: 'plugin-1', config }, renameEvent(), mockContext);
+
+      expect(result).toMatchObject({ success: true, spreadsheetId: 'sheet-1' });
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      const [url, opts] = vi.mocked(global.fetch).mock.calls[0] as [string, RequestInit];
+      expect(url).toBe('https://www.googleapis.com/drive/v3/files/sheet-1?fields=id');
+      expect(opts.method).toBe('PATCH');
+      expect(JSON.parse(opts.body as string)).toEqual({ name: 'Sales Leads' });
+      expect(mockContext.getFormById).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when there is no name or no file', async () => {
+      const result = await googleSheetsHandler({ id: 'plugin-1', config }, renameEvent(), mockContext);
+
+      expect(result).toMatchObject({ success: false, error: 'Nothing to rename' });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('returns a failure result when Drive rejects the rename', async () => {
+      config.spreadsheetName = 'Sales Leads';
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}), text: async () => 'gone' }) as any;
+
+      const result = await googleSheetsHandler({ id: 'plugin-1', config }, renameEvent(), mockContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Failed to rename spreadsheet');
     });
   });
 
