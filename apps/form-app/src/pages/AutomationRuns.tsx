@@ -7,16 +7,11 @@ import {
   Button,
   LoadingSpinner,
   EmptyState,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
 } from '@dculus/ui';
 import { GET_FORM_BY_ID } from '../graphql/queries';
 import { GET_AUTOMATION, GET_AUTOMATION_RUNS } from '../graphql/automations';
-import { AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, FlaskConical, History, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, ExternalLink, History, Loader2 } from 'lucide-react';
 import { FormPermissionProvider, type PermissionLevel } from '../contexts/FormPermissionContext';
-import { useFormPermissions } from '../hooks/useFormPermissions';
-import { useTestAutomation } from '../hooks/useTestAutomation';
 import { AutomationRunDetail } from '../components/automations/runs/AutomationRunDetail';
 import { formatDuration, isRunActive, runStatusStyle } from '../components/automations/runs/runFormatting';
 
@@ -26,10 +21,8 @@ const RunsContent: React.FC<{
   formId: string;
   automationId: string;
   automationName: string;
-  canTest: boolean;
-}> = ({ formId, automationId, automationName, canTest }) => {
+}> = ({ formId, automationId, automationName }) => {
   const { t, locale } = useTranslation('automations');
-  const { canEdit } = useFormPermissions();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -40,7 +33,6 @@ const RunsContent: React.FC<{
   const {
     data,
     loading,
-    refetch,
     startPolling,
     stopPolling,
   } = useQuery(GET_AUTOMATION_RUNS, {
@@ -63,7 +55,7 @@ const RunsContent: React.FC<{
     return () => stopPolling();
   }, [hasActiveRuns, startPolling, stopPolling]);
 
-  // Deep-link support: opening from "Test automation" (list/builder) or a shared link.
+  // Deep-link support: opening a run from a shared link.
   useEffect(() => {
     const runIdParam = searchParams.get('runId');
     if (runIdParam) {
@@ -86,14 +78,6 @@ const RunsContent: React.FC<{
     }
   };
 
-  const { runTest, isTesting } = useTestAutomation(formId, automationId);
-
-  const handleTest = () =>
-    runTest((runId) => {
-      refetch();
-      openRun(runId);
-    });
-
   const formatTimestamp = (timestamp: string) => new Date(timestamp).toLocaleString(locale);
 
   return (
@@ -112,27 +96,6 @@ const RunsContent: React.FC<{
           <h1 className="text-lg font-semibold text-primary">{t('runs.title')}</h1>
           <p className="text-sm mt-1 text-muted-foreground">{automationName}</p>
         </div>
-
-        {canEdit && (
-          canTest ? (
-            <Button onClick={handleTest} disabled={isTesting} data-testid="test-automation-button">
-              {isTesting ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FlaskConical className="mr-1.5 h-4 w-4" />}
-              {t('builder.header.testButton')}
-            </Button>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button disabled>
-                    <FlaskConical className="mr-1.5 h-4 w-4" />
-                    {t('builder.header.testButton')}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{t('builder.header.testDisabledNoResponses')}</TooltipContent>
-            </Tooltip>
-          )
-        )}
       </div>
 
       {loading && runs.length === 0 ? (
@@ -302,7 +265,6 @@ const AutomationRuns: React.FC = () => {
           automationName={automation.name}
           // A schedule automation has no triggering response — its data comes from its Filter
           // Responses step — so it is testable even on a form that has never been submitted.
-          canTest={(form.responseCount ?? 0) > 0 || automation.triggerType === 'schedule'}
         />
       </FormPermissionProvider>
     </div>

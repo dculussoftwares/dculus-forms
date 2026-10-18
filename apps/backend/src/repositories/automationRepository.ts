@@ -260,6 +260,51 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
       WHERE id = ${automationId}
     `);
 
+  /**
+   * Same as {@link setNodeConfigInGraph}, for the autosaved `draftGraph`. A no-op when there is no
+   * draft or the draft has no such node, so a run's write-back (auto-created spreadsheet, refreshed
+   * token) reaches the next Publish instead of being overwritten by a stale draft copy.
+   */
+  const setNodeConfigInDraftGraph = async (
+    automationId: string,
+    nodeId: string,
+    config: Prisma.InputJsonValue
+  ) =>
+    prisma.$executeRaw(Prisma.sql`
+      UPDATE ${Prisma.raw('"automation"')}
+      SET ${Prisma.raw('"draftGraph"')} = jsonb_set(
+        ${Prisma.raw('"draftGraph"')},
+        '{nodes}',
+        (
+          SELECT COALESCE(jsonb_agg(
+            CASE WHEN elem->>'id' = ${nodeId}
+              THEN jsonb_set(elem, '{data,config}', ${JSON.stringify(config)}::jsonb, true)
+              ELSE elem
+            END
+          ), '[]'::jsonb)
+          FROM jsonb_array_elements(${Prisma.raw('"draftGraph"')}->'nodes') AS elem
+        )
+      )
+      WHERE id = ${automationId} AND ${Prisma.raw('"draftGraph"')} IS NOT NULL
+    `);
+
+  /**
+   * Compare-and-swap on the draft revision: applies `data` only if `draftRevision` still equals
+   * `baseRevision` (pass null to skip the check — a forced overwrite). Returns the updated row, or
+   * null when another writer got there first.
+   */
+  const updateIfDraftRevision = async (
+    id: string,
+    baseRevision: number | null,
+    data: Prisma.AutomationUpdateManyMutationInput
+  ) => {
+    const { count } = await prisma.automation.updateMany({
+      where: baseRevision === null ? { id } : { id, draftRevision: baseRevision },
+      data,
+    });
+    return count === 0 ? null : prisma.automation.findUnique({ where: { id } });
+  };
+
   /** Same as {@link setNodeConfigInGraph}, scoped to a single run's frozen `graphSnapshot`. */
   const setNodeConfigInRunSnapshot = async (
     runId: string,
@@ -325,7 +370,9 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
 
     // Transaction-participating raw writes (see engine.ts updateAutomationNodeConfig)
     setNodeConfigInGraph,
+    setNodeConfigInDraftGraph,
     setNodeConfigInRunSnapshot,
+    updateIfDraftRevision,
   };
 };
 

@@ -266,6 +266,49 @@ describe('automationRepository', () => {
       expect(sqlArg.values).toContain(JSON.stringify({ type: 'webhook' }));
     });
 
+    it('setNodeConfigInDraftGraph only touches rows that have a draft', async () => {
+      const repo = createAutomationRepository();
+      await repo.setNodeConfigInDraftGraph('automation-1', 'node-1', { type: 'webhook' });
+
+      expect(prismaMock.$executeRaw).toHaveBeenCalledTimes(1);
+      const sqlArg = prismaMock.$executeRaw.mock.calls[0][0] as { strings: TemplateStringsArray; values: any[] };
+      const sql = sqlArg.strings.join('');
+      expect(JSON.stringify(sqlArg.values)).toContain('draftGraph');
+      expect(sql).toContain('IS NOT NULL');
+      expect(sqlArg.values).toContain('node-1');
+      expect(sqlArg.values).toContain('automation-1');
+    });
+
+    it('updateIfDraftRevision applies the write only when the revision still matches', async () => {
+      const repo = createAutomationRepository();
+      prismaMock.automation.updateMany.mockResolvedValueOnce({ count: 1 });
+      prismaMock.automation.findUnique.mockResolvedValueOnce({ id: 'automation-1' });
+
+      const result = await repo.updateIfDraftRevision('automation-1', 4, { draftRevision: { increment: 1 } });
+
+      expect(prismaMock.automation.updateMany).toHaveBeenCalledWith({
+        where: { id: 'automation-1', draftRevision: 4 },
+        data: { draftRevision: { increment: 1 } },
+      });
+      expect(result).toEqual({ id: 'automation-1' });
+    });
+
+    it('updateIfDraftRevision returns null when another writer got there first', async () => {
+      const repo = createAutomationRepository();
+      prismaMock.automation.updateMany.mockResolvedValueOnce({ count: 0 });
+
+      expect(await repo.updateIfDraftRevision('automation-1', 4, {})).toBeNull();
+    });
+
+    it('updateIfDraftRevision skips the revision check when forced (null base)', async () => {
+      const repo = createAutomationRepository();
+      prismaMock.automation.updateMany.mockResolvedValueOnce({ count: 1 });
+
+      await repo.updateIfDraftRevision('automation-1', null, {});
+
+      expect(prismaMock.automation.updateMany).toHaveBeenCalledWith({ where: { id: 'automation-1' }, data: {} });
+    });
+
     it('setNodeConfigInRunSnapshot issues a single $executeRaw scoped to the run id', async () => {
       const repo = createAutomationRepository();
       await repo.setNodeConfigInRunSnapshot('run-1', 'node-1', { type: 'webhook' });

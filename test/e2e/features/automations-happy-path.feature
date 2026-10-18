@@ -22,11 +22,11 @@ Feature: Automations linear happy path
     When I add a webhook action step
     Then the action node should show the setup required badge
     When I close the node config panel
-    And I save the automation graph
+    And the automation changes are autosaved
     And I try to activate the automation
     Then the automation should still be in Draft status
     When I configure the webhook action with a test delivery URL
-    And I save the automation graph
+    And the automation changes are autosaved
     And I activate the automation
     Then the automation status should be Active
     When I get the form short URL

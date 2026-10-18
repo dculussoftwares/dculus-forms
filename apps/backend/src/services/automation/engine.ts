@@ -493,6 +493,7 @@ async function updateAutomationNodeConfig(
   await prisma.$transaction(async (tx) => {
     const txRepo = createAutomationRepository(withPrisma(tx as any));
     await txRepo.setNodeConfigInGraph(automationId, nodeId, config as any);
+    await txRepo.setNodeConfigInDraftGraph(automationId, nodeId, config as any);
     await txRepo.setNodeConfigInRunSnapshot(runId, nodeId, config as any);
   });
 }

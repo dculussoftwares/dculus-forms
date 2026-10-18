@@ -1,5 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Checkbox,
   Input,
@@ -136,6 +144,17 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
 
   const node = nodes.find((n) => n.id === selectedNodeId);
 
+  // Plugin ConfigForms commit only through their own Apply button (they own their field state), so
+  // closing mid-edit would silently drop typing. Edits inside the panel body mark it "touched" and
+  // the close/cancel paths then ask first. Capturing on the wrapper avoids touching every plugin form.
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const touchedRef = useRef(false);
+  const [showUnappliedGuard, setShowUnappliedGuard] = useState(false);
+  useEffect(() => {
+    touchedRef.current = false;
+    setShowUnappliedGuard(false);
+  }, [selectedNodeId]);
+
   // A digest node, when present, is always the trigger's sole immediate successor
   // (graphValidator's DIGEST_MUST_FOLLOW_TRIGGER rule) — so its mere existence in the graph
   // means it's upstream of every other node, no graph walk needed to determine "downstream of
@@ -170,6 +189,14 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   if (!node) return null;
 
   const close = () => setSelectedNodeId(null);
+  const requestClose = () => {
+    if (node.type === 'action' && touchedRef.current && !isReadOnly) setShowUnappliedGuard(true);
+    else close();
+  };
+  const applyFromGuard = () => {
+    setShowUnappliedGuard(false);
+    bodyRef.current?.querySelector('form')?.requestSubmit();
+  };
 
   const titleForType: Record<string, string> = {
     trigger: t(`triggerTypes.${triggerTypeI18nKey(triggerType)}`, { defaultValue: t('builder.panel.titles.trigger') }),
@@ -187,7 +214,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
       body = (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{t('builder.panel.trigger.descriptionSchedule')}</p>
-          <ScheduleTriggerEditor automationId={automationId} disabled={isReadOnly} />
+          <ScheduleTriggerEditor disabled={isReadOnly} />
         </div>
       );
     } else if (triggerType === 'response.edited') {
@@ -242,12 +269,12 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
             hideEventsSection
             readOnly={isReadOnly}
             digestContext={{ available: hasDigestNode }}
-            submitLabelOverride={t('builder.panel.action.saveButton')}
+            submitLabelOverride={t('builder.panel.action.applyButton')}
             onSave={async (result: { name: string; config: Record<string, any> }) => {
               updateNodeData(node.id, { name: result.name, config: result.config });
               close();
             }}
-            onCancel={close}
+            onCancel={requestClose}
           />
         </fieldset>
       );
@@ -267,11 +294,44 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
         <h2 className="text-sm font-semibold" style={{ color: 'var(--tf-dark)' }}>
           {titleForType[node.type as string] ?? node.type}
         </h2>
-        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={close} aria-label={t('builder.panel.close')}>
+        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={requestClose} aria-label={t('builder.panel.close')}>
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="p-5">{body}</div>
+      <div
+        ref={bodyRef}
+        className="p-5"
+        onInputCapture={() => {
+          touchedRef.current = true;
+        }}
+        onChangeCapture={() => {
+          touchedRef.current = true;
+        }}
+      >
+        {body}
+      </div>
+
+      <AlertDialog open={showUnappliedGuard} onOpenChange={setShowUnappliedGuard}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('builder.panel.action.unappliedTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('builder.panel.action.unappliedDescription')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('builder.panel.action.keepEditing')}</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowUnappliedGuard(false);
+                close();
+              }}
+            >
+              {t('builder.panel.action.discardEdits')}
+            </Button>
+            <AlertDialogAction onClick={applyFromGuard}>{t('builder.panel.action.applyButton')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

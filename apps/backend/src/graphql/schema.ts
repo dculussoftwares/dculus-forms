@@ -1458,6 +1458,32 @@ export const typeDefs = gql`
     lastRunAt: String
     """Failed runs since the last clean one. Reaching 5 auto-pauses the automation."""
     consecutiveFailureCount: Int!
+    """
+    Autosaved working copy of the graph. Runs never read it — only the published graph above runs.
+    Null when there are no unpublished changes, and always null for viewers (who see what runs).
+    """
+    draftGraph: JSON
+    draftTriggerConfig: JSON
+    """Optimistic-concurrency token: send it back as baseRevision when saving or publishing."""
+    draftRevision: Int!
+    draftUpdatedAt: String
+    draftUpdatedBy: AutomationEditor
+    """Validation issues in the draft as of its last save."""
+    draftIssueCount: Int!
+    hasUnpublishedChanges: Boolean!
+    publishedAt: String
+    publishedBy: AutomationEditor
+  }
+
+  type AutomationEditor {
+    id: ID!
+    name: String!
+  }
+
+  type AutomationDraftSaveResult {
+    automation: Automation!
+    """Issues that would currently block publishing. Informational — the draft is saved regardless."""
+    validationErrors: [AutomationValidationError!]!
   }
 
   type AutomationStepRun {
@@ -1981,10 +2007,17 @@ export const typeDefs = gql`
     createAutomation(formId: ID!, name: String!, triggerType: String!, template: String): Automation!
     """Copies an automation within its form as a DRAFT, with integration bindings stripped."""
     duplicateAutomation(id: ID!): Automation!
+    """graph and triggerConfig are deprecated: the builder autosaves via saveAutomationDraft and goes live via publishAutomation."""
     updateAutomation(id: ID!, name: String, graph: JSON, triggerConfig: JSON): Automation!
+    """Autosave. Writes only the draft, never the live graph, and never rejects an incomplete graph. Rejects with AUTOMATION_DRAFT_CONFLICT when baseRevision is stale (unless force)."""
+    saveAutomationDraft(id: ID!, graph: JSON, triggerConfig: JSON, baseRevision: Int!, force: Boolean): AutomationDraftSaveResult!
+    """Validates the draft and makes it the live automation (bumping version), optionally activating in the same step."""
+    publishAutomation(id: ID!, baseRevision: Int!, activate: Boolean): Automation!
+    """Throws away unpublished changes and returns the builder to the live version."""
+    discardAutomationDraft(id: ID!): Automation!
     setAutomationStatus(id: ID!, status: String!): Automation!
     deleteAutomation(id: ID!): Boolean!
-    testAutomation(id: ID!, responseId: ID): AutomationRun!
+    testAutomation(id: ID!, responseId: ID): AutomationRun! @deprecated(reason: "The Test button was removed from the UI.")
     cancelAutomationRun(runId: ID!): AutomationRun!
     """
     Resumes a FAILED run from the step it died on, refreshing that step's config from the

@@ -1,9 +1,10 @@
 import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { generateId } from '@dculus/utils';
+import { Prisma } from '#prisma-client';
 import { automationRepository, responseRepository } from '../repositories/index.js';
 import { getAvailablePluginTypes } from '../plugins/core/registry.js';
-import { validateAutomationGraph } from './automation/graphValidator.js';
+import { validateAutomationGraph, type GraphValidationError } from './automation/graphValidator.js';
 import { enqueueFirstStep, enqueueRunStep } from './automation/engine.js';
 import {
   cancelRunsForAutomation,
@@ -16,6 +17,7 @@ import { isAutomationEngineEnabled } from './automation/boss.js';
 import { AUTOMATION_TEMPLATE_IDS, getAutomationTemplate } from './automation/templates.js';
 import { copyAutomation } from './automation/copyAutomation.js';
 import { carrySheetColumnsInGraph } from '../plugins/core/sheetColumns.js';
+import { audit } from '../lib/audit.js';
 import type { AutomationGraph, AutomationRunContext } from './automation/types.js';
 
 /**
@@ -163,10 +165,255 @@ export async function duplicateAutomation(
     triggerType: string;
     triggerConfig: unknown;
     graph: unknown;
+    draftGraph?: unknown;
+    draftTriggerConfig?: unknown;
   },
   createdBy: string
 ) {
-  return copyAutomation(automation, automation.formId, createdBy, `${automation.name} (Copy)`);
+  // Copy what the author sees in the builder, not the (possibly older) published version.
+  return copyAutomation(
+    {
+      ...automation,
+      graph: effectiveGraph(automation),
+      triggerConfig: effectiveTriggerConfig(automation),
+    },
+    automation.formId,
+    createdBy,
+    `${automation.name} (Copy)`
+  );
+}
+
+/** Autosaved drafts above this serialized size are rejected, as a guard against runaway payloads. */
+const MAX_DRAFT_BYTES = 512 * 1024;
+
+interface DraftAwareAutomation {
+  id: string;
+  status: string;
+  triggerType: string;
+  graph: unknown;
+  triggerConfig: unknown;
+  version: number;
+  draftGraph?: unknown;
+  draftTriggerConfig?: unknown;
+  draftRevision?: number;
+  draftUpdatedAt?: Date | null;
+  draftUpdatedById?: string | null;
+  lastDigestedAt?: Date | null;
+}
+
+const effectiveGraph = (automation: { graph: unknown; draftGraph?: unknown }) =>
+  automation.draftGraph ?? automation.graph;
+
+const effectiveTriggerConfig = (automation: { triggerConfig: unknown; draftTriggerConfig?: unknown }) =>
+  automation.draftTriggerConfig ?? automation.triggerConfig ?? null;
+
+/**
+ * JSON.stringify with sorted object keys. Postgres JSONB does not preserve key order, so a graph
+ * read back from the database would never compare equal to the same graph from the client.
+ */
+function stableStringify(value: unknown): string {
+  return JSON.stringify(value ?? null, (_key, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : v
+  );
+}
+
+const isGraphShape = (graph: unknown): graph is AutomationGraph =>
+  !!graph &&
+  typeof graph === 'object' &&
+  Array.isArray((graph as AutomationGraph).nodes) &&
+  Array.isArray((graph as AutomationGraph).edges);
+
+/** Everything that would stop this graph + trigger config from being published or activated. */
+function collectPublishIssues(graph: unknown, triggerConfig: unknown, triggerType: string): GraphValidationError[] {
+  const result = validateAutomationGraph(graph, {
+    pluginTypes: getAvailablePluginTypes(),
+    triggerType,
+  });
+  const issues = [...(result?.errors ?? [])];
+
+  if (triggerType === 'schedule') {
+    const config = triggerConfig as { cron?: string; timezone?: string } | null;
+    if (!config || typeof config !== 'object' || !isValidCronExpression(config.cron as string)) {
+      issues.push({ code: 'INVALID_TRIGGER_CONFIG', message: 'Set up a valid schedule for this automation.' });
+    } else if (config.timezone !== undefined && !isValidTimezone(config.timezone)) {
+      issues.push({ code: 'INVALID_TRIGGER_CONFIG', message: `Invalid timezone: ${config.timezone}` });
+    }
+  }
+
+  return issues;
+}
+
+function draftConflictError(latest: DraftAwareAutomation | null) {
+  return createGraphQLError(
+    'This automation was edited elsewhere',
+    GRAPHQL_ERROR_CODES.AUTOMATION_DRAFT_CONFLICT,
+    {
+      extensions: {
+        draftRevision: latest?.draftRevision ?? null,
+        draftUpdatedAt: latest?.draftUpdatedAt?.toISOString() ?? null,
+        draftUpdatedById: latest?.draftUpdatedById ?? null,
+      },
+    }
+  );
+}
+
+/**
+ * Autosave. Writes the builder's working copy to `draftGraph` / `draftTriggerConfig` and never
+ * touches the live `graph`, so nothing a run reads changes until {@link publishAutomation}.
+ *
+ * Deliberately does NOT reject an unpublishable graph: a half-configured step is the normal state
+ * mid-edit, and refusing to save it would defeat autosave. Issues are returned instead so the
+ * builder can show them as the user works. Optimistic concurrency via `baseRevision` stops two
+ * tabs silently overwriting each other; `force` is the "keep my version" escape hatch.
+ */
+export async function saveAutomationDraft(
+  automation: DraftAwareAutomation,
+  input: { graph?: unknown; triggerConfig?: unknown; baseRevision: number; force?: boolean },
+  userId: string
+) {
+  if (input.graph === undefined && input.triggerConfig === undefined) {
+    throw createGraphQLError('Nothing to save', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+  if (input.graph !== undefined && !isGraphShape(input.graph)) {
+    throw createGraphQLError('Graph must contain nodes and edges arrays', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+  if (
+    input.triggerConfig !== undefined &&
+    input.triggerConfig !== null &&
+    (typeof input.triggerConfig !== 'object' || Array.isArray(input.triggerConfig))
+  ) {
+    throw createGraphQLError('triggerConfig must be an object', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+  if (stableStringify({ g: input.graph, t: input.triggerConfig }).length > MAX_DRAFT_BYTES) {
+    throw createGraphQLError('Automation is too large to save', GRAPHQL_ERROR_CODES.AUTOMATION_DRAFT_TOO_LARGE);
+  }
+
+  const baseGraph = effectiveGraph(automation);
+  const nextGraph =
+    input.graph === undefined ? baseGraph : carrySheetColumnsInGraph(baseGraph, input.graph);
+  const nextTrigger = input.triggerConfig === undefined ? effectiveTriggerConfig(automation) : input.triggerConfig;
+
+  // A draft equal to the live version is stored as null, so undoing every edit clears the
+  // "unpublished changes" state instead of leaving a redundant copy behind.
+  const graphMatchesLive = stableStringify(nextGraph) === stableStringify(automation.graph);
+  const triggerMatchesLive = stableStringify(nextTrigger) === stableStringify(automation.triggerConfig);
+  const issues = collectPublishIssues(nextGraph, nextTrigger, automation.triggerType);
+
+  const updated = await automationRepository.updateIfDraftRevision(
+    automation.id,
+    input.force ? null : input.baseRevision,
+    {
+      draftGraph: graphMatchesLive ? Prisma.DbNull : (nextGraph as Prisma.InputJsonValue),
+      draftTriggerConfig:
+        triggerMatchesLive || nextTrigger === null ? Prisma.DbNull : (nextTrigger as Prisma.InputJsonValue),
+      draftRevision: { increment: 1 },
+      draftUpdatedAt: new Date(),
+      draftUpdatedById: userId,
+      draftIssueCount: issues.length,
+    }
+  );
+
+  if (!updated) {
+    throw draftConflictError((await automationRepository.findById(automation.id)) as DraftAwareAutomation | null);
+  }
+
+  return { automation: updated, validationErrors: issues };
+}
+
+/**
+ * Promotes the draft to the live automation: validates it at the activation bar, writes it to
+ * `graph` / `triggerConfig`, bumps `version`, and optionally activates — all in one compare-and-swap
+ * on `draftRevision`, so the version published is exactly the one the user last saw.
+ */
+export async function publishAutomation(
+  automation: DraftAwareAutomation,
+  input: { baseRevision: number; activate?: boolean },
+  userId: string
+) {
+  if ((automation.draftRevision ?? 0) !== input.baseRevision) {
+    throw draftConflictError(automation);
+  }
+
+  const candidateTrigger = effectiveTriggerConfig(automation);
+  // Engine write-backs (an auto-created spreadsheet's column layout) land on the live graph; keep
+  // them rather than overwriting with the draft's older copy.
+  const candidateGraph = carrySheetColumnsInGraph(automation.graph, effectiveGraph(automation));
+
+  const issues = collectPublishIssues(candidateGraph, candidateTrigger, automation.triggerType);
+  if (issues.length > 0) {
+    throw createGraphQLError(
+      'Automation graph is invalid and cannot be published',
+      GRAPHQL_ERROR_CODES.AUTOMATION_INVALID_GRAPH,
+      { extensions: { validationErrors: issues } }
+    );
+  }
+
+  const changed =
+    stableStringify(candidateGraph) !== stableStringify(automation.graph) ||
+    stableStringify(candidateTrigger) !== stableStringify(automation.triggerConfig);
+  const activate = input.activate === true;
+  const digestWatermark = activate
+    ? resolveActivationDigestWatermark({
+        triggerType: automation.triggerType,
+        graph: candidateGraph,
+        lastDigestedAt: automation.lastDigestedAt,
+      })
+    : null;
+
+  const updated = await automationRepository.updateIfDraftRevision(automation.id, input.baseRevision, {
+    graph: candidateGraph as Prisma.InputJsonValue,
+    triggerConfig: candidateTrigger === null ? Prisma.DbNull : (candidateTrigger as Prisma.InputJsonValue),
+    ...(changed ? { version: { increment: 1 } } : {}),
+    draftGraph: Prisma.DbNull,
+    draftTriggerConfig: Prisma.DbNull,
+    draftRevision: { increment: 1 },
+    draftUpdatedAt: null,
+    draftUpdatedById: null,
+    draftIssueCount: 0,
+    publishedAt: new Date(),
+    publishedById: userId,
+    updatedAt: new Date(),
+    ...(activate ? { status: 'ACTIVE' } : {}),
+    ...(digestWatermark ? { lastDigestedAt: digestWatermark } : {}),
+  });
+
+  if (!updated) {
+    throw draftConflictError((await automationRepository.findById(automation.id)) as DraftAwareAutomation | null);
+  }
+
+  // boss.schedule upserts by (queue, key), so a changed cron/timezone replaces the old schedule.
+  if (automation.triggerType === 'schedule' && updated.status === 'ACTIVE') {
+    const { cron, timezone } = candidateTrigger as { cron: string; timezone?: string };
+    await scheduleAutomationCron(updated.id, cron, timezone);
+  }
+
+  await audit('automation.published', 'Automation', automation.id, userId, {
+    fromVersion: automation.version,
+    toVersion: updated.version,
+    activated: activate,
+  });
+
+  return updated;
+}
+
+/** Throws the draft away and returns the builder to the published version. */
+export async function discardAutomationDraft(automation: { id: string }) {
+  // Bumping the revision makes any other open tab hit a conflict and reload rather than re-save
+  // the discarded edits.
+  const updated = await automationRepository.updateIfDraftRevision(automation.id, null, {
+    draftGraph: Prisma.DbNull,
+    draftTriggerConfig: Prisma.DbNull,
+    draftRevision: { increment: 1 },
+    draftUpdatedAt: null,
+    draftUpdatedById: null,
+    draftIssueCount: 0,
+  });
+  if (!updated) {
+    throw createGraphQLError('Automation not found', GRAPHQL_ERROR_CODES.AUTOMATION_NOT_FOUND);
+  }
+  return updated;
 }
 
 /**

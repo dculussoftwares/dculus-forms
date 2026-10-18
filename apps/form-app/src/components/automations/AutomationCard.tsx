@@ -26,22 +26,22 @@ import {
   DialogDescription,
   DialogFooter,
   Label,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
 } from '@dculus/ui';
-import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, FlaskConical, AlertTriangle, Copy } from 'lucide-react';
+import { MoreVertical, Trash2, Power, PowerOff, PencilLine, Loader2, Workflow, History, AlertTriangle, Copy, Rocket, Undo2 } from 'lucide-react';
 import {
   UPDATE_AUTOMATION,
   SET_AUTOMATION_STATUS,
   DELETE_AUTOMATION,
   DUPLICATE_AUTOMATION,
+  PUBLISH_AUTOMATION,
+  DISCARD_AUTOMATION_DRAFT,
   GET_FORM_AUTOMATIONS,
 } from '../../graphql/automations';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useFormPermissions } from '../../hooks/useFormPermissions';
-import { useTestAutomation } from '../../hooks/useTestAutomation';
 import { triggerTypeI18nKey } from './triggerTypes';
+import { extractValidationErrors } from './builder/validation';
+import { formatRelativeTime } from './relativeTime';
 
 export interface Automation {
   id: string;
@@ -56,11 +56,17 @@ export interface Automation {
   lastRunStatus?: string | null;
   lastRunAt?: string | null;
   consecutiveFailureCount?: number;
+  /** Autosaved edits that are not live yet. */
+  hasUnpublishedChanges?: boolean;
+  draftRevision?: number;
+  draftUpdatedAt?: string | null;
+  draftUpdatedBy?: { id: string; name: string } | null;
+  draftIssueCount?: number;
+  publishedAt?: string | null;
 }
 
 interface AutomationCardProps {
   automation: Automation;
-  hasResponses: boolean;
 }
 
 const statusStyle = (status: Automation['status']) => {
@@ -74,7 +80,7 @@ const statusStyle = (status: Automation['status']) => {
   }
 };
 
-export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasResponses }) => {
+export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) => {
   const { t, locale } = useTranslation('automations');
   const { canEdit } = useFormPermissions();
   const navigate = useNavigate();
@@ -92,19 +98,59 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
   const [setAutomationStatus] = useMutation(SET_AUTOMATION_STATUS);
   const [deleteAutomation] = useMutation(DELETE_AUTOMATION);
   const [duplicateAutomation] = useMutation(DUPLICATE_AUTOMATION);
+  const [publishAutomation] = useMutation(PUBLISH_AUTOMATION);
+  const [discardAutomationDraft] = useMutation(DISCARD_AUTOMATION_DRAFT);
   const [isDuplicating, setIsDuplicating] = useState(false);
-  const { runTest, isTesting } = useTestAutomation(automation.formId, automation.id);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [isDiscarding, setIsDiscarding] = useState(false);
 
-  // A schedule automation has no triggering response — its data comes from its Filter Responses
-  // step — so it is testable even on a form that has never been submitted.
-  const canTest = hasResponses || automation.triggerType === 'schedule';
+  const isNeverPublished = automation.status === 'DRAFT';
+  // A never-published automation has no live version to differ from, so "unpublished changes"
+  // only means something once it has been activated at least once.
+  const hasUnpublished = !!automation.hasUnpublishedChanges && !isNeverPublished;
 
   const openBuilder = () => navigate(`/dashboard/form/${automation.formId}/builder/automations/${automation.id}`);
   const openRuns = () => navigate(`/dashboard/form/${automation.formId}/builder/automations/${automation.id}/runs`);
 
-  const handleTest = (e: React.MouseEvent) => {
+  const handlePublish = async (e: React.MouseEvent, activate: boolean) => {
     e.stopPropagation();
-    runTest();
+    setIsPublishing(true);
+    try {
+      const result = await publishAutomation({
+        variables: { id: automation.id, baseRevision: automation.draftRevision ?? 0, activate },
+        refetchQueries,
+      });
+      if (result.error) throw result.error;
+      const version = result.data?.publishAutomation?.version ?? automation.version;
+      toastSuccess(
+        activate ? t('toasts.activatedTitle') : t('builder.header.publishedToastTitle', { values: { version } }),
+        activate
+          ? t('toasts.activatedMessage', { values: { name: automation.name } })
+          : t('builder.header.publishedToastMessage')
+      );
+    } catch (error: any) {
+      const issues = extractValidationErrors(error);
+      toastError(
+        t('builder.header.publishErrorTitle'),
+        issues ? t('card.actions.fixIssuesToActivate', { values: { count: issues.length } }) : error.message
+      );
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const handleDiscard = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsDiscarding(true);
+    try {
+      const result = await discardAutomationDraft({ variables: { id: automation.id }, refetchQueries });
+      if (result.error) throw result.error;
+      toastSuccess(t('builder.header.discardedToastTitle'), t('builder.header.discardedToastMessage'));
+    } catch (error: any) {
+      toastError(t('builder.header.discardErrorTitle'), error.message);
+    } finally {
+      setIsDiscarding(false);
+    }
   };
 
   const handleToggleStatus = async (e: React.MouseEvent) => {
@@ -195,11 +241,27 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
         : null;
   const healthColor = failures >= 1 ? 'var(--tf-error)' : '#9c7818';
 
-  const updatedAtLabel = new Date(automation.updatedAt).toLocaleDateString(locale, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const formatDate = (value: string) =>
+    new Date(value).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
+
+  const metaLabel = (() => {
+    if (hasUnpublished && automation.draftUpdatedAt) {
+      return t('card.meta.publishedEdited', {
+        values: {
+          version: automation.version,
+          time: formatRelativeTime(automation.draftUpdatedAt, locale),
+          name: automation.draftUpdatedBy?.name ?? t('card.meta.unknownEditor'),
+        },
+      });
+    }
+    if (!isNeverPublished && automation.publishedAt) {
+      return t('card.meta.published', {
+        values: { version: automation.version, date: formatDate(automation.publishedAt) },
+      });
+    }
+    const editedAt = automation.draftUpdatedAt ?? automation.updatedAt;
+    return t('card.meta.edited', { values: { date: formatDate(editedAt) } });
+  })();
 
   return (
     <>
@@ -222,11 +284,20 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
             <span className="px-2 py-0.5 rounded-full text-[10px] font-medium" style={statusStyle(automation.status)}>
               {t(`statuses.${automation.status}`)}
             </span>
+            {hasUnpublished && (
+              <span
+                className="px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0"
+                style={{ backgroundColor: 'rgba(190,153,58,0.08)', color: '#9c7818', border: '1px solid rgba(190,153,58,0.16)' }}
+                data-testid="automation-unpublished-chip"
+              >
+                {t('builder.header.unpublishedChip')}
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             {t(`triggerTypes.${triggerTypeI18nKey(automation.triggerType)}`, { defaultValue: automation.triggerType })}
             {' · '}
-            {t('card.updatedAt', { values: { date: updatedAtLabel } })}
+            {metaLabel}
           </p>
 
           {/* Health of the last run. Without this an automation whose integration expired looks
@@ -240,33 +311,6 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
         </div>
 
         <div className="shrink-0 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          {canEdit && (
-            canTest ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs gap-1.5 text-muted-foreground"
-                onClick={handleTest}
-                disabled={isTesting}
-              >
-                {isTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
-                {t('card.actions.test')}
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button variant="ghost" size="sm" className="h-8 px-2 text-xs gap-1.5 text-muted-foreground" disabled>
-                      <FlaskConical className="h-3.5 w-3.5" />
-                      {t('card.actions.test')}
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>{t('builder.header.testDisabledNoResponses')}</TooltipContent>
-              </Tooltip>
-            )
-          )}
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 flex items-center justify-center rounded-lg p-0">
@@ -281,14 +325,41 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation, hasR
               {canEdit && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleToggleStatus} disabled={isTogglingStatus}>
-                    {isTogglingStatus
+                  <DropdownMenuItem
+                    onClick={(e) => (isNeverPublished ? handlePublish(e, true) : handleToggleStatus(e))}
+                    disabled={isTogglingStatus || isPublishing}
+                  >
+                    {isTogglingStatus || isPublishing
                       ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       : automation.status === 'ACTIVE'
                         ? <PowerOff className="mr-2 h-4 w-4" />
                         : <Power className="mr-2 h-4 w-4" />}
-                    {automation.status === 'ACTIVE' ? t('card.actions.pause') : t('card.actions.activate')}
+                    {automation.status === 'ACTIVE'
+                      ? t('card.actions.pause')
+                      : automation.status === 'PAUSED' && hasUnpublished
+                        ? t('card.actions.resumeVersion', { values: { version: automation.version } })
+                        : t('card.actions.activate')}
                   </DropdownMenuItem>
+                  {automation.status === 'PAUSED' && hasUnpublished && (
+                    <p className="px-2 pb-1 -mt-1 pl-8 text-[11px] text-muted-foreground">
+                      {t('card.actions.resumeVersionHint')}
+                    </p>
+                  )}
+                  {hasUnpublished && (
+                    <>
+                      <DropdownMenuItem
+                        onClick={(e) => handlePublish(e, false)}
+                        disabled={isPublishing || (automation.draftIssueCount ?? 0) > 0}
+                      >
+                        {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
+                        {t('card.actions.publish')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDiscard} disabled={isDiscarding}>
+                        {isDiscarding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
+                        {t('card.actions.discard')}
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem
                     onClick={(e) => { e.stopPropagation(); setRenameValue(automation.name); setShowRenameDialog(true); }}
                   >

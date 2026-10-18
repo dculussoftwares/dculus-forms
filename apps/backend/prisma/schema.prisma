@@ -709,6 +709,19 @@ model Automation {
   /// COMPLETED run.
   consecutiveFailureCount Int @default(0)
 
+  // Autosaved working copy. `graph`, `triggerConfig` and `version` above are the PUBLISHED
+  // (live) values — runs only ever read those. Null means "no unpublished changes".
+  draftGraph         Json?
+  draftTriggerConfig Json?
+  /// Incremented on every accepted draft save/discard — optimistic concurrency token (baseRevision).
+  draftRevision      Int       @default(0)
+  draftUpdatedAt     DateTime?
+  draftUpdatedById   String?
+  /// Validation issue count from the last draft save, so the list can gate "Publish" without re-validating.
+  draftIssueCount    Int       @default(0)
+  publishedAt        DateTime?
+  publishedById      String?
+
   // Relations
   form Form              @relation(fields: [formId], references: [id], onDelete: Cascade)
   runs AutomationRun[]

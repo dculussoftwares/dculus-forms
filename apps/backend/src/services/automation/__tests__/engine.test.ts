@@ -24,6 +24,7 @@ import type { AutomationGraph } from '../types.js';
 // either the singleton or a tx-scoped instance uniformly.
 const txRepoMock = vi.hoisted(() => ({
   setNodeConfigInGraph: vi.fn().mockResolvedValue(1),
+  setNodeConfigInDraftGraph: vi.fn().mockResolvedValue(1),
   setNodeConfigInRunSnapshot: vi.fn().mockResolvedValue(1),
   createStepRun: vi.fn().mockResolvedValue({}),
   updateRun: vi.fn().mockResolvedValue({}),
@@ -128,6 +129,7 @@ describe('automation engine', () => {
       logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn() },
     } as any);
     txRepoMock.setNodeConfigInGraph.mockResolvedValue(1);
+    txRepoMock.setNodeConfigInDraftGraph.mockResolvedValue(1);
     txRepoMock.setNodeConfigInRunSnapshot.mockResolvedValue(1);
     txRepoMock.createStepRun.mockResolvedValue({});
     txRepoMock.updateRun.mockResolvedValue({});
@@ -995,6 +997,7 @@ describe('automation engine', () => {
       // succeeding while the other fails would leave Automation.graph and this run's
       // graphSnapshot permanently diverged.
       expect(txRepoMock.setNodeConfigInGraph).toHaveBeenCalledWith('automation-1', 'action-1', newConfig);
+      expect(txRepoMock.setNodeConfigInDraftGraph).toHaveBeenCalledWith('automation-1', 'action-1', newConfig);
       expect(txRepoMock.setNodeConfigInRunSnapshot).toHaveBeenCalledWith('run-1', 'action-1', newConfig);
     });
   });
