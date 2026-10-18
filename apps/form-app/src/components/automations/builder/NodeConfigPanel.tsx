@@ -149,11 +149,26 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
   // the close/cancel paths then ask first. Capturing on the wrapper avoids touching every plugin form.
   const bodyRef = useRef<HTMLDivElement>(null);
   const touchedRef = useRef(false);
+  const previousNodeIdRef = useRef<string | null>(selectedNodeId);
+  const nodesRef = useRef(nodes);
+  nodesRef.current = nodes;
+  const pendingSelectionRef = useRef<string | null>(null);
+  const applyRef = useRef<(() => Promise<void>) | null>(null);
   const [showUnappliedGuard, setShowUnappliedGuard] = useState(false);
   useEffect(() => {
+    const previousNode = nodesRef.current.find((candidate) => candidate.id === previousNodeIdRef.current);
+    const changedTo = selectedNodeId;
+    previousNodeIdRef.current = selectedNodeId;
+    if (previousNode?.type === 'action' && changedTo !== previousNode.id && touchedRef.current && !isReadOnly) {
+      pendingSelectionRef.current = changedTo;
+      previousNodeIdRef.current = previousNode.id;
+      setSelectedNodeId(previousNode.id);
+      setShowUnappliedGuard(true);
+      return;
+    }
     touchedRef.current = false;
     setShowUnappliedGuard(false);
-  }, [selectedNodeId]);
+  }, [selectedNodeId, isReadOnly, setSelectedNodeId]);
 
   // A digest node, when present, is always the trigger's sole immediate successor
   // (graphValidator's DIGEST_MUST_FOLLOW_TRIGGER rule) — so its mere existence in the graph
@@ -188,14 +203,20 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
 
   if (!node) return null;
 
-  const close = () => setSelectedNodeId(null);
+  const close = () => {
+    touchedRef.current = false;
+    const destination = pendingSelectionRef.current;
+    pendingSelectionRef.current = null;
+    setSelectedNodeId(destination);
+  };
   const requestClose = () => {
     if (node.type === 'action' && touchedRef.current && !isReadOnly) setShowUnappliedGuard(true);
     else close();
   };
-  const applyFromGuard = () => {
+  const applyFromGuard = async () => {
+    if (applyRef.current) await applyRef.current();
+    else bodyRef.current?.querySelector('form')?.requestSubmit();
     setShowUnappliedGuard(false);
-    bodyRef.current?.querySelector('form')?.requestSubmit();
   };
 
   const titleForType: Record<string, string> = {
@@ -270,6 +291,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
             readOnly={isReadOnly}
             digestContext={{ available: hasDigestNode }}
             submitLabelOverride={t('builder.panel.action.applyButton')}
+            onApplyReady={(apply) => { applyRef.current = apply; }}
             onSave={async (result: { name: string; config: Record<string, any> }) => {
               updateNodeData(node.id, { name: result.name, config: result.config });
               close();

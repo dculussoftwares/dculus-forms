@@ -53,6 +53,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   isSaving,
   onSave,
   onCancel,
+  onApplyReady,
   submitLabelOverride,
 }) => {
   const { t } = useTranslation('pluginGoogleSheets');
@@ -274,6 +275,10 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
       events: ['form.submitted'],
     });
   };
+
+  useEffect(() => {
+    onApplyReady?.(handleSave);
+  }, [onApplyReady, handleSave]);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">

@@ -15,6 +15,8 @@ export interface ConfigFormProps {
   isSaving: boolean;
   onSave: (data: any) => Promise<void>;
   onCancel: () => void;
+  /** Registers the plugin's button-driven save action for the builder's unapplied-edits guard. */
+  onApplyReady?: (apply: () => Promise<void>) => void;
   /**
    * Hides the "Trigger Events" card. Automation action nodes always execute as part of
    * graph traversal — there's no separate event selection like a standalone FormPlugin

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Card,
@@ -47,6 +47,7 @@ export const AiTaggerConfigForm: React.FC<ConfigFormProps> = ({
   isSaving,
   onSave,
   onCancel,
+  onApplyReady,
 }) => {
   const { t } = useTranslation('aiTaggerPluginConfig');
 
@@ -148,6 +149,10 @@ export const AiTaggerConfigForm: React.FC<ConfigFormProps> = ({
       events: ['form.submitted'],
     });
   };
+
+  useEffect(() => {
+    onApplyReady?.(handleSave);
+  }, [onApplyReady, handleSave]);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
