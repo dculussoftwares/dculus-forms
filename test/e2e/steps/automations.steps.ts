@@ -178,6 +178,11 @@ When('I fill and submit the automations happy path form', async function (this: 
 
 When('I open the automation runs view', async function (this: CustomWorld) {
   if (!this.page) throw new Error('Page is not initialized');
+  // The Activate/Publish success toast renders over the header's Runs button, and a resting mouse
+  // pointer hovering that toast keeps it open indefinitely. Move the pointer off it and let the
+  // toast dismiss before clicking, as a person would.
+  await this.page.mouse.move(0, 0);
+  await expect(this.page.locator('[data-sonner-toast]')).toHaveCount(0, { timeout: 20_000 });
   await this.page.getByRole('button', { name: 'Runs', exact: true }).click();
   await expect(this.page).toHaveURL(/\/runs$/, { timeout: 15_000 });
 });
