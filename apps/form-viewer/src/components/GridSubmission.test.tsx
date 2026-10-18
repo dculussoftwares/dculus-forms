@@ -24,7 +24,7 @@ vi.hoisted(() => {
 });
 
 import React from 'react';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import {
   type FormField,
   type FormPage,
@@ -34,7 +34,8 @@ import {
   RichTextFormField,
   TextInputField,
 } from '@dculus/types';
-import { SinglePageForm, useFormResponseStore } from '@dculus/ui';
+import { RendererMode } from '@dculus/utils';
+import { FormResponseContext, PageRenderer, SinglePageForm, useFormResponseStore } from '@dculus/ui';
 
 type FormHandle = NonNullable<NonNullable<React.ComponentProps<typeof SinglePageForm>['formRef']>['current']>;
 
@@ -100,5 +101,77 @@ describe('grid form submission', () => {
 
     const column0 = screen.getByTestId('viewer-grid-column-g1-0');
     expect(within(column0).getByText(/Name is required/i)).toBeTruthy();
+  });
+
+  it.each([false, true])('blocks duplicate submissions until the request settles (all pages hidden: %s)', async (allHidden) => {
+    const formPage = gridPage('Jane', 'jane@example.com');
+    let finishSubmission: () => void = () => { throw new Error('Submission has not started'); };
+    const onFormSubmit = vi.fn(() => new Promise<void>((resolve) => {
+      finishSubmission = resolve;
+    }));
+    render(
+      <FormResponseContext.Provider value={{
+        mode: RendererMode.PREVIEW,
+        formId: 'form-grid',
+        onFormSubmit,
+        hiddenFieldIds: new Set(),
+        hiddenPageIds: new Set(allHidden ? [formPage.id] : []),
+        getHiddenFieldIds: () => new Set(),
+        requiredOverrides: new Map(),
+        getRequiredOverrides: () => new Map(),
+      }}>
+        <PageRenderer pages={[formPage]} />
+      </FormResponseContext.Provider>
+    );
+    const button = screen.getByRole('button', { name: 'Submit' });
+
+    await act(async () => {
+      fireEvent.click(button);
+      fireEvent.click(button);
+    });
+
+    await waitFor(() => expect(onFormSubmit).toHaveBeenCalledTimes(1));
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    fireEvent.click(button);
+    expect(onFormSubmit).toHaveBeenCalledTimes(1);
+
+    await act(async () => { finishSubmission(); });
+
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('unlocks submission for retry when the request fails', async () => {
+    const onFormSubmit = vi.fn().mockRejectedValueOnce(new Error('Request failed')).mockResolvedValue(undefined);
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      render(
+        <FormResponseContext.Provider value={{
+          mode: RendererMode.PREVIEW,
+          formId: 'form-grid',
+          onFormSubmit,
+          hiddenFieldIds: new Set(),
+          hiddenPageIds: new Set(),
+          getHiddenFieldIds: () => new Set(),
+          requiredOverrides: new Map(),
+          getRequiredOverrides: () => new Map(),
+        }}>
+          <PageRenderer pages={[gridPage('Jane', 'jane@example.com')]} />
+        </FormResponseContext.Provider>
+      );
+      const button = screen.getByRole('button', { name: 'Submit' });
+
+      fireEvent.click(button);
+      await waitFor(() => expect(errorLog).toHaveBeenCalled());
+      expect(screen.getByText('Request failed')).toBeInTheDocument();
+      await waitFor(() => expect(button).toBeEnabled());
+      fireEvent.click(button);
+
+      await waitFor(() => expect(onFormSubmit).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(button).toBeEnabled());
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 });

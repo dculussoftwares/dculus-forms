@@ -14,8 +14,8 @@ export interface ResponseCopySettings {
 export interface FormResponseContextValue {
   formSchema?: FormSchema;
   mode: RendererMode;
-  onFormSubmit?: (formId: string, responses: Record<string, any>) => void;
-  onResponseUpdate?: (responseId: string, responses: Record<string, any>) => void;
+  onFormSubmit?: (formId: string, responses: Record<string, any>) => void | Promise<void>;
+  onResponseUpdate?: (responseId: string, responses: Record<string, any>) => void | Promise<void>;
   formId?: string;
   responseId?: string;
   responseCopySettings?: ResponseCopySettings;

@@ -6,6 +6,7 @@ import { useFormResponseStore } from '../stores/useFormResponseStore';
 import { FormValidationState, FormNavigationState } from '../types/validation';
 import { useFormResponseContext } from './FormResponseContext';
 import { Checkbox } from '../checkbox';
+import { Loader2 } from 'lucide-react';
 
 export type { LayoutStyles } from './SinglePageForm';
 
@@ -16,7 +17,7 @@ interface PageRendererProps {
   layoutStyles?: LayoutStyles;
   mode?: RendererMode;
   onPageSubmit?: (pageId: string, data: Record<string, any>) => void;
-  onFormComplete?: (allData: Record<string, Record<string, any>>) => void;
+  onFormComplete?: (allData: Record<string, Record<string, any>>) => void | Promise<void>;
   onValidationError?: (pageId: string, errors: string[]) => void;
   enableStrictValidation?: boolean;
   showValidationSummary?: boolean;
@@ -71,6 +72,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [pageAttemptCounts, setPageAttemptCounts] = useState<Record<string, number>>({});
   const [isNavigating, setIsNavigating] = useState(false);
+  const navigationInFlight = useRef(false);
   const [sendResponseCopy, setSendResponseCopy] = useState(false);
 
   const handleResponseCopyConsentChange = useCallback((checked: boolean) => {
@@ -162,7 +164,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     if (onPageSubmit) onPageSubmit(pageId, data);
   }, [onPageSubmit]);
 
-  const handleFormComplete = useCallback(() => {
+  const handleFormComplete = useCallback(async () => {
     // Submit-time enforcement gate (strategy doc §5): run a final visibility
     // pass over the complete answer set and strip hidden fields' values (and
     // whole hidden pages) before anything downstream — file upload, "send me
@@ -179,27 +181,25 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
     });
 
     if (contextMode === RendererMode.EDIT && onResponseUpdate && responseId) {
-      onResponseUpdate(responseId, formattedData);
+      await onResponseUpdate(responseId, formattedData);
     } else if (onFormSubmit && formId) {
-      onFormSubmit(formId, formattedData);
+      await onFormSubmit(formId, formattedData);
     } else if (onFormComplete) {
-      onFormComplete(strippedData);
+      await onFormComplete(strippedData);
     }
   }, [store, formSchema, pages, contextMode, onResponseUpdate, responseId, onFormSubmit, formId, onFormComplete]);
 
   const goToNextPage = useCallback(async () => {
-    if (isNavigating) return;
-    if (!currentPage) {
-      // Conditional rules can hide every page; the footer still offers Submit,
-      // so complete the form (the submit gate strips everything hidden anyway)
-      // instead of leaving a blank, non-submittable screen
-      handleFormComplete();
-      return;
-    }
-
+    if (navigationInFlight.current) return;
+    navigationInFlight.current = true;
     setIsNavigating(true);
     try {
       setValidationErrors([]);
+      if (!currentPage) {
+        // Conditions can hide every page, but submission still needs the same lock.
+        await handleFormComplete();
+        return;
+      }
 
       const currentPageAttempts = pageAttemptCounts[currentPage.id] ?? 0;
       setPageAttemptCounts(prev => ({ ...prev, [currentPage.id]: currentPageAttempts + 1 }));
@@ -232,18 +232,19 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
       if (newIndex < visiblePages.length) {
         navigateToIndex(newIndex);
       } else {
-        handleFormComplete();
+        await handleFormComplete();
       }
     } catch (error) {
       console.error('Navigation error:', error);
-      setValidationErrors(['An error occurred during validation']);
+      setValidationErrors([error instanceof Error ? error.message : 'An error occurred during validation']);
     } finally {
+      navigationInFlight.current = false;
       setIsNavigating(false);
     }
-  }, [currentPage, currentPageIndex, visiblePages.length, navigateToIndex, isNavigating, enableStrictValidation, onValidationError, handleFormComplete, pageAttemptCounts]);
+  }, [currentPage, currentPageIndex, visiblePages.length, navigateToIndex, onValidationError, handleFormComplete, pageAttemptCounts]);
 
   const goToPrevPage = useCallback(async () => {
-    if (!currentPage || currentPageIndex <= 0) return;
+    if (navigationInFlight.current || !currentPage || currentPageIndex <= 0) return;
     if (currentPageFormRef.current) currentPageFormRef.current.submit();
     navigateToIndex(currentPageIndex - 1);
     setValidationErrors([]);
@@ -376,7 +377,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
               <button
                 data-testid="viewer-prev-button"
                 onClick={goToPrevPage}
-                disabled={!navigationState.canGoPrevious}
+                disabled={isNavigating || !navigationState.canGoPrevious}
                 className="flex items-center gap-1.5 text-sm font-medium text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors disabled:opacity-0 disabled:pointer-events-none"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -392,12 +393,17 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                     data-testid="viewer-submit-button"
                     onClick={goToNextPage}
                     disabled={isNavigating}
+                    aria-busy={isNavigating}
                     className="flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {contextMode === RendererMode.EDIT ? 'Update Response' : 'Submit'}
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    {isNavigating ? (
+                      <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                    ) : (
+                      <svg className="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
                   </button>
                 ) : (
                   <button

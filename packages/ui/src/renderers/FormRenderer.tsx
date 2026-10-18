@@ -27,8 +27,10 @@ export interface FormRendererProps {
   className?: string;
   mode: RendererMode;
   onResponseChange?: (responses: Record<string, any>) => void;
-  onFormSubmit?: (formId: string, responses: Record<string, any>) => void;
-  onResponseUpdate?: (responseId: string, responses: Record<string, any>) => void;
+  /** Return the submission promise to keep navigation locked and Submit busy until it settles. */
+  onFormSubmit?: (formId: string, responses: Record<string, any>) => void | Promise<void>;
+  /** Async updates share the same navigation lock and busy indicator as submissions. */
+  onResponseUpdate?: (responseId: string, responses: Record<string, any>) => void | Promise<void>;
   onLayoutChange?: (updates: Partial<FormLayout>) => void;
   formId?: string;
   existingResponseData?: Record<string, any>;

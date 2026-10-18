@@ -135,6 +135,18 @@ export const actionToneClass = (tone: ActionTone): string => {
   }
 };
 
+/**
+ * Solid fill for the small tone dots. The pill palette above is too pale to
+ * read at dot size, so dots use saturated colours in both themes.
+ */
+const ACTION_DOT_CLASS: Record<ActionTone, string> = {
+  additive: 'bg-emerald-600 dark:bg-emerald-400',
+  subtractive: 'bg-amber-600 dark:bg-amber-400',
+  navigational: 'bg-violet-600 dark:bg-violet-400',
+};
+
+export const actionDotClass = (tone: ActionTone): string => ACTION_DOT_CLASS[tone];
+
 /** Every field id an action targets (empty for page actions). */
 export const actionFieldIds = (action: ConditionAction): string[] =>
   'fieldIds' in action ? action.fieldIds : [];
