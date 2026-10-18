@@ -226,13 +226,10 @@ const AutomationBuilderContent: React.FC<{ form: any; automation: any }> = ({ fo
   const handleBack = async () => {
     // In a conflict the local edits can't be re-based onto the newer server draft later, so leaving
     // would lose them for good — make that an explicit choice.
-    if (
-      useAutomationBuilderStore.getState().saveState === 'conflict' &&
-      !window.confirm(t('builder.conflict.leaveConfirm'))
-    ) {
-      return;
-    }
-    if (useAutomationBuilderStore.getState().isDirty) {
+    const inConflict = useAutomationBuilderStore.getState().saveState === 'conflict';
+    if (inConflict && !window.confirm(t('builder.conflict.leaveConfirm'))) return;
+    // After confirming the loss there is nothing left to flush, and "kept on this device" would be untrue.
+    if (!inConflict && useAutomationBuilderStore.getState().isDirty) {
       const saved = await Promise.race([
         flush(),
         new Promise<boolean>((resolve) => setTimeout(() => resolve(false), LEAVE_FLUSH_TIMEOUT_MS)),

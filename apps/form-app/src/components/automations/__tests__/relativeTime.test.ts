@@ -14,6 +14,10 @@ describe('formatRelativeTime', () => {
     expect(formatRelativeTime(ago(2 * 86_400_000), 'en', now)).toBe('2 days ago');
   });
 
+  test('clamps a timestamp from a faster server clock to "now"', () => {
+    expect(formatRelativeTime(new Date(now + 5 * 60_000).toISOString(), 'en', now)).toBe('now');
+  });
+
   test('localizes the output', () => {
     expect(formatRelativeTime(ago(5 * 60_000), 'ta', now)).not.toBe('5 minutes ago');
   });

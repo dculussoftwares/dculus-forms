@@ -318,7 +318,7 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
             <AlertDialogDescription>{t('builder.panel.action.unappliedDescription')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('builder.panel.action.keepEditing')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setShowUnappliedGuard(false)}>{t('builder.panel.action.keepEditing')}</AlertDialogCancel>
             <Button
               variant="outline"
               onClick={() => {
@@ -328,7 +328,10 @@ export const NodeConfigPanel: React.FC<NodeConfigPanelProps> = ({ form }) => {
             >
               {t('builder.panel.action.discardEdits')}
             </Button>
-            <AlertDialogAction onClick={applyFromGuard}>{t('builder.panel.action.applyButton')}</AlertDialogAction>
+            {/* Some plugin forms (the Sheets ones) aren't native <form>s, so there is nothing to submit for them. */}
+            {bodyRef.current?.querySelector('form') && (
+              <AlertDialogAction onClick={applyFromGuard}>{t('builder.panel.action.applyButton')}</AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

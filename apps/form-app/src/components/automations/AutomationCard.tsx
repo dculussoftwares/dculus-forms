@@ -437,7 +437,7 @@ export const AutomationCard: React.FC<AutomationCardProps> = ({ automation }) =>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('builder.discardDialog.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setShowDiscardDialog(false)}>{t('builder.discardDialog.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDiscard} variant="destructive">
               {t('builder.discardDialog.confirm')}
             </AlertDialogAction>

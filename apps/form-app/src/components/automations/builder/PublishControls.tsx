@@ -283,7 +283,7 @@ export const PublishControls: React.FC<PublishControlsProps> = ({ automation, fl
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('builder.discardDialog.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setShowDiscardDialog(false)}>{t('builder.discardDialog.cancel')}</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={handleDiscard}>
               {t('builder.discardDialog.confirm')}
             </AlertDialogAction>
@@ -308,7 +308,7 @@ export const PublishControls: React.FC<PublishControlsProps> = ({ automation, fl
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('builder.publishDialog.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setConfirmation(null)}>{t('builder.publishDialog.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 const pending = confirmation;
