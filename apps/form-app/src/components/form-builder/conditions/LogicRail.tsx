@@ -4,7 +4,7 @@ import { Button, Input, ScrollArea } from '@dculus/ui';
 import { ConditionAction, FormPage } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
-import { ACTION_TONE, actionToneClass } from './logicVisuals';
+import { ACTION_TONE, actionDotClass } from './logicVisuals';
 
 export type RuleFilter = 'all' | 'issues' | 'disabled';
 
@@ -164,9 +164,10 @@ export const LogicRail: React.FC<LogicRailProps> = ({
                   )}
                 >
                   <span
+                    aria-hidden="true"
                     className={cn(
-                      'h-2.5 w-2.5 shrink-0 rounded-full border',
-                      actionToneClass(ACTION_TONE[type])
+                      'h-2.5 w-2.5 shrink-0 rounded-full',
+                      actionDotClass(ACTION_TONE[type])
                     )}
                   />
                   <span className="min-w-0 flex-1 truncate">{t(`actions.${type}`)}</span>

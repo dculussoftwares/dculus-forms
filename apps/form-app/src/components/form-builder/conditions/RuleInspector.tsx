@@ -22,7 +22,7 @@ import {
 } from './conditionFieldConfig';
 import { FieldPicker } from './FieldPicker';
 import { TargetFieldPicker } from './TargetFieldPicker';
-import { ACTION_TONE, actionToneClass, buildLogicIndex } from './logicVisuals';
+import { ACTION_TONE, actionDotClass, buildLogicIndex } from './logicVisuals';
 import { buildRuleSentence } from './ruleSentence';
 import type { LogicDraftStash } from './logicDraftStorage';
 import {
@@ -827,9 +827,10 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
                         <SelectItem key={type} value={type}>
                           <span className="flex items-center gap-2">
                             <span
+                              aria-hidden="true"
                               className={cn(
-                                'h-2 w-2 shrink-0 rounded-full border',
-                                actionToneClass(ACTION_TONE[type])
+                                'h-2.5 w-2.5 shrink-0 rounded-full',
+                                actionDotClass(ACTION_TONE[type])
                               )}
                             />
                             {t(`actions.${type}`)}
