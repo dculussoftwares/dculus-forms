@@ -139,24 +139,32 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   // Handle permission updates
   const handleUpdatePermission = async (userId: string, permission: PermissionLevel) => {
-    await updatePermission({
-      variables: {
-        input: {
-          formId,
-          userId,
-          permission
+    try {
+      await updatePermission({
+        variables: {
+          input: {
+            formId,
+            userId,
+            permission
+          }
         }
-      }
-    });
+      });
+    } catch {
+      // Already surfaced by the mutation's onError callback
+    }
   };
 
   const handleRemoveAccess = async (userId: string) => {
-    await removeAccess({
-      variables: {
-        formId,
-        userId
-      }
-    });
+    try {
+      await removeAccess({
+        variables: {
+          formId,
+          userId
+        }
+      });
+    } catch {
+      // Already surfaced by the mutation's onError callback
+    }
   };
 
   // Handle adding users
@@ -186,7 +194,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({
       userPermissions: userPermissions.length > 0 ? userPermissions : undefined
     };
 
-    await shareForm({ variables: { input } });
+    try {
+      await shareForm({ variables: { input } });
+    } catch {
+      // Already surfaced by the mutation's onError callback; keep the selection so the user can retry
+      return;
+    }
     setSelectedUsers(new Map());
   };
 

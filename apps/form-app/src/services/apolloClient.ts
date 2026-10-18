@@ -65,14 +65,13 @@ const errorLink = new ErrorLink(({ error }) => {
 export const client = new ApolloClient({
   link: errorLink.concat(authLink).concat(httpLink),
   cache: new InMemoryCache(),
+  // Mutations deliberately keep the default errorPolicy ('none') so GraphQL errors reject the
+  // promise and reach each caller's catch block instead of resolving as a fake success.
   defaultOptions: {
     watchQuery: {
       errorPolicy: 'all',
     },
     query: {
-      errorPolicy: 'all',
-    },
-    mutate: {
       errorPolicy: 'all',
     },
   },

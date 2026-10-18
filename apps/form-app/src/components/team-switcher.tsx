@@ -81,9 +81,13 @@ export function TeamSwitcher() {
     if (orgId === activeOrganization?.id) return;
 
     setIsLoading(true);
-    await setActiveOrganization({
-      variables: { organizationId: orgId },
-    });
+    try {
+      await setActiveOrganization({
+        variables: { organizationId: orgId },
+      });
+    } catch {
+      // Already surfaced by the mutation's onError callback
+    }
   };
 
   if (!activeOrganization) {

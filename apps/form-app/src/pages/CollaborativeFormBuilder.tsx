@@ -36,7 +36,7 @@ import {
 } from '../components/form-builder/tabs';
 import { ConditionsTab } from '../components/form-builder/conditions/ConditionsTab';
 import { PreviewOverlay } from '../components/form-builder/PreviewOverlay';
-import { TooltipProvider } from '@dculus/ui';
+import { TooltipProvider, toastError } from '@dculus/ui';
 import Automations from './Automations';
 import AutomationBuilder from './AutomationBuilder';
 import AutomationRuns from './AutomationRuns';
@@ -335,25 +335,23 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     navigate(`/dashboard/form/${formId}`);
   }, [formId, navigate]);
 
-  const handlePublish = useCallback(() => {
-    if (!formId) return;
-    updateForm({
-      variables: {
-        id: formId,
-        input: { isPublished: true },
-      },
-    });
-  }, [formId, updateForm]);
+  const setPublished = useCallback(
+    (isPublished: boolean) => {
+      if (!formId) return;
+      updateForm({
+        variables: { id: formId, input: { isPublished } },
+      }).catch((error: unknown) => {
+        toastError(
+          t('errors.publishFailed'),
+          error instanceof Error ? error.message : undefined
+        );
+      });
+    },
+    [formId, updateForm, t]
+  );
 
-  const handleUnpublish = useCallback(() => {
-    if (!formId) return;
-    updateForm({
-      variables: {
-        id: formId,
-        input: { isPublished: false },
-      },
-    });
-  }, [formId, updateForm]);
+  const handlePublish = useCallback(() => setPublished(true), [setPublished]);
+  const handleUnpublish = useCallback(() => setPublished(false), [setPublished]);
 
   const autoSelectFirstPage = useCallback(() => {
     // Read live store state rather than this closure's captured pages/selectedPageId/

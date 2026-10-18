@@ -6,6 +6,9 @@ import { DELETE_FORM, UPDATE_FORM } from '../graphql/mutations';
 import { getFormViewerUrl } from '@/lib/config';
 import { toastError } from '@dculus/ui';
 
+// The mutations' onError callbacks already toast; this only stops an unhandled rejection.
+const ignoreHandledError = () => undefined;
+
 interface DashboardStats {
   totalResponses: number;
   totalFields: number;
@@ -112,7 +115,7 @@ export const useFormDashboard = (formId: string | undefined) => {
   const handleDelete = () => {
     if (!formId) return;
     // Do NOT close the dialog here — onCompleted/onError handle it
-    deleteForm({ variables: { id: formId } });
+    deleteForm({ variables: { id: formId } }).catch(ignoreHandledError);
   };
 
   const handlePublish = () => {
@@ -122,7 +125,7 @@ export const useFormDashboard = (formId: string | undefined) => {
         id: formId,
         input: { isPublished: true }
       }
-    });
+    }).catch(ignoreHandledError);
   };
 
   const handleUnpublish = () => {
@@ -132,7 +135,7 @@ export const useFormDashboard = (formId: string | undefined) => {
         id: formId,
         input: { isPublished: false }
       }
-    });
+    }).catch(ignoreHandledError);
     setShowUnpublishDialog(false);
   };
 

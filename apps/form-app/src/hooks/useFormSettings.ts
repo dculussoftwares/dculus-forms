@@ -172,7 +172,7 @@ export const useFormSettings = ({
     // Strip __typename fields from the settings object
     const cleanedSettings = stripTypename({ ...settings, ...settingsToSave });
 
-    const result = await updateForm({
+    await updateForm({
       variables: {
         id: formId,
         input: {
@@ -180,16 +180,6 @@ export const useFormSettings = ({
         },
       },
     });
-
-    // The Apollo client is configured with `mutate: { errorPolicy: 'all' }`
-    // (see services/apolloClient.ts), so a GraphQL error (e.g. the backend
-    // rejecting invalid quiz settings) resolves this promise instead of
-    // rejecting it — the mutation's own `onError` callback still surfaces a
-    // toastError, but without this throw every saveXxxSettings caller below
-    // would fall through to its own toastSuccess on top of that.
-    if (result.error) {
-      throw result.error;
-    }
   };
 
   // Update submission limits

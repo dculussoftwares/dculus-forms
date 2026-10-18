@@ -136,7 +136,9 @@ const AIFormBar: React.FC<AIFormBarProps> = ({ organizationId, className }) => {
   const handleSubmit = useCallback(() => {
     const trimmed = prompt.trim();
     if (!trimmed || loading || !targetPageId) return;
-    generateForm({ variables: { prompt: trimmed, organizationId } });
+    generateForm({ variables: { prompt: trimmed, organizationId } }).catch(() => {
+      // Already surfaced by the mutation's onError callback
+    });
   }, [prompt, loading, targetPageId, generateForm, organizationId]);
 
   const handleKeyDown = useCallback(
