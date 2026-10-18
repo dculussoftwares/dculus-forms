@@ -250,13 +250,14 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
         (
           SELECT COALESCE(jsonb_agg(
             CASE WHEN elem->>'id' = ${nodeId}
-              THEN jsonb_set(elem, '{data,config}', ${JSON.stringify(config)}::jsonb, true)
+              THEN jsonb_set(elem, '{data,config}', (elem->'data'->'config') || ${JSON.stringify(config)}::jsonb, true)
               ELSE elem
             END
           ), '[]'::jsonb)
           FROM jsonb_array_elements(${Prisma.raw('"graph"')}->'nodes') AS elem
         )
-      )
+      ),
+      ${Prisma.raw('"draftRevision"')} = ${Prisma.raw('"draftRevision"')} + 1
       WHERE id = ${automationId}
     `);
 
@@ -278,7 +279,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
         (
           SELECT COALESCE(jsonb_agg(
             CASE WHEN elem->>'id' = ${nodeId}
-              THEN jsonb_set(elem, '{data,config}', ${JSON.stringify(config)}::jsonb, true)
+              THEN jsonb_set(elem, '{data,config}', (elem->'data'->'config') || ${JSON.stringify(config)}::jsonb, true)
               ELSE elem
             END
           ), '[]'::jsonb)

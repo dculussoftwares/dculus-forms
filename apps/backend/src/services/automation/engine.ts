@@ -490,10 +490,17 @@ async function updateAutomationNodeConfig(
   nodeId: string,
   config: PluginConfig
 ): Promise<void> {
+  const runGraph = (await prisma.automationRun.findUnique({ where: { id: runId }, select: { graphSnapshot: true } }))
+    ?.graphSnapshot as AutomationGraph | undefined;
+  const previousConfig = runGraph?.nodes.find((node) => node.id === nodeId)?.data?.config ?? {};
+  const patch = Object.fromEntries(
+    Object.entries(config).filter(([key, value]) => JSON.stringify(previousConfig[key]) !== JSON.stringify(value))
+  );
+
   await prisma.$transaction(async (tx) => {
     const txRepo = createAutomationRepository(withPrisma(tx as any));
-    await txRepo.setNodeConfigInGraph(automationId, nodeId, config as any);
-    await txRepo.setNodeConfigInDraftGraph(automationId, nodeId, config as any);
+    await txRepo.setNodeConfigInGraph(automationId, nodeId, patch as any);
+    await txRepo.setNodeConfigInDraftGraph(automationId, nodeId, patch as any);
     await txRepo.setNodeConfigInRunSnapshot(runId, nodeId, config as any);
   });
 }
