@@ -3,7 +3,7 @@
  *
  * Checks that after 3 real form submissions (1 fully visible, 1 field hidden,
  * 1 page hidden) the downstream surfaces behave correctly:
- *  - Responses table: stripped cells show "No response" fallback
+ *  - Responses table: stripped cells render blank (no value, no placeholder)
  *  - Individual response detail panel: opens without crashes
  *  - Excel export: stripped columns have empty cells in the file
  *  - Field analytics: response count matches visible-only submissions
@@ -97,15 +97,17 @@ Then(
       });
     }
 
-    // Response 1 (field hidden): bonus = "No response", details has value
+    // Cells with no stored answer render blank — the table no longer shows a "No response"
+    // placeholder (c8b8c96e) — so a stripped value is an empty cell next to a filled one.
+    // Response 2 (field hidden): bonus is blank, details has value
     const hasFieldHiddenRow = rowValues.some(r =>
-      r.bonus.toLowerCase().includes('no response') &&
+      r.bonus === '' &&
       r.details.includes('details field hidden')
     );
-    // Response 3 (page hidden): bonus has value, details = "No response"
+    // Response 3 (page hidden): bonus has value, details is blank
     const hasPageHiddenRow = rowValues.some(r =>
       r.bonus.includes('bonus page hidden') &&
-      r.details.toLowerCase().includes('no response')
+      r.details === ''
     );
     // Response 1 (all visible): both have values
     const hasFullyVisibleRow = rowValues.some(r =>
@@ -113,8 +115,8 @@ Then(
       r.details.includes('details visible')
     );
 
-    expect(hasFieldHiddenRow, `Expected a row with field hidden (No response for bonus). Rows: ${JSON.stringify(rowValues)}`).toBe(true);
-    expect(hasPageHiddenRow, `Expected a row with page hidden (No response for details). Rows: ${JSON.stringify(rowValues)}`).toBe(true);
+    expect(hasFieldHiddenRow, `Expected a row with field hidden (blank bonus cell). Rows: ${JSON.stringify(rowValues)}`).toBe(true);
+    expect(hasPageHiddenRow, `Expected a row with page hidden (blank details cell). Rows: ${JSON.stringify(rowValues)}`).toBe(true);
     expect(hasFullyVisibleRow, `Expected a row with all visible. Rows: ${JSON.stringify(rowValues)}`).toBe(true);
   }
 );
