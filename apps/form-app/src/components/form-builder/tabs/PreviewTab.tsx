@@ -24,6 +24,13 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
   const [submitCount, setSubmitCount] = useState(0);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
   const [previewStep, setPreviewStep] = useState<PreviewStep>('form');
+  // Server-resolved (mention-substituted) message from the last preview submit.
+  const [submittedThankYouMessage, setSubmittedThankYouMessage] = useState<string | undefined>();
+
+  const changePreviewStep = useCallback((step: PreviewStep) => {
+    setSubmittedThankYouMessage(undefined);
+    setPreviewStep(step);
+  }, []);
 
   const [submitResponse] = useMutation(SUBMIT_RESPONSE);
 
@@ -49,7 +56,10 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
 
   const handlePreviewSubmit = useCallback(
     async (_formId: string, data: Record<string, any>) => {
-      if (!formId) return;
+      if (!formId) {
+        changePreviewStep('finish');
+        return;
+      }
       try {
         const result = await submitResponse({
           variables: { input: { formId, data, isPreview: true } },
@@ -59,7 +69,10 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
           return;
         }
         toastSuccess(t('toasts.previewSubmitted.title'), t('toasts.previewSubmitted.description'));
+        // Remount (clears answers) and land on the thank-you screen, like the live viewer.
         setSubmitCount((c) => c + 1);
+        setPreviewStep('finish');
+        setSubmittedThankYouMessage(result.data?.submitResponse?.thankYouMessage ?? undefined);
       } catch (err: unknown) {
         toastError(
           t('toasts.submissionFailed'),
@@ -67,7 +80,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
         );
       }
     },
-    [formId, submitResponse, t]
+    [formId, submitResponse, t, changePreviewStep]
   );
 
   const content = (
@@ -78,9 +91,10 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
       className="preview-mode"
       mode={RendererMode.PREVIEW}
       formId={formId}
-      onFormSubmit={formId ? handlePreviewSubmit : undefined}
+      onFormSubmit={handlePreviewSubmit}
       initialPageId={selectedPageId ?? undefined}
       screenOverride={previewStep === 'finish' ? 'thankYou' : undefined}
+      thankYouMessage={submittedThankYouMessage}
     />
   );
 
@@ -96,7 +110,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
           style={{ border: '1px solid var(--tf-border-strong)' }}
         >
           <button
-            onClick={() => setPreviewStep('form')}
+            onClick={() => changePreviewStep('form')}
             title={t('stepToggle.formTooltip')}
             data-testid="preview-step-form"
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
@@ -109,7 +123,7 @@ export const PreviewTab: React.FC<PreviewTabProps> = ({ formId }) => {
             {t('stepToggle.form')}
           </button>
           <button
-            onClick={() => setPreviewStep('finish')}
+            onClick={() => changePreviewStep('finish')}
             title={t('stepToggle.finishTooltip')}
             data-testid="preview-step-finish"
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
