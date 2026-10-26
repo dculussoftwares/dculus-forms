@@ -36,8 +36,8 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.11"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
   },
   "dependencies": {
     "libphonenumber-js": "^1.13.15",
