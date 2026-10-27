@@ -513,11 +513,11 @@ describe('Chargebee Service', () => {
         expect.objectContaining({
           planId: 'advanced',
           viewsLimit: null,
-          submissionsLimit: 100000,
-          aiCreditsLimit: 20000,
+          submissionsLimit: 25000,
+          aiCreditsLimit: 5000,
         }),
         expect.objectContaining({
-          aiCreditsLimit: 20000,
+          aiCreditsLimit: 5000,
         })
       );
     });

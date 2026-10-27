@@ -127,7 +127,7 @@ export const CheckoutSuccess = () => {
           t('plans.advanced.features.advancedAnalytics'),
           t('plans.advanced.features.prioritySupport'),
           t('plans.advanced.features.customIntegrations'),
-          t('plans.advanced.features.whiteLabel'),
+          t('plans.advanced.features.removeBranding'),
         ],
       },
       enterprise: {

@@ -122,7 +122,7 @@ export function buildPromptCacheOptions(
 export const AI_CREDIT_LIMITS_FALLBACK: Record<string, number> = {
   free: 200,
   starter: 2_000,
-  advanced: 20_000,
+  advanced: 5_000,
 };
 
 export type AIModelTier = 'nano' | 'mini';

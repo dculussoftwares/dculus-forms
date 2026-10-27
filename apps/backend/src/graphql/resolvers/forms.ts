@@ -21,6 +21,8 @@ import { createGraphQLError, GraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { sanitizeQuizSettings, type FormSettings } from '@dculus/types';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
+import { subscriptionRepository } from '../../repositories/subscriptionRepository.js';
+import { canRemoveBranding } from '../../lib/planLimits.js';
 import { logger } from '../../lib/logger.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { resolveAccessStatus, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
@@ -118,6 +120,10 @@ export const formsResolvers = {
     },
   },
   Form: {
+    // Derived server-side so the public viewer cannot be told to hide the badge
+    // by anything other than the org's plan.
+    showBranding: async (parent: any) =>
+      !canRemoveBranding(await subscriptionRepository.findByOrganizationPublic(parent.organizationId)),
     metadata: async (parent: any) => {
       const formId = parent.id;
       const metadata = await getFormMetadata(formId);

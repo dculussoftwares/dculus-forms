@@ -131,8 +131,8 @@ async function createFeatures() {
           level: 1
         },
         {
-          value: '100000',
-          name: '100,000 submissions',
+          value: '25000',
+          name: '25,000 submissions',
           level: 2
         },
         {
@@ -168,8 +168,8 @@ async function createFeatures() {
           level: 1
         },
         {
-          value: '20000',
-          name: '20,000 credits',
+          value: '5000',
+          name: '5,000 credits',
           level: 2
         },
         {
@@ -279,7 +279,7 @@ async function createItemPrices() {
       name: 'Starter Plan USD Monthly',
       pricing_model: 'per_unit',
       currency_code: 'USD',
-      price: 600, // $6.00 in cents
+      price: 1200, // $12.00 in cents
       period_unit: 'month',
       period: 1
     },
@@ -289,7 +289,7 @@ async function createItemPrices() {
       name: 'Starter Plan INR Monthly',
       pricing_model: 'per_unit',
       currency_code: 'INR',
-      price: 48900, // ₹489.00 in paise
+      price: 69900, // ₹699.00 in paise
       period_unit: 'month',
       period: 1
     },
@@ -300,7 +300,7 @@ async function createItemPrices() {
       name: 'Starter Plan USD Yearly',
       pricing_model: 'per_unit',
       currency_code: 'USD',
-      price: 6600, // $66.00/year ($5.50/month) in cents
+      price: 12000, // $120.00/year ($10/month) in cents
       period_unit: 'year',
       period: 1
     },
@@ -310,7 +310,7 @@ async function createItemPrices() {
       name: 'Starter Plan INR Yearly',
       pricing_model: 'per_unit',
       currency_code: 'INR',
-      price: 540000, // ₹5,400/year (₹450/month) in paise
+      price: 718800, // ₹7,188/year (₹599/month) in paise
       period_unit: 'year',
       period: 1
     },
@@ -321,7 +321,7 @@ async function createItemPrices() {
       name: 'Advanced Plan USD Monthly',
       pricing_model: 'per_unit',
       currency_code: 'USD',
-      price: 1500, // $15.00 in cents
+      price: 3000, // $30.00 in cents
       period_unit: 'month',
       period: 1
     },
@@ -331,7 +331,7 @@ async function createItemPrices() {
       name: 'Advanced Plan INR Monthly',
       pricing_model: 'per_unit',
       currency_code: 'INR',
-      price: 128900, // ₹1,289.00 in paise
+      price: 174900, // ₹1,749.00 in paise
       period_unit: 'month',
       period: 1
     },
@@ -342,7 +342,7 @@ async function createItemPrices() {
       name: 'Advanced Plan USD Yearly',
       pricing_model: 'per_unit',
       currency_code: 'USD',
-      price: 16800, // $168.00/year ($14/month) in cents
+      price: 30000, // $300.00/year ($25/month) in cents
       period_unit: 'year',
       period: 1
     },
@@ -352,7 +352,7 @@ async function createItemPrices() {
       name: 'Advanced Plan INR Yearly',
       pricing_model: 'per_unit',
       currency_code: 'INR',
-      price: 1426800, // ₹14,268/year (₹1,189/month) in paise
+      price: 1798800, // ₹17,988/year (₹1,499/month) in paise
       period_unit: 'year',
       period: 1
     }
@@ -447,8 +447,8 @@ async function createEntitlements() {
       planName: 'Advanced (USD) - Monthly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '100000' },
-        { feature_id: 'ai_credits', value: '20000' }
+        { feature_id: 'form_submissions', value: '25000' },
+        { feature_id: 'ai_credits', value: '5000' }
       ]
     },
     // Advanced Plan (INR) - Monthly
@@ -457,8 +457,8 @@ async function createEntitlements() {
       planName: 'Advanced (INR) - Monthly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '100000' },
-        { feature_id: 'ai_credits', value: '20000' }
+        { feature_id: 'form_submissions', value: '25000' },
+        { feature_id: 'ai_credits', value: '5000' }
       ]
     },
     // Advanced Plan (USD) - Yearly
@@ -467,8 +467,8 @@ async function createEntitlements() {
       planName: 'Advanced (USD) - Yearly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '100000' },
-        { feature_id: 'ai_credits', value: '20000' }
+        { feature_id: 'form_submissions', value: '25000' },
+        { feature_id: 'ai_credits', value: '5000' }
       ]
     },
     // Advanced Plan (INR) - Yearly
@@ -477,8 +477,8 @@ async function createEntitlements() {
       planName: 'Advanced (INR) - Yearly',
       entitlements: [
         { feature_id: 'form_views', value: 'unlimited' },
-        { feature_id: 'form_submissions', value: '100000' },
-        { feature_id: 'ai_credits', value: '20000' }
+        { feature_id: 'form_submissions', value: '25000' },
+        { feature_id: 'ai_credits', value: '5000' }
       ]
     }
   ];
@@ -530,7 +530,7 @@ async function main() {
     logger.info('    - Free: 2 (USD/INR monthly)');
     logger.info('    - Starter: 4 (USD/INR monthly + yearly)');
     logger.info('    - Advanced: 4 (USD/INR monthly + yearly)');
-    logger.info('  • Entitlements configured: 10 plan prices (incl. ai_credits: 200/2,000/20,000)\n');
+    logger.info('  • Entitlements configured: 10 plan prices (incl. ai_credits: 200/2,000/5,000)\n');
     logger.info('💰 Pricing:');
     logger.info('  • Starter: $6/mo or $66/yr ($5.50/mo)');
     logger.info('  • Advanced: $15/mo or $168/yr ($14/mo)\n');

@@ -37,6 +37,7 @@
         "collaboration": "Advanced collaboration",
         "analytics": "Advanced analytics",
         "support": "Email support",
+        "removeBranding": "Remove Dculus branding",
         "customDomain": "Custom Domain (Coming Soon)",
         "apiAccess": "API Access (Coming Soon)"
       }
@@ -45,14 +46,14 @@
       "tagline": "For enterprises",
       "features": {
         "views": "Unlimited form views",
-        "submissions": "100,000 submissions/month",
+        "submissions": "25,000 submissions/month",
         "forms": "Unlimited forms",
         "collaboration": "Advanced collaboration",
         "analytics": "Advanced analytics & exports",
         "support": "24/7 priority support",
         "customDomain": "Custom Domain (Coming Soon)",
         "apiAccess": "API Access (Coming Soon)",
-        "whiteLabel": "White-label (Coming Soon)"
+        "removeBranding": "Remove Dculus branding"
       }
     },
     "priceNotAvailable": "Contact sales",

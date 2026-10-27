@@ -22,12 +22,12 @@ const PLAN_META: Record<string, { tagline: string; planSize: string[]; benefits:
   starter: {
     tagline: 'More responses, more power',
     planSize: ['Unlimited form views', '10,000 submissions / month', '500k AI tokens / month'],
-    benefits: ['Everything in Free', 'Advanced analytics', 'Email support', 'API access (coming soon)'],
+    benefits: ['Everything in Free', 'Advanced analytics', 'Email support', 'Remove Dculus branding', 'API access (coming soon)'],
   },
   advanced: {
     tagline: 'For teams that need scale',
-    planSize: ['Unlimited form views', '100,000 submissions / month', '5M AI tokens / month'],
-    benefits: ['Everything in Starter', 'Priority support', 'Analytics export', 'White-label (coming soon)'],
+    planSize: ['Unlimited form views', '25,000 submissions / month', '5M AI tokens / month'],
+    benefits: ['Everything in Starter', 'Priority support', 'Analytics export', 'Remove Dculus branding'],
   },
 };
 
