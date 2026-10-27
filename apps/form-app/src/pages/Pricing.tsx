@@ -57,6 +57,7 @@ export const Pricing = () => {
         t('plans.starter.features.collaboration'),
         t('plans.starter.features.analytics'),
         t('plans.starter.features.support'),
+        t('plans.starter.features.removeBranding'),
         t('plans.starter.features.customDomain'),
         t('plans.starter.features.apiAccess'),
       ],
@@ -75,7 +76,7 @@ export const Pricing = () => {
         t('plans.advanced.features.support'),
         t('plans.advanced.features.customDomain'),
         t('plans.advanced.features.apiAccess'),
-        t('plans.advanced.features.whiteLabel'),
+        t('plans.advanced.features.removeBranding'),
       ],
     },
   };

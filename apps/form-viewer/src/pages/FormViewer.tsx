@@ -31,6 +31,7 @@ import {
 import SignInGate from '../components/SignInGate';
 import AccessDeniedScreen from '../components/AccessDeniedScreen';
 import RespondentBadge from '../components/RespondentBadge';
+import { PoweredByBadge } from '../components/PoweredByBadge';
 import SaveProgressPrompt from '../components/SaveProgressPrompt';
 import { saveProgressLabels } from '../locales/saveProgress';
 import { signOut } from '../lib/auth-client';
@@ -946,6 +947,8 @@ const FormViewer: React.FC<FormViewerProps> = ({
           resultLink={resultLink}
         />
       )}
+
+      {form.showBranding !== false && <PoweredByBadge embedded={embedded} />}
 
       {/* Re-auth overlay — token expired/revoked mid-fill. Rendered on top of
           the still-mounted FormRenderer (not an early return) so in-progress

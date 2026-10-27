@@ -21,11 +21,11 @@
       "name": "Advanced Plan",
       "features": {
         "unlimitedViews": "Unlimited form views",
-        "submissions": "100,000 submissions per month",
+        "submissions": "25,000 submissions per month",
         "advancedAnalytics": "Advanced analytics",
         "prioritySupport": "24/7 priority support",
         "customIntegrations": "Custom integrations",
-        "whiteLabel": "White-label options"
+        "removeBranding": "Remove Dculus branding"
       }
     },
     "enterprise": {

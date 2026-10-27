@@ -40,14 +40,14 @@
       },
       "advanced": {
         "formViews": "Unlimited form views",
-        "submissions": "100,000 form submissions per month",
+        "submissions": "25,000 form submissions per month",
         "unlimitedForms": "Unlimited forms",
         "collaboration": "Real-time collaboration",
         "analytics": "Advanced analytics + Export",
         "support": "Priority support",
         "customDomain": "Custom Domain (Coming Soon)",
         "apiAccess": "API Access (Coming Soon)",
-        "whiteLabel": "White-label (Coming Soon)"
+        "removeBranding": "Remove Dculus branding"
       }
     }
   },

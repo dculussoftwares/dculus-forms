@@ -51,6 +51,8 @@ export const GET_FORM_BY_SHORT_URL: TypedDocumentNode<any, any> = gql`
       # Set when the form no longer takes new responses but still opens for
       # this respondent's own answers (FORM_CLOSED, MAX_RESPONSES_REACHED).
       closedReason
+      # False on paid plans, which hide the "Powered by Dculus" badge.
+      showBranding
       settings {
         submissionLimits {
           timeWindow {

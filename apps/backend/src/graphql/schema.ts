@@ -256,6 +256,9 @@ export const typeDefs = gql`
     # such as FORM_CLOSED or MAX_RESPONSES_REACHED) but still opens for a
     # signed-in respondent who already responded, so they can see their answers.
     closedReason: String
+    # Whether the public viewer shows the "Powered by Dculus" badge. False on
+    # paid plans (branding removal), true on Free.
+    showBranding: Boolean!
     isPublished: Boolean!
     organization: Organization!
     createdBy: User!

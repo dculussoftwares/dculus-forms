@@ -21,11 +21,11 @@
       "name": "மேம்பட்ட திட்டம்",
       "features": {
         "unlimitedViews": "வரம்பற்ற படிவக் காட்சிகள்",
-        "submissions": "மாதத்திற்கு 100,000 சமர்ப்பிப்புகள்",
+        "submissions": "மாதத்திற்கு 25,000 சமர்ப்பிப்புகள்",
         "advancedAnalytics": "மேம்பட்ட பகுப்பாய்வு",
         "prioritySupport": "24/7 முன்னுரிமை ஆதரவு",
         "customIntegrations": "விருப்ப ஒருங்கிணைப்புகள்",
-        "whiteLabel": "வெள்ளை லேபிள் விருப்பங்கள்"
+        "removeBranding": "Dculus பிராண்டிங்கை நீக்கு"
       }
     },
     "enterprise": {

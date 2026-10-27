@@ -176,12 +176,12 @@ describe('buildPromptCacheOptions', () => {
 describe('AI_CREDIT_LIMITS_FALLBACK', () => {
   beforeEach(() => vi.resetModules());
 
-  it('has exactly free:200, starter:2000, advanced:20000', async () => {
+  it('has exactly free:200, starter:2000, advanced:5000', async () => {
     const { AI_CREDIT_LIMITS_FALLBACK } = await import('../ai.js');
     expect(AI_CREDIT_LIMITS_FALLBACK).toEqual({
       free: 200,
       starter: 2_000,
-      advanced: 20_000,
+      advanced: 5_000,
     });
   });
 });
