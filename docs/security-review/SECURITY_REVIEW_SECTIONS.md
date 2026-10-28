@@ -154,18 +154,18 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 | S05 | general-purpose | done | 0 | 1 | 3 | 5 |
 | S06 | general-purpose | done | 0 | 1 | 5 | 7 |
 | S07 | general-purpose | done | 0 | 2 | 6 | 5 |
-| S08 | | todo | | | | |
+| S08 | general-purpose | done | 0 | 3 | 6 | 5 |
 | S09 | general-purpose | done | 0 | 0 | 4 | 8 |
 | S10 | pdf-template-expert | done | 0 | 0 | 6 | 6 |
 | S11 | response-filter-auditor | done | 0 | 0 | 3 | 6 |
-| S12 | | todo | | | | |
+| S12 | subscription-billing-expert | done | 0 | 2 | 5 | 4 |
 | S13 | general-purpose | done | 0 | 0 | 2 | 5 |
-| S14 | | todo | | | | |
-| S15 | | todo | | | | |
-| S16 | | todo | | | | |
-| S17 | | todo | | | | |
-| S18 | | todo | | | | |
-| S19 | | todo | | | | |
+| S14 | general-purpose | done | 0 | 1 | 8 | 7 |
+| S15 | auth-permission-auditor | done | 0 | 0 | 2 | 5 |
+| S16 | general-purpose | done | 0 | 0 | 1 | 6 |
+| S17 | general-purpose | done | 0 | 0 | 1 | 5 |
+| S18 | general-purpose | done | 0 | 0 | 1 | 4 |
+| S19 | general-purpose | done | 0 | 0 | 1 | 4 |
 | S20 | | todo | | | | |
 | S21 | | todo | | | | |
 | S22 | | todo | | | | |
