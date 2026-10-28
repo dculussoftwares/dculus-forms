@@ -151,13 +151,13 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 | S02 | auth-permission-auditor | done | 0 | 3 | 3 | 4 |
 | S03 | auth-permission-auditor | done | 0 | 1 | 4 | 5 |
 | S04 | general-purpose | done | 0 | 2 | 5 | 3 |
-| S05 | | todo | | | | |
-| S06 | | todo | | | | |
-| S07 | | todo | | | | |
+| S05 | general-purpose | done | 0 | 1 | 3 | 5 |
+| S06 | general-purpose | done | 0 | 1 | 5 | 7 |
+| S07 | general-purpose | done | 0 | 2 | 6 | 5 |
 | S08 | | todo | | | | |
-| S09 | | todo | | | | |
-| S10 | | todo | | | | |
-| S11 | | todo | | | | |
+| S09 | general-purpose | done | 0 | 0 | 4 | 8 |
+| S10 | pdf-template-expert | done | 0 | 0 | 6 | 6 |
+| S11 | response-filter-auditor | done | 0 | 0 | 3 | 6 |
 | S12 | | todo | | | | |
 | S13 | general-purpose | done | 0 | 0 | 2 | 5 |
 | S14 | | todo | | | | |
