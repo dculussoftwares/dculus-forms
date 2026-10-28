@@ -147,10 +147,10 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 
 | Section | Agent | Status | Critical | High | Medium | Low |
 |---------|-------|--------|----------|------|--------|-----|
-| S01 | | todo | | | | |
-| S02 | | todo | | | | |
-| S03 | | todo | | | | |
-| S04 | | todo | | | | |
+| S01 | general-purpose | done | 0 | 1 | 5 | 7 |
+| S02 | auth-permission-auditor | done | 0 | 3 | 3 | 4 |
+| S03 | auth-permission-auditor | done | 0 | 1 | 4 | 5 |
+| S04 | general-purpose | done | 0 | 2 | 5 | 3 |
 | S05 | | todo | | | | |
 | S06 | | todo | | | | |
 | S07 | | todo | | | | |
@@ -159,7 +159,7 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 | S10 | | todo | | | | |
 | S11 | | todo | | | | |
 | S12 | | todo | | | | |
-| S13 | | todo | | | | |
+| S13 | general-purpose | done | 0 | 0 | 2 | 5 |
 | S14 | | todo | | | | |
 | S15 | | todo | | | | |
 | S16 | | todo | | | | |
