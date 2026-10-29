@@ -29,11 +29,13 @@ function isLocalTarget(url: string): boolean {
  * Exported for unit testing.
  */
 export function assertDefaultCredentialsOnlyLocal(
-  email: string,
+  _email: string,
   password: string,
   targetUrls: Array<string | undefined>
 ): void {
-  if (email.toLowerCase() !== PUBLIC_DEFAULT_E2E_EMAIL && password !== PUBLIC_DEFAULT_E2E_EMAIL) {
+  // Only the public default password is the risk; the shared account's email may be reused
+  // on hosted targets as long as it has a private password there.
+  if (password !== PUBLIC_DEFAULT_E2E_EMAIL) {
     return;
   }
   const remote = targetUrls.find((url) => url && !isLocalTarget(url));
