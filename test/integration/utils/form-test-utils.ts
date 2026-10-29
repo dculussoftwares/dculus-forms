@@ -440,12 +440,6 @@ export class FormTestUtils {
             name
             slug
           }
-          createdBy {
-            id
-            name
-            email
-          }
-          responseCount
           createdAt
           updatedAt
           metadata {
