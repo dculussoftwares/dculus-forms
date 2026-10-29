@@ -56,4 +56,12 @@ describe('validateResponseAnswers', () => {
   it('fails closed when the schema is missing', () => {
     expect(() => validateResponseAnswers(null, { name: 'Bob' }, opts)).toThrow(/unavailable/);
   });
+
+  it('accepts a JSON-encoded string schema', () => {
+    expect(validateResponseAnswers(JSON.stringify(schema), { name: 'Bob', extra: 1 }, opts)).toEqual({ name: 'Bob' });
+  });
+
+  it('fails closed when the string schema is not valid JSON', () => {
+    expect(() => validateResponseAnswers('{not json', { name: 'Bob' }, opts)).toThrow(/unavailable/);
+  });
 });

@@ -171,18 +171,30 @@ export function validateResponseAnswers(
   data: Record<string, unknown>,
   options: ValidateAnswersOptions
 ): Record<string, unknown> {
-  if (!rawSchema || typeof rawSchema !== 'object') {
-    throw createGraphQLError('Form schema is unavailable', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+  const unavailable = () =>
+    createGraphQLError('Form schema is unavailable', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+
+  // Some rows hold the schema as a JSON-encoded string rather than a JSON object.
+  let schemaInput: unknown = rawSchema;
+  if (typeof schemaInput === 'string') {
+    try {
+      schemaInput = JSON.parse(schemaInput);
+    } catch {
+      throw unavailable();
+    }
+  }
+  if (!schemaInput || typeof schemaInput !== 'object') {
+    throw unavailable();
   }
 
   let pages: FormPage[];
   let conditions: ReturnType<typeof deserializeFormSchema>['conditions'];
   try {
-    const schema = deserializeFormSchema(rawSchema);
+    const schema = deserializeFormSchema(schemaInput);
     pages = schema.pages ?? [];
     conditions = schema.conditions;
   } catch {
-    throw createGraphQLError('Form schema is unavailable', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+    throw unavailable();
   }
 
   const answerable = new Map<string, { field: AnswerField; pageId: string }>();
