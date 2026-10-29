@@ -68,7 +68,7 @@ describe('env config', () => {
     process.env.PUBLIC_S3_BUCKET_NAME = 'public';
     process.env.PRIVATE_S3_BUCKET_NAME = 'private';
     delete process.env.PUBLIC_S3_CDN_URL;
-    process.env.BETTER_AUTH_SECRET = 'prod-auth-secret';
+    process.env.BETTER_AUTH_SECRET = 'prod-auth-secret-0123456789-abcdefghij';
 
     await expect(import('../env.js')).rejects.toThrow(
       'Missing required environment variable: PUBLIC_S3_CDN_URL'
@@ -83,7 +83,7 @@ describe('env config', () => {
     process.env.PUBLIC_S3_BUCKET_NAME = 'public';
     process.env.PRIVATE_S3_BUCKET_NAME = 'private';
     process.env.PUBLIC_S3_CDN_URL = 'https://cdn.example.com';
-    process.env.BETTER_AUTH_SECRET = 'prod-auth-secret';
+    process.env.BETTER_AUTH_SECRET = 'prod-auth-secret-0123456789-abcdefghij';
     process.env.BETTER_AUTH_URL = 'https://auth.example.com';
     process.env.PORT = '8080';
     process.env.EMAIL_HOST = 'smtp.example.com';
@@ -104,7 +104,7 @@ describe('env config', () => {
     });
     expect(envModule.authConfig).toEqual({
       baseUrl: 'https://auth.example.com',
-      secret: 'prod-auth-secret',
+      secret: 'prod-auth-secret-0123456789-abcdefghij',
     });
     expect(envModule.appConfig).toMatchObject({
       port: 8080,
@@ -118,6 +118,54 @@ describe('env config', () => {
       user: 'mailer',
       password: 'super-secret',
       from: 'no-reply@example.com',
+    });
+  });
+
+  it('rejects a short or placeholder BETTER_AUTH_SECRET in production', async () => {
+    process.env.NODE_ENV = 'production';
+    process.env.PUBLIC_S3_ENDPOINT = 'https://s3.example.com';
+    process.env.PUBLIC_S3_ACCESS_KEY = 'prod-access';
+    process.env.PUBLIC_S3_SECRET_KEY = 'prod-secret';
+    process.env.PUBLIC_S3_BUCKET_NAME = 'public';
+    process.env.PRIVATE_S3_BUCKET_NAME = 'private';
+    process.env.PUBLIC_S3_CDN_URL = 'https://cdn.example.com';
+
+    process.env.BETTER_AUTH_SECRET = 'too-short';
+    await expect(import('../env.js')).rejects.toThrow('at least 32 characters');
+
+    vi.resetModules();
+    process.env.BETTER_AUTH_SECRET = 'test-only-secret-for-unit-tests-not-used-in-production';
+    await expect(import('../env.js')).rejects.toThrow('known placeholder');
+  });
+
+  it('refuses NODE_ENV=test against a non-local auth URL or database', async () => {
+    process.env.NODE_ENV = 'test';
+    delete process.env.BETTER_AUTH_SECRET;
+    process.env.BETTER_AUTH_URL = 'https://forms.example.com';
+    await expect(import('../env.js')).rejects.toThrow('local BETTER_AUTH_URL');
+
+    vi.resetModules();
+    process.env.BETTER_AUTH_URL = 'http://localhost:4000';
+    process.env.DATABASE_URL = 'postgresql://user:pw@db.prod.example.com:5432/app';
+    await expect(import('../env.js')).rejects.toThrow('local DATABASE_URL');
+  });
+
+  it('allows NODE_ENV=test against local services', async () => {
+    process.env.NODE_ENV = 'test';
+    delete process.env.BETTER_AUTH_SECRET;
+    delete process.env.BETTER_AUTH_URL;
+    process.env.DATABASE_URL = 'postgresql://user:pw@127.0.0.1:5543/dculus_forms';
+    await expect(import('../env.js')).resolves.toBeDefined();
+  });
+
+  it('parses reverse-proxy settings', async () => {
+    process.env.NODE_ENV = 'test';
+    process.env.TRUST_PROXY_HOPS = '2';
+    process.env.AUTH_IP_ADDRESS_HEADERS = 'CF-Connecting-IP, x-real-ip';
+    const envModule = await import('../env.js');
+    expect(envModule.proxyConfig).toEqual({
+      trustProxyHops: 2,
+      authIpAddressHeaders: ['cf-connecting-ip', 'x-real-ip'],
     });
   });
 });

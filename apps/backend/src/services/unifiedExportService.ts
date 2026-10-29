@@ -18,6 +18,7 @@ import {
 // removes it at the source.
 import '../plugins/quiz/index.js';
 import { logger } from '../lib/logger.js';
+import { neutralizeFormula } from '../lib/spreadsheetSafety.js';
 
 export type ExportFormat = 'excel' | 'csv';
 
@@ -76,6 +77,21 @@ export interface ExportResult {
   contentType: string;
 }
 
+// Response keys are not guaranteed to match the schema, so unknown keys must not widen the sheet
+// without bound (one column per distinct key is a DoS vector).
+export const MAX_ORPHAN_EXPORT_COLUMNS = 100;
+export const MAX_SCHEMALESS_EXPORT_COLUMNS = 500;
+
+const buildFieldTypeMap = (formSchema: FormSchema): Map<string, FieldType> => {
+  const types = new Map<string, FieldType>();
+  for (const page of formSchema.pages) {
+    for (const field of page.fields) {
+      if (!types.has(field.id)) types.set(field.id, field.type);
+    }
+  }
+  return types;
+};
+
 // Helper function to format values based on field type
 const formatFieldValue = (
   value: any,
@@ -86,11 +102,14 @@ const formatFieldValue = (
 
   // Handle arrays (checkboxes, multi-select)
   if (Array.isArray(value)) {
-    return format === 'csv' ? value.join('; ') : value.join(', ');
+    return format === 'csv'
+      ? escapeCsvCell(neutralizeFormula(value.join('; ')))
+      : value.join(', ');
   }
 
   // Convert to string
   let stringValue = String(value);
+  let isTrustedPhone = false;
 
   // Handle specific field types
   if (fieldType) {
@@ -124,7 +143,10 @@ const formatFieldValue = (
         // Values are stored as a plain E.164 string — export in spaced
         // international format; fall back to the raw value if unparseable.
         const parsed = parsePhoneNumberFromString(stringValue);
-        if (parsed) stringValue = parsed.formatInternational();
+        if (parsed) {
+          stringValue = parsed.formatInternational();
+          isTrustedPhone = true;
+        }
         break;
       }
       default:
@@ -135,6 +157,8 @@ const formatFieldValue = (
 
   // CSV-specific escaping
   if (format === 'csv') {
+    // A parsed phone number is a trusted "+CC ..." string, not respondent text.
+    if (!isTrustedPhone) stringValue = neutralizeFormula(stringValue);
     if (
       stringValue.includes('"') ||
       stringValue.includes(',') ||
@@ -148,8 +172,8 @@ const formatFieldValue = (
   return stringValue;
 };
 
-// Helper function to escape CSV field names
-const escapeCsvFieldName = (fieldName: string): string => {
+// Quotes a CSV cell per RFC 4180 without altering its content.
+const escapeCsvCell = (fieldName: string): string => {
   if (
     fieldName.includes('"') ||
     fieldName.includes(',') ||
@@ -160,6 +184,11 @@ const escapeCsvFieldName = (fieldName: string): string => {
   }
   return fieldName;
 };
+
+// Escapes untrusted CSV text (headers, labels, tags, emails, plugin values): neutralizes spreadsheet
+// formula triggers, then quotes.
+const escapeCsvFieldName = (fieldName: string): string =>
+  escapeCsvCell(neutralizeFormula(fieldName));
 
 // ---------------------------------------------------------------------------
 // Native Quiz gradebook columns (epic #289, Story 12/#301)
@@ -457,6 +486,12 @@ const extractFieldInfo = (
 
     // Convert to array and sort for consistent column order
     orderedFieldIds = Array.from(allFieldIds).sort();
+    if (orderedFieldIds.length > MAX_SCHEMALESS_EXPORT_COLUMNS) {
+      logger.warn(
+        `Unified Export - ${orderedFieldIds.length} distinct response keys; exporting the first ${MAX_SCHEMALESS_EXPORT_COLUMNS}`
+      );
+      orderedFieldIds = orderedFieldIds.slice(0, MAX_SCHEMALESS_EXPORT_COLUMNS);
+    }
 
     // Create a mapping of field ID to a human-readable label
     orderedFieldIds.forEach((fieldId) => {
@@ -509,9 +544,15 @@ const extractFieldInfo = (
     });
 
     // Sorted so a filtered export orders orphan columns the same as a full one.
-    const orphanIds = Array.from(answeredIds)
+    const allOrphanIds = Array.from(answeredIds)
       .filter((id) => !knownIds.has(id))
       .sort();
+    if (allOrphanIds.length > MAX_ORPHAN_EXPORT_COLUMNS) {
+      logger.warn(
+        `Unified Export - ${allOrphanIds.length} unknown response keys; exporting the first ${MAX_ORPHAN_EXPORT_COLUMNS}`
+      );
+    }
+    const orphanIds = allOrphanIds.slice(0, MAX_ORPHAN_EXPORT_COLUMNS);
     orphanIds.forEach((id) => {
       fieldInfo[id] = 'Unknown field (deleted)';
     });
@@ -529,6 +570,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
     formSchema,
     responses
   );
+  const fieldTypes = buildFieldTypeMap(formSchema);
 
   const quizPlan = buildQuizExportPlan(formSchema, responses, data);
 
@@ -575,7 +617,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
     const row: string[] = [];
 
     // Add basic fields
-    row.push(escapeCsvFieldName(response.id));
+    row.push(escapeCsvCell(response.id));
     row.push(
       escapeCsvFieldName(
         new Date(
@@ -624,17 +666,7 @@ const generateCsvContent = (data: UnifiedExportData): string => {
     orderedFieldIds.forEach((fieldId) => {
       const value = response.data[fieldId];
 
-      // Find field type if available from schema
-      let fieldType: FieldType | undefined;
-      if (formSchema.pages.length > 0) {
-        for (const page of formSchema.pages) {
-          const field = page.fields.find((f) => f.id === fieldId);
-          if (field) {
-            fieldType = field.type;
-            break;
-          }
-        }
-      }
+      const fieldType = fieldTypes.get(fieldId);
 
       row.push(formatFieldValue(value, fieldType, 'csv'));
     });
@@ -669,6 +701,7 @@ const generateExcelContent = async (
     formSchema,
     responses
   );
+  const fieldTypes = buildFieldTypeMap(formSchema);
 
   const quizPlan = buildQuizExportPlan(formSchema, responses, data);
 
@@ -766,17 +799,7 @@ const generateExcelContent = async (
     orderedFieldIds.forEach((fieldId) => {
       const value = response.data[fieldId];
 
-      // Find field type if available from schema
-      let fieldType: FieldType | undefined;
-      if (formSchema.pages.length > 0) {
-        for (const page of formSchema.pages) {
-          const field = page.fields.find((f) => f.id === fieldId);
-          if (field) {
-            fieldType = field.type;
-            break;
-          }
-        }
-      }
+      const fieldType = fieldTypes.get(fieldId);
 
       rowData.push(formatFieldValue(value, fieldType, 'excel') || '');
     });

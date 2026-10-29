@@ -11,7 +11,7 @@ root_domain         = "dculus.com"
 
 # Additional custom CORS origins (optional, comma-separated)
 # Frontend URLs are automatically included: https://form-app-dev.dculus.com, etc.
-# Localhost URLs are automatically included for dev/staging environments
+# Localhost origins are not allowed on deployed environments
 cors_origins        = ""
 
 # Resource configuration

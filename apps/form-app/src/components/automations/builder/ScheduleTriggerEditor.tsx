@@ -22,7 +22,7 @@ import { cn } from '@dculus/utils';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useAutomationBuilderStore } from '../../../store/useAutomationBuilderStore';
-import { isValidCronExpression, isValidTimezone } from './scheduleCronValidation';
+import { isCronTooFrequent, isValidCronExpression, isValidTimezone } from './scheduleCronValidation';
 
 /** IANA timezone identifiers, with a hand-rolled fallback for runtimes without Intl.supportedValuesOf. */
 function getAllTimezones(): string[] {
@@ -144,6 +144,7 @@ export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ di
 
   const builtCron = buildCron(preset, time, weekday, dayOfMonth, customCron);
   const cronValid = isValidCronExpression(builtCron);
+  const cronTooFrequent = cronValid && isCronTooFrequent(builtCron);
   const timezoneValid = !timezone || isValidTimezone(timezone);
 
   // The schedule is part of the autosaved draft: every change goes to the store (and from there to
@@ -234,6 +235,11 @@ export const ScheduleTriggerEditor: React.FC<ScheduleTriggerEditorProps> = ({ di
           {!cronValid && customCron.trim().length > 0 && (
             <p className="text-xs" style={{ color: 'var(--tf-error)' }}>
               {t('builder.panel.schedule.invalidCron')}
+            </p>
+          )}
+          {cronTooFrequent && (
+            <p className="text-xs" style={{ color: 'var(--tf-error)' }}>
+              {t('builder.panel.schedule.cronTooFrequent')}
             </p>
           )}
         </div>

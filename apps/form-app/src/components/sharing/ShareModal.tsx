@@ -405,12 +405,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                               value={permission}
                               onValueChange={(value) => handleAddUser(userId, value as PermissionLevel)}
                             >
-                              <SelectTrigger className="w-24">
+                              <SelectTrigger className="w-28">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value={PermissionLevel.VIEWER}>{t('modal.permissions.viewer')}</SelectItem>
                                 <SelectItem value={PermissionLevel.EDITOR}>{t('modal.permissions.editor')}</SelectItem>
+                                <SelectItem value={PermissionLevel.NO_ACCESS}>{t('modal.permissions.noAccess')}</SelectItem>
                               </SelectContent>
                             </Select>
                             <Button
@@ -486,12 +487,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                           value={permission.permission}
                           onValueChange={(value) => handleUpdatePermission(permission.userId, value as PermissionLevel)}
                         >
-                          <SelectTrigger className="w-24">
+                          <SelectTrigger className="w-28">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value={PermissionLevel.VIEWER}>{t('modal.permissions.viewer')}</SelectItem>
                             <SelectItem value={PermissionLevel.EDITOR}>{t('modal.permissions.editor')}</SelectItem>
+                            <SelectItem value={PermissionLevel.NO_ACCESS}>{t('modal.permissions.noAccess')}</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (

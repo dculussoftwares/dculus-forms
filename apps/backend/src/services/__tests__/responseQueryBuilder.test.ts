@@ -6,6 +6,7 @@ import {
   filtersNeedGradeJoin,
   buildJoinClause,
   isMetaFilterFieldId,
+  SQL_SAFE_CAST_PATTERNS,
 } from '../responseQueryBuilder.js';
 
 describe('Response Query Builder', () => {
@@ -1013,3 +1014,40 @@ describe('response meta filters', () => {
   });
 });
 
+
+describe('SQL_SAFE_CAST_PATTERNS (cast guards for respondent-controlled values)', () => {
+  const ymd = new RegExp(SQL_SAFE_CAST_PATTERNS.ymd);
+  const epoch = new RegExp(SQL_SAFE_CAST_PATTERNS.epoch);
+  const numeric = new RegExp(SQL_SAFE_CAST_PATTERNS.numeric);
+
+  it.each([
+    '2024-01-31',
+    '2024-02-29',
+    '2000-02-29',
+    '2023-12-31T23:59:59Z',
+    '2024-06-15T10:30:00.123+05:30',
+    '2024-06-15 10:30',
+    '2024-04-30',
+  ])('accepts castable date %s', (value) => expect(ymd.test(value)).toBe(true));
+
+  it.each([
+    '2024-99-99',
+    '2024-01-01xyz',
+    '2024-02-30',
+    '2023-02-29',
+    '1900-02-29',
+    '2024-04-31',
+    '2024-13-01',
+    '2024-01-01T25:00:00',
+    '2024-01-01T10:00:00junk',
+    '2024-01-01 ',
+  ])('rejects uncastable date %s', (value) => expect(ymd.test(value)).toBe(false));
+
+  it('bounds epoch and numeric digit counts so bigint/numeric casts cannot overflow', () => {
+    expect(epoch.test('1704067200000')).toBe(true);
+    expect(epoch.test('1'.repeat(16))).toBe(false);
+    expect(numeric.test('-12.5')).toBe(true);
+    expect(numeric.test('9'.repeat(31))).toBe(false);
+    expect(numeric.test('1.5abc')).toBe(false);
+  });
+});

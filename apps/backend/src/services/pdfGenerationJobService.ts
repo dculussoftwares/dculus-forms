@@ -33,6 +33,10 @@ const STALLED_THRESHOLD_MS = 5 * 60 * 1000;
 // on the form's total live-response count up front rather than risk a
 // request-path timeout/OOM on a broad or filterless generator.
 const MAX_RESPONSES_PER_RUN = 5000;
+// Runs render in the API process, so cap how many bulk runs (across all forms/orgs) may be active
+// at once; further starts fail fast with a retryable error instead of starving the event loop.
+export const MAX_CONCURRENT_BULK_RUNS = 3;
+let activeBulkRuns = 0;
 
 export const wait = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -119,6 +123,13 @@ export const startPdfGenerationRun = async (
     );
   }
 
+  if (activeBulkRuns >= MAX_CONCURRENT_BULK_RUNS) {
+    throw createGraphQLError(
+      'The server is busy generating other PDFs. Please try again in a few minutes.',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+
   const activeRun = await pdfGeneratorRepository.findActiveRun(generatorId);
   if (activeRun) {
     throw createGraphQLError(
@@ -151,7 +162,10 @@ export const startPdfGenerationRun = async (
     totalCount: matchingResponses.length,
   });
 
-  void runPdfGenerationLoop(run.id, generatorId, matchingResponses);
+  activeBulkRuns += 1;
+  void runPdfGenerationLoop(run.id, generatorId, matchingResponses).finally(() => {
+    activeBulkRuns -= 1;
+  });
 
   return run;
 };

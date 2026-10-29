@@ -122,7 +122,12 @@ async function uploadFormResponseFile(
   const query = new URLSearchParams({ type: 'FormResponse', formId });
   let response: Response;
   try {
-    response = await fetch(`${uploadUrl}?${query.toString()}`, { method: 'POST', body: formData });
+    // Cookies let the backend apply the form's sign-in / email-domain rules to the upload.
+    response = await fetch(`${uploadUrl}?${query.toString()}`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
   } catch {
     throw new Error(
       `Could not upload "${file.name}". Please check your connection and try again.`

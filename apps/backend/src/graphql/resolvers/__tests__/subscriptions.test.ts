@@ -98,10 +98,60 @@ describe('Subscription Resolvers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(chargebeeService.getAvailablePlans).mockResolvedValue([
+      { id: 'starter', prices: [{ id: 'starter-monthly' }] },
+    ] as any);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  describe('Billing authorization (S03-03)', () => {
+    const memberContext = mockContext;
+
+    beforeEach(() => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue({
+        ...mockMember,
+        role: 'member',
+      } as any);
+    });
+
+    it('rejects checkout, portal and enterprise payment for non-owners', async () => {
+      await expect(
+        subscriptionResolvers.Mutation.createCheckoutSession(
+          {},
+          { itemPriceId: 'starter-monthly' },
+          memberContext
+        )
+      ).rejects.toThrow(/only the organization owner/);
+      await expect(
+        subscriptionResolvers.Mutation.createPortalSession({}, {}, memberContext)
+      ).rejects.toThrow(/only the organization owner/);
+      await expect(
+        subscriptionResolvers.Mutation.completeEnterprisePayment({}, {}, memberContext)
+      ).rejects.toThrow(/only the organization owner/);
+
+      expect(chargebeeService.createCheckoutHostedPage).not.toHaveBeenCalled();
+      expect(chargebeeService.createPortalSession).not.toHaveBeenCalled();
+      expect(chargebeeService.getEnterpriseCheckoutUrl).not.toHaveBeenCalled();
+    });
+
+    it('rejects an item price that is not in the public plan catalog', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
+
+      await expect(
+        subscriptionResolvers.Mutation.createCheckoutSession(
+          {},
+          { itemPriceId: 'enterprise-private-price' },
+          mockContext
+        )
+      ).rejects.toThrow('Invalid item price ID');
+      expect(chargebeeService.createCheckoutHostedPage).not.toHaveBeenCalled();
+    });
   });
 
   describe('Query: availablePlans', () => {
@@ -292,7 +342,7 @@ describe('Subscription Resolvers', () => {
           { itemPriceId: 'starter-monthly' },
           mockContext
         )
-      ).rejects.toThrow('Failed to create checkout session: Payment gateway error');
+      ).rejects.toThrow(/^Failed to create checkout session$/);
     });
 
     it('throws when itemPriceId is empty or invalid', async () => {
@@ -529,7 +579,7 @@ describe('Subscription Resolvers', () => {
 
       await expect(
         subscriptionResolvers.Mutation.createPortalSession({}, {}, mockContext)
-      ).rejects.toThrow('Failed to create portal session: Portal access denied');
+      ).rejects.toThrow(/^Failed to create portal session$/);
     });
   });
 

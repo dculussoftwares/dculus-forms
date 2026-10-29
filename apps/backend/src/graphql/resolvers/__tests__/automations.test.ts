@@ -8,6 +8,7 @@ import * as automationService from '../../../services/automationService.js';
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../services/automationService.js');
+vi.mock('../../../lib/audit.js', () => ({ audit: vi.fn() }));
 
 describe('Automations Resolvers', () => {
   const mockContext = {
@@ -375,6 +376,59 @@ describe('Automations Resolvers', () => {
 
       expect(automationService.setAutomationStatus).toHaveBeenCalledWith(mockAutomation, 'ACTIVE');
       expect(result).toEqual({ ...updated, _revealSecrets: false });
+    });
+
+    describe('off-platform delivery needs OWNER (S08-05)', () => {
+      const webhookGraph = {
+        nodes: [
+          { id: 'trigger-1', type: 'trigger', data: { triggerType: 'form.submitted' } },
+          { id: 'hook', type: 'action', data: { actionType: 'webhook', config: { url: 'https://example.com' } } },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [],
+      };
+
+      it('blocks an EDITOR from activating, publishing or editing the live graph of a webhook automation', async () => {
+        grantAccess('EDITOR');
+        const automation = { ...mockAutomation, graph: webhookGraph, draftGraph: webhookGraph };
+        vi.mocked(automationService.getAutomationById).mockResolvedValue(automation as any);
+
+        await expect(
+          automationsResolvers.Mutation.setAutomationStatus({}, { id: 'automation-123', status: 'ACTIVE' }, mockContext)
+        ).rejects.toThrow(/OWNER access/);
+        await expect(
+          automationsResolvers.Mutation.publishAutomation({}, { id: 'automation-123', baseRevision: 1 }, mockContext)
+        ).rejects.toThrow(/OWNER access/);
+        await expect(
+          automationsResolvers.Mutation.updateAutomation({}, { id: 'automation-123', graph: mockGraph }, mockContext)
+        ).rejects.toThrow(/OWNER access/);
+
+        expect(automationService.setAutomationStatus).not.toHaveBeenCalled();
+        expect(automationService.publishAutomation).not.toHaveBeenCalled();
+        expect(automationService.updateAutomation).not.toHaveBeenCalled();
+      });
+
+      it('lets an EDITOR pause it and activate automations with no off-platform delivery', async () => {
+        grantAccess('EDITOR');
+        vi.mocked(automationService.getAutomationById).mockResolvedValue({ ...mockAutomation, graph: webhookGraph } as any);
+        vi.mocked(automationService.setAutomationStatus).mockResolvedValue(mockAutomation as any);
+        await automationsResolvers.Mutation.setAutomationStatus({}, { id: 'automation-123', status: 'PAUSED' }, mockContext);
+        expect(automationService.setAutomationStatus).toHaveBeenCalledTimes(1);
+
+        vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
+        await automationsResolvers.Mutation.setAutomationStatus({}, { id: 'automation-123', status: 'ACTIVE' }, mockContext);
+        expect(automationService.setAutomationStatus).toHaveBeenCalledTimes(2);
+      });
+
+      it('lets an OWNER activate a webhook automation', async () => {
+        grantAccess('OWNER');
+        vi.mocked(automationService.getAutomationById).mockResolvedValue({ ...mockAutomation, graph: webhookGraph } as any);
+        vi.mocked(automationService.setAutomationStatus).mockResolvedValue(mockAutomation as any);
+
+        await automationsResolvers.Mutation.setAutomationStatus({}, { id: 'automation-123', status: 'ACTIVE' }, mockContext);
+
+        expect(automationService.setAutomationStatus).toHaveBeenCalled();
+      });
     });
 
     it('setAutomationStatus: denies without EDITOR+ access', async () => {

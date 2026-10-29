@@ -34,21 +34,34 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { edgeGeolocationMiddleware } from './middleware/edge-geolocation.js';
 import { createBetterAuthContext } from './middleware/better-auth-middleware.js';
 import { prisma } from './lib/prisma.js';
-import { createHocuspocusServer } from './services/hocuspocus.js';
-import { appConfig } from './lib/env.js';
+import {
+  createHocuspocusServer,
+  COLLAB_MAX_WS_PAYLOAD_BYTES,
+} from './services/hocuspocus.js';
+import { appConfig, proxyConfig } from './lib/env.js';
 import { initializePluginSystem } from './plugins/index.js';
 import { initializeSubscriptionSystem } from './subscriptions/index.js';
 import { initializeAutomationEngine, shutdownAutomationEngine } from './services/automation/engine.js';
 import { initializeAutomationTriggers, initializeAutomationScheduleTrigger } from './services/automation/triggerService.js';
 import { startPeriodicCleanup, tempFilesMockStore } from './services/temporaryFileService.js';
 import { cleanupOldAnalytics } from './services/analyticsService.js';
+import { runDataRetention } from './services/dataRetentionService.js';
 import { deleteExpiredDrafts } from './services/responseDraftService.js';
 import { logger } from './lib/logger.js';
-import { deriveGraphQLErrorCode } from './lib/graphqlErrors.js';
+import { deriveGraphQLErrorCode, sanitizeFormattedError } from './lib/graphqlErrors.js';
+import { randomUUID } from 'node:crypto';
+import { unwrapResolverError } from '@apollo/server/errors';
 
 const app = express();
 const httpServer = createServer(app);
 const PORT = appConfig.port;
+
+// Without this, req.ip is the reverse proxy's address and every visitor shares
+// one rate-limit bucket. Set TRUST_PROXY_HOPS to the exact number of proxies in
+// front of the backend so req.ip is the real client address.
+if (proxyConfig.trustProxyHops !== undefined) {
+  app.set('trust proxy', proxyConfig.trustProxyHops);
+}
 
 // Holds the graphql-ws dispose function so the shutdown handler can close it cleanly
 let disposeGqlWs: (() => void | Promise<void>) | undefined;
@@ -135,9 +148,11 @@ app.use(
 // Rate limiters — disabled in test environments so integration/E2E suites are not throttled
 const isTestEnv = appConfig.nodeEnv === 'test';
 
+// With no trusted-proxy hop count configured every visitor shares one bucket, so
+// the limit has to stay high; once req.ip is the real client it can be tight.
 const authLimiter = rateLimit({
   windowMs: 60_000,
-  max: isTestEnv ? 10_000 : 5000,
+  max: isTestEnv ? 10_000 : proxyConfig.trustProxyHops !== undefined ? 300 : 5000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: () => isTestEnv,
@@ -215,18 +230,28 @@ app.get('/respondent-oauth-callback', authLimiter, async (req, res) => {
   const formViewerUrl = process.env.FORM_VIEWER_URL || 'http://localhost:5173';
   const requestedReturnTo = req.query.returnTo;
   const returnTo = typeof requestedReturnTo === 'string' && isSafeReturnPath(requestedReturnTo) ? requestedReturnTo : '/';
+  // Echoed back so form-viewer can check the sign-in was started in the same browser tab.
+  const requestedNonce = req.query.nonce;
+  const nonceParam =
+    typeof requestedNonce === 'string' && /^[A-Za-z0-9_-]{22,128}$/.test(requestedNonce)
+      ? `&nonce=${encodeURIComponent(requestedNonce)}`
+      : '';
 
   try {
     const result = await auth.api.generateOneTimeToken({
       headers: fromNodeHeaders(req.headers),
     });
-    const redirectUrl = `${formViewerUrl}/auth/callback?ott=${encodeURIComponent(result.token)}&returnTo=${encodeURIComponent(returnTo)}`;
+    const redirectUrl = `${formViewerUrl}/auth/callback?ott=${encodeURIComponent(result.token)}&returnTo=${encodeURIComponent(returnTo)}${nonceParam}`;
     res.redirect(redirectUrl);
   } catch (error) {
     logger.error('Failed to generate one-time token for respondent OAuth callback:', error);
     res.redirect(`${formViewerUrl}/auth/callback?error=sign_in_failed&returnTo=${encodeURIComponent(returnTo)}`);
   }
 });
+
+// Rate-limit /graphql before any body is buffered or parsed (and before the
+// session lookup below), so oversized requests are throttled first.
+app.use('/graphql', graphqlLimiter);
 
 // Apply express.json() AFTER Better Auth handler
 // Callers without a valid session (public form viewer, anonymous attackers) get a
@@ -332,24 +357,29 @@ const server = new ApolloServer({
         })]
       : [ApolloServerPluginLandingPageDisabled()]),
   ],
+  // Stack traces are never sent to clients, in any environment (Apollo adds them
+  // by default unless NODE_ENV is exactly production/test).
+  includeStacktraceInErrorResponses: false,
   formatError: (formattedError, error) => {
     const code = deriveGraphQLErrorCode(formattedError);
-    const extensions = {
-      ...formattedError.extensions,
-      code,
-    };
+    const requestId = randomUUID();
 
     logger.error('GraphQL Error:', {
       message: formattedError.message,
       path: formattedError.path,
       code,
+      requestId,
       originalError: error,
     });
 
-    return {
-      ...formattedError,
-      extensions,
-    };
+    return sanitizeFormattedError(
+      {
+        ...formattedError,
+        extensions: { ...formattedError.extensions, code },
+      },
+      unwrapResolverError(error),
+      requestId
+    );
   },
 });
 
@@ -387,7 +417,6 @@ async function startServer() {
   const { default: graphqlUploadExpress } = await import(
     'graphql-upload/graphqlUploadExpress.mjs'
   );
-  app.use('/graphql', graphqlLimiter);
   app.use(
     '/graphql',
     graphqlUploadExpress({ maxFileSize: 5000000, maxFiles: 10 })
@@ -425,7 +454,7 @@ async function startServer() {
   // "Invalid frame header" errors on the client side.
   const { WebSocketServer } = await import('ws');
 
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({ noServer: true, maxPayload: COLLAB_MAX_WS_PAYLOAD_BYTES });
   wss.on('connection', (ws, request) => {
     logger.info('🔌 WebSocket connection established');
     // v4 handleConnection expects a Fetch API Request; bridge from Node IncomingMessage
@@ -512,6 +541,7 @@ async function startServer() {
     setInterval(() => {
       cleanupOldAnalytics().catch(err => logger.warn('Analytics cleanup failed:', err));
       deleteExpiredDrafts().catch(err => logger.warn('Response draft cleanup failed:', err));
+      runDataRetention().catch(err => logger.warn('Data retention job failed:', err));
     }, 24 * 60 * 60 * 1000).unref(); // .unref() so it doesn't prevent process exit
   });
 }

@@ -1,11 +1,16 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { createAuthMiddleware, getSessionFromCtx, isAPIError } from 'better-auth/api';
 import { admin, bearer, emailOTP, haveIBeenPwned, magicLink, oneTimeToken, organization } from 'better-auth/plugins';
-import { adminAc } from 'better-auth/plugins/admin/access';
 import { prisma } from './prisma.js';
-import { authConfig, googleConfig } from './env.js';
+import { authConfig, googleConfig, proxyConfig } from './env.js';
+import { authAdminRoles, authRateLimitRules } from './authAccess.js';
 import { logger } from '../lib/logger.js';
+import { audit } from './audit.js';
+import { buildAuthAuditEvent, isAuditedAuthPath } from './authAudit.js';
 import { assertUserOwnsNoForms } from './userDeletionGuard.js';
+import { anonymizeUserData } from './userDataErasure.js';
+import { checkInvitationEmailLimit, recordInvitationEmail } from './invitationRateLimit.js';
 import {
   sendInvitationEmail,
   sendMagicLinkEmail,
@@ -66,6 +71,12 @@ export const auth = betterAuth({
     },
   },
 
+  account: {
+    // Social-login access/refresh tokens are encrypted with the auth secret.
+    // Rows stored before this was enabled are still read as-is.
+    encryptOAuthTokens: true,
+  },
+
   ...(googleConfig.clientId && googleConfig.clientSecret
     ? {
         socialProviders: {
@@ -86,15 +97,34 @@ export const auth = betterAuth({
     oneTimeToken(),
     organization({
       allowUserToCreateOrganization: true,
+      // Deleting an organization cascades every form, response and subscription row
+      // while billing keeps running and nothing is audited. No client uses the
+      // endpoint, so it stays off until an audited, billing-aware flow exists.
+      disableOrganizationDeletion: true,
       organizationLimit: process.env.NODE_ENV === 'test' ? 100 : 1, // Allow multiple orgs in test environment
       creatorRole: 'owner',
       membershipLimit: 100,
+      // Pending invitations per organization (library default is 100).
+      invitationLimit: 50,
       sendInvitationEmail: async ({
         email,
         invitation,
         organization,
         inviter,
       }) => {
+        // S24-04: cooldown and caps so the invite endpoint cannot be used as a mail relay. better-auth
+        // swallows errors thrown here, so an exceeded limit silently skips the email (resend path).
+        const limitKey = {
+          recipientEmail: email,
+          organizationId: organization.id,
+          inviterId: inviter.user.id,
+        };
+        const exceeded = checkInvitationEmailLimit(limitKey);
+        if (exceeded) {
+          logger.warn(`Invitation email suppressed (${exceeded}) for organization ${organization.id}`);
+          return;
+        }
+        recordInvitationEmail(limitKey);
         await sendInvitationEmail({
           to: email,
           invitationId: invitation.id,
@@ -104,6 +134,20 @@ export const auth = betterAuth({
       },
       invitationExpiresIn: 60 * 60 * 24 * 2, // 2 days
       organizationHooks: {
+        // Reject new invitations that exceed the abuse limits with a visible error.
+        beforeCreateInvitation: async ({ invitation, organization }: any) => {
+          const exceeded = checkInvitationEmailLimit({
+            recipientEmail: invitation.email,
+            organizationId: organization.id,
+            inviterId: invitation.inviterId,
+          });
+          if (exceeded) {
+            const { APIError } = await import('better-auth/api');
+            throw new APIError('TOO_MANY_REQUESTS', {
+              message: 'Too many invitations sent. Please try again later.',
+            });
+          }
+        },
         afterCreateOrganization: async ({ organization, user }: any) => {
           // Update active sessions with the new organizationId
           try {
@@ -125,10 +169,8 @@ export const auth = betterAuth({
     admin({
       defaultRole: 'user',
       adminRoles: ['admin', 'superAdmin'],
-      roles: {
-        admin: adminAc,
-        superAdmin: adminAc, // superAdmin inherits full admin permissions
-      },
+      // Only superAdmin may use set-role / set-password / ban / delete.
+      roles: authAdminRoles,
     }),
     emailOTP({
       otpLength: 6,
@@ -166,7 +208,19 @@ export const auth = betterAuth({
   // P2-10: Explicit cookie security flags — httpOnly prevents XSS access,
   // secure ensures cookies are only sent over HTTPS in production, and
   // sameSite=lax guards against CSRF while allowing top-level navigations.
+  // Explicitly on outside test: better-auth otherwise only enables its limiter
+  // when NODE_ENV === 'production', leaving dev/staging unthrottled.
+  rateLimit: {
+    enabled: process.env.NODE_ENV !== 'test',
+    customRules: authRateLimitRules,
+  },
   advanced: {
+    // The client IP keys the rate limiter. Set AUTH_IP_ADDRESS_HEADERS to the
+    // header the edge overwrites (e.g. cf-connecting-ip); otherwise the
+    // leftmost, client-spoofable x-forwarded-for value is used.
+    ...(proxyConfig.authIpAddressHeaders
+      ? { ipAddress: { ipAddressHeaders: proxyConfig.authIpAddressHeaders } }
+      : {}),
     crossSubDomainCookies: {
       enabled: false,
     },
@@ -180,6 +234,35 @@ export const auth = betterAuth({
       },
     },
   },
+  hooks: {
+    // S14-03: privileged admin/organization actions leave an audit trail. Failed
+    // calls are skipped, and audit() is non-fatal so it never breaks the request.
+    after: createAuthMiddleware(async (ctx) => {
+      if (!isAuditedAuthPath(ctx.path)) return;
+      const returned = ctx.context.returned as { user?: { id?: string } } | undefined;
+      if (returned instanceof Error || isAPIError(returned)) return;
+      try {
+        const session = ctx.context.session ?? (await getSessionFromCtx(ctx));
+        const event = buildAuthAuditEvent(ctx.path, ctx.body, {
+          actorId: session?.user?.id,
+          sessionOrganizationId: (session?.session as { activeOrganizationId?: string | null } | undefined)
+            ?.activeOrganizationId,
+          returnedId: typeof returned?.user?.id === 'string' ? returned.user.id : undefined,
+        });
+        if (!event) return;
+        await audit(
+          event.action,
+          event.resourceType,
+          event.resourceId,
+          session?.user?.id,
+          event.metadata,
+          event.organizationId
+        );
+      } catch (error) {
+        logger.warn('Auth audit hook failed (non-fatal):', error);
+      }
+    }),
+  },
   databaseHooks: {
     user: {
       delete: {
@@ -187,6 +270,8 @@ export const auth = betterAuth({
         // response collected through them) with it.
         before: async (user) => {
           await assertUserOwnsNoForms(user.id);
+          // S24-01: the SET NULL foreign keys fire at deletion, so identity must be detached first.
+          await anonymizeUserData(user.id);
         },
         // P2-09: GDPR compliance — null out PII in edit history when a user is
         // deleted so personal data (IP address, user agent) is no longer retained

@@ -29,7 +29,9 @@ export const formFileResolvers = {
           throw createGraphQLError('Access denied: You do not have permission to view files for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
         }
 
-        const ALLOWED_FILE_TYPES = new Set(['FormBackground', 'FormResponse', 'FormTemplate', 'UserAvatar', 'OrganizationLogo']);
+        // Respondent files are browsed only through the live-response catalog (responseFiles);
+        // this listing also holds rows from deleted responses and abandoned uploads.
+        const ALLOWED_FILE_TYPES = new Set(['FormBackground', 'FormTemplate', 'UserAvatar', 'OrganizationLogo']);
         if (type && !ALLOWED_FILE_TYPES.has(type)) {
           throw createGraphQLError(`Invalid file type filter: ${type}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }

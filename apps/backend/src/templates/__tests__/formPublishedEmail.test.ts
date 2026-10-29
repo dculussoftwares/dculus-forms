@@ -127,7 +127,21 @@ describe('Form Published Email Template', () => {
 
       const html = generateFormPublishedHtml(data);
 
-      expect(html).toContain('Form with "Quotes" & Symbols');
+      expect(html).toContain('Form with &quot;Quotes&quot; &amp; Symbols');
+    });
+
+    it('neutralises markup in owner name, form title and description', () => {
+      const html = generateFormPublishedHtml({
+        ownerName: '<b>owner</b>',
+        formTitle: '<img src="https://evil.example/p.gif">',
+        formDescription: '<a href="https://evil.example">click</a>',
+        formUrl: 'https://dculus.com/f/abc',
+      });
+
+      expect(html).not.toContain('<img src="https://evil.example');
+      expect(html).not.toContain('<a href="https://evil.example"');
+      expect(html).not.toContain('<b>owner</b>');
+      expect(html).toContain('&lt;img src=&quot;https://evil.example/p.gif&quot;&gt;');
     });
 
     it('should handle very long form URLs', () => {

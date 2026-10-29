@@ -2,10 +2,12 @@ import crypto from 'crypto';
 import express, { Router } from 'express';
 import { logger } from '../lib/logger.js';
 import { chargebeeConfig } from '../lib/env.js';
+import { webhookEventRepository } from '../repositories/webhookEventRepository.js';
 import {
   syncSubscriptionFromWebhook,
   handleSubscriptionRenewal,
   handlePaymentFailed,
+  handleCustomerDeleted,
 } from '../services/chargebeeService.js';
 
 const router: Router = express.Router();
@@ -34,7 +36,7 @@ function timingSafeStringEqual(a: string, b: string): boolean {
  * Chargebee Webhook Handler
  *
  * Handles webhook events from Chargebee
- * Events: subscription_created, subscription_changed, subscription_cancelled, subscription_renewed
+ * Events: subscription lifecycle (created/changed/renewed/cancelled/paused/resumed/deleted), customer_deleted, payment_succeeded/failed
  */
 
 router.post('/webhooks/chargebee', async (req, res) => {
@@ -70,77 +72,96 @@ router.post('/webhooks/chargebee', async (req, res) => {
       customerId: event.content?.subscription?.customer_id ?? event.content?.customer?.id,
     });
 
-    // Handle different event types
-    switch (event.event_type) {
-      case 'subscription_created':
-      case 'subscription_started':
-        // New subscription created — may intentionally replace the stored one
-        if (event.content?.subscription) {
-          await syncSubscriptionFromWebhook(event.content.subscription, { allowTakeover: true });
-        }
-        break;
-
-      case 'subscription_changed':
-      case 'subscription_activated':
-        // Subscription plan changed or reactivated
-        if (event.content?.subscription) {
-          await syncSubscriptionFromWebhook(event.content.subscription);
-        }
-        break;
-
-      case 'subscription_renewed':
-        // Subscription renewed (new billing period)
-        if (event.content?.subscription) {
-          await syncSubscriptionFromWebhook(event.content.subscription);
-          await handleSubscriptionRenewal(event.content.subscription);
-        }
-        break;
-
-      case 'subscription_cancelled':
-      case 'subscription_cancelled_scheduled':
-        // Subscription cancelled
-        if (event.content?.subscription) {
-          await syncSubscriptionFromWebhook(event.content.subscription);
-        }
-        break;
-
-      case 'subscription_paused':
-        // Subscription paused
-        if (event.content?.subscription) {
-          await syncSubscriptionFromWebhook(event.content.subscription);
-        }
-        break;
-
-      case 'subscription_reactivated':
-        // Subscription reactivated after cancellation
-        if (event.content?.subscription) {
-          await syncSubscriptionFromWebhook(event.content.subscription);
-        }
-        break;
-
-      case 'payment_succeeded':
-        // Sync subscription to clear any past_due status set by a prior payment_failed event
-        if (event.content?.subscription) {
-          await syncSubscriptionFromWebhook(event.content.subscription);
-        }
-        break;
-
-      case 'payment_failed':
-        logger.warn('[Chargebee Webhook] Payment failed for subscription');
-        await handlePaymentFailed(event);
-        break;
-
-      default:
-        logger.info('[Chargebee Webhook] Unhandled event type:', event.event_type);
+    // At-least-once delivery: skip an event id we already handled. The claim is
+    // released on failure so Chargebee's retry is processed.
+    const eventId: string | undefined = typeof event.id === 'string' && event.id ? event.id : undefined;
+    if (eventId && !(await webhookEventRepository.claim(eventId, String(event.event_type)))) {
+      logger.info('[Chargebee Webhook] Duplicate event ignored:', event.event_type, { eventId });
+      return res.status(200).json({ received: true, duplicate: true });
     }
 
-    // Always respond with 200 to acknowledge receipt
+    try {
+      await processEvent(event);
+    } catch (processingError) {
+      if (eventId) {
+        await webhookEventRepository.release(eventId).catch((releaseError) => {
+          logger.error('[Chargebee Webhook] Failed to release event claim:', releaseError);
+        });
+      }
+      throw processingError;
+    }
+
     res.status(200).json({ received: true });
   } catch (error: any) {
     logger.error('[Chargebee Webhook] Error processing webhook:', error);
-    // Still return 200 to prevent retries for errors we can't fix
-    res.status(200).json({ received: true, error: error.message });
+    // Non-2xx so Chargebee retries transient failures instead of dropping the event.
+    res.status(500).json({ received: false, error: error.message });
   }
 });
+
+async function processEvent(event: any): Promise<void> {
+  const subscription = event.content?.subscription;
+  // Chargebee `occurred_at` is epoch seconds; used to ignore reordered/late events.
+  const occurredAt =
+    typeof event.occurred_at === 'number' ? new Date(event.occurred_at * 1000) : undefined;
+
+  switch (event.event_type) {
+    case 'subscription_created':
+    case 'subscription_started':
+      // New subscription created — may intentionally replace the stored one
+      if (subscription) {
+        await syncSubscriptionFromWebhook(subscription, { allowTakeover: true, occurredAt });
+      }
+      break;
+
+    // A scheduled cancellation keeps the subscription active until term end
+    case 'subscription_changed':
+    case 'subscription_activated':
+    case 'subscription_reactivated':
+    case 'subscription_resumed':
+    case 'subscription_scheduled_cancellation_removed':
+    case 'subscription_cancellation_scheduled':
+    case 'subscription_cancelled':
+    case 'subscription_paused':
+      if (subscription) {
+        await syncSubscriptionFromWebhook(subscription, { occurredAt });
+      }
+      break;
+
+    case 'subscription_renewed':
+      // Renewal runs first: it compares the new term against the stored period,
+      // which the sync below then overwrites.
+      if (subscription) {
+        await handleSubscriptionRenewal(subscription, { occurredAt });
+        await syncSubscriptionFromWebhook(subscription, { occurredAt });
+      }
+      break;
+
+    case 'subscription_deleted':
+      if (subscription) {
+        await syncSubscriptionFromWebhook(subscription, { occurredAt, forceStatus: 'cancelled' });
+      }
+      break;
+
+    case 'customer_deleted':
+      await handleCustomerDeleted(event, { occurredAt });
+      break;
+
+    case 'payment_succeeded':
+      // The only event that proves dunning ended: may clear a past_due status
+      if (subscription) {
+        await syncSubscriptionFromWebhook(subscription, { occurredAt, clearPastDue: true });
+      }
+      break;
+
+    case 'payment_failed':
+      logger.warn('[Chargebee Webhook] Payment failed for subscription');
+      await handlePaymentFailed(event, { occurredAt });
+      break;
+
+    default:
+      logger.info('[Chargebee Webhook] Unhandled event type:', event.event_type);
+  }
+}
 
 export { router as chargebeeWebhookRouter };

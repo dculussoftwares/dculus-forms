@@ -4,6 +4,10 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { toastError } from '@dculus/ui';
+import { useTranslation } from './useTranslation';
+
+// Mirrors the backend's MAX_CHAT_MESSAGE_CHARS (routes/aiChat.ts).
+export const MAX_CHAT_MESSAGE_CHARS = 4000;
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
 import {
   LIST_AI_CHAT_CONVERSATIONS,
@@ -53,6 +57,7 @@ export function useAIChat({
    * need to change to accept. See ticket #232. */
   builderContext?: AskAIBuilderContext;
 }) {
+  const { t } = useTranslation('aiEditDrawer');
   const store = useFormBuilderStore();
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const { canUndo, beginBatch, clearBatch, undo, getUndoStackDepth } = useYjsUndoManager();
@@ -136,7 +141,16 @@ export function useAIChat({
       } catch {
         // raw was plain text — use as-is
       }
-      const isLimit = displayMsg.toLowerCase().includes('token limit');
+      const lowered = displayMsg.toLowerCase();
+      if (lowered.includes('message is too long')) {
+        toastError(t('genericErrorTitle'), t('messageTooLongError', { values: { max: MAX_CHAT_MESSAGE_CHARS } }));
+        return;
+      }
+      if (lowered.includes('too many ai requests')) {
+        toastError(t('genericErrorTitle'), t('tooManyRequestsError'));
+        return;
+      }
+      const isLimit = lowered.includes('token limit');
       toastError(
         isLimit ? 'AI Token Limit Reached' : 'AI Error',
         isLimit ? displayMsg : 'AI processing failed. Please try again.'

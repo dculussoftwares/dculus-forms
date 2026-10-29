@@ -566,7 +566,7 @@ describe('Chargebee Service', () => {
       );
     });
 
-    it('should map non_renewing status to cancelled', async () => {
+    it('keeps a non_renewing (scheduled cancellation) subscription active until term end', async () => {
       const subscriptionData = {
         id: 'sub_101',
         customer_id: 'org_org-101',
@@ -583,10 +583,90 @@ describe('Chargebee Service', () => {
       expect(subscriptionRepository.upsertForOrganization).toHaveBeenCalledWith(
         'org-101',
         expect.objectContaining({
-          status: 'cancelled',
+          status: 'active',
         }),
         expect.any(Object)
       );
+    });
+
+    describe('past_due, ordering and forced status', () => {
+      const base = {
+        id: 'sub_pd',
+        customer_id: 'org_org-pd',
+        status: 'active',
+        subscription_items: [{ item_price_id: 'starter-usd-monthly' }],
+        current_term_start: 1704067200,
+        current_term_end: 1706745600,
+      };
+      const existingRow = (extra: Record<string, unknown> = {}) =>
+        ({
+          chargebeeSubscriptionId: 'sub_pd',
+          planId: 'starter',
+          status: 'past_due',
+          currentPeriodStart: new Date(1704067200 * 1000),
+          ...extra,
+        }) as any;
+      const writtenStatus = () =>
+        (vi.mocked(subscriptionRepository.upsertForOrganization).mock.calls[0][1] as any).status;
+
+      beforeEach(() => {
+        vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+      });
+
+      it('does not lift past_due on a generic sync while dues are outstanding', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(existingRow());
+        await syncSubscriptionFromWebhook({ ...base, due_invoices_count: 1 });
+        expect(writtenStatus()).toBe('past_due');
+      });
+
+      it('does not lift past_due when Chargebee reports no due-invoice information', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(existingRow());
+        await syncSubscriptionFromWebhook(base);
+        expect(writtenStatus()).toBe('past_due');
+      });
+
+      it('clears past_due on payment_succeeded', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(existingRow());
+        await syncSubscriptionFromWebhook(base, { clearPastDue: true });
+        expect(writtenStatus()).toBe('active');
+      });
+
+      it('clears past_due when Chargebee reports no outstanding dues', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(existingRow());
+        await syncSubscriptionFromWebhook({ ...base, due_invoices_count: 0 });
+        expect(writtenStatus()).toBe('active');
+      });
+
+      it('still lets a cancellation replace past_due', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(existingRow());
+        await syncSubscriptionFromWebhook({ ...base, status: 'cancelled' });
+        expect(writtenStatus()).toBe('cancelled');
+      });
+
+      it('ignores an event older than the last applied one', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(
+          existingRow({ status: 'active', lastWebhookEventAt: new Date(2000 * 1000) })
+        );
+        await syncSubscriptionFromWebhook(base, { occurredAt: new Date(1000 * 1000) });
+        expect(subscriptionRepository.upsertForOrganization).not.toHaveBeenCalled();
+      });
+
+      it('records occurredAt as the last applied event', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(
+          existingRow({ status: 'active', lastWebhookEventAt: new Date(1000 * 1000) })
+        );
+        const occurredAt = new Date(2000 * 1000);
+        await syncSubscriptionFromWebhook(base, { occurredAt });
+        expect(vi.mocked(subscriptionRepository.upsertForOrganization).mock.calls[0][1]).toMatchObject({
+          lastWebhookEventAt: occurredAt,
+        });
+      });
+
+      it('applies forceStatus (subscription_deleted)', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(existingRow({ status: 'active' }));
+        await syncSubscriptionFromWebhook(base, { forceStatus: 'cancelled' });
+        expect(writtenStatus()).toBe('cancelled');
+      });
     });
 
     it('should recognize the enterprise plan and preserve existing limits instead of overwriting from the catalog', async () => {
@@ -1066,13 +1146,19 @@ describe('Chargebee Service', () => {
   });
 
   describe('handleSubscriptionRenewal', () => {
-    it('should reset usage counters on renewal', async () => {
-      const subscriptionData = {
-        customer_id: 'org_org-123',
-        current_term_start: 1704067200,
-        current_term_end: 1706745600,
-      };
+    const subscriptionData = {
+      customer_id: 'org_org-123',
+      current_term_start: 1704067200,
+      current_term_end: 1706745600,
+    };
+    const storedRow = (periodStartSec: number, extra: Record<string, unknown> = {}) =>
+      ({ currentPeriodStart: new Date(periodStartSec * 1000), ...extra }) as any;
 
+    beforeEach(() => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(storedRow(1701388800));
+    });
+
+    it('should reset usage counters on renewal', async () => {
       vi.mocked(resetUsageCounters).mockResolvedValue(undefined);
 
       await handleSubscriptionRenewal(subscriptionData);
@@ -1084,13 +1170,33 @@ describe('Chargebee Service', () => {
       );
     });
 
-    it('should invalidate the AI budget cache on renewal, so a mid-cycle upgrade limit or new-period reset is not masked by a stale cached result', async () => {
-      const subscriptionData = {
-        customer_id: 'org_org-123',
-        current_term_start: 1704067200,
-        current_term_end: 1706745600,
-      };
+    it('keeps usage when the renewal does not advance the stored billing period (duplicate/late event)', async () => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(storedRow(1704067200));
 
+      await handleSubscriptionRenewal(subscriptionData);
+
+      expect(resetUsageCounters).not.toHaveBeenCalled();
+    });
+
+    it('ignores a renewal older than the last applied event', async () => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(
+        storedRow(1701388800, { lastWebhookEventAt: new Date(2000 * 1000) })
+      );
+
+      await handleSubscriptionRenewal(subscriptionData, { occurredAt: new Date(1000 * 1000) });
+
+      expect(resetUsageCounters).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when no subscription row exists yet (the sync creates it)', async () => {
+      vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(null);
+
+      await handleSubscriptionRenewal(subscriptionData);
+
+      expect(resetUsageCounters).not.toHaveBeenCalled();
+    });
+
+    it('should invalidate the AI budget cache on renewal, so a mid-cycle upgrade limit or new-period reset is not masked by a stale cached result', async () => {
       vi.mocked(resetUsageCounters).mockResolvedValue(undefined);
 
       await handleSubscriptionRenewal(subscriptionData);
@@ -1102,13 +1208,7 @@ describe('Chargebee Service', () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(resetUsageCounters).mockRejectedValue(new Error('Reset failed'));
 
-      await expect(
-        handleSubscriptionRenewal({
-          customer_id: 'org_org-123',
-          current_term_start: 1704067200,
-          current_term_end: 1706745600,
-        })
-      ).rejects.toThrow('Reset failed');
+      await expect(handleSubscriptionRenewal(subscriptionData)).rejects.toThrow('Reset failed');
 
       expect(loggerError).toHaveBeenCalled();
       loggerError.mockRestore();

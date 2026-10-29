@@ -780,15 +780,29 @@ model AuditLog {
   id           String   @id @default(cuid())
   action       String // e.g. "form.deleted", "permission.changed", "response.deleted"
   actorId      String? // userId — null for system actions
+  // Tenant scope of the action when known, so an org owner's audit view / offboarding
+  // export can be filtered without scanning metadata. No FK: audit rows must outlive the org.
+  organizationId String?
   resourceType String // "Form", "Response", "FormPermission"
   resourceId   String
   metadata     Json? // additional context (e.g. old/new values)
   createdAt    DateTime @default(now())
 
   @@index([actorId])
+  @@index([organizationId, createdAt])
   @@index([resourceType, resourceId])
   @@index([createdAt])
   @@map("audit_log")
+}
+
+// Chargebee webhook idempotency: one row per processed event id (at-least-once delivery).
+model ProcessedWebhookEvent {
+  id          String   @id // Chargebee event id
+  eventType   String
+  processedAt DateTime @default(now())
+
+  @@index([processedAt])
+  @@map("processed_webhook_event")
 }
 
 // Subscription Management Models
@@ -830,6 +844,10 @@ model Subscription {
   // enterprise org that later went past_due via normal dunning (needs the
   // billing portal instead). See syncSubscriptionFromWebhook.
   enterprisePendingActivation Boolean @default(false)
+
+  // occurred_at of the newest Chargebee webhook applied to this row. Older
+  // (reordered / replayed) events are ignored so they cannot roll state back.
+  lastWebhookEventAt DateTime?
 
   // Billing period (resets usage counters)
   currentPeriodStart DateTime

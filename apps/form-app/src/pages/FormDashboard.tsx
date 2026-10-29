@@ -238,7 +238,7 @@ const FormDashboard: React.FC = () => {
               navigate(`/dashboard/form/${formId}/analytics`);
             }}
             onShare={form.userPermission === 'OWNER' ? handleShare : undefined}
-            onDuplicate={handleDuplicate}
+            onDuplicate={form.userPermission === 'OWNER' || form.userPermission === 'EDITOR' ? handleDuplicate : undefined}
             updateLoading={updateLoading}
             deleteLoading={deleteLoading}
             duplicateLoading={isDuplicating}

@@ -84,10 +84,10 @@ Feature: Response Table Filters
     When I publish the form
     Then the form should be published
     When I get the form short URL
-    When I submit response with text "R1" number 10 and dropdown "red"
-    And I submit response with text "R2" number 20 and dropdown "green"
-    And I submit response with text "R3" number 30 and dropdown "blue"
-    And I submit response with text "R4" number 40 and dropdown "red"
+    When I submit response with text "R1" number 10 and dropdown "Red"
+    And I submit response with text "R2" number 20 and dropdown "Green"
+    And I submit response with text "R3" number 30 and dropdown "Blue"
+    And I submit response with text "R4" number 40 and dropdown "Red"
     And I submit response with text "R5" number 50 and empty dropdown
     When I navigate to the responses page
     Then I should see 5 responses in the table

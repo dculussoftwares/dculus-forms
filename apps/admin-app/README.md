@@ -49,12 +49,9 @@ pnpm dev
 - **URL**: http://localhost:3002
 - **Port**: 3002 (configurable in package.json)
 
-### Default Admin Credentials
-```
-Email: admin@dculus.com
-Password: admin123!@#
-Role: superAdmin
-```
+### Admin Credentials
+There is no default admin account. Create the superAdmin with `pnpm admin:setup`, using your own
+`ADMIN_EMAIL` and a strong, unique `ADMIN_PASSWORD` (see "Admin Setup" below).
 
 ## File Structure
 
@@ -156,8 +153,8 @@ export const client = new ApolloClient({
 ### Creating Super Admin User
 ```bash
 # Set environment variables
-export SUPER_ADMIN_EMAIL="admin@dculus.com"
-export SUPER_ADMIN_PASSWORD="admin123!@#"
+export ADMIN_EMAIL="<your-admin-email>"
+export ADMIN_PASSWORD="<strong-unique-password>"
 
 # Run setup script
 pnpm admin:setup

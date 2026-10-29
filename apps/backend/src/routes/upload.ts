@@ -16,6 +16,11 @@ import { auth } from '../lib/better-auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
 import { resolveFreshUser } from '../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
+import type { FormSettings } from '@dculus/types';
+import { GraphQLError } from '#graphql-errors';
+import { resolveAccessStatus } from '../lib/accessControlEnforcement.js';
+import { enforceTimeWindow } from '../lib/timeWindowEnforcement.js';
+import { countAllResponses } from '../services/responseService.js';
 
 // Allowed upload type values — prevents arbitrary path injection via type param
 const ALLOWED_UPLOAD_TYPES = new Set([
@@ -73,7 +78,7 @@ interface UploadRejection {
   body: { error: string; code: string; [key: string]: unknown };
 }
 
-type CallerUser = { id: string; role?: string | null } | null;
+type CallerUser = { id: string; role?: string | null; email?: string | null } | null;
 
 const reject = (status: number, body: UploadRejection['body']): UploadRejection => ({ status, body });
 
@@ -102,6 +107,46 @@ function getUploader(maxBytes: number): RequestHandler {
 function maxBytesFor(type: string | undefined, callerUser: CallerUser): number {
   const typeCap = (type && MAX_UPLOAD_BYTES[type]) || DEFAULT_MAX_UPLOAD_BYTES;
   return callerUser ? typeCap : Math.min(typeCap, MAX_ANONYMOUS_UPLOAD_BYTES);
+}
+
+/**
+ * The submitResponse gates a respondent must pass before any upload is accepted:
+ * sign-in / email-domain access control, the submission time window and the
+ * maximum-response cap. Uploads for a form that cannot take the submission
+ * would only be orphaned storage.
+ */
+async function checkRespondentGate(
+  formId: string,
+  settings: FormSettings | null,
+  callerUser: CallerUser
+): Promise<UploadRejection | null> {
+  const status = resolveAccessStatus(settings?.accessControl, settings?.collectRespondentEmail, {
+    user: callerUser,
+    session: null,
+    isAuthenticated: !!callerUser,
+  });
+  if (status === 'SIGN_IN_REQUIRED') {
+    return reject(401, { error: 'Sign-in is required to submit this form', code: 'SIGN_IN_REQUIRED' });
+  }
+  if (status === 'DOMAIN_REJECTED') {
+    return reject(403, { error: 'Your email domain is not allowed to submit this form', code: 'EMAIL_DOMAIN_NOT_ALLOWED' });
+  }
+
+  const limits = settings?.submissionLimits;
+  if (limits?.timeWindow) {
+    try {
+      enforceTimeWindow(limits.timeWindow);
+    } catch (error) {
+      if (error instanceof GraphQLError) {
+        return reject(403, { error: error.message, code: String(error.extensions?.code ?? 'FORBIDDEN') });
+      }
+      throw error;
+    }
+  }
+  if (limits?.maxResponses?.enabled && (await countAllResponses(formId)) >= limits.maxResponses.limit) {
+    return reject(403, { error: 'Form has reached its maximum response limit', code: 'MAX_RESPONSES_REACHED' });
+  }
+  return null;
 }
 
 /**
@@ -175,9 +220,16 @@ async function authorizeUpload(
       }
       const form = await prisma.form.findUnique({
         where: { id: formId },
-        select: { id: true, isPublished: true, organizationId: true, createdById: true },
+        select: {
+          id: true,
+          isPublished: true,
+          organizationId: true,
+          createdById: true,
+          deletedAt: true,
+          settings: true,
+        },
       });
-      if (!form) {
+      if (!form || form.deletedAt) {
         return reject(404, { error: 'Form not found', code: 'NOT_FOUND' });
       }
 
@@ -211,9 +263,24 @@ async function authorizeUpload(
           code: 'FORBIDDEN',
         });
       }
+
+      if (!isAuthorisedEditor) {
+        return checkRespondentGate(form.id, form.settings as FormSettings | null, callerUser);
+      }
     }
 
   return null;
+}
+
+// Avatars and logos are keyed under their owner so deleteFile can authorize from the key alone.
+function uploadOwnerId(
+  type: string,
+  callerUser: CallerUser,
+  organizationId: string | undefined
+): string | undefined {
+  if (type === 'UserAvatar') return callerUser?.id;
+  if (type === 'OrganizationLogo') return organizationId;
+  return undefined;
 }
 
 // Resolves when the middleware calls next() or has already answered the request
@@ -242,7 +309,7 @@ const preflight: RequestHandler = async (req, res, next) => {
       });
       // Cookie-cached role can lag behind demotions/bans; re-check privileged users.
       const freshUser = sessionData?.user ? await resolveFreshUser(sessionData.user) : null;
-      callerUser = freshUser ? { id: freshUser.id, role: freshUser.role } : null;
+      callerUser = freshUser ? { id: freshUser.id, role: freshUser.role, email: freshUser.email } : null;
     } catch {
       // Non-fatal: unauthenticated callers are handled per-type below
     }
@@ -366,6 +433,7 @@ router.post('/upload', preflight, receiveFile, async (req, res) => {
       file: fileObject,
       type,
       formId: formId || undefined,
+      ownerId: uploadOwnerId(type, callerUser, params.organizationId),
     });
 
     // Record form-scoped uploads so their original name, size and type stay known

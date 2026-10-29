@@ -194,7 +194,61 @@ export function stripBasePdf(template: any, hasUploadedPdf: boolean): any {
  * unrepaired template would otherwise pass validation here but fail
  * later at generation time.
  */
+export const PDF_TEMPLATE_LIMITS = {
+  maxPages: 100,
+  maxElementsPerPage: 500,
+  maxElementsTotal: 2000,
+  maxContentChars: 100_000,
+  minPageMm: 10,
+  maxPageMm: 2000,
+  maxNameChars: 200,
+  maxFileNameChars: 255,
+} as const;
+
+const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
+
+function assertBlankPdfShape(basePdf: unknown): void {
+  const { minPageMm, maxPageMm } = PDF_TEMPLATE_LIMITS;
+  if (!basePdf || typeof basePdf !== 'object' || Array.isArray(basePdf) || ArrayBuffer.isView(basePdf)) {
+    throw new Error('basePdf must be a blank page definition { width, height, padding }');
+  }
+  const { width, height, padding } = basePdf as { width?: unknown; height?: unknown; padding?: unknown };
+  if (!isFiniteNumber(width) || !isFiniteNumber(height) || width < minPageMm || width > maxPageMm || height < minPageMm || height > maxPageMm) {
+    throw new Error(`Page width and height must be between ${minPageMm} and ${maxPageMm} mm`);
+  }
+  if (!Array.isArray(padding) || padding.length !== 4 || !padding.every((p) => isFiniteNumber(p) && p >= 0)) {
+    throw new Error('Page padding must be four non-negative numbers');
+  }
+  if (padding[0] + padding[2] >= height || padding[1] + padding[3] >= width) {
+    throw new Error('Page padding leaves no content area');
+  }
+}
+
+function assertTemplateBounds(template: any): void {
+  const { maxPages, maxElementsPerPage, maxElementsTotal, maxContentChars } = PDF_TEMPLATE_LIMITS;
+  const pages: unknown[] = Array.isArray(template?.schemas) ? template.schemas : [];
+  if (pages.length > maxPages) throw new Error(`A template can have at most ${maxPages} pages`);
+  let total = 0;
+  for (const page of pages) {
+    const elements: unknown[] = Array.isArray(page) ? page : [];
+    if (elements.length > maxElementsPerPage) throw new Error(`A page can have at most ${maxElementsPerPage} elements`);
+    total += elements.length;
+    for (const element of elements) {
+      const content = (element as { content?: unknown } | null)?.content;
+      if (typeof content === 'string' && content.length > maxContentChars) {
+        throw new Error(`Element content is too large (max ${maxContentChars} characters)`);
+      }
+    }
+  }
+  if (total > maxElementsTotal) throw new Error(`A template can have at most ${maxElementsTotal} elements`);
+}
+
 export function validatePdfTemplate(template: any, hasUploadedPdf: boolean): void {
+  if (!template || typeof template !== 'object') throw new Error('Template must be an object');
+  // Without an uploaded PDF the base must be a plain blank-page definition: any string/buffer
+  // would be parsed as an attacker-supplied PDF at render time.
+  if (!hasUploadedPdf) assertBlankPdfShape(template.basePdf);
+  assertTemplateBounds(template);
   const candidate = hasUploadedPdf ? { ...template, basePdf: BLANK_PDF } : template;
   checkTemplate(candidate); // throws on invalid template
 }

@@ -298,7 +298,7 @@ if (!userId) throw new Error('Authentication required');
 ### Admin App
 
 - Cookie-based auth (NOT bearer). Apollo uses `credentials: 'include'`.
-- Default admin: `admin@dculus.com` / `admin123!@#` (role: `superAdmin`).
+- No default admin account: create one with `pnpm admin:setup` using `ADMIN_EMAIL` / a strong, unique `ADMIN_PASSWORD` (role: `superAdmin`).
 
 ---
 
@@ -378,7 +378,7 @@ pnpm lint               # ESLint
 
 # Testing
 pnpm test:integration              # API integration tests
-pnpm test:integration:production   # Against production
+pnpm test:integration:health:production   # Read-only /health smoke check against production
 pnpm test:integration:by-tags      # Filter by Cucumber tag (e.g., @forms)
 pnpm test:e2e                      # Playwright + Cucumber E2E
 pnpm test:unit                     # Backend unit tests

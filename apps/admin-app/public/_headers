@@ -1,3 +1,14 @@
+# Cloudflare Pages header rules for admin-app (privileged origin: never frameable).
+# connect-src cannot name the API origin because it is injected at deploy time via
+# /config.js, so it allows any TLS endpoint; the other directives still block
+# framing, plugin content, base-tag and form-action hijacking and third-party scripts.
+/*
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https: wss:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000
+
 # Overwritten at deploy time with environment values; must never be served stale.
 /config.js
   Cache-Control: no-cache

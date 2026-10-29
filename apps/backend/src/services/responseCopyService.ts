@@ -8,6 +8,7 @@ import {
 import { escapeHtml } from '@dculus/utils';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
+import { isSingleEmailAddress } from '../lib/emailAddress.js';
 import { sendEmail } from './emailService.js';
 import { resolveResponsePdfAttachment } from './pdfTemplateService.js';
 import { generateResponseCopyEmailHtml, type ResponseCopyQaRow } from '../templates/responseCopyEmail.js';
@@ -84,6 +85,16 @@ export async function sendResponseCopyIfEnabled({
 
   const recipient = response.data?.[settings.emailFieldId];
   if (typeof recipient !== 'string' || !recipient.trim()) return;
+
+  // The value is respondent-supplied: only a single plain address is allowed so
+  // the copy can never be fanned out to several recipients or carry injected headers.
+  if (!isSingleEmailAddress(recipient.trim())) {
+    logger.warn('Response copy skipped: recipient is not a single valid email address', {
+      formId: form.id,
+      responseId: response.id,
+    });
+    return;
+  }
 
   // Enforce the org's emails-sent usage limit before sending — mirrors the
   // hard-block enforcement used for views/submissions.

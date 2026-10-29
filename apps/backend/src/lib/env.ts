@@ -47,6 +47,51 @@ export interface ChargebeeConfig {
 const nodeEnv = optionalEnv('NODE_ENV', 'development')!;
 const isTest = nodeEnv === 'test';
 
+const TEST_FALLBACK_AUTH_SECRET = 'test-only-secret-for-unit-tests-not-used-in-production';
+const MIN_AUTH_SECRET_LENGTH = 32;
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]', 'host.docker.internal']);
+const PLACEHOLDER_SECRET_PATTERN = /^(secret|changeme|change-me|password|your[-_ ]?secret|your[-_ ]?auth[-_ ]?secret|test|default)$/i;
+
+function extractHostname(value: string): string | undefined {
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    return /@([^:/?#]+)/.exec(value)?.[1]?.toLowerCase();
+  }
+}
+
+/**
+ * Throws when the auth secret is a weak/placeholder value. The built-in test
+ * fallback is only tolerated when NODE_ENV=test. Exported for unit tests.
+ */
+export function assertStrongAuthSecret(secret: string, testMode: boolean): void {
+  if (testMode && secret === TEST_FALLBACK_AUTH_SECRET) return;
+  if (secret === TEST_FALLBACK_AUTH_SECRET || PLACEHOLDER_SECRET_PATTERN.test(secret)) {
+    throw new Error('BETTER_AUTH_SECRET is a known placeholder value; set a unique random secret');
+  }
+  if (secret.length < MIN_AUTH_SECRET_LENGTH) {
+    throw new Error(`BETTER_AUTH_SECRET must be at least ${MIN_AUTH_SECRET_LENGTH} characters long`);
+  }
+}
+
+/**
+ * NODE_ENV=test relaxes email verification, org limits, rate limiting and uses a
+ * public fallback secret, so refuse to run that mode against anything non-local.
+ * Exported for unit tests.
+ */
+export function assertTestModeIsLocal(baseUrl: string, databaseUrl: string | undefined): void {
+  const baseHost = extractHostname(baseUrl);
+  if (!baseHost || !LOCAL_HOSTNAMES.has(baseHost)) {
+    throw new Error('NODE_ENV=test is only allowed with a local BETTER_AUTH_URL (localhost)');
+  }
+  if (databaseUrl) {
+    const dbHost = extractHostname(databaseUrl);
+    if (!dbHost || !LOCAL_HOSTNAMES.has(dbHost)) {
+      throw new Error('NODE_ENV=test is only allowed with a local DATABASE_URL (localhost)');
+    }
+  }
+}
+
 export const s3Config: S3Config = {
   endpoint: isTest ? optionalEnv('PUBLIC_S3_ENDPOINT', 'http://localhost:9000')! : requireEnv('PUBLIC_S3_ENDPOINT'),
   accessKey: isTest ? optionalEnv('PUBLIC_S3_ACCESS_KEY', 'test-access-key')! : requireEnv('PUBLIC_S3_ACCESS_KEY'),
@@ -59,8 +104,32 @@ export const s3Config: S3Config = {
 export const authConfig: AuthConfig = {
   baseUrl: optionalEnv('BETTER_AUTH_URL', 'http://localhost:4000')!,
   secret: isTest
-    ? optionalEnv('BETTER_AUTH_SECRET', 'test-only-secret-for-unit-tests-not-used-in-production')!
+    ? optionalEnv('BETTER_AUTH_SECRET', TEST_FALLBACK_AUTH_SECRET)!
     : requireEnv('BETTER_AUTH_SECRET'),
+};
+
+assertStrongAuthSecret(authConfig.secret, isTest);
+if (isTest) {
+  assertTestModeIsLocal(authConfig.baseUrl, optionalEnv('DATABASE_URL'));
+}
+
+export interface ProxyConfig {
+  /** Number of trusted reverse-proxy hops in front of the backend (Express `trust proxy`). */
+  trustProxyHops: number | undefined;
+  /** Headers better-auth should read the client IP from (e.g. `cf-connecting-ip`). */
+  authIpAddressHeaders: string[] | undefined;
+}
+
+const parsedTrustProxyHops = parseInt(optionalEnv('TRUST_PROXY_HOPS', '')!, 10);
+const parsedIpHeaders = optionalEnv('AUTH_IP_ADDRESS_HEADERS')
+  ?.split(',')
+  .map((h) => h.trim().toLowerCase())
+  .filter(Boolean);
+
+export const proxyConfig: ProxyConfig = {
+  trustProxyHops:
+    Number.isInteger(parsedTrustProxyHops) && parsedTrustProxyHops > 0 ? parsedTrustProxyHops : undefined,
+  authIpAddressHeaders: parsedIpHeaders && parsedIpHeaders.length > 0 ? parsedIpHeaders : undefined,
 };
 
 export const appConfig: AppConfig = {

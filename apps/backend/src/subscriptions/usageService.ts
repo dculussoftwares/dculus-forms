@@ -11,6 +11,8 @@ import { logger } from '../lib/logger.js';
 import { isLocalDatabase } from '../lib/prisma.js';
 import { PLAN_LIMITS_FALLBACK } from '../lib/planLimits.js';
 import { subscriptionRepository } from '../repositories/subscriptionRepository.js';
+import { createGraphQLError } from '../lib/graphqlErrors.js';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 
 // Keep the app-side pool small in production (max: 2) — PgBouncer handles
 // real server-side pooling. Mirrors the cap used by the main Prisma singleton
@@ -47,7 +49,7 @@ export const initializeUsageService = (): void => {
     }
   });
 
-  // Track form submissions
+  // Usage warnings after a submission (the counter itself is reserved atomically at submit time)
   eventEmitter.on(
     SubscriptionEventType.FORM_SUBMITTED,
     async (event: FormSubmittedEvent) => {
@@ -113,8 +115,57 @@ export const trackFormView = async (
 };
 
 /**
- * Track a form submission
- * Increments the submissionsUsed counter and checks limits
+ * Reserve one submission against the organization's plan before the response is stored.
+ *
+ * The increment is a single conditional UPDATE, so a burst of concurrent submissions cannot pass
+ * the limit together (the old read-then-event-increment let it overshoot by the burst size).
+ * Callers must call `releaseSubmissionSlot` if the insert then fails.
+ *
+ * @returns `tracked: false` when the org has no subscription row (nothing to count against).
+ * @throws SUBMISSION_LIMIT_EXCEEDED when the plan is exhausted or the subscription is past due.
+ */
+export const reserveSubmissionSlot = async (
+  organizationId: string
+): Promise<{ tracked: boolean }> => {
+  const subscription = await subscriptionRepository.findByOrganizationPublic(organizationId);
+  if (!subscription) {
+    return { tracked: false };
+  }
+
+  const limitExceeded = () =>
+    createGraphQLError(
+      'Form submission limit exceeded for this organization subscription plan',
+      GRAPHQL_ERROR_CODES.SUBMISSION_LIMIT_EXCEEDED
+    );
+
+  if (subscription.status === 'past_due') {
+    throw limitExceeded();
+  }
+
+  // Same effective-limit rule as checkUsageExceeded: a cancelled/expired plan falls back to free.
+  const isCancelledOrExpired = subscription.status === 'cancelled' || subscription.status === 'expired';
+  const limit = isCancelledOrExpired ? PLAN_LIMITS_FALLBACK.free.submissions : subscription.submissionsLimit;
+
+  const { count } = await subscriptionRepository.reserveSubmissionSlot(organizationId, limit);
+  if (count === 0) {
+    throw limitExceeded();
+  }
+  return { tracked: true };
+};
+
+/** Give back a slot taken by `reserveSubmissionSlot` when the response was not stored. */
+export const releaseSubmissionSlot = async (organizationId: string): Promise<void> => {
+  try {
+    await subscriptionRepository.releaseSubmissionSlot(organizationId);
+  } catch (error) {
+    // Over-counting by one is the safe failure direction; never mask the original error.
+    logger.error('[Usage Service] Failed to release submission slot:', error);
+  }
+};
+
+/**
+ * React to a stored submission. The counter was already incremented atomically by
+ * `reserveSubmissionSlot`, so this only raises the warning / exceeded notifications.
  *
  * @param organizationId - ID of the organization
  * @param formId - ID of the form
@@ -123,33 +174,19 @@ export const trackFormSubmission = async (
   organizationId: string,
   formId: string
 ): Promise<void> => {
-  // Get current subscription
-  const subscription = await prisma.subscription.findUnique({
-    where: { organizationId },
-  });
+  const subscription = await subscriptionRepository.findByOrganizationPublic(organizationId);
 
   if (!subscription) {
     logger.warn('[Usage Service] No subscription found for organization:', organizationId);
     return;
   }
 
-  // Increment submissions counter
-  const updatedSubscription = await prisma.subscription.update({
-    where: { organizationId },
-    data: {
-      submissionsUsed: {
-        increment: 1,
-      },
-    },
-  });
-
-  // Check if we need to emit warning or exceeded events
   checkUsageLimits(
     organizationId,
     formId,
     'submissions',
-    updatedSubscription.submissionsUsed,
-    updatedSubscription.submissionsLimit
+    subscription.submissionsUsed,
+    subscription.submissionsLimit
   );
 };
 

@@ -51,6 +51,18 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
       where: { formId, status: 'ACTIVE', triggerType },
     });
 
+  const listActiveIdsByForm = async (formId: string) =>
+    prisma.automation.findMany({
+      where: { formId, status: 'ACTIVE' },
+      select: { id: true },
+    });
+
+  const pauseByIds = async (ids: string[]) =>
+    prisma.automation.updateMany({
+      where: { id: { in: ids }, status: 'ACTIVE' },
+      data: { status: 'PAUSED', updatedAt: new Date() },
+    });
+
   const createAutomation = async (data: Prisma.AutomationCreateArgs['data']) =>
     prisma.automation.create({ data });
 
@@ -315,6 +327,8 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
     findById,
     listByFormId,
     listActiveByFormAndTrigger,
+    listActiveIdsByForm,
+    pauseByIds,
     createAutomation,
     updateAutomation,
     deleteAutomation,

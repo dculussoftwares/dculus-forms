@@ -10,6 +10,7 @@ import {
   type RespondentForm,
 } from '../lib/respondentAccess.js';
 import { assertResponsePayloadWithinLimits } from '../lib/responsePayloadLimits.js';
+import { validateResponseAnswers } from '../lib/responseAnswerValidation.js';
 import { stripConditionallyHiddenValues } from '../lib/conditionalStrip.js';
 import { responseRepository } from '../repositories/index.js';
 import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
@@ -111,15 +112,16 @@ export async function editMyResponse(params: EditMyResponseParams): Promise<MyRe
   // rules hide are dropped (and recorded as deletions by the edit tracker).
   // Answers to fields removed since submission are carried over untouched.
   const schema = (await getFormSchemaFromHocuspocus(editable.id)) ?? editable.formSchema;
-  const submitted = params.data as Record<string, unknown>;
-  const data = (
-    schema
-      ? {
-          ...answersToRemovedFields(schema, (existing.data as Record<string, unknown>) ?? {}),
-          ...stripConditionallyHiddenValues(schema, submitted),
-        }
-      : submitted
-  ) as Prisma.JsonObject;
+  // S04-04: validated against the live schema; fails closed without one.
+  const submitted = validateResponseAnswers(
+    schema,
+    stripConditionallyHiddenValues(schema, params.data as Record<string, unknown>),
+    { formId: editable.id }
+  );
+  const data = {
+    ...answersToRemovedFields(schema, (existing.data as Record<string, unknown>) ?? {}),
+    ...submitted,
+  } as Prisma.JsonObject;
 
   const updated = await updateResponse(existing.id, data, {
     userId,

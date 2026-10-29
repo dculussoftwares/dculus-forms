@@ -4,9 +4,13 @@ import { GraphQLError } from '#graphql-errors';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import { prisma } from '../../../lib/prisma.js';
 import { requireFormViewerAccess } from '../../../lib/formFieldAccess.js';
+import { closeFormCollaborationConnections } from '../../../services/collaborationConnections.js';
 
 // Mock all dependencies
 vi.mock('../../../middleware/better-auth-middleware.js');
+vi.mock('../../../services/collaborationConnections.js', () => ({
+  closeFormCollaborationConnections: vi.fn(),
+}));
 vi.mock('../../../lib/formFieldAccess.js', () => ({
   requireFormViewerAccess: vi.fn(),
 }));
@@ -345,6 +349,28 @@ describe('FormSharing Resolvers', () => {
     });
 
     describe('Sharing scope - PRIVATE and SPECIFIC_MEMBERS', () => {
+      it('lets an explicit NO_ACCESS row override ALL_ORG_MEMBERS (S02-05)', async () => {
+        const formOrgWide = {
+          ...mockForm,
+          createdById: 'owner-999',
+          sharingScope: SharingScope.ALL_ORG_MEMBERS,
+          defaultPermission: PermissionLevel.VIEWER,
+          organization: {
+            ...mockForm.organization,
+            members: [
+              { userId: 'user-123', organizationId: 'org-123', role: 'member', user: mockContext.auth.user },
+            ],
+          },
+          permissions: [{ userId: 'user-123', permission: PermissionLevel.NO_ACCESS }],
+        };
+        vi.mocked(prisma.form.findFirst).mockResolvedValue(formOrgWide as any);
+
+        const result = await checkFormAccess('user-123', 'form-123');
+
+        expect(result.hasAccess).toBe(false);
+        expect(result.permission).toBe(PermissionLevel.NO_ACCESS);
+      });
+
       it('should deny access when sharingScope is PRIVATE without explicit permissions', async () => {
         const formPrivate = {
           ...mockForm,
@@ -585,6 +611,9 @@ describe('FormSharing Resolvers', () => {
                   {
                     sharingScope: SharingScope.ALL_ORG_MEMBERS,
                     defaultPermission: { not: PermissionLevel.NO_ACCESS },
+                    permissions: {
+                      none: { userId: 'user-123', permission: PermissionLevel.NO_ACCESS },
+                    },
                   },
                 ],
               },
@@ -704,6 +733,9 @@ describe('FormSharing Resolvers', () => {
                   {
                     sharingScope: SharingScope.ALL_ORG_MEMBERS,
                     defaultPermission: { not: PermissionLevel.NO_ACCESS },
+                    permissions: {
+                      none: { userId: 'user-123', permission: PermissionLevel.NO_ACCESS },
+                    },
                   },
                 ],
               },
@@ -1000,7 +1032,7 @@ describe('FormSharing Resolvers', () => {
       });
     });
 
-    it('should skip NO_ACCESS permissions when creating', async () => {
+    it('should persist NO_ACCESS permissions as explicit rows (S02-05)', async () => {
       const inputWithNoAccess = {
         ...shareFormInput,
         userPermissions: [
@@ -1017,7 +1049,7 @@ describe('FormSharing Resolvers', () => {
         { userId: 'user-789', organizationId: 'org-123' },
       ] as any);
       vi.mocked(prisma.formPermission.deleteMany).mockResolvedValue({ count: 0 });
-      vi.mocked(prisma.formPermission.createMany).mockResolvedValue({ count: 1 });
+      vi.mocked(prisma.formPermission.createMany).mockResolvedValue({ count: 2 });
       vi.mocked(prisma.formPermission.findMany).mockResolvedValue([]);
 
       await formSharingResolvers.Mutation.shareForm(
@@ -1028,41 +1060,10 @@ describe('FormSharing Resolvers', () => {
 
       expect(prisma.formPermission.createMany).toHaveBeenCalledWith({
         data: [
-          expect.objectContaining({
-            userId: 'user-456',
-            permission: PermissionLevel.EDITOR,
-          }),
+          expect.objectContaining({ userId: 'user-456', permission: PermissionLevel.EDITOR }),
+          expect.objectContaining({ userId: 'user-789', permission: PermissionLevel.NO_ACCESS }),
         ],
       });
-    });
-
-    it('should not call createMany when all permissions are NO_ACCESS', async () => {
-      const inputWithAllNoAccess = {
-        ...shareFormInput,
-        userPermissions: [
-          { userId: 'user-456', permission: PermissionLevel.NO_ACCESS },
-          { userId: 'user-789', permission: PermissionLevel.NO_ACCESS },
-        ],
-      };
-
-      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
-      vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
-      vi.mocked(prisma.form.update).mockResolvedValue(mockForm as any);
-      vi.mocked(prisma.member.findMany).mockResolvedValue([
-        { userId: 'user-456', organizationId: 'org-123' },
-        { userId: 'user-789', organizationId: 'org-123' },
-      ] as any);
-      vi.mocked(prisma.formPermission.deleteMany).mockResolvedValue({ count: 2 });
-      vi.mocked(prisma.formPermission.findMany).mockResolvedValue([]);
-
-      await formSharingResolvers.Mutation.shareForm(
-        {},
-        { input: inputWithAllNoAccess },
-        mockContext
-      );
-
-      expect(prisma.formPermission.deleteMany).toHaveBeenCalled();
-      expect(prisma.formPermission.createMany).not.toHaveBeenCalled();
     });
 
     it('should throw error when user is not org member', async () => {
@@ -1190,9 +1191,15 @@ describe('FormSharing Resolvers', () => {
       expect(result).toEqual(updatedPermission);
     });
 
-    it('should remove permission when permission is NO_ACCESS', async () => {
-      const removePermissionInput = {
+    it('should store NO_ACCESS as an explicit row instead of deleting it (S02-05)', async () => {
+      const noAccessInput = {
         ...updatePermissionInput,
+        permission: PermissionLevel.NO_ACCESS,
+      };
+      const storedRow = {
+        id: 'perm-1',
+        formId: 'form-123',
+        userId: 'user-456',
         permission: PermissionLevel.NO_ACCESS,
       };
 
@@ -1203,22 +1210,22 @@ describe('FormSharing Resolvers', () => {
         organizationId: 'org-123',
         role: 'member',
       } as any);
-      vi.mocked(prisma.formPermission.deleteMany).mockResolvedValue({ count: 1 });
+      vi.mocked(prisma.formPermission.upsert).mockResolvedValue(storedRow as any);
 
       const result = await formSharingResolvers.Mutation.updateFormPermission(
         {},
-        { input: removePermissionInput },
+        { input: noAccessInput },
         mockContext
       );
 
-      expect(prisma.formPermission.deleteMany).toHaveBeenCalledWith({
-        where: {
-          formId: 'form-123',
-          userId: 'user-456',
-        },
-      });
+      expect(prisma.formPermission.deleteMany).not.toHaveBeenCalled();
+      expect(prisma.formPermission.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({ permission: PermissionLevel.NO_ACCESS }),
+          create: expect.objectContaining({ permission: PermissionLevel.NO_ACCESS }),
+        })
+      );
       expect(result.permission).toBe(PermissionLevel.NO_ACCESS);
-      expect(result.user).toBeNull();
     });
 
     it('should throw error when target user is not org member', async () => {
@@ -1321,6 +1328,7 @@ describe('FormSharing Resolvers', () => {
         },
       });
       expect(result).toBe(true);
+      expect(closeFormCollaborationConnections).toHaveBeenCalledWith('form-123');
     });
 
     it('should return false when no permission found', async () => {
@@ -1403,6 +1411,7 @@ describe('FormSharing Resolvers', () => {
           },
         ];
         vi.mocked(prisma.formPermission.findMany).mockResolvedValue(mockPermissions as any);
+        vi.mocked(prisma.form.findFirst).mockResolvedValue(mockForm as any);
 
         const result = await formSharingResolvers.Form.permissions({ id: 'form-123' }, {}, mockContext);
         expect(requireFormViewerAccess).toHaveBeenCalledWith('form-123', mockContext);
@@ -1420,6 +1429,22 @@ describe('FormSharing Resolvers', () => {
     });
 
     describe('Form.permissions guard (S04-01)', () => {
+      it('returns an empty list for non-owner viewers (S02-06)', async () => {
+        vi.mocked(prisma.form.findFirst).mockResolvedValue({
+          ...mockForm,
+          createdById: 'someone-else',
+          sharingScope: SharingScope.ALL_ORG_MEMBERS,
+          defaultPermission: PermissionLevel.VIEWER,
+          permissions: [],
+        } as any);
+        vi.mocked(prisma.formPermission.findMany).mockClear();
+
+        const result = await formSharingResolvers.Form.permissions({ id: 'form-123' }, {}, mockContext);
+
+        expect(result).toEqual([]);
+        expect(prisma.formPermission.findMany).not.toHaveBeenCalled();
+      });
+
       it('rejects callers without VIEWER access and never queries permissions', async () => {
         vi.mocked(requireFormViewerAccess).mockRejectedValueOnce(new Error('NO_ACCESS'));
 

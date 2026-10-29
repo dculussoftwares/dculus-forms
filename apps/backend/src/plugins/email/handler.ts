@@ -152,6 +152,9 @@ function toSubmittedRecipient(value: unknown): string | undefined {
   return isEmailAddress(candidate) ? candidate : undefined;
 }
 
+/** Upper bound on addresses in one message, so a single send cannot be used as a mass-mail relay. */
+export const MAX_RECIPIENTS_PER_SEND = 20;
+
 /**
  * Resolves the set of recipient addresses for this send: the static
  * recipientEmail (if set — now a comma/semicolon/whitespace-separated list, so a scheduled
@@ -184,7 +187,10 @@ function resolveRecipients(
     }
   }
 
-  return { recipients, skipReason: recipients.length === 0 ? skipReason : undefined };
+  return {
+    recipients: recipients.slice(0, MAX_RECIPIENTS_PER_SEND),
+    skipReason: recipients.length === 0 ? skipReason : undefined,
+  };
 }
 
 /**
@@ -528,7 +534,10 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
       attachedPdfFilename,
     });
 
-    emitEmailSent(event.organizationId, event.formId, 'plugin');
+    // Quota is consumed per recipient, not per message.
+    for (let i = 0; i < recipients.length; i++) {
+      emitEmailSent(event.organizationId, event.formId, 'plugin');
+    }
 
     const result: EmailDeliveryResult = {
       success: true,
@@ -540,6 +549,23 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
 
     return result;
   } catch (error: any) {
+    // An address the mail server refuses is a property of the submission, not of this automation:
+    // when every recipient came from respondent-supplied data it must not count as a failed run,
+    // or a respondent could pause the owner's automation by entering addresses that bounce.
+    if (error?.recipientRejected === true && parseEmailList(config.recipientEmail).length === 0) {
+      context.logger.warn('Email skipped: the mail server rejected the submitted recipient address', {
+        recipientFieldId: config.recipientFieldId,
+      });
+      const rejectedResult: EmailDeliveryResult = {
+        success: false,
+        recipient: '',
+        subject: config.subject,
+        skipped: true,
+        skipReason: 'The mail server rejected the recipient address',
+      };
+      return rejectedResult;
+    }
+
     context.logger.error('Email sending failed', {
       recipient: config.recipientEmail,
       error: error.message,

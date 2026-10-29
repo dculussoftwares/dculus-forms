@@ -16,12 +16,14 @@ import { logger } from '../../lib/logger.js';
 import { prisma } from '../../lib/prisma.js';
 
 import { applyResponseFilters } from '../responseFilterService.js';
+import { purgeResponseSideDataSafely } from '../dataRetentionService.js';
 import { ResponseEditTrackingService } from '../responseEditTrackingService.js';
 import { emitResponseEdited } from '../../plugins/core/events.js';
 
 // Mock dependencies
 vi.mock('../../repositories/index.js');
 vi.mock('../responseFilterService.js');
+vi.mock('../dataRetentionService.js', () => ({ purgeResponseSideDataSafely: vi.fn().mockResolvedValue(undefined) }));
 // Minimal mock Prisma transaction client used by updateResponse (P2-02) and
 // submitResponseWithLimitChecks's Serializable limit-check transaction
 const mockTxClient = {
@@ -352,6 +354,11 @@ describe('Response Service', () => {
 
       // Should use database-level filtering (or fallback to memory if it fails)
       expect(result.data).toHaveLength(1);
+      expect(responseRepository.countFilteredRaw).toHaveBeenCalledWith(
+        expect.stringContaining('"response"."deletedAt" IS NULL'),
+        expect.any(Array),
+        expect.anything()
+      );
     });
 
     it('should sort by form field when sortBy starts with data.', async () => {
@@ -891,6 +898,7 @@ describe('Response Service', () => {
         where: { id: 'response-123' },
         data: expect.objectContaining({ deletedAt: expect.any(Date) }),
       });
+      expect(purgeResponseSideDataSafely).toHaveBeenCalledWith(['response-123']);
       expect(result).toBe(true);
     });
 

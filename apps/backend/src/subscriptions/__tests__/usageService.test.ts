@@ -3,6 +3,8 @@ import {
   initializeUsageService,
   trackFormView,
   trackFormSubmission,
+  reserveSubmissionSlot,
+  releaseSubmissionSlot,
   checkUsageExceeded,
   getRemainingEmailQuota,
   getUsage,
@@ -23,6 +25,7 @@ vi.mock('#prisma-client', () => {
   const mockSubscription = {
     findUnique: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
   };
 
   return {
@@ -41,6 +44,7 @@ const getMockSubscription = () => {
   return prisma.subscription as unknown as {
     findUnique: ReturnType<typeof vi.fn>;
     update: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
   };
 };
 
@@ -347,13 +351,8 @@ describe('usageService', () => {
   });
 
   describe('trackFormSubmission', () => {
-    it('should increment submissions counter and check limits', async () => {
+    it('should only read the subscription and never increment the counter', async () => {
       mockSubscription.findUnique.mockResolvedValue({
-        organizationId: 'org-1',
-        submissionsUsed: 5,
-        submissionsLimit: 50,
-      });
-      mockSubscription.update.mockResolvedValue({
         organizationId: 'org-1',
         submissionsUsed: 6,
         submissionsLimit: 50,
@@ -361,26 +360,15 @@ describe('usageService', () => {
 
       await trackFormSubmission('org-1', 'form-1');
 
-      expect(mockSubscription.findUnique).toHaveBeenCalledWith({
-        where: { organizationId: 'org-1' },
-      });
-      expect(mockSubscription.update).toHaveBeenCalledWith({
-        where: { organizationId: 'org-1' },
-        data: {
-          submissionsUsed: {
-            increment: 1,
-          },
-        },
-      });
+      expect(mockSubscription.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { organizationId: 'org-1' } })
+      );
+      expect(mockSubscription.update).not.toHaveBeenCalled();
+      expect(mockSubscription.updateMany).not.toHaveBeenCalled();
     });
 
     it('should emit warning when approaching submissions limit', async () => {
       mockSubscription.findUnique.mockResolvedValue({
-        organizationId: 'org-1',
-        submissionsUsed: 39,
-        submissionsLimit: 50,
-      });
-      mockSubscription.update.mockResolvedValue({
         organizationId: 'org-1',
         submissionsUsed: 40,
         submissionsLimit: 50,
@@ -401,11 +389,6 @@ describe('usageService', () => {
     it('should emit exceeded event when over submissions limit', async () => {
       mockSubscription.findUnique.mockResolvedValue({
         organizationId: 'org-1',
-        submissionsUsed: 50,
-        submissionsLimit: 50,
-      });
-      mockSubscription.update.mockResolvedValue({
-        organizationId: 'org-1',
         submissionsUsed: 51,
         submissionsLimit: 50,
       });
@@ -423,11 +406,6 @@ describe('usageService', () => {
 
     it('should not check limits when submissionsLimit is null', async () => {
       mockSubscription.findUnique.mockResolvedValue({
-        organizationId: 'org-1',
-        submissionsUsed: 500,
-        submissionsLimit: null,
-      });
-      mockSubscription.update.mockResolvedValue({
         organizationId: 'org-1',
         submissionsUsed: 501,
         submissionsLimit: null,
@@ -449,6 +427,111 @@ describe('usageService', () => {
         'org-1'
       );
       expect(mockSubscription.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('reserveSubmissionSlot', () => {
+    it('should not track when the organization has no subscription', async () => {
+      mockSubscription.findUnique.mockResolvedValue(null);
+
+      await expect(reserveSubmissionSlot('org-1')).resolves.toEqual({ tracked: false });
+      expect(mockSubscription.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should reserve atomically with a conditional update against the plan limit', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        status: 'active',
+        submissionsUsed: 5,
+        submissionsLimit: 50,
+      });
+      mockSubscription.updateMany.mockResolvedValue({ count: 1 });
+
+      await expect(reserveSubmissionSlot('org-1')).resolves.toEqual({ tracked: true });
+      expect(mockSubscription.updateMany).toHaveBeenCalledWith({
+        where: { organizationId: 'org-1', submissionsUsed: { lt: 50 } },
+        data: { submissionsUsed: { increment: 1 } },
+      });
+    });
+
+    it('should reject when the conditional update changes no rows (limit reached)', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        status: 'active',
+        submissionsUsed: 50,
+        submissionsLimit: 50,
+      });
+      mockSubscription.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(reserveSubmissionSlot('org-1')).rejects.toThrow(
+        'Form submission limit exceeded for this organization subscription plan'
+      );
+    });
+
+    it('should reject past_due subscriptions without touching the counter', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        status: 'past_due',
+        submissionsUsed: 1,
+        submissionsLimit: 50,
+      });
+
+      await expect(reserveSubmissionSlot('org-1')).rejects.toThrow(
+        'Form submission limit exceeded'
+      );
+      expect(mockSubscription.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to the free plan limit for cancelled subscriptions', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        status: 'cancelled',
+        submissionsUsed: 5,
+        submissionsLimit: 100000,
+      });
+      mockSubscription.updateMany.mockResolvedValue({ count: 1 });
+
+      await reserveSubmissionSlot('org-1');
+
+      const where = mockSubscription.updateMany.mock.calls[0][0].where;
+      expect(where.submissionsUsed.lt).toBeLessThan(100000);
+    });
+
+    it('should not cap unlimited plans', async () => {
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        status: 'active',
+        submissionsUsed: 5,
+        submissionsLimit: null,
+      });
+      mockSubscription.updateMany.mockResolvedValue({ count: 1 });
+
+      await reserveSubmissionSlot('org-1');
+
+      expect(mockSubscription.updateMany).toHaveBeenCalledWith({
+        where: { organizationId: 'org-1' },
+        data: { submissionsUsed: { increment: 1 } },
+      });
+    });
+  });
+
+  describe('releaseSubmissionSlot', () => {
+    it('should decrement the counter without going below zero', async () => {
+      mockSubscription.updateMany.mockResolvedValue({ count: 1 });
+
+      await releaseSubmissionSlot('org-1');
+
+      expect(mockSubscription.updateMany).toHaveBeenCalledWith({
+        where: { organizationId: 'org-1', submissionsUsed: { gt: 0 } },
+        data: { submissionsUsed: { decrement: 1 } },
+      });
+    });
+
+    it('should swallow and log database errors', async () => {
+      mockSubscription.updateMany.mockRejectedValue(new Error('db down'));
+
+      await expect(releaseSubmissionSlot('org-1')).resolves.toBeUndefined();
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 

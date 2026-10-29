@@ -6,11 +6,16 @@ import {
   syncSubscriptionFromWebhook,
   handleSubscriptionRenewal,
   handlePaymentFailed,
+  handleCustomerDeleted,
 } from '../../services/chargebeeService.js';
 import { logger } from '../../lib/logger.js';
+import { webhookEventRepository } from '../../repositories/webhookEventRepository.js';
 
 // Mock dependencies
 vi.mock('../../services/chargebeeService.js');
+vi.mock('../../repositories/webhookEventRepository.js', () => ({
+  webhookEventRepository: { claim: vi.fn(), release: vi.fn() },
+}));
 vi.mock('../../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -31,6 +36,8 @@ describe('Chargebee Webhook Routes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(webhookEventRepository.claim).mockResolvedValue(true);
+    vi.mocked(webhookEventRepository.release).mockResolvedValue({ count: 1 } as any);
     app = express();
     app.use(express.json());
     app.use('/', chargebeeWebhookRouter);
@@ -70,7 +77,7 @@ describe('Chargebee Webhook Routes', () => {
         'subscription_created',
         expect.objectContaining({ subscriptionId: 'sub_123', subscriptionStatus: 'active' })
       );
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, { allowTakeover: true });
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, { allowTakeover: true, occurredAt: undefined });
       expect(handleSubscriptionRenewal).not.toHaveBeenCalled();
     });
 
@@ -90,7 +97,7 @@ describe('Chargebee Webhook Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ received: true });
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, { allowTakeover: true });
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, { allowTakeover: true, occurredAt: undefined });
     });
 
     it('should handle subscription_changed event', async () => {
@@ -109,7 +116,7 @@ describe('Chargebee Webhook Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ received: true });
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, expect.any(Object));
     });
 
     it('should handle subscription_activated event', async () => {
@@ -127,7 +134,7 @@ describe('Chargebee Webhook Routes', () => {
         .send(createWebhookEvent('subscription_activated', subscription));
 
       expect(response.status).toBe(200);
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, expect.any(Object));
     });
 
     it('should handle subscription_renewed event with renewal handler', async () => {
@@ -147,8 +154,8 @@ describe('Chargebee Webhook Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ received: true });
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
-      expect(handleSubscriptionRenewal).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, expect.any(Object));
+      expect(handleSubscriptionRenewal).toHaveBeenCalledWith(subscription, expect.any(Object));
     });
 
     it('should handle subscription_cancelled event', async () => {
@@ -166,10 +173,10 @@ describe('Chargebee Webhook Routes', () => {
         .send(createWebhookEvent('subscription_cancelled', subscription));
 
       expect(response.status).toBe(200);
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, expect.any(Object));
     });
 
-    it('should handle subscription_cancelled_scheduled event', async () => {
+    it('should handle subscription_cancellation_scheduled event', async () => {
       const subscription = {
         id: 'sub_123',
         plan_id: 'plan_456',
@@ -181,10 +188,10 @@ describe('Chargebee Webhook Routes', () => {
       const response = await request(app)
         .post('/webhooks/chargebee')
         .set('Authorization', VALID_AUTH)
-        .send(createWebhookEvent('subscription_cancelled_scheduled', subscription));
+        .send(createWebhookEvent('subscription_cancellation_scheduled', subscription));
 
       expect(response.status).toBe(200);
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, expect.any(Object));
     });
 
     it('should handle subscription_paused event', async () => {
@@ -202,7 +209,7 @@ describe('Chargebee Webhook Routes', () => {
         .send(createWebhookEvent('subscription_paused', subscription));
 
       expect(response.status).toBe(200);
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, expect.any(Object));
     });
 
     it('should handle subscription_reactivated event', async () => {
@@ -220,7 +227,7 @@ describe('Chargebee Webhook Routes', () => {
         .send(createWebhookEvent('subscription_reactivated', subscription));
 
       expect(response.status).toBe(200);
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, expect.any(Object));
     });
 
     it('should handle payment_succeeded event without calling sync', async () => {
@@ -279,7 +286,7 @@ describe('Chargebee Webhook Routes', () => {
       expect(syncSubscriptionFromWebhook).not.toHaveBeenCalled();
     });
 
-    it('should handle errors and still return 200', async () => {
+    it('should return 500 so Chargebee retries when processing fails', async () => {
       const subscription = {
         id: 'sub_123',
         plan_id: 'plan_456',
@@ -295,9 +302,9 @@ describe('Chargebee Webhook Routes', () => {
         .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_created', subscription));
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(500);
       expect(response.body).toEqual({
-        received: true,
+        received: false,
         error: 'Database connection failed',
       });
       expect(logger.error).toHaveBeenCalledWith(
@@ -306,7 +313,7 @@ describe('Chargebee Webhook Routes', () => {
       );
     });
 
-    it('should handle renewal errors and still return 200', async () => {
+    it('should return 500 on renewal errors', async () => {
       const subscription = {
         id: 'sub_123',
         plan_id: 'plan_456',
@@ -323,15 +330,15 @@ describe('Chargebee Webhook Routes', () => {
         .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_renewed', subscription));
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(500);
       expect(response.body).toEqual({
-        received: true,
+        received: false,
         error: 'Renewal processing failed',
       });
       expect(logger.error).toHaveBeenCalled();
     });
 
-    it('should handle errors without error message', async () => {
+    it('should return 500 for non-Error rejections', async () => {
       const subscription = {
         id: 'sub_123',
         plan_id: 'plan_456',
@@ -345,8 +352,124 @@ describe('Chargebee Webhook Routes', () => {
         .set('Authorization', VALID_AUTH)
         .send(createWebhookEvent('subscription_created', subscription));
 
+      expect(response.status).toBe(500);
+      expect(response.body.received).toBe(false);
+    });
+
+    it('skips a duplicate event id without reprocessing it', async () => {
+      vi.mocked(webhookEventRepository.claim).mockResolvedValue(false);
+
+      const response = await request(app)
+        .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
+        .send({ id: 'ev_1', ...createWebhookEvent('subscription_renewed', { id: 'sub_1' }) });
+
       expect(response.status).toBe(200);
-      expect(response.body.received).toBe(true);
+      expect(response.body).toEqual({ received: true, duplicate: true });
+      expect(handleSubscriptionRenewal).not.toHaveBeenCalled();
+      expect(syncSubscriptionFromWebhook).not.toHaveBeenCalled();
+    });
+
+    it('releases the event claim when processing fails so the retry is handled', async () => {
+      vi.mocked(syncSubscriptionFromWebhook).mockRejectedValue(new Error('db down'));
+
+      const response = await request(app)
+        .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
+        .send({ id: 'ev_2', ...createWebhookEvent('subscription_changed', { id: 'sub_1' }) });
+
+      expect(response.status).toBe(500);
+      expect(webhookEventRepository.release).toHaveBeenCalledWith('ev_2');
+    });
+
+    it('passes occurred_at to the sync as a Date', async () => {
+      vi.mocked(syncSubscriptionFromWebhook).mockResolvedValue(undefined);
+      const subscription = { id: 'sub_1' };
+
+      await request(app)
+        .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
+        .send({ occurred_at: 1704067200, ...createWebhookEvent('subscription_changed', subscription) });
+
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, {
+        occurredAt: new Date(1704067200 * 1000),
+      });
+    });
+
+    it('renews (period check) before the sync overwrites the stored period', async () => {
+      const order: string[] = [];
+      vi.mocked(handleSubscriptionRenewal).mockImplementation(async () => {
+        order.push('renewal');
+      });
+      vi.mocked(syncSubscriptionFromWebhook).mockImplementation(async () => {
+        order.push('sync');
+      });
+
+      await request(app)
+        .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
+        .send(createWebhookEvent('subscription_renewed', { id: 'sub_1' }));
+
+      expect(order).toEqual(['renewal', 'sync']);
+    });
+
+    it('lets only payment_succeeded clear past_due', async () => {
+      vi.mocked(syncSubscriptionFromWebhook).mockResolvedValue(undefined);
+      const subscription = { id: 'sub_1' };
+
+      await request(app)
+        .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
+        .send(createWebhookEvent('payment_succeeded', subscription));
+
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, {
+        occurredAt: undefined,
+        clearPastDue: true,
+      });
+    });
+
+    it.each([
+      'subscription_resumed',
+      'subscription_scheduled_cancellation_removed',
+      'subscription_cancellation_scheduled',
+    ])('syncs %s', async (eventType) => {
+      vi.mocked(syncSubscriptionFromWebhook).mockResolvedValue(undefined);
+      const subscription = { id: 'sub_1' };
+
+      const response = await request(app)
+        .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
+        .send(createWebhookEvent(eventType, subscription));
+
+      expect(response.status).toBe(200);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, expect.any(Object));
+    });
+
+    it('marks the subscription cancelled on subscription_deleted', async () => {
+      vi.mocked(syncSubscriptionFromWebhook).mockResolvedValue(undefined);
+      const subscription = { id: 'sub_1' };
+
+      await request(app)
+        .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
+        .send(createWebhookEvent('subscription_deleted', subscription));
+
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, {
+        occurredAt: undefined,
+        forceStatus: 'cancelled',
+      });
+    });
+
+    it('handles customer_deleted', async () => {
+      vi.mocked(handleCustomerDeleted).mockResolvedValue(undefined);
+
+      const response = await request(app)
+        .post('/webhooks/chargebee')
+        .set('Authorization', VALID_AUTH)
+        .send({ event_type: 'customer_deleted', content: { customer: { id: 'org_1' } } });
+
+      expect(response.status).toBe(200);
+      expect(handleCustomerDeleted).toHaveBeenCalledTimes(1);
     });
 
     it('should process multiple events in sequence', async () => {

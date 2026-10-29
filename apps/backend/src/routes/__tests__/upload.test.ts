@@ -8,6 +8,7 @@ import { logger } from '../../lib/logger.js';
 import { auth } from '../../lib/better-auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
 import * as formSharing from '../../graphql/resolvers/formSharing.js';
+import { countAllResponses } from '../../services/responseService.js';
 
 // Mock dependencies
 vi.mock('../../services/fileUploadService.js');
@@ -55,6 +56,10 @@ vi.mock('../../graphql/resolvers/formSharing.js', () => ({
     VIEWER: 'VIEWER',
     NO_ACCESS: 'NO_ACCESS',
   },
+}));
+
+vi.mock('../../services/responseService.js', () => ({
+  countAllResponses: vi.fn(),
 }));
 
 const mockUser = { id: 'user-123', email: 'test@example.com', role: 'user' };
@@ -112,6 +117,7 @@ describe('Upload Routes', () => {
           encoding: 'binary',
         }),
         type: 'UserAvatar',
+        ownerId: 'user-123',
       });
       expect(prisma.formFile.create).not.toHaveBeenCalled();
     });
@@ -430,6 +436,7 @@ describe('Upload Routes', () => {
           filename: 'my-custom-image.png',
         }),
         type: 'UserAvatar',
+        ownerId: 'user-123',
       });
     });
 
@@ -574,6 +581,92 @@ describe('Upload Routes', () => {
         .field('formId', 'bad-form')
         .attach('file', Buffer.from('doc'), 'doc.pdf');
       expect(res.status).toBe(404);
+    });
+
+    describe('respondent gates (mirrors submitResponse)', () => {
+      const publishedForm = (settings: unknown, extra: object = {}) =>
+        ({
+          id: 'f1',
+          isPublished: true,
+          createdById: 'other',
+          organizationId: 'org-1',
+          deletedAt: null,
+          settings,
+          ...extra,
+        }) as any;
+      const upload = () =>
+        request(app)
+          .post('/api/upload/upload')
+          .field('type', 'FormResponse')
+          .field('formId', 'f1')
+          .attach('file', Buffer.from('doc'), 'doc.pdf');
+
+      beforeEach(() => {
+        vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+        vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
+        vi.mocked(uploadFile).mockResolvedValue({
+          key: 'files/form-response/f1/x.pdf',
+          type: 'FormResponse',
+          url: '',
+          originalName: 'doc.pdf',
+          size: 3,
+          mimeType: 'application/pdf',
+        });
+      });
+
+      it('returns 404 for a soft-deleted form that is still published', async () => {
+        vi.mocked(prisma.form.findUnique).mockResolvedValue(publishedForm(null, { deletedAt: new Date() }));
+        expect((await upload()).status).toBe(404);
+        expect(uploadFile).not.toHaveBeenCalled();
+      });
+
+      it('returns 401 when the form requires sign-in and the caller is anonymous', async () => {
+        vi.mocked(prisma.form.findUnique).mockResolvedValue(
+          publishedForm({ accessControl: { enabled: true, requireSignIn: true } })
+        );
+        const res = await upload();
+        expect(res.status).toBe(401);
+        expect(res.body.code).toBe('SIGN_IN_REQUIRED');
+      });
+
+      it('returns 403 when the signed-in email domain is not allowed', async () => {
+        vi.mocked(auth.api.getSession).mockResolvedValue({ user: mockUser, session: { id: 's' } } as any);
+        vi.mocked(prisma.formPermission.findUnique).mockResolvedValue(null);
+        vi.mocked(prisma.member.findFirst).mockResolvedValue(null);
+        vi.mocked(prisma.form.findUnique).mockResolvedValue(
+          publishedForm({ accessControl: { enabled: true, requireSignIn: true, allowedDomains: ['corp.com'] } })
+        );
+        const res = await upload();
+        expect(res.status).toBe(403);
+        expect(res.body.code).toBe('EMAIL_DOMAIN_NOT_ALLOWED');
+      });
+
+      it('returns 403 outside the submission time window', async () => {
+        vi.mocked(prisma.form.findUnique).mockResolvedValue(
+          publishedForm({ submissionLimits: { timeWindow: { enabled: true, endDate: '2000-01-01T00:00:00.000Z' } } })
+        );
+        const res = await upload();
+        expect(res.status).toBe(403);
+        expect(res.body.code).toBe('FORM_CLOSED');
+      });
+
+      it('returns 403 once the maximum number of responses is reached', async () => {
+        vi.mocked(prisma.form.findUnique).mockResolvedValue(
+          publishedForm({ submissionLimits: { maxResponses: { enabled: true, limit: 5 } } })
+        );
+        vi.mocked(countAllResponses).mockResolvedValue(5);
+        const res = await upload();
+        expect(res.status).toBe(403);
+        expect(res.body.code).toBe('MAX_RESPONSES_REACHED');
+      });
+
+      it('accepts the upload when every gate passes', async () => {
+        vi.mocked(prisma.form.findUnique).mockResolvedValue(
+          publishedForm({ submissionLimits: { maxResponses: { enabled: true, limit: 5 } } })
+        );
+        vi.mocked(countAllResponses).mockResolvedValue(4);
+        expect((await upload()).status).toBe(200);
+      });
     });
 
     it('returns 403 for unauthenticated upload to unpublished form', async () => {

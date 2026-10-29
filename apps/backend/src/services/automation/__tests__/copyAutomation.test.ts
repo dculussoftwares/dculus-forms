@@ -138,6 +138,32 @@ describe('copyAutomationGraph', () => {
     expect(microsoft.worksheetName).toBe('Sheet1');
   });
 
+  // S08-04: a VIEWER can duplicate a form, so webhook credentials must not travel with the copy.
+  it('strips webhook secrets, headers and any credential-like key at any depth', () => {
+    const copy = copyAutomationGraph({
+      nodes: [
+        {
+          id: 'w',
+          type: 'action',
+          data: {
+            actionType: 'webhook',
+            config: {
+              url: 'https://example.com/hook',
+              secret: 'hmac',
+              headers: { Authorization: 'Bearer x' },
+              auth: { apiKey: 'k', mode: 'bearer' },
+              futureBearerToken: 't',
+            },
+          },
+        },
+      ],
+      edges: [],
+    });
+
+    const config = (copy.nodes[0] as any).data.config;
+    expect(config).toEqual({ url: 'https://example.com/hook', auth: { mode: 'bearer' } });
+  });
+
   // graph is a JSON column: a malformed one must not take out an unrelated form duplication.
   it('tolerates a missing or malformed graph', () => {
     expect(copyAutomationGraph(undefined)).toEqual({ nodes: [], edges: [] });

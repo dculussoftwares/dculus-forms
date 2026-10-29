@@ -30,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@dculus/ui';
 import { useTranslation } from '../../hooks/useTranslation';
-import { useAIChat } from '../../hooks/useAIChat';
+import { useAIChat, MAX_CHAT_MESSAGE_CHARS } from '../../hooks/useAIChat';
 import { useAIChips } from '../../hooks/useAIChips';
 import { useFormBuilderStore } from '../../store/useFormBuilderStore';
 import { isToolFailed, isToolSettled, type FormEditAgentUIMessage, type FormEditToolPart } from '../../lib/aiAgentTypes';
@@ -586,6 +586,7 @@ const AIEditDrawer: React.FC<AIEditDrawerProps> = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            maxLength={MAX_CHAT_MESSAGE_CHARS}
             placeholder={t('inputPlaceholder')}
             disabled={isStreaming || !isConversationReady}
             rows={1}

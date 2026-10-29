@@ -117,11 +117,11 @@ describe('pdfGeneratorRepository', () => {
       expect(prismaMock.pdfGenerationRun.findUnique).toHaveBeenCalledWith({ where: { id: 'run-1' } });
     });
 
-    it('findActiveRun scopes to running/cancelling statuses', async () => {
+    it('findActiveRun scopes to running/cancelling statuses and ignores auto-run rows', async () => {
       const repo = createPdfGeneratorRepository();
       await repo.findActiveRun('generator-1');
       expect(prismaMock.pdfGenerationRun.findFirst).toHaveBeenCalledWith({
-        where: { generatorId: 'generator-1', status: { in: ['running', 'cancelling'] } },
+        where: { generatorId: 'generator-1', trigger: { not: 'auto' }, status: { in: ['running', 'cancelling'] } },
       });
     });
 

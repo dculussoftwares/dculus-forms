@@ -57,7 +57,8 @@
     "pointValueNegative": "Points can't be negative.",
     "noCorrectOption": "Mark at least one correct option to save this answer key.",
     "regexTooLong": "Regular expressions can't be longer than 200 characters.",
-    "regexInvalid": "This isn't a valid regular expression."
+    "regexInvalid": "This isn't a valid regular expression.",
+    "regexUnsafe": "Regular expressions can't repeat a group that contains \"|\" (for example (a|b)+). Use a simpler pattern."
   },
   "summary": {
     "totalPoints_one": "{{count}} point total",

@@ -1007,7 +1007,7 @@ export const adminResolvers = {
     },
 
     adminCancelSubscription: async (_: any, args: { orgId: string }, context: { auth: BetterAuthContext }) => {
-      requireAdminRole(context);
+      const admin = requireAdminRole(context);
       const { orgId } = args;
 
       const subscription = await subscriptionService.getSubscriptionByOrganization(orgId);
@@ -1021,11 +1021,23 @@ export const adminResolvers = {
       await cancelChargebeeSubscription(subscription.chargebeeSubscriptionId, true);
       await subscriptionService.updateSubscriptionStatus(orgId, 'cancelled');
 
+      await auditLogService.logAction({
+        action: 'subscription_cancelled',
+        actorId: admin.id,
+        resourceType: 'Organization',
+        resourceId: orgId,
+        metadata: {
+          previousStatus: subscription.status,
+          chargebeeSubscriptionId: subscription.chargebeeSubscriptionId,
+          changedBy: admin.email,
+        },
+      });
+
       return true;
     },
 
     adminReactivateSubscription: async (_: any, args: { orgId: string }, context: { auth: BetterAuthContext }) => {
-      requireAdminRole(context);
+      const admin = requireAdminRole(context);
       const { orgId } = args;
 
       const subscription = await subscriptionService.getSubscriptionByOrganization(orgId);
@@ -1036,8 +1048,28 @@ export const adminResolvers = {
         throw createGraphQLError('No Chargebee subscription to reactivate', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
+      // past_due is lifted only by Chargebee's payment_succeeded webhook, never by hand.
+      if (subscription.status === 'past_due') {
+        throw createGraphQLError(
+          'Subscription has an unpaid invoice; it is restored automatically once payment succeeds',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
       await reactivateChargebeeSubscription(subscription.chargebeeSubscriptionId);
       await subscriptionService.updateSubscriptionStatus(orgId, 'active');
+
+      await auditLogService.logAction({
+        action: 'subscription_reactivated',
+        actorId: admin.id,
+        resourceType: 'Organization',
+        resourceId: orgId,
+        metadata: {
+          previousStatus: subscription.status,
+          chargebeeSubscriptionId: subscription.chargebeeSubscriptionId,
+          changedBy: admin.email,
+        },
+      });
 
       return true;
     },

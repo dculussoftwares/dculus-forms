@@ -6,6 +6,7 @@ import { getFormById } from '../../services/formService.js';
 import { getResponseById } from '../../services/responseService.js';
 import { emitFormViewed } from '../../subscriptions/events.js';
 import { logger } from '../../lib/logger.js';
+import { shouldCountFormView } from '../../lib/formViewDedupe.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 
 // UUID v4 / cuid pattern — rejects obviously bogus session IDs
@@ -54,6 +55,11 @@ export const analyticsResolvers = {
 
         if (!form.isPublished) {
           throw createGraphQLError('Form is not published', GRAPHQL_ERROR_CODES.FORM_NOT_PUBLISHED);
+        }
+
+        // S04-05: repeat/flooded views are acknowledged but not counted.
+        if (!shouldCountFormView(input.formId, input.sessionId, clientIP)) {
+          return { success: true };
         }
 
         const visitorGeo = context.req?.visitorGeo || context.res?.locals?.visitorGeo;

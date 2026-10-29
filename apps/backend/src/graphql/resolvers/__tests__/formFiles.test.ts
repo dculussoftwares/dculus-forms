@@ -263,7 +263,7 @@ describe('Form Files Resolvers', () => {
         );
 
         expect(prisma.formFile.findMany).toHaveBeenCalledWith({
-          where: { formId: 'form-123' },
+          where: { formId: 'form-123', type: { not: 'FormResponse' } },
           orderBy: { createdAt: 'desc' },
         });
         expect(result).toHaveLength(3);
@@ -344,27 +344,39 @@ describe('Form Files Resolvers', () => {
         expect(result.every((file) => file.type === 'FormBackground')).toBe(true);
       });
 
-      it('should filter by FormResponse type', async () => {
+      it('should reject listing respondent files by FormResponse type', async () => {
         vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
         vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
           hasAccess: true,
           permission: 'VIEWER' as any,
           form: mockForm as any,
         });
-        vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile2] as any);
 
-        const result = await formFileResolvers.Query.getFormFiles(
-          {},
-          { formId: 'form-123', type: 'FormResponse' },
-          mockContext
-        );
+        await expect(
+          formFileResolvers.Query.getFormFiles(
+            {},
+            { formId: 'form-123', type: 'FormResponse' },
+            mockContext
+          )
+        ).rejects.toThrow('Invalid file type filter');
+        expect(prisma.formFile.findMany).not.toHaveBeenCalled();
+      });
+
+      it('should exclude respondent files when no type filter is given', async () => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'VIEWER' as any,
+          form: mockForm as any,
+        });
+        vi.mocked(prisma.formFile.findMany).mockResolvedValue([]);
+
+        await formFileResolvers.Query.getFormFiles({}, { formId: 'form-123' }, mockContext);
 
         expect(prisma.formFile.findMany).toHaveBeenCalledWith({
-          where: { formId: 'form-123', type: 'FormResponse' },
+          where: { formId: 'form-123', type: { not: 'FormResponse' } },
           orderBy: { createdAt: 'desc' },
         });
-        expect(result).toHaveLength(1);
-        expect(result[0].type).toBe('FormResponse');
       });
 
       it('should return empty array when no files match type filter', async () => {
@@ -756,7 +768,7 @@ describe('Form Files Resolvers', () => {
 
         // Empty string is still truthy for the condition check, so it's not included
         expect(prisma.formFile.findMany).toHaveBeenCalledWith({
-          where: { formId: 'form-123' },
+          where: { formId: 'form-123', type: { not: 'FormResponse' } },
           orderBy: { createdAt: 'desc' },
         });
       });
@@ -780,7 +792,7 @@ describe('Form Files Resolvers', () => {
 
         // Verify no includes or unnecessary selects
         expect(prisma.formFile.findMany).toHaveBeenCalledWith({
-          where: { formId: 'form-123' },
+          where: { formId: 'form-123', type: { not: 'FormResponse' } },
           orderBy: { createdAt: 'desc' },
         });
       });
@@ -821,24 +833,6 @@ describe('Form Files Resolvers', () => {
         );
 
         expect(result[0].type).toBe('FormBackground');
-      });
-
-      it('should support FormResponse file type', async () => {
-        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
-        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
-          hasAccess: true,
-          permission: 'VIEWER' as any,
-          form: mockForm as any,
-        });
-        vi.mocked(prisma.formFile.findMany).mockResolvedValue([mockFormFile2] as any);
-
-        const result = await formFileResolvers.Query.getFormFiles(
-          {},
-          { formId: 'form-123', type: 'FormResponse' },
-          mockContext
-        );
-
-        expect(result[0].type).toBe('FormResponse');
       });
     });
 

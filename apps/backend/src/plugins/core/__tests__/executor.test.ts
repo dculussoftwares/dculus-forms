@@ -83,6 +83,7 @@ describe('executor', () => {
 
       expect(prisma.formPlugin.findUnique).toHaveBeenCalledWith({
         where: { id: 'plugin-1' },
+        include: { form: { select: { deletedAt: true } } },
       });
       expect(getPluginHandler).toHaveBeenCalledWith('webhook');
       expect(mockHandler).toHaveBeenCalledWith(
@@ -174,6 +175,23 @@ describe('executor', () => {
         where: { id: 'plugin-1' },
         data: { config: newConfig },
       });
+    });
+
+    it('skips execution when the plugin belongs to a deleted form', async () => {
+      const mockHandler: PluginHandler = vi.fn().mockResolvedValue({ success: true });
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({
+        id: 'plugin-1',
+        type: 'webhook',
+        enabled: true,
+        config: {},
+        form: { deletedAt: new Date() },
+      } as any);
+      vi.mocked(getPluginHandler).mockReturnValue(mockHandler);
+
+      const result = await executePlugin('plugin-1', mockEvent);
+
+      expect(result).toEqual({ success: false, error: 'Form is deleted' });
+      expect(mockHandler).not.toHaveBeenCalled();
     });
 
     it('returns error when plugin is not found', async () => {
@@ -400,6 +418,7 @@ describe('executor', () => {
           events: {
             has: 'form.submitted',
           },
+          form: { deletedAt: null },
         },
       });
       expect(mockLogger.info).toHaveBeenCalledWith(

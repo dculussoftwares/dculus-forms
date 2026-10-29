@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { isValidCronExpression, isValidTimezone } from '../cronValidator.js';
+import {
+  getMinCronIntervalMinutes,
+  isCronTooFrequent,
+  isValidCronExpression,
+  isValidTimezone,
+} from '../cronValidator.js';
 
 describe('cronValidator', () => {
   describe('isValidCronExpression', () => {
@@ -62,6 +67,36 @@ describe('cronValidator', () => {
       expect(isValidTimezone(null)).toBe(false);
       expect(isValidTimezone(undefined)).toBe(false);
       expect(isValidTimezone(123)).toBe(false);
+    });
+  });
+
+  describe('schedule frequency (S08-07)', () => {
+    it.each([
+      ['* * * * *', 1],
+      ['*/5 * * * *', 5],
+      ['*/7 * * * *', 4],
+      ['0,10 * * * *', 10],
+      ['0,50 * * * *', 10],
+      ['0,50 9 * * *', 50],
+      ['*/15 * * * *', 15],
+      ['0,30 * * * *', 30],
+      ['0 * * * *', 60],
+      ['0 9 * * *', 60],
+      ['0 9-10 * * *', 60],
+    ])('computes minimum interval of %s as %i', (cron, expected) => {
+      expect(getMinCronIntervalMinutes(cron)).toBe(expected);
+    });
+
+    it('flags crons firing more often than every 15 minutes', () => {
+      expect(isCronTooFrequent('* * * * *')).toBe(true);
+      expect(isCronTooFrequent('*/14 * * * *')).toBe(true);
+      expect(isCronTooFrequent('*/15 * * * *')).toBe(false);
+      expect(isCronTooFrequent('0 9 * * *')).toBe(false);
+    });
+
+    it('does not flag an invalid expression (validity is reported separately)', () => {
+      expect(getMinCronIntervalMinutes('nope')).toBeNull();
+      expect(isCronTooFrequent('nope')).toBe(false);
     });
   });
 });

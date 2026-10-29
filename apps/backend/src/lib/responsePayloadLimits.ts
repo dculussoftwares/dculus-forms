@@ -3,6 +3,8 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 
 export const MAX_RESPONSE_FIELDS = 500;
 export const MAX_RESPONSE_STRING_LENGTH = 10_000;
+export const MAX_RESPONSE_KEY_LENGTH = 200;
+export const MAX_RESPONSE_NESTING_DEPTH = 6;
 /**
  * Ceiling on the whole serialized answers object, nested values included:
  * room for every field at its string limit, plus keys and JSON punctuation.
@@ -15,7 +17,12 @@ export const MAX_RESPONSE_PAYLOAD_LENGTH = MAX_RESPONSE_FIELDS * (MAX_RESPONSE_S
  * `saveResponseDraft` so a draft can never hold more than a submission could.
  */
 export function assertResponsePayloadWithinLimits(data: unknown): void {
-  if (!data || typeof data !== 'object') return;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw createGraphQLError(
+      'Response data must be an object of answers',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
 
   const entries = Object.entries(data as Record<string, unknown>);
   if (entries.length > MAX_RESPONSE_FIELDS) {
@@ -25,6 +32,12 @@ export function assertResponsePayloadWithinLimits(data: unknown): void {
     );
   }
   for (const [key, value] of entries) {
+    if (key.length > MAX_RESPONSE_KEY_LENGTH) {
+      throw createGraphQLError(
+        'Response data contains an oversized field key',
+        GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+      );
+    }
     if (typeof value === 'string' && value.length > MAX_RESPONSE_STRING_LENGTH) {
       throw createGraphQLError(
         `Field "${key}" exceeds the 10,000 character limit`,
@@ -32,9 +45,23 @@ export function assertResponsePayloadWithinLimits(data: unknown): void {
       );
     }
   }
+  if (exceedsNestingDepth(data, 0)) {
+    throw createGraphQLError(
+      'Response data is nested too deeply',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
   // Per-field checks only see top-level strings; nested arrays and objects
   // are bounded by the total size instead.
   if (JSON.stringify(data).length > MAX_RESPONSE_PAYLOAD_LENGTH) {
     throw createGraphQLError('Response data is too large', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
   }
+}
+
+function exceedsNestingDepth(value: unknown, depth: number): boolean {
+  if (!value || typeof value !== 'object') return false;
+  if (depth >= MAX_RESPONSE_NESTING_DEPTH) return true;
+  return Object.values(value as Record<string, unknown>).some((child) =>
+    exceedsNestingDepth(child, depth + 1)
+  );
 }

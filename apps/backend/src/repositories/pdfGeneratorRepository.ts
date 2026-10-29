@@ -45,6 +45,9 @@ export const createPdfGeneratorRepository = (context?: RepositoryContext) => {
   const listByForm = async (formId: string) =>
     prisma.pdfGenerator.findMany({ where: { formId }, orderBy: { createdAt: 'desc' } });
 
+  const listByTemplate = async (templateId: string) =>
+    prisma.pdfGenerator.findMany({ where: { templateId } });
+
   const countByForm = async (formId: string) => prisma.pdfGenerator.count({ where: { formId } });
 
   const createGenerator = async (data: Prisma.PdfGeneratorCreateArgs['data']) =>
@@ -58,9 +61,11 @@ export const createPdfGeneratorRepository = (context?: RepositoryContext) => {
   /** --- Domain helpers: PdfGenerationRun --- */
   const findRunById = async (id: string) => prisma.pdfGenerationRun.findUnique({ where: { id } });
 
+  // Single-response auto-runs are excluded: a stream of public submissions must not be able to
+  // block the owner's manual bulk run with "already in progress".
   const findActiveRun = async (generatorId: string) =>
     prisma.pdfGenerationRun.findFirst({
-      where: { generatorId, status: { in: [...ACTIVE_RUN_STATUSES] } },
+      where: { generatorId, trigger: { not: 'auto' }, status: { in: [...ACTIVE_RUN_STATUSES] } },
     });
 
   const findLatestRun = async (generatorId: string) =>
@@ -139,6 +144,7 @@ export const createPdfGeneratorRepository = (context?: RepositoryContext) => {
     findById,
     findByIdWithTemplate,
     listByForm,
+    listByTemplate,
     countByForm,
     createGenerator,
     updateGenerator,

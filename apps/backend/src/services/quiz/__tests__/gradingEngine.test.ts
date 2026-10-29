@@ -306,6 +306,22 @@ describe('gradeResponse', () => {
         expect(result.score).toBe(0);
       });
 
+      it('treats overlapping-alternation patterns as non-matching and returns promptly', () => {
+        const grading: FieldGrading = {
+          mode: 'text',
+          pointValue: 5,
+          acceptedAnswers: ['(a|aa)+'],
+          text: { regex: true },
+        };
+        const schema = schemaWith([field({ id: 'q1', type: FieldType.TEXT_INPUT_FIELD, grading })]);
+
+        const start = Date.now();
+        const result = gradeResponse(schema, baseSettings, { q1: 'a'.repeat(60) + 'b' });
+
+        expect(Date.now() - start).toBeLessThan(500);
+        expect(result.score).toBe(0);
+      });
+
       it('never interpolates the submitted value into the compiled pattern', () => {
         const grading: FieldGrading = {
           mode: 'text',

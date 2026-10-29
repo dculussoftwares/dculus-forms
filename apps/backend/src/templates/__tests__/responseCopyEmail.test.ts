@@ -2,6 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { generateResponseCopyEmailHtml } from '../responseCopyEmail.js';
 
 describe('generateResponseCopyEmailHtml', () => {
+  it('neutralises markup in the form title', () => {
+    const html = generateResponseCopyEmailHtml({
+      formTitle: '<a href="https://evil.example">Verify</a>',
+      hasAttachment: true,
+      qaRows: [],
+    });
+
+    expect(html).not.toContain('<a href="https://evil.example"');
+    expect(html).toContain('&lt;a href=&quot;https://evil.example&quot;&gt;Verify&lt;/a&gt;');
+  });
+
   it('renders a Q&A table when there is no PDF attachment', () => {
     const html = generateResponseCopyEmailHtml({
       formTitle: 'Feedback Form',

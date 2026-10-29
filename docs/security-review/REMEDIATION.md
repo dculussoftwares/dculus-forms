@@ -111,3 +111,69 @@ applied by a Prisma client extension so no caller handles ciphertext).
 - Automation action credentials are masked for everyone except the form OWNER (EDITORs can still edit; masked values are
   restored on save), matching plugin configs.
 - The AI form builder no longer accepts a webhook signing secret through chat; set it in the integration's settings.
+
+## Medium findings — manual steps
+
+Code, workflow, Terraform and doc fixes for the Medium findings (S20-03…S24-04) are in the repository. Items below
+need admin access, secrets, or a deploy that cannot be done from a commit. Nothing here has been run against a real
+environment: validate Terraform with `plan` on **dev** first.
+
+### CI / GitHub (S20)
+
+- **S20-04 (Terraform state auth):** grant the deploy identity `Storage Blob Data Contributor` on the state storage
+  account, switch the backend to `use_azuread_auth = true`, disable shared-key access, and use separate state storage
+  accounts for dev and prod.
+- **S20-07:** enable the repository/org setting *Require actions to be pinned to a full-length commit SHA*. All
+  `uses:` lines are already SHA-pinned; Dependabot's `github-actions` ecosystem keeps them current.
+- **S20-09:** enable GitHub secret scanning and push protection. Developers should install `gitleaks` so the
+  new `lefthook` pre-commit `secrets` step runs (it is skipped when gitleaks is missing).
+- **S20-10:** the release now retags by the image digest recorded by the build run (artifact
+  `backend-image-digest-<sha>`). A release can only promote a commit whose build ran **after** this change. Still
+  manual: replace the Docker Hub password with a repo-scoped access token, and add cosign signing / build
+  attestations.
+- Pre-existing and unrelated: `actionlint` reports `github.event.inputs.tag` in `build.yml` (workflow_dispatch input
+  referenced from a non-dispatch job).
+
+### Infrastructure (S21)
+
+- **S21-03:** the backend ingress is still public. Restrict it to Cloudflare ranges or require a secret origin header
+  (Cloudflare Transform Rule + backend check). Not done in code because it can break cert validation, the CI health
+  checks and the custom-domain script.
+- **S21-04:** secrets now ship as Container App secrets instead of plain env values. Rotate every value that was
+  previously a plain env var (database password, auth secret, SMTP, Chargebee, S3, AI keys, OAuth client secrets,
+  admin password). Consider Key Vault references, Entra auth to Azure OpenAI, and moving the admin bootstrap to a
+  one-off job. `ADMIN_PASSWORD` is only set when `admin_password` is non-empty.
+- **S21-06:** `_headers` now set nosniff, framing and HSTS. Still manual in Cloudflare: WAF managed rules and
+  rate-limit rulesets for the API zone, zone HSTS, minimum TLS 1.2, Always-HTTPS. A full `script-src` CSP for form-app is
+  a follow-up (Google Picker, Chargebee and Sentry need an allow-list and a report-only trial).
+- **S21-07:** the R2 token is now scoped to the environment's two buckets only. The permission-resource key format
+  (`com.cloudflare.edge.r2.bucket.<account>_default_<bucket>`) has not been checked against the live API: run
+  `terraform plan` on dev, confirm uploads and presigned downloads still work, then rotate the token.
+- **S21-09:** `sslmode=disable` is now upgraded to `require` for non-local hosts. Still manual: separate migration
+  and runtime database roles (runtime role without DDL), and verify the PostgreSQL firewall rules.
+- Staging `better_auth_url` is now empty so it resolves from the custom domain; set it explicitly if staging has none.
+
+### Docs / history (S22)
+
+- Rotate the shared database admin password (it was documented alongside the host names), delete the PgBouncer
+  container instance if no longer used, and confirm the Postgres firewall does not allow the public internet. The
+  redacted `PGBOUNCER-MIGRATION.md` keeps the procedure but not the identifiers; history still contains them.
+- Verify the AWS SES key shown in the old `GITHUB_SECRETS_SETUP.md` example was not real; if it was, rotate it and
+  review CloudTrail for its use.
+- Confirm no hosted environment has a superAdmin using the previously documented default password; reset it if so.
+- Delete the public E2E account (`cloude2etest@mailinator.com`) from any hosted environment (E2E now refuses it for
+  non-local targets).
+
+### Packaging / data protection (S23-09, S24)
+
+- **S23-09 (not done):** `apps/backend/Dockerfile` still installs the whole workspace. A multi-stage build with
+  `pnpm deploy --prod` and `--ignore-scripts` (rebuilding only Prisma/esbuild) changes the runtime layout and needs a
+  Docker build and smoke test, which were not possible here. Track it as a separate change.
+- **S24-01:** deleting a user now nulls `respondentEmail` / `respondentUserId` on their responses and scrubs their
+  respondent edit values. Still open: a respondent-initiated "delete my response" mutation and a documented controller
+  (form owner) / processor (platform) split.
+- **S24-02 (not done):** needs a new `response.deleted` / form-delete event for plugins (delete Sheets rows, signed
+  deletion webhook) and revocation of Google/Microsoft refresh tokens when plugins, forms or orgs are deleted. Until
+  then, warn owners that deleting a response does not recall copies sent to spreadsheets, webhooks or email.
+- **S24-04:** invitation limits are in process memory (per replica). Pair with the S01-04 fix (trusted client IP and a
+  shared rate-limit store) for a global quota.

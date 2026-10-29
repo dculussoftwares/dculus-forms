@@ -4,6 +4,8 @@ import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '.
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import * as automationService from '../../services/automationService.js';
 import { userRepository } from '../../repositories/index.js';
+import { graphHasOffPlatformDelivery } from '../../services/automation/externalDelivery.js';
+import { audit } from '../../lib/audit.js';
 import { redactAutomationGraph, redactRunOutput } from '../../lib/secretRedaction.js';
 
 /**
@@ -81,6 +83,20 @@ async function assertFormAccess(
   }
 
   return accessCheck;
+}
+
+/**
+ * An EDITOR may build and save drafts, but making a graph that delivers data off-platform
+ * (webhook, email, sheets) live needs OWNER — the same bar the equivalent plugins have.
+ */
+function assertCanPublishDelivery(permission: string | null | undefined, graphs: unknown[], action: string) {
+  if (permission === PermissionLevel.OWNER) return;
+  if (graphs.some(graphHasOffPlatformDelivery)) {
+    throw createGraphQLError(
+      `Access denied: You need OWNER access to ${action} an automation that sends data to webhooks, email or spreadsheets`,
+      GRAPHQL_ERROR_CODES.NO_ACCESS
+    );
+  }
 }
 
 export const automationsResolvers = {
@@ -223,7 +239,21 @@ export const automationsResolvers = {
         'Access denied: You need EDITOR access to update this automation'
       );
 
+      if (graph !== undefined) {
+        assertCanPublishDelivery(accessCheck.permission, [graph, automation.graph], 'edit the live version of');
+      }
+
       const updated = await automationService.updateAutomation(automation, { name, graph, triggerConfig });
+      if (graph !== undefined || triggerConfig !== undefined) {
+        await audit(
+          'automation.updated',
+          'Automation',
+          automation.id,
+          context.auth.user!.id,
+          { formId: automation.formId, graphChanged: graph !== undefined, triggerConfigChanged: triggerConfig !== undefined },
+          automation.organizationId
+        );
+      }
       return forEditor(updated, accessCheck.permission);
     },
 
@@ -269,6 +299,12 @@ export const automationsResolvers = {
         'Access denied: You need EDITOR access to publish this automation'
       );
 
+      assertCanPublishDelivery(
+        accessCheck.permission,
+        [automation.draftGraph ?? automation.graph],
+        'publish'
+      );
+
       const published = await automationService.publishAutomation(automation, { baseRevision, activate }, context.auth.user!.id);
       return forEditor(published, accessCheck.permission);
     },
@@ -305,7 +341,19 @@ export const automationsResolvers = {
         'Access denied: You need EDITOR access to change this automation status'
       );
 
+      if (status === 'ACTIVE') {
+        assertCanPublishDelivery(accessCheck.permission, [automation.graph], 'activate');
+      }
+
       const updated = await automationService.setAutomationStatus(automation, status);
+      await audit(
+        'automation.status_changed',
+        'Automation',
+        automation.id,
+        context.auth.user!.id,
+        { formId: automation.formId, from: automation.status, to: status },
+        automation.organizationId
+      );
       return forEditor(updated, accessCheck.permission);
     },
 
@@ -323,7 +371,16 @@ export const automationsResolvers = {
         'Access denied: You need EDITOR access to delete this automation'
       );
 
-      return automationService.deleteAutomation(automation);
+      const deleted = await automationService.deleteAutomation(automation);
+      await audit(
+        'automation.deleted',
+        'Automation',
+        automation.id,
+        context.auth.user!.id,
+        { formId: automation.formId, name: automation.name },
+        automation.organizationId
+      );
+      return deleted;
     },
 
     testAutomation: async (

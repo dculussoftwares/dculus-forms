@@ -137,7 +137,11 @@ describe('formRepository', () => {
           OR: [
             { createdById: 'user-1' },
             { permissions: { some: { userId: 'user-1', permission: { not: 'NO_ACCESS' } } } },
-            { sharingScope: 'ALL_ORG_MEMBERS', defaultPermission: { not: 'NO_ACCESS' } },
+            {
+              sharingScope: 'ALL_ORG_MEMBERS',
+              defaultPermission: { not: 'NO_ACCESS' },
+              permissions: { none: { userId: 'user-1', permission: 'NO_ACCESS' } },
+            },
           ],
         },
         select: { id: true },

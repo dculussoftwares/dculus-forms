@@ -21,7 +21,10 @@ type Currency = 'USD' | 'INR';
 export const Pricing = () => {
   const { t } = useTranslation('pricing');
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user, activeOrganization } = useAuthContext();
+  // The backend only lets organization owners start checkout
+  const canManageBilling =
+    activeOrganization?.members?.find((m: any) => m.user.id === user?.id)?.role === 'owner';
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [currency, setCurrency] = useState<Currency>('USD');
 
@@ -111,6 +114,11 @@ export const Pricing = () => {
 
     if (planId === 'free') {
       navigate('/dashboard');
+      return;
+    }
+
+    if (!canManageBilling) {
+      toastError(t('buttons.ownerOnly'));
       return;
     }
 
@@ -256,7 +264,8 @@ export const Pricing = () => {
                   {/* CTA button — Typeform dark aubergine */}
                   <Button
                     onClick={() => handleGetStarted(plan.id)}
-                    disabled={checkoutLoading}
+                    disabled={checkoutLoading || (plan.id !== 'free' && !!user && !canManageBilling)}
+                    title={plan.id !== 'free' && !!user && !canManageBilling ? t('buttons.ownerOnly') : undefined}
                     className="w-full h-9 flex items-center justify-center gap-1.5"
                   >
                     {checkoutLoading ? t('buttons.processing') : plan.id === 'free' ? t('buttons.getStarted') : t('buttons.upgradeTo', { values: { planName: plan.name } })}

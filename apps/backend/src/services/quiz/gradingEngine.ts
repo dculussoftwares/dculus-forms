@@ -5,6 +5,8 @@
  * engine trivially unit-testable and reusable by submitResponse (Story 06),
  * a future regrade job, and preview.
  */
+import { runInNewContext } from 'node:vm';
+import { hasQuantifiedAlternation } from '@dculus/types';
 import type {
   FieldGrading,
   FillableFormField,
@@ -30,6 +32,19 @@ const MAX_REGEX_PATTERN_LENGTH = 200;
 // false negatives, so also cap the string it runs against — bounds the
 // worst case even for a pattern that slips past the heuristic.
 const MAX_REGEX_INPUT_LENGTH = 500;
+// Hard stop for a match that still backtracks catastrophically: the vm watchdog
+// terminates the synchronous regex execution instead of blocking the event loop.
+const REGEX_MATCH_TIMEOUT_MS = 50;
+
+const matchRegexWithTimeout = (source: string, flags: string, input: string): boolean => {
+  try {
+    return runInNewContext('new RegExp(source, flags).test(input)', { source, flags, input }, {
+      timeout: REGEX_MATCH_TIMEOUT_MS,
+    }) === true;
+  } catch {
+    return false;
+  }
+};
 
 const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -123,13 +138,8 @@ const gradeText = (grading: FieldGrading, value: unknown): ModeOutcome => {
       // safe-regex rejects catastrophic-backtracking shapes (nested/ambiguous
       // quantifiers, e.g. `(a+)+$`) by limiting star height — the anchoring
       // and length cap above don't bound that on their own.
-      if (!safeRegex(pattern)) return false;
-      try {
-        const anchored = new RegExp(`^(?:${pattern})$`, flags);
-        return anchored.test(submitted);
-      } catch {
-        return false;
-      }
+      if (!safeRegex(pattern) || hasQuantifiedAlternation(pattern)) return false;
+      return matchRegexWithTimeout(`^(?:${pattern})$`, flags, submitted);
     });
     return { correct: matched, points: matched ? grading.pointValue : 0 };
   }

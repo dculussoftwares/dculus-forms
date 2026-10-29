@@ -3,6 +3,28 @@ import type { Prisma } from '#prisma-client';
 import { pluginRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
 
+const CREDENTIAL_KEYS = new Set([
+  'secret',
+  'headers',
+  'googleToken',
+  'microsoftToken',
+  'spreadsheetId',
+  'spreadsheetUrl',
+  'workbookId',
+  'workbookUrl',
+  'workbookFolderUrl',
+  'destinationFolder',
+  'sheetColumns',
+]);
+
+/** Drops credentials and linked external resources so only non-secret settings are duplicated. */
+export function stripPluginCredentials(config: unknown): Record<string, unknown> {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return {};
+  return Object.fromEntries(
+    Object.entries(config as Record<string, unknown>).filter(([key]) => !CREDENTIAL_KEYS.has(key))
+  );
+}
+
 /**
  * Copies every plugin from one form onto another when a form is duplicated.
  *
@@ -15,6 +37,11 @@ import { logger } from '../lib/logger.js';
  * deliveries alongside the original the moment the cloned form takes a submission, with
  * nothing in the UI to explain the duplicate traffic. The owner re-enables each one after
  * confirming where it points.
+ *
+ * Credentials and external-resource identity are NOT copied: duplication only needs VIEWER on
+ * the source, so copying secrets, auth headers, OAuth tokens or the linked spreadsheet would
+ * hand them to a caller who may never have been allowed to see them. The owner of the copy
+ * re-enters or re-authorizes them.
  *
  * Failures are logged, not thrown: losing the plugin configs is bad, failing the whole
  * form duplication over it is worse. Mirrors `copyAutomationsToForm`.
@@ -35,7 +62,7 @@ export async function copyPluginsToForm(
           type: plugin.type,
           name: plugin.name,
           enabled: false,
-          config: (plugin.config ?? {}) as Prisma.InputJsonValue,
+          config: stripPluginCredentials(plugin.config) as Prisma.InputJsonValue,
           events: plugin.events,
         },
       });

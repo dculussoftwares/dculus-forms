@@ -119,7 +119,11 @@ describe('Responses Resolvers', () => {
       pages: [{
         id: 'page-1',
         title: 'Page 1',
-        fields: [],
+        fields: [
+          { id: 'field1', type: 'text_input_field', label: 'Field 1', validation: { required: false } },
+          { id: 'field2', type: 'text_input_field', label: 'Field 2', validation: { required: false } },
+          { id: 'f-email', type: 'email_field', label: 'Email', validation: { required: false } },
+        ],
         order: 0,
       }],
       layout: {
@@ -481,6 +485,8 @@ describe('Responses Resolvers', () => {
         submissionsExceeded: false,
         emailsExceeded: false,
       });
+      vi.mocked(usageService.reserveSubmissionSlot).mockResolvedValue({ tracked: true });
+      vi.mocked(usageService.releaseSubmissionSlot).mockResolvedValue(undefined);
       vi.mocked(responseService.submitResponse).mockResolvedValue(mockResponse as any);
       vi.mocked(pluginEvents.emitFormSubmitted).mockReturnValue(undefined);
       vi.mocked(subscriptionEvents.emitFormSubmitted).mockReturnValue(undefined);
@@ -679,6 +685,23 @@ describe('Responses Resolvers', () => {
       expect(responseDraftRepository.deleteForRespondent).not.toHaveBeenCalled();
     });
 
+    it('does not count builder preview submissions toward usage (S04-05)', async () => {
+      vi.mocked(subscriptionEvents.emitFormSubmitted).mockClear();
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({ hasAccess: true } as any);
+
+      await responsesResolvers.Mutation.submitResponse({}, { input: { ...mockInput, isPreview: true } }, mockContext);
+      expect(subscriptionEvents.emitFormSubmitted).not.toHaveBeenCalled();
+
+      await responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext);
+      expect(subscriptionEvents.emitFormSubmitted).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects non-object answers data (S04-03)', async () => {
+      await expect(
+        responsesResolvers.Mutation.submitResponse({}, { input: { ...mockInput, data: 'x'.repeat(100) } }, mockContext)
+      ).rejects.toThrow(/must be an object/);
+    });
+
     it('should throw error when form not found', async () => {
       vi.mocked(formService.getFormById).mockResolvedValue(null);
 
@@ -727,6 +750,28 @@ describe('Responses Resolvers', () => {
       await expect(
         responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
       ).rejects.toThrow('Form has reached its maximum response limit');
+    });
+
+    it('should release the reserved plan slot when the insert fails', async () => {
+      vi.mocked(usageService.reserveSubmissionSlot).mockResolvedValue({ tracked: true });
+      vi.mocked(responseService.submitResponse).mockRejectedValue(new Error('insert failed'));
+
+      await expect(
+        responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
+      ).rejects.toThrow('insert failed');
+
+      expect(usageService.reserveSubmissionSlot).toHaveBeenCalledWith('org-123');
+      expect(usageService.releaseSubmissionSlot).toHaveBeenCalledWith('org-123');
+    });
+
+    it('should not reserve a plan slot for builder previews', async () => {
+      await responsesResolvers.Mutation.submitResponse(
+        {},
+        { input: { ...mockInput, isPreview: true } },
+        mockContext
+      );
+
+      expect(usageService.reserveSubmissionSlot).not.toHaveBeenCalled();
     });
 
     it('should allow submission when under max responses limit', async () => {
@@ -1033,7 +1078,7 @@ describe('Responses Resolvers', () => {
           organizationId: 'org-123',
           isPublished: true,
           settings: {},
-          formSchema: null,
+          formSchema: mockForm.formSchema,
         } as any);
         vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
           submissionsExceeded: false,
@@ -1072,7 +1117,7 @@ describe('Responses Resolvers', () => {
           organizationId: 'org-123',
           isPublished: true,
           settings: {},
-          formSchema: null,
+          formSchema: mockForm.formSchema,
         } as any);
         vi.mocked(usageService.checkUsageExceeded).mockResolvedValue({
           submissionsExceeded: false,
@@ -1103,7 +1148,7 @@ describe('Responses Resolvers', () => {
         title: 'Feedback Form',
         isPublished: true,
         settings: { responseCopy: { enabled: true, mode: 'always', emailFieldId: 'f-email' } },
-        formSchema: null,
+        formSchema: mockForm.formSchema,
       };
 
       beforeEach(() => {
@@ -1381,13 +1426,14 @@ describe('Responses Resolvers', () => {
           gradeRelease: 'immediate',
           respondentVisibility: baseVisibility,
         };
-        // `pages: 'not-a-schema'` makes deserializeFormSchema throw (a bare
-        // string has no .map), exercising the branch where grading itself
-        // fails but the NEEDS_REVIEW fallback save succeeds.
-        vi.mocked(formService.getFormById).mockResolvedValue(
-          buildFormWithQuiz(quiz, { pages: 'not-a-schema' }) as any
-        );
+        // Exercises the branch where grading fails but the NEEDS_REVIEW
+        // fallback save succeeds.
+        vi.mocked(formService.getFormById).mockResolvedValue(buildFormWithQuiz(quiz) as any);
         stubGradeUpsert();
+        // The first upsert (the real grade) fails; the NEEDS_REVIEW fallback succeeds.
+        vi.mocked(responseGradeRepository.upsertForResponse).mockRejectedValueOnce(
+          new Error('grade store unavailable')
+        );
 
         const result = await responsesResolvers.Mutation.submitResponse(
           {},
@@ -1694,6 +1740,39 @@ describe('Responses Resolvers', () => {
       },
     ];
 
+    it('hides editor IP and user agent from VIEWER but keeps them for EDITOR (S03-05)', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
+      vi.mocked(formService.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(mockEditHistory as any);
+
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValueOnce({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      const asViewer = (await extendedResponsesResolvers.Query.responseEditHistory(
+        {},
+        { responseId: 'response-123' },
+        mockContext
+      )) as any[];
+      expect(asViewer[0].ipAddress).toBeNull();
+      expect(asViewer[0].userAgent).toBeNull();
+
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValueOnce({
+        hasAccess: true,
+        permission: 'EDITOR' as any,
+        form: mockForm as any,
+      });
+      const asEditor = (await extendedResponsesResolvers.Query.responseEditHistory(
+        {},
+        { responseId: 'response-123' },
+        mockContext
+      )) as any[];
+      expect(asEditor[0].ipAddress).toBe('192.168.1.1');
+      expect(asEditor[0].userAgent).toBe('Mozilla/5.0');
+    });
+
     it('should return edit history for response', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(responseService.getResponseById).mockResolvedValue(mockResponse as any);
@@ -1872,27 +1951,54 @@ describe('Responses Resolvers', () => {
         },
       ];
       vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(editHistory as any);
-      const parent = { ...mockResponse };
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
+      const parent = { ...mockResponse, formId: 'form-last-editor' };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(parent);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(
+        parent,
+        {},
+        mockContext as any
+      );
 
       expect(result).toEqual(editHistory[0].editedBy);
     });
 
     it('should return null when no edits', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
       vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([]);
-      const parent = { ...mockResponse };
+      const parent = { ...mockResponse, formId: 'form-last-editor' };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(parent);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(
+        parent,
+        {},
+        mockContext as any
+      );
 
       expect(result).toBeNull();
     });
 
     it('should return null when error occurs', async () => {
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: 'VIEWER' as any,
+        form: mockForm as any,
+      });
       vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockRejectedValue(new Error('Database error'));
-      const parent = { ...mockResponse };
+      const parent = { ...mockResponse, formId: 'form-last-editor' };
 
-      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(parent);
+      const result = await extendedResponsesResolvers.FormResponse.lastEditedBy(
+        parent,
+        {},
+        mockContext as any
+      );
 
       expect(result).toBeNull();
     });
@@ -1904,32 +2010,93 @@ describe('Responses Resolvers', () => {
         id: 'edit-1',
         editedBy: { id: 'user-123', name: 'User', email: 'user@example.com', image: null },
         editedAt: new Date('2024-01-01'),
+        ipAddress: '10.0.0.1',
+        userAgent: 'Mozilla/5.0',
       },
     ];
 
-    it('should return full edit history', async () => {
-      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(mockEditHistoryData as any);
-      const parent = { ...mockResponse };
+    const grantAccess = (permission: string) =>
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: permission as any,
+        form: mockForm as any,
+      });
 
-      const result = await extendedResponsesResolvers.FormResponse.editHistory(parent);
+    it('returns full edit history including IP/user agent to EDITOR+', async () => {
+      grantAccess('EDITOR');
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(mockEditHistoryData as any);
+      const parent = { ...mockResponse, formId: 'form-history-editor' };
+
+      const result = await extendedResponsesResolvers.FormResponse.editHistory(
+        parent,
+        {},
+        mockContext as any
+      );
 
       expect(result).toEqual(mockEditHistoryData);
     });
 
-    it('should return empty array when no edits', async () => {
-      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([]);
-      const parent = { ...mockResponse };
+    it('hides editor IP and user agent from VIEWER (S03-05)', async () => {
+      grantAccess('VIEWER');
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue(mockEditHistoryData as any);
+      const parent = { ...mockResponse, formId: 'form-history-viewer' };
 
-      const result = await extendedResponsesResolvers.FormResponse.editHistory(parent);
+      const result = (await extendedResponsesResolvers.FormResponse.editHistory(
+        parent,
+        {},
+        mockContext as any
+      )) as any[];
+
+      expect(result).toHaveLength(1);
+      expect(result[0].ipAddress).toBeNull();
+      expect(result[0].userAgent).toBeNull();
+      expect(result[0].editedBy.email).toBe('user@example.com');
+    });
+
+    it('returns nothing to anonymous callers and never loads history (S03-05)', async () => {
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockClear();
+      const parent = { ...mockResponse, formId: 'form-history-anon' };
+
+      const result = await extendedResponsesResolvers.FormResponse.editHistory(
+        parent,
+        {},
+        { auth: { user: null } } as any
+      );
+      const lastEditor = await extendedResponsesResolvers.FormResponse.lastEditedBy(
+        parent,
+        {},
+        { auth: { user: null } } as any
+      );
+
+      expect(result).toEqual([]);
+      expect(lastEditor).toBeNull();
+      expect(editTrackingService.ResponseEditTrackingService.getEditHistory).not.toHaveBeenCalled();
+    });
+
+    it('should return empty array when no edits', async () => {
+      grantAccess('VIEWER');
+      vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockResolvedValue([]);
+      const parent = { ...mockResponse, formId: 'form-history-empty' };
+
+      const result = await extendedResponsesResolvers.FormResponse.editHistory(
+        parent,
+        {},
+        mockContext as any
+      );
 
       expect(result).toEqual([]);
     });
 
     it('should return empty array when error occurs', async () => {
+      grantAccess('VIEWER');
       vi.mocked(editTrackingService.ResponseEditTrackingService.getEditHistory).mockRejectedValue(new Error('Database error'));
-      const parent = { ...mockResponse };
+      const parent = { ...mockResponse, formId: 'form-history-error' };
 
-      const result = await extendedResponsesResolvers.FormResponse.editHistory(parent);
+      const result = await extendedResponsesResolvers.FormResponse.editHistory(
+        parent,
+        {},
+        mockContext as any
+      );
 
       expect(result).toEqual([]);
     });

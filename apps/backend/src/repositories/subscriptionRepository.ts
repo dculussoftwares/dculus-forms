@@ -51,6 +51,23 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
       create: createData,
     });
 
+  // One conditional UPDATE: the increment only happens while under `limit`, so concurrent
+  // callers cannot overshoot it. Returns the number of rows changed (0 = limit reached).
+  const reserveSubmissionSlot = (organizationId: string, limit: number | null) =>
+    prisma.subscription.updateMany({
+      where: {
+        organizationId,
+        ...(limit !== null ? { submissionsUsed: { lt: limit } } : {}),
+      },
+      data: { submissionsUsed: { increment: 1 } },
+    });
+
+  const releaseSubmissionSlot = (organizationId: string) =>
+    prisma.subscription.updateMany({
+      where: { organizationId, submissionsUsed: { gt: 0 } },
+      data: { submissionsUsed: { decrement: 1 } },
+    });
+
   // Safe read-only accessor — omits Chargebee credential fields.
   // Use this for usage checks and plan display; use findUnique for billing operations.
   const findByOrganizationPublic = (organizationId: string) =>
@@ -101,6 +118,8 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
     createSubscription,
     upsertForOrganization,
     findByOrganizationPublic,
+    reserveSubmissionSlot,
+    releaseSubmissionSlot,
     groupByPlan,
     findManyWithLimits,
   };

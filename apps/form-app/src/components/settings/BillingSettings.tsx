@@ -12,6 +12,7 @@ import {
 import { UpgradeModal } from '../subscription/UpgradeModal';
 import { UsageChart } from '../subscription/UsageChart';
 import { useTranslation } from '../../hooks/useTranslation';
+import { useAuthContext } from '../../contexts/AuthContext';
 
 function isChargebeeUrl(url: string): boolean {
   try {
@@ -79,6 +80,10 @@ function UsageCard({
 
 export function BillingSettings() {
   const { t } = useTranslation('settings');
+  const { activeOrganization, user } = useAuthContext();
+  // The backend only lets organization owners start checkout or open the billing portal
+  const canManageBilling =
+    activeOrganization?.members?.find((m: any) => m.user.id === user?.id)?.role === 'owner';
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showChart, setShowChart] = useState(false);
 
@@ -199,6 +204,12 @@ export function BillingSettings() {
         <p className="mt-1 text-sm text-[#655d67]">{t('billing.subtitle')}</p>
       </div>
 
+      {!canManageBilling && (
+        <div className="rounded-lg border border-[rgba(81,76,84,0.2)] bg-[rgba(81,76,84,0.04)] p-4 text-sm text-[#655d67]">
+          {t('billing.ownerOnly')}
+        </div>
+      )}
+
       {/* Limit exceeded alert */}
       {limitExceeded && (
         <div className="rounded-lg border border-[rgba(206,93,85,0.25)] bg-[rgba(206,93,85,0.06)] p-4 flex items-start gap-3">
@@ -206,7 +217,7 @@ export function BillingSettings() {
           <div className="flex-1 text-sm text-[#ce5d55]">
             Usage limit exceeded. Upgrade to restore access.
           </div>
-          <Button size="sm" onClick={() => setShowUpgradeModal(true)}
+          <Button size="sm" onClick={() => setShowUpgradeModal(true)} disabled={!canManageBilling}
             className="shrink-0 bg-[#ce5d55] hover:bg-[#b94f47] text-white">
             Upgrade
           </Button>
@@ -225,7 +236,7 @@ export function BillingSettings() {
           <Button
             size="sm"
             onClick={handleCompleteEnterprisePayment}
-            disabled={enterpriseCheckoutLoading}
+            disabled={enterpriseCheckoutLoading || !canManageBilling}
             className="shrink-0 bg-red-600 hover:bg-red-700 text-white"
           >
             {enterpriseCheckoutLoading ? t('billing.opening') : t('billing.completePayment')}
@@ -321,6 +332,7 @@ export function BillingSettings() {
           {planId !== 'advanced' && (
             <Button
               onClick={() => setShowUpgradeModal(true)}
+              disabled={!canManageBilling}
               className="bg-[#3c323e] hover:bg-[#2e2530] text-white"
             >
               Upgrade
@@ -339,7 +351,7 @@ export function BillingSettings() {
           variant="outline"
           size="sm"
           onClick={handleManageBilling}
-          disabled={portalLoading}
+          disabled={portalLoading || !canManageBilling}
           className="text-[#3c323e] border-[rgba(81,76,84,0.2)]"
         >
           {portalLoading ? 'Opening…' : 'Edit billing details'}

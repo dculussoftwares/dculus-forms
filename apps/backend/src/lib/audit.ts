@@ -10,13 +10,15 @@ export const audit = async (
   resourceType: string,
   resourceId: string,
   actorId?: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  organizationId?: string
 ): Promise<void> => {
   try {
     await prisma.auditLog.create({
       data: {
         action,
         actorId: actorId ?? null,
+        organizationId: organizationId ?? null,
         resourceType,
         resourceId,
         metadata: (metadata ?? {}) as any,

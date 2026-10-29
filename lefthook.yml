@@ -3,6 +3,14 @@ pre-commit:
   commands:
     lint:
       run: pnpm lint-staged
+    secrets:
+      name: Secret scan (gitleaks, staged changes)
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --redact --no-banner
+        else
+          echo "gitleaks not installed - skipping local secret scan (brew install gitleaks)"
+        fi
 
 # pre-push: mirrors CI — runs in parallel (~2-3 min)
 pre-push:

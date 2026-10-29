@@ -236,6 +236,7 @@
     "title": "Billing & Plans",
     "subtitle": "Manage your subscription, usage, and plan",
     "manageBilling": "Manage billing",
+    "ownerOnly": "Only organization owners can upgrade the plan or manage billing details.",
     "upgradePlan": "Upgrade Plan",
     "billingPeriod": "{{start}} – {{end}} · {{days}} days remaining",
     "sectionUsage": "Usage this period",

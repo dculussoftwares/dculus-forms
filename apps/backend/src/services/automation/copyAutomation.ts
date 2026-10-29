@@ -42,11 +42,29 @@ const EXTERNALLY_BOUND_CONFIG_KEYS = [
   'microsoftToken',
   'accessToken',
   'refreshToken',
+  // Webhook credentials (HMAC secret, auth headers) and the Drive folder the owner picked.
+  // A copy needs only VIEWER on the source, so none of these may reach the copier.
+  'secret',
+  'headers',
+  'destinationFolder',
 ] as const;
 
+// Catch-all for credential-like keys a future action type might add, at any nesting depth.
+const CREDENTIAL_KEY_PATTERN = /secret|token|password|passwd|authorization|api[-_]?key|credential|private[-_]?key/i;
+
+function stripValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(stripValue);
+  if (value && typeof value === 'object') return stripExternalBindings(value as Record<string, any>);
+  return value;
+}
+
 function stripExternalBindings(config: Record<string, any>): Record<string, any> {
-  const copy = { ...config };
-  for (const key of EXTERNALLY_BOUND_CONFIG_KEYS) delete copy[key];
+  const copy: Record<string, any> = {};
+  for (const [key, value] of Object.entries(config)) {
+    if ((EXTERNALLY_BOUND_CONFIG_KEYS as readonly string[]).includes(key)) continue;
+    if (CREDENTIAL_KEY_PATTERN.test(key)) continue;
+    copy[key] = stripValue(value);
+  }
   return copy;
 }
 

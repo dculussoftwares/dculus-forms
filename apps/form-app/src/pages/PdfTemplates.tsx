@@ -358,6 +358,7 @@ const PdfTemplates: React.FC = () => {
               autoFocus
               placeholder={t('createDialog.namePlaceholder')}
               value={templateName}
+              maxLength={200}
               data-testid="pdf-template-name-input"
               onChange={(e) => setTemplateName(e.target.value)}
               onKeyDown={(e) => {

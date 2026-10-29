@@ -127,6 +127,17 @@ export function generateAdminTestUser(prefix: string = 'admin'): AdminTestUser {
 }
 
 /**
+ * Generate an admin test user
+ */
+export function generateAdminTestUser(prefix: string = 'admin'): AdminTestUser {
+  const user = generateTestUser(prefix);
+  return {
+    ...user,
+    role: 'admin' as const,
+  };
+}
+
+/**
  * Generate default super admin credentials (for testing setup script)
  */
 export function getDefaultSuperAdminCredentials(): SuperAdminTestUser {
@@ -175,8 +186,6 @@ export const TEST_CONFIG = {
 
   // Admin test configuration
   ADMIN_ROLES: ['admin', 'superAdmin'] as const,
-  DEFAULT_ADMIN_EMAIL: 'admin@dculus.com',
-  DEFAULT_ADMIN_PASSWORD: 'admin123!@#',
   TEST_ADMIN_EMAIL: 'test-admin@dculus.com',
   TEST_ADMIN_PASSWORD: 'TestAdminPassword123!',
 } as const;

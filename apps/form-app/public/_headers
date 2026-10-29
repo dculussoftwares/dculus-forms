@@ -6,6 +6,10 @@
 # Kept here so the intent also holds for self-hosted/Pages-only deployments.
 /*
   Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'
+  Strict-Transport-Security: max-age=31536000
 
 # Overwritten at deploy time with environment values; must never be served stale.
 /config.js

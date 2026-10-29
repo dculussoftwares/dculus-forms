@@ -65,7 +65,7 @@ These secrets enable email sending through AWS Simple Email Service:
 |------------|-------------|---------------|
 | `EMAIL_HOST` | SMTP email host | `email-smtp.ap-south-1.amazonaws.com` |
 | `EMAIL_PORT` | SMTP port | `587` |
-| `EMAIL_USER` | SMTP username (AWS SES access key) | `AKIAXXQEZJBZ2CWQ7AKS` |
+| `EMAIL_USER` | SMTP username (AWS SES access key) | `AKIAXXXXXXXXXXXXXXXX` |
 | `EMAIL_PASSWORD` | SMTP password (AWS SES secret key) | `your-ses-smtp-password` |
 | `EMAIL_FROM` | From email address | `noreply@dculus.com` |
 

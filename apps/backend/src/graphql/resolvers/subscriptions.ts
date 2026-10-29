@@ -24,6 +24,16 @@ import { logger } from '../../lib/logger.js';
  * Handles subscription data for organizations
  */
 
+const requireBillingOwner = async (auth: BetterAuthContext, organizationId: string) => {
+  const membership = await requireOrganizationMembership(auth, organizationId);
+  if (membership?.role !== 'owner') {
+    throw createGraphQLError(
+      'Access denied: only the organization owner can manage billing',
+      GRAPHQL_ERROR_CODES.NO_ACCESS
+    );
+  }
+};
+
 export const subscriptionResolvers = {
   Query: {
     /**
@@ -58,8 +68,21 @@ export const subscriptionResolvers = {
         throw new GraphQLError('No active organization');
       }
 
-      // 🔒 SECURITY: Verify user is a member of the active organization
-      await requireOrganizationMembership(context.auth, session.activeOrganizationId);
+      // 🔒 SECURITY: Billing changes are owner-only
+      await requireBillingOwner(context.auth, session.activeOrganizationId);
+
+      // 🔒 SECURITY: Only publicly purchasable prices may be checked out
+      // (excludes hidden/archived plans and per-organization enterprise deals).
+      const plans = await getAvailablePlans();
+      const isPurchasable = plans.some((plan: { prices: { id: string }[] }) =>
+        plan.prices.some((price) => price.id === itemPriceId)
+      );
+      if (!isPurchasable) {
+        throw createGraphQLError(
+          'Invalid item price ID',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
 
       // Get subscription to find Chargebee customer ID
       const subscription = await getSubscriptionByOrganization(session.activeOrganizationId);
@@ -87,7 +110,10 @@ export const subscriptionResolvers = {
         };
       } catch (error: any) {
         logger.error('[Subscription Resolver] Error creating checkout session:', error);
-        throw new GraphQLError(`Failed to create checkout session: ${error.message}`);
+        throw createGraphQLError(
+          'Failed to create checkout session',
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
       }
     },
 
@@ -108,8 +134,8 @@ export const subscriptionResolvers = {
         throw new GraphQLError('No active organization');
       }
 
-      // 🔒 SECURITY: Verify user is a member of the active organization
-      await requireOrganizationMembership(context.auth, session.activeOrganizationId);
+      // 🔒 SECURITY: Billing changes are owner-only
+      await requireBillingOwner(context.auth, session.activeOrganizationId);
 
       // Get subscription to find Chargebee customer ID
       const subscription = await getSubscriptionByOrganization(session.activeOrganizationId);
@@ -124,7 +150,10 @@ export const subscriptionResolvers = {
         return { url };
       } catch (error: any) {
         logger.error('[Subscription Resolver] Error creating portal session:', error);
-        throw new GraphQLError(`Failed to create portal session: ${error.message}`);
+        throw createGraphQLError(
+          'Failed to create portal session',
+          GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
+        );
       }
     },
 
@@ -134,7 +163,7 @@ export const subscriptionResolvers = {
      * adminSetEnterprisePlan, which returns a checkout URL that is emailed to
      * the owner and shown to the admin — but that URL is never persisted (it
      * expires) and the org owner has no other in-product way to retrieve or
-     * resume it. This lets any member of the org regenerate a fresh one on
+     * resume it. This lets the org owner regenerate a fresh one on
      * demand, same as self-serve checkout/portal below.
      */
     completeEnterprisePayment: async (
@@ -149,8 +178,8 @@ export const subscriptionResolvers = {
         throw createGraphQLError('No active organization', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      // 🔒 SECURITY: Verify user is a member of the active organization
-      await requireOrganizationMembership(context.auth, session.activeOrganizationId);
+      // 🔒 SECURITY: Billing changes are owner-only
+      await requireBillingOwner(context.auth, session.activeOrganizationId);
 
       try {
         const { url, hostedPageId } = await getEnterpriseCheckoutUrl(session.activeOrganizationId);

@@ -122,6 +122,25 @@ describe('sendResponseCopyIfEnabled', () => {
     expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'respondent@example.com' }));
   });
 
+  it.each([
+    'a@example.com, b@example.org',
+    'a@example.com;b@example.org',
+    'a@example.com b@example.org',
+    'a@example.com\r\nBcc: victim@example.org',
+    'Alice <a@example.com>',
+  ])('refuses to send to a non-single recipient %j (S03-04)', async (value) => {
+    await sendResponseCopyIfEnabled({
+      form: {
+        ...baseForm,
+        settings: { responseCopy: { enabled: true, mode: 'always', emailFieldId: 'f-email' } },
+      },
+      response: { ...baseResponse, data: { ...baseResponse.data, 'f-email': value } },
+      consent: true,
+    });
+
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
   it('does nothing when no emailFieldId is configured', async () => {
     await sendResponseCopyIfEnabled({
       form: { ...baseForm, settings: { responseCopy: { enabled: true, mode: 'always' } } },

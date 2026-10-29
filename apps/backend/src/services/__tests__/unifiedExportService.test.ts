@@ -3,6 +3,7 @@ import {
   generateExportFile,
   generateExcelFilename,
   generateCsvFilename,
+  MAX_ORPHAN_EXPORT_COLUMNS,
   type QuizGradeExportRow,
 } from '../unifiedExportService.js';
 import {
@@ -247,6 +248,49 @@ describe('Unified Export Service', () => {
   });
 
   describe('generateExportFile - CSV', () => {
+    it('neutralizes spreadsheet formulas in answers, emails and tags but keeps numbers intact', async () => {
+      const result = await generateExportFile({
+        formTitle: 'Test Form',
+        responses: [
+          {
+            id: 'resp-1',
+            data: { 'field-1': '=HYPERLINK("http://evil.test","x")', 'field-2': '@SUM(A1)' },
+            submittedAt: 1704067200000,
+            metadata: {},
+            respondentEmail: '+cmd@evil.test',
+            tags: [{ name: '-2+3' }],
+          },
+          { id: 'resp-2', data: { 'field-1': '-42', 'field-2': '\tTAB' }, submittedAt: 1704067200000, metadata: {} },
+        ] as any,
+        formSchema: mockFormSchema,
+        format: 'csv',
+        includeRespondentEmail: true,
+      } as any);
+
+      const csv = result.buffer.toString('utf-8');
+      expect(csv).toContain('"\'=HYPERLINK(""http://evil.test"",""x"")"');
+      expect(csv).toContain("'@SUM(A1)");
+      expect(csv).toContain("'+cmd@evil.test");
+      expect(csv).toContain("'-2+3");
+      expect(csv).toContain("'\tTAB");
+      expect(csv).toContain(',-42,');
+      expect(csv.split('\n')[1].startsWith('resp-1,')).toBe(true);
+    });
+
+    it('caps unknown response keys at one bounded set of columns', async () => {
+      const data: Record<string, string> = { 'field-1': 'ok' };
+      for (let i = 0; i < 400; i++) data[`junk-${String(i).padStart(3, '0')}`] = 'v';
+      const result = await generateExportFile({
+        formTitle: 'Test Form',
+        responses: [{ id: 'r', data, submittedAt: 1704067200000, metadata: {} }] as any,
+        formSchema: mockFormSchema,
+        format: 'csv',
+      });
+      const header = result.buffer.toString('utf-8').split('\n')[0];
+      const unknownColumns = header.split(',').filter((h) => h === 'Unknown field (deleted)');
+      expect(unknownColumns).toHaveLength(MAX_ORPHAN_EXPORT_COLUMNS);
+    });
+
     it('should generate CSV file with correct format', async () => {
       const result = await generateExportFile({
         formTitle: 'Contact Form',
