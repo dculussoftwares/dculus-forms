@@ -13,6 +13,16 @@ vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../plugins/core/events.js');
 vi.mock('../../../plugins/core/backfill.js');
+// Save-time URL screening is exercised in lib/__tests__/urlGuard.test.ts; keep DNS out of these tests.
+vi.mock('../../../lib/urlGuard.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../lib/urlGuard.js')>();
+  return {
+    ...actual,
+    assertOutboundUrlAllowed: vi.fn(async (raw: unknown) => {
+      actual.parseOutboundUrl(raw, { allowLocal: false, allowPrivateNetwork: false });
+    }),
+  };
+});
 vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
     formPlugin: {
@@ -139,7 +149,7 @@ describe('Plugins Resolvers', () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
-        permission: 'EDITOR' as any,
+        permission: 'OWNER' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([
@@ -222,7 +232,7 @@ describe('Plugins Resolvers', () => {
       } as any);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
-        permission: 'EDITOR' as any,
+        permission: 'OWNER' as any,
         form: mockForm as any,
       });
 
@@ -580,6 +590,142 @@ describe('Plugins Resolvers', () => {
       await pluginsResolvers.Mutation.createFormPlugin({}, { input }, mockContext);
 
       expect(prisma.formPlugin.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('Secret redaction and webhook URL screening', () => {
+    const secretWebhook = {
+      ...mockWebhookPlugin,
+      config: {
+        url: 'https://example.com/webhook',
+        secret: 'hmac-secret',
+        headers: { Authorization: 'Bearer abc' },
+      },
+    };
+    const sheetsPlugin = {
+      ...mockWebhookPlugin,
+      id: 'plugin-sheets',
+      type: 'google-sheets',
+      config: { googleToken: { accessToken: 'ya29.a', refreshToken: '1//r', email: 'me@example.com' } },
+    };
+
+    const asPermission = (permission: string) =>
+      vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+        hasAccess: true,
+        permission: permission as any,
+        form: mockForm as any,
+      });
+
+    it.each(['VIEWER', 'EDITOR'])('masks credentials in formPlugins for %s', async (permission) => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      asPermission(permission);
+      vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([secretWebhook, sheetsPlugin] as any);
+
+      const result = (await pluginsResolvers.Query.formPlugins({}, { formId: 'form-123' }, mockContext)) as any[];
+
+      const json = JSON.stringify(result);
+      for (const secret of ['hmac-secret', 'Bearer abc', 'ya29.a', '1//r']) expect(json).not.toContain(secret);
+      expect(result[0].config.hasSecret).toBe(true);
+      expect(result[0].config.url).toBe('https://example.com/webhook');
+      expect(result[1].config.connectedEmail).toBe('me@example.com');
+    });
+
+    it('masks credentials in formPlugin for a viewer', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue({ ...secretWebhook, form: mockForm } as any);
+      asPermission('VIEWER');
+
+      const result = (await pluginsResolvers.Query.formPlugin({}, { id: 'plugin-123' }, mockContext)) as any;
+
+      expect(JSON.stringify(result.config)).not.toContain('hmac-secret');
+    });
+
+    it('returns the real configuration to the owner', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      asPermission('OWNER');
+      vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([secretWebhook] as any);
+
+      const result = (await pluginsResolvers.Query.formPlugins({}, { formId: 'form-123' }, mockContext)) as any[];
+
+      expect(result[0].config.secret).toBe('hmac-secret');
+    });
+
+    it('never returns a stored receiver body in delivery history', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(secretWebhook as any);
+      vi.mocked(prisma.pluginDelivery.findMany).mockResolvedValue([
+        { id: 'd1', response: { success: true, statusCode: 200, responseBody: 'internal metadata', responseExcerpt: 'ok' } },
+      ] as any);
+
+      asPermission('OWNER');
+      const asOwner = (await pluginsResolvers.Query.pluginDeliveries({}, { pluginId: 'plugin-123' }, mockContext)) as any[];
+      expect(asOwner[0].response).toEqual({ success: true, statusCode: 200, responseExcerpt: 'ok' });
+
+      asPermission('VIEWER');
+      const asViewer = (await pluginsResolvers.Query.pluginDeliveries({}, { pluginId: 'plugin-123' }, mockContext)) as any[];
+      expect(asViewer[0].response).toEqual({ success: true, statusCode: 200 });
+    });
+
+    it('keeps stored secrets when an update sends the masks back', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(secretWebhook as any);
+      asPermission('OWNER');
+      vi.mocked(prisma.formPlugin.update).mockResolvedValue(secretWebhook as any);
+
+      await pluginsResolvers.Mutation.updateFormPlugin(
+        {},
+        {
+          id: 'plugin-123',
+          input: {
+            config: {
+              url: 'https://example.com/webhook',
+              secret: '••••••••',
+              hasSecret: true,
+              headers: { Authorization: '••••••••' },
+            },
+          },
+        },
+        mockContext
+      );
+
+      const saved = vi.mocked(prisma.formPlugin.update).mock.calls[0][0].data.config as any;
+      expect(saved.secret).toBe('hmac-secret');
+      expect(saved.headers).toEqual({ Authorization: 'Bearer abc' });
+      expect(saved).not.toHaveProperty('hasSecret');
+    });
+
+    it.each([
+      'http://example.com/hook',
+      'https://169.254.169.254/latest/meta-data/',
+      'https://127.0.0.1/hook',
+      'https://user:pw@example.com/hook',
+    ])('rejects webhook destination %s on create', async (url) => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      asPermission('OWNER');
+
+      await expect(
+        pluginsResolvers.Mutation.createFormPlugin(
+          {},
+          { input: { formId: 'form-123', type: 'webhook', name: 'W', config: { url }, events: ['form.submitted'] } },
+          mockContext
+        )
+      ).rejects.toMatchObject({ extensions: { code: GRAPHQL_ERROR_CODES.BAD_USER_INPUT } });
+      expect(prisma.formPlugin.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unsafe destination on update', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(secretWebhook as any);
+      asPermission('OWNER');
+
+      await expect(
+        pluginsResolvers.Mutation.updateFormPlugin(
+          {},
+          { id: 'plugin-123', input: { config: { url: 'https://10.0.0.1/hook' } } },
+          mockContext
+        )
+      ).rejects.toMatchObject({ extensions: { code: GRAPHQL_ERROR_CODES.BAD_USER_INPUT } });
+      expect(prisma.formPlugin.update).not.toHaveBeenCalled();
     });
   });
 
@@ -1076,7 +1222,7 @@ describe('Plugins Resolvers', () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
-        permission: 'EDITOR' as any,
+        permission: 'OWNER' as any,
         form: mockForm as any,
       });
       vi.mocked(prisma.formPlugin.findMany).mockResolvedValue([mockWebhookPlugin] as any);

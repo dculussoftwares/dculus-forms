@@ -34,7 +34,9 @@ async function uploadEditResponseFile(
   formData.append('formId', formId);
   formData.append('editMode', 'true');
 
-  const response = await fetch(uploadUrl, {
+  // Query params let the backend authorize and size-check before buffering the file.
+  const query = new URLSearchParams({ type: 'FormResponse', formId });
+  const response = await fetch(`${uploadUrl}?${query.toString()}`, {
     method: 'POST',
     body: formData,
     credentials: 'include', // send auth cookie so server can bypass isPublished check

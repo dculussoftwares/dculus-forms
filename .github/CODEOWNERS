@@ -1,0 +1,9 @@
+# Security-sensitive paths. Pair with a branch ruleset that enables
+# "Require review from Code Owners" (see docs/security-review/REMEDIATION.md).
+# Owners below are repository admins; replace with a dedicated team when one exists.
+
+/.github/workflows/**   @natheeshsunway @bannarisoftwares @prabu-naveen @arunkumardursaisamy66
+/.github/actions/**     @natheeshsunway @bannarisoftwares @prabu-naveen @arunkumardursaisamy66
+/.github/scripts/**     @natheeshsunway @bannarisoftwares @prabu-naveen @arunkumardursaisamy66
+/.github/CODEOWNERS     @natheeshsunway @bannarisoftwares @prabu-naveen @arunkumardursaisamy66
+/infrastructure/**      @natheeshsunway @bannarisoftwares @prabu-naveen @arunkumardursaisamy66

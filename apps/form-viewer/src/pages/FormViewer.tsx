@@ -7,6 +7,8 @@ import {
   deserializeFormSchema,
   extractEmailFields,
   FieldType,
+  FILE_UPLOAD_MAX_FILE_SIZE_MB,
+  isFileTypeAllowed,
   isOneResponsePerRespondent,
   isRespondentEditEnabled,
   isSaveProgressEnabled,
@@ -45,7 +47,7 @@ import { myResponseLabels } from '../locales/myResponse';
 import { formatDate } from '../lib/dateFormat';
 
 const SUBMISSION_TIMEOUT_MS = 30_000;
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB — matches backend multer limit
+const MAX_FILE_SIZE_BYTES = FILE_UPLOAD_MAX_FILE_SIZE_MB * 1024 * 1024; // matches the backend cap for respondent uploads
 
 function validateFiles(
   responses: Record<string, unknown>,
@@ -58,7 +60,7 @@ function validateFiles(
       if (field.type === FieldType.FILE_UPLOAD_FIELD) {
         const f = field as { maxFileSizeMb?: number; allowedMimeTypes?: string[] } & typeof field;
         fieldLimits[field.id] = {
-          maxMb: f.maxFileSizeMb ?? 50,
+          maxMb: Math.min(f.maxFileSizeMb ?? FILE_UPLOAD_MAX_FILE_SIZE_MB, FILE_UPLOAD_MAX_FILE_SIZE_MB),
           mimeTypes: f.allowedMimeTypes ?? [],
         };
       }
@@ -71,14 +73,36 @@ function validateFiles(
     const maxBytes = limits ? limits.maxMb * 1024 * 1024 : MAX_FILE_SIZE_BYTES;
     for (const file of value.filter((item): item is File => item instanceof File)) {
       if (file.size > maxBytes) {
-        return `File "${file.name}" exceeds the maximum allowed size of ${limits?.maxMb ?? 50} MB.`;
+        return `File "${file.name}" exceeds the maximum allowed size of ${limits?.maxMb ?? FILE_UPLOAD_MAX_FILE_SIZE_MB} MB.`;
       }
-      if (limits?.mimeTypes.length && !limits.mimeTypes.includes(file.type)) {
+      if (limits?.mimeTypes.length && !isFileTypeAllowed(file.type, limits.mimeTypes)) {
         return `File "${file.name}" has an unsupported type. Allowed: ${limits.mimeTypes.join(', ')}.`;
       }
     }
   }
   return null;
+}
+
+/** Turns an upload rejection into a message a respondent can act on. */
+function describeUploadFailure(
+  file: File,
+  status: number,
+  body: { error?: string; code?: string }
+): string {
+  const name = `"${file.name}"`;
+  if (status === 413 || body.code === 'FILE_TOO_LARGE') {
+    return `${name} is too large. Files can be at most ${FILE_UPLOAD_MAX_FILE_SIZE_MB} MB. Please choose a smaller file.`;
+  }
+  if (status === 429 || body.code === 'RATE_LIMITED') {
+    return 'Too many uploads in a short time. Please wait a minute and try again.';
+  }
+  if (body.code === 'UPLOAD_BUSY' || status === 503) {
+    return 'Uploads are busy right now. Please try again in a moment.';
+  }
+  if (status === 403) {
+    return body.error ?? `${name} could not be uploaded because this form is not accepting submissions.`;
+  }
+  return body.error ?? `Could not upload ${name} (error ${status}). Please try again.`;
 }
 
 /**
@@ -94,16 +118,25 @@ async function uploadFormResponseFile(
   formData.append('type', 'FormResponse');
   formData.append('formId', formId);
 
-  const response = await fetch(uploadUrl, { method: 'POST', body: formData });
+  // Query params let the backend authorize and size-check before buffering the file.
+  const query = new URLSearchParams({ type: 'FormResponse', formId });
+  let response: Response;
+  try {
+    response = await fetch(`${uploadUrl}?${query.toString()}`, { method: 'POST', body: formData });
+  } catch {
+    throw new Error(
+      `Could not upload "${file.name}". Please check your connection and try again.`
+    );
+  }
 
   if (!response.ok) {
     let body: { error?: string; code?: string } = {};
     try {
       body = await response.json();
     } catch {
-      /* non-JSON body */
+      /* non-JSON body (for example a proxy rejecting an oversized request) */
     }
-    throw new Error(body.error ?? `Upload failed (${response.status})`);
+    throw new Error(describeUploadFailure(file, response.status, body));
   }
 
   const data = (await response.json()) as { key: string };

@@ -14,6 +14,7 @@ import { AUTOMATION_QUEUE, getBoss, startAutomationBoss, stopAutomationBoss } fr
 import { evaluateCondition } from './conditionEvaluator.js';
 import { DIGEST_RESPONSE_SAFETY_CEILING } from './graphValidator.js';
 import { recordRunOutcome } from './runOutcome.js';
+import { stripReservedKeys } from '../../lib/reservedKeys.js';
 import type {
   AutomationEdge,
   AutomationGraph,
@@ -258,7 +259,11 @@ function buildPluginEvent(
     formId: automation.formId,
     organizationId: automation.organizationId,
     data: {
-      ...(context.triggerData ?? {}),
+      // Only a schedule run can carry engine-written `__digest*` keys; on any other trigger a `__`
+      // key can only have come from respondent data, so it is never forwarded.
+      ...(automation.triggerType === 'schedule'
+        ? (context.triggerData ?? {})
+        : stripReservedKeys(context.triggerData ?? {})),
       // Reserved scalar (same channel as the __digest* keys) marking a test run, so a receiver on
       // the far end of a webhook can tell a rehearsal from a real submission and decline to act
       // on it. `event.type` deliberately stays the automation's real trigger type — handlers
@@ -799,6 +804,7 @@ async function handleActionNode(
   // which collapses the batch to one redirected email — that path pre-substitutes like any other.
   const isPerResponseEmailAction =
     actionType === 'email' &&
+    event.type === 'schedule' &&
     Boolean(effectiveConfig.recipientFieldId) &&
     Array.isArray(event.data.__digestResponses);
   const substitutedConfig = isPerResponseEmailAction

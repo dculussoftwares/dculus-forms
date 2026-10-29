@@ -25,6 +25,9 @@ vi.mock('../../lib/prisma.js', () => ({
     member: {
       findFirst: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
@@ -61,6 +64,43 @@ describe('Better Auth Middleware', () => {
       expect(result.user).toEqual(mockUser);
       expect(result.session).toEqual(mockSession);
       expect(result.isAuthenticated).toBe(true);
+    });
+
+    it('should re-validate admin roles against the database', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue({
+        user: { id: 'admin-1', role: 'superAdmin' },
+        session: { id: 's1' },
+      } as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({ role: 'user', banned: false } as any);
+
+      const result = await createBetterAuthContext({ headers: {} } as Request);
+
+      expect(result.user.role).toBe('user');
+      expect(result.isAuthenticated).toBe(true);
+    });
+
+    it('should reject cached admin sessions for banned or deleted users', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue({
+        user: { id: 'admin-1', role: 'admin' },
+        session: { id: 's1' },
+      } as any);
+
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ role: 'admin', banned: true } as any);
+      expect((await createBetterAuthContext({ headers: {} } as Request)).isAuthenticated).toBe(false);
+
+      vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(null);
+      expect((await createBetterAuthContext({ headers: {} } as Request)).isAuthenticated).toBe(false);
+    });
+
+    it('should not hit the database for non-admin users', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue({
+        user: { id: 'u1', role: 'user' },
+        session: { id: 's1' },
+      } as any);
+
+      await createBetterAuthContext({ headers: {} } as Request);
+
+      expect(prisma.user.findUnique).not.toHaveBeenCalled();
     });
 
     it('should create unauthenticated context when no session', async () => {

@@ -636,6 +636,37 @@ describe('automation engine', () => {
       );
     });
 
+    it('drops reserved __ keys from trigger data on a non-schedule trigger (forged __digestResponses)', async () => {
+      const graph: AutomationGraph = {
+        nodes: [
+          {
+            id: 'action-1',
+            type: 'action',
+            data: { actionType: 'email', config: { recipientFieldId: 'email-field', subject: 'Hi', message: 'Hello' } },
+          },
+        ],
+        edges: [],
+      };
+
+      vi.mocked(automationRepository.findExecutedStepRun).mockResolvedValue(null);
+      vi.mocked(automationRepository.findRunByIdWithAutomation).mockResolvedValue(
+        makeRun({
+          graphSnapshot: graph,
+          context: { triggerData: { name: 'Ada', __digestResponses: [{ id: 'forged' }] } },
+          automation: { id: 'automation-1', status: 'ACTIVE', formId: 'form-1', organizationId: 'org-1', triggerType: 'form.submitted' },
+        }) as any
+      );
+
+      const handler = vi.fn().mockResolvedValue({});
+      vi.mocked(getPluginHandler).mockReturnValue(handler);
+
+      await executeAutomationStep(makeJob({ runId: 'run-1', nodeId: 'action-1' }, 0, ACTION_RETRY_LIMIT));
+
+      const event = handler.mock.calls[0][1];
+      expect(event.data).not.toHaveProperty('__digestResponses');
+      expect(event.data).toMatchObject({ name: 'Ada' });
+    });
+
     it('does NOT skip pre-substitution for a webhook action downstream of a digest node — only the specific email+recipientFieldId case is exempted', async () => {
       const graph: AutomationGraph = {
         nodes: [

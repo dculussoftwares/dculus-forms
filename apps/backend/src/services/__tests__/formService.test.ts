@@ -498,6 +498,48 @@ describe('Form Service', () => {
       expect(formRepository.updateForm).toHaveBeenCalledWith('form-123', updates);
     });
 
+    describe('OWNER-only settings (S02-02)', () => {
+      const persisted = {
+        accessControl: { enabled: true, requireSignIn: true },
+        collectRespondentEmail: true,
+      };
+
+      beforeEach(() => {
+        vi.mocked(formRepository.findById).mockResolvedValue({ ...mockForm, settings: persisted } as any);
+      });
+
+      it('keeps persisted OWNER-only keys when an EDITOR omits them', async () => {
+        await updateForm('form-123', { settings: { saveProgress: { enabled: true } } } as any, 'user-123');
+
+        const written = vi.mocked(formRepository.updateForm).mock.calls[0][1] as any;
+        expect(written.settings.accessControl).toEqual(persisted.accessControl);
+        expect(written.settings.collectRespondentEmail).toBe(true);
+        expect(written.settings.saveProgress).toEqual({ enabled: true });
+      });
+
+      it('rejects an EDITOR who changes accessControl', async () => {
+        await expect(
+          updateForm('form-123', { settings: { accessControl: { enabled: false } } } as any, 'user-123')
+        ).rejects.toThrow('owner permissions required');
+        expect(formRepository.updateForm).not.toHaveBeenCalled();
+      });
+
+      it('rejects an EDITOR who changes collectRespondentEmail', async () => {
+        await expect(
+          updateForm('form-123', { settings: { collectRespondentEmail: false } } as any, 'user-123')
+        ).rejects.toThrow('owner permissions required');
+      });
+
+      it('allows an OWNER to change accessControl', async () => {
+        vi.mocked(checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'OWNER' as any, form: mockFormWithAccess });
+
+        await updateForm('form-123', { settings: { accessControl: { enabled: false } } } as any, 'user-123');
+
+        const written = vi.mocked(formRepository.updateForm).mock.calls[0][1] as any;
+        expect(written.settings.accessControl).toEqual({ enabled: false });
+      });
+    });
+
     it('should throw error when form not found', async () => {
       vi.mocked(formRepository.findById).mockResolvedValue(null);
 

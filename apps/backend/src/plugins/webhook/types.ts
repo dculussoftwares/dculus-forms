@@ -19,7 +19,8 @@ export interface WebhookPayload {
 export interface WebhookDeliveryResult {
   success: boolean;
   statusCode?: number;
-  responseBody?: any;
+  /** Short truncated excerpt of the receiver's reply — never the full body. */
+  responseExcerpt?: string;
   error?: string;
   deliveryTime: number;
 }

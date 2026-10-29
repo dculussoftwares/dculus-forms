@@ -13,6 +13,7 @@ import {
   FieldType,
   FILE_UPLOAD_DEFAULT_MAX_FILES,
   FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB,
+  FILE_UPLOAD_MAX_FILE_SIZE_MB,
   FillableFormField,
   TextFieldValidation,
   RichTextFormField,
@@ -20,7 +21,7 @@ import {
   isLayoutField,
 } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
-import { Upload } from 'lucide-react';
+import { FileUploadInput } from './FileUploadInput';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import {
   AffixedInput,
@@ -407,104 +408,24 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
             /* ─── File upload ─── */
             case FieldType.FILE_UPLOAD_FIELD: {
               const fuf = field as any;
-              const raw: (string | File)[] = Array.isArray(cf.value) ? cf.value : [];
-              const existing: string[] = raw.filter((v): v is string => typeof v === 'string');
-              const pending: File[] = raw.filter((v): v is File => v instanceof File);
-              const maxFiles: number = fuf.maxFiles || FILE_UPLOAD_DEFAULT_MAX_FILES;
-              const maxMb: number = fuf.maxFileSizeMb || FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB;
-              const mimes: string[] = fuf.allowedMimeTypes || [];
-              const total = existing.length + pending.length;
-
-              const nameFromKey = (k: string) => (k.split('/').pop() ?? k).replace(/^\d{13}-[0-9a-f-]{36}-/i, '');
-
-              const onFiles = (files: FileList | null) => {
-                if (!files || !isInteractive) return;
-                const incoming = Array.from(files).filter(f =>
-                  f.size <= maxMb * 1024 * 1024 && (mimes.length === 0 || mimes.includes(f.type))
-                );
-                cf.onChange([...existing, ...pending, ...incoming].slice(0, maxFiles));
-              };
-
-              /* File chip — consistent with card/badge style */
-              const FileChip: React.FC<{ name: string; onRemove?: () => void }> = ({ name, onRemove }) => (
-                <div
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
-                  style={{ backgroundColor: '#f7f7f8', border: '1px solid rgba(81,76,84,0.12)', color: '#4c414e' }}
-                >
-                  <span data-testid="file-upload-chip-name" className={`min-w-0 ${WRAP_TEXT_CLASS}`}>{name}</span>
-                  {onRemove && (
-                    <button
-                      type="button"
-                      onClick={onRemove}
-                      className="ml-2 flex-shrink-0 transition-colors text-lg leading-none"
-                      style={{ color: '#655d67' }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ce5d55'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = '#655d67'}
-                    >
-                      &times;
-                    </button>
-                  )}
-                </div>
+              const maxMb: number = Math.min(
+                fuf.maxFileSizeMb || FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB,
+                FILE_UPLOAD_MAX_FILE_SIZE_MB
               );
-
               return (
-                <div className="space-y-2">
-                  {/* Existing uploaded files */}
-                  {existing.map((key, i) => (
-                    <FileChip key={key} name={nameFromKey(key)} onRemove={isInteractive ? () => cf.onChange([...existing.filter((_, j) => j !== i), ...pending]) : undefined} />
-                  ))}
-                  {/* New pending files */}
-                  {pending.map((file, i) => (
-                    <FileChip key={i} name={file.name} onRemove={isInteractive ? () => cf.onChange([...existing, ...pending.filter((_, j) => j !== i)]) : undefined} />
-                  ))}
-
-                  {/* Drop zone — wrapped in <label> for keyboard/screen-reader access (P2-19) */}
-                  {isInteractive && total < maxFiles && (
-                    <label
-                      htmlFor={`ff-${field.id}`}
-                      data-testid={`file-upload-drop-zone-${field.id}`}
-                      className="border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all duration-150 block"
-                      style={{
-                        borderColor: hasError ? '#ce5d55' : 'rgba(81,76,84,0.18)',
-                        backgroundColor: hasError ? 'rgba(206,93,85,0.03)' : '#f7f7f8',
-                      }}
-                      onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
-                      onDrop={e => { e.preventDefault(); e.stopPropagation(); onFiles(e.dataTransfer.files); }}
-                    >
-                      <Upload className="w-7 h-7 mx-auto mb-2" style={{ color: '#dedcde' }} />
-                      <p className="text-sm font-medium" style={{ color: '#655d67' }}>
-                        {existing.length > 0 ? 'Add more files' : 'Click or drag files here'}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: '#655d67', opacity: 0.65 }}>
-                        Up to {maxFiles} file{maxFiles > 1 ? 's' : ''} · max {maxMb} MB each
-                        {mimes.length > 0 && ` · ${mimes.join(', ')}`}
-                      </p>
-                      <input
-                        id={`ff-${field.id}`}
-                        data-testid={`file-upload-input-${field.id}`}
-                        type="file"
-                        multiple={maxFiles > 1}
-                        accept={mimes.length ? mimes.join(',') : undefined}
-                        className="hidden"
-                        disabled={!isInteractive}
-                        onChange={e => onFiles(e.target.files)}
-                      />
-                    </label>
-                  )}
-
-                  {/* Disabled placeholder */}
-                  {!isInteractive && total === 0 && (
-                    <div
-                      className="border-2 border-dashed rounded-xl p-5 text-center opacity-50 cursor-not-allowed"
-                      style={{ borderColor: 'rgba(81,76,84,0.18)', backgroundColor: '#f7f7f8' }}
-                    >
-                      <Upload className="w-7 h-7 mx-auto mb-1.5" style={{ color: '#dedcde' }} />
-                      <p className="text-sm" style={{ color: '#655d67' }}>File upload</p>
-                    </div>
-                  )}
-
+                <>
+                  <FileUploadInput
+                    fieldId={field.id}
+                    value={cf.value}
+                    onChange={cf.onChange}
+                    maxFiles={fuf.maxFiles || FILE_UPLOAD_DEFAULT_MAX_FILES}
+                    maxMb={maxMb}
+                    allowedMimeTypes={fuf.allowedMimeTypes || []}
+                    isInteractive={isInteractive}
+                    hasError={hasError}
+                  />
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
-                </div>
+                </>
               );
             }
 

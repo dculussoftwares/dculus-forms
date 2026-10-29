@@ -49,10 +49,11 @@ import { createGraphQLError } from '#graphql-errors';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { logger } from '../../lib/logger.js';
 import { audit } from '../../lib/audit.js';
-import { upsertPreviewTag, addTagToResponse } from '../../services/tagService.js';
+import { upsertPreviewTag, addTagToResponse, PREVIEW_RESPONSE_SOURCE } from '../../services/tagService.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { enforceAccessControlForSubmission, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
 import { assertResponsePayloadWithinLimits } from '../../lib/responsePayloadLimits.js';
+import { stripReservedKeys } from '../../lib/reservedKeys.js';
 import { clearDraftAfterSubmit } from '../../services/responseDraftService.js';
 import {
   generateFakeResponsesForForm,
@@ -375,6 +376,8 @@ export const responsesResolvers = {
 
       // P2-04: Validate response payload size to prevent unbounded writes
       assertResponsePayloadWithinLimits(input.data);
+      // `__*` keys are the automation engine's reserved channel, never answers
+      input.data = stripReservedKeys(input.data);
 
       // Live schema for form.id (Hocuspocus, falling back to the DB column),
       // resolved at most once and shared by conditional stripping below and
@@ -421,6 +424,9 @@ export const responsesResolvers = {
         respondentUserId,
         respondentEmail,
         submittedAt: new Date(),
+        // Authoritative preview marker: deletePreviewResponses matches on it
+        // (not on the user-assignable __preview__ tag).
+        ...(input.isPreview ? { metadata: { source: PREVIEW_RESPONSE_SOURCE } } : {}),
       };
 
       // Track whether the response row has already been created inside a
@@ -449,6 +455,7 @@ export const responsesResolvers = {
             data: (input.data || {}) as Prisma.InputJsonValue,
             respondentUserId,
             respondentEmail,
+            ...(input.isPreview ? { metadata: { source: PREVIEW_RESPONSE_SOURCE } } : {}),
           },
           limitChecks
         );
@@ -715,6 +722,10 @@ export const responsesResolvers = {
       const accessCheck = await checkFormAccess(context.auth.user!.id, existingResponse.formId, PermissionLevel.EDITOR);
       if (!accessCheck.hasAccess) {
         throw createGraphQLError('Access denied: You need EDITOR access to update responses for this form', GRAPHQL_ERROR_CODES.NO_ACCESS);
+      }
+
+      if (input.data && typeof input.data === 'object') {
+        input.data = stripReservedKeys(input.data);
       }
 
       // Same conditional-logic enforcement as submitResponse — edits flow

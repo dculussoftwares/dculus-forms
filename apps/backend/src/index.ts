@@ -15,6 +15,7 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import depthLimit from 'graphql-depth-limit';
 import { validate } from 'graphql';
+import { createQueryCostRule } from './graphql/validationRules.js';
 import { toNodeHandler, fromNodeHeaders } from 'better-auth/node';
 import { auth, DEV_ORIGINS } from './lib/better-auth.js';
 import { typeDefs } from './graphql/schema.js';
@@ -228,7 +229,31 @@ app.get('/respondent-oauth-callback', authLimiter, async (req, res) => {
 });
 
 // Apply express.json() AFTER Better Auth handler
-app.use(express.json({ limit: '10mb' }));
+// Callers without a valid session (public form viewer, anonymous attackers) get a
+// small limit. Authenticated callers keep 10 MB for legitimate large payloads
+// (form schema saves, imports, AI chat context).
+const GRAPHQL_BODY_LIMIT_ANONYMOUS_BYTES = 1024 * 1024;
+const anonymousJsonParser = express.json({ limit: GRAPHQL_BODY_LIMIT_ANONYMOUS_BYTES });
+const credentialedJsonParser = express.json({ limit: '10mb' });
+app.use(async (req, res, next) => {
+  // Headers alone prove nothing (`Authorization: x` is enough to fake them), so
+  // the larger limit is only granted after the session is actually validated.
+  // Only JSON bodies need the lookup; bodyless requests (GET /health) skip it.
+  const hasJsonBody = !!req.is('application/json');
+  const claimsCredentials =
+    hasJsonBody &&
+    (!!req.headers.authorization || /session_token/.test(req.headers.cookie ?? ''));
+  let hasValidSession = false;
+  if (claimsCredentials) {
+    try {
+      const sessionData = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
+      hasValidSession = !!sessionData?.user;
+    } catch {
+      hasValidSession = false;
+    }
+  }
+  (hasValidSession ? credentialedJsonParser : anonymousJsonParser)(req, res, next);
+});
 app.use(express.urlencoded({ extended: true }));
 app.use(edgeGeolocationMiddleware);
 
@@ -277,6 +302,9 @@ const sentryApolloPlugin = {
   },
 };
 
+// Shared by ApolloServer (HTTP) and graphql-ws so both enforce the same limits.
+const graphqlValidationRules = [depthLimit(8), createQueryCostRule()];
+
 // Build executable schema — shared between ApolloServer (HTTP) and graphql-ws (WebSocket)
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 
@@ -284,7 +312,7 @@ const schema = makeExecutableSchema({ typeDefs, resolvers });
 const server = new ApolloServer({
   schema,
   introspection: !appConfig.isProduction,
-  validationRules: [depthLimit(8)],
+  validationRules: graphqlValidationRules,
   plugins: [
     ...(sentryEnabled ? [sentryApolloPlugin] : []),
     // Only show Apollo Sandbox in local development — disable in production and
@@ -432,11 +460,11 @@ async function startServer() {
   // The frontend GraphQLWsLink has been removed. This backend WS server can also be
   // cleaned up when convenient (requires removing useServer, WebSocketServer, and
   // the upgrade handler below).
-  const gqlWss = new WebSocketServer({ noServer: true });
+  const gqlWss = new WebSocketServer({ noServer: true, maxPayload: GRAPHQL_BODY_LIMIT_ANONYMOUS_BYTES });
   ({ dispose: disposeGqlWs } = useServer(
     {
       schema,
-      validate: (schema, document) => validate(schema, document, [depthLimit(8)]),
+      validate: (schema, document) => validate(schema, document, graphqlValidationRules),
       context: async (ctx: { connectionParams?: Record<string, unknown> }) => {
         const token = ctx.connectionParams?.token as string | undefined;
         if (!token) {

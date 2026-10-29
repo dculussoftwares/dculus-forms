@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { executePluginsForForm } from './executor.js';
 import type { PluginEvent } from './types.js';
 import { logger } from '../../lib/logger.js';
+import { stripReservedKeys } from '../../lib/reservedKeys.js';
 
 const pluginEventEmitter = new EventEmitter();
 pluginEventEmitter.setMaxListeners(100);
@@ -34,7 +35,8 @@ export const emitFormSubmitted = (
     type: 'form.submitted',
     formId,
     organizationId,
-    data: responseData,
+    // `__*` keys are the engine's reserved channel (see lib/reservedKeys.ts); respondent data never carries them.
+    data: stripReservedKeys(responseData),
     timestamp: new Date(),
   } satisfies PluginEvent);
 };
@@ -55,7 +57,7 @@ export const emitResponseEdited = (
     type: 'response.edited',
     formId,
     organizationId,
-    data,
+    data: stripReservedKeys(data),
     timestamp: new Date(),
   } satisfies PluginEvent);
 };

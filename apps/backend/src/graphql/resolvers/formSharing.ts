@@ -2,6 +2,7 @@ import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '.
 import * as formSharingService from '../../services/formSharingService.js';
 import { checkFormAccess } from '../../services/formSharingService.js';
 import type { Permission, Scope } from '../../services/formSharingService.js';
+import { requireFormViewerAccess } from '../../lib/formFieldAccess.js';
 
 // Re-exported for backward compatibility — other resolvers/services import these
 // directly from this file (e.g. formService.ts's checkFormAccess-based permission
@@ -97,7 +98,10 @@ export const formSharingResolvers = {
   },
 
   Form: {
-    permissions: async (parent: any) => {
+    // Lists every collaborator's email, so it must never resolve for the
+    // anonymous viewer that reaches `Form` through `formByShortUrl`.
+    permissions: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
+      await requireFormViewerAccess(parent.id, context);
       return formSharingService.listFormPermissions(parent.id);
     },
 

@@ -27,19 +27,18 @@ import { resolveAccessStatus, requiresRespondentIdentity } from '../../lib/acces
 import { toRespondentForm } from '../../lib/respondentAccess.js';
 import { getMyResponse } from '../../services/myResponseService.js';
 import { canUseDrafts } from '../../services/responseDraftService.js';
+import { hasFormViewerAccess, requireFormViewerAccess } from '../../lib/formFieldAccess.js';
+import {
+  mergeFormSettings,
+  hasAccessControlChanged,
+  hasCollectRespondentEmailChanged,
+} from '../../lib/formSettingsAccess.js';
 
 // Sibling field resolvers on `Form` only see the raw `parent` DB row, not
 // each other's resolved output, so both `accessStatus` and
 // `formSchemaPublic` independently parse `parent.settings` via this helper.
 const DOMAIN_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i;
 
-// Order-insensitive on `allowedDomains` so re-saving the same domain list in
-// a different order isn't treated as a change requiring OWNER re-approval.
-// Never-configured (null/undefined) and explicitly-disabled-with-no-domains
-// must normalize to the SAME value — the frontend always sends a populated
-// default accessControl object on every settings save (useFormSettings.ts),
-// so treating "absent" and "default" as different would require OWNER
-// permission for every settings save on every form that predates this field.
 /**
  * Why the form no longer accepts new responses (maximum reached or outside
  * its time window), as the error `formByShortUrl` would throw, or null.
@@ -59,14 +58,6 @@ async function findSubmissionClosure(form: { id: string; settings?: FormSettings
     }
   }
   return null;
-}
-
-function normalizeAccessControlForComparison(accessControl: any) {
-  return {
-    enabled: !!accessControl?.enabled,
-    requireSignIn: !!accessControl?.requireSignIn,
-    allowedDomains: [...(accessControl?.allowedDomains ?? [])].map((d: string) => d.toLowerCase()).sort(),
-  };
 }
 
 function parseFormSettings(parent: any) {
@@ -118,8 +109,15 @@ export const formsResolvers = {
     },
   },
   Form: {
-    metadata: async (parent: any) => {
+    // Builder-only fields below (metadata, formSchema, createdBy,
+    // responseCount, dashboardStats; `permissions` lives in formSharing.ts)
+    // are reachable on the Form returned by the public `formByShortUrl`
+    // query, so each one requires VIEWER+ access to the form. The public
+    // viewer renders from `formSchemaPublic`, `settings`, `accessStatus` and
+    // `organization { id name slug }` only.
+    metadata: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
       const formId = parent.id;
+      if (!(await hasFormViewerAccess(formId, context))) return null;
       const metadata = await getFormMetadata(formId);
 
       if (!metadata) {
@@ -137,8 +135,9 @@ export const formsResolvers = {
         lastUpdated: metadata.lastUpdated.toISOString(),
       };
     },
-    formSchema: async (parent: any) => {
+    formSchema: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
       const formId = parent.id;
+      if (!(await hasFormViewerAccess(formId, context))) return null;
       const schema = await getFormSchemaFromHocuspocus(formId);
       // Fall back to the DB column when Hocuspocus is unavailable (e.g. pool pressure timeout)
       return schema ?? parent.formSchema ?? null;
@@ -229,14 +228,20 @@ export const formsResolvers = {
       }
       return null;
     },
-    responseCount: async (parent: any) => {
+    createdBy: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
+      await requireFormViewerAccess(parent.id, context);
+      return parent.createdBy;
+    },
+    responseCount: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
+      await requireFormViewerAccess(parent.id, context);
       // P3-02: Return pre-fetched _count when available (avoids N+1 on list queries).
       // Fall back to a direct COUNT query for single-form queries where _count is absent.
       if (parent._count?.responses !== undefined) return parent._count.responses;
       return getResponseCount(parent.id);
     },
-    dashboardStats: async (parent: any) => {
+    dashboardStats: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
       const formId = parent.id;
+      if (!(await hasFormViewerAccess(formId, context))) return null;
 
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -515,6 +520,18 @@ export const formsResolvers = {
         throw createGraphQLError('Access denied: Cannot change form ownership through update', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
+      // `settings` is persisted as one JSON column, so it is a full replacement.
+      // Merge the incoming keys over the PERSISTED settings (absent key =
+      // unchanged) before any comparison or write; otherwise an EDITOR could
+      // erase the OWNER-only keys below simply by omitting them.
+      const persistedSettings = (accessCheck.form.settings as any) ?? null;
+      const rawIncomingSettings = input.settings;
+      if (rawIncomingSettings === null) {
+        delete input.settings;
+      } else if (rawIncomingSettings !== undefined) {
+        input.settings = mergeFormSettings(persistedSettings, rawIncomingSettings) as FormSettings;
+      }
+
       // 🔒 Access control (who can respond) is security-relevant, so changing
       // it specifically requires OWNER — even though `settings` as a whole is
       // an EDITOR-level field. Compared against the PERSISTED value (not mere
@@ -522,20 +539,17 @@ export const formsResolvers = {
       // settings object on every save, so `input.settings.accessControl`
       // would otherwise be present on every unrelated settings save too,
       // once a form has ever visited the Access Control tab.
-      const incomingAccessControl = input.settings?.accessControl;
-      if (incomingAccessControl !== undefined) {
-        const currentAccessControl = (accessCheck.form.settings as any)?.accessControl ?? null;
-        const accessControlChanged =
-          JSON.stringify(normalizeAccessControlForComparison(incomingAccessControl)) !==
-          JSON.stringify(normalizeAccessControlForComparison(currentAccessControl));
-
-        if (accessControlChanged && accessCheck.permission !== PermissionLevel.OWNER) {
+      const incomingAccessControl = rawIncomingSettings?.accessControl;
+      if (input.settings) {
+        if (hasAccessControlChanged(persistedSettings, input.settings) && accessCheck.permission !== PermissionLevel.OWNER) {
           throw createGraphQLError(
             'Access denied: owner permissions required to change who can respond to this form',
             GRAPHQL_ERROR_CODES.NO_ACCESS
           );
         }
+      }
 
+      if (incomingAccessControl) {
         if (incomingAccessControl.allowedDomains) {
           for (const domain of incomingAccessControl.allowedDomains) {
             if (typeof domain !== 'string' || !DOMAIN_RE.test(domain)) {
@@ -553,15 +567,16 @@ export const formsResolvers = {
       // even when it doesn't restrict who may respond, so it's gated the same
       // OWNER-only way, compared against the persisted value for the same
       // reason as accessControl above.
-      const incomingCollectEmail = input.settings?.collectRespondentEmail;
-      if (incomingCollectEmail !== undefined) {
-        const currentCollectEmail = !!(accessCheck.form.settings as any)?.collectRespondentEmail;
-        if (!!incomingCollectEmail !== currentCollectEmail && accessCheck.permission !== PermissionLevel.OWNER) {
-          throw createGraphQLError(
-            'Access denied: owner permissions required to change respondent email collection settings',
-            GRAPHQL_ERROR_CODES.NO_ACCESS
-          );
-        }
+      const incomingCollectEmail = rawIncomingSettings?.collectRespondentEmail;
+      if (
+        input.settings &&
+        hasCollectRespondentEmailChanged(persistedSettings, input.settings) &&
+        accessCheck.permission !== PermissionLevel.OWNER
+      ) {
+        throw createGraphQLError(
+          'Access denied: owner permissions required to change respondent email collection settings',
+          GRAPHQL_ERROR_CODES.NO_ACCESS
+        );
       }
 
       // ✅ VALIDATION: title and description length
@@ -580,7 +595,7 @@ export const formsResolvers = {
       // `responseCopy.mode` is a plain GraphQL String (no enum), so reject anything
       // other than the two values the consent-gating logic understands — an
       // unvalidated value would otherwise be treated as 'always' by responseCopyService.
-      const responseCopyMode = input.settings?.responseCopy?.mode;
+      const responseCopyMode = rawIncomingSettings?.responseCopy?.mode;
       if (responseCopyMode !== undefined && responseCopyMode !== 'always' && responseCopyMode !== 'respondentChoice') {
         throw createGraphQLError(
           "responseCopy.mode must be 'always' or 'respondentChoice'",
@@ -593,7 +608,7 @@ export const formsResolvers = {
       // 'scheduled' without a releaseAt) is rejected rather than silently
       // persisted, so the panel's save fails loudly instead of corrupting
       // settings.quiz.
-      const incomingQuiz = input.settings?.quiz;
+      const incomingQuiz = rawIncomingSettings?.quiz;
       if (incomingQuiz !== undefined) {
         const sanitizedQuiz = sanitizeQuizSettings(incomingQuiz);
         if (!sanitizedQuiz) {
@@ -602,7 +617,7 @@ export const formsResolvers = {
             GRAPHQL_ERROR_CODES.BAD_USER_INPUT
           );
         }
-        input.settings.quiz = sanitizedQuiz;
+        input.settings!.quiz = sanitizedQuiz;
       }
 
       // D9 guardrail (epic #289 Story 17, #321): 'afterReview'/'scheduled'

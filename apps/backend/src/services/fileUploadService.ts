@@ -160,9 +160,11 @@ async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
   const chunks: Buffer[] = [];
 
   return new Promise((resolve, reject) => {
-    stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+    // Avoid copying: chunks are usually already Buffers, and a single chunk (the
+    // multer memory buffer) needs no concat. Copies multiply peak memory per upload.
+    stream.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
     stream.on('error', (err) => reject(err));
-    stream.on('end', () => resolve(Buffer.concat(chunks)));
+    stream.on('end', () => resolve(chunks.length === 1 ? chunks[0] : Buffer.concat(chunks)));
   });
 }
 

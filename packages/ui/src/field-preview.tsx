@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FormField, FieldType, RichTextFormField, PhoneNumberField } from '@dculus/types';
+import { FormField, FieldType, RichTextFormField, PhoneNumberField, FILE_UPLOAD_MAX_FILE_SIZE_MB } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { Upload } from 'lucide-react';
 import {
@@ -378,7 +378,10 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
       case FieldType.FILE_UPLOAD_FIELD: {
         const fileUploadField = field as any;
         const maxFiles: number = fileUploadField.maxFiles || 1;
-        const maxFileSizeMb: number = fileUploadField.maxFileSizeMb || 5;
+        const maxFileSizeMb: number = Math.min(
+          fileUploadField.maxFileSizeMb || 5,
+          FILE_UPLOAD_MAX_FILE_SIZE_MB
+        );
         return (
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center bg-gray-50 opacity-60 cursor-not-allowed">
             <Upload className="w-7 h-7 text-gray-400 mx-auto mb-1" />

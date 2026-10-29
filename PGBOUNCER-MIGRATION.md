@@ -52,10 +52,18 @@ sslmode=require
 ```
 host=dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io
 port=5432
-sslmode=disable
+sslmode=require   # use verify-full once PgBouncer presents a CA-signed certificate for its hostname
 ```
 
-> TLS is handled internally between PgBouncer and PostgreSQL. Apps connect to PgBouncer without SSL.
+> **Never use `sslmode=disable` for a non-local host.** The PgBouncer host is a public Azure Container
+> Instance FQDN, so a cleartext connection exposes the database credentials and all query data to anyone on
+> the network path. Configure PgBouncer with `client_tls_sslmode = require`,
+> `client_tls_key_file` and `client_tls_cert_file` (do not use `client_tls_sslmode = verify-full` on the
+> server unless every client is issued a certificate), and connect with `sslmode=require` at minimum
+> (client-side `sslmode=verify-full` plus `sslrootcert` once the certificate is CA-signed, to prevent
+> man-in-the-middle). Prefer private networking (VNet
+> integration / private endpoint, no public IP) so the PgBouncer port is not reachable from the internet at
+> all. `sslmode=disable` is acceptable only for `localhost` / `127.0.0.1` development databases.
 
 ---
 
@@ -64,16 +72,16 @@ sslmode=disable
 > **Note:** The password contains `+`. In URL-format connection strings, encode it as `%2B`.
 > For plain environment variables (not URLs), use the raw password as-is.
 >
-> **Prisma (dculus-forms):** Always append `?pgbouncer=true&connection_limit=2&sslmode=disable` to any
+> **Prisma (dculus-forms):** Always append `?pgbouncer=true&connection_limit=2&sslmode=require` to any
 > DATABASE_URL that targets PgBouncer. Without `pgbouncer=true`, Prisma uses prepared statements
 > which PgBouncer transaction mode does not support — this causes intermittent query failures.
 
 | Database | DATABASE_URL (via PgBouncer) |
 |---|---|
-| `indiastats_cms_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/indiastats_cms_db?sslmode=disable` |
-| `dculus_forms_dev_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_dev_db?pgbouncer=true&connection_limit=2&sslmode=disable` |
-| `dculus_forms_prod_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_prod_db?pgbouncer=true&connection_limit=2&sslmode=disable` |
-| `dculus_home_site_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_home_site_db?sslmode=disable` |
+| `indiastats_cms_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/indiastats_cms_db?sslmode=require` |
+| `dculus_forms_dev_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_dev_db?pgbouncer=true&connection_limit=2&sslmode=require` |
+| `dculus_forms_prod_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_prod_db?pgbouncer=true&connection_limit=2&sslmode=require` |
+| `dculus_home_site_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_home_site_db?sslmode=require` |
 
 > `indiastats_cms_db` uses `@payloadcms/db-postgres` (Drizzle under the hood) which does not use
 > Prisma prepared statements — `pgbouncer=true` is not applicable there. The `max: 2` pool cap in
@@ -88,7 +96,7 @@ sslmode=disable
 
 2. Replace the **host** with the PgBouncer host. Keep port `5432`.
 
-3. Change `sslmode` to `disable`.
+3. Set `sslmode=require` (or `verify-full`). Never use `disable` for a non-local host.
 
 4. If using URL format, encode `+` in the password as `%2B`.
 
@@ -97,7 +105,7 @@ sslmode=disable
    # FALLBACK (direct DB) — remove after confirming PgBouncer is stable
    # DATABASE_URL=postgresql://dculus_admin:<password>@dculus-shared-postgres.postgres.database.azure.com:5432/<db>?sslmode=require
 
-   DATABASE_URL=postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/<db>?sslmode=disable
+   DATABASE_URL=postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/<db>?sslmode=require
    ```
 
 6. If the app has its own connection pool, set the **app-level pool size to 2**.

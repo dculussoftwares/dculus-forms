@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { validateEmailList } from '@dculus/utils';
 import type { DelayUnit } from './types.js';
+import { assertOutboundUrlAllowed, outboundUrlProblem, UnsafeUrlError } from '../../lib/urlGuard.js';
 
 export interface GraphValidationError {
   nodeId?: string;
@@ -182,7 +183,12 @@ const EmailActionConfigSchema = z
   });
 
 const WebhookActionConfigSchema = z.object({
-  url: z.url(),
+  // Synchronous SSRF screen (scheme, credentials, literal/blocked hosts). DNS resolution is checked
+  // at save time by assertAutomationWebhookUrlsAllowed and again on every send by safeFetch.
+  url: z.url().superRefine((value, ctx) => {
+    const problem = outboundUrlProblem(value);
+    if (problem) ctx.addIssue({ code: 'custom', message: problem });
+  }),
   secret: z.string().optional(),
   headers: z.record(z.string(), z.string()).optional(),
 });
@@ -715,4 +721,33 @@ export function validateAutomationGraph(
   }
 
   return { valid: errors.length === 0, errors };
+}
+
+/**
+ * DNS-level companion to the synchronous webhook URL check in the config schema: resolves every
+ * webhook action's host and fails when it maps into a private or reserved range. Returns the
+ * errors in the same shape as {@link validateAutomationGraph}, so callers can surface them as-is.
+ * The send path re-validates regardless — this only gives the author early feedback.
+ */
+export async function validateWebhookDestinations(graph: unknown): Promise<GraphValidationError[]> {
+  const nodes = (graph as { nodes?: Array<{ id?: string; type?: string; data?: any }> } | null)?.nodes;
+  if (!Array.isArray(nodes)) return [];
+
+  const errors: GraphValidationError[] = [];
+  for (const node of nodes) {
+    if (node?.type !== 'action' || node.data?.actionType !== 'webhook') continue;
+    const url = node.data?.config?.url;
+    if (typeof url !== 'string' || url === '') continue;
+    try {
+      await assertOutboundUrlAllowed(url);
+    } catch (error) {
+      if (!(error instanceof UnsafeUrlError)) throw error;
+      errors.push({
+        code: GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG,
+        message: `Webhook URL: ${error.message}`,
+        nodeId: node.id,
+      });
+    }
+  }
+  return errors;
 }

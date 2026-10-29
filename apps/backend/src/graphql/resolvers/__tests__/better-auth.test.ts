@@ -116,7 +116,7 @@ describe('Better-Auth Resolvers', () => {
     it('should return user organizations with members', async () => {
       vi.mocked(prisma.member.findMany).mockResolvedValue([mockMembership] as any);
 
-      const result = await betterAuthResolvers.User.organizations({ id: 'user-123' });
+      const result = await betterAuthResolvers.User.organizations({ id: 'user-123' }, {}, { auth: { user: { id: 'user-123' } } } as any);
 
       expect(result).toEqual([mockOrganization]);
       expect(prisma.member.findMany).toHaveBeenCalledWith({
@@ -128,7 +128,7 @@ describe('Better-Auth Resolvers', () => {
     it('should return empty array when user has no organizations', async () => {
       vi.mocked(prisma.member.findMany).mockResolvedValue([]);
 
-      const result = await betterAuthResolvers.User.organizations({ id: 'user-789' });
+      const result = await betterAuthResolvers.User.organizations({ id: 'user-789' }, {}, { auth: { user: { id: 'user-789' } } } as any);
 
       expect(result).toEqual([]);
     });
@@ -144,13 +144,54 @@ describe('Better-Auth Resolvers', () => {
         { ...mockMembership, id: 'member-456', organization: mockOrg2 },
       ] as any);
 
-      const result = await betterAuthResolvers.User.organizations({
-        id: 'user-123',
-      });
+      const result = await betterAuthResolvers.User.organizations({ id: 'user-123' }, {}, { auth: { user: { id: 'user-123' } } } as any);
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual(mockOrganization);
       expect(result[1]).toEqual(mockOrg2);
+    });
+  });
+
+  describe('User: organizations access guard (S04-02)', () => {
+    it('rejects anonymous callers without querying memberships', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockImplementationOnce(() => {
+        throw new Error('Authentication required');
+      });
+
+      await expect(
+        betterAuthResolvers.User.organizations({ id: 'user-123' }, {}, { auth: { user: null } } as any)
+      ).rejects.toThrow('Authentication required');
+      expect(prisma.member.findMany).not.toHaveBeenCalled();
+    });
+
+    it('rejects when the auth context is missing', async () => {
+      await expect(betterAuthResolvers.User.organizations({ id: 'user-123' }, {})).rejects.toThrow(
+        'Authentication required'
+      );
+      expect(prisma.member.findMany).not.toHaveBeenCalled();
+    });
+
+    it("returns [] when a different regular user asks for someone else's organizations", async () => {
+      const result = await betterAuthResolvers.User.organizations(
+        { id: 'user-123' },
+        {},
+        { auth: { user: { id: 'other-user', role: 'user' } } } as any
+      );
+
+      expect(result).toEqual([]);
+      expect(prisma.member.findMany).not.toHaveBeenCalled();
+    });
+
+    it.each(['admin', 'superAdmin'])('lets a system %s read any user organizations', async (role) => {
+      vi.mocked(prisma.member.findMany).mockResolvedValue([mockMembership] as any);
+
+      const result = await betterAuthResolvers.User.organizations(
+        { id: 'user-123' },
+        {},
+        { auth: { user: { id: 'admin-1', role } } } as any
+      );
+
+      expect(result).toEqual([mockOrganization]);
     });
   });
 

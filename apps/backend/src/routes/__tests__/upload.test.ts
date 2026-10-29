@@ -35,6 +35,9 @@ vi.mock('../../lib/prisma.js', () => ({
     member: {
       findFirst: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 vi.mock('../../lib/logger.js', () => ({
@@ -209,17 +212,17 @@ describe('Upload Routes', () => {
     });
 
     it('should handle file size limit exceeded (multer error)', async () => {
-      // Multer rejects files exceeding the 50MB limit automatically.
-      // Send 51MB to reliably trigger LIMIT_FILE_SIZE.
-      const largeBuffer = Buffer.alloc(51 * 1024 * 1024); // 51MB
+      // Just over the FormBackground cap (45MB) but within the Content-Length slack,
+      // so the early check passes and multer's own LIMIT_FILE_SIZE rejects it.
+      const largeBuffer = Buffer.alloc(45 * 1024 * 1024 + 1);
 
       const response = await request(app)
-        .post('/api/upload/upload')
-        .field('type', 'FormBackground')
+        .post('/api/upload/upload?type=FormBackground&formId=form-123')
         .attach('file', largeBuffer, 'large-file.jpg');
 
-      // Multer may return 413 or 500 depending on configuration
-      expect([413, 500]).toContain(response.status);
+      expect(response.status).toBe(413);
+      expect(response.body).toMatchObject({ code: 'FILE_TOO_LARGE', maxSize: '45MB' });
+      expect(uploadFile).not.toHaveBeenCalled();
     });
 
     it('should handle upload service errors', async () => {
@@ -460,6 +463,30 @@ describe('Upload Routes', () => {
     });
   });
 
+  describe('FormTemplate fresh role check', () => {
+    const adminSession = { user: { id: 'a1', role: 'admin' }, session: {} } as any;
+
+    it('rejects a cached admin who was demoted in the database', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(adminSession);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({ role: 'user', banned: false } as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormTemplate')
+        .attach('file', Buffer.from('tmpl'), 'tmpl.json');
+      expect(res.status).toBe(403);
+    });
+
+    it('treats a banned or deleted admin as unauthenticated', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(adminSession);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormTemplate')
+        .attach('file', Buffer.from('tmpl'), 'tmpl.json');
+      expect(res.status).toBe(401);
+    });
+  });
+
   describe('FormBackground auth', () => {
     it('returns 400 when formId missing for FormBackground', async () => {
       const res = await request(app)
@@ -558,6 +585,127 @@ describe('Upload Routes', () => {
         .field('formId', 'f1')
         .attach('file', Buffer.from('doc'), 'doc.pdf');
       expect(res.status).toBe(403);
+    });
+  });
+  describe('preflight checks before buffering (S06-01)', () => {
+    const MB = 1024 * 1024;
+    const okResult = {
+      key: 'k',
+      type: 'UserAvatar',
+      url: 'u',
+      originalName: 'a.png',
+      size: 1,
+      mimeType: 'image/png',
+    };
+
+    it('accepts type from the query string', async () => {
+      vi.mocked(uploadFile).mockResolvedValue(okResult);
+      const res = await request(app)
+        .post('/api/upload/upload?type=UserAvatar')
+        .attach('file', Buffer.from('x'), 'a.png');
+      expect(res.status).toBe(200);
+      expect(uploadFile).toHaveBeenCalledWith(expect.objectContaining({ type: 'UserAvatar' }));
+    });
+
+    it('prefers query params over multipart fields and ignores body values when query has type', async () => {
+      vi.mocked(uploadFile).mockResolvedValue({ ...okResult, type: 'FormBackground' });
+      vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
+      const res = await request(app)
+        .post('/api/upload/upload?type=FormBackground&formId=form-123')
+        .field('type', 'FormTemplate')
+        .field('formId', 'other-form')
+        .attach('file', Buffer.from('x'), 'a.png');
+      expect(res.status).toBe(200);
+      expect(formSharing.checkFormAccess).toHaveBeenCalledWith('user-123', 'form-123', 'EDITOR');
+      expect(uploadFile).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'FormBackground', formId: 'form-123' })
+      );
+    });
+
+    it('rejects unauthenticated callers before the body is parsed when type is in the query', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+      const res = await request(app)
+        .post('/api/upload/upload?type=UserAvatar')
+        .attach('file', Buffer.from('x'), 'a.png');
+      expect(res.status).toBe(401);
+      expect(uploadFile).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unknown query type', async () => {
+      const res = await request(app)
+        .post('/api/upload/upload?type=Evil')
+        .attach('file', Buffer.from('x'), 'a.png');
+      expect(res.status).toBe(400);
+    });
+
+    it('rejects a Content-Length above the per-type cap without reading the body', async () => {
+      const res = await request(app)
+        .post('/api/upload/upload?type=UserAvatar')
+        .set('Content-Type', 'multipart/form-data; boundary=x')
+        .set('Content-Length', String(6 * MB))
+        .send('')
+        .ok(() => true);
+      expect(res.status).toBe(413);
+      expect(res.body).toMatchObject({ code: 'FILE_TOO_LARGE', maxSize: '5MB' });
+      expect(uploadFile).not.toHaveBeenCalled();
+    });
+
+    it('applies a lower size ceiling to anonymous callers', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+      vi.mocked(prisma.form.findUnique).mockResolvedValue({
+        id: 'f1',
+        isPublished: true,
+        createdById: 'other',
+        organizationId: 'org-1',
+      } as any);
+      const res = await request(app)
+        .post('/api/upload/upload?type=FormResponse&formId=f1')
+        .set('Content-Type', 'multipart/form-data; boundary=x')
+        .set('Content-Length', String(30 * MB))
+        .send('')
+        .ok(() => true);
+      expect(res.status).toBe(413);
+      expect(res.body.maxSize).toBe('25MB');
+    });
+
+    it('caps concurrent anonymous uploads', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(null as any);
+      vi.mocked(prisma.form.findUnique).mockResolvedValue({
+        id: 'f1',
+        isPublished: true,
+        createdById: 'other',
+        organizationId: 'org-1',
+      } as any);
+      let release!: () => void;
+      const gate = new Promise<void>(resolve => {
+        release = resolve;
+      });
+      vi.mocked(uploadFile).mockImplementation(async () => {
+        await gate;
+        return { ...okResult, type: 'FormResponse' };
+      });
+      vi.mocked(prisma.formFile.create).mockResolvedValue({} as any);
+
+      const send = () =>
+        request(app)
+          .post('/api/upload/upload?type=FormResponse&formId=f1')
+          .attach('file', Buffer.from('x'), 'doc.pdf')
+          .then(r => r);
+
+      const inFlight = Array.from({ length: 4 }, send);
+      await vi.waitFor(() => expect(uploadFile).toHaveBeenCalledTimes(4));
+
+      const overflow = await send();
+      expect(overflow.status).toBe(503);
+      expect(overflow.body.code).toBe('UPLOAD_BUSY');
+
+      release();
+      const done = await Promise.all(inFlight);
+      expect(done.every(r => r.status === 200)).toBe(true);
+
+      // Slots are released once requests finish
+      const after = await send();
+      expect(after.status).toBe(200);
     });
   });
 });

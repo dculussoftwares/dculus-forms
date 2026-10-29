@@ -490,6 +490,32 @@ describe('Email Handler', () => {
       expect(sentHtml).toContain('Showing the first 100 of 150 responses.');
     });
 
+    it('ignores __digestResponses on a non-schedule event', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: 'admin@example.com',
+        subject: 'Digest',
+        message: '<p>Body</p>',
+        includeDigestTable: true,
+      };
+      const event: PluginEvent = {
+        type: 'form.submitted',
+        formId: 'form-123',
+        organizationId: 'org-123',
+        timestamp: new Date('2026-01-01T09:00:00Z'),
+        data: { __digestResponses: [{ id: 'forged', submittedAt: '2025-12-26T10:00:00.000Z', data: { x: 'FORGED-ROW' } }] },
+      };
+      vi.mocked(mockContext.getFormById).mockResolvedValue({ id: 'form-123', formSchema: { pages: [] } } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+
+      await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      for (const call of vi.mocked(mockContext.sendEmail).mock.calls) {
+        expect(JSON.stringify(call)).not.toContain('FORGED-ROW');
+      }
+    });
+
     it('does NOT append a response table when includeDigestTable is false, even with __digestResponses present', async () => {
       const config: ValidatedEmailConfig = {
         type: 'email',

@@ -4,6 +4,7 @@ import { BetterAuthContext, requireAuth, requireOrganizationMembership } from '.
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import * as automationService from '../../services/automationService.js';
 import { userRepository } from '../../repositories/index.js';
+import { redactAutomationGraph, redactRunOutput } from '../../lib/secretRedaction.js';
 
 /**
  * GraphQL Resolvers for the Automations system (#195)
@@ -26,8 +27,10 @@ const canEditPermission = (permission: string | null | undefined) =>
  * Viewers see what actually runs. The draft is an editor's work in progress, so it is withheld —
  * but `hasUnpublishedChanges` is preserved so the UI can still tell them one exists.
  */
-const withoutDraft = <T extends { draftGraph?: unknown; draftTriggerConfig?: unknown }>(automation: T) => ({
+const withoutDraft = <T extends { graph?: unknown; draftGraph?: unknown; draftTriggerConfig?: unknown }>(automation: T) => ({
   ...automation,
+  // Action configs hold credentials (webhook secret, header values, OAuth tokens); viewers get them masked.
+  graph: redactAutomationGraph(automation.graph),
   _hasUnpublishedChanges: automation.draftGraph != null || automation.draftTriggerConfig != null,
   draftGraph: null,
   draftTriggerConfig: null,
@@ -107,14 +110,16 @@ export const automationsResolvers = {
     ) => {
       requireAuth(context.auth);
       const automation = await automationService.getAutomationById(automationId);
-      await assertFormAccess(
+      const accessCheck = await assertFormAccess(
         context,
         automation.formId,
         PermissionLevel.VIEWER,
         'Access denied: You do not have permission to view runs for this automation'
       );
 
-      return automationService.listAutomationRuns(automationId, limit, offset);
+      const runs = await automationService.listAutomationRuns(automationId, limit, offset);
+      const canEdit = canEditPermission(accessCheck.permission);
+      return runs.map((run) => ({ ...run, _canEdit: canEdit }));
     },
 
     automationRun: async (
@@ -125,14 +130,14 @@ export const automationsResolvers = {
       requireAuth(context.auth);
       const run = await automationService.getAutomationRunWithAutomation(id);
 
-      await assertFormAccess(
+      const accessCheck = await assertFormAccess(
         context,
         run.automation.formId,
         PermissionLevel.VIEWER,
         'Access denied: You do not have permission to view this automation run'
       );
 
-      return run;
+      return { ...run, _canEdit: canEditPermission(accessCheck.permission) };
     },
   },
 
@@ -373,10 +378,17 @@ export const automationsResolvers = {
   AutomationRun: {
     startedAt: (parent: { startedAt: Date | string }) => toISOString(parent.startedAt),
     completedAt: (parent: { completedAt: Date | string | null }) => toISOString(parent.completedAt),
-    stepRuns: async (parent: { id: string }) => automationService.listStepRuns(parent.id),
+    // Receiver replies are never returned in full; the short excerpt is for editors only.
+    context: (parent: { context?: unknown; _canEdit?: boolean }) =>
+      redactRunOutput(parent.context, parent._canEdit === true),
+    stepRuns: async (parent: { id: string; _canEdit?: boolean }) => {
+      const stepRuns = await automationService.listStepRuns(parent.id);
+      return stepRuns.map((stepRun) => ({ ...stepRun, _canEdit: parent._canEdit === true }));
+    },
   },
 
   AutomationStepRun: {
+    output: (parent: { output?: unknown; _canEdit?: boolean }) => redactRunOutput(parent.output, parent._canEdit === true),
     startedAt: (parent: { startedAt: Date | string }) => toISOString(parent.startedAt),
     finishedAt: (parent: { finishedAt: Date | string | null }) => toISOString(parent.finishedAt),
   },

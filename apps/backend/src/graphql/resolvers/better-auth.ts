@@ -18,7 +18,21 @@ import * as organizationService from '../../services/organizationService.js';
 
 export const betterAuthResolvers = {
   User: {
-    organizations: async (user: { id: string }) => {
+    // Only the user themself (or a system admin) may list a user's
+    // organizations; this field is reachable through public types such as
+    // `Form.createdBy`, so it must not resolve for anonymous/other callers.
+    organizations: async (
+      user: { id: string },
+      _args: unknown,
+      context?: { auth?: BetterAuthContext }
+    ) => {
+      if (context?.auth) requireAuth(context.auth);
+      else throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED);
+      const caller = context?.auth?.user as { id?: string; role?: string } | null | undefined;
+      const isSelf = !!caller?.id && caller.id === user.id;
+      const isAdmin = caller?.role === 'admin' || caller?.role === 'superAdmin';
+      if (!isSelf && !isAdmin) return [];
+
       const memberships = await organizationService.listUserMemberships({
         where: { userId: user.id },
         include: { organization: true },

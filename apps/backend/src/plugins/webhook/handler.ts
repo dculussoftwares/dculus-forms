@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import type { PluginHandler } from '../core/types.js';
+import { safeFetch, toExcerpt, describeFetchFailure } from '../../lib/safeFetch.js';
+import { logger } from '../../lib/logger.js';
 import type { WebhookPayload, WebhookDeliveryResult, ValidatedWebhookConfig } from './types.js';
 
 /** Header carrying the per-delivery idempotency key. Receivers dedupe retries on this. */
@@ -35,7 +37,7 @@ const sendWebhook = async (
     // An automation action retries up to 3× on any error, and a timeout is not proof the receiver
     // did nothing: it may have committed its work and lost the response on the way back.
     //
-    // Assigning over the key is not enough: `fetch` lowercases header names and *combines*
+    // Assigning over the key is not enough: HTTP clients may lowercase header names and *combine*
     // duplicates, so a configured `x-dculus-idempotency-key` would arrive appended to ours
     // ("configured, generated") rather than replaced — leaving the receiver with a value that is
     // not the stable key at all. Every case-variant has to go first.
@@ -46,39 +48,36 @@ const sendWebhook = async (
       requestHeaders[IDEMPOTENCY_HEADER] = idempotencyKey;
     }
 
-    const response = await fetch(url, {
+    const response = await safeFetch(url, {
       method: 'POST',
       headers: requestHeaders,
       body: payloadString,
     });
 
     const deliveryTime = Date.now() - startTime;
-
-    let responseBody: any;
-    try {
-      const contentType = response.headers.get('content-type');
-      responseBody = contentType?.includes('application/json')
-        ? await response.json()
-        : await response.text();
-    } catch {
-      responseBody = null;
-    }
+    // The receiver's body is never returned to the caller or kept whole: it is attacker-chosen
+    // text from whatever the URL reached. Only the status and a short excerpt are recorded.
+    const isRedirect = response.status >= 300 && response.status < 400;
+    const responseExcerpt = isRedirect ? undefined : toExcerpt(response.body);
 
     if (response.status >= 200 && response.status < 300) {
-      return { success: true, statusCode: response.status, responseBody, deliveryTime };
+      return { success: true, statusCode: response.status, responseExcerpt, deliveryTime };
     }
 
     return {
       success: false,
       statusCode: response.status,
-      responseBody,
-      error: `HTTP ${response.status}: ${response.statusText}`,
+      responseExcerpt,
+      error: isRedirect
+        ? `HTTP ${response.status}: redirects are not followed`
+        : `HTTP ${response.status}${response.statusText ? `: ${response.statusText}` : ''}`,
       deliveryTime,
     };
   } catch (error: any) {
+    logger.warn('Webhook request failed', { reason: error?.message });
     return {
       success: false,
-      error: error.message || 'Unknown error',
+      error: describeFetchFailure(error),
       deliveryTime: Date.now() - startTime,
     };
   }

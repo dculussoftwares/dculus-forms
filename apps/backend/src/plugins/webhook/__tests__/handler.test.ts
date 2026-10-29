@@ -3,9 +3,19 @@ import { webhookHandler } from '../handler.js';
 import type { PluginEvent, PluginContext } from '../../core/types.js';
 import type { ValidatedWebhookConfig } from '../types.js';
 
-// Mock global fetch
+// The handler sends through safeFetch (SSRF-safe, no redirects); `mockFetch` stands in for it and
+// keeps the (url, init) call shape these tests assert on. A mocked `body` string is the receiver reply.
 const mockFetch = vi.fn();
-global.fetch = mockFetch as any;
+vi.mock('../../../lib/safeFetch.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../lib/safeFetch.js')>();
+  return {
+    ...actual,
+    safeFetch: async (url: string, init: unknown) => {
+      const reply = await mockFetch(url, init);
+      return { statusText: '', headers: {}, body: '', truncated: false, ...reply };
+    },
+  };
+});
 
 describe('Webhook Handler', () => {
   let mockContext: PluginContext;
@@ -179,12 +189,10 @@ describe('Webhook Handler', () => {
         url: 'https://example.com/webhook',
       };
 
-      const responseBody = { message: 'Webhook received', id: 'webhook-123' };
       mockFetch.mockResolvedValue({
         status: 200,
         statusText: 'OK',
-        headers: new Map([['content-type', 'application/json']]),
-        json: async () => responseBody,
+        body: JSON.stringify({ message: 'Webhook received', id: 'webhook-123' }),
       });
 
       const result = await webhookHandler(
@@ -194,7 +202,8 @@ describe('Webhook Handler', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.responseBody).toEqual(responseBody);
+      expect(result.responseExcerpt).toBe('{"message":"Webhook received","id":"webhook-123"}');
+      expect(result).not.toHaveProperty('responseBody');
     });
 
     it('should handle text response body when not JSON', async () => {
@@ -206,8 +215,7 @@ describe('Webhook Handler', () => {
       mockFetch.mockResolvedValue({
         status: 200,
         statusText: 'OK',
-        headers: new Map([['content-type', 'text/plain']]),
-        text: async () => 'Success',
+        body: 'Success',
       });
 
       const result = await webhookHandler(
@@ -217,7 +225,7 @@ describe('Webhook Handler', () => {
       );
 
       expect(result.success).toBe(true);
-      expect(result.responseBody).toBe('Success');
+      expect(result.responseExcerpt).toBe('Success');
     });
 
     it('should include responseId in payload when available', async () => {
@@ -274,8 +282,7 @@ describe('Webhook Handler', () => {
       mockFetch.mockResolvedValue({
         status: 400,
         statusText: 'Bad Request',
-        headers: new Map(),
-        text: async () => 'Invalid payload',
+        body: 'Invalid payload',
       });
 
       const result = await webhookHandler(
@@ -287,7 +294,7 @@ describe('Webhook Handler', () => {
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(400);
       expect(result.error).toBe('HTTP 400: Bad Request');
-      expect(result.responseBody).toBe('Invalid payload');
+      expect(result.responseExcerpt).toBe('Invalid payload');
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Webhook delivery failed',
@@ -329,7 +336,7 @@ describe('Webhook Handler', () => {
         url: 'https://example.com/webhook',
       };
 
-      mockFetch.mockRejectedValue(new Error('Network error: ECONNREFUSED'));
+      mockFetch.mockRejectedValue(new Error('connect ECONNREFUSED 10.0.0.5:6379'));
 
       const result = await webhookHandler(
         { id: 'test-plugin', config },
@@ -338,13 +345,14 @@ describe('Webhook Handler', () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Network error: ECONNREFUSED');
+      // The socket error would let a caller map internal hosts, so only a generic message is returned
+      expect(result.error).toBe('Webhook request failed');
       expect(result.statusCode).toBeUndefined();
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Webhook delivery failed',
         expect.objectContaining({
-          error: 'Network error: ECONNREFUSED',
+          error: 'Webhook request failed',
         })
       );
     });
@@ -355,7 +363,7 @@ describe('Webhook Handler', () => {
         url: 'https://example.com/webhook',
       };
 
-      mockFetch.mockRejectedValue(new Error('Request timeout'));
+      mockFetch.mockRejectedValue(Object.assign(new Error('timed out'), { name: 'TimeoutError' }));
 
       const result = await webhookHandler(
         { id: 'test-plugin', config },
@@ -364,33 +372,58 @@ describe('Webhook Handler', () => {
       );
 
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Request timeout');
+      expect(result.error).toBe('Webhook request timed out');
     });
 
-    it('should handle response body parse errors gracefully', async () => {
+    it('should truncate the stored receiver reply to a short excerpt', async () => {
+      const config: ValidatedWebhookConfig = {
+        type: 'webhook',
+        url: 'https://example.com/webhook',
+      };
+
+      mockFetch.mockResolvedValue({ status: 200, statusText: 'OK', body: 'x'.repeat(5000) });
+
+      const result = await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(result.success).toBe(true);
+      expect(result.responseExcerpt!.length).toBeLessThanOrEqual(201);
+      expect(result).not.toHaveProperty('responseBody');
+    });
+
+    it('should not follow redirects and reports them as a failure', async () => {
       const config: ValidatedWebhookConfig = {
         type: 'webhook',
         url: 'https://example.com/webhook',
       };
 
       mockFetch.mockResolvedValue({
-        status: 200,
-        statusText: 'OK',
-        headers: new Map([['content-type', 'application/json']]),
-        json: async () => {
-          throw new Error('Invalid JSON');
-        },
+        status: 302,
+        statusText: 'Found',
+        headers: { location: 'http://169.254.169.254/latest/meta-data/' },
+        body: 'secret-metadata',
       });
 
-      const result = await webhookHandler(
-        { id: 'test-plugin', config },
-        mockEvent,
-        mockContext
-      );
+      const result = await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
 
-      // Should still succeed even if body parsing fails
-      expect(result.success).toBe(true);
-      expect(result.responseBody).toBeNull();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(result.success).toBe(false);
+      expect(result.statusCode).toBe(302);
+      expect(result.responseExcerpt).toBeUndefined();
+    });
+
+    it('should report a blocked destination without leaking resolution details', async () => {
+      const config: ValidatedWebhookConfig = {
+        type: 'webhook',
+        url: 'https://example.com/webhook',
+      };
+
+      const { UnsafeUrlError } = await import('../../../lib/urlGuard.js');
+      mockFetch.mockRejectedValue(new UnsafeUrlError('Destination resolves to a private address'));
+
+      const result = await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Webhook URL is not allowed: Destination resolves to a private address');
     });
   });
 
@@ -730,7 +763,7 @@ describe('Webhook Handler', () => {
       mockFetch.mockRejectedValue({ code: 'NETWORK_FAIL' });
 
       const result = await webhookHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
-      expect((result as any).error).toBe('Unknown error');
+      expect((result as any).error).toBe('Webhook request failed');
     });
   });
 });

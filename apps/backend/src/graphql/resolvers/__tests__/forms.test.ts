@@ -10,6 +10,7 @@ import * as fileUploadService from '../../../services/fileUploadService.js';
 import * as hocuspocusService from '../../../services/hocuspocus.js';
 import * as usageService from '../../../subscriptions/usageService.js';
 import * as myResponseService from '../../../services/myResponseService.js';
+import * as formSharingService from '../../../services/formSharingService.js';
 import { prisma } from '../../../lib/prisma.js';
 import { DEFAULT_QUIZ_SETTINGS } from '@dculus/types';
 
@@ -19,6 +20,7 @@ vi.mock('../../../services/templateService.js');
 vi.mock('../../../services/formMetadataService.js');
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
+vi.mock('../../../services/formSharingService.js');
 vi.mock('../../../services/fileUploadService.js');
 vi.mock('../../../services/hocuspocus.js');
 vi.mock('../../../subscriptions/usageService.js');
@@ -73,6 +75,11 @@ describe('Forms Resolvers', () => {
 
   const respondentContext = mockContext as any;
 
+  // The builder-only Form field guards memoise per request context, so each
+  // call gets its own context object.
+  const builderContext = () => ({ auth: mockContext.auth }) as any;
+  const anonymousContext = () => ({ auth: { user: null, session: null, isAuthenticated: false } }) as any;
+
   const mockForm = {
     id: 'form-123',
     title: 'Test Form',
@@ -88,6 +95,11 @@ describe('Forms Resolvers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(formSharingService.checkFormAccess).mockResolvedValue({
+      hasAccess: true,
+      permission: 'VIEWER' as any,
+      form: mockForm as any,
+    });
     // Default: no completion-time data (individual tests override as needed)
     vi.mocked(prisma.$queryRaw).mockResolvedValue([]);
   });
@@ -429,7 +441,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(formMetadataService.constructBackgroundImageUrl).mockReturnValue('https://cdn.example.com/test-key');
       vi.mocked(formMetadataService.constructBackgroundVideoUrl).mockReturnValue(null);
 
-      const result = await formsResolvers.Form.metadata({ id: 'form-123' });
+      const result = await formsResolvers.Form.metadata({ id: 'form-123' }, {}, builderContext());
 
       expect(result).toEqual({
         pageCount: 3,
@@ -456,7 +468,7 @@ describe('Forms Resolvers', () => {
       vi.mocked(formMetadataService.constructBackgroundImageUrl).mockReturnValue(null);
       vi.mocked(formMetadataService.constructBackgroundVideoUrl).mockReturnValue('https://cdn.example.com/test-video-key.mp4');
 
-      const result = await formsResolvers.Form.metadata({ id: 'form-123' });
+      const result = await formsResolvers.Form.metadata({ id: 'form-123' }, {}, builderContext());
 
       expect(formMetadataService.constructBackgroundVideoUrl).toHaveBeenCalledWith('test-video-key.mp4');
       expect(result).toEqual({
@@ -474,7 +486,7 @@ describe('Forms Resolvers', () => {
     it('should return null when no metadata found', async () => {
       vi.mocked(formMetadataService.getFormMetadata).mockResolvedValue(null);
 
-      const result = await formsResolvers.Form.metadata({ id: 'form-123' });
+      const result = await formsResolvers.Form.metadata({ id: 'form-123' }, {}, builderContext());
 
       expect(result).toBeNull();
     });
@@ -485,7 +497,7 @@ describe('Forms Resolvers', () => {
       const mockSchema = { pages: [], layout: {} };
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(mockSchema);
 
-      const result = await formsResolvers.Form.formSchema({ id: 'form-123' });
+      const result = await formsResolvers.Form.formSchema({ id: 'form-123' }, {}, builderContext());
 
       expect(hocuspocusService.getFormSchemaFromHocuspocus).toHaveBeenCalledWith('form-123');
       expect(result).toEqual(mockSchema);
@@ -591,7 +603,7 @@ describe('Forms Resolvers', () => {
       const schema = buildSchema();
       vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue(schema);
 
-      const result = await formsResolvers.Form.formSchema(mockForm);
+      const result = await formsResolvers.Form.formSchema(mockForm, {}, builderContext());
 
       expect(JSON.stringify(result)).toContain('grading');
       expect(result.pages[0].fields[0].grading.acceptedAnswers).toEqual(['Paris']);
@@ -753,7 +765,7 @@ describe('Forms Resolvers', () => {
       const result = await formsResolvers.Form.responseCount({
         id: 'form-123',
         _count: { responses: 7 },
-      });
+      }, {}, builderContext());
 
       expect(prisma.response.count).not.toHaveBeenCalled();
       expect(result).toBe(7);
@@ -762,7 +774,7 @@ describe('Forms Resolvers', () => {
     it('should fall back to COUNT query with deletedAt filter when _count absent', async () => {
       vi.mocked(prisma.response.count).mockResolvedValue(42);
 
-      const result = await formsResolvers.Form.responseCount({ id: 'form-123' });
+      const result = await formsResolvers.Form.responseCount({ id: 'form-123' }, {}, builderContext());
 
       expect(prisma.response.count).toHaveBeenCalledWith({
         where: { formId: 'form-123', deletedAt: null },
@@ -789,7 +801,7 @@ describe('Forms Resolvers', () => {
       // Average of [120, 180, 150] = 150, now computed in SQL
       vi.mocked(prisma.$queryRaw).mockResolvedValue([{ avg: 150 }] as any);
 
-      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
+      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' }, {}, builderContext());
 
       expect(result).toEqual({
         averageCompletionTime: 150,
@@ -815,9 +827,9 @@ describe('Forms Resolvers', () => {
       vi.mocked(prisma.formViewAnalytics.count).mockResolvedValue(200);
       vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([]);
 
-      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
+      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' }, {}, builderContext());
 
-      expect(result.averageCompletionTime).toBeNull();
+      expect(result!.averageCompletionTime).toBeNull();
     });
 
     it('should return null trendResponsesToday when no responses yesterday', async () => {
@@ -832,10 +844,10 @@ describe('Forms Resolvers', () => {
       vi.mocked(prisma.formViewAnalytics.count).mockResolvedValue(200);
       vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([]);
 
-      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
+      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' }, {}, builderContext());
 
-      expect(result.trendResponsesToday).toBeNull();
-      expect(result.trendThisWeek).toBe(25);
+      expect(result!.trendResponsesToday).toBeNull();
+      expect(result!.trendThisWeek).toBe(25);
     });
 
     it('should return null trendThisWeek when no responses last week', async () => {
@@ -850,10 +862,10 @@ describe('Forms Resolvers', () => {
       vi.mocked(prisma.formViewAnalytics.count).mockResolvedValue(200);
       vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([]);
 
-      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
+      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' }, {}, builderContext());
 
-      expect(result.trendThisWeek).toBeNull();
-      expect(result.trendResponsesToday).toBe(25);
+      expect(result!.trendThisWeek).toBeNull();
+      expect(result!.trendResponsesToday).toBe(25);
     });
 
     it('should return null trendResponseRate when either week has fewer than 10 views', async () => {
@@ -872,9 +884,108 @@ describe('Forms Resolvers', () => {
 
       vi.mocked(prisma.formSubmissionAnalytics.findMany).mockResolvedValue([]);
 
-      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' });
+      const result = await formsResolvers.Form.dashboardStats({ id: 'form-123' }, {}, builderContext());
 
-      expect(result.trendResponseRate).toBeNull();
+      expect(result!.trendResponseRate).toBeNull();
+    });
+  });
+
+  describe('Form: builder-only field guards (anonymous / non-viewer callers)', () => {
+    const noAccess = () =>
+      vi.mocked(formSharingService.checkFormAccess).mockResolvedValue({
+        hasAccess: false,
+        permission: 'NO_ACCESS' as any,
+        form: mockForm as any,
+      });
+
+    it('does not read the Y.js/DB schema nor the access table for anonymous callers (formSchema -> null)', async () => {
+      const result = await formsResolvers.Form.formSchema(
+        { id: 'form-123', formSchema: { pages: [{ fields: [{ grading: { acceptedAnswers: ['x'] } }] }] } },
+        {},
+        anonymousContext()
+      );
+
+      expect(result).toBeNull();
+      expect(hocuspocusService.getFormSchemaFromHocuspocus).not.toHaveBeenCalled();
+      expect(formSharingService.checkFormAccess).not.toHaveBeenCalled();
+    });
+
+    it('formSchema is null for a signed-in caller without VIEWER access', async () => {
+      noAccess();
+      const result = await formsResolvers.Form.formSchema({ id: 'form-123' }, {}, builderContext());
+      expect(result).toBeNull();
+      expect(hocuspocusService.getFormSchemaFromHocuspocus).not.toHaveBeenCalled();
+    });
+
+    it('requires VIEWER-level access when checking the caller', async () => {
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue({ pages: [] } as any);
+      await formsResolvers.Form.formSchema({ id: 'form-123' }, {}, builderContext());
+      expect(formSharingService.checkFormAccess).toHaveBeenCalledWith('user-123', 'form-123', 'VIEWER');
+    });
+
+    it('metadata and dashboardStats are null for anonymous callers without touching data services', async () => {
+      expect(await formsResolvers.Form.metadata({ id: 'form-123' }, {}, anonymousContext())).toBeNull();
+      expect(await formsResolvers.Form.dashboardStats({ id: 'form-123' }, {}, anonymousContext())).toBeNull();
+      expect(formMetadataService.getFormMetadata).not.toHaveBeenCalled();
+      expect(prisma.response.count).not.toHaveBeenCalled();
+    });
+
+    it('metadata and dashboardStats are null for a signed-in caller without access', async () => {
+      noAccess();
+      const ctx = builderContext();
+      expect(await formsResolvers.Form.metadata({ id: 'form-123' }, {}, ctx)).toBeNull();
+      expect(await formsResolvers.Form.dashboardStats({ id: 'form-123' }, {}, ctx)).toBeNull();
+      expect(prisma.response.count).not.toHaveBeenCalled();
+    });
+
+    it('responseCount and createdBy are denied for anonymous callers', async () => {
+      await expect(
+        formsResolvers.Form.responseCount({ id: 'form-123', _count: { responses: 3 } }, {}, anonymousContext())
+      ).rejects.toThrow('Access denied');
+      await expect(
+        formsResolvers.Form.createdBy(
+          { id: 'form-123', createdBy: { id: 'u', email: 'owner@example.com' } },
+          {},
+          anonymousContext()
+        )
+      ).rejects.toThrow('Access denied');
+    });
+
+    it('responseCount and createdBy are denied for a signed-in caller without access', async () => {
+      noAccess();
+      const ctx = builderContext();
+      await expect(
+        formsResolvers.Form.responseCount({ id: 'form-123', _count: { responses: 3 } }, {}, ctx)
+      ).rejects.toThrow('Access denied');
+      await expect(
+        formsResolvers.Form.createdBy({ id: 'form-123', createdBy: { id: 'u', email: 'o@example.com' } }, {}, ctx)
+      ).rejects.toThrow('Access denied');
+    });
+
+    it('createdBy resolves for a caller with form access', async () => {
+      const creator = { id: 'u', name: 'Owner', email: 'owner@example.com' };
+      const result = await formsResolvers.Form.createdBy({ id: 'form-123', createdBy: creator }, {}, builderContext());
+      expect(result).toBe(creator);
+    });
+
+    it('memoises the access lookup per request context', async () => {
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue({ pages: [] } as any);
+      const ctx = builderContext();
+      await formsResolvers.Form.formSchema({ id: 'form-123' }, {}, ctx);
+      await formsResolvers.Form.metadata({ id: 'form-123' }, {}, ctx);
+      await formsResolvers.Form.createdBy({ id: 'form-123', createdBy: {} }, {}, ctx);
+      expect(formSharingService.checkFormAccess).toHaveBeenCalledTimes(1);
+    });
+
+    it('public fields the viewer needs stay resolvable anonymously (formSchemaPublic, settings)', async () => {
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue({
+        pages: [{ id: 'p', fields: [{ id: 'f', grading: { acceptedAnswers: ['a'] } }] }],
+      } as any);
+      const result = await formsResolvers.Form.formSchemaPublic(mockForm, {}, anonymousContext());
+      expect(result.pages[0].fields[0]).not.toHaveProperty('grading');
+      expect(formsResolvers.Form.settings({ ...mockForm, settings: { saveProgress: { enabled: true } } })).toEqual({
+        saveProgress: { enabled: true },
+      });
     });
   });
 
@@ -1307,6 +1418,105 @@ describe('Forms Resolvers', () => {
       await expect(
         formsResolvers.Mutation.updateForm({}, { id: 'form-123', input: { title: 'New' } }, mockContext)
       ).rejects.toThrow(GraphQLError);
+    });
+
+    describe('OWNER-only settings cannot be erased by omitting keys (S02-02)', () => {
+      const persistedSettings = {
+        accessControl: { enabled: true, requireSignIn: true, allowedDomains: ['corp.com'] },
+        collectRespondentEmail: true,
+        saveProgress: { enabled: false },
+      };
+      const editorAccess = (permission: string) =>
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: permission as any,
+          form: { ...mockForm, settings: persistedSettings } as any,
+        });
+
+      beforeEach(() => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formService.updateForm).mockResolvedValue(mockForm as any);
+      });
+
+      it('keeps OWNER-only keys when an EDITOR omits them from settings', async () => {
+        editorAccess('EDITOR');
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            { id: 'form-123', input: { settings: { saveProgress: { enabled: true } } } },
+            mockContext
+          )
+        ).resolves.toBeDefined();
+        // Omitted keys are unchanged: the merged payload keeps both OWNER-only keys.
+        const written = vi.mocked(formService.updateForm).mock.calls[0][1] as any;
+        expect(written.settings.accessControl).toEqual(persistedSettings.accessControl);
+        expect(written.settings.collectRespondentEmail).toBe(true);
+        expect(written.settings.saveProgress).toEqual({ enabled: true });
+      });
+
+      it('rejects an EDITOR who explicitly nulls accessControl', async () => {
+        editorAccess('EDITOR');
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            { id: 'form-123', input: { settings: { accessControl: null } } },
+            mockContext
+          )
+        ).rejects.toThrow('owner permissions required to change who can respond');
+        expect(formService.updateForm).not.toHaveBeenCalled();
+      });
+
+      it('rejects an EDITOR who sends a partial accessControl dropping allowedDomains', async () => {
+        editorAccess('EDITOR');
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            { id: 'form-123', input: { settings: { accessControl: { enabled: true, requireSignIn: true } } } },
+            mockContext
+          )
+        ).rejects.toThrow('owner permissions required to change who can respond');
+      });
+
+      it('rejects an EDITOR who explicitly nulls collectRespondentEmail', async () => {
+        editorAccess('EDITOR');
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            { id: 'form-123', input: { settings: { collectRespondentEmail: null } } },
+            mockContext
+          )
+        ).rejects.toThrow('owner permissions required to change respondent email collection');
+      });
+
+      it('treats settings: null as unchanged instead of wiping persisted settings', async () => {
+        editorAccess('EDITOR');
+        await formsResolvers.Mutation.updateForm({}, { id: 'form-123', input: { title: 'T', settings: null } }, mockContext);
+        const written = vi.mocked(formService.updateForm).mock.calls[0][1] as any;
+        expect('settings' in written).toBe(false);
+      });
+
+      it('lets an OWNER change accessControl', async () => {
+        editorAccess('OWNER');
+        await formsResolvers.Mutation.updateForm(
+          {},
+          { id: 'form-123', input: { settings: { accessControl: { enabled: false, requireSignIn: false } } } },
+          mockContext
+        );
+        const written = vi.mocked(formService.updateForm).mock.calls[0][1] as any;
+        expect(written.settings.accessControl).toEqual({ enabled: false, requireSignIn: false });
+        expect(written.settings.collectRespondentEmail).toBe(true);
+      });
+
+      it('lets an EDITOR resend the unchanged full settings object', async () => {
+        editorAccess('EDITOR');
+        await expect(
+          formsResolvers.Mutation.updateForm(
+            {},
+            { id: 'form-123', input: { settings: { ...persistedSettings, saveProgress: { enabled: true } } } },
+            mockContext
+          )
+        ).resolves.toBeDefined();
+      });
     });
 
     it('should throw error when trying to change organizationId', async () => {

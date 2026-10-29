@@ -35,7 +35,13 @@ export async function uploadFileHTTP(
     formData.append('formId', formId);
   }
 
-  const uploadUrl = getUploadUrl();
+  // type/formId go in the query string so the backend can authorize and size-check
+  // before it buffers the file; the multipart fields remain for older backends.
+  const query = new URLSearchParams({ type });
+  if (formId) {
+    query.set('formId', formId);
+  }
+  const uploadUrl = `${getUploadUrl()}?${query.toString()}`;
 
   const response = await fetch(uploadUrl, {
     method: 'POST',

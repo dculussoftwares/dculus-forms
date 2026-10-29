@@ -179,7 +179,35 @@ describe('Subscription Resolvers', () => {
       });
       expect(chargebeeService.createCheckoutHostedPage).toHaveBeenCalledWith(
         'cust_123',
-        'starter-monthly'
+        'starter-monthly',
+        'cb_sub_123'
+      );
+    });
+
+    it('starts a new Chargebee subscription when the stored one is cancelled', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        ...mockSubscription,
+        status: 'cancelled',
+      } as any);
+      vi.mocked(chargebeeService.createCheckoutHostedPage).mockResolvedValue({
+        url: 'https://chargebee.com/checkout/12345',
+        id: 'hosted_page_123',
+      });
+
+      await subscriptionResolvers.Mutation.createCheckoutSession(
+        {},
+        { itemPriceId: 'starter-monthly' },
+        mockContext
+      );
+
+      expect(chargebeeService.createCheckoutHostedPage).toHaveBeenCalledWith(
+        'cust_123',
+        'starter-monthly',
+        null
       );
     });
 
@@ -376,6 +404,23 @@ describe('Subscription Resolvers', () => {
       ).rejects.toThrow('No active organization');
     });
 
+    it('rejects non-owner members without calling Chargebee', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue({
+        ...mockMember,
+        role: 'member',
+      } as any);
+
+      await expect(
+        subscriptionResolvers.Mutation.syncCheckoutSession(
+          {},
+          { hostedPageId: 'hosted_page_123' },
+          mockContext
+        )
+      ).rejects.toThrow('only the organization owner');
+      expect(chargebeeService.syncFromHostedPage).not.toHaveBeenCalled();
+    });
+
     it('throws when user is not organization member', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth as any);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
@@ -534,6 +579,9 @@ describe('Subscription Resolvers', () => {
 
     it('should return existing subscription if already initialized', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(mockSubscription as any);
 
       const result = await subscriptionResolvers.Mutation.initializeOrganizationSubscription(
@@ -567,6 +615,9 @@ describe('Subscription Resolvers', () => {
 
     it('should return error when organization not found', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
       vi.mocked(prisma.organization.findUnique).mockResolvedValue(null);
 
@@ -578,46 +629,42 @@ describe('Subscription Resolvers', () => {
 
       expect(result.success).toBe(false);
       expect(result.subscription).toBeNull();
-      expect(result.message).toBe('Organization not found');
+      expect(result.message).toBe('Failed to initialize subscription');
     });
 
-    it('should return error when user is not organization member', async () => {
+    it('rejects non-members before looking up any subscription data', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
-      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
-      vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(mockSubscription as any);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
         new GraphQLError('Not a member of this organization')
       );
 
-      const result = await subscriptionResolvers.Mutation.initializeOrganizationSubscription(
-        {},
-        { organizationId: 'org-123' },
-        mockContext
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.subscription).toBeNull();
-      expect(result.message).toBe('Not a member of this organization');
+      await expect(
+        subscriptionResolvers.Mutation.initializeOrganizationSubscription(
+          {},
+          { organizationId: 'org-123' },
+          mockContext
+        )
+      ).rejects.toThrow('Not a member of this organization');
+      expect(prisma.subscription.findUnique).not.toHaveBeenCalled();
     });
 
-    it('should return error when user is not organization owner', async () => {
+    it('rejects non-owner members before returning an existing subscription', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
-      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
-      vi.mocked(prisma.organization.findUnique).mockResolvedValue(mockOrganization as any);
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(mockSubscription as any);
       vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue({
         ...mockMember,
         role: 'member',
       } as any);
 
-      const result = await subscriptionResolvers.Mutation.initializeOrganizationSubscription(
-        {},
-        { organizationId: 'org-123' },
-        mockContext
-      );
-
-      expect(result.success).toBe(false);
-      expect(result.subscription).toBeNull();
-      expect(result.message).toBe('Only organization owner can initialize subscription');
+      await expect(
+        subscriptionResolvers.Mutation.initializeOrganizationSubscription(
+          {},
+          { organizationId: 'org-123' },
+          mockContext
+        )
+      ).rejects.toThrow('only the organization owner');
+      expect(prisma.subscription.findUnique).not.toHaveBeenCalled();
     });
 
     it('uses fallback message when error has no message property', async () => {
@@ -655,7 +702,7 @@ describe('Subscription Resolvers', () => {
 
       expect(result.success).toBe(false);
       expect(result.subscription).toBeNull();
-      expect(result.message).toBe('Organization owner not found');
+      expect(result.message).toBe('Failed to initialize subscription');
     });
 
     it('should handle Chargebee customer creation errors', async () => {
@@ -678,7 +725,7 @@ describe('Subscription Resolvers', () => {
 
       expect(result.success).toBe(false);
       expect(result.subscription).toBeNull();
-      expect(result.message).toBe('Chargebee API error');
+      expect(result.message).toBe('Failed to initialize subscription');
     });
 
     it('should handle subscription creation errors', async () => {
@@ -702,17 +749,24 @@ describe('Subscription Resolvers', () => {
 
       expect(result.success).toBe(false);
       expect(result.subscription).toBeNull();
-      expect(result.message).toBe('Database error');
+      expect(result.message).toBe('Failed to initialize subscription');
     });
   });
 
   describe('Organization: subscription', () => {
-    it('should return subscription for organization', async () => {
+    const memberContext = mockContext as any;
+
+    it('returns the subscription to a member of the organization', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(mockSubscription as any);
 
-      const result = await subscriptionResolvers.Organization.subscription({
-        id: 'org-123',
-      });
+      const result = await subscriptionResolvers.Organization.subscription(
+        { id: 'org-123' },
+        {},
+        memberContext
+      );
 
       expect(result).toEqual(mockSubscription);
       expect(prisma.subscription.findUnique).toHaveBeenCalledWith({
@@ -720,14 +774,64 @@ describe('Subscription Resolvers', () => {
       });
     });
 
-    it('should return null when subscription not found', async () => {
+    it('returns null when subscription not found', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(
+        mockMember as any
+      );
       vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
 
-      const result = await subscriptionResolvers.Organization.subscription({
-        id: 'org-123',
-      });
+      const result = await subscriptionResolvers.Organization.subscription(
+        { id: 'org-123' },
+        {},
+        memberContext
+      );
 
       expect(result).toBeNull();
+    });
+
+    it('returns null for anonymous callers without touching the database', async () => {
+      const result = await subscriptionResolvers.Organization.subscription(
+        { id: 'org-123' },
+        {},
+        { auth: { user: null, session: null, isAuthenticated: false } }
+      );
+
+      expect(result).toBeNull();
+      expect(prisma.subscription.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('returns null for authenticated users who are not members', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockRejectedValue(
+        new GraphQLError('Access denied')
+      );
+
+      const result = await subscriptionResolvers.Organization.subscription(
+        { id: 'org-123' },
+        {},
+        memberContext
+      );
+
+      expect(result).toBeNull();
+      expect(prisma.subscription.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('allows system admins without an org membership', async () => {
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(mockSubscription as any);
+
+      const result = await subscriptionResolvers.Organization.subscription(
+        { id: 'org-123' },
+        {},
+        {
+          auth: {
+            user: { id: 'admin-1', role: 'admin' },
+            session: null,
+            isAuthenticated: true,
+          },
+        }
+      );
+
+      expect(result).toEqual(mockSubscription);
+      expect(betterAuthMiddleware.requireOrganizationMembership).not.toHaveBeenCalled();
     });
   });
 

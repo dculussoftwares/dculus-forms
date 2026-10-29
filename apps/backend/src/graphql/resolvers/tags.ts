@@ -89,7 +89,8 @@ export const tagResolvers = {
       context: { auth: BetterAuthContext }
     ) => {
       requireAuth(context.auth);
-      const access = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
+      // OWNER, matching deleteResponses: this hard-deletes response rows.
+      const access = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.OWNER);
       if (!access.hasAccess) {
         throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
@@ -102,7 +103,7 @@ export const tagResolvers = {
       context: { auth: BetterAuthContext }
     ) => {
       requireAuth(context.auth);
-      const access = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.EDITOR);
+      const access = await checkFormAccess(context.auth.user!.id, formId, PermissionLevel.OWNER);
       if (!access.hasAccess) {
         throw createGraphQLError('Access denied', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }

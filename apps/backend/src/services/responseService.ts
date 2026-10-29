@@ -14,6 +14,7 @@ import { withPrisma } from '../repositories/baseRepository.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
 import { emitResponseEdited } from '../plugins/core/events.js';
+import { stripReservedKeys } from '../lib/reservedKeys.js';
 import { Prisma } from '#prisma-client';
 
 
@@ -592,6 +593,7 @@ export const submitResponse = async (responseData: Partial<FormResponse>): Promi
       data: responseDataForStorage,
       respondentUserId: (responseData as any).respondentUserId ?? null,
       respondentEmail: (responseData as any).respondentEmail ?? null,
+      ...(responseData.metadata ? { metadata: responseData.metadata as Prisma.InputJsonValue } : {}),
     },
   });
 
@@ -650,6 +652,7 @@ export const submitResponseWithLimitChecks = async (
     data: Prisma.InputJsonValue;
     respondentUserId: string | null;
     respondentEmail: string | null;
+    metadata?: Prisma.InputJsonValue;
   },
   checks: SubmissionLimitChecks
 ): Promise<FormResponse> => {
@@ -684,6 +687,7 @@ export const submitResponseWithLimitChecks = async (
             data: responseData.data,
             respondentUserId: responseData.respondentUserId,
             respondentEmail: responseData.respondentEmail,
+            ...(responseData.metadata ? { metadata: responseData.metadata } : {}),
           },
         });
       },
@@ -732,6 +736,8 @@ export const updateResponse = async (
   }
 ): Promise<FormResponse> => {
   logger.info('updateResponse called with:', { responseId, hasEditContext: !!editContext, editContext });
+  // `__*` keys are the automation engine's reserved channel, never answers (also covers the respondent self-edit path)
+  data = stripReservedKeys(data);
   // Debug logging
 
   try {

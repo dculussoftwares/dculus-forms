@@ -4,7 +4,11 @@ import { generateId } from '@dculus/utils';
 import { Prisma } from '#prisma-client';
 import { automationRepository, responseRepository } from '../repositories/index.js';
 import { getAvailablePluginTypes } from '../plugins/core/registry.js';
-import { validateAutomationGraph, type GraphValidationError } from './automation/graphValidator.js';
+import {
+  validateAutomationGraph,
+  validateWebhookDestinations,
+  type GraphValidationError,
+} from './automation/graphValidator.js';
 import { enqueueFirstStep, enqueueRunStep } from './automation/engine.js';
 import {
   cancelRunsForAutomation,
@@ -17,6 +21,7 @@ import { isAutomationEngineEnabled } from './automation/boss.js';
 import { AUTOMATION_TEMPLATE_IDS, getAutomationTemplate } from './automation/templates.js';
 import { copyAutomation } from './automation/copyAutomation.js';
 import { carrySheetColumnsInGraph } from '../plugins/core/sheetColumns.js';
+import { mergeMaskedGraph } from '../lib/secretRedaction.js';
 import { audit } from '../lib/audit.js';
 import type { AutomationGraph, AutomationRunContext } from './automation/types.js';
 
@@ -313,7 +318,9 @@ export async function saveAutomationDraft(
 
   const baseGraph = effectiveGraph(automation);
   const nextGraph =
-    input.graph === undefined ? baseGraph : carrySheetColumnsInGraph(baseGraph, input.graph);
+    input.graph === undefined
+      ? baseGraph
+      : carrySheetColumnsInGraph(baseGraph, mergeMaskedGraph(baseGraph, input.graph));
   const nextTrigger = input.triggerConfig === undefined ? effectiveTriggerConfig(automation) : input.triggerConfig;
 
   // A draft equal to the live version is stored as null, so undoing every edit clears the
@@ -363,6 +370,7 @@ export async function publishAutomation(
   const candidateGraph = carrySheetColumnsInGraph(automation.graph, effectiveGraph(automation));
 
   const issues = collectPublishIssues(candidateGraph, candidateTrigger, automation.triggerType);
+  issues.push(...(await validateWebhookDestinations(candidateGraph)));
   if (issues.length > 0) {
     throw createGraphQLError(
       'Automation graph is invalid and cannot be published',
@@ -451,7 +459,9 @@ export async function updateAutomation(
   const { name, triggerConfig } = updates;
   // The builder saves the whole graph, including the sheet layout it loaded; keep the latest one.
   const graph =
-    updates.graph === undefined ? undefined : carrySheetColumnsInGraph(automation.graph, updates.graph);
+    updates.graph === undefined
+      ? undefined
+      : carrySheetColumnsInGraph(automation.graph, mergeMaskedGraph(automation.graph, updates.graph));
   const data: Record<string, any> = { updatedAt: new Date() };
 
   if (name !== undefined) data.name = name;
@@ -467,11 +477,12 @@ export async function updateAutomation(
         pluginTypes: getAvailablePluginTypes(),
         triggerType: automation.triggerType,
       });
-      if (!result.valid) {
+      const errors = [...result.errors, ...(await validateWebhookDestinations(graph))];
+      if (errors.length > 0) {
         throw createGraphQLError(
           'Automation graph is invalid and cannot be saved while this automation is active',
           GRAPHQL_ERROR_CODES.AUTOMATION_INVALID_GRAPH,
-          { extensions: { validationErrors: result.errors } }
+          { extensions: { validationErrors: errors } }
         );
       }
     }
@@ -562,11 +573,12 @@ export async function setAutomationStatus(
       pluginTypes: getAvailablePluginTypes(),
       triggerType: automation.triggerType,
     });
-    if (!result.valid) {
+    const errors = [...result.errors, ...(await validateWebhookDestinations(automation.graph))];
+    if (errors.length > 0) {
       throw createGraphQLError(
         'Automation graph is invalid and cannot be activated',
         GRAPHQL_ERROR_CODES.AUTOMATION_INVALID_GRAPH,
-        { extensions: { validationErrors: result.errors } }
+        { extensions: { validationErrors: errors } }
       );
     }
     if (automation.triggerType === 'schedule') {

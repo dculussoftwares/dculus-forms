@@ -8,11 +8,41 @@ import { carrySheetColumns } from '../../plugins/core/sheetColumns.js';
 import type { PluginConfig } from '../../plugins/core/types.js';
 import { provisionSheetPlugin, syncSheetPluginName } from '../../plugins/core/provision.js';
 import * as pluginService from '../../services/pluginService.js';
+import { mergeMaskedConfig, redactPluginConfig, redactRunOutput } from '../../lib/secretRedaction.js';
+import { assertOutboundUrlAllowed, UnsafeUrlError } from '../../lib/urlGuard.js';
 
 /**
  * GraphQL Resolvers for Plugin System
  * Handles plugin CRUD operations and testing
  */
+
+const parseJsonField = (value: unknown) => (typeof value === 'string' ? JSON.parse(value) : value);
+
+/**
+ * Plugin configs carry credentials (webhook secret, header values, OAuth tokens). Only an OWNER —
+ * the level that can create/update plugins — receives them; everyone else gets the masked
+ * projection from lib/secretRedaction.ts.
+ */
+const projectPlugin = <T extends { config?: unknown }>(plugin: T, permission: string | undefined): T =>
+  permission === PermissionLevel.OWNER
+    ? plugin
+    : { ...plugin, config: redactPluginConfig(parseJsonField(plugin.config)) };
+
+/** Webhook destinations are screened at save time; safeFetch screens them again on every send. */
+const assertWebhookDestination = async (type: string, config: unknown) => {
+  if (type !== 'webhook') return;
+  const url = (config as { url?: unknown } | null)?.url;
+  // A plugin saved without a URL yet cannot send anything; every send is screened regardless.
+  if (url === undefined || url === null || url === '') return;
+  try {
+    await assertOutboundUrlAllowed(url);
+  } catch (error) {
+    if (error instanceof UnsafeUrlError) {
+      throw createGraphQLError(`Invalid webhook URL: ${error.message}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+    }
+    throw error;
+  }
+};
 
 export const pluginsResolvers = {
   Query: {
@@ -39,7 +69,7 @@ export const pluginsResolvers = {
       // Fetch all plugins for this form
       const plugins = await pluginService.listPluginsByForm(formId);
 
-      return plugins;
+      return plugins.map((plugin) => projectPlugin(plugin, accessCheck.permission));
     },
 
     /**
@@ -69,7 +99,7 @@ export const pluginsResolvers = {
         throw createGraphQLError('Access denied: You do not have permission to view this plugin', GRAPHQL_ERROR_CODES.NO_ACCESS);
       }
 
-      return plugin;
+      return projectPlugin(plugin, accessCheck.permission);
     },
 
     /**
@@ -102,7 +132,13 @@ export const pluginsResolvers = {
       // Fetch delivery history
       const deliveries = await pluginService.listPluginDeliveries(pluginId, limit);
 
-      return deliveries;
+      // Receiver replies are attacker-controlled text; only OWNER sees the short excerpt, and
+      // full bodies stored before they were dropped are never returned.
+      const includeExcerpt = accessCheck.permission === PermissionLevel.OWNER;
+      return deliveries.map((delivery) => ({
+        ...delivery,
+        response: redactRunOutput(parseJsonField(delivery.response), includeExcerpt),
+      }));
     },
 
     /**
@@ -184,8 +220,13 @@ export const pluginsResolvers = {
         throw createGraphQLError(`Invalid event types: ${invalidEvents.join(', ')}. Supported events: ${supportedEvents.join(', ')}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      // Create plugin
-      const plugin = await pluginService.createPlugin(input);
+      await assertWebhookDestination(input.type, input.config);
+
+      // Create plugin (a mask can never be a real credential, so none is stored on create)
+      const plugin = await pluginService.createPlugin({
+        ...input,
+        config: mergeMaskedConfig(undefined, input.config),
+      });
 
       const provisioned = await provisionSheetPlugin(plugin.id);
       return provisioned ? ((await pluginService.getPluginById(plugin.id)) ?? plugin) : plugin;
@@ -240,12 +281,19 @@ export const pluginsResolvers = {
         }
       }
 
-      // Update plugin
+      if (input.config !== undefined) {
+        await assertWebhookDestination(plugin.type, input.config);
+      }
+
+      // Update plugin. A credential sent back as the mask means "unchanged" — restore the stored one.
       const updatedPlugin = await pluginService.updatePlugin(
         id,
         input.config === undefined
           ? input
-          : { ...input, config: carrySheetColumns(plugin.config, input.config) }
+          : {
+              ...input,
+              config: carrySheetColumns(plugin.config, mergeMaskedConfig(plugin.config, input.config)),
+            }
       );
 
       const provisioned = await provisionSheetPlugin(id);
