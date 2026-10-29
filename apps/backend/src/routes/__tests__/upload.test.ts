@@ -35,6 +35,9 @@ vi.mock('../../lib/prisma.js', () => ({
     member: {
       findFirst: vi.fn(),
     },
+    user: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 vi.mock('../../lib/logger.js', () => ({
@@ -457,6 +460,30 @@ describe('Upload Routes', () => {
         .field('type', 'FormTemplate')
         .attach('file', Buffer.from('tmpl'), 'tmpl.json');
       expect(res.status).toBe(403);
+    });
+  });
+
+  describe('FormTemplate fresh role check', () => {
+    const adminSession = { user: { id: 'a1', role: 'admin' }, session: {} } as any;
+
+    it('rejects a cached admin who was demoted in the database', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(adminSession);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue({ role: 'user', banned: false } as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormTemplate')
+        .attach('file', Buffer.from('tmpl'), 'tmpl.json');
+      expect(res.status).toBe(403);
+    });
+
+    it('treats a banned or deleted admin as unauthenticated', async () => {
+      vi.mocked(auth.api.getSession).mockResolvedValue(adminSession);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null as any);
+      const res = await request(app)
+        .post('/api/upload/upload')
+        .field('type', 'FormTemplate')
+        .attach('file', Buffer.from('tmpl'), 'tmpl.json');
+      expect(res.status).toBe(401);
     });
   });
 

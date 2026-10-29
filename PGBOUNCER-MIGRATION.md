@@ -57,9 +57,11 @@ sslmode=require   # use verify-full once PgBouncer presents a CA-signed certific
 
 > **Never use `sslmode=disable` for a non-local host.** The PgBouncer host is a public Azure Container
 > Instance FQDN, so a cleartext connection exposes the database credentials and all query data to anyone on
-> the network path. Configure PgBouncer with `client_tls_sslmode = require` (or `verify-full`),
-> `client_tls_key_file` and `client_tls_cert_file`, and connect with `sslmode=require` at minimum
-> (`verify-full` plus `sslrootcert` to prevent man-in-the-middle). Prefer private networking (VNet
+> the network path. Configure PgBouncer with `client_tls_sslmode = require`,
+> `client_tls_key_file` and `client_tls_cert_file` (do not use `client_tls_sslmode = verify-full` on the
+> server unless every client is issued a certificate), and connect with `sslmode=require` at minimum
+> (client-side `sslmode=verify-full` plus `sslrootcert` once the certificate is CA-signed, to prevent
+> man-in-the-middle). Prefer private networking (VNet
 > integration / private endpoint, no public IP) so the PgBouncer port is not reachable from the internet at
 > all. `sslmode=disable` is acceptable only for `localhost` / `127.0.0.1` development databases.
 

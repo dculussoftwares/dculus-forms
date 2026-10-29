@@ -23,7 +23,7 @@ const PRIVILEGED_ROLES = ['admin', 'superAdmin'];
  * (admin/superAdmin) sessions are therefore re-validated against the database
  * so system-role gates never trust a cached role.
  */
-async function resolveFreshUser(user: any): Promise<any | null> {
+export async function resolveFreshUser(user: any): Promise<any | null> {
   if (!PRIVILEGED_ROLES.includes(user?.role)) {
     return user;
   }

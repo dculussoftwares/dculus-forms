@@ -229,16 +229,27 @@ app.get('/respondent-oauth-callback', authLimiter, async (req, res) => {
 });
 
 // Apply express.json() AFTER Better Auth handler
-// Callers without credentials (public form viewer, anonymous attackers) get a
-// small limit. Credentialed callers keep 10 MB for legitimate large payloads
+// Callers without a valid session (public form viewer, anonymous attackers) get a
+// small limit. Authenticated callers keep 10 MB for legitimate large payloads
 // (form schema saves, imports, AI chat context).
 const GRAPHQL_BODY_LIMIT_ANONYMOUS_BYTES = 1024 * 1024;
 const anonymousJsonParser = express.json({ limit: GRAPHQL_BODY_LIMIT_ANONYMOUS_BYTES });
 const credentialedJsonParser = express.json({ limit: '10mb' });
-app.use((req, res, next) => {
-  const hasCredentials =
+app.use(async (req, res, next) => {
+  // Headers alone prove nothing (`Authorization: x` is enough to fake them), so
+  // the larger limit is only granted after the session is actually validated.
+  const claimsCredentials =
     !!req.headers.authorization || /session_token/.test(req.headers.cookie ?? '');
-  (hasCredentials ? credentialedJsonParser : anonymousJsonParser)(req, res, next);
+  let hasValidSession = false;
+  if (claimsCredentials) {
+    try {
+      const sessionData = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
+      hasValidSession = !!sessionData?.user;
+    } catch {
+      hasValidSession = false;
+    }
+  }
+  (hasValidSession ? credentialedJsonParser : anonymousJsonParser)(req, res, next);
 });
 app.use(express.urlencoded({ extended: true }));
 app.use(edgeGeolocationMiddleware);

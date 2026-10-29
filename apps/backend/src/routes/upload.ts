@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto';
 import { logger } from '../lib/logger.js';
 import { auth } from '../lib/better-auth.js';
 import { fromNodeHeaders } from 'better-auth/node';
+import { resolveFreshUser } from '../middleware/better-auth-middleware.js';
 import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formSharing.js';
 
 // Allowed upload type values — prevents arbitrary path injection via type param
@@ -239,7 +240,9 @@ const preflight: RequestHandler = async (req, res, next) => {
       const sessionData = await auth.api.getSession({
         headers: fromNodeHeaders(req.headers),
       });
-      callerUser = sessionData?.user ? { id: sessionData.user.id, role: sessionData.user.role } : null;
+      // Cookie-cached role can lag behind demotions/bans; re-check privileged users.
+      const freshUser = sessionData?.user ? await resolveFreshUser(sessionData.user) : null;
+      callerUser = freshUser ? { id: freshUser.id, role: freshUser.role } : null;
     } catch {
       // Non-fatal: unauthenticated callers are handled per-type below
     }

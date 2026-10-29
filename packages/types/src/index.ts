@@ -662,6 +662,20 @@ export const FILE_UPLOAD_DEFAULT_MAX_FILE_SIZE_MB = 5;
 // Respondent uploads are unauthenticated, so the backend caps them at 25 MB.
 export const FILE_UPLOAD_MAX_FILE_SIZE_MB = 25;
 
+/**
+ * Matches a file's MIME type against the field's allowed list, which may hold
+ * exact types ("application/pdf") or wildcards ("image/*").
+ */
+export function isFileTypeAllowed(fileType: string, allowedMimeTypes: string[]): boolean {
+  if (allowedMimeTypes.length === 0) return true;
+  const type = fileType.toLowerCase();
+  return allowedMimeTypes.some((allowed) => {
+    const pattern = allowed.toLowerCase();
+    if (pattern.endsWith('/*')) return type.startsWith(pattern.slice(0, -1));
+    return pattern === type;
+  });
+}
+
 export class FileUploadField extends FillableFormField {
   allowedMimeTypes?: string[];
   maxFileSizeMb?: number;

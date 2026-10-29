@@ -26,6 +26,8 @@ export const betterAuthResolvers = {
       _args: unknown,
       context?: { auth?: BetterAuthContext }
     ) => {
+      if (context?.auth) requireAuth(context.auth);
+      else throw createGraphQLError('Authentication required', GRAPHQL_ERROR_CODES.AUTHENTICATION_REQUIRED);
       const caller = context?.auth?.user as { id?: string; role?: string } | null | undefined;
       const isSelf = !!caller?.id && caller.id === user.id;
       const isAdmin = caller?.role === 'admin' || caller?.role === 'superAdmin';

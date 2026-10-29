@@ -8,6 +8,7 @@ import {
   extractEmailFields,
   FieldType,
   FILE_UPLOAD_MAX_FILE_SIZE_MB,
+  isFileTypeAllowed,
   isOneResponsePerRespondent,
   isRespondentEditEnabled,
   isSaveProgressEnabled,
@@ -74,7 +75,7 @@ function validateFiles(
       if (file.size > maxBytes) {
         return `File "${file.name}" exceeds the maximum allowed size of ${limits?.maxMb ?? FILE_UPLOAD_MAX_FILE_SIZE_MB} MB.`;
       }
-      if (limits?.mimeTypes.length && !limits.mimeTypes.includes(file.type)) {
+      if (limits?.mimeTypes.length && !isFileTypeAllowed(file.type, limits.mimeTypes)) {
         return `File "${file.name}" has an unsupported type. Allowed: ${limits.mimeTypes.join(', ')}.`;
       }
     }

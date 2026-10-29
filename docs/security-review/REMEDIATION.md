@@ -44,16 +44,21 @@ leaks.
 1. Review historical Actions logs of `multi-cloud-deployment.yml` runs (and delete them if they show the
    value: `Settings → Actions` or `gh run delete`).
 2. Rotate the token **after** the fix is merged: `terraform apply -replace=cloudflare_api_token.r2_access`
-   for each environment (`dev`, `production`) — or roll it in the Cloudflare dashboard (*R2 → Manage API
-   tokens*). The next deploy re-reads the new value via `terraform output -raw` and passes it to the backend.
+   for each environment (`dev`, `production`). The next deploy re-reads the new value via
+   `terraform output -raw` and passes it to the backend.
+   Do **not** roll the token in the Cloudflare dashboard instead: Cloudflare does not return the new secret on
+   later reads, so Terraform state (and therefore the next deploy) would keep the revoked value.
 3. Verify uploads/downloads still work, then confirm the old token is revoked.
 
 ## S21-02 — Database TLS
 
-Docs now recommend `sslmode=require` (or `verify-full`) and private networking. Operational follow-ups:
+Docs now recommend `sslmode=require` (or `verify-full` with a CA-signed certificate) and private networking.
+Operational follow-ups:
 
 - Enable TLS on the PgBouncer container (`client_tls_sslmode=require`, cert + key) and update every
-  `DATABASE_URL` secret (dev/production) from `sslmode=disable` to `sslmode=require`/`verify-full`.
+  `DATABASE_URL` **and `DIRECT_URL`** secret/variable (dev/production; Azure takes `DIRECT_URL` from
+  `var.postgres_direct_url`, and the migration runner and automation engine use it) from `sslmode=disable` to
+  `sslmode=require`/`verify-full`.
 - Restrict the PgBouncer ACI to a VNet / private IP or an IP allow-list so it is not reachable from the
   internet.
 - Rotate the `dculus_admin` database password if cleartext connections crossed untrusted networks.

@@ -153,17 +153,21 @@ describe('Better-Auth Resolvers', () => {
   });
 
   describe('User: organizations access guard (S04-02)', () => {
-    it('returns [] for anonymous callers without querying memberships', async () => {
-      const result = await betterAuthResolvers.User.organizations({ id: 'user-123' }, {}, { auth: { user: null } } as any);
+    it('rejects anonymous callers without querying memberships', async () => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockImplementationOnce(() => {
+        throw new Error('Authentication required');
+      });
 
-      expect(result).toEqual([]);
+      await expect(
+        betterAuthResolvers.User.organizations({ id: 'user-123' }, {}, { auth: { user: null } } as any)
+      ).rejects.toThrow('Authentication required');
       expect(prisma.member.findMany).not.toHaveBeenCalled();
     });
 
-    it('returns [] when context is missing', async () => {
-      const result = await betterAuthResolvers.User.organizations({ id: 'user-123' }, {});
-
-      expect(result).toEqual([]);
+    it('rejects when the auth context is missing', async () => {
+      await expect(betterAuthResolvers.User.organizations({ id: 'user-123' }, {})).rejects.toThrow(
+        'Authentication required'
+      );
       expect(prisma.member.findMany).not.toHaveBeenCalled();
     });
 

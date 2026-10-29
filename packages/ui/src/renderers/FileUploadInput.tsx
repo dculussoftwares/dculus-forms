@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload } from 'lucide-react';
+import { isFileTypeAllowed } from '@dculus/types';
 
 const WRAP_TEXT_CLASS = 'leading-snug break-words [overflow-wrap:anywhere]';
 
@@ -68,7 +69,7 @@ export const FileUploadInput: React.FC<FileUploadInputProps> = ({
     for (const file of Array.from(files)) {
       if (file.size > maxMb * 1024 * 1024) {
         problems.push(`"${file.name}" is larger than ${maxMb} MB and was not added.`);
-      } else if (allowedMimeTypes.length > 0 && !allowedMimeTypes.includes(file.type)) {
+      } else if (!isFileTypeAllowed(file.type, allowedMimeTypes)) {
         problems.push(`"${file.name}" is not an allowed file type and was not added.`);
       } else {
         accepted.push(file);
