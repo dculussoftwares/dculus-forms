@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateAutomationGraph, GRAPH_ERROR_CODES } from '../graphValidator.js';
+import { validateAutomationGraph, validateWebhookDestinations, GRAPH_ERROR_CODES } from '../graphValidator.js';
 import type { AutomationGraph } from '../types.js';
 
 const PLUGIN_TYPES = ['email', 'webhook', 'slack', 'quiz-grading'];
@@ -412,6 +412,40 @@ describe('validateAutomationGraph', () => {
       };
       const result = validate(graph);
       expect(codesOf(result)).toContain(GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG);
+    });
+
+    it.each([
+      'https://169.254.169.254/latest/meta-data/',
+      'https://10.0.0.5/hook',
+      'https://user:pw@example.com/hook',
+      'ftp://example.com/hook',
+    ])('rejects an unsafe webhook url %s', (url) => {
+      const graph: AutomationGraph = {
+        nodes: [
+          { id: 't1', type: 'trigger', data: { triggerType: 'form.submitted' } },
+          { id: 'a1', type: 'action', data: { actionType: 'webhook', config: { url } } },
+          { id: 'end-1', type: 'end' },
+        ],
+        edges: [
+          { id: 'e1', source: 't1', target: 'a1' },
+          { id: 'e2', source: 'a1', target: 'end-1' },
+        ],
+      };
+      expect(codesOf(validate(graph))).toContain(GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG);
+    });
+
+    it('validateWebhookDestinations flags webhook actions that target internal addresses', async () => {
+      const graph = {
+        nodes: [
+          { id: 'a1', type: 'action', data: { actionType: 'webhook', config: { url: 'https://192.168.1.10/hook' } } },
+          { id: 'a2', type: 'action', data: { actionType: 'email', config: {} } },
+        ],
+        edges: [],
+      };
+      const errors = await validateWebhookDestinations(graph);
+      expect(errors).toHaveLength(1);
+      expect(errors[0]).toMatchObject({ code: GRAPH_ERROR_CODES.INVALID_ACTION_CONFIG, nodeId: 'a1' });
+      expect(await validateWebhookDestinations(null)).toEqual([]);
     });
 
     it('rejects a slack action missing a message', () => {

@@ -10,7 +10,7 @@ import {
 } from '../automationService.js';
 import { automationRepository } from '../../repositories/index.js';
 import { getAvailablePluginTypes } from '../../plugins/core/registry.js';
-import { validateAutomationGraph } from '../automation/graphValidator.js';
+import { validateAutomationGraph, validateWebhookDestinations } from '../automation/graphValidator.js';
 import { scheduleAutomationCron } from '../automation/triggerService.js';
 import { copyAutomation } from '../automation/copyAutomation.js';
 import { audit } from '../../lib/audit.js';
@@ -71,6 +71,7 @@ describe('automation draft / publish', () => {
     vi.clearAllMocks();
     vi.mocked(getAvailablePluginTypes).mockReturnValue(['email', 'webhook']);
     vi.mocked(validateAutomationGraph).mockReturnValue({ valid: true, errors: [] });
+    vi.mocked(validateWebhookDestinations).mockResolvedValue([]);
     vi.mocked(automationRepository.updateIfDraftRevision).mockImplementation(
       async (id: string, _base: number | null, data: any) => ({ id, status: 'ACTIVE', version: 4, ...data }) as any
     );

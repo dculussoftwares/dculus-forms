@@ -120,6 +120,35 @@ describe('Automations Resolvers', () => {
       expect(automationsResolvers.Automation.hasUnpublishedChanges(result)).toBe(true);
     });
 
+    it('automation: masks webhook and sheet credentials for a VIEWER but not an EDITOR', async () => {
+      const secretGraph = {
+        nodes: [
+          { id: 'trigger-1', type: 'trigger', data: { triggerType: 'form.submitted' } },
+          {
+            id: 'a1',
+            type: 'action',
+            data: {
+              actionType: 'webhook',
+              config: { url: 'https://example.com/h', secret: 'hmac-secret', headers: { Authorization: 'Bearer abc' } },
+            },
+          },
+        ],
+        edges: [],
+      };
+      vi.mocked(automationService.getAutomationById).mockResolvedValue({ ...mockAutomation, graph: secretGraph } as any);
+
+      grantAccess('VIEWER');
+      const viewer: any = await automationsResolvers.Query.automation({}, { id: 'automation-123' }, mockContext);
+      const json = JSON.stringify(viewer.graph);
+      expect(json).not.toContain('hmac-secret');
+      expect(json).not.toContain('Bearer abc');
+      expect(json).toContain('https://example.com/h');
+
+      grantAccess('EDITOR');
+      const editor: any = await automationsResolvers.Query.automation({}, { id: 'automation-123' }, mockContext);
+      expect(JSON.stringify(editor.graph)).toContain('hmac-secret');
+    });
+
     it('hasUnpublishedChanges: derives from the draft columns', () => {
       expect(automationsResolvers.Automation.hasUnpublishedChanges({ draftGraph: null, draftTriggerConfig: null })).toBe(false);
       expect(automationsResolvers.Automation.hasUnpublishedChanges({ draftGraph: mockGraph })).toBe(true);
@@ -433,7 +462,7 @@ describe('Automations Resolvers', () => {
       );
 
       expect(automationService.listAutomationRuns).toHaveBeenCalledWith('automation-123', 10, 5);
-      expect(result).toEqual(runs);
+      expect(result).toMatchObject(runs);
     });
 
     it('automationRun: fetches the run with its automation, checks access, and returns it', async () => {
@@ -448,7 +477,7 @@ describe('Automations Resolvers', () => {
       );
 
       expect(automationService.getAutomationRunWithAutomation).toHaveBeenCalledWith('run-1');
-      expect(result).toEqual(run);
+      expect(result).toMatchObject(run);
     });
 
     it('automationRun: propagates a NOT_FOUND-style error from the service', async () => {
@@ -510,7 +539,22 @@ describe('Automations Resolvers', () => {
       const result = await automationsResolvers.AutomationRun.stepRuns({ id: 'run-1' } as any);
 
       expect(automationService.listStepRuns).toHaveBeenCalledWith('run-1');
-      expect(result).toEqual(stepRuns);
+      expect(result).toMatchObject(stepRuns);
+    });
+
+    it('AutomationRun.context and AutomationStepRun.output drop receiver bodies', () => {
+      const context = automationsResolvers.AutomationRun.context({
+        context: { a: { responseBody: 'internal', statusCode: 200, responseExcerpt: 'ok' } },
+        _canEdit: false,
+      } as any);
+      expect(JSON.stringify(context)).not.toContain('internal');
+      expect(JSON.stringify(context)).not.toContain('responseExcerpt');
+
+      const output = automationsResolvers.AutomationStepRun.output({
+        output: { statusCode: 200, responseBody: 'internal', responseExcerpt: 'ok' },
+        _canEdit: true,
+      } as any);
+      expect(output).toEqual({ statusCode: 200, responseExcerpt: 'ok' });
     });
 
     it('Automation.createdAt formats a Date to ISO string', () => {

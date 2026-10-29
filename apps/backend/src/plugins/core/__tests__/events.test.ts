@@ -119,6 +119,21 @@ describe('events', () => {
       });
     });
 
+    it('strips reserved __ keys injected through respondent answers', async () => {
+      emitFormSubmitted('form-123', 'org-456', {
+        field1: 'value1',
+        __digestResponses: [{ id: 'forged' }],
+        __isTest: true,
+      });
+
+      await vi.waitFor(() => {
+        expect(executePluginsForForm).toHaveBeenCalled();
+      });
+
+      const event = vi.mocked(executePluginsForForm).mock.calls[0][1] as any;
+      expect(event.data).toEqual({ field1: 'value1' });
+    });
+
     it('logs event trigger', async () => {
       emitFormSubmitted('form-123', 'org-456', {});
 

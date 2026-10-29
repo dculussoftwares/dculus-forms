@@ -16,7 +16,7 @@ import {
 } from '../automationService.js';
 import { automationRepository, responseRepository } from '../../repositories/index.js';
 import { getAvailablePluginTypes } from '../../plugins/core/registry.js';
-import { validateAutomationGraph } from '../automation/graphValidator.js';
+import { validateAutomationGraph, validateWebhookDestinations } from '../automation/graphValidator.js';
 import { enqueueFirstStep, enqueueRunStep } from '../automation/engine.js';
 import { isAutomationEngineEnabled } from '../automation/boss.js';
 import {
@@ -44,6 +44,7 @@ describe('automationService', () => {
     let idCounter = 0;
     vi.mocked(generateId).mockImplementation(() => `generated-${++idCounter}`);
     vi.mocked(getAvailablePluginTypes).mockReturnValue(['webhook', 'email']);
+    vi.mocked(validateWebhookDestinations).mockResolvedValue([]);
   });
 
   describe('getAutomationById', () => {

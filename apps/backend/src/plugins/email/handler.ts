@@ -352,7 +352,9 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
     // per-response digest send branch immediately following).
     const formSchema = deserializeFormSchema(form.formSchema);
 
-    const rawDigestResponses = event.data.__digestResponses;
+    // Only the scheduler's digest step writes `__digestResponses`; on any other event it can only
+    // be respondent-supplied, so it is ignored.
+    const rawDigestResponses = event.type === 'schedule' ? event.data.__digestResponses : undefined;
     const digestResponses = Array.isArray(rawDigestResponses)
       ? (rawDigestResponses as unknown[]).filter(isValidDigestResponseEntry)
       : undefined;

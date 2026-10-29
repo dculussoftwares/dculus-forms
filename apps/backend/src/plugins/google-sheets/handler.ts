@@ -384,7 +384,8 @@ export const googleSheetsHandler: PluginHandler = async (plugin, event, context)
     // event.data.__digestResponses instead of exactly one event.data.responseId.
     // `plugin.provision` only creates/syncs the spreadsheet so its link exists before any response.
     const isProvision = event.type === 'plugin.provision';
-    const rawDigestResponses = isProvision ? undefined : (event.data as Record<string, any>).__digestResponses;
+    const rawDigestResponses =
+      isProvision || event.type !== 'schedule' ? undefined : (event.data as Record<string, any>).__digestResponses;
     const digestResponses = Array.isArray(rawDigestResponses)
       ? (rawDigestResponses as unknown[]).filter(isValidDigestResponseEntry)
       : null;
