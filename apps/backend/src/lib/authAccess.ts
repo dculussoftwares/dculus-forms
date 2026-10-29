@@ -20,10 +20,16 @@ export const authAdminRoles = {
 // email-sending endpoints (3 per 60s) by default. These add limits for the
 // token/OTP verification endpoints it leaves on the generic bucket, so OTPs
 // cannot be guessed by cycling new codes. Per client IP; see proxyConfig.
-export const authRateLimitRules = {
+export const buildAuthRateLimitRules = (appEnv: string | undefined = process.env.APP_ENV) => ({
   '/email-otp/verify-email': { window: 60, max: 10 },
   '/email-otp/check-verification-otp': { window: 60, max: 10 },
   '/email-otp/reset-password': { window: 60, max: 10 },
   '/reset-password': { window: 60, max: 10 },
   '/magic-link/verify': { window: 60, max: 10 },
-};
+  // The dev post-deploy E2E run signs in from one runner IP across parallel
+  // workers, which the default 3-per-10s sign-in limit throttles. Staging and
+  // production keep the default.
+  ...(appEnv === 'dev' ? { '/sign-in/email': { window: 10, max: 200 } } : {}),
+});
+
+export const authRateLimitRules = buildAuthRateLimitRules();
