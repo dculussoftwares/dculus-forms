@@ -10,6 +10,7 @@ import { provisionSheetPlugin, syncSheetPluginName } from '../../plugins/core/pr
 import * as pluginService from '../../services/pluginService.js';
 import { mergeMaskedConfig, redactPluginConfig, redactRunOutput } from '../../lib/secretRedaction.js';
 import { assertOutboundUrlAllowed, UnsafeUrlError } from '../../lib/urlGuard.js';
+import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 
 /**
  * GraphQL Resolvers for Plugin System
@@ -41,6 +42,32 @@ const assertWebhookDestination = async (type: string, config: unknown) => {
       throw createGraphQLError(`Invalid webhook URL: ${error.message}`, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
     }
     throw error;
+  }
+};
+
+/**
+ * An email plugin may address the respondent through a form field. That field must be an email
+ * field, otherwise any free-text answer would become a recipient. The handler validates the
+ * submitted value again on every send; this rejects the misconfiguration up front.
+ */
+const assertRecipientFieldIsEmail = async (type: string, config: unknown, formId: string) => {
+  if (type !== 'email') return;
+  const fieldId = (config as { recipientFieldId?: unknown } | null)?.recipientFieldId;
+  if (typeof fieldId !== 'string' || fieldId === '') return;
+
+  const schema = await getFormSchemaFromHocuspocus(formId);
+  // No live schema to check against (new or unsynced form); the handler's runtime check still applies.
+  if (!schema?.pages) return;
+
+  const fields: Array<{ id?: string; type?: string }> = (schema.pages as Array<{ fields?: unknown[] }>).flatMap(
+    (page) => (page.fields ?? []) as Array<{ id?: string; type?: string }>
+  );
+  const field = fields.find((candidate) => candidate.id === fieldId);
+  if (!field || String(field.type).toLowerCase() !== 'email_field') {
+    throw createGraphQLError(
+      'The recipient field must be an email field on this form',
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
   }
 };
 
@@ -221,6 +248,7 @@ export const pluginsResolvers = {
       }
 
       await assertWebhookDestination(input.type, input.config);
+      await assertRecipientFieldIsEmail(input.type, input.config, input.formId);
 
       // Create plugin (a mask can never be a real credential, so none is stored on create)
       const plugin = await pluginService.createPlugin({
@@ -283,6 +311,7 @@ export const pluginsResolvers = {
 
       if (input.config !== undefined) {
         await assertWebhookDestination(plugin.type, input.config);
+        await assertRecipientFieldIsEmail(plugin.type, input.config, plugin.formId);
       }
 
       // Update plugin. A credential sent back as the mask means "unchanged" — restore the stored one.

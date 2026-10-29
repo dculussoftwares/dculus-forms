@@ -686,6 +686,29 @@ describe('Email Handler', () => {
       expect(result.skippedCount).toBe(1);
     });
 
+    it.each([
+      ['a comma-separated list', 'a@example.com,b@example.com'],
+      ['a display-name address', 'Eve <eve@example.com>'],
+      ['free text', 'please email me'],
+    ])('skips a response whose recipient field holds %s instead of one address', async (_label, value) => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        subject: 'Reminder',
+        message: 'Hi',
+      };
+      vi.mocked(substituteMentions).mockImplementation((msg: string) => msg);
+
+      const event = scheduleEventWithDigest([
+        { id: 'r1', submittedAt: '2025-12-26T10:00:00.000Z', data: { 'email-field': value } },
+      ]);
+
+      const result = await emailHandler({ id: 'test-plugin', config }, event, mockContext);
+
+      expect(mockContext.sendEmail).not.toHaveBeenCalled();
+      expect(result.skippedCount).toBe(1);
+    });
+
     it('counts (not throws on) a per-response send failure, continuing with the remaining responses', async () => {
       const config: ValidatedEmailConfig = {
         type: 'email',

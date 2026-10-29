@@ -10,6 +10,7 @@ import {
 import { generateRandomString, parseEmailList, validateEmailList } from '@dculus/utils';
 import { countResponsesPerField, countResponsesReferencingAnyField } from '../services/responseService.js';
 import { prisma } from './prisma.js';
+import { assertOutboundUrlAllowed, UnsafeUrlError } from './urlGuard.js';
 
 // Field type tokens the AI uses (kept in sync with addField's fieldType enum).
 const FIELD_TYPE_TOKENS = ['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file', 'phone'] as const;
@@ -611,7 +612,6 @@ export function createFormEditTools(
         name: z.string().min(1).max(100).describe('Short display name for the integration'),
         webhook: z.object({
           url: z.string().describe('HTTPS endpoint to POST submissions to'),
-          secret: z.string().nullable().optional().describe('Optional signing secret'),
         }).optional(),
         email: z.object({
           recipientEmail: z.string().nullable().optional().describe('Static recipient address(es), comma-separated for more than one'),
@@ -630,7 +630,15 @@ export function createFormEditTools(
           let parsed: URL;
           try { parsed = new URL(webhook.url); } catch { return { error: `"${webhook.url}" is not a valid URL.` }; }
           if (parsed.protocol !== 'https:') return { error: 'Webhook URLs must use https.' };
-          config = { type: 'webhook', url: webhook.url, ...(webhook.secret ? { secret: webhook.secret } : {}) };
+          try {
+            await assertOutboundUrlAllowed(webhook.url);
+          } catch (error) {
+            if (error instanceof UnsafeUrlError) return { error: `That webhook URL is not allowed: ${error.message}` };
+            throw error;
+          }
+          // Signing secrets are never taken through chat (the model and chat history would see
+          // them); the owner sets one in the integration's settings after it is created.
+          config = { type: 'webhook', url: webhook.url };
         } else {
           if (!email) return { error: 'The email config block is required for pluginType "email".' };
           // Mirrors EmailPluginConfig: at least one of recipientEmail / recipientFieldId is required.

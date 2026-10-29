@@ -1,7 +1,7 @@
 import type { PluginHandler, PluginEvent, PluginContext } from '../core/types.js';
 import type { ValidatedEmailConfig, EmailDeliveryResult } from './types.js';
 import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dculus/types';
-import { substituteMentions, createFieldLabelsMap, parseEmailList } from '@dculus/utils';
+import { substituteMentions, createFieldLabelsMap, parseEmailList, isEmailAddress } from '@dculus/utils';
 import type { EmailAttachment } from '../../services/emailService.js';
 import { resolveResponsePdfAttachment } from '../../services/pdfTemplateService.js';
 import { checkUsageExceeded, getRemainingEmailQuota } from '../../subscriptions/usageService.js';
@@ -139,6 +139,19 @@ function buildDigestResponseTable(
 }
 
 /**
+ * A recipient taken from a submitted answer is respondent-controlled text. It is used only when it
+ * is exactly one plain address: nothing that could expand into several recipients or a
+ * display-name/group form once the mailer parses the string.
+ */
+function toSubmittedRecipient(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const candidate = value.trim();
+  if (!candidate || candidate.length > 254) return undefined;
+  if (/[,;<>"()\\[\]:\r\n]/.test(candidate)) return undefined;
+  return isEmailAddress(candidate) ? candidate : undefined;
+}
+
+/**
  * Resolves the set of recipient addresses for this send: the static
  * recipientEmail (if set — now a comma/semicolon/whitespace-separated list, so a scheduled
  * summary can reach several people) plus the current value of the recipientFieldId field
@@ -159,14 +172,13 @@ function resolveRecipients(
     if (!hasResponse) {
       skipReason = `Recipient field "${config.recipientFieldLabel || config.recipientFieldId}" has no data during a test send`;
     } else {
-      const fieldValue = responseData?.[config.recipientFieldId];
-      if (typeof fieldValue === 'string' && fieldValue.trim()) {
-        const dynamicEmail = fieldValue.trim();
+      const dynamicEmail = toSubmittedRecipient(responseData?.[config.recipientFieldId]);
+      if (dynamicEmail) {
         if (!recipients.some((r) => r.toLowerCase() === dynamicEmail.toLowerCase())) {
           recipients.push(dynamicEmail);
         }
       } else {
-        skipReason = `Recipient field "${config.recipientFieldLabel || config.recipientFieldId}" was empty for this submission`;
+        skipReason = `Recipient field "${config.recipientFieldLabel || config.recipientFieldId}" was empty or not a single valid email address`;
       }
     }
   }
@@ -188,12 +200,10 @@ function resolvePerResponseRecipient(
   config: ValidatedEmailConfig,
   responseData: Record<string, any>
 ): { recipient?: string; skipReason?: string } {
-  const fieldValue = responseData[config.recipientFieldId!];
-  if (typeof fieldValue === 'string' && fieldValue.trim()) {
-    return { recipient: fieldValue.trim() };
-  }
+  const recipient = toSubmittedRecipient(responseData[config.recipientFieldId!]);
+  if (recipient) return { recipient };
   return {
-    skipReason: `Recipient field "${config.recipientFieldLabel || config.recipientFieldId}" was empty for this submission`,
+    skipReason: `Recipient field "${config.recipientFieldLabel || config.recipientFieldId}" was empty or not a single valid email address`,
   };
 }
 
