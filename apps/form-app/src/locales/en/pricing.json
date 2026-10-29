@@ -89,7 +89,8 @@
     "processing": "Processing...",
     "getStarted": "Get Started Free",
     "upgradeTo": "Upgrade to {{planName}}",
-    "contactSales": "Contact Sales"
+    "contactSales": "Contact Sales",
+    "ownerOnly": "Only organization owners can upgrade the plan."
   },
   "faq": {
     "title": "Frequently Asked Questions",
