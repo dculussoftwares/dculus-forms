@@ -476,6 +476,9 @@ const Responses: React.FC = () => {
   const error = formError || responsesError;
   const responsePagination = responsesData?.responsesByForm ?? previousResponsesData?.responsesByForm;
 
+  // Bulk-deleting responses is OWNER-only on the backend.
+  const isFormOwner = formData?.form?.userPermission === 'OWNER';
+
   const previewResponseCount = responses.filter((r: any) =>
     r.tags?.some((tag: any) => tag.name === PREVIEW_TAG_NAME)
   ).length;
@@ -689,7 +692,7 @@ const Responses: React.FC = () => {
             {/* Toolbar */}
             <div className="flex-shrink-0">
               {/* Clear preview / fake-response buttons — only shown when they exist */}
-              {(previewResponseCount > 0 || aiGeneratedResponseCount > 0) && (
+              {isFormOwner && (previewResponseCount > 0 || aiGeneratedResponseCount > 0) && (
                 <div className="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 border-b" style={{ borderColor: 'var(--tf-border-medium)' }}>
                   <div className="ml-auto flex items-center gap-2">
                     {aiGeneratedResponseCount > 0 && (

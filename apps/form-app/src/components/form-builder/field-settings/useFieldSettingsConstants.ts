@@ -204,6 +204,10 @@ export const useFieldSettingsConstants = () => {
           },
         }),
       SELECT_FIELD_TO_EDIT: t('infoMessages.selectFieldToEdit'),
+      MAX_FILE_SIZE_HINT: (max: number) =>
+        t('infoMessages.maxFileSizeHint', { values: { max } }),
+      MAX_FILE_SIZE_OVER_LIMIT: (max: number) =>
+        t('infoMessages.maxFileSizeOverLimit', { values: { max } }),
     },
   } as const;
 };

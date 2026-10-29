@@ -656,7 +656,7 @@ export const fileUploadFieldValidationSchema = z.object({
   maxFileSizeMb: z
     .number()
     .min(1, 'fieldSettingsConstants:errorMessages.minFileSizeInvalid')
-    .max(50, 'fieldSettingsConstants:errorMessages.maxFileSizeExceeded')
+    .max(25, 'fieldSettingsConstants:errorMessages.maxFileSizeExceeded')
     .optional(),
   maxFiles: z
     .number()

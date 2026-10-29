@@ -14,6 +14,7 @@ import {
   RichTextFormField,
   PhoneNumberField,
   GridField,
+  FILE_UPLOAD_MAX_FILE_SIZE_MB,
 } from '@dculus/types';
 import { Settings } from 'lucide-react';
 import { Controller } from 'react-hook-form';
@@ -88,6 +89,8 @@ const FileUploadFieldSettingsInner: React.FC<
   const errors = formErrors as any;
   const { control, watch, setValue } = form;
   const allowedMimeTypes: string[] = watch('allowedMimeTypes') || [];
+  const watchedMaxFileSizeMb = Number(watch('maxFileSizeMb'));
+  const isOverUploadLimit = watchedMaxFileSizeMb > FILE_UPLOAD_MAX_FILE_SIZE_MB;
 
   const toggleMimeType = (value: string) => {
     const next = allowedMimeTypes.includes(value)
@@ -178,7 +181,7 @@ const FileUploadFieldSettingsInner: React.FC<
               placeholder="5"
               type="number"
               min="1"
-              max="50"
+              max="25"
               control={control}
               error={errors.maxFileSizeMb}
               disabled={!isEditable}
@@ -186,6 +189,14 @@ const FileUploadFieldSettingsInner: React.FC<
                 output: (v: string) => (v === '' ? undefined : parseInt(v)),
               }}
             />
+            <p
+              role={isOverUploadLimit ? 'alert' : undefined}
+              className={`text-xs ${isOverUploadLimit ? 'text-amber-700' : 'text-muted-foreground'}`}
+            >
+              {isOverUploadLimit
+                ? constants.INFO_MESSAGES.MAX_FILE_SIZE_OVER_LIMIT(FILE_UPLOAD_MAX_FILE_SIZE_MB)
+                : constants.INFO_MESSAGES.MAX_FILE_SIZE_HINT(FILE_UPLOAD_MAX_FILE_SIZE_MB)}
+            </p>
 
             <FormInputField
               name="maxFiles"
