@@ -1,4 +1,5 @@
 import {
+  isCredentialEncryptionEnabled,
   openAutomationGraph,
   openPluginConfig,
   sealAutomationGraph,
@@ -92,7 +93,8 @@ export const withCredentialEncryption = async ({ model, operation, args, query }
   if (!SEAL[modelKey] && !NESTED[modelKey]) return query(args);
 
   const nextArgs: Row = { ...(args as Row) };
-  assertNoNestedCredentialWrites(modelKey, nextArgs);
+  // With no key configured nothing is sealed, so a nested write cannot bypass anything.
+  if (isCredentialEncryptionEnabled()) assertNoNestedCredentialWrites(modelKey, nextArgs);
   if (!SEAL[modelKey]) return applyToResult(modelKey, await query(nextArgs), OPEN);
   if ('data' in nextArgs) nextArgs.data = sealData(modelKey, nextArgs.data);
   if (operation === 'upsert') {
