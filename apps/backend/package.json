@@ -55,7 +55,7 @@
     "@pdfme/generator": "6.2.5",
     "@pdfme/schemas": "6.2.5",
     "@prisma/adapter-pg": "6.19.2",
-    "@prisma/client": "6.19.2",
+    "@prisma/client": "7.10.1",
     "@sentry/node": "^10.70.0",
     "@sentry/profiling-node": "^10.70.0",
     "@types/bcryptjs": "3.0.0",
