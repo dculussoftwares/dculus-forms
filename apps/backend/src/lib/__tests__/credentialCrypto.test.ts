@@ -183,6 +183,18 @@ describe('withCredentialEncryption (Prisma extension)', () => {
     expect(automation.runs).toHaveLength(1);
   });
 
+  it('allows nested writes when encryption is not enabled, since nothing is sealed', async () => {
+    delete process.env[KEY_ENV];
+    const query = vi.fn(async () => null);
+    await withCredentialEncryption({
+      model: 'Form',
+      operation: 'create',
+      args: { data: { plugins: { create: [{ config: webhookConfig }] } } },
+      query,
+    });
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects nested writes that would create credential rows unsealed, but allows link-only ones', async () => {
     const query = vi.fn(async () => null);
     await expect(
