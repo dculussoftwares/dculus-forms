@@ -98,6 +98,13 @@ variable "better_auth_secret" {
   sensitive   = true
 }
 
+variable "credential_encryption_key" {
+  description = "Key material for encrypting plugin/automation credentials at rest (e.g. `openssl rand -base64 32`). Empty disables encryption."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
 variable "better_auth_url" {
   description = "Better Auth URL (backend URL)"
   type        = string

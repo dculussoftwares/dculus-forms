@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '#prisma-client';
 import { appConfig } from './env.js';
+import { credentialEncryption } from './credentialEncryptionExtension.js';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -32,10 +33,14 @@ function buildAdapter(): PrismaPg {
   return new PrismaPg({ connectionString, max });
 }
 
-const prisma = globalThis.prisma || new PrismaClient({ adapter: buildAdapter() });
+const baseClient = globalThis.prisma || new PrismaClient({ adapter: buildAdapter() });
 
 if (!appConfig.isProduction) {
-  globalThis.prisma = prisma;
+  globalThis.prisma = baseClient;
 }
+
+// Plugin / automation credentials are encrypted at rest; see lib/credentialCrypto.ts. The extended
+// client is exposed as a PrismaClient so existing repository / transaction typings keep working.
+const prisma = baseClient.$extends(credentialEncryption) as unknown as PrismaClient;
 
 export { prisma };

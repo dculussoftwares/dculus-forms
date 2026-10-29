@@ -142,6 +142,12 @@ resource "azurerm_container_app" "backend" {
         value = var.better_auth_secret
       }
 
+      # Encrypts plugin / automation credentials at rest. Empty = encryption disabled.
+      env {
+        name  = "CREDENTIAL_ENCRYPTION_KEY"
+        value = var.credential_encryption_key
+      }
+
       env {
         name  = "BETTER_AUTH_URL"
         value = local.resolved_auth_url

@@ -287,6 +287,8 @@ jobs:
           # Phase 2 fix removed the BETTER_AUTH_SECRET fallback — integration tests
           # spin up the real backend server which requires this at startup.
           BETTER_AUTH_SECRET: test-only-secret-for-integration-tests-not-used-in-production
+          # Exercise credential encryption at rest against the real database.
+          CREDENTIAL_ENCRYPTION_KEY: test-only-credential-key-not-used-in-production
           BETTER_AUTH_URL: http://localhost:4000
           PUBLIC_S3_ENDPOINT: http://localhost:9000
           PUBLIC_S3_ACCESS_KEY: test-access-key
@@ -452,6 +454,7 @@ jobs:
       DATABASE_URL: postgresql://dculus:dculus_dev_password@localhost:5544/dculus_forms_e2e?sslmode=disable
       DIRECT_URL: postgresql://dculus:dculus_dev_password@localhost:5544/dculus_forms_e2e?sslmode=disable
       BETTER_AUTH_SECRET: e2e-test-secret-at-least-32-chars-long-ok
+      CREDENTIAL_ENCRYPTION_KEY: e2e-test-only-credential-key-not-used-in-production
       BETTER_AUTH_URL: http://localhost:4000
       NODE_ENV: test
       # Stub S3 — no real uploads in local E2E
