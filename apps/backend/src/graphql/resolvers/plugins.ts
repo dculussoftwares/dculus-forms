@@ -10,6 +10,7 @@ import { provisionSheetPlugin, syncSheetPluginName } from '../../plugins/core/pr
 import * as pluginService from '../../services/pluginService.js';
 import { mergeMaskedConfig, redactPluginConfig, redactRunOutput } from '../../lib/secretRedaction.js';
 import { assertOutboundUrlAllowed, UnsafeUrlError } from '../../lib/urlGuard.js';
+import { isActiveEmailField } from '../../lib/recipientField.js';
 import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
 
 /**
@@ -47,23 +48,17 @@ const assertWebhookDestination = async (type: string, config: unknown) => {
 
 /**
  * An email plugin may address the respondent through a form field. That field must be an email
- * field, otherwise any free-text answer would become a recipient. The handler validates the
- * submitted value again on every send; this rejects the misconfiguration up front.
+ * field, otherwise any free-text answer would become a recipient. The handler checks the field
+ * and the submitted value again on every send; this rejects the misconfiguration up front.
  */
 const assertRecipientFieldIsEmail = async (type: string, config: unknown, formId: string) => {
   if (type !== 'email') return;
   const fieldId = (config as { recipientFieldId?: unknown } | null)?.recipientFieldId;
   if (typeof fieldId !== 'string' || fieldId === '') return;
 
+  // A schema that cannot be loaded means the field cannot be verified, so it is not accepted.
   const schema = await getFormSchemaFromHocuspocus(formId);
-  // No live schema to check against (new or unsynced form); the handler's runtime check still applies.
-  if (!schema?.pages) return;
-
-  const fields: Array<{ id?: string; type?: string }> = (schema.pages as Array<{ fields?: unknown[] }>).flatMap(
-    (page) => (page.fields ?? []) as Array<{ id?: string; type?: string }>
-  );
-  const field = fields.find((candidate) => candidate.id === fieldId);
-  if (!field || String(field.type).toLowerCase() !== 'email_field') {
+  if (!isActiveEmailField(schema, fieldId)) {
     throw createGraphQLError(
       'The recipient field must be an email field on this form',
       GRAPHQL_ERROR_CODES.BAD_USER_INPUT

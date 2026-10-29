@@ -590,7 +590,7 @@ describe('Email Handler', () => {
     beforeEach(() => {
       const mockForm = { id: 'form-123', formSchema: { pages: [] } };
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
-      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [{ id: 'email-field', type: 'email_field' }] }] } as any);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
     });
 
@@ -852,7 +852,7 @@ describe('Email Handler', () => {
 
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
-      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [{ id: 'email-field', type: 'email_field' }] }] } as any);
       vi.mocked(createFieldLabelsMap).mockReturnValue({});
       vi.mocked(substituteMentions).mockReturnValue('<p>Test</p>');
       vi.mocked(mockContext.sendEmail).mockRejectedValue(
@@ -1009,7 +1009,7 @@ describe('Email Handler', () => {
 
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
-      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [{ id: 'email-field', type: 'email_field' }] }] } as any);
       vi.mocked(createFieldLabelsMap).mockReturnValue({});
       vi.mocked(substituteMentions).mockReturnValue(config.message);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
@@ -1041,7 +1041,7 @@ describe('Email Handler', () => {
 
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
-      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [{ id: 'email-field', type: 'email_field' }] }] } as any);
       vi.mocked(createFieldLabelsMap).mockReturnValue({});
       vi.mocked(substituteMentions).mockReturnValue(config.message);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
@@ -1071,7 +1071,7 @@ describe('Email Handler', () => {
 
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
-      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [{ id: 'email-field', type: 'email_field' }] }] } as any);
       vi.mocked(createFieldLabelsMap).mockReturnValue({});
       vi.mocked(substituteMentions).mockReturnValue(config.message);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
@@ -1097,7 +1097,7 @@ describe('Email Handler', () => {
 
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
-      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [{ id: 'email-field', type: 'email_field' }] }] } as any);
       vi.mocked(createFieldLabelsMap).mockReturnValue({});
       vi.mocked(substituteMentions).mockReturnValue(config.message);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
@@ -1127,7 +1127,7 @@ describe('Email Handler', () => {
 
       vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
       vi.mocked(mockContext.getResponseById).mockResolvedValue(mockResponse as any);
-      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [{ id: 'email-field', type: 'email_field' }] }] } as any);
       vi.mocked(createFieldLabelsMap).mockReturnValue({});
       vi.mocked(substituteMentions).mockReturnValue(config.message);
       vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
@@ -1168,6 +1168,30 @@ describe('Email Handler', () => {
         'Email skipped: no recipient could be resolved',
         expect.objectContaining({ reason: expect.stringContaining('Contact Email') })
       );
+    });
+
+    it('should not send to a recipient field that is not an email field (or was deleted)', async () => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientFieldId: 'email-field',
+        recipientFieldLabel: 'Contact Email',
+        subject: 'New Form Submission',
+        message: '<p>Hi</p>',
+      };
+      const mockForm = { id: 'form-123', formSchema: { pages: [] } };
+      vi.mocked(mockContext.getFormById).mockResolvedValue(mockForm as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({ id: 'r', data: { 'email-field': 'a@b.com' } } as any);
+
+      for (const field of [
+        { id: 'email-field', type: 'text_input_field' },
+        { id: 'email-field', type: 'email_field', deleted: true },
+      ]) {
+        vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [field] }] } as any);
+        const result = await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+        expect(result.skipped).toBe(true);
+        expect(result.skipReason).toContain('not an email field');
+      }
+      expect(mockContext.sendEmail).not.toHaveBeenCalled();
     });
 
     it('should skip sending during a plugin.test event when only a field-based recipient is configured', async () => {

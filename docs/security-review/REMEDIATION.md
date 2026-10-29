@@ -87,7 +87,11 @@ applied by a Prisma client extension so no caller handles ciphertext).
 
 - **Enable:** create the GitHub Actions secret `CREDENTIAL_ENCRYPTION_KEY` (`openssl rand -base64 32`). The deployment
   workflow passes it to Terraform (`credential_encryption_key`) and on to the backend container. Unset = encryption off.
-- Existing plaintext values stay readable and are encrypted the next time their row is written. No backfill is required.
+- Existing plaintext values stay readable. A row's credentials are encrypted when a write includes that column
+  (plugin config save, automation graph/draft save, a new run); a write that doesn't touch it (e.g. a run status
+  update) leaves the old plaintext in place. Rows that are never rewritten stay plaintext until a one-off
+  re-save/backfill is run; none is provided. Nested writes of plugin/automation/run rows through `Form`/`Automation`
+  are rejected by the extension so they can't bypass sealing; write the model directly.
 - **Never rotate or remove the key casually.** A value that cannot be decrypted makes reads of that plugin/automation
   fail loudly (`CredentialCryptoError`) instead of using ciphertext. Rotation needs a re-encryption script (the `enc:v1:`
   prefix leaves room for a `v2`).

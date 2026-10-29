@@ -164,4 +164,43 @@ describe('withCredentialEncryption (Prisma extension)', () => {
     await withCredentialEncryption({ model: 'Form', operation: 'create', args, query });
     expect(query).toHaveBeenCalledWith(args);
   });
+
+  it('opens credentials in rows nested under a Form or Automation read', async () => {
+    const form: any = await withCredentialEncryption({
+      model: 'Form',
+      operation: 'findUnique',
+      args: { include: { plugins: true } },
+      query: async () => ({ id: 'f1', plugins: [{ id: 'p1', config: sealPluginConfig(webhookConfig) }] }),
+    });
+    expect(form.plugins[0].config).toEqual(webhookConfig);
+
+    const automation: any = await withCredentialEncryption({
+      model: 'Automation',
+      operation: 'findUnique',
+      args: { include: { runs: true } },
+      query: async () => ({ id: 'a1', graph: null, runs: [{ id: 'r1', graphSnapshot: null }] }),
+    });
+    expect(automation.runs).toHaveLength(1);
+  });
+
+  it('rejects nested writes that would create credential rows unsealed, but allows link-only ones', async () => {
+    const query = vi.fn(async () => null);
+    await expect(
+      withCredentialEncryption({
+        model: 'Form',
+        operation: 'create',
+        args: { data: { plugins: { create: [{ config: webhookConfig }] } } },
+        query,
+      })
+    ).rejects.toThrow(/bypass credential encryption/);
+    expect(query).not.toHaveBeenCalled();
+
+    await withCredentialEncryption({
+      model: 'Form',
+      operation: 'update',
+      args: { data: { plugins: { disconnect: [{ id: 'p1' }] } } },
+      query,
+    });
+    expect(query).toHaveBeenCalledTimes(1);
+  });
 });

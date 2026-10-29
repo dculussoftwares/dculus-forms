@@ -4,6 +4,7 @@ import { deserializeFormSchema, FillableFormField, type FormSchema } from '@dcul
 import { substituteMentions, createFieldLabelsMap, parseEmailList, isEmailAddress } from '@dculus/utils';
 import type { EmailAttachment } from '../../services/emailService.js';
 import { resolveResponsePdfAttachment } from '../../services/pdfTemplateService.js';
+import { isActiveEmailField } from '../../lib/recipientField.js';
 import { checkUsageExceeded, getRemainingEmailQuota } from '../../subscriptions/usageService.js';
 import { emitEmailSent } from '../../subscriptions/events.js';
 import { buildFieldColumns, collectAnsweredIds, collectSchemaFields } from '../core/sheetColumns.js';
@@ -361,6 +362,17 @@ export const emailHandler: PluginHandler = async (plugin, event, context) => {
     // below (single-response mention substitution, the digest response table, AND the
     // per-response digest send branch immediately following).
     const formSchema = deserializeFormSchema(form.formSchema);
+
+    // Plugins saved before the save-time check, or whose field was since changed or removed, must
+    // not turn a free-text answer into a recipient.
+    if (config.recipientFieldId && !isActiveEmailField(formSchema, config.recipientFieldId)) {
+      const skipReason = `Recipient field "${config.recipientFieldLabel || config.recipientFieldId}" is not an email field on this form`;
+      context.logger.warn('Email skipped: recipient field is not an email field', {
+        recipientFieldId: config.recipientFieldId,
+        eventType: event.type,
+      });
+      return { success: false, recipient: '', subject: config.subject, skipped: true, skipReason };
+    }
 
     // Only the scheduler's digest step writes `__digestResponses`; on any other event it can only
     // be respondent-supplied, so it is ignored.

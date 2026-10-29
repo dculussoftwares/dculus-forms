@@ -607,6 +607,23 @@ describe('Plugins Resolvers', () => {
         ).rejects.toThrow('recipient field must be an email field');
       });
 
+      it('rejects the recipient field when the form schema cannot be loaded', async () => {
+        vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce(null);
+        await expect(
+          pluginsResolvers.Mutation.createFormPlugin({}, { input: emailInput('f1') }, mockContext)
+        ).rejects.toThrow('recipient field must be an email field');
+        expect(prisma.formPlugin.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects a soft-deleted email field', async () => {
+        vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce({
+          pages: [{ fields: [{ id: 'f1', type: 'email_field', deleted: true }] }],
+        } as any);
+        await expect(
+          pluginsResolvers.Mutation.createFormPlugin({}, { input: emailInput('f1') }, mockContext)
+        ).rejects.toThrow('recipient field must be an email field');
+      });
+
       it('accepts an email field', async () => {
         vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce(schemaWith('email_field'));
         await pluginsResolvers.Mutation.createFormPlugin({}, { input: emailInput('f1') }, mockContext);

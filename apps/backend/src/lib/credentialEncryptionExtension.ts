@@ -28,7 +28,16 @@ const OPEN: Record<string, FieldTransforms> = {
 
 /** Relations that can be loaded alongside a row and carry credential columns of their own. */
 const NESTED: Record<string, Record<string, string>> = {
+  form: { plugins: 'formPlugin', automations: 'automation' },
+  automation: { runs: 'automationRun' },
   automationRun: { automation: 'automation' },
+};
+
+/** Relation names that hold credential rows; writing through them would bypass sealing. */
+const NESTED_WRITE_GUARD: Record<string, string[]> = {
+  form: ['plugins', 'automations'],
+  automation: ['runs'],
+  automationRun: ['automation'],
 };
 
 const isRow = (value: unknown): value is Row => !!value && typeof value === 'object' && !Array.isArray(value);
@@ -43,7 +52,8 @@ const applyToRow = (model: string, row: unknown, table: Record<string, FieldTran
     }
   }
   for (const [relation, relatedModel] of Object.entries(NESTED[model] ?? {})) {
-    if (next[relation] !== undefined) next[relation] = applyToRow(relatedModel, next[relation], table);
+    const related = next[relation];
+    if (related !== undefined) next[relation] = applyToResult(relatedModel, related, table);
   }
   return next;
 };
@@ -54,6 +64,22 @@ const applyToResult = (model: string, result: unknown, table: Record<string, Fie
 const sealData = (model: string, data: unknown): unknown =>
   Array.isArray(data) ? data.map((row) => applyToRow(model, row, SEAL)) : applyToRow(model, data, SEAL);
 
+/** Nested operations that only link or unlink existing rows and never carry credential data. */
+const LINK_ONLY_OPERATIONS = new Set(['connect', 'disconnect', 'set', 'delete', 'deleteMany']);
+
+const assertNoNestedCredentialWrites = (model: string, args: Row) => {
+  const payloads = [args.data, args.create, args.update].flat().filter(isRow);
+  for (const relation of NESTED_WRITE_GUARD[model] ?? []) {
+    const writesRows = (payload: Row) => {
+      const value = payload[relation];
+      return isRow(value) && Object.keys(value).some((key) => !LINK_ONLY_OPERATIONS.has(key));
+    };
+    if (payloads.some(writesRows)) {
+      throw new Error(`Writing ${model}.${relation} through a nested write would bypass credential encryption; write the related model directly`);
+    }
+  }
+};
+
 interface OperationParams {
   model: string;
   operation: string;
@@ -63,9 +89,11 @@ interface OperationParams {
 
 export const withCredentialEncryption = async ({ model, operation, args, query }: OperationParams) => {
   const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
-  if (!SEAL[modelKey]) return query(args);
+  if (!SEAL[modelKey] && !NESTED[modelKey]) return query(args);
 
   const nextArgs: Row = { ...(args as Row) };
+  assertNoNestedCredentialWrites(modelKey, nextArgs);
+  if (!SEAL[modelKey]) return applyToResult(modelKey, await query(nextArgs), OPEN);
   if ('data' in nextArgs) nextArgs.data = sealData(modelKey, nextArgs.data);
   if (operation === 'upsert') {
     nextArgs.create = sealData(modelKey, nextArgs.create);
