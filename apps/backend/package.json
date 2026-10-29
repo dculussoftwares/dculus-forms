@@ -89,7 +89,7 @@
     "lib0": "0.2.119",
     "libphonenumber-js": "^1.13.15",
     "morgan": "^1.12.1",
-    "multer": "^2.4.0",
+    "multer": "^2.5.0",
     "nanoid": "5.1.16",
     "nodemailer": "^10.1.4",
     "pg": "^8.23.1",
