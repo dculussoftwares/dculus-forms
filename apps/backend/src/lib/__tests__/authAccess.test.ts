@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { authAdminRoles, authRateLimitRules } from '../authAccess.js';
+import { authAdminRoles, authRateLimitRules, buildAuthRateLimitRules } from '../authAccess.js';
 
 describe('auth access control (S01-02)', () => {
   it('does not give the admin role destructive user permissions', () => {
@@ -24,5 +24,12 @@ describe('auth rate-limit rules (S01-04)', () => {
     for (const rule of Object.values(authRateLimitRules)) {
       expect(rule).toMatchObject({ window: expect.any(Number), max: expect.any(Number) });
     }
+  });
+
+  it('relaxes the sign-in limit only for the dev environment', () => {
+    expect(buildAuthRateLimitRules('dev')).toHaveProperty('/sign-in/email');
+    expect(buildAuthRateLimitRules('staging')).not.toHaveProperty('/sign-in/email');
+    expect(buildAuthRateLimitRules('production')).not.toHaveProperty('/sign-in/email');
+    expect(buildAuthRateLimitRules(undefined)).not.toHaveProperty('/sign-in/email');
   });
 });
