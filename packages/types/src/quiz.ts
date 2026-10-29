@@ -225,6 +225,52 @@ export const quizSettingsSchema = z
   );
 
 /**
+ * True when a regex pattern repeats a group that contains an alternation, e.g.
+ * `(a|aa)+` or `(\w|\d)*`. That shape can backtrack exponentially even though
+ * its star height is 1, which star-height checkers such as `safe-regex` accept.
+ * Deliberately conservative: it also flags harmless disjoint cases like `(a|b)+`.
+ */
+export const hasQuantifiedAlternation = (pattern: string): boolean => {
+  const groups: { alternation: boolean }[] = [];
+  let inClass = false;
+
+  for (let i = 0; i < pattern.length; i += 1) {
+    const char = pattern[i];
+    if (char === '\\') {
+      i += 1;
+      continue;
+    }
+    if (inClass) {
+      if (char === ']') inClass = false;
+      continue;
+    }
+    if (char === '[') {
+      inClass = true;
+    } else if (char === '(') {
+      groups.push({ alternation: false });
+    } else if (char === '|') {
+      const group = groups[groups.length - 1];
+      if (group) group.alternation = true;
+    } else if (char === ')') {
+      const group = groups.pop();
+      if (!group?.alternation) continue;
+      const parent = groups[groups.length - 1];
+      if (parent) parent.alternation = true;
+      const next = pattern[i + 1];
+      if (next === '*' || next === '+') return true;
+      if (next === '{') {
+        const bounds = /^\{(\d+)(,(\d*))?\}/.exec(pattern.slice(i + 1));
+        if (bounds && bounds[2] !== undefined) {
+          const max = bounds[3];
+          if (max === '' || Number(max) > 1) return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
+/**
  * Validates untrusted persisted data into a clean FieldGrading. Invalid
  * grading is dropped (not thrown) — collab races and hand-edited JSON must
  * never take the whole field down. Returns undefined when the input doesn't

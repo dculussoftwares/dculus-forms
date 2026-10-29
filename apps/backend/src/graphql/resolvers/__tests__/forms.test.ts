@@ -1797,11 +1797,11 @@ describe('Forms Resolvers', () => {
   });
 
   describe('Mutation: duplicateForm', () => {
-    it('should duplicate form with viewer permissions (VIEWER is sufficient — duplicate is a fresh PRIVATE draft)', async () => {
+    it('should duplicate form with EDITOR permission (duplicate is a fresh PRIVATE draft)', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: true,
-        permission: 'VIEWER' as any,
+        permission: 'EDITOR' as any,
         form: mockForm as any,
       });
       vi.mocked(formService.duplicateForm).mockResolvedValue({
@@ -1818,9 +1818,14 @@ describe('Forms Resolvers', () => {
 
       expect(result.id).toBe('form-456');
       expect(result.title).toBe('Test Form (Copy)');
+      expect(formSharingResolvers.checkFormAccess).toHaveBeenCalledWith(
+        mockContext.auth.user.id,
+        'form-123',
+        formSharingResolvers.PermissionLevel.EDITOR
+      );
     });
 
-    it('should throw error when access denied', async () => {
+    it('should throw error when access denied (a VIEWER cannot duplicate)', async () => {
       vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
       vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
         hasAccess: false,
@@ -1830,7 +1835,7 @@ describe('Forms Resolvers', () => {
 
       await expect(
         formsResolvers.Mutation.duplicateForm({}, { id: 'form-123' }, mockContext)
-      ).rejects.toThrow('Access denied: You do not have permission to duplicate this form');
+      ).rejects.toThrow('Access denied: You need EDITOR access to duplicate this form');
     });
   });
 });

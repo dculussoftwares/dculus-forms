@@ -28,6 +28,9 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { GET_PDF_TEMPLATES } from '../../graphql/pdfTemplates';
 import type { ConfigFormProps } from '../core/registry';
 
+// Mirrors the backend's per-send recipient cap (plugins/email/handler.ts MAX_RECIPIENTS_PER_SEND).
+const MAX_RECIPIENTS = 20;
+
 const NO_RECIPIENT_FIELD = '__none__';
 const NO_PDF_TEMPLATE = '__none__';
 
@@ -245,6 +248,11 @@ export const EmailConfigForm: React.FC<ConfigFormProps> = ({
                   if (invalid.length > 0) {
                     return t('basicInformation.recipientEmail.invalidList', {
                       values: { emails: invalid.join(', ') },
+                    });
+                  }
+                  if (valid.length > MAX_RECIPIENTS) {
+                    return t('basicInformation.recipientEmail.tooMany', {
+                      values: { max: MAX_RECIPIENTS },
                     });
                   }
                   return valid.length > 0 || t('basicInformation.recipientEmail.invalid');

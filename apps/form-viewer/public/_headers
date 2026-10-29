@@ -32,6 +32,7 @@
   Content-Security-Policy: frame-ancestors 'self'
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000
 
 /embed.js
   # Fetched cross-origin by every host page, and changes rarely. Kept short

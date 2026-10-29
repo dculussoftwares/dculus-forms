@@ -57,7 +57,8 @@
     "pointValueNegative": "மதிப்பெண்கள் எதிர்மறையாக இருக்க முடியாது.",
     "noCorrectOption": "இந்த விடை திறவுகோலைச் சேமிக்க குறைந்தது ஒரு சரியான விருப்பத்தைக் குறிக்கவும்.",
     "regexTooLong": "Regular expression 200 எழுத்துகளுக்கு மேல் இருக்கக்கூடாது.",
-    "regexInvalid": "இது சரியான regular expression அல்ல."
+    "regexInvalid": "இது சரியான regular expression அல்ல.",
+    "regexUnsafe": "Regular expression-இல் \"|\" உள்ள குழுவை மீண்டும் மீண்டும் பயன்படுத்த முடியாது (எ.கா. (a|b)+). எளிய முறைமையைப் பயன்படுத்தவும்."
   },
   "summary": {
     "totalPoints_one": "மொத்தம் {{count}} மதிப்பெண்",

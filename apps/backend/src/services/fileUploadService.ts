@@ -12,6 +12,7 @@ import { s3Config } from '../lib/env.js';
 import { constructCdnUrl } from '../utils/cdn.js';
 import { logger } from '../lib/logger.js';
 import { contentDisposition } from '../lib/contentDisposition.js';
+import { detectFileType, mimeTypesMatch } from '../lib/fileSignature.js';
 
 export interface UploadFileResult {
   key: string;
@@ -31,6 +32,8 @@ export interface UploadFileInput {
   };
   type: string;
   formId?: string;
+  /** User id (UserAvatar) or organization id (OrganizationLogo); embedded in the key so ownership is verifiable from it. */
+  ownerId?: string;
 }
 
 // Initialize S3 client for Cloudflare R2
@@ -106,17 +109,21 @@ const BLOCKED_MIME_TYPES = new Set([
   'application/vnd.microsoft.portable-executable',
 ]);
 
+const sanitizeKeySegment = (value: string): string => value.replace(/[^a-zA-Z0-9_-]/g, '');
+
 /**
  * Generate a unique S3 key for the uploaded file
  */
 function generateS3Key(
   originalName: string,
   type: string,
-  formId?: string
+  formId?: string,
+  ownerId?: string,
+  forcedExtension?: string
 ): string {
   const timestamp = Date.now();
   const uuid = randomUUID();
-  const extension = path.extname(originalName).toLowerCase();
+  const extension = forcedExtension ?? path.extname(originalName).toLowerCase();
   const baseName = path.basename(originalName, extension);
 
   // Sanitize filename
@@ -137,9 +144,13 @@ function generateS3Key(
         ? `files/form-background/${formId}/${uniqueFilename}`
         : `files/form-background/${uniqueFilename}`;
     case 'UserAvatar':
-      return `files/user-avatar/${uniqueFilename}`;
+      return ownerId
+        ? `files/user-avatar/${sanitizeKeySegment(ownerId)}/${uniqueFilename}`
+        : `files/user-avatar/${uniqueFilename}`;
     case 'OrganizationLogo':
-      return `files/organization-logo/${uniqueFilename}`;
+      return ownerId
+        ? `files/organization-logo/${sanitizeKeySegment(ownerId)}/${uniqueFilename}`
+        : `files/organization-logo/${uniqueFilename}`;
     case 'FormResponse':
       return formId
         ? `files/form-response/${formId}/${uniqueFilename}`
@@ -194,7 +205,7 @@ function getMimetypeFromExtension(filename: string | undefined): string {
 export async function uploadFile(
   input: UploadFileInput
 ): Promise<UploadFileResult> {
-  const { file, type, formId } = input;
+  const { file, type, formId, ownerId } = input;
   const { filename, mimetype, createReadStream } = file;
 
   // Use detected mimetype or fallback to extension-based detection
@@ -249,9 +260,6 @@ export async function uploadFile(
     );
   }
 
-  // Generate S3 key
-  const s3Key = generateS3Key(filename, type, formId);
-
   try {
     // Convert stream to buffer
     const stream = createReadStream();
@@ -279,6 +287,21 @@ export async function uploadFile(
       );
     }
 
+    // Respondent files may be any type (served only as attachments via pre-signed URLs);
+    // everything else is stored under the type the bytes prove, never the declared one.
+    let storedMimetype = finalMimetype;
+    let forcedExtension: string | undefined;
+    if (type !== 'FormResponse') {
+      const detected = detectFileType(buffer);
+      if (!detected || !mimeTypesMatch(finalMimetype, detected.mimeType)) {
+        throw new Error('File content does not match its declared type');
+      }
+      storedMimetype = detected.mimeType;
+      forcedExtension = detected.extension;
+    }
+
+    const s3Key = generateS3Key(filename, type, formId, ownerId, forcedExtension);
+
     // Resolve bucket and access mode from the upload type
     const { bucketName, mode } = getBucketForType(type);
 
@@ -287,7 +310,7 @@ export async function uploadFile(
       Bucket: bucketName,
       Key: s3Key,
       Body: buffer,
-      ContentType: finalMimetype,
+      ContentType: storedMimetype,
       ContentLength: buffer.length,
       // Only set public-read ACL for public-bucket uploads
       ...(mode === 'PUBLIC' ? { ACL: 'public-read' } : {}),
@@ -304,7 +327,7 @@ export async function uploadFile(
       url: cdnUrl,
       originalName: filename,
       size: buffer.length,
-      mimeType: finalMimetype,
+      mimeType: storedMimetype,
     };
   } catch (error) {
     logger.error('Error uploading file to Cloudflare R2:', error);

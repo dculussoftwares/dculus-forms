@@ -130,6 +130,48 @@ describe('AI Tagger Handler', () => {
     expect(mockPrisma.response.update).toHaveBeenCalledOnce();
   });
 
+  it('truncates long answers and the overall prompt before calling the model', async () => {
+    const { generateText } = await import('ai');
+    (generateText as any).mockResolvedValue({ output: { tagIds: [] }, usage: { totalTokens: 1 } });
+    const data: Record<string, string> = {};
+    for (let i = 0; i < 40; i++) data[`k${i}`] = 'x'.repeat(5000);
+    mockContext.getResponseById = vi.fn().mockResolvedValue({ id: 'response-1', data, metadata: {} });
+
+    const { aiTaggerHandler, MAX_ANSWER_CHARS, MAX_RESPONSE_PROMPT_CHARS } = await import('../handler.js');
+    await aiTaggerHandler(
+      {
+        id: TEST_PLUGIN_ID,
+        config: { type: 'ai-tagger', tags: [{ tagId: 't', name: 'T', color: '#000', definition: 'd' }] } as AiTaggerPluginConfig,
+      },
+      mockEvent,
+      mockContext
+    );
+
+    const prompt = (generateText as any).mock.calls.at(-1)[0].prompt as string;
+    expect(prompt).not.toContain('x'.repeat(MAX_ANSWER_CHARS + 1));
+    const responsePart = prompt.split('Form response:\n')[1];
+    expect(responsePart.length).toBeLessThanOrEqual(MAX_RESPONSE_PROMPT_CHARS + 1);
+  });
+
+  it('skips tagging once a form exceeds its per-minute limit', async () => {
+    const { generateText } = await import('ai');
+    (generateText as any).mockResolvedValue({ output: { tagIds: [] }, usage: { totalTokens: 1 } });
+    mockContext.getResponseById = vi.fn().mockResolvedValue({ id: 'response-1', data: { a: 'b' }, metadata: {} });
+    mockEvent.formId = 'form-rate-limited';
+    const { aiTaggerHandler, MAX_TAGGED_PER_FORM_PER_MINUTE } = await import('../handler.js');
+    const plugin = {
+      id: TEST_PLUGIN_ID,
+      config: { type: 'ai-tagger', tags: [{ tagId: 't', name: 'T', color: '#000', definition: 'd' }] } as AiTaggerPluginConfig,
+    };
+    vi.mocked(generateText).mockClear();
+
+    for (let i = 0; i < MAX_TAGGED_PER_FORM_PER_MINUTE; i++) await aiTaggerHandler(plugin, mockEvent, mockContext);
+    const result = await aiTaggerHandler(plugin, mockEvent, mockContext);
+
+    expect(result.skipped).toBe(true);
+    expect(generateText).toHaveBeenCalledTimes(MAX_TAGGED_PER_FORM_PER_MINUTE);
+  });
+
   it('charges the tokens it used to the organization as nano-tier AI credits', async () => {
     const { generateText } = await import('ai');
     (generateText as any).mockResolvedValue({ output: { tagIds: [] }, usage: { totalTokens: 150 } });

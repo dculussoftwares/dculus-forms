@@ -800,6 +800,7 @@ const PdfTemplateDesigner: React.FC = () => {
           </Button>
           <Input
             value={name}
+            maxLength={200}
             onChange={(e) => {
               setName(e.target.value);
               setDirty(true);

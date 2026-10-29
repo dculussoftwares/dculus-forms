@@ -51,7 +51,7 @@ describe('formFileRepository', () => {
 
     await repo.listByFormId('form-1');
     expect(prismaMock.formFile.findMany).toHaveBeenCalledWith({
-      where: { formId: 'form-1' },
+      where: { formId: 'form-1', type: { not: 'FormResponse' } },
       orderBy: { createdAt: 'desc' },
     });
 

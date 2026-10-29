@@ -65,14 +65,7 @@ locals {
     "https://form-admin-app-${var.environment}.pages.dev"
   ]
 
-  # 2. Development localhost URLs (only for dev/staging)
-  localhost_origins = var.environment != "production" ? [
-    "http://localhost:3000",
-    "http://localhost:3002",
-    "http://localhost:5173"
-  ] : []
-
-  # 3. Additional custom origins from variable (if any)
+  # 2. Additional custom origins from variable (if any)
   custom_origins = var.cors_origins != "" ? split(",", var.cors_origins) : []
 
   # Combine all origins and remove duplicates
@@ -80,12 +73,39 @@ locals {
     local.frontend_domains,
     local.pages_dev_domains,
     local.production_domains,
-    local.localhost_origins,
     local.custom_origins
   ))
 
   # Convert to comma-separated string for environment variable
   cors_origins_string = join(",", local.all_cors_origins)
+
+  # Database URL used by the app. Always TLS: any `sslmode=disable` is upgraded and a
+  # missing sslmode is added, whichever URL variable is used. connection_limit only
+  # applies to the direct URL (Prisma adapter pools client-side, max 2).
+  db_url_base      = var.postgres_direct_url != "" ? var.postgres_direct_url : var.postgres_connection_string
+  db_url_limited   = var.postgres_direct_url == "" || can(regex("connection_limit=", local.db_url_base)) ? local.db_url_base : "${local.db_url_base}${can(regex("\\?", local.db_url_base)) ? "&" : "?"}connection_limit=2"
+  db_url_tls       = replace(local.db_url_limited, "sslmode=disable", "sslmode=require")
+  database_url_tls = can(regex("sslmode=", local.db_url_tls)) ? local.db_url_tls : "${local.db_url_tls}${can(regex("\\?", local.db_url_tls)) ? "&" : "?"}sslmode=require"
+
+  # Secrets delivered through Container Apps `secret` entries (referenced with
+  # secret_name) instead of plain env values. Optional ones are only created when set;
+  # the key set is derived with nonsensitive() because for_each cannot take sensitive
+  # input (only which keys are non-empty is revealed, never a value).
+  optional_secret_env = {
+    DIRECT_URL                 = var.postgres_direct_url
+    PUBLIC_S3_ACCESS_KEY       = var.public_s3_access_key
+    PUBLIC_S3_SECRET_KEY       = var.public_s3_secret_key
+    CREDENTIAL_ENCRYPTION_KEY  = var.credential_encryption_key
+    ADMIN_PASSWORD             = var.admin_password
+    EMAIL_PASSWORD             = var.email_password
+    CHARGEBEE_API_KEY          = var.chargebee_api_key
+    CHARGEBEE_WEBHOOK_PASSWORD = var.chargebee_webhook_password
+    PEXELS_API_KEY             = var.pexels_api_key
+    PIXABAY_API_KEY            = var.pixabay_api_key
+    GOOGLE_CLIENT_SECRET       = var.google_client_secret
+    MICROSOFT_CLIENT_SECRET    = var.microsoft_client_secret
+  }
+  optional_secret_env_set = nonsensitive(toset([for k, v in local.optional_secret_env : k if v != ""]))
 }
 
 # Resource Group for this environment
@@ -122,30 +142,13 @@ resource "azurerm_container_app" "backend" {
       memory = "${var.memory_gb}Gi"
 
       env {
-        name  = "DATABASE_URL"
-        # Directly connect to shared PostgreSQL Flexible Server (bypasses PgBouncer)
-        # Prisma adapter manages client-side connection pooling (max: 2)
-        value = var.postgres_direct_url != "" ? (
-          can(regex("connection_limit=", var.postgres_direct_url)) ? var.postgres_direct_url : (
-            can(regex("\\?", var.postgres_direct_url)) ? "${var.postgres_direct_url}&connection_limit=2" : "${var.postgres_direct_url}?connection_limit=2&sslmode=require"
-          )
-        ) : var.postgres_connection_string
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
       }
 
       env {
-        name  = "DIRECT_URL"
-        value = var.postgres_direct_url
-      }
-
-      env {
-        name  = "BETTER_AUTH_SECRET"
-        value = var.better_auth_secret
-      }
-
-      # Encrypts plugin / automation credentials at rest. Empty = encryption disabled.
-      env {
-        name  = "CREDENTIAL_ENCRYPTION_KEY"
-        value = var.credential_encryption_key
+        name        = "BETTER_AUTH_SECRET"
+        secret_name = "better-auth-secret"
       }
 
       env {
@@ -172,8 +175,16 @@ resource "azurerm_container_app" "backend" {
         value = "https://${local.form_viewer_domain}"
       }
 
+      # Every deployed environment is internet-facing, so it runs production behaviour
+      # (generic errors, secure cookies, auth rate limiting). APP_ENV carries the
+      # dev/staging/production name.
       env {
         name  = "NODE_ENV"
+        value = "production"
+      }
+
+      env {
+        name  = "APP_ENV"
         value = var.environment
       }
 
@@ -185,16 +196,6 @@ resource "azurerm_container_app" "backend" {
       env {
         name  = "CORS_ORIGINS"
         value = local.cors_origins_string
-      }
-
-      env {
-        name  = "PUBLIC_S3_ACCESS_KEY"
-        value = var.public_s3_access_key
-      }
-
-      env {
-        name  = "PUBLIC_S3_SECRET_KEY"
-        value = var.public_s3_secret_key
       }
 
       env {
@@ -223,11 +224,6 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "ADMIN_PASSWORD"
-        value = var.admin_password
-      }
-
-      env {
         name  = "ADMIN_NAME"
         value = var.admin_name
       }
@@ -248,11 +244,6 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "EMAIL_PASSWORD"
-        value = var.email_password
-      }
-
-      env {
         name  = "EMAIL_FROM"
         value = var.email_from
       }
@@ -260,16 +251,6 @@ resource "azurerm_container_app" "backend" {
       env {
         name  = "CHARGEBEE_SITE"
         value = var.chargebee_site
-      }
-
-      env {
-        name  = "CHARGEBEE_API_KEY"
-        value = var.chargebee_api_key
-      }
-
-      env {
-        name  = "CHARGEBEE_WEBHOOK_PASSWORD"
-        value = var.chargebee_webhook_password
       }
 
       env {
@@ -289,8 +270,8 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "AI_PRIMARY_API_KEY"
-        value = azurerm_cognitive_account.ai.primary_access_key
+        name        = "AI_PRIMARY_API_KEY"
+        secret_name = "ai-primary-api-key"
       }
 
       env {
@@ -304,8 +285,8 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "AI_FAST_API_KEY"
-        value = azurerm_cognitive_account.ai.primary_access_key
+        name        = "AI_FAST_API_KEY"
+        secret_name = "ai-fast-api-key"
       }
 
       env {
@@ -314,23 +295,8 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "PEXELS_API_KEY"
-        value = var.pexels_api_key
-      }
-
-      env {
-        name  = "PIXABAY_API_KEY"
-        value = var.pixabay_api_key
-      }
-
-      env {
         name  = "GOOGLE_CLIENT_ID"
         value = var.google_client_id
-      }
-
-      env {
-        name  = "GOOGLE_CLIENT_SECRET"
-        value = var.google_client_secret
       }
 
       env {
@@ -344,13 +310,18 @@ resource "azurerm_container_app" "backend" {
       }
 
       env {
-        name  = "MICROSOFT_CLIENT_SECRET"
-        value = var.microsoft_client_secret
-      }
-
-      env {
         name  = "MICROSOFT_REDIRECT_URI"
         value = "https://${local.service_domain}/api/integrations/microsoft/callback"
+      }
+
+      # Optional secrets (see local.optional_secret_env). ADMIN_PASSWORD is only used by
+      # the one-time `admin:setup` script; CREDENTIAL_ENCRYPTION_KEY empty = encryption disabled.
+      dynamic "env" {
+        for_each = local.optional_secret_env_set
+        content {
+          name        = env.value
+          secret_name = lower(replace(env.value, "_", "-"))
+        }
       }
 
       liveness_probe {
@@ -378,6 +349,34 @@ resource "azurerm_container_app" "backend" {
     http_scale_rule {
       name                = "http-scale"
       concurrent_requests = "10"
+    }
+  }
+
+  secret {
+    name  = "database-url"
+    value = local.database_url_tls
+  }
+
+  secret {
+    name  = "better-auth-secret"
+    value = var.better_auth_secret
+  }
+
+  secret {
+    name  = "ai-primary-api-key"
+    value = azurerm_cognitive_account.ai.primary_access_key
+  }
+
+  secret {
+    name  = "ai-fast-api-key"
+    value = azurerm_cognitive_account.ai.primary_access_key
+  }
+
+  dynamic "secret" {
+    for_each = local.optional_secret_env_set
+    content {
+      name  = lower(replace(secret.value, "_", "-"))
+      value = local.optional_secret_env[secret.value]
     }
   }
 

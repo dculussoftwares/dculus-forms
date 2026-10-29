@@ -969,3 +969,22 @@ describe('validateAutomationGraph', () => {
     });
   });
 });
+
+describe('graph size limits (S08-07)', () => {
+  it('rejects a graph with more than 100 nodes before validating anything else', () => {
+    const nodes = Array.from({ length: 101 }, (_, i) => ({ id: `n${i}`, type: 'end' }));
+    const result = validate({ nodes, edges: [] });
+    expect(codesOf(result)).toEqual([GRAPH_ERROR_CODES.GRAPH_TOO_LARGE]);
+  });
+
+  it('rejects a graph with more than 200 edges', () => {
+    const edges = Array.from({ length: 201 }, (_, i) => ({ id: `e${i}`, source: 'a', target: 'b' }));
+    const result = validate({ nodes: [{ id: 'a', type: 'end' }], edges });
+    expect(codesOf(result)).toEqual([GRAPH_ERROR_CODES.GRAPH_TOO_LARGE]);
+  });
+
+  it('still accepts a normally sized graph', () => {
+    expect(validate(validGraph).valid).toBe(true);
+  });
+});
+

@@ -17,6 +17,7 @@ import { checkFormAccess, PermissionLevel } from '../graphql/resolvers/formShari
 import { randomUUID } from 'crypto';
 import { getFormSchemaFromHocuspocus } from './hocuspocus.js';
 import { copyFileForForm } from './fileUploadService.js';
+import { disableFormIntegrations } from './formDeletionCleanup.js';
 import { formRepository, createFormRepository } from '../repositories/index.js';
 import { withPrisma } from '../repositories/baseRepository.js';
 import { prisma } from '../lib/prisma.js';
@@ -469,6 +470,7 @@ export const deleteForm = async (id: string, userId?: string): Promise<boolean> 
     }
 
     await formRepository.deleteForm(id); // Soft delete: sets deletedAt timestamp
+    await disableFormIntegrations(id);
     await audit('form.deleted', 'Form', id, userId);
     return true;
   } catch (error) {

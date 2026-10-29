@@ -38,6 +38,7 @@ vi.mock('../../../lib/logger.js', () => ({
 }));
 vi.mock('nanoid', () => ({
   nanoid: vi.fn(() => 'generated-nano-id'),
+  customAlphabet: vi.fn(() => () => 'generated-alphanumeric-id'),
 }));
 
 describe('Better-Auth Resolvers', () => {

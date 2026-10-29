@@ -51,6 +51,9 @@ export const createPluginRepository = (context?: RepositoryContext) => {
   const findById = async (id: string) =>
     prisma.formPlugin.findUnique({ where: { id } });
 
+  const disableAllByForm = async (formId: string) =>
+    (await prisma.formPlugin.updateMany({ where: { formId, enabled: true }, data: { enabled: false } })).count;
+
   const findByIdWithForm = async (id: string) =>
     prisma.formPlugin.findUnique({ where: { id }, include: { form: true } });
 
@@ -116,6 +119,7 @@ export const createPluginRepository = (context?: RepositoryContext) => {
     findUniqueDelivery,
     createDelivery,
     listDeliveriesByPlugin,
+    disableAllByForm,
 
     // PluginBackfillJob
     findManyBackfillJobs,

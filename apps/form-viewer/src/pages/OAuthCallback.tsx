@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { Button, LoadingSpinner } from '@dculus/ui';
 import { authClient } from '../lib/auth-client';
+import { consumeOAuthNonce } from '../lib/oauthNonce';
 
 // Defense in depth alongside the backend's own check on this query param —
 // only a same-origin relative path is safe to hand to window.location.replace.
@@ -15,8 +16,11 @@ function safeReturnPath(value: string | null): string {
 export default function OAuthCallback() {
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const handled = useRef(false);
 
   useEffect(() => {
+    if (handled.current) return;
+    handled.current = true;
     const ott = searchParams.get('ott');
     const returnTo = safeReturnPath(searchParams.get('returnTo'));
     const oauthError = searchParams.get('error');
@@ -28,6 +32,14 @@ export default function OAuthCallback() {
 
     if (!ott) {
       setError('Sign-in link is missing or invalid.');
+      return;
+    }
+
+    // Keep the one-time token out of the address bar/history while it is redeemed.
+    window.history.replaceState(null, '', window.location.pathname);
+
+    if (!consumeOAuthNonce(searchParams.get('nonce'))) {
+      setError('This sign-in link was not started from this browser. Please sign in again.');
       return;
     }
 

@@ -95,8 +95,21 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
     logger.info(`Email sent successfully to: ${options.to}`);
   } catch (error) {
     logger.error('Failed to send email:', error);
-    throw new Error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    const failure = new Error(`Failed to send email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Lets callers tell "this address was refused" (bad input) from "the mail system is down".
+    throw Object.assign(failure, { recipientRejected: isRecipientRejection(error) });
   }
+}
+
+/** True when the SMTP server refused the recipient address itself, not the connection or login. */
+export function isRecipientRejection(error: unknown): boolean {
+  const { code, command, responseCode } = (error ?? {}) as {
+    code?: string;
+    command?: string;
+    responseCode?: number;
+  };
+  if (code === 'EENVELOPE') return true;
+  return command === 'RCPT TO' && typeof responseCode === 'number' && responseCode >= 500 && responseCode < 600;
 }
 
 export async function sendFormPublishedNotification(data: FormPublishedEmailData, recipientEmail: string): Promise<void> {

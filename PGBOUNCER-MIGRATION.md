@@ -1,8 +1,10 @@
 # PgBouncer Migration Guide
 
+> Host, role and database names are intentionally redacted placeholders (`<...>`); the real values live in the private runbook / secret store.
+
 > [!NOTE]
 > **Status (September 2026): Disconnected / Direct Connection Restored**
-> Due to Azure Container Instances (ACI) vCPU billing rounding up to a full 1.0 vCPU (costing ₹3,190.33/mo), apps have been transitioned back to direct connections to `dculus-shared-postgres.postgres.database.azure.com:5432` with application-level pool limits (`max: 2` in Prisma / `@prisma/adapter-pg`). Total active connections remain under 20 (well below the 50 limit). PgBouncer will be dismantled in Step 2.
+> Due to Azure Container Instances (ACI) vCPU billing rounding up to a full 1.0 vCPU (costing ₹3,190.33/mo), apps have been transitioned back to direct connections to `<postgres-host>:5432` with application-level pool limits (`max: 2` in Prisma / `@prisma/adapter-pg`). Total active connections remain under 20 (well below the 50 limit). PgBouncer will be dismantled in Step 2.
 
 ## What Changed
 
@@ -11,7 +13,7 @@ Apps can now connect via PgBouncer instead of directly to the database.
 
 | Resource | Details |
 |---|---|
-| **PgBouncer Host** | `dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io` |
+| **PgBouncer Host** | `<pgbouncer-host>` |
 | **PgBouncer Port** | `5432` |
 | **Pool Mode** | `transaction` (recommended for APIs) |
 | **Max Client Connections** | `200` |
@@ -42,7 +44,7 @@ PgBouncer allows apps to hold hundreds of connections while only 10 real DB conn
 ### Direct PostgreSQL (current — keep as fallback)
 
 ```
-host=dculus-shared-postgres.postgres.database.azure.com
+host=<postgres-host>
 port=5432
 sslmode=require
 ```
@@ -50,7 +52,7 @@ sslmode=require
 ### PgBouncer (new — migrate apps to this)
 
 ```
-host=dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io
+host=<pgbouncer-host>
 port=5432
 sslmode=require   # use verify-full once PgBouncer presents a CA-signed certificate for its hostname
 ```
@@ -69,7 +71,7 @@ sslmode=require   # use verify-full once PgBouncer presents a CA-signed certific
 
 ## DATABASE_URL per App
 
-> **Note:** The password contains `+`. In URL-format connection strings, encode it as `%2B`.
+> **Note:** In URL-format connection strings, percent-encode special characters in the password (for example `+` as `%2B`).
 > For plain environment variables (not URLs), use the raw password as-is.
 >
 > **Prisma (dculus-forms):** Always append `?pgbouncer=true&connection_limit=2&sslmode=require` to any
@@ -78,12 +80,12 @@ sslmode=require   # use verify-full once PgBouncer presents a CA-signed certific
 
 | Database | DATABASE_URL (via PgBouncer) |
 |---|---|
-| `indiastats_cms_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/indiastats_cms_db?sslmode=require` |
-| `dculus_forms_dev_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_dev_db?pgbouncer=true&connection_limit=2&sslmode=require` |
-| `dculus_forms_prod_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_forms_prod_db?pgbouncer=true&connection_limit=2&sslmode=require` |
-| `dculus_home_site_db` | `postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/dculus_home_site_db?sslmode=require` |
+| `<cms-db>` | `postgresql://<db-admin-role>:<password>@<pgbouncer-host>:5432/<cms-db>?sslmode=require` |
+| `<forms-dev-db>` | `postgresql://<db-admin-role>:<password>@<pgbouncer-host>:5432/<forms-dev-db>?pgbouncer=true&connection_limit=2&sslmode=require` |
+| `<forms-prod-db>` | `postgresql://<db-admin-role>:<password>@<pgbouncer-host>:5432/<forms-prod-db>?pgbouncer=true&connection_limit=2&sslmode=require` |
+| `<home-site-db>` | `postgresql://<db-admin-role>:<password>@<pgbouncer-host>:5432/<home-site-db>?sslmode=require` |
 
-> `indiastats_cms_db` uses `@payloadcms/db-postgres` (Drizzle under the hood) which does not use
+> `<cms-db>` uses `@payloadcms/db-postgres` (Drizzle under the hood) which does not use
 > Prisma prepared statements — `pgbouncer=true` is not applicable there. The `max: 2` pool cap in
 > `payload.config.ts` serves the same connection-limiting purpose.
 
@@ -98,14 +100,14 @@ sslmode=require   # use verify-full once PgBouncer presents a CA-signed certific
 
 3. Set `sslmode=require` (or `verify-full`). Never use `disable` for a non-local host.
 
-4. If using URL format, encode `+` in the password as `%2B`.
+4. If using URL format, percent-encode special characters in the password (for example `+` as `%2B`).
 
 5. Leave the old direct DB URL as a commented fallback directly above the new value:
    ```env
    # FALLBACK (direct DB) — remove after confirming PgBouncer is stable
-   # DATABASE_URL=postgresql://dculus_admin:<password>@dculus-shared-postgres.postgres.database.azure.com:5432/<db>?sslmode=require
+   # DATABASE_URL=postgresql://<db-admin-role>:<password>@<postgres-host>:5432/<db>?sslmode=require
 
-   DATABASE_URL=postgresql://dculus_admin:<password>@dculus-pgbouncer.ejfrc3bugjejc2d6.centralindia.azurecontainer.io:5432/<db>?sslmode=require
+   DATABASE_URL=postgresql://<db-admin-role>:<password>@<pgbouncer-host>:5432/<db>?sslmode=require
    ```
 
 6. If the app has its own connection pool, set the **app-level pool size to 2**.
@@ -133,10 +135,10 @@ If PgBouncer is unavailable or causing issues, revert the app `DATABASE_URL` to 
 Both connection paths tested and confirmed working on 25 April 2026:
 
 ```
-✅ indiastats_cms_db    — direct + pgbouncer
-✅ dculus_forms_dev_db  — direct + pgbouncer
-✅ dculus_forms_prod_db — direct + pgbouncer
-✅ dculus_home_site_db  — direct + pgbouncer
+✅ <cms-db>    — direct + pgbouncer
+✅ <forms-dev-db>  — direct + pgbouncer
+✅ <forms-prod-db> — direct + pgbouncer
+✅ <home-site-db>  — direct + pgbouncer
 ```
 
 ---

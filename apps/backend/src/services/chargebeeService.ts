@@ -590,7 +590,20 @@ export interface SubscriptionSyncOptions {
    * subscription other than the stored one are ignored.
    */
   allowTakeover?: boolean;
+  /** Chargebee `occurred_at` of the triggering event; older-than-applied events are ignored. */
+  occurredAt?: Date;
+  /** The event proves the outstanding invoice was paid (`payment_succeeded`), so `past_due` may clear. */
+  clearPastDue?: boolean;
+  /** Override the status derived from Chargebee (e.g. `subscription_deleted`). */
+  forceStatus?: 'cancelled' | 'expired';
 }
+
+/** True when an event is older than the newest one already applied to the row. */
+const isStaleWebhookEvent = (
+  existing: { lastWebhookEventAt?: Date | null } | null | undefined,
+  occurredAt?: Date
+): boolean =>
+  Boolean(occurredAt && existing?.lastWebhookEventAt && occurredAt < existing.lastWebhookEventAt);
 
 const DEAD_LOCAL_STATUSES = ['cancelled', 'expired'];
 
@@ -624,9 +637,20 @@ export const syncSubscriptionFromWebhook = async (
 ): Promise<void> => {
   try {
     const customerId = subscriptionData.customer_id;
+    if (typeof customerId !== 'string' || !customerId) {
+      logger.warn('[Chargebee Service] Ignoring subscription event without a customer id');
+      return;
+    }
     const organizationId = customerId.replace('org_', '');
 
     const existing = await subscriptionRepository.findUnique({ where: { organizationId } });
+    if (isStaleWebhookEvent(existing, options.occurredAt)) {
+      logger.warn('[Chargebee Service] Ignoring stale subscription event', {
+        organizationId,
+        eventSubscriptionId: subscriptionData.id,
+      });
+      return;
+    }
     if (isForeignSubscriptionEvent(existing, subscriptionData, options)) {
       logger.warn(
         '[Chargebee Service] Ignoring event for a subscription that is not the organization\'s current one',
@@ -699,11 +723,25 @@ export const syncSubscriptionFromWebhook = async (
       });
     }
 
-    // Map Chargebee status to our status
+    // Map Chargebee status to our status. `non_renewing` (cancellation scheduled
+    // for term end) stays active: the customer has paid through the term and the
+    // real `cancelled` event follows when it ends.
     let status = 'active';
-    if (subscriptionData.status === 'cancelled') status = 'cancelled';
-    else if (subscriptionData.status === 'non_renewing') status = 'cancelled';
+    if (options.forceStatus) status = options.forceStatus;
+    else if (subscriptionData.status === 'cancelled') status = 'cancelled';
     else if (subscriptionData.status === 'paused') status = 'expired';
+
+    // A subscription in dunning is still `active` in Chargebee, so a generic sync
+    // must not lift a local `past_due` block. It clears only on proof of payment:
+    // payment_succeeded, no outstanding invoices, or a pending enterprise checkout
+    // completing.
+    if (status === 'active' && existing?.status === 'past_due') {
+      const paymentRecovered =
+        options.clearPastDue === true ||
+        Number(subscriptionData.due_invoices_count) === 0 ||
+        (isEnterprise && existing.enterprisePendingActivation === true);
+      if (!paymentRecovered) status = 'past_due';
+    }
 
     // Update or create subscription
     await subscriptionRepository.upsertForOrganization(
@@ -726,6 +764,7 @@ export const syncSubscriptionFromWebhook = async (
         // "awaiting payment" flag is resolved. Non-enterprise plans never set
         // this — it stays whatever it was (irrelevant for those planIds).
         ...(isEnterprise ? { enterprisePendingActivation: false } : {}),
+        ...(options.occurredAt ? { lastWebhookEventAt: options.occurredAt } : {}),
         currentPeriodStart: new Date(
           subscriptionData.current_term_start * 1000
         ),
@@ -749,6 +788,7 @@ export const syncSubscriptionFromWebhook = async (
         emailsLimit: limits ? limits.emails : null,
         aiCreditsLimit: limits ? limits.aiCredits : null,
         ...(isEnterprise ? { enterprisePendingActivation: false } : {}),
+        ...(options.occurredAt ? { lastWebhookEventAt: options.occurredAt } : {}),
         currentPeriodStart: new Date(
           subscriptionData.current_term_start * 1000
         ),
@@ -859,13 +899,17 @@ export const syncFromHostedPage = async (
  * keyed to the new `periodStart` — starting that period's usage at zero.
  */
 export const handleSubscriptionRenewal = async (
-  subscriptionData: any
+  subscriptionData: any,
+  options: Pick<SubscriptionSyncOptions, 'occurredAt'> = {}
 ): Promise<void> => {
   try {
     const customerId = subscriptionData.customer_id;
+    if (typeof customerId !== 'string' || !customerId) return;
     const organizationId = customerId.replace('org_', '');
 
     const existing = await subscriptionRepository.findUnique({ where: { organizationId } });
+    // No row yet: the accompanying sync creates it with zeroed counters.
+    if (!existing || isStaleWebhookEvent(existing, options.occurredAt)) return;
     if (isForeignSubscriptionEvent(existing, subscriptionData)) {
       logger.warn(
         '[Chargebee Service] Ignoring renewal for a subscription that is not the organization\'s current one',
@@ -876,6 +920,16 @@ export const handleSubscriptionRenewal = async (
 
     const periodStart = new Date(subscriptionData.current_term_start * 1000);
     const periodEnd = new Date(subscriptionData.current_term_end * 1000);
+
+    // A duplicate or delayed renewal must not zero mid-period usage: only a term
+    // that actually advanced past the stored one is a new billing period. Must run
+    // before the sync that rewrites currentPeriodStart.
+    if (periodStart <= existing.currentPeriodStart) {
+      logger.info('[Chargebee Service] Renewal does not advance the billing period — usage kept', {
+        organizationId,
+      });
+      return;
+    }
 
     await resetUsageCounters(organizationId, periodStart, periodEnd);
     invalidateAIBudgetCache(organizationId);
@@ -888,10 +942,38 @@ export const handleSubscriptionRenewal = async (
 };
 
 /**
+ * Handle customer_deleted: the Chargebee customer is gone, so the org can no longer
+ * hold a paid plan — mark the row cancelled (free-limit floor applies).
+ */
+export const handleCustomerDeleted = async (
+  event: any,
+  options: Pick<SubscriptionSyncOptions, 'occurredAt'> = {}
+): Promise<void> => {
+  const customerId = event.content?.customer?.id;
+  if (typeof customerId !== 'string' || !customerId) return;
+  const organizationId = customerId.replace('org_', '');
+
+  const existing = await subscriptionRepository.findUnique({ where: { organizationId } });
+  if (!existing || isStaleWebhookEvent(existing, options.occurredAt)) return;
+
+  await subscriptionRepository.update({
+    where: { organizationId },
+    data: {
+      status: 'cancelled',
+      ...(options.occurredAt ? { lastWebhookEventAt: options.occurredAt } : {}),
+    },
+  });
+  logger.warn('[Chargebee Service] Customer deleted — subscription marked cancelled for org:', organizationId);
+};
+
+/**
  * Handle a payment_failed Chargebee webhook event.
  * Marks the subscription as past_due and emails the org owner.
  */
-export const handlePaymentFailed = async (event: any): Promise<void> => {
+export const handlePaymentFailed = async (
+  event: any,
+  options: Pick<SubscriptionSyncOptions, 'occurredAt'> = {}
+): Promise<void> => {
   const subscription = event.content?.subscription;
   if (!subscription) return;
 
@@ -901,6 +983,10 @@ export const handlePaymentFailed = async (event: any): Promise<void> => {
 
   try {
     const existing = await subscriptionRepository.findUnique({ where: { organizationId } });
+    if (isStaleWebhookEvent(existing, options.occurredAt)) {
+      logger.warn('[Chargebee Service] Ignoring stale payment failure', { organizationId });
+      return;
+    }
     if (isForeignSubscriptionEvent(existing, subscription)) {
       logger.warn(
         '[Chargebee Service] Ignoring payment failure for a subscription that is not the organization\'s current one',
@@ -911,7 +997,10 @@ export const handlePaymentFailed = async (event: any): Promise<void> => {
 
     await subscriptionRepository.update({
       where: { organizationId },
-      data: { status: 'past_due' },
+      data: {
+        status: 'past_due',
+        ...(options.occurredAt ? { lastWebhookEventAt: options.occurredAt } : {}),
+      },
     });
 
     const org = await organizationRepository.findUnique({

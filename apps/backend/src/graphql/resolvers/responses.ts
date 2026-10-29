@@ -53,6 +53,7 @@ import { upsertPreviewTag, addTagToResponse, PREVIEW_RESPONSE_SOURCE } from '../
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { enforceAccessControlForSubmission, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
 import { assertResponsePayloadWithinLimits } from '../../lib/responsePayloadLimits.js';
+import { validateResponseAnswers } from '../../lib/responseAnswerValidation.js';
 import { stripReservedKeys } from '../../lib/reservedKeys.js';
 import { clearDraftAfterSubmit } from '../../services/responseDraftService.js';
 import {
@@ -100,6 +101,28 @@ function getCachedFormAccess(context: { auth: BetterAuthContext }, userId: strin
     cache.set(key, pending);
   }
   return pending;
+}
+
+type EditHistoryVisibility = 'none' | 'viewer' | 'editor';
+
+/**
+ * What a caller may see of a response's edit history. Anonymous callers and
+ * users without form access see nothing; VIEWERs see who edited what but not
+ * the editor's network details; EDITOR/OWNER see everything.
+ */
+async function getEditHistoryVisibility(
+  context: { auth?: BetterAuthContext } | undefined,
+  formId: string
+): Promise<EditHistoryVisibility> {
+  const userId = context?.auth?.user?.id;
+  if (!context?.auth || !userId) return 'none';
+
+  const access = await getCachedFormAccess(context as { auth: BetterAuthContext }, userId, formId);
+  if (!access.hasAccess) return 'none';
+
+  return access.permission === PermissionLevel.EDITOR || access.permission === PermissionLevel.OWNER
+    ? 'editor'
+    : 'viewer';
 }
 
 /**
@@ -399,15 +422,19 @@ export const responsesResolvers = {
       // same live schema the viewer was served. The client strips too, but
       // this mutation is public and callable directly. Runs before BOTH
       // insert paths below.
-      if (input.data && typeof input.data === 'object') {
-        const schema = await resolveLiveSchema();
-        if (schema) {
-          input.data = stripConditionallyHiddenValues(
-            schema,
-            input.data as Record<string, unknown>
-          );
-        }
+      const liveFormSchema = await resolveLiveSchema();
+      if (liveFormSchema) {
+        input.data = stripConditionallyHiddenValues(
+          liveFormSchema,
+          input.data as Record<string, unknown>
+        );
       }
+
+      // S04-04: answers must satisfy the live schema (required, type, options,
+      // ranges, file refs); unknown keys are dropped. Fails closed without a schema.
+      input.data = validateResponseAnswers(liveFormSchema, input.data as Record<string, unknown>, {
+        formId: form.id,
+      });
 
       // Pre-assign the response ID so it can be used inside the serializable
       // transaction (limit-check path) and also in the normal path below.
@@ -660,11 +687,14 @@ export const responsesResolvers = {
         logger.error('Error emitting form.submitted event:', error);
       }
 
-      // Emit subscription event for usage tracking
-      try {
-        emitSubscriptionFormSubmitted(form.organizationId, input.formId, savedResponse.id);
-      } catch (error) {
-        logger.error('Error emitting subscription event:', error);
+      // Emit subscription event for usage tracking. Builder preview submissions
+      // are not billable usage and must not consume the org's submission quota.
+      if (!input.isPreview) {
+        try {
+          emitSubscriptionFormSubmitted(form.organizationId, input.formId, savedResponse.id);
+        } catch (error) {
+          logger.error('Error emitting subscription event:', error);
+        }
       }
 
       // Email the respondent a copy of their answers, if the form owner enabled it.
@@ -1001,6 +1031,10 @@ export const extendedResponsesResolvers = {
       const editHistory =
         await ResponseEditTrackingService.getEditHistory(responseId);
 
+      const canSeeNetworkDetails =
+        accessCheck.permission === PermissionLevel.EDITOR ||
+        accessCheck.permission === PermissionLevel.OWNER;
+
       return editHistory.map((edit) => ({
         id: edit.id,
         responseId: edit.responseId,
@@ -1008,8 +1042,8 @@ export const extendedResponsesResolvers = {
         editedAt: edit.editedAt.toISOString(),
         editType: edit.editType,
         editReason: edit.editReason,
-        ipAddress: edit.ipAddress,
-        userAgent: edit.userAgent,
+        ipAddress: canSeeNetworkDetails ? edit.ipAddress : null,
+        userAgent: canSeeNetworkDetails ? edit.userAgent : null,
         totalChanges: edit.totalChanges,
         changesSummary: edit.changesSummary,
         fieldChanges: edit.fieldChanges.map((change) => ({
@@ -1116,8 +1150,9 @@ export const extendedResponsesResolvers = {
       }
     },
 
-    lastEditedBy: async (parent: any) => {
+    lastEditedBy: async (parent: any, _args?: unknown, context?: { auth: BetterAuthContext }) => {
       try {
+        if ((await getEditHistoryVisibility(context, parent.formId)) === 'none') return null;
         const history = await getEditHistoryMemoised(parent);
         return history.length > 0 ? history[0].editedBy : null;
       } catch (error) {
@@ -1126,9 +1161,16 @@ export const extendedResponsesResolvers = {
       }
     },
 
-    editHistory: async (parent: any) => {
+    // SECURITY: editor IP/user-agent are EDITOR+ only; no access means no history
+    // (this field is reachable from the public submitResponse mutation).
+    editHistory: async (parent: any, _args?: unknown, context?: { auth: BetterAuthContext }) => {
       try {
-        return await getEditHistoryMemoised(parent);
+        const visibility = await getEditHistoryVisibility(context, parent.formId);
+        if (visibility === 'none') return [];
+
+        const history = await getEditHistoryMemoised(parent);
+        if (visibility === 'editor') return history;
+        return history.map((edit) => ({ ...edit, ipAddress: null, userAgent: null }));
       } catch (error) {
         logger.error('Error getting editHistory for response:', parent.id, error);
         return [];

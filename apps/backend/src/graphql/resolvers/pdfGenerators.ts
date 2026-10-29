@@ -303,6 +303,7 @@ export const pdfGeneratorsResolvers = {
           filename,
         };
       } catch (error) {
+        if (error instanceof GraphQLError) throw error;
         logger.error('downloadPdfGenerationResultsZip failed:', error);
         throw createGraphQLError('Failed to build ZIP archive', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }

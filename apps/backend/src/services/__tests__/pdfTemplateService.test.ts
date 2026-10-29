@@ -18,6 +18,7 @@ import {
   _resetCachedFontsForTesting,
   stripBasePdf,
   validatePdfTemplate,
+  PDF_TEMPLATE_LIMITS,
 } from '../pdfTemplateService.js';
 
 const BLANK_A4 = { width: 210, height: 297, padding: [10, 10, 10, 10] as [number, number, number, number] };
@@ -465,6 +466,38 @@ describe('validatePdfTemplate', () => {
     // and only fail later, at generation time.
     const template = { basePdf: null, schemas: [[textSchema('a', 'hello')]] };
     expect(() => validatePdfTemplate(template, false)).toThrow();
+  });
+
+  it('rejects a string basePdf on a blank template (attacker-supplied PDF bytes)', () => {
+    const template = { basePdf: 'data:application/pdf;base64,JVBERi0x', schemas: [[textSchema('a', 'x')]] };
+    expect(() => validatePdfTemplate(template, false)).toThrow(/blank page/);
+  });
+
+  it.each([
+    ['zero width', { width: 0, height: 297, padding: [0, 0, 0, 0] }],
+    ['huge height', { width: 210, height: 1e9, padding: [0, 0, 0, 0] }],
+    ['negative padding', { width: 210, height: 297, padding: [-1, 0, 0, 0] }],
+    ['padding eating the page', { width: 210, height: 297, padding: [150, 0, 150, 0] }],
+    ['NaN width', { width: NaN, height: 297, padding: [0, 0, 0, 0] }],
+  ])('rejects a blank page with %s', (_label, basePdf) => {
+    expect(() => validatePdfTemplate({ basePdf, schemas: [[textSchema('a', 'x')]] }, false)).toThrow();
+  });
+
+  it('rejects templates over the page, element and content limits', () => {
+    const { maxPages, maxElementsPerPage, maxContentChars } = PDF_TEMPLATE_LIMITS;
+    const page = [textSchema('a', 'x')];
+    expect(() =>
+      validatePdfTemplate({ basePdf: BLANK_A4, schemas: Array.from({ length: maxPages + 1 }, () => page) }, false)
+    ).toThrow(/pages/);
+    expect(() =>
+      validatePdfTemplate(
+        { basePdf: BLANK_A4, schemas: [Array.from({ length: maxElementsPerPage + 1 }, (_, i) => textSchema(`a${i}`, 'x'))] },
+        false
+      )
+    ).toThrow(/elements/);
+    expect(() =>
+      validatePdfTemplate({ basePdf: BLANK_A4, schemas: [[textSchema('a', 'x'.repeat(maxContentChars + 1))]] }, true)
+    ).toThrow(/too large/);
   });
 });
 

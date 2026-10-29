@@ -3,6 +3,7 @@ import { Button, Input, Label, OTPInput } from '@dculus/ui';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { authClient } from '../lib/auth-client';
 import { getApiBaseUrl } from '../lib/config';
+import { startOAuthNonce } from '../lib/oauthNonce';
 
 interface SignInOptionsProps {
   allowedDomains?: string[] | null;
@@ -34,9 +35,14 @@ export default function SignInOptions({ allowedDomains, onSignedIn, onBeforeGoog
       // Storage blocked: the returnTo in the callback URL still brings the respondent back.
     }
     const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+    const nonce = startOAuthNonce();
+    if (!nonce) {
+      setError('Could not start Google sign-in in this browser. Enable site storage or use an email code.');
+      return;
+    }
     authClient.signIn.social({
       provider: 'google',
-      callbackURL: `${getApiBaseUrl()}/respondent-oauth-callback?returnTo=${returnTo}`,
+      callbackURL: `${getApiBaseUrl()}/respondent-oauth-callback?returnTo=${returnTo}&nonce=${encodeURIComponent(nonce)}`,
     });
   };
 

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js/max';
 import { FieldType } from './index.js';
-import { fieldGradingSchema } from './quiz.js';
+import { fieldGradingSchema, hasQuantifiedAlternation } from './quiz.js';
 import { MAX_GRID_COLUMNS, MIN_GRID_COLUMN_PERCENT } from './gridConstants.js';
 
 // Mirrors MAX_REGEX_PATTERN_LENGTH in apps/backend/src/services/quiz/gradingEngine.ts —
@@ -47,6 +47,14 @@ export const gradingFormSchema = fieldGradingSchema
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'quizGrading:errors.regexTooLong',
+            path: ['acceptedAnswers', index],
+          });
+          return;
+        }
+        if (hasQuantifiedAlternation(pattern)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'quizGrading:errors.regexUnsafe',
             path: ['acceptedAnswers', index],
           });
           return;

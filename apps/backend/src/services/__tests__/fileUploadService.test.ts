@@ -49,8 +49,18 @@ describe('File Upload Service', () => {
   });
 
   describe('uploadFile', () => {
+    const SIGNATURES: Record<string, Buffer> = {
+      'image/jpeg': Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+      'image/png': Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      'image/gif': Buffer.from('GIF89a'),
+      'image/webp': Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBP')]),
+      'application/pdf': Buffer.from('%PDF-1.7\n'),
+      'video/mp4': Buffer.concat([Buffer.alloc(4), Buffer.from('ftypisom')]),
+      'video/webm': Buffer.from([0x1a, 0x45, 0xdf, 0xa3]),
+    };
     const createMockFile = (filename: string, mimetype: string, size: number) => {
       const buffer = Buffer.alloc(size);
+      SIGNATURES[mimetype]?.copy(buffer);
       const stream = Readable.from(buffer);
 
       return {
@@ -106,6 +116,24 @@ describe('File Upload Service', () => {
       expect(result.key).toMatch(/files\/user-avatar\/.*-test-image--1-\.jpg$/);
     });
 
+    it('should key avatars and logos under their sanitized owner id', async () => {
+      mockSend.mockResolvedValue({});
+
+      const avatar = await uploadFile({
+        file: createMockFile('me.png', 'image/png', 1024),
+        type: 'UserAvatar',
+        ownerId: 'user-123',
+      });
+      const logo = await uploadFile({
+        file: createMockFile('logo.png', 'image/png', 1024),
+        type: 'OrganizationLogo',
+        ownerId: '../org/9',
+      });
+
+      expect(avatar.key).toMatch(/^files\/user-avatar\/user-123\/[^/]+$/);
+      expect(logo.key).toMatch(/^files\/organization-logo\/org9\/[^/]+$/);
+    });
+
     it('should throw error when filename is missing', async () => {
       const mockFile = createMockFile('', 'image/jpeg', 1024);
 
@@ -154,7 +182,10 @@ describe('File Upload Service', () => {
 
     it('should fallback to extension-based mimetype detection', async () => {
       mockSend.mockResolvedValue({});
-      const mockFile = createMockFile('test.jpg', '', 1024);
+      const mockFile = {
+        ...createMockFile('test.jpg', 'image/jpeg', 1024),
+        mimetype: '',
+      };
 
       const result = await uploadFile({
         file: mockFile,
@@ -162,6 +193,30 @@ describe('File Upload Service', () => {
       });
 
       expect(result.mimeType).toBe('image/jpeg');
+    });
+
+    it('should reject content that does not match the declared type', async () => {
+      const mockFile = {
+        filename: 'payload.png',
+        mimetype: 'image/png',
+        encoding: '7bit',
+        createReadStream: () => Readable.from(Buffer.from('<svg onload="alert(1)"></svg>')),
+      };
+
+      await expect(uploadFile({ file: mockFile, type: 'UserAvatar' })).rejects.toThrow(
+        'File content does not match its declared type'
+      );
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('should derive the stored extension and type from the bytes, not the filename', async () => {
+      mockSend.mockResolvedValue({});
+      const mockFile = createMockFile('evil.html', 'image/png', 1024);
+
+      const result = await uploadFile({ file: mockFile, type: 'UserAvatar' });
+
+      expect(result.key).toMatch(/\.png$/);
+      expect(result.mimeType).toBe('image/png');
     });
 
     it('should throw error when file exceeds max size', async () => {

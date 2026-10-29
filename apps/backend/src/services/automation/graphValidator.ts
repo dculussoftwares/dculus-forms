@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { validateEmailList } from '@dculus/utils';
 import type { DelayUnit } from './types.js';
+import { describeGraphSizeViolation } from './limits.js';
 import { assertOutboundUrlAllowed, outboundUrlProblem, UnsafeUrlError } from '../../lib/urlGuard.js';
 
 export interface GraphValidationError {
@@ -28,6 +29,7 @@ export interface ValidateAutomationGraphOptions {
 /** Stable error codes surfaced to the builder UI (#197) for node-level badges. */
 export const GRAPH_ERROR_CODES = {
   INVALID_GRAPH_SHAPE: 'INVALID_GRAPH_SHAPE',
+  GRAPH_TOO_LARGE: 'GRAPH_TOO_LARGE',
   MISSING_TRIGGER: 'MISSING_TRIGGER',
   MULTIPLE_TRIGGERS: 'MULTIPLE_TRIGGERS',
   INVALID_TRIGGER_CONFIG: 'INVALID_TRIGGER_CONFIG',
@@ -468,6 +470,13 @@ export function validateAutomationGraph(
 
   const { nodes, edges } = parsed.data;
   const errors: GraphValidationError[] = [];
+
+  // Checked before any per-node work so an oversized graph cannot make validation itself costly.
+  const sizeViolation = describeGraphSizeViolation(parsed.data);
+  if (sizeViolation) {
+    return { valid: false, errors: [{ code: GRAPH_ERROR_CODES.GRAPH_TOO_LARGE, message: sizeViolation }] };
+  }
+
   const nodeIds = new Set(nodes.map((n) => n.id));
   const nodesById = new Map(nodes.map((n) => [n.id, n]));
 

@@ -11,6 +11,40 @@ export type Credentials = {
   password: string;
 };
 
+// Public, disposable local account baked into the `test:e2e` npm scripts. Its password is
+// its own (publicly readable mailinator) address, so it must never be used on a hosted target.
+const PUBLIC_DEFAULT_E2E_EMAIL = 'cloude2etest@mailinator.com';
+const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
+
+function isLocalTarget(url: string): boolean {
+  try {
+    return LOCAL_HOSTNAMES.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Throws when the public default credentials are combined with a non-local target.
+ * Exported for unit testing.
+ */
+export function assertDefaultCredentialsOnlyLocal(
+  email: string,
+  password: string,
+  targetUrls: Array<string | undefined>
+): void {
+  if (email.toLowerCase() !== PUBLIC_DEFAULT_E2E_EMAIL && password !== PUBLIC_DEFAULT_E2E_EMAIL) {
+    return;
+  }
+  const remote = targetUrls.find((url) => url && !isLocalTarget(url));
+  if (remote) {
+    throw new Error(
+      `Refusing to run E2E with the public default credentials against a non-local target (${remote}). ` +
+        'Set E2E_EMAIL and E2E_PASSWORD to a dedicated account for hosted environments.'
+    );
+  }
+}
+
 /**
  * Get credentials from environment variables
  */
@@ -21,6 +55,12 @@ export function getCredentials(): Credentials {
   if (!email || !password) {
     throw new Error('E2E_EMAIL and E2E_PASSWORD must be set for sign-in tests.');
   }
+
+  assertDefaultCredentialsOnlyLocal(email, password, [
+    process.env.E2E_FORM_APP_URL,
+    process.env.E2E_FORM_VIEWER_URL,
+    process.env.E2E_BACKEND_URL,
+  ]);
 
   return { email, password };
 }

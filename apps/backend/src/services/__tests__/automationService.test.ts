@@ -92,6 +92,36 @@ describe('automationService', () => {
       expect(automationRepository.createAutomation).not.toHaveBeenCalled();
     });
 
+    it('rejects a name longer than 200 characters', async () => {
+      await expect(
+        createAutomation({
+          formId: 'form-1',
+          organizationId: 'org-1',
+          name: 'x'.repeat(201),
+          triggerType: 'form.submitted',
+          createdBy: 'user-1',
+        })
+      ).rejects.toThrow(/at most 200 characters/);
+    });
+
+    it('rejects creation once the form or organization automation cap is reached', async () => {
+      const params = {
+        formId: 'form-1',
+        organizationId: 'org-1',
+        name: 'Test',
+        triggerType: 'form.submitted',
+        createdBy: 'user-1',
+      };
+
+      vi.mocked(automationRepository.count).mockResolvedValueOnce(50).mockResolvedValueOnce(50);
+      await expect(createAutomation(params)).rejects.toThrow(/at most 50 automations/);
+
+      vi.mocked(automationRepository.count).mockResolvedValueOnce(1).mockResolvedValueOnce(500);
+      await expect(createAutomation(params)).rejects.toThrow(/at most 500 automations/);
+
+      expect(automationRepository.createAutomation).not.toHaveBeenCalled();
+    });
+
     it('rejects an unsupported trigger type', async () => {
       await expect(
         createAutomation({
@@ -253,6 +283,29 @@ describe('automationService', () => {
       await expect(
         updateAutomation(scheduleAutomation, { triggerConfig: { cron: 'nonsense' } })
       ).rejects.toThrow(/Invalid cron expression/);
+      expect(automationRepository.updateAutomation).not.toHaveBeenCalled();
+    });
+
+    it('rejects a schedule that fires more often than every 15 minutes', async () => {
+      const scheduleAutomation = { ...baseAutomation, triggerType: 'schedule' };
+
+      await expect(
+        updateAutomation(scheduleAutomation, { triggerConfig: { cron: '* * * * *' } })
+      ).rejects.toThrow(/at most once every 15 minutes/);
+      expect(automationRepository.updateAutomation).not.toHaveBeenCalled();
+    });
+
+    it('rejects an empty or oversized name and an oversized graph', async () => {
+      await expect(updateAutomation(baseAutomation, { name: '  ' })).rejects.toThrow('Automation name is required');
+      await expect(updateAutomation(baseAutomation, { name: 'y'.repeat(201) })).rejects.toThrow(/at most 200/);
+
+      const nodes = Array.from({ length: 101 }, (_, i) => ({ id: `n${i}`, type: 'end' }));
+      await expect(updateAutomation(baseAutomation, { graph: { nodes, edges: [] } })).rejects.toThrow(/at most 100 steps/);
+      await expect(updateAutomation(baseAutomation, { graph: 'nope' })).rejects.toThrow(/nodes and edges/);
+
+      const bulky = { nodes: [{ id: 'a', type: 'end', data: { blob: 'z'.repeat(600 * 1024) } }], edges: [] };
+      await expect(updateAutomation(baseAutomation, { graph: bulky })).rejects.toThrow(/too large/);
+
       expect(automationRepository.updateAutomation).not.toHaveBeenCalled();
     });
 

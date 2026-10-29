@@ -17,6 +17,7 @@ import {
   type SheetColumn,
 } from '../core/sheetColumns.js';
 import { toOneDriveFileName } from '../core/fileName.js';
+import { neutralizeFormula } from '../../lib/spreadsheetSafety.js';
 
 /** One response embedded in a digest node's output (see services/automation/types.ts DigestResponseSummary). */
 interface DigestResponseEntry {
@@ -207,7 +208,7 @@ const writeHeaderRow = async (
     method: 'PATCH',
     headers: authHeaders(accessToken),
     body: JSON.stringify({
-      values: [headers],
+      values: [headers.map(neutralizeFormula)],
     }),
   });
 
@@ -290,7 +291,7 @@ const appendDataRows = async (
     method: 'PATCH',
     headers: authHeaders(accessToken),
     body: JSON.stringify({
-      values: rows,
+      values: rows.map((row) => row.map(neutralizeFormula)),
     }),
   });
 

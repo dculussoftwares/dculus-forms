@@ -49,7 +49,16 @@ const stored = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(responseRepository.findFirst).mockResolvedValue(stored as any);
-  vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({ pages: [] } as any);
+  vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({
+    pages: [
+      {
+        id: 'page-1',
+        title: 'Page 1',
+        order: 0,
+        fields: [{ id: 'name', type: 'text_input_field', label: 'Name', validation: { required: false } }],
+      },
+    ],
+  } as any);
   vi.mocked(updateResponse).mockImplementation(async (id, data) => ({ ...stored, id, data }) as any);
 });
 
@@ -135,13 +144,29 @@ describe('editMyResponse', () => {
     );
   });
 
-  it('keeps only the submitted answers when the live schema cannot be read', async () => {
-    vi.mocked(responseRepository.findFirst).mockResolvedValue({ ...stored, data: { name: 'Ada', retired: 'old' } } as any);
+  it('rejects the edit when the live schema cannot be read', async () => {
     vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({ pages: 'not-a-list' } as any);
 
-    await edit({ data: { name: 'Grace' } });
+    await expect(edit({ data: { name: 'Grace' } })).rejects.toBeDefined();
+    expect(updateResponse).not.toHaveBeenCalled();
+  });
 
-    expect(updateResponse).toHaveBeenCalledWith('response-1', { name: 'Grace' }, expect.anything());
+  it('rejects answers that violate the field rules', async () => {
+    vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({
+      pages: [
+        {
+          id: 'page-1',
+          title: 'Page 1',
+          order: 0,
+          fields: [{ id: 'name', type: 'text_input_field', label: 'Name', validation: { required: true, maxLength: 3 } }],
+        },
+      ],
+    } as any);
+
+    await expect(edit({ data: { name: 'Grace' } })).rejects.toMatchObject({
+      extensions: { code: GRAPHQL_ERROR_CODES.BAD_USER_INPUT },
+    });
+    expect(updateResponse).not.toHaveBeenCalled();
   });
 
   it('drops answers the form rules hide', async () => {

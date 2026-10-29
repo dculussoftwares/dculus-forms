@@ -24,6 +24,7 @@ import {
   generatePdfForResponse,
   getTemplateById,
   listTemplates,
+  PDF_TEMPLATE_LIMITS,
   stripBasePdf,
   updateTemplate,
   validatePdfTemplate,
@@ -33,8 +34,24 @@ import {
   checkAITokenBudget,
   recordAITokenUsage,
 } from '../../services/aiUsageService.js';
+import { deleteGeneratedPdfsForTemplate } from '../../services/pdfGeneratorService.js';
 import { getFormById } from '../../services/formService.js';
 import { getResponseById } from '../../services/responseService.js';
+
+function assertTemplateTextLengths(name?: string | null, fileName?: string | null): void {
+  if (name && name.length > PDF_TEMPLATE_LIMITS.maxNameChars) {
+    throw createGraphQLError(
+      `Template name must be at most ${PDF_TEMPLATE_LIMITS.maxNameChars} characters`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+  if (fileName && fileName.length > PDF_TEMPLATE_LIMITS.maxFileNameChars) {
+    throw createGraphQLError(
+      `File name must be at most ${PDF_TEMPLATE_LIMITS.maxFileNameChars} characters`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+}
 
 /**
  * GraphQL Resolvers for PDF Templates (issue #87)
@@ -149,6 +166,7 @@ export const pdfTemplatesResolvers = {
       if (!input.name?.trim()) {
         throw createGraphQLError('Template name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
+      assertTemplateTextLengths(input.name, input.fileName);
 
       const existingTemplateCount = await countTemplates(input.formId);
       if (existingTemplateCount >= MAX_PDF_TEMPLATES_PER_FORM) {
@@ -230,6 +248,7 @@ export const pdfTemplatesResolvers = {
         if (!input.name.trim()) {
           throw createGraphQLError('Template name cannot be empty', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
         }
+        assertTemplateTextLengths(input.name);
         data.name = input.name.trim();
       }
 
@@ -276,6 +295,7 @@ export const pdfTemplatesResolvers = {
         );
       }
 
+      await deleteGeneratedPdfsForTemplate(id);
       await deleteTemplate(id);
 
       // Best-effort cleanup of the base PDF in R2 — the DB row is already gone

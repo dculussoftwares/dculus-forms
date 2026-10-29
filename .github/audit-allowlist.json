@@ -1,0 +1,10 @@
+{
+  "advisories": [
+    {
+      "id": "GHSA-ggr8-5vv4-36mx",
+      "package": "deepmerge-ts@7.1.5",
+      "reason": "Only reachable through the Prisma CLI (@prisma/config) merging its own config at generate/migrate time; no untrusted input. Fix needs deepmerge-ts 8.x, which @prisma/config 6.x does not support.",
+      "expires": "2027-01-31"
+    }
+  ]
+}

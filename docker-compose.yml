@@ -9,13 +9,14 @@ services:
       POSTGRES_USER: dculus
       POSTGRES_PASSWORD: dculus_dev_password
       POSTGRES_DB: dculus_forms
-      # WARNING: trust mode disables password authentication — NEVER use in staging/production
+      # WARNING: trust mode disables password authentication. It is only acceptable because
+      # the port below is published on loopback; NEVER expose it or use it in staging/production.
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    command: postgres -c listen_addresses='*' -c log_connections=on -c log_statement='all'
+    command: postgres -c listen_addresses='*' -c log_connections=on
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dculus -d dculus_forms"]
       interval: 10s
@@ -24,15 +25,16 @@ services:
 
   # Optional: pgAdmin for database management UI
   pgadmin:
-    image: dpage/pgadmin4:latest
+    image: dpage/pgadmin4:8.14
     container_name: dculus-forms-pgadmin
     restart: unless-stopped
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@dculus.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      # Local-only login (UI is published on loopback); override via PGADMIN_PASSWORD in .env
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
       PGADMIN_LISTEN_PORT: 5050
     ports:
-      - "5050:5050"
+      - "127.0.0.1:5050:5050"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:

@@ -122,7 +122,10 @@ const PluginProposalCard: React.FC = () => {
             </p>
             {renderConfig(proposal)}
             {proposal.rationale && (
-              <p className="mt-1 text-xs text-indigo-700">{proposal.rationale}</p>
+              <p className="mt-1 text-xs text-indigo-700">
+                <span className="font-medium">{t('pluginProposal.rationaleUnverified')}</span>{' '}
+                {proposal.rationale}
+              </p>
             )}
             <div className="mt-2 flex justify-end gap-1">
               <Button

@@ -1,3 +1,4 @@
+import { escapeHtml } from '@dculus/utils';
 import {
   renderEmailLayout,
   renderParagraph,
@@ -15,7 +16,12 @@ export interface InvitationEmailData {
 }
 
 export function generateInvitationEmailHtml(data: InvitationEmailData): string {
-  const { organizationName, inviterName, invitationUrl, expiresInHours = 48 } = data;
+  const { expiresInHours = 48 } = data;
+  // inviterName and organizationName are chosen by the inviting user; escape everything interpolated.
+  const organizationName = escapeHtml(data.organizationName);
+  const inviterName = escapeHtml(data.inviterName);
+  const invitationUrl = escapeHtml(data.invitationUrl);
+  const recipient = escapeHtml(data.to);
 
   const subtitle = `<strong style="color:${EMAIL_THEME.body};">${inviterName}</strong> has invited you to join <strong style="color:${EMAIL_THEME.green};">${organizationName}</strong> on Dculus Forms.`;
 
@@ -23,7 +29,7 @@ export function generateInvitationEmailHtml(data: InvitationEmailData): string {
     ${renderParagraph('Join your team to collaborate on forms, manage responses, and streamline your workflow together.')}
     ${renderButton(invitationUrl, 'Accept Invitation')}
     ${renderInfoBox('warning', `⏰&nbsp;This invitation expires in <strong>${expiresInHours} hours</strong>.`)}
-    ${renderInfoBox('security', `🔒&nbsp;<strong>Security Notice:</strong> This invitation was sent to ${data.to}. If you weren't expecting this invitation, you can safely ignore this email.`)}
+    ${renderInfoBox('security', `🔒&nbsp;<strong>Security Notice:</strong> This invitation was sent to ${recipient}. If you weren't expecting this invitation, you can safely ignore this email.`)}
     <p style="margin:24px 0 6px 0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size:13px; line-height:1.5; color:${EMAIL_THEME.muted};">Having trouble with the button? Copy and paste this link into your browser:</p>
     <p style="margin:0; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size:13px; line-height:1.5; word-break:break-all;"><a href="${invitationUrl}" style="color:${EMAIL_THEME.green}; text-decoration:none;">${invitationUrl}</a></p>
   `;

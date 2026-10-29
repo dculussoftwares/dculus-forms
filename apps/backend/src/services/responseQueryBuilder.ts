@@ -20,6 +20,27 @@ import { ResponseFilter } from './responseFilterService.js';
 
 const SAFE_FIELD_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 
+// Stored answers are respondent-controlled, so every cast in the generated SQL is guarded by a
+// fully anchored regex that only matches values the cast is guaranteed to accept. A value that
+// merely looks like a date/number (e.g. 2024-99-99, a 30-digit epoch) must not make the whole
+// statement fail, which would force callers onto the in-memory fallback for the entire form.
+const LEAP_YEAR = '([0-9]{2}(0[48]|[2468][048]|[13579][26])|([02468][048]|[13579][26])00)';
+const YMD_DATE =
+  '(' + '[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|1[0-9]|2[0-8])' +
+  '|[0-9]{4}-(0[13-9]|1[0-2])-(29|30)' +
+  '|[0-9]{4}-(0[13578]|1[02])-31' +
+  '|' + LEAP_YEAR + '-02-29' + ')';
+const TIME_SUFFIX =
+  '(([T ]([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9]([.][0-9]{1,6})?)?)(Z|[+-](0[0-9]|1[0-4])(:?[0-5][0-9])?)?)?';
+const YMD_SQL_REGEX = `^${YMD_DATE}${TIME_SUFFIX}$`;
+const EPOCH_SQL_REGEX = '^[0-9]{1,15}$';
+const NUMERIC_SQL_REGEX = '^-?[0-9]{1,30}([.][0-9]{1,30})?$';
+export const SQL_SAFE_CAST_PATTERNS = {
+  ymd: YMD_SQL_REGEX,
+  epoch: EPOCH_SQL_REGEX,
+  numeric: NUMERIC_SQL_REGEX,
+};
+
 const ensureSafeFieldId = (fieldId: string): string => {
   if (!SAFE_FIELD_ID_PATTERN.test(fieldId)) {
     throw new Error(`Invalid fieldId "${fieldId}"`);
@@ -707,7 +728,7 @@ export function buildRawSQLCondition(
       return {
         sql: `(
           CASE 
-            WHEN ${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$' 
+            WHEN ${textAccessor} ~ '${NUMERIC_SQL_REGEX}' 
             THEN (${textAccessor})::numeric > $${startIndex}::numeric
             ELSE FALSE
           END
@@ -720,7 +741,7 @@ export function buildRawSQLCondition(
       return {
         sql: `(
           CASE 
-            WHEN ${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$' 
+            WHEN ${textAccessor} ~ '${NUMERIC_SQL_REGEX}' 
             THEN (${textAccessor})::numeric >= $${startIndex}::numeric
             ELSE FALSE
           END
@@ -734,7 +755,7 @@ export function buildRawSQLCondition(
       return {
         sql: `(
           CASE 
-            WHEN ${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$' 
+            WHEN ${textAccessor} ~ '${NUMERIC_SQL_REGEX}' 
             THEN (${textAccessor})::numeric < $${startIndex}::numeric
             ELSE FALSE
           END
@@ -747,7 +768,7 @@ export function buildRawSQLCondition(
       return {
         sql: `(
           CASE 
-            WHEN ${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$' 
+            WHEN ${textAccessor} ~ '${NUMERIC_SQL_REGEX}' 
             THEN (${textAccessor})::numeric <= $${startIndex}::numeric
             ELSE FALSE
           END
@@ -763,7 +784,7 @@ export function buildRawSQLCondition(
       let idx = startIndex;
 
       // Safe numeric cast: only process if value matches numeric pattern
-      const numericCheck = `${textAccessor} ~ '^-?[0-9]+(\\.[0-9]+)?$'`;
+      const numericCheck = `${textAccessor} ~ '${NUMERIC_SQL_REGEX}'`;
 
       if (filter.numberRange.min !== undefined) {
         conditions.push(`(${textAccessor})::numeric >= $${idx}::numeric`);
@@ -848,9 +869,9 @@ export function buildRawSQLCondition(
       return {
         sql: `(
           CASE
-            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+            WHEN ${textAccessor} ~ '${YMD_SQL_REGEX}'
             THEN DATE((${textAccessor})::timestamp) = DATE($${startIndex}::timestamp)
-            WHEN ${textAccessor} ~ '^[0-9]+$'
+            WHEN ${textAccessor} ~ '${EPOCH_SQL_REGEX}'
             THEN DATE(to_timestamp((${textAccessor})::bigint / 1000)) = DATE($${startIndex}::timestamp)
             ELSE FALSE
           END
@@ -864,9 +885,9 @@ export function buildRawSQLCondition(
       return {
         sql: `(
           CASE
-            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+            WHEN ${textAccessor} ~ '${YMD_SQL_REGEX}'
             THEN (${textAccessor})::timestamp < $${startIndex}::timestamp
-            WHEN ${textAccessor} ~ '^[0-9]+$'
+            WHEN ${textAccessor} ~ '${EPOCH_SQL_REGEX}'
             THEN to_timestamp((${textAccessor})::bigint / 1000) < $${startIndex}::timestamp
             ELSE FALSE
           END
@@ -880,9 +901,9 @@ export function buildRawSQLCondition(
       return {
         sql: `(
           CASE
-            WHEN ${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+            WHEN ${textAccessor} ~ '${YMD_SQL_REGEX}'
             THEN (${textAccessor})::timestamp > $${startIndex}::timestamp
-            WHEN ${textAccessor} ~ '^[0-9]+$'
+            WHEN ${textAccessor} ~ '${EPOCH_SQL_REGEX}'
             THEN to_timestamp((${textAccessor})::bigint / 1000) > $${startIndex}::timestamp
             ELSE FALSE
           END
@@ -899,8 +920,8 @@ export function buildRawSQLCondition(
       const dateValues: any[] = [];
       let dateIdx = startIndex;
 
-      const isYMD = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'`;
-      const isEpoch = `${textAccessor} ~ '^[0-9]+$'`;
+      const isYMD = `${textAccessor} ~ '${YMD_SQL_REGEX}'`;
+      const isEpoch = `${textAccessor} ~ '${EPOCH_SQL_REGEX}'`;
 
       if (filter.dateRange.from) {
         ymdConditions.push(`(${textAccessor})::timestamp >= $${dateIdx}::timestamp`);
@@ -931,8 +952,8 @@ export function buildRawSQLCondition(
 
     case 'DATE_TODAY': {
       // Stored as YYYY-MM-DD string; legacy fallback for epoch-ms numeric strings
-      const isYMD = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'`;
-      const isEpoch = `${textAccessor} ~ '^[0-9]+$'`;
+      const isYMD = `${textAccessor} ~ '${YMD_SQL_REGEX}'`;
+      const isEpoch = `${textAccessor} ~ '${EPOCH_SQL_REGEX}'`;
       return {
         sql: `(
           CASE
@@ -955,8 +976,8 @@ export function buildRawSQLCondition(
       }
 
       // Stored as YYYY-MM-DD string; legacy fallback for epoch-ms numeric strings
-      const isYMD = `${textAccessor} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}'`;
-      const isEpoch = `${textAccessor} ~ '^[0-9]+$'`;
+      const isYMD = `${textAccessor} ~ '${YMD_SQL_REGEX}'`;
+      const isEpoch = `${textAccessor} ~ '${EPOCH_SQL_REGEX}'`;
       const sql = `(
           CASE
             WHEN ${isYMD}

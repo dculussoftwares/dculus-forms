@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { emailHandler } from '../handler.js';
+import { emailHandler, MAX_RECIPIENTS_PER_SEND } from '../handler.js';
 import type { PluginEvent, PluginContext } from '../../core/types.js';
 import type { ValidatedEmailConfig } from '../types.js';
 
@@ -41,6 +41,7 @@ import { deserializeFormSchema } from '@dculus/types';
 import { substituteMentions, createFieldLabelsMap } from '@dculus/utils';
 import { resolveResponsePdfAttachment } from '../../../services/pdfTemplateService.js';
 import { checkUsageExceeded, getRemainingEmailQuota } from '../../../subscriptions/usageService.js';
+import { emitEmailSent } from '../../../subscriptions/events.js';
 
 describe('Email Handler', () => {
   let mockContext: PluginContext;
@@ -992,6 +993,39 @@ describe('Email Handler', () => {
   });
 
   describe('Field-based recipient', () => {
+    // S08-09: an address the mail server refuses is respondent input, not a broken automation.
+    it.each([
+      ['only a respondent-supplied recipient', undefined, true],
+      ['a static recipient is also configured', 'admin@example.com', false],
+    ])('on SMTP recipient rejection with %s', async (_label, staticRecipient, expectSkipped) => {
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: staticRecipient,
+        recipientFieldId: 'email-field',
+        subject: 'Hi',
+        message: '<p>Hi</p>',
+      } as ValidatedEmailConfig;
+
+      vi.mocked(mockContext.getFormById).mockResolvedValue({ id: 'form-123', formSchema: { pages: [] } } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({
+        id: 'response-123',
+        data: { 'email-field': 'nobody@bounces.example' },
+      } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [{ fields: [{ id: 'email-field', type: 'email_field' }] }] } as any);
+      vi.mocked(createFieldLabelsMap).mockReturnValue({});
+      vi.mocked(substituteMentions).mockReturnValue(config.message);
+      vi.mocked(mockContext.sendEmail).mockRejectedValue(
+        Object.assign(new Error('Failed to send email: 550 no such user'), { recipientRejected: true })
+      );
+
+      const run = emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+      if (expectSkipped) {
+        await expect(run).resolves.toMatchObject({ success: false, skipped: true });
+      } else {
+        await expect(run).rejects.toThrow('Email sending failed');
+      }
+    });
+
     it('should resolve recipient from a form email field', async () => {
       const config: ValidatedEmailConfig = {
         type: 'email',
@@ -1082,6 +1116,30 @@ describe('Email Handler', () => {
         expect.objectContaining({ to: 'same@example.com' })
       );
       expect(result.recipient).toBe('same@example.com');
+    });
+
+    it('caps recipients per send and counts quota per recipient', async () => {
+      const list = Array.from({ length: 30 }, (_, i) => `user${i}@example.com`).join(', ');
+      const config: ValidatedEmailConfig = {
+        type: 'email',
+        recipientEmail: list,
+        subject: 'Blast',
+        message: '<p>Hi</p>',
+      };
+
+      vi.mocked(mockContext.getFormById).mockResolvedValue({ id: 'form-123', formSchema: { pages: [] } } as any);
+      vi.mocked(mockContext.getResponseById).mockResolvedValue({ id: 'response-123', data: {} } as any);
+      vi.mocked(deserializeFormSchema).mockReturnValue({ pages: [] } as any);
+      vi.mocked(createFieldLabelsMap).mockReturnValue({});
+      vi.mocked(substituteMentions).mockReturnValue(config.message);
+      vi.mocked(mockContext.sendEmail).mockResolvedValue(undefined);
+      vi.mocked(emitEmailSent).mockClear();
+
+      await emailHandler({ id: 'test-plugin', config }, mockEvent, mockContext);
+
+      const sent = vi.mocked(mockContext.sendEmail).mock.calls.at(-1)![0] as { to: string };
+      expect(sent.to.split(', ')).toHaveLength(MAX_RECIPIENTS_PER_SEND);
+      expect(emitEmailSent).toHaveBeenCalledTimes(MAX_RECIPIENTS_PER_SEND);
     });
 
     it('should send to every address in a comma-separated static recipient list', async () => {

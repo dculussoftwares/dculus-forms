@@ -142,6 +142,13 @@ export const listForms = async (params: {
     {
       sharingScope: SharingScope.ALL_ORG_MEMBERS,
       defaultPermission: { not: PermissionLevel.NO_ACCESS },
+      // An explicit per-user NO_ACCESS row overrides the org-wide default.
+      permissions: {
+        none: {
+          userId,
+          permission: PermissionLevel.NO_ACCESS,
+        },
+      },
     },
   ];
 
@@ -319,16 +326,15 @@ export const shareForm = async (
     // Remove existing permissions for these users
     await formPermissionRepository.removeManyForUsers(input.formId, userIds);
 
-    // Add new permissions
-    const permissionsToCreate = input.userPermissions
-      .filter((up) => up.permission !== PermissionLevel.NO_ACCESS)
-      .map((up) => ({
-        id: randomUUID(),
-        formId: input.formId,
-        userId: up.userId,
-        permission: up.permission,
-        grantedById: userId,
-      }));
+    // Add new permissions. NO_ACCESS is persisted as an explicit row so it can
+    // override an ALL_ORG_MEMBERS default (deleting the row would restore it).
+    const permissionsToCreate = input.userPermissions.map((up) => ({
+      id: randomUUID(),
+      formId: input.formId,
+      userId: up.userId,
+      permission: up.permission,
+      grantedById: userId,
+    }));
 
     if (permissionsToCreate.length > 0) {
       await formPermissionRepository.createManyForUsers(permissionsToCreate);
@@ -384,28 +390,8 @@ export const updateFormPermission = async (
     throw createGraphQLError('Cannot change permissions for form owner', GRAPHQL_ERROR_CODES.NO_ACCESS);
   }
 
-  // Remove access if permission is NO_ACCESS
-  if (input.permission === PermissionLevel.NO_ACCESS) {
-    await formPermissionRepository.removeForUser(input.formId, input.userId);
-
-    await audit('permission.granted', 'FormPermission', input.formId, grantedById, {
-      targetUserId: input.userId,
-      permission: PermissionLevel.NO_ACCESS,
-    });
-
-    return {
-      id: '',
-      formId: input.formId,
-      userId: input.userId,
-      permission: PermissionLevel.NO_ACCESS,
-      grantedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      user: null,
-      grantedBy: null,
-    };
-  }
-
-  // Upsert permission
+  // Upsert permission (NO_ACCESS is stored as an explicit row, not deleted, so
+  // it keeps blocking users who would otherwise inherit an org-wide default)
   const permission = await formPermissionRepository.upsertForUser(
     input.formId,
     input.userId,

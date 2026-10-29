@@ -37,12 +37,14 @@ export const createFormFileRepository = (context?: RepositoryContext) => {
   /** --- Domain-oriented helpers for common access patterns --- */
 
   /**
-   * List a form's files, most recent first, optionally filtered by type
-   * (e.g. `FormBackground`, `FormResponse`).
+   * List a form's builder assets, most recent first, optionally filtered by type
+   * (e.g. `FormBackground`). Respondent uploads (`FormResponse`) are never listed
+   * here unless asked for by type: they may belong to deleted responses or
+   * abandoned submissions.
    */
   const listByFormId = async (formId: string, type?: string) =>
     prisma.formFile.findMany({
-      where: { formId, ...(type ? { type } : {}) },
+      where: { formId, ...(type ? { type } : { type: { not: 'FormResponse' } }) },
       orderBy: { createdAt: 'desc' },
     });
 

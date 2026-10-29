@@ -261,6 +261,7 @@
         "timezoneSearchPlaceholder": "Search timezone...",
         "timezoneNoResults": "No timezone found.",
         "invalidCron": "Enter a valid 5-field cron expression, e.g. \"0 9 * * *\".",
+        "cronTooFrequent": "Schedules can run at most once every 15 minutes.",
         "invalidTimezone": "Enter a valid IANA timezone, e.g. \"America/Chicago\".",
         "hint": "Times are evaluated in the timezone above (defaults to UTC if left blank).",
         "appliesOnPublish": "Changes are saved automatically and take effect when you publish."

@@ -10,6 +10,7 @@ import {
 } from './responseQueryBuilder.js';
 import { batchLoadTagsForResponses, PREVIEW_TAG_NAME } from './tagService.js';
 import { responseRepository, createResponseRepository } from '../repositories/index.js';
+import { purgeResponseSideDataSafely } from './dataRetentionService.js';
 import { withPrisma } from '../repositories/baseRepository.js';
 import { logger } from '../lib/logger.js';
 import { prisma } from '../lib/prisma.js';
@@ -353,7 +354,8 @@ export async function getResponsesByFormId(
       const joinClause = buildJoinClause(filters, isGradeSort);
 
       const logicOperator = filterLogic === 'OR' ? ' OR ' : ' AND ';
-      let whereClause = `WHERE "response"."formId" = $1`;
+      // Soft-deleted responses must never resurface through filtered queries.
+      let whereClause = `WHERE "response"."formId" = $1 AND "response"."deletedAt" IS NULL`;
       if (fieldConditions.length > 0) {
         whereClause += ` AND (${fieldConditions.join(logicOperator)})`;
       }
@@ -849,6 +851,7 @@ export const deleteResponse = async (id: string): Promise<boolean> => {
       where: { id },
       data: { deletedAt: new Date() },
     });
+    await purgeResponseSideDataSafely([id]);
     return true;
   } catch (error) {
     logger.error('Error deleting response:', error);
@@ -859,6 +862,7 @@ export const deleteResponse = async (id: string): Promise<boolean> => {
 export const deleteResponses = async (formId: string, ids: string[]): Promise<boolean> => {
   try {
     await responseRepository.softDeleteMany(formId, ids);
+    await purgeResponseSideDataSafely(ids);
     return true;
   } catch (error) {
     logger.error('Error bulk-deleting responses:', error);

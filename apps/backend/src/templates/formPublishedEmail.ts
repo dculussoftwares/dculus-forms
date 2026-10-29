@@ -1,3 +1,4 @@
+import { escapeHtml } from '@dculus/utils';
 import { FormPublishedEmailData } from '../services/emailService.js';
 import {
   renderEmailLayout,
@@ -9,7 +10,14 @@ import {
 const FONT_STACK =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
-export function generateFormPublishedHtml(data: FormPublishedEmailData): string {
+export function generateFormPublishedHtml(rawData: FormPublishedEmailData): string {
+  const data = {
+    ...rawData,
+    ownerName: escapeHtml(rawData.ownerName),
+    formTitle: escapeHtml(rawData.formTitle),
+    formUrl: escapeHtml(rawData.formUrl),
+    formDescription: rawData.formDescription ? escapeHtml(rawData.formDescription) : undefined,
+  };
   const descriptionHtml = data.formDescription
     ? `<p style="margin:0 0 20px 0; font-family:${FONT_STACK}; font-size:14px; line-height:1.6; color:${EMAIL_THEME.muted};">${data.formDescription}</p>`
     : '';

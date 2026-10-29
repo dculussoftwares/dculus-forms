@@ -116,6 +116,21 @@ export const deletePdfGenerator = async (id: string): Promise<boolean> => {
   return true;
 };
 
+/**
+ * Generators cascade-delete with their template in Postgres, which leaves their rendered PDFs
+ * (respondent PII) in R2. Call before deleting the template, while the generator rows still exist.
+ */
+export const deleteGeneratedPdfsForTemplate = async (templateId: string): Promise<void> => {
+  const generators = await pdfGeneratorRepository.listByTemplate(templateId);
+  for (const generator of generators) {
+    try {
+      await deleteGeneratedPdfsForGenerator(generator.formId, generator.id);
+    } catch (error) {
+      logger.warn(`Failed to clean up generated PDFs for generator ${generator.id}:`, error);
+    }
+  }
+};
+
 export const listPdfGenerators = async (formId: string) => {
   return pdfGeneratorRepository.listByForm(formId);
 };

@@ -7,6 +7,7 @@ import * as responseService from '../../../services/responseService.js';
 import * as events from '../../../subscriptions/events.js';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import * as formSharingModule from '../formSharing.js';
+import { resetFormViewDedupeForTests } from '../../../lib/formViewDedupe.js';
 
 // Mock all dependencies
 vi.mock('../../../services/analyticsService.js');
@@ -69,6 +70,7 @@ describe('Analytics Resolvers', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    resetFormViewDedupeForTests();
     // Default: membership check passes
     vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(undefined);
   });
@@ -118,6 +120,18 @@ describe('Analytics Resolvers', () => {
       );
 
       expect(result).toEqual({ success: true });
+    });
+
+    it('does not count a repeated view for the same session', async () => {
+      vi.mocked(formService.getFormById).mockResolvedValue(mockPublishedForm as any);
+      vi.mocked(analyticsService.trackFormView).mockResolvedValue(undefined);
+
+      const first = await analyticsResolvers.Mutation.trackFormView({}, { input: trackFormViewInput }, mockContext);
+      const second = await analyticsResolvers.Mutation.trackFormView({}, { input: trackFormViewInput }, mockContext);
+
+      expect(first).toEqual({ success: true });
+      expect(second).toEqual({ success: true });
+      expect(analyticsService.trackFormView).toHaveBeenCalledTimes(1);
     });
 
     it('should extract IP from various sources', async () => {

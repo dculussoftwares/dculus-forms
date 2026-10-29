@@ -1683,6 +1683,7 @@ describe('Admin Resolvers', () => {
         organizationId: 'org-1', chargebeeSubscriptionId: 'sub_abc123', status: 'active',
       } as any);
       vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
 
       const result = await adminResolvers.Mutation.adminCancelSubscription({}, { orgId: 'org-1' }, mockAdminContext);
 
@@ -1691,6 +1692,15 @@ describe('Admin Resolvers', () => {
       expect(vi.mocked(prisma.subscription.update)).toHaveBeenCalledWith({
         where: { organizationId: 'org-1' },
         data: { status: 'cancelled' },
+      });
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'subscription_cancelled',
+          actorId: 'admin-123',
+          resourceType: 'Organization',
+          resourceId: 'org-1',
+          metadata: expect.objectContaining({ previousStatus: 'active', changedBy: 'admin@example.com' }),
+        }),
       });
     });
 
@@ -1725,6 +1735,7 @@ describe('Admin Resolvers', () => {
         organizationId: 'org-1', chargebeeSubscriptionId: 'sub_abc123', status: 'cancelled',
       } as any);
       vi.mocked(prisma.subscription.update).mockResolvedValue({} as any);
+      vi.mocked(prisma.auditLog.create).mockResolvedValue({} as any);
 
       const result = await adminResolvers.Mutation.adminReactivateSubscription({}, { orgId: 'org-1' }, mockAdminContext);
 
@@ -1733,6 +1744,14 @@ describe('Admin Resolvers', () => {
       expect(vi.mocked(prisma.subscription.update)).toHaveBeenCalledWith({
         where: { organizationId: 'org-1' },
         data: { status: 'active' },
+      });
+      expect(vi.mocked(prisma.auditLog.create)).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'subscription_reactivated',
+          actorId: 'admin-123',
+          resourceId: 'org-1',
+          metadata: expect.objectContaining({ previousStatus: 'cancelled', changedBy: 'admin@example.com' }),
+        }),
       });
     });
 

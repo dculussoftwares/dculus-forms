@@ -14,7 +14,7 @@ applyTo: "test/**"
 
 ```bash
 pnpm test:integration                  # All tests (local)
-pnpm test:integration:production       # Against production
+pnpm test:integration:health:production # Read-only /health smoke check against production
 pnpm test:integration:auth             # Auth tests only
 pnpm test:integration:by-tags          # Filter by Cucumber tags
 pnpm test:integration:coverage         # With code coverage
@@ -41,6 +41,13 @@ pnpm test:unit:coverage                # With coverage
 ```
 
 ## Test Credentials
+
+> **Local only.** These are public, disposable accounts on public (mailinator) inboxes whose
+> passwords are published here. Use them only against `localhost`. The E2E helper
+> (`getCredentials`) refuses the default E2E account when `E2E_FORM_APP_URL`,
+> `E2E_FORM_VIEWER_URL` or `E2E_BACKEND_URL` point at a hosted environment; hosted runs must set
+> `E2E_EMAIL` / `E2E_PASSWORD` to a dedicated account (CI uses secrets). Never create these users
+> on dev, staging or production.
 
 ```
 # E2E Tests

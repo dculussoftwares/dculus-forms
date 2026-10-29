@@ -57,6 +57,49 @@ export function isValidCronExpression(cron: unknown): cron is string {
   return fields.every((field, index) => isValidCronField(field, FIELD_RANGES[index]));
 }
 
+/** Shortest gap a schedule may run at (mirrors the backend limit; the server enforces it). */
+export const MIN_SCHEDULE_INTERVAL_MINUTES = 15;
+
+function expandCronField(field: string, { min, max }: FieldRange): number[] {
+  const values = new Set<number>();
+  for (const part of field.split(',')) {
+    const [rangeOrValue, step] = part.split('/');
+    const stepSize = step === undefined ? 1 : Number(step);
+    let start = min;
+    let end = max;
+    if (rangeOrValue !== '*') {
+      const range = /^(\d+)-(\d+)$/.exec(rangeOrValue);
+      start = range ? Number(range[1]) : Number(rangeOrValue);
+      end = range ? Number(range[2]) : step === undefined ? start : max;
+    }
+    for (let value = start; value <= end; value += stepSize) values.add(value);
+  }
+  return [...values].sort((a, b) => a - b);
+}
+
+/** Smallest gap in minutes between firings, from the minute and hour fields; null if invalid. */
+export function getMinCronIntervalMinutes(cron: unknown): number | null {
+  if (!isValidCronExpression(cron)) return null;
+  const [minuteField, hourField] = cron.trim().split(/\s+/);
+  const minutes = expandCronField(minuteField, FIELD_RANGES[0]);
+  const hours = expandCronField(hourField, FIELD_RANGES[1]);
+
+  let smallest = Infinity;
+  for (let i = 1; i < minutes.length; i++) smallest = Math.min(smallest, minutes[i] - minutes[i - 1]);
+
+  const hourSet = new Set(hours);
+  const hasConsecutiveHours = hours.some((hour) => hourSet.has((hour + 1) % 24));
+  if (hasConsecutiveHours) smallest = Math.min(smallest, 60 - minutes[minutes.length - 1] + minutes[0]);
+
+  return Number.isFinite(smallest) ? smallest : 60;
+}
+
+/** True when the cron fires more often than {@link MIN_SCHEDULE_INTERVAL_MINUTES} allows. */
+export function isCronTooFrequent(cron: unknown): boolean {
+  const interval = getMinCronIntervalMinutes(cron);
+  return interval !== null && interval < MIN_SCHEDULE_INTERVAL_MINUTES;
+}
+
 /** Validates an IANA timezone identifier using the runtime's own Intl support (no new deps). */
 export function isValidTimezone(timezone: unknown): timezone is string {
   if (typeof timezone !== 'string' || timezone.trim().length === 0) return false;

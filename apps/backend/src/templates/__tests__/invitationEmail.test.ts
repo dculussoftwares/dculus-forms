@@ -2,6 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { generateInvitationEmailHtml, generateInvitationEmailText, InvitationEmailData } from '../invitationEmail.js';
 
 describe('Invitation Email Templates', () => {
+  it('neutralises markup in inviter name, organization name and recipient', () => {
+    const html = generateInvitationEmailHtml({
+      to: '"><script>alert(1)</script>@example.com',
+      organizationName: '<img src="https://evil.example/p.gif">',
+      inviterName: '<a href="https://evil.example">Security team</a>',
+      invitationUrl: 'https://dculus.com/invite/abc123',
+    });
+
+    expect(html).not.toContain('<img src="https://evil.example');
+    expect(html).not.toContain('<a href="https://evil.example"');
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;a href=&quot;https://evil.example&quot;&gt;Security team&lt;/a&gt;');
+  });
+
   describe('generateInvitationEmailHtml', () => {
     it('should generate HTML with organization and inviter details', () => {
       const data: InvitationEmailData = {

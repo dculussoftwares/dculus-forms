@@ -66,12 +66,56 @@ describe('copyPluginsToForm', () => {
         type: 'webhook',
         name: 'Notify CRM',
         enabled: false,
-        config: { url: 'https://example.com/hook', secret: 's3cr3t' },
+        config: { url: 'https://example.com/hook' },
         events: ['form.submitted'],
       },
     });
     // Even a plugin that was already disabled on the source stays disabled on the copy.
     expect(vi.mocked(pluginRepository.create).mock.calls[1][0].data.enabled).toBe(false);
+  });
+
+  it('does not copy credentials or linked external resources', async () => {
+    vi.mocked(pluginRepository.listByForm).mockResolvedValue([
+      {
+        id: 'p1',
+        type: 'webhook',
+        name: 'x',
+        enabled: true,
+        config: { url: 'https://example.com/hook', secret: 's', headers: { Authorization: 'Bearer t' } },
+        events: [],
+      },
+      {
+        id: 'p2',
+        type: 'google-sheets',
+        name: 'y',
+        enabled: true,
+        config: {
+          googleToken: { accessToken: 'a', refreshToken: 'r' },
+          spreadsheetId: 'sheet',
+          spreadsheetUrl: 'u',
+          sheetColumns: [{ id: 'c' }],
+          spreadsheetName: 'Leads',
+        },
+        events: [],
+      },
+      {
+        id: 'p3',
+        type: 'microsoft-sheets',
+        name: 'z',
+        enabled: true,
+        config: { microsoftToken: { accessToken: 'a' }, workbookId: 'w', workbookUrl: 'u', worksheetName: 'S' },
+        events: [],
+      },
+    ] as any);
+
+    await copyPluginsToForm('src', 'dst');
+
+    const configs = vi.mocked(pluginRepository.create).mock.calls.map((c) => c[0].data.config);
+    expect(configs).toEqual([
+      { url: 'https://example.com/hook' },
+      { spreadsheetName: 'Leads' },
+      { worksheetName: 'S' },
+    ]);
   });
 
   it('never throws when a write fails — duplication must not hard-fail over a plugin', async () => {

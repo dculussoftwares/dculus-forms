@@ -1,3 +1,4 @@
+import { escapeHtml } from '@dculus/utils';
 import { renderEmailLayout, renderParagraph, EMAIL_THEME } from './emailLayout.js';
 
 export interface ResponseCopyQaRow {
@@ -37,7 +38,9 @@ function renderQaTable(qaRows: ResponseCopyQaRow[]): string {
 }
 
 export function generateResponseCopyEmailHtml(data: ResponseCopyEmailData): string {
-  const { formTitle, hasAttachment, qaRows } = data;
+  const { hasAttachment, qaRows } = data;
+  // The form title is owner-controlled; the Q&A rows arrive already escaped.
+  const formTitle = escapeHtml(data.formTitle);
 
   const bodyHtml = hasAttachment
     ? renderParagraph('A PDF copy of your answers is attached to this email.')

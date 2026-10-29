@@ -42,7 +42,8 @@ interface FormHeaderProps {
   onPreview: () => void;
   onViewAnalytics: () => void;
   onShare?: () => void;
-  onDuplicate: () => void;
+  /** Omitted for VIEWERs — duplicating copies automations/plugins and needs EDITOR. */
+  onDuplicate?: () => void;
   updateLoading: boolean;
   deleteLoading: boolean;
   duplicateLoading: boolean;
@@ -200,10 +201,12 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                   {t('header.actions.embed')}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onClick={onDuplicate} disabled={duplicateLoading}>
-                <Copy className="mr-2 h-4 w-4" />
-                {duplicateLoading ? t('header.actions.duplicating') : t('header.actions.duplicate')}
-              </DropdownMenuItem>
+              {onDuplicate && (
+                <DropdownMenuItem onClick={onDuplicate} disabled={duplicateLoading}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  {duplicateLoading ? t('header.actions.duplicating') : t('header.actions.duplicate')}
+                </DropdownMenuItem>
+              )}
               {onDelete && (
                 <>
                   <DropdownMenuSeparator />

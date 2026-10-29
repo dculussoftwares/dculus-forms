@@ -7,8 +7,6 @@ import {
 } from '../../services/fileUploadService.js';
 import { createResponseFileDownloadUrl } from '../../services/responseFiles/responseFileDownloadService.js';
 import { createFormFile, findFormFileByKeyWithForm } from '../../services/formFileService.js';
-import { findUserByImageKey } from '../../services/userService.js';
-import { findOrganizationByLogoKey } from '../../services/organizationService.js';
 import { randomUUID } from 'crypto';
 import {
   BetterAuthContext,
@@ -40,6 +38,8 @@ export interface UploadFileArgs {
     organizationId?: string;
   };
 }
+
+const OWNED_KEY_PATTERN = /^files\/(user-avatar|organization-logo)\/([a-zA-Z0-9_-]+)\/[^/]+$/;
 
 /**
  * Helper function to check if user has admin role
@@ -179,6 +179,12 @@ export const fileUploadResolvers = {
         const result = await uploadFile({
           file,
           type,
+          ownerId:
+            type === 'UserAvatar'
+              ? context.auth.user?.id
+              : type === 'OrganizationLogo'
+                ? organizationId
+                : undefined,
         });
 
         // If formId is provided and type is FormBackground, save to FormFile table
@@ -233,29 +239,22 @@ export const fileUploadResolvers = {
             );
           }
         } else {
-          // 🔒 SECURITY: Verify ownership for non-FormFile uploads.
-          // User.image and Organization.logo store the S3 key directly — use them for lookup.
-          const ownerUser = await findUserByImageKey(args.key);
-          if (ownerUser) {
-            if (ownerUser.id !== userId) {
+          // 🔒 SECURITY: Ownership comes from the key itself (files/<kind>/<ownerId>/...),
+          // written server-side at upload time. It must never be inferred from
+          // User.image / Organization.logo, which users can set to arbitrary values.
+          const ownedKey = args.key.match(OWNED_KEY_PATTERN);
+          if (ownedKey?.[1] === 'user-avatar') {
+            if (ownedKey[2] !== userId) {
               throw createGraphQLError('Access denied: You can only delete your own avatar', GRAPHQL_ERROR_CODES.NO_ACCESS);
             }
-          } else {
-            const ownerOrg = await findOrganizationByLogoKey({
-              where: { logo: args.key },
-              include: { members: { where: { userId }, select: { role: true } } },
-            });
-            if (ownerOrg) {
-              if (ownerOrg.members.length === 0) {
-                throw createGraphQLError('Access denied: You are not a member of this organization', GRAPHQL_ERROR_CODES.NO_ACCESS);
-              }
-              if (ownerOrg.members[0]?.role !== 'owner') {
-                throw createGraphQLError('Access denied: Only org owners can delete the organization logo', GRAPHQL_ERROR_CODES.NO_ACCESS);
-              }
-            } else {
-              // Key belongs to a FormTemplate or an untracked file — require admin role
-              requireAdminRole(context);
+          } else if (ownedKey?.[1] === 'organization-logo') {
+            const membership = await requireOrganizationMembership(context.auth, ownedKey[2]);
+            if (membership.role !== 'owner') {
+              throw createGraphQLError('Access denied: Only org owners can delete the organization logo', GRAPHQL_ERROR_CODES.NO_ACCESS);
             }
+          } else {
+            // Templates, legacy un-owned keys and anything untracked — require admin role
+            requireAdminRole(context);
           }
         }
 

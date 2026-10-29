@@ -24,7 +24,13 @@ import {
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl, getFormViewerUrl } from '../../lib/config';
 import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
-import { stashPendingConfigFields, consumePendingConfigFields } from '../../lib/pendingConfigFields';
+import {
+  stashPendingConfigFields,
+  consumePendingConfigFields,
+  beginOAuthConnect,
+  verifyOAuthReturn,
+  parseOAuthTokenFragment,
+} from '../../lib/pendingConfigFields';
 import {
   createOneDrivePickerSession,
   isOneDrivePickerConfigured,
@@ -122,12 +128,19 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
   // On mount: check if we just returned from Microsoft OAuth redirect
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes('microsoft_oauth_token=')) {
-      const raw = new URLSearchParams(hash.slice(1)).get('microsoft_oauth_token') ?? '';
+    const hashParams = new URLSearchParams(hash.slice(1));
+    const returnedFromConnect = verifyOAuthReturn('microsoft-sheets');
+    if (hashParams.has('microsoft_oauth_token')) {
       try {
-        const b64 = raw.replace(/-/g, '+').replace(/_/g, '/');
-        const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
-        const token: MicrosoftToken = JSON.parse(atob(padded));
+        // Only trust a token that comes back from a Connect flow this tab started.
+        const token = returnedFromConnect
+          ? parseOAuthTokenFragment<MicrosoftToken>(hashParams.get('microsoft_oauth_token') ?? '', [
+              'refreshToken',
+              'email',
+              'displayName',
+            ])
+          : null;
+        if (!token) throw new Error('OAuth return rejected');
         setMicrosoftToken(token);
         // Restore whatever the user had typed into "Plugin Name"/"Worksheet Name" before
         // Connect navigated the tab away — those edits lived only in local React state and
@@ -150,12 +163,12 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
           window.location.pathname + window.location.search
         );
       } catch (e) {
-        console.error('[MicrosoftSheets Config] token parse error:', e);
+        console.error('[MicrosoftSheets Config] token rejected:', e);
         setConnectionError(t('connection.authFailed'));
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
-    } else if (hash.includes('microsoft_oauth_error=')) {
-      const error =
-        new URLSearchParams(hash.slice(1)).get('microsoft_oauth_error') ?? '';
+    } else if (hashParams.has('microsoft_oauth_error')) {
+      const error = hashParams.get('microsoft_oauth_error') ?? '';
       console.warn('[MicrosoftSheets Config] OAuth error from redirect:', error);
       setConnectionError(t('connection.authFailed'));
       const pending = consumePendingConfigFields<{ pluginName?: string; worksheetName?: string; workbookName?: string; workbookNameTouched?: boolean }>(
@@ -220,7 +233,7 @@ export const MicrosoftSheetsConfigForm: React.FC<ConfigFormProps> = ({
     // guard (which would otherwise treat this like an accidental tab close) lets it through
     // unprompted.
     markIntentionalNavigation();
-    const returnTo = window.location.pathname + window.location.search;
+    const returnTo = beginOAuthConnect('microsoft-sheets', window.location.pathname + window.location.search);
     window.location.href = `${getApiBaseUrl()}/api/integrations/microsoft/auth?return_to=${encodeURIComponent(returnTo)}`;
   };
 

@@ -135,6 +135,8 @@ export const createFormRepository = (context?: RepositoryContext) => {
           {
             sharingScope: 'ALL_ORG_MEMBERS',
             defaultPermission: { not: 'NO_ACCESS' },
+            // An explicit per-user NO_ACCESS row overrides the org-wide default.
+            permissions: { none: { userId, permission: 'NO_ACCESS' } },
           },
         ],
       },

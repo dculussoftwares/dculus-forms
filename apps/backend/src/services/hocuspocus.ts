@@ -21,6 +21,7 @@ import {
 import { auth } from '../lib/better-auth.js';
 import { collaborativeDocumentRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
+import { registerHocuspocusServer } from './collaborationConnections.js';
 
 // Debounce configuration for metadata updates
 const METADATA_UPDATE_DEBOUNCE_MS = 5000; // 5 seconds
@@ -79,8 +80,14 @@ const validateUserAccess = async (
   }
 };
 
+// Persisted state ceiling (S13-02). Every anonymous submit to a form rebuilds
+// this document, so an oversized blob would amplify into a tenant-crossing DoS.
+export const MAX_COLLAB_DOCUMENT_BYTES = 5 * 1024 * 1024;
+// ws frame ceiling for the collaboration socket; real Y.js updates are far smaller.
+export const COLLAB_MAX_WS_PAYLOAD_BYTES = 1024 * 1024;
+
 export const createHocuspocusServer = () => {
-  return new Hocuspocus({
+  const server = new Hocuspocus({
     quiet: true,
     extensions: [
       new Database({
@@ -149,6 +156,13 @@ export const createHocuspocusServer = () => {
               logger.info(
                 `[Hocuspocus] Storing document ${documentName} with state length: ${state.length}`
               );
+            }
+
+            if (stateToStore.length > MAX_COLLAB_DOCUMENT_BYTES) {
+              logger.error(
+                `[Hocuspocus] Refusing to persist ${documentName}: ${stateToStore.length}B exceeds ${MAX_COLLAB_DOCUMENT_BYTES}B cap`
+              );
+              return;
             }
 
             await collaborativeDocumentRepository.saveDocumentState(
@@ -368,6 +382,8 @@ export const createHocuspocusServer = () => {
       }
     },
   });
+  registerHocuspocusServer(server);
+  return server;
 };
 
 /**

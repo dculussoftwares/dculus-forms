@@ -12,6 +12,26 @@ const TagIdsSchema = z.object({
   tagIds: z.array(z.string()),
 });
 
+// Tagging is triggered by anonymous submissions, so cost per call and calls per form are bounded.
+export const MAX_ANSWER_CHARS = 500;
+export const MAX_RESPONSE_PROMPT_CHARS = 8000;
+export const MAX_TAGGED_PER_FORM_PER_MINUTE = 60;
+const taggingWindows = new Map<string, { start: number; count: number }>();
+
+function allowTagging(formId: string, now = Date.now()): boolean {
+  const window = taggingWindows.get(formId);
+  if (!window || now - window.start >= 60_000) {
+    taggingWindows.set(formId, { start: now, count: 1 });
+    return true;
+  }
+  window.count += 1;
+  return window.count <= MAX_TAGGED_PER_FORM_PER_MINUTE;
+}
+
+export const resetAiTaggerRateLimit = () => taggingWindows.clear();
+
+const truncate = (text: string, max: number) => (text.length > max ? `${text.slice(0, max)}…` : text);
+
 export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => {
   const config = plugin.config as AiTaggerPluginConfig;
 
@@ -27,6 +47,11 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
   if (!event.data.responseId) {
     context.logger.warn('AI tagger: no responseId in event data', { formId: event.formId });
     return { success: false, error: 'No response ID', tagsApplied: [] };
+  }
+
+  if (!allowTagging(event.formId)) {
+    context.logger.warn('AI tagger: per-form rate limit reached, skipping', { formId: event.formId });
+    return { success: true, skipped: true, skipReason: 'Tagging rate limit reached', tagsApplied: [] };
   }
 
   // Tagging runs on public submissions, so it draws on the org's AI credits like every
@@ -76,12 +101,14 @@ export const aiTaggerHandler: PluginHandler = async (plugin, event, context) => 
       .filter(([key]) => !SKIP_KEYS.has(key))
       .map(([key, value]) => {
         const label = fieldLabelMap[key] ?? key;
-        const displayValue = Array.isArray(value) ? value.join(', ') : (value ?? '(no answer)');
+        const rawValue = Array.isArray(value) ? value.join(', ') : (value ?? '(no answer)');
+        const displayValue = truncate(typeof rawValue === 'string' ? rawValue : JSON.stringify(rawValue) ?? '', MAX_ANSWER_CHARS);
         const options = fieldOptionsMap[key];
         const optionsHint = options ? ` [all options: ${options.join(' | ')}]` : '';
         return `[${label}]${optionsHint}: ${displayValue}`;
       })
       .join('\n');
+    const boundedResponseFields = truncate(responseFields, MAX_RESPONSE_PROMPT_CHARS);
 
     const { output, usage } = await generateText({
       model: getFastModel(),
@@ -95,7 +122,7 @@ Rules:
 - When two tags have similar definitions, pick the single best-fitting one based on the response. Apply both only if the response independently satisfies each definition.
 - Return an empty array only if no tag has any reasonable match.
 - You MUST respond with valid JSON matching exactly: {"tagIds": ["id1", "id2"]}`,
-      prompt: `Tags to consider:\n${tagList}\n\nForm response:\n${responseFields}`,
+      prompt: `Tags to consider:\n${tagList}\n\nForm response:\n${boundedResponseFields}`,
     });
 
     const tokensUsed = usage?.totalTokens ?? 0;

@@ -16,6 +16,9 @@
   },
   "tokenLimitError": "AI credit limit reached. Upgrade your plan to continue.",
   "genericError": "Something went wrong. Please try again.",
+  "genericErrorTitle": "AI Error",
+  "messageTooLongError": "Your message is too long. Please keep it under {{max}} characters.",
+  "tooManyRequestsError": "The AI is busy with your other requests. Please wait for them to finish and try again.",
   "emptyState": "Ask AI to help you edit, improve, or rewrite any part of your form.",
   "openButton": "AI",
   "undo": "Undo",
@@ -92,6 +95,7 @@
     "acceptAll": "Accept all"
   },
   "pluginProposal": {
+    "rationaleUnverified": "AI explanation (unverified — review the settings above):",
     "title": "Suggested integration",
     "listed": "Read integrations",
     "createTitle": "Add {{type}} integration \"{{name}}\"?",

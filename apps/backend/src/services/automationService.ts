@@ -16,7 +16,19 @@ import {
   scheduleAutomationCron,
   unscheduleAutomationCron,
 } from './automation/triggerService.js';
-import { isValidCronExpression, isValidTimezone } from './automation/cronValidator.js';
+import {
+  isCronTooFrequent,
+  isValidCronExpression,
+  isValidTimezone,
+  MIN_SCHEDULE_INTERVAL_MINUTES,
+} from './automation/cronValidator.js';
+import {
+  describeGraphSizeViolation,
+  MAX_AUTOMATION_BYTES,
+  MAX_AUTOMATION_NAME_LENGTH,
+  MAX_AUTOMATIONS_PER_FORM,
+  MAX_AUTOMATIONS_PER_ORGANIZATION,
+} from './automation/limits.js';
 import { isAutomationEngineEnabled } from './automation/boss.js';
 import { AUTOMATION_TEMPLATE_IDS, getAutomationTemplate } from './automation/templates.js';
 import { copyAutomation } from './automation/copyAutomation.js';
@@ -55,9 +67,50 @@ function assertValidScheduleTriggerConfig(
       GRAPHQL_ERROR_CODES.BAD_USER_INPUT
     );
   }
+  if (isCronTooFrequent(triggerConfig.cron)) {
+    throw createGraphQLError(
+      `Schedules can run at most once every ${MIN_SCHEDULE_INTERVAL_MINUTES} minutes`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
   if (triggerConfig.timezone !== undefined && !isValidTimezone(triggerConfig.timezone)) {
     throw createGraphQLError(
       `Invalid timezone: ${triggerConfig.timezone}`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+}
+
+/** Trimmed, non-empty and bounded; names are rendered in lists, run history and notifications. */
+function normalizeAutomationName(name: unknown): string {
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+  if (trimmed.length === 0) {
+    throw createGraphQLError('Automation name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+  if (trimmed.length > MAX_AUTOMATION_NAME_LENGTH) {
+    throw createGraphQLError(
+      `Automation name must be at most ${MAX_AUTOMATION_NAME_LENGTH} characters`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+  return trimmed;
+}
+
+/** Per-form and per-organization ceilings so one tenant cannot queue unbounded scheduled work. */
+async function assertAutomationCapacity(formId: string, organizationId: string) {
+  const [formCount, organizationCount] = await Promise.all([
+    automationRepository.count({ where: { formId } }),
+    automationRepository.count({ where: { organizationId } }),
+  ]);
+  if (formCount >= MAX_AUTOMATIONS_PER_FORM) {
+    throw createGraphQLError(
+      `A form can have at most ${MAX_AUTOMATIONS_PER_FORM} automations — delete one to add another`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+  if (organizationCount >= MAX_AUTOMATIONS_PER_ORGANIZATION) {
+    throw createGraphQLError(
+      `An organization can have at most ${MAX_AUTOMATIONS_PER_ORGANIZATION} automations`,
       GRAPHQL_ERROR_CODES.BAD_USER_INPUT
     );
   }
@@ -121,9 +174,7 @@ export async function createAutomation(params: {
 }) {
   const { formId, organizationId, name, createdBy } = params;
 
-  if (!name || name.trim().length === 0) {
-    throw createGraphQLError('Automation name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
-  }
+  const trimmedName = normalizeAutomationName(name);
 
   // A template dictates its own trigger — a follow-up email only makes sense on a submission, a
   // digest only on a schedule — so it takes precedence over whatever the dialog last had selected.
@@ -143,11 +194,13 @@ export async function createAutomation(params: {
     );
   }
 
+  await assertAutomationCapacity(formId, organizationId);
+
   return automationRepository.createAutomation({
     id: generateId(),
     formId,
     organizationId,
-    name,
+    name: trimmedName,
     status: 'DRAFT',
     triggerType,
     graph: (template ? template.buildGraph() : buildDefaultGraph(triggerType)) as any,
@@ -175,6 +228,8 @@ export async function duplicateAutomation(
   },
   createdBy: string
 ) {
+  await assertAutomationCapacity(automation.formId, automation.organizationId);
+
   // Copy what the author sees in the builder, not the (possibly older) published version.
   return copyAutomation(
     {
@@ -189,7 +244,7 @@ export async function duplicateAutomation(
 }
 
 /** Autosaved drafts above this serialized size are rejected, as a guard against runaway payloads. */
-const MAX_DRAFT_BYTES = 512 * 1024;
+const MAX_DRAFT_BYTES = MAX_AUTOMATION_BYTES;
 
 interface DraftAwareAutomation {
   id: string;
@@ -254,6 +309,11 @@ function collectPublishIssues(graph: unknown, triggerConfig: unknown, triggerTyp
     const config = triggerConfig as { cron?: string; timezone?: string } | null;
     if (!config || typeof config !== 'object' || !isValidCronExpression(config.cron as string)) {
       issues.push({ code: 'INVALID_TRIGGER_CONFIG', message: 'Set up a valid schedule for this automation.' });
+    } else if (isCronTooFrequent(config.cron)) {
+      issues.push({
+        code: 'INVALID_TRIGGER_CONFIG',
+        message: `Schedules can run at most once every ${MIN_SCHEDULE_INTERVAL_MINUTES} minutes.`,
+      });
     } else if (config.timezone !== undefined && !isValidTimezone(config.timezone)) {
       issues.push({ code: 'INVALID_TRIGGER_CONFIG', message: `Invalid timezone: ${config.timezone}` });
     }
@@ -456,7 +516,27 @@ export async function updateAutomation(
   automation: { id: string; status: string; triggerType: string; graph: unknown },
   updates: { name?: string; graph?: any; triggerConfig?: any }
 ) {
-  const { name, triggerConfig } = updates;
+  const { triggerConfig } = updates;
+  const name = updates.name === undefined ? undefined : normalizeAutomationName(updates.name);
+  if (updates.graph !== undefined) {
+    if (!isGraphShape(updates.graph)) {
+      throw createGraphQLError('Graph must contain nodes and edges arrays', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+    }
+    const sizeViolation = describeGraphSizeViolation(updates.graph);
+    if (sizeViolation) {
+      throw createGraphQLError(sizeViolation, GRAPHQL_ERROR_CODES.AUTOMATION_DRAFT_TOO_LARGE);
+    }
+  }
+  if (
+    triggerConfig !== undefined &&
+    triggerConfig !== null &&
+    (typeof triggerConfig !== 'object' || Array.isArray(triggerConfig))
+  ) {
+    throw createGraphQLError('triggerConfig must be an object', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+  if (stableStringify({ g: updates.graph, t: triggerConfig }).length > MAX_AUTOMATION_BYTES) {
+    throw createGraphQLError('Automation is too large to save', GRAPHQL_ERROR_CODES.AUTOMATION_DRAFT_TOO_LARGE);
+  }
   // The builder saves the whole graph, including the sheet layout it loaded; keep the latest one.
   const graph =
     updates.graph === undefined

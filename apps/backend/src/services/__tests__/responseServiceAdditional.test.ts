@@ -22,6 +22,7 @@ vi.mock('../../repositories/index.js', () => ({
   }
 }));
 
+vi.mock('../dataRetentionService.js', () => ({ purgeResponseSideDataSafely: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('../responseFilterService.js', () => ({
   applyResponseFilters: vi.fn((responses) => responses),
   ResponseFilter: {}

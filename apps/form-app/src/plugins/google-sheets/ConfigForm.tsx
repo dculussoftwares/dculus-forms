@@ -24,7 +24,13 @@ import {
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiBaseUrl, getFormViewerUrl } from '../../lib/config';
 import { markIntentionalNavigation } from '../../lib/intentionalNavigation';
-import { stashPendingConfigFields, consumePendingConfigFields } from '../../lib/pendingConfigFields';
+import {
+  stashPendingConfigFields,
+  consumePendingConfigFields,
+  beginOAuthConnect,
+  verifyOAuthReturn,
+  parseOAuthTokenFragment,
+} from '../../lib/pendingConfigFields';
 import { isGoogleFolderPickerConfigured, pickGoogleDriveFolder, type PickedFolder } from '../../lib/googlePicker';
 import { createGoogleDriveFolder, fetchGoogleDriveParentId, getDriveFolderUrl } from '../../lib/googleDrive';
 import { DestinationFolderField } from '../../components/plugins/shared/DestinationFolderField';
@@ -114,13 +120,15 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
   // On mount: check if we just returned from Google OAuth redirect
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes('google_oauth_token=')) {
-      const raw = new URLSearchParams(hash.slice(1)).get('google_oauth_token') ?? '';
+    const hashParams = new URLSearchParams(hash.slice(1));
+    const returnedFromConnect = verifyOAuthReturn('google-sheets');
+    if (hashParams.has('google_oauth_token')) {
       try {
-        const b64 = raw.replace(/-/g, '+').replace(/_/g, '/');
-        const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
-        const token: GoogleToken = JSON.parse(atob(padded));
-        console.log('[GSheets Config] ✅ token from redirect for:', token.email);
+        // Only trust a token that comes back from a Connect flow this tab started.
+        const token = returnedFromConnect
+          ? parseOAuthTokenFragment<GoogleToken>(hashParams.get('google_oauth_token') ?? '', ['refreshToken', 'email'])
+          : null;
+        if (!token) throw new Error('OAuth return rejected');
         setGoogleToken(token);
         // Restore whatever the user had typed into "Plugin Name" before Connect navigated the
         // tab away — that edit lived only in local React state and was never saved, so the
@@ -137,11 +145,12 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
         // Clean hash from URL without triggering a navigation
         window.history.replaceState(null, '', window.location.pathname + window.location.search);
       } catch (e) {
-        console.error('[GSheets Config] token parse error:', e);
+        console.error('[GSheets Config] token rejected:', e);
         setConnectionError(t('connection.authFailed'));
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
       }
-    } else if (hash.includes('google_oauth_error=')) {
-      const error = new URLSearchParams(hash.slice(1)).get('google_oauth_error') ?? '';
+    } else if (hashParams.has('google_oauth_error')) {
+      const error = hashParams.get('google_oauth_error') ?? '';
       console.warn('[GSheets Config] OAuth error from redirect:', error);
       setConnectionError(t('connection.authFailed'));
       const pending = consumePendingConfigFields<{ pluginName?: string; sheetName?: string; sheetNameTouched?: boolean }>('google-sheets');
@@ -198,7 +207,7 @@ export const GoogleSheetsConfigForm: React.FC<ConfigFormProps> = ({
     // navigation as intentional first so the automation builder's beforeunload guard (which
     // would otherwise treat this like an accidental tab close) lets it through unprompted.
     markIntentionalNavigation();
-    const returnTo = window.location.pathname + window.location.search;
+    const returnTo = beginOAuthConnect('google-sheets', window.location.pathname + window.location.search);
     window.location.href = `${getApiBaseUrl()}/api/integrations/google/auth?return_to=${encodeURIComponent(returnTo)}`;
   };
 

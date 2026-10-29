@@ -23,13 +23,21 @@ export const executePlugin = async (
   }, idempotencyKey);
 
   try {
-    const plugin = await prisma.formPlugin.findUnique({ where: { id: pluginId } });
+    const plugin = await prisma.formPlugin.findUnique({
+      where: { id: pluginId },
+      include: { form: { select: { deletedAt: true } } },
+    });
 
     if (!plugin) throw new Error(`Plugin ${pluginId} not found`);
 
     if (!plugin.enabled) {
       context.logger.warn(`Plugin ${pluginId} is disabled, skipping execution`);
       return { success: false, error: 'Plugin is disabled' };
+    }
+
+    if (plugin.form?.deletedAt) {
+      context.logger.warn(`Form for plugin ${pluginId} is deleted, skipping execution`);
+      return { success: false, error: 'Form is deleted' };
     }
 
     const handler = getPluginHandler(plugin.type);
@@ -116,7 +124,7 @@ export const executePluginsForForm = async (
 
   try {
     const plugins = await prisma.formPlugin.findMany({
-      where: { formId, enabled: true, events: { has: event.type } },
+      where: { formId, enabled: true, events: { has: event.type }, form: { deletedAt: null } },
     });
 
     if (plugins.length === 0) {

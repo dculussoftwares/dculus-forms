@@ -3,6 +3,7 @@ import * as formSharingService from '../../services/formSharingService.js';
 import { checkFormAccess } from '../../services/formSharingService.js';
 import type { Permission, Scope } from '../../services/formSharingService.js';
 import { requireFormViewerAccess } from '../../lib/formFieldAccess.js';
+import { closeFormCollaborationConnections } from '../../services/collaborationConnections.js';
 
 // Re-exported for backward compatibility — other resolvers/services import these
 // directly from this file (e.g. formService.ts's checkFormAccess-based permission
@@ -73,7 +74,10 @@ export const formSharingResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      return formSharingService.shareForm(context.auth.user!.id, input);
+      const result = await formSharingService.shareForm(context.auth.user!.id, input);
+      // Live editors must re-authenticate against the new access rules (S13-01)
+      closeFormCollaborationConnections(input.formId);
+      return result;
     },
 
     updateFormPermission: async (
@@ -83,7 +87,9 @@ export const formSharingResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      return formSharingService.updateFormPermission(context.auth.user!.id, input);
+      const result = await formSharingService.updateFormPermission(context.auth.user!.id, input);
+      closeFormCollaborationConnections(input.formId);
+      return result;
     },
 
     removeFormAccess: async (
@@ -93,15 +99,27 @@ export const formSharingResolvers = {
     ) => {
       requireAuth(context.auth);
 
-      return formSharingService.removeFormAccess(context.auth.user!.id, formId, userId);
+      const result = await formSharingService.removeFormAccess(context.auth.user!.id, formId, userId);
+      closeFormCollaborationConnections(formId);
+      return result;
     }
   },
 
   Form: {
     // Lists every collaborator's email, so it must never resolve for the
-    // anonymous viewer that reaches `Form` through `formByShortUrl`.
+    // anonymous viewer that reaches `Form` through `formByShortUrl`. Like the
+    // `formPermissions` query it is OWNER-only; other readers get an empty list
+    // (they can rely on `userPermission` for their own level).
     permissions: async (parent: any, _args: any, context: { auth: BetterAuthContext }) => {
       await requireFormViewerAccess(parent.id, context);
+
+      const access = await checkFormAccess(
+        context.auth.user!.id,
+        parent.id,
+        formSharingService.PermissionLevel.OWNER
+      );
+      if (!access.hasAccess) return [];
+
       return formSharingService.listFormPermissions(parent.id);
     },
 
