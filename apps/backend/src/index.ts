@@ -238,8 +238,11 @@ const credentialedJsonParser = express.json({ limit: '10mb' });
 app.use(async (req, res, next) => {
   // Headers alone prove nothing (`Authorization: x` is enough to fake them), so
   // the larger limit is only granted after the session is actually validated.
+  // Only JSON bodies need the lookup; bodyless requests (GET /health) skip it.
+  const hasJsonBody = !!req.is('application/json');
   const claimsCredentials =
-    !!req.headers.authorization || /session_token/.test(req.headers.cookie ?? '');
+    hasJsonBody &&
+    (!!req.headers.authorization || /session_token/.test(req.headers.cookie ?? ''));
   let hasValidSession = false;
   if (claimsCredentials) {
     try {
