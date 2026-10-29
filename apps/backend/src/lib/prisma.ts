@@ -20,7 +20,7 @@ function positiveIntFromEnv(name: string, fallback: number): number {
  * Build the pg driver adapter.
  *
  * In production (PgBouncer transaction mode) the app-side pool stays small
- * (DB_POOL_MAX, default 10) — PgBouncer handles real server-side pooling. The adapter does not
+ * (DB_POOL_MAX, default 2) — PgBouncer handles real server-side pooling. The adapter does not
  * send named/prepared statements unless a statementNameGenerator is supplied
  * (we don't supply one), which is required for PgBouncer transaction mode
  * compatibility — this replaces the old `pgbouncer=true` query-string flag
@@ -34,7 +34,7 @@ function buildAdapter(): PrismaPg {
 
   assertSecureDatabaseUrl(connectionString, appConfig.isProduction);
 
-  const max = isLocalDatabase(connectionString) ? undefined : positiveIntFromEnv('DB_POOL_MAX', 10);
+  const max = isLocalDatabase(connectionString) ? undefined : positiveIntFromEnv('DB_POOL_MAX', 2);
 
   // query_timeout is enforced client-side: a server-side statement_timeout startup
   // parameter is rejected by PgBouncer unless it is explicitly ignored.
