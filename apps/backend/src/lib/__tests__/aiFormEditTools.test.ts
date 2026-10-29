@@ -949,21 +949,29 @@ describe('listPlugins', () => {
 describe('proposePlugin (proposal only)', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('proposes a webhook with an https URL and masked-out secret carried in config', async () => {
+  it('proposes a webhook with an https URL and never carries a secret', async () => {
     const tools = makePluginTools();
     const result = await tools.proposePlugin.execute!({
       pluginType: 'webhook', name: 'CRM sync',
-      webhook: { url: 'https://example.com/hook', secret: 's3cret' },
+      webhook: { url: 'https://example.com/hook', secret: 's3cret' } as any,
       rationale: 'Send submissions to the CRM.',
     }, { messages: [], toolCallId: 'test' }) as any;
     expect(result).toEqual({
       type: 'PROPOSE_CREATE_PLUGIN',
       pluginType: 'webhook',
       name: 'CRM sync',
-      config: { type: 'webhook', url: 'https://example.com/hook', secret: 's3cret' },
+      config: { type: 'webhook', url: 'https://example.com/hook' },
       events: ['form.submitted'],
       rationale: 'Send submissions to the CRM.',
     });
+  });
+
+  it('rejects a webhook URL that targets a private address', async () => {
+    const tools = makePluginTools();
+    const result = await tools.proposePlugin.execute!({
+      pluginType: 'webhook', name: 'Internal', webhook: { url: 'https://169.254.169.254/latest' }, rationale: 'x',
+    }, { messages: [], toolCallId: 'test' }) as any;
+    expect(result.error).toMatch(/not allowed/i);
   });
 
   it('rejects a non-https webhook URL', async () => {

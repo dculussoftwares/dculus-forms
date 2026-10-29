@@ -103,7 +103,7 @@ describe('Automations Resolvers', () => {
 
       const result = await automationsResolvers.Query.formAutomations({}, { formId: 'form-123' }, mockContext);
 
-      expect(result).toEqual([withDraft]);
+      expect(result).toEqual([{ ...withDraft, _revealSecrets: false }]);
     });
 
     it('automation: hides the draft from a VIEWER but still reports that one exists', async () => {
@@ -139,14 +139,21 @@ describe('Automations Resolvers', () => {
 
       grantAccess('VIEWER');
       const viewer: any = await automationsResolvers.Query.automation({}, { id: 'automation-123' }, mockContext);
-      const json = JSON.stringify(viewer.graph);
+      const json = JSON.stringify(automationsResolvers.Automation.graph(viewer));
       expect(json).not.toContain('hmac-secret');
       expect(json).not.toContain('Bearer abc');
       expect(json).toContain('https://example.com/h');
 
+      // EDITORs can edit but, like plugins, never read credentials back.
       grantAccess('EDITOR');
       const editor: any = await automationsResolvers.Query.automation({}, { id: 'automation-123' }, mockContext);
-      expect(JSON.stringify(editor.graph)).toContain('hmac-secret');
+      const editorJson = JSON.stringify(automationsResolvers.Automation.graph(editor));
+      expect(editorJson).not.toContain('hmac-secret');
+      expect(editorJson).toContain('https://example.com/h');
+
+      grantAccess('OWNER');
+      const owner: any = await automationsResolvers.Query.automation({}, { id: 'automation-123' }, mockContext);
+      expect(JSON.stringify(automationsResolvers.Automation.graph(owner))).toContain('hmac-secret');
     });
 
     it('hasUnpublishedChanges: derives from the draft columns', () => {
@@ -180,6 +187,12 @@ describe('Automations Resolvers', () => {
     it('saveAutomationDraft / publishAutomation / discardAutomationDraft delegate to the service with the caller id', async () => {
       vi.mocked(automationService.getAutomationById).mockResolvedValue(mockAutomation as any);
       grantAccess('EDITOR');
+      vi.mocked(automationService.saveAutomationDraft).mockResolvedValue({
+        automation: mockAutomation,
+        validationErrors: [],
+      } as any);
+      vi.mocked(automationService.publishAutomation).mockResolvedValue(mockAutomation as any);
+      vi.mocked(automationService.discardAutomationDraft).mockResolvedValue(mockAutomation as any);
 
       await automationsResolvers.Mutation.saveAutomationDraft(
         {},
@@ -274,7 +287,7 @@ describe('Automations Resolvers', () => {
         triggerType: 'form.submitted',
         createdBy: 'user-123',
       });
-      expect(result).toEqual(mockAutomation);
+      expect(result).toEqual({ ...mockAutomation, _revealSecrets: false });
     });
 
     it('automation: allows OWNER access to read', async () => {
@@ -287,7 +300,7 @@ describe('Automations Resolvers', () => {
         mockContext
       );
 
-      expect(result).toEqual(mockAutomation);
+      expect(result).toEqual({ ...mockAutomation, _revealSecrets: true });
     });
 
     it('automation: throws AUTOMATION_NOT_FOUND when the automation does not exist', async () => {
@@ -331,7 +344,7 @@ describe('Automations Resolvers', () => {
         graph: undefined,
         triggerConfig: undefined,
       });
-      expect(result).toEqual(updated);
+      expect(result).toEqual({ ...updated, _revealSecrets: false });
     });
 
     it('updateAutomation: denies without EDITOR+ access', async () => {
@@ -361,7 +374,7 @@ describe('Automations Resolvers', () => {
       );
 
       expect(automationService.setAutomationStatus).toHaveBeenCalledWith(mockAutomation, 'ACTIVE');
-      expect(result).toEqual(updated);
+      expect(result).toEqual({ ...updated, _revealSecrets: false });
     });
 
     it('setAutomationStatus: denies without EDITOR+ access', async () => {

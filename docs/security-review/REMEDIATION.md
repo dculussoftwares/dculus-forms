@@ -76,3 +76,38 @@ Operational follow-ups:
 - `pnpm audit --prod` still reports unrelated advisories (`qs`, `zod`, `body-parser`, `multer`, `vite`,
   `proxy-addr`, `brace-expansion`, `deepmerge-ts`, `fast-copy`, `@vitest/mocker`) — not part of these findings;
   track separately.
+
+## Hardening follow-ups (plugins / automations)
+
+### Credential encryption at rest
+
+Webhook secrets, request-header values and Google/Microsoft OAuth tokens in `FormPlugin.config`, `Automation.graph` /
+`draftGraph` and `AutomationRun.graphSnapshot` are encrypted with AES-256-GCM (`apps/backend/src/lib/credentialCrypto.ts`,
+applied by a Prisma client extension so no caller handles ciphertext).
+
+- **Enable:** create the GitHub Actions secret `CREDENTIAL_ENCRYPTION_KEY` (`openssl rand -base64 32`). The deployment
+  workflow passes it to Terraform (`credential_encryption_key`) and on to the backend container. Unset = encryption off.
+- Existing plaintext values stay readable. A row's credentials are encrypted when a write includes that column
+  (plugin config save, automation graph/draft save, a new run); a write that doesn't touch it (e.g. a run status
+  update) leaves the old plaintext in place. Rows that are never rewritten stay plaintext until a one-off
+  re-save/backfill is run; none is provided. Nested writes of plugin/automation/run rows through `Form`/`Automation`
+  are rejected by the extension so they can't bypass sealing; write the model directly.
+- **Never rotate or remove the key casually.** A value that cannot be decrypted makes reads of that plugin/automation
+  fail loudly (`CredentialCryptoError`) instead of using ciphertext. Rotation needs a re-encryption script (the `enc:v1:`
+  prefix leaves room for a `v2`).
+
+### Outbound network policy
+
+- Webhook and automation destinations that resolve to private / loopback / link-local addresses are blocked
+  (`lib/urlGuard.ts`). Self-hosted installs that must reach internal services can set `OUTBOUND_ALLOW_PRIVATE_NETWORK=true`.
+- Infrastructure (not done in code): put the backend container behind an egress policy (NAT / firewall allow-list) so a
+  DNS-rebinding bypass of the application-level check still cannot reach the database, PgBouncer or cloud metadata.
+
+### Other behaviour changes
+
+- A webhook that returns `success: false` is recorded as a **failed** delivery (previously `success`), so backfill retries it.
+- Email plugins only send to a recipient field that holds a single valid address, and the field must be an email field
+  (checked at save time and again on every send).
+- Automation action credentials are masked for everyone except the form OWNER (EDITORs can still edit; masked values are
+  restored on save), matching plugin configs.
+- The AI form builder no longer accepts a webhook signing secret through chat; set it in the integration's settings.

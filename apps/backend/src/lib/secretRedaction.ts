@@ -9,8 +9,9 @@
  * The inverse, {@link mergeMaskedConfig}, treats a mask coming back on save as "unchanged", so a
  * client that round-trips a masked config can never overwrite a stored secret with the mask.
  *
- * Follow-up (not done here): encrypt these values at rest and stop copying them into
- * `AutomationRun.graphSnapshot`.
+ * The same credential detection drives encryption at rest (lib/credentialCrypto.ts), so the two
+ * can never disagree about which values are sensitive. Encrypted values are what the database
+ * (including `AutomationRun.graphSnapshot`) holds; everything in this file works on plaintext.
  */
 
 export const SECRET_MASK = '••••••••';
@@ -59,6 +60,31 @@ export const redactPluginConfig = <T>(config: T): T => {
   if ('secret' in config) redacted.hasSecret = hasValue(config.secret);
 
   return redacted as T;
+};
+
+/** Applies `transform` to every credential string of a plugin / action config, leaving the rest as is. */
+export const mapConfigCredentials = <T>(config: T, transform: (value: string) => string): T => {
+  if (!isRecord(config)) return config;
+
+  const mapped: ConfigRecord = { ...config };
+  const apply = (value: unknown) => (typeof value === 'string' && value !== '' ? transform(value) : value);
+
+  for (const key of Object.keys(mapped)) {
+    const value = mapped[key];
+    if ((TOKEN_KEYS as readonly string[]).includes(key)) {
+      if (isRecord(value)) {
+        const token: ConfigRecord = { ...value };
+        for (const field of TOKEN_SECRET_FIELDS) token[field] = apply(token[field]);
+        mapped[key] = token;
+      }
+    } else if (key === 'headers' && isRecord(value)) {
+      mapped.headers = Object.fromEntries(Object.entries(value).map(([name, headerValue]) => [name, apply(headerValue)]));
+    } else if (SECRET_FIELD_PATTERN.test(key)) {
+      mapped[key] = apply(value);
+    }
+  }
+
+  return mapped as T;
 };
 
 const mergeToken = (existing: unknown, incoming: unknown): unknown => {
@@ -132,6 +158,10 @@ const mapActionConfigs = <T>(graph: T, transform: (node: { id?: string }, config
     }),
   } as T;
 };
+
+/** Graph counterpart of {@link mapConfigCredentials}: covers every action node's config. */
+export const mapGraphCredentials = <T>(graph: T, transform: (value: string) => string): T =>
+  mapActionConfigs(graph, (_node, config) => mapConfigCredentials(config, transform));
 
 export const redactAutomationGraph = <T>(graph: T): T =>
   mapActionConfigs(graph, (_node, config) => redactPluginConfig(config));

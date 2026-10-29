@@ -28,6 +28,9 @@ vi.mock('#prisma-client', () => {
   return {
     PrismaClient: class {
       subscription = mockSubscription;
+      $extends() {
+        return this;
+      }
     },
   };
 });

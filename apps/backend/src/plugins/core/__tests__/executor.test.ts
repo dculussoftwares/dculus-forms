@@ -109,6 +109,39 @@ describe('executor', () => {
       expect(result).toEqual({ success: true });
     });
 
+    it('records a handler result with success:false as a failed delivery', async () => {
+      const mockPlugin = { id: 'plugin-1', name: 'Hook', type: 'webhook', enabled: true, config: {} };
+      const failure = { success: false, error: 'Webhook returned 500' };
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockPlugin as any);
+      vi.mocked(getPluginHandler).mockReturnValue(vi.fn().mockResolvedValue(failure));
+      vi.mocked(prisma.pluginDelivery.create).mockResolvedValue({} as any);
+
+      const result = await executePlugin('plugin-1', mockEvent);
+
+      expect(prisma.pluginDelivery.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          status: 'failed',
+          errorMessage: 'Webhook returned 500',
+          response: failure,
+        }),
+      });
+      expect(result).toEqual({ success: false, error: 'Webhook returned 500' });
+    });
+
+    it('keeps a deliberately skipped result as a successful delivery', async () => {
+      const mockPlugin = { id: 'plugin-1', name: 'Mail', type: 'email', enabled: true, config: {} };
+      const skipped = { success: false, skipped: true, skipReason: 'no recipient' };
+      vi.mocked(prisma.formPlugin.findUnique).mockResolvedValue(mockPlugin as any);
+      vi.mocked(getPluginHandler).mockReturnValue(vi.fn().mockResolvedValue(skipped));
+      vi.mocked(prisma.pluginDelivery.create).mockResolvedValue({} as any);
+
+      await executePlugin('plugin-1', mockEvent);
+
+      expect(prisma.pluginDelivery.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ status: 'success' }),
+      });
+    });
+
     it('wires createPluginContext with a persistence strategy that writes back to the FormPlugin row', async () => {
       const mockPlugin = {
         id: 'plugin-1',

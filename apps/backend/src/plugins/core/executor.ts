@@ -44,6 +44,30 @@ export const executePlugin = async (
     const result = await handler({ id: pluginId, config: plugin.config as PluginConfig }, event, context);
     const duration = Date.now() - startTime;
 
+    // Handlers report delivery problems (non-2xx webhook, failed sheet sync) by returning
+    // `success: false` instead of throwing. Deliberate skips (`skipped: true`) are not failures.
+    const reportedFailure = result?.success === false && result?.skipped !== true;
+    if (reportedFailure) {
+      const failureMessage = typeof result.error === 'string' && result.error ? result.error : 'Plugin reported a failed delivery';
+      context.logger.error(`Plugin reported failure: ${plugin.name}`, { pluginId, duration: `${duration}ms`, error: failureMessage });
+
+      await prisma.pluginDelivery.create({
+        data: {
+          id: generateId(),
+          pluginId,
+          responseId: event.data?.responseId ?? null,
+          eventType: event.type,
+          status: 'failed',
+          payload: event.data,
+          response: result,
+          errorMessage: failureMessage,
+          deliveredAt: new Date(),
+        },
+      });
+
+      return { success: false, error: failureMessage };
+    }
+
     context.logger.info(`Plugin executed successfully: ${plugin.name}`, {
       pluginId,
       duration: `${duration}ms`,

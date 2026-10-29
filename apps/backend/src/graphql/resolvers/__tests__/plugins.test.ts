@@ -7,12 +7,14 @@ import * as formSharingResolvers from '../formSharing.js';
 import * as pluginEvents from '../../../plugins/core/events.js';
 import * as pluginBackfill from '../../../plugins/core/backfill.js';
 import { prisma } from '../../../lib/prisma.js';
+import { getFormSchemaFromHocuspocus } from '../../../services/hocuspocus.js';
 
 // Mock all dependencies
 vi.mock('../../../middleware/better-auth-middleware.js');
 vi.mock('../formSharing.js');
 vi.mock('../../../plugins/core/events.js');
 vi.mock('../../../plugins/core/backfill.js');
+vi.mock('../../../services/hocuspocus.js', () => ({ getFormSchemaFromHocuspocus: vi.fn().mockResolvedValue(null) }));
 // Save-time URL screening is exercised in lib/__tests__/urlGuard.test.ts; keep DNS out of these tests.
 vi.mock('../../../lib/urlGuard.js', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../lib/urlGuard.js')>();
@@ -568,6 +570,65 @@ describe('Plugins Resolvers', () => {
       await expect(
         pluginsResolvers.Mutation.createFormPlugin({}, { input }, mockContext)
       ).rejects.toThrow('Invalid event types: invalid.event, another.invalid. Supported events: form.submitted, plugin.test');
+    });
+
+    describe('email recipient field', () => {
+      const emailInput = (recipientFieldId: string) => ({
+        formId: 'form-123',
+        type: 'email',
+        name: 'Receipt',
+        config: { recipientFieldId, subject: 'Hi', message: 'Thanks' },
+        events: ['form.submitted'],
+      });
+      const schemaWith = (type: string) => ({ pages: [{ fields: [{ id: 'f1', type }] }] });
+
+      beforeEach(() => {
+        vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+        vi.mocked(formSharingResolvers.checkFormAccess).mockResolvedValue({
+          hasAccess: true,
+          permission: 'OWNER' as any,
+          form: mockForm as any,
+        });
+        vi.mocked(prisma.formPlugin.create).mockResolvedValue(mockWebhookPlugin as any);
+      });
+
+      it('rejects a recipient field that is not an email field', async () => {
+        vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce(schemaWith('text_input_field'));
+        await expect(
+          pluginsResolvers.Mutation.createFormPlugin({}, { input: emailInput('f1') }, mockContext)
+        ).rejects.toThrow('recipient field must be an email field');
+        expect(prisma.formPlugin.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects a recipient field that does not exist on the form', async () => {
+        vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce(schemaWith('email_field'));
+        await expect(
+          pluginsResolvers.Mutation.createFormPlugin({}, { input: emailInput('missing') }, mockContext)
+        ).rejects.toThrow('recipient field must be an email field');
+      });
+
+      it('rejects the recipient field when the form schema cannot be loaded', async () => {
+        vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce(null);
+        await expect(
+          pluginsResolvers.Mutation.createFormPlugin({}, { input: emailInput('f1') }, mockContext)
+        ).rejects.toThrow('recipient field must be an email field');
+        expect(prisma.formPlugin.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects a soft-deleted email field', async () => {
+        vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce({
+          pages: [{ fields: [{ id: 'f1', type: 'email_field', deleted: true }] }],
+        } as any);
+        await expect(
+          pluginsResolvers.Mutation.createFormPlugin({}, { input: emailInput('f1') }, mockContext)
+        ).rejects.toThrow('recipient field must be an email field');
+      });
+
+      it('accepts an email field', async () => {
+        vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValueOnce(schemaWith('email_field'));
+        await pluginsResolvers.Mutation.createFormPlugin({}, { input: emailInput('f1') }, mockContext);
+        expect(prisma.formPlugin.create).toHaveBeenCalled();
+      });
     });
 
     it('should accept plugin.test event', async () => {

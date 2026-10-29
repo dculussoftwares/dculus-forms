@@ -1,5 +1,6 @@
 import { Prisma } from '#prisma-client';
 import { resolvePrisma, type RepositoryContext } from './baseRepository.js';
+import { sealPluginConfig } from '../lib/credentialCrypto.js';
 
 const ACTIVE_RUN_STATUSES = ['RUNNING', 'WAITING'] as const;
 
@@ -250,7 +251,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
         (
           SELECT COALESCE(jsonb_agg(
             CASE WHEN elem->>'id' = ${nodeId}
-              THEN jsonb_set(elem, '{data,config}', ${JSON.stringify(config)}::jsonb, true)
+              THEN jsonb_set(elem, '{data,config}', ${JSON.stringify(sealPluginConfig(config))}::jsonb, true)
               ELSE elem
             END
           ), '[]'::jsonb)
@@ -291,7 +292,7 @@ export const createAutomationRepository = (context?: RepositoryContext) => {
         (
           SELECT COALESCE(jsonb_agg(
             CASE WHEN elem->>'id' = ${nodeId}
-              THEN jsonb_set(elem, '{data,config}', ${JSON.stringify(config)}::jsonb, true)
+              THEN jsonb_set(elem, '{data,config}', ${JSON.stringify(sealPluginConfig(config))}::jsonb, true)
               ELSE elem
             END
           ), '[]'::jsonb)
