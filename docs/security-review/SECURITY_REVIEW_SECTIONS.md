@@ -145,29 +145,42 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 
 ## Findings tracker
 
-| Section | Agent | Status | Critical | High | Medium | Low |
-|---------|-------|--------|----------|------|--------|-----|
-| S01 | general-purpose | done | 0 | 1 | 5 | 7 |
-| S02 | auth-permission-auditor | done | 0 | 3 | 3 | 4 |
-| S03 | auth-permission-auditor | done | 0 | 1 | 4 | 5 |
-| S04 | general-purpose | done | 0 | 2 | 5 | 3 |
-| S05 | general-purpose | done | 0 | 1 | 3 | 5 |
-| S06 | general-purpose | done | 0 | 1 | 5 | 7 |
-| S07 | general-purpose | done | 0 | 2 | 6 | 5 |
-| S08 | general-purpose | done | 0 | 3 | 6 | 5 |
-| S09 | general-purpose | done | 0 | 0 | 4 | 8 |
-| S10 | pdf-template-expert | done | 0 | 0 | 6 | 6 |
-| S11 | response-filter-auditor | done | 0 | 0 | 3 | 6 |
-| S12 | subscription-billing-expert | done | 0 | 2 | 5 | 4 |
-| S13 | general-purpose | done | 0 | 0 | 2 | 5 |
-| S14 | general-purpose | done | 0 | 1 | 8 | 7 |
-| S15 | auth-permission-auditor | done | 0 | 0 | 2 | 5 |
-| S16 | general-purpose | done | 0 | 0 | 1 | 6 |
-| S17 | general-purpose | done | 0 | 0 | 1 | 5 |
-| S18 | general-purpose | done | 0 | 0 | 1 | 4 |
-| S19 | general-purpose | done | 0 | 0 | 1 | 4 |
-| S20 | general-purpose | done | 0 | 2 | 8 | 6 |
-| S21 | general-purpose | done | 0 | 2 | 7 | 7 |
-| S22 | general-purpose | done | 0 | 0 | 4 | 5 |
-| S23 | general-purpose | done | 0 | 2 | 5 | 6 |
-| S24 | general-purpose | done | 0 | 0 | 4 | 4 |
+| Section | Agent | Status | Critical | High | Medium | Low | High remediation |
+|---------|-------|--------|----------|------|--------|-----|------------------|
+| S01 | general-purpose | done | 0 | 1 | 5 | 7 | Fixed in code (#442) |
+| S02 | auth-permission-auditor | done | 0 | 3 | 3 | 4 | Fixed in code (#442) |
+| S03 | auth-permission-auditor | done | 0 | 1 | 4 | 5 | Fixed in code (#442) |
+| S04 | general-purpose | done | 0 | 2 | 5 | 3 | Fixed in code (#442) |
+| S05 | general-purpose | done | 0 | 1 | 3 | 5 | Fixed in code (#442) |
+| S06 | general-purpose | done | 0 | 1 | 5 | 7 | Fixed in code (#442) |
+| S07 | general-purpose | done | 0 | 2 | 6 | 5 | Fixed in code (#442) |
+| S08 | general-purpose | done | 0 | 3 | 6 | 5 | Fixed in code (#442) |
+| S09 | general-purpose | done | 0 | 0 | 4 | 8 | — |
+| S10 | pdf-template-expert | done | 0 | 0 | 6 | 6 | — |
+| S11 | response-filter-auditor | done | 0 | 0 | 3 | 6 | — |
+| S12 | subscription-billing-expert | done | 0 | 2 | 5 | 4 | Fixed in code (#442) |
+| S13 | general-purpose | done | 0 | 0 | 2 | 5 | — |
+| S14 | general-purpose | done | 0 | 1 | 8 | 7 | Fixed in code (#442) |
+| S15 | auth-permission-auditor | done | 0 | 0 | 2 | 5 | — |
+| S16 | general-purpose | done | 0 | 0 | 1 | 6 | — |
+| S17 | general-purpose | done | 0 | 0 | 1 | 5 | — |
+| S18 | general-purpose | done | 0 | 0 | 1 | 4 | — |
+| S19 | general-purpose | done | 0 | 0 | 1 | 4 | — |
+| S20 | general-purpose | done | 0 | 2 | 8 | 6 | Code fixed (#442): S20-02 destroy guard. **Manual:** S20-01 GitHub environment/ruleset protections |
+| S21 | general-purpose | done | 0 | 2 | 7 | 7 | Code fixed (#442): S21-01 output now sensitive, S21-02 docs. **Manual:** rotate R2 token, enable PgBouncer TLS |
+| S22 | general-purpose | done | 0 | 0 | 4 | 5 | — |
+| S23 | general-purpose | done | 0 | 2 | 5 | 6 | Fixed in code (#442) |
+| S24 | general-purpose | done | 0 | 0 | 4 | 4 | — |
+
+**Status (as of 2026-10-29):**
+
+- **Critical:** none were reported.
+- **High (23):** all fixed in code in #442. Follow-ups for the remaining open code items (webhook failure recording,
+  email recipient hardening, EDITOR masking of automation credentials, AI plugin proposal, credential encryption at
+  rest) shipped in #445 and #447; see "Hardening follow-ups" in [REMEDIATION.md](./REMEDIATION.md).
+- **Still needs a person (cannot be done in code):** S20-01 (GitHub environment protections and workflow ruleset),
+  S21-01 (rotate the R2 token), S21-02 (PgBouncer TLS and network restriction). Steps are in REMEDIATION.md. Setting
+  the `CREDENTIAL_ENCRYPTION_KEY` environment secrets for `dev` and `production` is done; encryption starts on the
+  next deploy.
+- **Medium / Low / Info:** not triaged or remediated as part of this work, apart from fixes that fell out of the High
+  work.
