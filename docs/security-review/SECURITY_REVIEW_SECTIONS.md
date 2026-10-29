@@ -166,8 +166,8 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 | S17 | general-purpose | done | 0 | 0 | 1 | 5 |
 | S18 | general-purpose | done | 0 | 0 | 1 | 4 |
 | S19 | general-purpose | done | 0 | 0 | 1 | 4 |
-| S20 | | todo | | | | |
-| S21 | | todo | | | | |
-| S22 | | todo | | | | |
-| S23 | | todo | | | | |
-| S24 | | todo | | | | |
+| S20 | general-purpose | done | 0 | 2 | 8 | 6 |
+| S21 | general-purpose | done | 0 | 2 | 7 | 7 |
+| S22 | general-purpose | done | 0 | 0 | 4 | 5 |
+| S23 | general-purpose | done | 0 | 2 | 5 | 6 |
+| S24 | general-purpose | done | 0 | 0 | 4 | 4 |
