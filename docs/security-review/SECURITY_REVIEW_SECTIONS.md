@@ -186,6 +186,6 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 - **Medium (99):** triaged and remediated in code where possible (branch `fix/security-review-medium-findings`);
   each finding was re-verified against current code. Fixed or already fixed: the large majority. Partially fixed or
   skipped (need an infra, product or billing-design decision, or an admin-only setting): S01-04, S04-06, S06-06,
-  S07-03/07, S08-08, S09-01/02, S10-03/04/06, S12-07, S14-03/04/06/09, S20-04, S21-03/06/09, S23-09, S24-01/02/04.
+  S07-03/07, S08-08, S09-01/02, S10-03/04/06, S14-03/04/06/09, S20-04, S21-03/06/09, S23-09, S24-01/02/04.
   Manual steps are under "Medium findings — manual steps" in [REMEDIATION.md](./REMEDIATION.md).
 - **Low / Info:** the Low column is the original count and has not been triaged.

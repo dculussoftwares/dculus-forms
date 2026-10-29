@@ -485,6 +485,8 @@ describe('Responses Resolvers', () => {
         submissionsExceeded: false,
         emailsExceeded: false,
       });
+      vi.mocked(usageService.reserveSubmissionSlot).mockResolvedValue({ tracked: true });
+      vi.mocked(usageService.releaseSubmissionSlot).mockResolvedValue(undefined);
       vi.mocked(responseService.submitResponse).mockResolvedValue(mockResponse as any);
       vi.mocked(pluginEvents.emitFormSubmitted).mockReturnValue(undefined);
       vi.mocked(subscriptionEvents.emitFormSubmitted).mockReturnValue(undefined);
@@ -748,6 +750,28 @@ describe('Responses Resolvers', () => {
       await expect(
         responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
       ).rejects.toThrow('Form has reached its maximum response limit');
+    });
+
+    it('should release the reserved plan slot when the insert fails', async () => {
+      vi.mocked(usageService.reserveSubmissionSlot).mockResolvedValue({ tracked: true });
+      vi.mocked(responseService.submitResponse).mockRejectedValue(new Error('insert failed'));
+
+      await expect(
+        responsesResolvers.Mutation.submitResponse({}, { input: mockInput }, mockContext)
+      ).rejects.toThrow('insert failed');
+
+      expect(usageService.reserveSubmissionSlot).toHaveBeenCalledWith('org-123');
+      expect(usageService.releaseSubmissionSlot).toHaveBeenCalledWith('org-123');
+    });
+
+    it('should not reserve a plan slot for builder previews', async () => {
+      await responsesResolvers.Mutation.submitResponse(
+        {},
+        { input: { ...mockInput, isPreview: true } },
+        mockContext
+      );
+
+      expect(usageService.reserveSubmissionSlot).not.toHaveBeenCalled();
     });
 
     it('should allow submission when under max responses limit', async () => {

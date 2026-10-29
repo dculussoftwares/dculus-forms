@@ -42,7 +42,7 @@ import {
 } from '../../services/quiz/gradingService.js';
 import { analyticsService } from '../../services/analyticsService.js';
 import { emitFormSubmitted } from '../../plugins/core/events.js';
-import { checkUsageExceeded } from '../../subscriptions/usageService.js';
+import { checkUsageExceeded, reserveSubmissionSlot, releaseSubmissionSlot } from '../../subscriptions/usageService.js';
 import { emitFormSubmitted as emitSubscriptionFormSubmitted } from '../../subscriptions/events.js';
 import { checkFormAccess, PermissionLevel } from './formSharing.js';
 import { createGraphQLError } from '#graphql-errors';
@@ -474,24 +474,33 @@ export const responsesResolvers = {
         maxResponses: limits?.maxResponses?.enabled ? limits.maxResponses.limit : undefined,
         onePerRespondent: isOneResponsePerRespondent(form.settings) && !input.isPreview,
       };
-      if (limitChecks.maxResponses !== undefined || limitChecks.onePerRespondent) {
-        response = await submitResponseWithLimitChecks(
-          {
-            id: responseId,
-            formId: input.formId,
-            data: (input.data || {}) as Prisma.InputJsonValue,
-            respondentUserId,
-            respondentEmail,
-            ...(input.isPreview ? { metadata: { source: PREVIEW_RESPONSE_SOURCE } } : {}),
-          },
-          limitChecks
-        );
-      }
 
-      // If the response was not already inserted by the atomic limit-check
-      // transaction above, persist it now via the normal path.
-      if (!response) {
-        response = await submitResponse(responseData);
+      // Take the plan's submission slot atomically before the insert (builder previews are not
+      // billable). A failed insert gives the slot back.
+      const usageSlot = input.isPreview ? { tracked: false } : await reserveSubmissionSlot(form.organizationId);
+      try {
+        if (limitChecks.maxResponses !== undefined || limitChecks.onePerRespondent) {
+          response = await submitResponseWithLimitChecks(
+            {
+              id: responseId,
+              formId: input.formId,
+              data: (input.data || {}) as Prisma.InputJsonValue,
+              respondentUserId,
+              respondentEmail,
+              ...(input.isPreview ? { metadata: { source: PREVIEW_RESPONSE_SOURCE } } : {}),
+            },
+            limitChecks
+          );
+        }
+
+        // If the response was not already inserted by the atomic limit-check
+        // transaction above, persist it now via the normal path.
+        if (!response) {
+          response = await submitResponse(responseData);
+        }
+      } catch (error) {
+        if (usageSlot.tracked) await releaseSubmissionSlot(form.organizationId);
+        throw error;
       }
       // At this point response is guaranteed non-null — both branches above set it.
       const savedResponse = response!;
