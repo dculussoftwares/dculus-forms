@@ -1,5 +1,7 @@
 import { tagRepository, responseRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 
 export const PREVIEW_TAG_NAME = '__preview__';
 export const AI_GENERATED_TAG_NAME = '__ai_generated__';
@@ -9,12 +11,27 @@ export const AI_GENERATED_TAG_NAME = '__ai_generated__';
  * which is best-effort). See fakeResponseService.ts. */
 export const AI_GENERATED_RESPONSE_SOURCE = 'ai_generated';
 
+/** Marks a Response.metadata payload as a builder-preview submission. The
+ * `__preview__` tag alone is not trustworthy: tag names are user-creatable
+ * and any EDITOR can assign a tag to any response of the form. */
+export const PREVIEW_RESPONSE_SOURCE = 'preview';
+
+/** Tag names starting with this prefix are reserved for system tags. */
+export const RESERVED_TAG_PREFIX = '__';
+
 export const getFormTags = async (formId: string) => {
   return tagRepository.listByForm(formId);
 };
 
 export const createTag = async (formId: string, name: string, color?: string) => {
-  return tagRepository.upsertTag(formId, name.trim(), color);
+  const trimmedName = name.trim();
+  if (trimmedName.startsWith(RESERVED_TAG_PREFIX)) {
+    throw createGraphQLError(
+      `Tag names starting with "${RESERVED_TAG_PREFIX}" are reserved`,
+      GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+    );
+  }
+  return tagRepository.upsertTag(formId, trimmedName, color);
 };
 
 export const deleteTag = async (id: string, formId: string): Promise<boolean> => {
@@ -81,16 +98,18 @@ export const upsertPreviewTag = async (formId: string) => {
   return tagRepository.ensureTag(formId, PREVIEW_TAG_NAME, '#f59e0b');
 };
 
+/**
+ * Deletes the builder-preview responses of a form. Matches on
+ * metadata.source (written server-side at submission) rather than the
+ * `__preview__` tag assignment, which an EDITOR could attach to real
+ * responses; scoped to `formId` so it can never reach another form's rows.
+ */
 export const deletePreviewResponses = async (formId: string): Promise<number> => {
-  const previewTag = await tagRepository.findByFormAndName(formId, PREVIEW_TAG_NAME);
-  if (!previewTag) return 0;
-
-  const assignments = await tagRepository.findAssignmentsByTag(previewTag.id);
-  if (!assignments.length) return 0;
-
-  const responseIds = assignments.map((a) => a.responseId);
   const { count } = await responseRepository.deleteMany({
-    where: { id: { in: responseIds } },
+    where: {
+      formId,
+      metadata: { path: ['source'], equals: PREVIEW_RESPONSE_SOURCE },
+    },
   });
   return count;
 };

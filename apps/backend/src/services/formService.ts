@@ -22,6 +22,13 @@ import { withPrisma } from '../repositories/baseRepository.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { audit } from '../lib/audit.js';
+import { createGraphQLError } from '#graphql-errors';
+import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
+import {
+  mergeFormSettings,
+  hasAccessControlChanged,
+  hasCollectRespondentEmailChanged,
+} from '../lib/formSettingsAccess.js';
 import { copyAutomationsToForm } from './automation/copyAutomation.js';
 import { copyPluginsToForm } from './copyFormPlugins.js';
 import { copyPdfTemplatesToForm } from './copyPdfTemplates.js';
@@ -369,6 +376,22 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
       }
 
       logger.info(`✅ Permission validated for user ${userId} on form ${id}: ${requiredPermission}`);
+
+      // Defense in depth for the resolver's own check: who may respond
+      // (accessControl / collectRespondentEmail) is OWNER-only, including
+      // when an EDITOR drops those keys from a full-replacement `settings`.
+      if (formData.settings != null) {
+        const mergedSettings = mergeFormSettings(currentForm.settings, formData.settings);
+        const changesOwnerOnlySettings =
+          hasAccessControlChanged(currentForm.settings, mergedSettings) ||
+          hasCollectRespondentEmailChanged(currentForm.settings, mergedSettings);
+        if (changesOwnerOnlySettings && accessCheck.permission !== PermissionLevel.OWNER) {
+          throw createGraphQLError(
+            'Access denied: owner permissions required to change who can respond to this form',
+            GRAPHQL_ERROR_CODES.NO_ACCESS
+          );
+        }
+      }
     }
 
     const updateData: any = {};
@@ -376,7 +399,10 @@ export const updateForm = async (id: string, formData: Partial<Omit<Form, 'id' |
     if (formData.title) updateData.title = formData.title;
     if (formData.description !== undefined) updateData.description = formData.description;
     if (formData.isPublished !== undefined) updateData.isPublished = formData.isPublished;
-    if (formData.settings !== undefined) updateData.settings = formData.settings;
+    // `settings` is a full-replacement JSON column: absent keys mean unchanged.
+    if (formData.settings != null) {
+      updateData.settings = mergeFormSettings(currentForm.settings, formData.settings);
+    }
 
     const updatedForm = await formRepository.updateForm(id, updateData);
 

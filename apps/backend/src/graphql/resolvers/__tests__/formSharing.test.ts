@@ -3,9 +3,13 @@ import { formSharingResolvers, checkFormAccess, PermissionLevel, SharingScope } 
 import { GraphQLError } from '#graphql-errors';
 import * as betterAuthMiddleware from '../../../middleware/better-auth-middleware.js';
 import { prisma } from '../../../lib/prisma.js';
+import { requireFormViewerAccess } from '../../../lib/formFieldAccess.js';
 
 // Mock all dependencies
 vi.mock('../../../middleware/better-auth-middleware.js');
+vi.mock('../../../lib/formFieldAccess.js', () => ({
+  requireFormViewerAccess: vi.fn(),
+}));
 vi.mock('../../../lib/prisma.js', () => ({
   prisma: {
     form: {
@@ -1400,7 +1404,8 @@ describe('FormSharing Resolvers', () => {
         ];
         vi.mocked(prisma.formPermission.findMany).mockResolvedValue(mockPermissions as any);
 
-        const result = await formSharingResolvers.Form.permissions({ id: 'form-123' });
+        const result = await formSharingResolvers.Form.permissions({ id: 'form-123' }, {}, mockContext);
+        expect(requireFormViewerAccess).toHaveBeenCalledWith('form-123', mockContext);
 
         expect(prisma.formPermission.findMany).toHaveBeenCalledWith({
           where: { formId: 'form-123' },
@@ -1411,6 +1416,17 @@ describe('FormSharing Resolvers', () => {
           orderBy: { grantedAt: 'desc' },
         });
         expect(result).toEqual(mockPermissions);
+      });
+    });
+
+    describe('Form.permissions guard (S04-01)', () => {
+      it('rejects callers without VIEWER access and never queries permissions', async () => {
+        vi.mocked(requireFormViewerAccess).mockRejectedValueOnce(new Error('NO_ACCESS'));
+
+        await expect(
+          formSharingResolvers.Form.permissions({ id: 'form-123' }, {}, { auth: { user: null } } as any)
+        ).rejects.toThrow('NO_ACCESS');
+        expect(prisma.formPermission.findMany).not.toHaveBeenCalled();
       });
     });
 

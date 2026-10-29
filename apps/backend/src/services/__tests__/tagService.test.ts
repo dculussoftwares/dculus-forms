@@ -40,6 +40,7 @@ import {
   PREVIEW_TAG_NAME,
   AI_GENERATED_TAG_NAME,
   AI_GENERATED_RESPONSE_SOURCE,
+  PREVIEW_RESPONSE_SOURCE,
 } from '../tagService.js';
 
 beforeEach(() => vi.clearAllMocks());
@@ -213,39 +214,32 @@ describe('upsertPreviewTag', () => {
 });
 
 describe('deletePreviewResponses', () => {
-  it('returns 0 when no preview tag exists for the form', async () => {
-    (prisma.responseTag.findFirst as any).mockResolvedValue(null);
-
-    const count = await deletePreviewResponses('form-1');
-
-    expect(count).toBe(0);
-    expect(prisma.responseTagAssignment.findMany).not.toHaveBeenCalled();
-  });
-
-  it('returns 0 when the preview tag has no assignments', async () => {
-    (prisma.responseTag.findFirst as any).mockResolvedValue({ id: 'tag-1' });
-    (prisma.responseTagAssignment.findMany as any).mockResolvedValue([]);
-
-    const count = await deletePreviewResponses('form-1');
-
-    expect(count).toBe(0);
-    expect(prisma.response.deleteMany).not.toHaveBeenCalled();
-  });
-
-  it('deletes responses assigned to the preview tag and returns count', async () => {
-    (prisma.responseTag.findFirst as any).mockResolvedValue({ id: 'tag-1' });
-    (prisma.responseTagAssignment.findMany as any).mockResolvedValue([
-      { responseId: 'r1' },
-      { responseId: 'r2' },
-    ]);
+  it('deletes only responses marked as preview in their metadata', async () => {
     (prisma.response.deleteMany as any).mockResolvedValue({ count: 2 });
 
     const count = await deletePreviewResponses('form-1');
 
     expect(prisma.response.deleteMany).toHaveBeenCalledWith({
-      where: { id: { in: ['r1', 'r2'] } },
+      where: { formId: 'form-1', metadata: { path: ['source'], equals: PREVIEW_RESPONSE_SOURCE } },
     });
     expect(count).toBe(2);
+  });
+
+  it('does not rely on the user-creatable preview tag', async () => {
+    (prisma.response.deleteMany as any).mockResolvedValue({ count: 0 });
+
+    const count = await deletePreviewResponses('form-1');
+
+    expect(count).toBe(0);
+    expect(prisma.responseTag.findFirst).not.toHaveBeenCalled();
+    expect(prisma.responseTagAssignment.findMany).not.toHaveBeenCalled();
+  });
+});
+
+describe('createTag reserved names (S02-03)', () => {
+  it.each([PREVIEW_TAG_NAME, AI_GENERATED_TAG_NAME, '__custom'])('rejects "%s"', async (name) => {
+    await expect(createTag('form-1', name)).rejects.toThrow(/reserved/i);
+    expect(prisma.responseTag.upsert).not.toHaveBeenCalled();
   });
 });
 
