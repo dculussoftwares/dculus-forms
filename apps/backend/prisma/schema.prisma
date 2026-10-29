@@ -166,7 +166,7 @@ model Form {
 
   // Relations
   organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  createdBy           User                      @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdBy           User                      @relation(fields: [createdById], references: [id], onDelete: Restrict)
   responses           Response[]
   files               FormFile[]
   analytics           FormViewAnalytics[]

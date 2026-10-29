@@ -69,9 +69,16 @@ export const subscriptionResolvers = {
       }
 
       try {
+        // Upgrade the org's existing Chargebee subscription in place; a
+        // dead (cancelled/paused) one can't be modified, so start a new one.
+        const reusableSubscriptionId =
+          subscription.status === 'cancelled' || subscription.status === 'expired'
+            ? null
+            : subscription.chargebeeSubscriptionId;
         const result = await createCheckoutHostedPage(
           subscription.chargebeeCustomerId,
-          itemPriceId
+          itemPriceId,
+          reusableSubscriptionId
         );
 
         return {
@@ -183,8 +190,17 @@ export const subscriptionResolvers = {
         throw createGraphQLError('No active organization', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
 
-      // 🔒 SECURITY: Verify user is a member of the active organization
-      await requireOrganizationMembership(context.auth, session.activeOrganizationId);
+      // 🔒 SECURITY: Billing changes are owner-only
+      const membership = await requireOrganizationMembership(
+        context.auth,
+        session.activeOrganizationId
+      );
+      if (membership?.role !== 'owner') {
+        throw createGraphQLError(
+          'Access denied: only the organization owner can sync checkout sessions',
+          GRAPHQL_ERROR_CODES.NO_ACCESS
+        );
+      }
 
       let synced = false;
       try {
@@ -212,6 +228,16 @@ export const subscriptionResolvers = {
 
       logger.info('[Subscription Resolver] Initializing subscription for organization:', organizationId);
 
+      // 🔒 SECURITY: Authorize before any lookup so existing subscription data
+      // (plan, usage, Chargebee IDs) is never disclosed to non-owners.
+      const membership = await requireOrganizationMembership(context.auth, organizationId);
+      if (membership.role !== 'owner') {
+        throw createGraphQLError(
+          'Access denied: only the organization owner can initialize a subscription',
+          GRAPHQL_ERROR_CODES.NO_ACCESS
+        );
+      }
+
       try {
         // Check if subscription already exists (idempotency)
         const existingSubscription = await getSubscriptionByOrganization(organizationId);
@@ -230,14 +256,6 @@ export const subscriptionResolvers = {
 
         if (!organization) {
           throw new GraphQLError('Organization not found');
-        }
-
-        // 🔒 SECURITY: Verify the authenticated user is a member of this organization
-        const membership = await requireOrganizationMembership(context.auth, organizationId);
-
-        // 🔒 SECURITY: Verify the authenticated user is the organization owner
-        if (membership.role !== 'owner') {
-          throw new GraphQLError('Only organization owner can initialize subscription');
         }
 
         // Get the organization owner to get email for Chargebee customer
@@ -270,20 +288,42 @@ export const subscriptionResolvers = {
       } catch (error: any) {
         logger.error('[Subscription Resolver] Error initializing subscription:', error);
 
-        // Return error without throwing to allow signup to continue
+        // Return a generic error without throwing to allow signup to continue;
+        // provider/internal messages stay server-side.
         return {
           success: false,
           subscription: null,
-          message: error.message || 'Failed to initialize subscription',
+          message: 'Failed to initialize subscription',
         };
       }
     },
   },
   Organization: {
     /**
-     * Fetch subscription for an organization
+     * Fetch subscription for an organization.
+     * 🔒 SECURITY: Organization objects are reachable from public queries
+     * (e.g. formByShortUrl), so only members of the organization and system
+     * admins may read its billing data; everyone else gets null.
      */
-    subscription: async (organization: any) => {
+    subscription: async (
+      organization: { id: string },
+      _: unknown,
+      context?: { auth?: BetterAuthContext }
+    ) => {
+      const auth = context?.auth;
+      if (!auth?.isAuthenticated || !auth.user) {
+        return null;
+      }
+
+      const systemRole = auth.user.role;
+      if (systemRole !== 'admin' && systemRole !== 'superAdmin') {
+        try {
+          await requireOrganizationMembership(auth, organization.id);
+        } catch {
+          return null;
+        }
+      }
+
       return await getSubscriptionByOrganization(organization.id);
     },
   },

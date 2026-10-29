@@ -74,9 +74,9 @@ router.post('/webhooks/chargebee', async (req, res) => {
     switch (event.event_type) {
       case 'subscription_created':
       case 'subscription_started':
-        // New subscription created
+        // New subscription created — may intentionally replace the stored one
         if (event.content?.subscription) {
-          await syncSubscriptionFromWebhook(event.content.subscription);
+          await syncSubscriptionFromWebhook(event.content.subscription, { allowTakeover: true });
         }
         break;
 

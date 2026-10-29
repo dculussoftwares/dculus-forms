@@ -5,6 +5,7 @@ import { adminAc } from 'better-auth/plugins/admin/access';
 import { prisma } from './prisma.js';
 import { authConfig, googleConfig } from './env.js';
 import { logger } from '../lib/logger.js';
+import { assertUserOwnsNoForms } from './userDeletionGuard.js';
 import {
   sendInvitationEmail,
   sendMagicLinkEmail,
@@ -43,6 +44,8 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: process.env.NODE_ENV !== 'test', // Skip verification in test environment
+    // A stolen session must not survive the owner resetting their password.
+    revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }, _request) => {
       await sendResetPasswordEmail({
         to: user.email,
@@ -55,9 +58,11 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 24 hours
+    // Keep this short: while the signed cookie cache is valid, revocations,
+    // bans and role changes are not seen (the database is skipped).
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 5, // 5 minutes
     },
   },
 
@@ -178,6 +183,11 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       delete: {
+        // S14-01: never let a user deletion take the user's forms (and every
+        // response collected through them) with it.
+        before: async (user) => {
+          await assertUserOwnsNoForms(user.id);
+        },
         // P2-09: GDPR compliance — null out PII in edit history when a user is
         // deleted so personal data (IP address, user agent) is no longer retained
         // in the audit trail after account removal.

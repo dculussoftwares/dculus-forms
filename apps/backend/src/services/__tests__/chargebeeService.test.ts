@@ -39,6 +39,7 @@ vi.mock('chargebee', () => {
       checkoutNewForItems: vi.fn(),
       checkoutExistingForItems: vi.fn(),
       retrieve: vi.fn(),
+      acknowledge: vi.fn(),
     },
     portalSession: {
       create: vi.fn(),
@@ -99,11 +100,13 @@ describe('Chargebee Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset all mock functions
+    vi.mocked(subscriptionRepository.findUnique).mockReset();
     mockChargebee.customer.create.mockReset();
     mockChargebee.customer.retrieve.mockReset();
     mockChargebee.hostedPage.checkoutNewForItems.mockReset();
     mockChargebee.hostedPage.checkoutExistingForItems.mockReset();
     mockChargebee.hostedPage.retrieve.mockReset();
+    mockChargebee.hostedPage.acknowledge.mockReset();
     mockChargebee.portalSession.create.mockReset();
     mockChargebee.subscription.retrieve.mockReset();
     mockChargebee.subscription.cancel.mockReset();
@@ -304,6 +307,24 @@ describe('Chargebee Service', () => {
         url: 'https://chargebee.com/checkout/abc123',
         id: 'hp_123',
       });
+    });
+
+    it('swaps items on the existing subscription instead of opening a second one', async () => {
+      mockChargebee.hostedPage.checkoutExistingForItems.mockResolvedValue({
+        hosted_page: { url: 'https://chargebee.com/checkout/existing', id: 'hp_existing' },
+      });
+
+      const result = await createCheckoutHostedPage('cust_123', 'starter-usd-monthly', 'sub_free');
+
+      expect(mockChargebee.hostedPage.checkoutExistingForItems).toHaveBeenCalledWith({
+        subscription: { id: 'sub_free', auto_collection: 'on' },
+        subscription_items: [{ item_price_id: 'starter-usd-monthly', quantity: 1 }],
+        replace_items_list: true,
+        redirect_url: 'https://app.example.com/subscription/success',
+        cancel_url: 'https://app.example.com/subscription/cancel',
+      });
+      expect(mockChargebee.hostedPage.checkoutNewForItems).not.toHaveBeenCalled();
+      expect(result).toEqual({ url: 'https://chargebee.com/checkout/existing', id: 'hp_existing' });
     });
 
     it('should use default URL when FRONTEND_URL is not set', async () => {
@@ -760,6 +781,87 @@ describe('Chargebee Service', () => {
       expect(vi.mocked(Sentry.captureMessage)).not.toHaveBeenCalled();
     });
 
+    describe('events for a subscription other than the stored one', () => {
+      const paidRow = {
+        organizationId: 'org-123',
+        chargebeeSubscriptionId: 'sub_paid',
+        planId: 'starter',
+        status: 'active',
+      };
+      const freeEvent = {
+        id: 'sub_free',
+        customer_id: 'org_org-123',
+        status: 'active',
+        subscription_items: [{ item_id: 'free', item_price_id: 'free-usd-monthly' }],
+        current_term_start: 1704067200,
+        current_term_end: 1706745600,
+      };
+
+      it('ignores a renewal of the leftover free subscription', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(paidRow as any);
+
+        await syncSubscriptionFromWebhook(freeEvent);
+
+        expect(subscriptionRepository.upsertForOrganization).not.toHaveBeenCalled();
+      });
+
+      it('lets a creation event take over the stored subscription', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(paidRow as any);
+        vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+        await syncSubscriptionFromWebhook(freeEvent, { allowTakeover: true });
+
+        expect(subscriptionRepository.upsertForOrganization).toHaveBeenCalledWith(
+          'org-123',
+          expect.objectContaining({ chargebeeSubscriptionId: 'sub_free' }),
+          expect.any(Object)
+        );
+      });
+
+      it('never lets a cancelled foreign subscription take over', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(paidRow as any);
+
+        await syncSubscriptionFromWebhook(
+          { ...freeEvent, status: 'cancelled' },
+          { allowTakeover: true }
+        );
+
+        expect(subscriptionRepository.upsertForOrganization).not.toHaveBeenCalled();
+      });
+
+      it('adopts a new subscription when the stored one is already cancelled locally', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue({
+          ...paidRow,
+          status: 'cancelled',
+        } as any);
+        vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+        await syncSubscriptionFromWebhook(freeEvent);
+
+        expect(subscriptionRepository.upsertForOrganization).toHaveBeenCalled();
+      });
+
+      it('adopts the first subscription when none is stored yet', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue({
+          ...paidRow,
+          chargebeeSubscriptionId: null,
+        } as any);
+        vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+        await syncSubscriptionFromWebhook(freeEvent);
+
+        expect(subscriptionRepository.upsertForOrganization).toHaveBeenCalled();
+      });
+
+      it('does not reset usage counters on a foreign renewal', async () => {
+        vi.mocked(subscriptionRepository.findUnique).mockResolvedValue(paidRow as any);
+
+        await handleSubscriptionRenewal(freeEvent);
+
+        expect(resetUsageCounters).not.toHaveBeenCalled();
+      });
+    });
+
     it('should handle sync errors', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
       vi.mocked(subscriptionRepository.upsertForOrganization).mockRejectedValue(
@@ -799,17 +901,118 @@ describe('Chargebee Service', () => {
           },
         },
       });
+      mockChargebee.subscription.retrieve.mockResolvedValue({
+        subscription: {
+          id: 'sub_123',
+          customer_id: 'org_org-123',
+          status: 'active',
+          subscription_items: [{ item_price_id: 'starter-usd-monthly' }],
+          current_term_start: 1704067200,
+          current_term_end: 1706745600,
+        },
+      });
+      mockChargebee.hostedPage.acknowledge.mockResolvedValue({});
       vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
 
       const result = await syncFromHostedPage('hp_123', 'org-123');
 
       expect(result).toEqual({ synced: true, state: 'succeeded' });
       expect(mockChargebee.hostedPage.retrieve).toHaveBeenCalledWith('hp_123');
+      expect(mockChargebee.subscription.retrieve).toHaveBeenCalledWith('sub_123');
+      expect(mockChargebee.hostedPage.acknowledge).toHaveBeenCalledWith('hp_123');
       expect(subscriptionRepository.upsertForOrganization).toHaveBeenCalledWith(
         'org-123',
         expect.objectContaining({ planId: 'starter', status: 'active' }),
         expect.any(Object)
       );
+    });
+
+    it('syncs the live subscription, not the stale hosted-page snapshot', async () => {
+      mockChargebee.hostedPage.retrieve.mockResolvedValue({
+        hosted_page: {
+          id: 'hp_123',
+          state: 'succeeded',
+          content: {
+            subscription: {
+              id: 'sub_123',
+              customer_id: 'org_org-123',
+              status: 'active',
+              subscription_items: [{ item_price_id: 'advanced-usd-monthly' }],
+              current_term_start: 1704067200,
+              current_term_end: 1706745600,
+            },
+          },
+        },
+      });
+      mockChargebee.subscription.retrieve.mockResolvedValue({
+        subscription: {
+          id: 'sub_123',
+          customer_id: 'org_org-123',
+          status: 'cancelled',
+          subscription_items: [{ item_price_id: 'starter-usd-monthly' }],
+          current_term_start: 1709000000,
+          current_term_end: 1711000000,
+        },
+      });
+      mockChargebee.hostedPage.acknowledge.mockResolvedValue({});
+      vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+      await syncFromHostedPage('hp_123', 'org-123');
+
+      expect(subscriptionRepository.upsertForOrganization).toHaveBeenCalledWith(
+        'org-123',
+        expect.objectContaining({ planId: 'starter', status: 'cancelled' }),
+        expect.any(Object)
+      );
+    });
+
+    it('refuses to sync when the live subscription belongs to a different customer', async () => {
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      mockChargebee.hostedPage.retrieve.mockResolvedValue({
+        hosted_page: {
+          id: 'hp_123',
+          state: 'succeeded',
+          content: { subscription: { id: 'sub_123', customer_id: 'org_org-123' } },
+        },
+      });
+      mockChargebee.subscription.retrieve.mockResolvedValue({
+        subscription: { id: 'sub_123', customer_id: 'org_other', status: 'active' },
+      });
+
+      const result = await syncFromHostedPage('hp_123', 'org-123');
+
+      expect(result).toEqual({ synced: false, state: 'succeeded' });
+      expect(subscriptionRepository.upsertForOrganization).not.toHaveBeenCalled();
+      expect(mockChargebee.hostedPage.acknowledge).not.toHaveBeenCalled();
+      loggerWarn.mockRestore();
+    });
+
+    it('still reports synced when acknowledging the hosted page fails', async () => {
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      mockChargebee.hostedPage.retrieve.mockResolvedValue({
+        hosted_page: {
+          id: 'hp_123',
+          state: 'succeeded',
+          content: { subscription: { id: 'sub_123', customer_id: 'org_org-123' } },
+        },
+      });
+      mockChargebee.subscription.retrieve.mockResolvedValue({
+        subscription: {
+          id: 'sub_123',
+          customer_id: 'org_org-123',
+          status: 'active',
+          subscription_items: [{ item_price_id: 'starter-usd-monthly' }],
+          current_term_start: 1704067200,
+          current_term_end: 1706745600,
+        },
+      });
+      mockChargebee.hostedPage.acknowledge.mockRejectedValue(new Error('boom'));
+      vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+
+      const result = await syncFromHostedPage('hp_123', 'org-123');
+
+      expect(result.synced).toBe(true);
+      loggerWarn.mockRestore();
     });
 
     it('does not sync when the hosted page has not succeeded yet', async () => {

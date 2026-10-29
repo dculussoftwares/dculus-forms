@@ -460,7 +460,8 @@ export const setEnterpriseSubscription = async (
  */
 export const createCheckoutHostedPage = async (
   customerId: string,
-  itemPriceId: string
+  itemPriceId: string,
+  existingSubscriptionId?: string | null
 ): Promise<{ url: string; id: string }> => {
   try {
     // Get base URL from environment or use default
@@ -468,11 +469,30 @@ export const createCheckoutHostedPage = async (
     logger.info('[Chargebee Service] Creating checkout hosted page', {
       customerId,
       itemPriceId,
+      existingSubscriptionId: existingSubscriptionId ?? null,
       redirectBaseUrl: baseUrl,
       frontendUrlSet: Boolean(process.env.FRONTEND_URL),
     });
 
-    // Use checkoutNewForItems for Product Catalog 2.0
+    // Every org already owns a (free) Chargebee subscription. Upgrading must
+    // swap the items on THAT subscription — opening a second one leaves the
+    // free subscription renewing and its webhooks fighting the paid plan.
+    if (existingSubscriptionId) {
+      const existing: any = await chargebee.hostedPage.checkoutExistingForItems({
+        subscription: { id: existingSubscriptionId, auto_collection: 'on' },
+        subscription_items: [{ item_price_id: itemPriceId, quantity: 1 }],
+        replace_items_list: true,
+        redirect_url: `${baseUrl}/subscription/success`,
+        cancel_url: `${baseUrl}/subscription/cancel`,
+      } as any);
+
+      return {
+        url: existing.hosted_page.url!,
+        id: existing.hosted_page.id!,
+      };
+    }
+
+    // No Chargebee subscription yet (e.g. created during an outage) — Product Catalog 2.0
     const result = await chargebee.hostedPage.checkoutNewForItems({
       subscription_items: [
         {
@@ -563,16 +583,61 @@ export const reactivateChargebeeSubscription = async (
   }
 };
 
+export interface SubscriptionSyncOptions {
+  /**
+   * The event intentionally replaces the stored Chargebee subscription (a
+   * creation event, or a verified checkout). Without it, events for any
+   * subscription other than the stored one are ignored.
+   */
+  allowTakeover?: boolean;
+}
+
+const DEAD_LOCAL_STATUSES = ['cancelled', 'expired'];
+
+/**
+ * An org has one authoritative Chargebee subscription (`chargebeeSubscriptionId`).
+ * Events for a different subscription — e.g. renewals of the free subscription
+ * left over after an upgrade — must not overwrite the paid plan or reset usage.
+ * A different subscription may only take over when the row has none yet, when
+ * the stored one is already dead locally, or when explicitly allowed (creation
+ * event / verified checkout) and the incoming subscription is not cancelled.
+ */
+const isForeignSubscriptionEvent = (
+  existing: { chargebeeSubscriptionId?: string | null; status?: string | null } | null | undefined,
+  subscriptionData: { id?: string; status?: string },
+  options: SubscriptionSyncOptions = {}
+): boolean => {
+  const storedId = existing?.chargebeeSubscriptionId;
+  if (!storedId || !subscriptionData.id || storedId === subscriptionData.id) return false;
+  if (subscriptionData.status === 'cancelled') return true;
+  if (options.allowTakeover) return false;
+  return !DEAD_LOCAL_STATUSES.includes(existing?.status ?? '');
+};
+
 /**
  * Sync subscription from Chargebee webhook event
  * Updates local subscription record based on Chargebee event
  */
 export const syncSubscriptionFromWebhook = async (
-  subscriptionData: any
+  subscriptionData: any,
+  options: SubscriptionSyncOptions = {}
 ): Promise<void> => {
   try {
     const customerId = subscriptionData.customer_id;
     const organizationId = customerId.replace('org_', '');
+
+    const existing = await subscriptionRepository.findUnique({ where: { organizationId } });
+    if (isForeignSubscriptionEvent(existing, subscriptionData, options)) {
+      logger.warn(
+        '[Chargebee Service] Ignoring event for a subscription that is not the organization\'s current one',
+        {
+          organizationId,
+          eventSubscriptionId: subscriptionData.id,
+          storedSubscriptionId: existing?.chargebeeSubscriptionId,
+        }
+      );
+      return;
+    }
 
     // Determine plan ID from item_id (stable plan identifier, no currency/period
     // suffix). Plans are created dynamically from the admin app, so any item_id is
@@ -600,7 +665,6 @@ export const syncSubscriptionFromWebhook = async (
     // state only resolves via an enterprise webhook (checkout completed) or an
     // admin re-assigning a plan.
     if (planId !== 'enterprise') {
-      const existing = await subscriptionRepository.findUnique({ where: { organizationId } });
       if (existing?.planId === 'enterprise' && existing.status === 'past_due') {
         logger.info(
           '[Chargebee Service] Skipping webhook sync — enterprise checkout pending for organization:',
@@ -754,13 +818,33 @@ export const syncFromHostedPage = async (
     return { synced: false, state };
   }
 
-  await syncSubscriptionFromWebhook(subscriptionData);
+  // The hosted page only carries a snapshot taken at checkout time. Replaying
+  // it could restore a plan that was since cancelled or downgraded, so always
+  // sync the live subscription instead.
+  const liveResult: any = await chargebee.subscription.retrieve(subscriptionData.id);
+  const liveSubscription = liveResult.subscription;
+  if (!liveSubscription || liveSubscription.customer_id !== expectedCustomerId) {
+    logger.warn(
+      '[Chargebee Service] Live subscription does not belong to requesting organization — refusing to sync',
+      { hostedPageId, organizationId }
+    );
+    return { synced: false, state };
+  }
+
+  await syncSubscriptionFromWebhook(liveSubscription, { allowTakeover: true });
   logger.info('[Chargebee Service] Synced subscription from hosted page', {
     hostedPageId,
     organizationId,
-    subscriptionId: subscriptionData.id,
-    subscriptionStatus: subscriptionData.status,
+    subscriptionId: liveSubscription.id,
+    subscriptionStatus: liveSubscription.status,
   });
+
+  // Mark the page consumed so the same id cannot be replayed later.
+  try {
+    await chargebee.hostedPage.acknowledge(hostedPageId);
+  } catch (error: unknown) {
+    logger.warn('[Chargebee Service] Could not acknowledge hosted page', { hostedPageId, error });
+  }
   return { synced: true, state };
 };
 
@@ -780,6 +864,15 @@ export const handleSubscriptionRenewal = async (
   try {
     const customerId = subscriptionData.customer_id;
     const organizationId = customerId.replace('org_', '');
+
+    const existing = await subscriptionRepository.findUnique({ where: { organizationId } });
+    if (isForeignSubscriptionEvent(existing, subscriptionData)) {
+      logger.warn(
+        '[Chargebee Service] Ignoring renewal for a subscription that is not the organization\'s current one',
+        { organizationId, eventSubscriptionId: subscriptionData.id }
+      );
+      return;
+    }
 
     const periodStart = new Date(subscriptionData.current_term_start * 1000);
     const periodEnd = new Date(subscriptionData.current_term_end * 1000);
@@ -807,6 +900,15 @@ export const handlePaymentFailed = async (event: any): Promise<void> => {
   if (!organizationId) return;
 
   try {
+    const existing = await subscriptionRepository.findUnique({ where: { organizationId } });
+    if (isForeignSubscriptionEvent(existing, subscription)) {
+      logger.warn(
+        '[Chargebee Service] Ignoring payment failure for a subscription that is not the organization\'s current one',
+        { organizationId, eventSubscriptionId: subscription.id }
+      );
+      return;
+    }
+
     await subscriptionRepository.update({
       where: { organizationId },
       data: { status: 'past_due' },

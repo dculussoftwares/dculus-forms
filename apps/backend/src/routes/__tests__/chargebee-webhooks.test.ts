@@ -70,7 +70,7 @@ describe('Chargebee Webhook Routes', () => {
         'subscription_created',
         expect.objectContaining({ subscriptionId: 'sub_123', subscriptionStatus: 'active' })
       );
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, { allowTakeover: true });
       expect(handleSubscriptionRenewal).not.toHaveBeenCalled();
     });
 
@@ -90,7 +90,7 @@ describe('Chargebee Webhook Routes', () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ received: true });
-      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription);
+      expect(syncSubscriptionFromWebhook).toHaveBeenCalledWith(subscription, { allowTakeover: true });
     });
 
     it('should handle subscription_changed event', async () => {

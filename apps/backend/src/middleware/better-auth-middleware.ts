@@ -15,19 +15,47 @@ export interface BetterAuthContext {
   isAuthenticated: boolean;
 }
 
+const PRIVILEGED_ROLES = ['admin', 'superAdmin'];
+
+/**
+ * Role and ban state come from better-auth's signed session cookie cache, which
+ * can lag behind the database (demotions, bans, deletions). Privileged
+ * (admin/superAdmin) sessions are therefore re-validated against the database
+ * so system-role gates never trust a cached role.
+ */
+async function resolveFreshUser(user: any): Promise<any | null> {
+  if (!PRIVILEGED_ROLES.includes(user?.role)) {
+    return user;
+  }
+
+  const fresh = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { role: true, banned: true },
+  });
+  if (!fresh || fresh.banned) {
+    return null;
+  }
+  return { ...user, role: fresh.role, banned: fresh.banned };
+}
+
 export async function createBetterAuthContext(req: Request): Promise<BetterAuthContext> {
   try {
     const sessionData = await auth.api.getSession({
       headers: fromNodeHeaders(req.headers),
     });
 
+    const freshUser = sessionData?.user ? await resolveFreshUser(sessionData.user) : null;
+    if (sessionData?.user && !freshUser) {
+      return { user: null, session: null, isAuthenticated: false };
+    }
+
     // P3-08: Log user ID instead of email to avoid PII in log output
-    logger.info('Auth context - User:', sessionData?.user?.id || 'none', 'Role:', (sessionData?.user as any)?.role || 'none');
+    logger.info('Auth context - User:', freshUser?.id || 'none', 'Role:', freshUser?.role || 'none');
 
     return {
-      user: sessionData?.user || null,
+      user: freshUser,
       session: sessionData?.session || null,
-      isAuthenticated: !!sessionData?.user,
+      isAuthenticated: !!freshUser,
     };
   } catch (error) {
     logger.error('Error getting session:', error);
