@@ -176,7 +176,7 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 **Status (as of 2026-10-29):**
 
 - **Critical:** none were reported.
-- **High (23):** 20 fully resolved, 3 open (S20-01, S21-01, S21-02 — manual steps below). All 23 have their code changes in #442. Follow-ups for the remaining open code items (webhook failure recording,
+- **High (23):** 20 fully resolved, 3 open (S20-01, S21-01, S21-02 — manual steps below). Code fixes landed across #442, #445 and #447; the three open items need the manual follow-ups below. Follow-ups for the remaining open code items (webhook failure recording,
   email recipient hardening, EDITOR masking of automation credentials, AI plugin proposal, credential encryption at
   rest) shipped in #445 and #447; see "Hardening follow-ups" in [REMEDIATION.md](./REMEDIATION.md).
 - **Still needs a person (cannot be done in code):** S20-01 (GitHub environment protections and workflow ruleset),
