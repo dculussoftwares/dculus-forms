@@ -76,7 +76,6 @@ export const Pricing = () => {
         t('plans.advanced.features.customDomain'),
         t('plans.advanced.features.apiAccess'),
         t('plans.advanced.features.whiteLabel'),
-        t('plans.advanced.features.sla'),
       ],
     },
   };
