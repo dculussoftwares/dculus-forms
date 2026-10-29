@@ -49,17 +49,19 @@ output "dns_record_status" {
 }
 
 # R2 API Token Outputs (S3-compatible credentials)
-# Note: Token ID is not sensitive, but token value is
-# Token value uses nonsensitive() to allow job output passing in GitHub Actions
-# Values are immediately masked via ::add-mask:: in the workflow for security
+# The secret stays sensitive so `terraform apply` never prints it in CI logs.
+# Consumers must read it with `terraform output -raw` and mask it immediately
+# (see the "Deploy Cloudflare R2" step in multi-cloud-deployment.yml).
 output "r2_access_key_id" {
   description = "R2 Access Key ID (API Token ID) - Used as AWS_ACCESS_KEY_ID"
   value       = cloudflare_api_token.r2_access.id
+  sensitive   = true
 }
 
 output "r2_secret_access_key" {
   description = "R2 Secret Access Key (SHA256 of Token Value) - Used as AWS_SECRET_ACCESS_KEY"
-  value       = nonsensitive(sha256(cloudflare_api_token.r2_access.value))
+  value       = sha256(cloudflare_api_token.r2_access.value)
+  sensitive   = true
 }
 
 output "next_steps" {

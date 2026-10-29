@@ -41,6 +41,12 @@ permissions:
   id-token: write      # Required for OIDC authentication with Azure
   contents: read       # Required for checking out code
 
+# Shares its group with multi-cloud-deployment.yml so a destroy can never race a
+# deploy on the same environment's Terraform state.
+concurrency:
+  group: multi-cloud-deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
 env:
   TERRAFORM_VERSION: '1.9.8'
   CLOUDFLARE_TERRAFORM_DIR: 'dculus-forms/infrastructure/multi-cloud/terraform/cloudflare'
@@ -62,12 +68,22 @@ jobs:
     steps:
       - name: Validate Confirmation
         id: validate
+        env:
+          INPUT_ENVIRONMENT: ${{ github.event.inputs.environment }}
+          INPUT_CONFIRMATION: ${{ github.event.inputs.confirmation }}
         run: |
-          EXPECTED="DESTROY-${{ github.event.inputs.environment }}"
-          ACTUAL="${{ github.event.inputs.confirmation }}"
+          EXPECTED="DESTROY-${INPUT_ENVIRONMENT}"
+          ACTUAL="$INPUT_CONFIRMATION"
 
           echo "Expected confirmation: $EXPECTED"
           echo "Actual confirmation: $ACTUAL"
+
+          # The GitHub environments are not protected by reviewers, so keep
+          # production credentials away from non-main refs.
+          if [ "$INPUT_ENVIRONMENT" = "production" ] && [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "❌ ERROR: Production destroy must run from main (got $GITHUB_REF)"
+            exit 1
+          fi
 
           if [ "$ACTUAL" != "$EXPECTED" ]; then
             echo "❌ ERROR: Confirmation does not match!"
@@ -290,7 +306,10 @@ jobs:
     name: Cleanup Custom Domain & Certificate
     runs-on: ubuntu-latest
     needs: [validate-destroy-request, setup-azure-backend]
-    if: github.event.inputs.destroy_azure == 'true'
+    if: |
+      needs.validate-destroy-request.result == 'success' &&
+      needs.validate-destroy-request.outputs.confirmed == 'true' &&
+      github.event.inputs.destroy_azure == 'true'
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Checkout code
@@ -339,6 +358,8 @@ jobs:
     needs: [validate-destroy-request, cleanup-azure-custom-domain]
     if: |
       always() && !cancelled() &&
+      needs.validate-destroy-request.result == 'success' &&
+      needs.validate-destroy-request.outputs.confirmed == 'true' &&
       (needs.cleanup-azure-custom-domain.result == 'success' || needs.cleanup-azure-custom-domain.result == 'skipped') &&
       github.event.inputs.destroy_azure == 'true'
     environment: ${{ github.event.inputs.environment }}
@@ -486,6 +507,8 @@ jobs:
     needs: [validate-destroy-request, terraform-azure-destroy]
     if: |
       always() && !cancelled() &&
+      needs.validate-destroy-request.result == 'success' &&
+      needs.validate-destroy-request.outputs.confirmed == 'true' &&
       (needs.terraform-azure-destroy.result == 'success' || needs.terraform-azure-destroy.result == 'skipped') &&
       github.event.inputs.destroy_cloudflare_pages == 'true'
     environment: ${{ github.event.inputs.environment }}
@@ -566,6 +589,8 @@ jobs:
     needs: [validate-destroy-request, terraform-cloudflare-pages-destroy]
     if: |
       always() && !cancelled() &&
+      needs.validate-destroy-request.result == 'success' &&
+      needs.validate-destroy-request.outputs.confirmed == 'true' &&
       (needs.terraform-cloudflare-pages-destroy.result == 'success' || needs.terraform-cloudflare-pages-destroy.result == 'skipped') &&
       github.event.inputs.destroy_cloudflare_r2 == 'true'
     environment: ${{ github.event.inputs.environment }}
@@ -633,6 +658,8 @@ jobs:
     needs: [validate-destroy-request, terraform-cloudflare-service-domain-destroy]
     if: |
       always() && !cancelled() &&
+      needs.validate-destroy-request.result == 'success' &&
+      needs.validate-destroy-request.outputs.confirmed == 'true' &&
       (needs.terraform-cloudflare-service-domain-destroy.result == 'success' || needs.terraform-cloudflare-service-domain-destroy.result == 'skipped') &&
       github.event.inputs.destroy_cloudflare_r2 == 'true'
     environment: ${{ github.event.inputs.environment }}
@@ -722,6 +749,8 @@ jobs:
     needs: [validate-destroy-request, terraform-cloudflare-destroy]
     if: |
       always() && !cancelled() &&
+      needs.validate-destroy-request.result == 'success' &&
+      needs.validate-destroy-request.outputs.confirmed == 'true' &&
       (needs.terraform-cloudflare-destroy.result == 'success' || needs.terraform-cloudflare-destroy.result == 'skipped') &&
       github.event.inputs.destroy_neon == 'true'
     environment: ${{ github.event.inputs.environment }}

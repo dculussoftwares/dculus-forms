@@ -582,8 +582,15 @@ jobs:
           echo "R2_PRIVATE_BUCKET=$(terraform output -raw private_bucket_name)" >> $GITHUB_ENV
           echo "R2_PUBLIC_BUCKET=$(terraform output -raw public_bucket_name)" >> $GITHUB_ENV
           echo "R2_PUBLIC_CDN_URL=$(terraform output -raw public_cdn_url)" >> $GITHUB_ENV
-          echo "R2_ACCESS_KEY_ID=$(terraform output -raw r2_access_key_id)" >> $GITHUB_ENV
-          echo "R2_SECRET_ACCESS_KEY=$(terraform output -raw r2_secret_access_key)" >> $GITHUB_ENV
+          # Mask credentials before they are written anywhere so later steps
+          # (including `terraform apply` output in the Azure step) cannot print them.
+          R2_ACCESS_KEY_ID_VALUE="$(terraform output -raw r2_access_key_id)"
+          R2_SECRET_ACCESS_KEY_VALUE="$(terraform output -raw r2_secret_access_key)"
+          echo "::add-mask::$R2_ACCESS_KEY_ID_VALUE"
+          echo "::add-mask::$R2_SECRET_ACCESS_KEY_VALUE"
+          echo "R2_ACCESS_KEY_ID=$R2_ACCESS_KEY_ID_VALUE" >> $GITHUB_ENV
+          echo "R2_SECRET_ACCESS_KEY=$R2_SECRET_ACCESS_KEY_VALUE" >> $GITHUB_ENV
+          unset R2_ACCESS_KEY_ID_VALUE R2_SECRET_ACCESS_KEY_VALUE
           echo "R2_ENDPOINT=https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com" >> $GITHUB_ENV
 
       - name: Set Cloudflare outputs
