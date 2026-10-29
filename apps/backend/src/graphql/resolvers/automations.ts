@@ -24,13 +24,27 @@ const canEditPermission = (permission: string | null | undefined) =>
   permission === PermissionLevel.OWNER || permission === PermissionLevel.EDITOR;
 
 /**
+ * Action configs hold credentials (webhook secret, header values, OAuth tokens). Like plugins,
+ * only an OWNER receives them; EDITORs still edit through the masked projection because saves
+ * restore any credential that comes back as the mask (see mergeMaskedGraph).
+ */
+const canRevealSecrets = (permission: string | null | undefined) => permission === PermissionLevel.OWNER;
+
+const forEditor = <T extends object>(automation: T, permission: string | null | undefined) => ({
+  ...automation,
+  _revealSecrets: canRevealSecrets(permission),
+});
+
+const projectGraph = (graph: unknown, parent: { _revealSecrets?: boolean }) =>
+  parent._revealSecrets === true ? graph : redactAutomationGraph(graph);
+
+/**
  * Viewers see what actually runs. The draft is an editor's work in progress, so it is withheld —
  * but `hasUnpublishedChanges` is preserved so the UI can still tell them one exists.
  */
 const withoutDraft = <T extends { graph?: unknown; draftGraph?: unknown; draftTriggerConfig?: unknown }>(automation: T) => ({
   ...automation,
-  // Action configs hold credentials (webhook secret, header values, OAuth tokens); viewers get them masked.
-  graph: redactAutomationGraph(automation.graph),
+  _revealSecrets: false,
   _hasUnpublishedChanges: automation.draftGraph != null || automation.draftTriggerConfig != null,
   draftGraph: null,
   draftTriggerConfig: null,
@@ -84,7 +98,9 @@ export const automationsResolvers = {
       );
 
       const automations = await automationService.listAutomationsByForm(formId);
-      return canEditPermission(accessCheck.permission) ? automations : automations.map(withoutDraft);
+      return canEditPermission(accessCheck.permission)
+        ? automations.map((a) => forEditor(a, accessCheck.permission))
+        : automations.map(withoutDraft);
     },
 
     automation: async (
@@ -100,7 +116,7 @@ export const automationsResolvers = {
         PermissionLevel.VIEWER,
         'Access denied: You do not have permission to view this automation'
       );
-      return canEditPermission(accessCheck.permission) ? automation : withoutDraft(automation);
+      return canEditPermission(accessCheck.permission) ? forEditor(automation, accessCheck.permission) : withoutDraft(automation);
     },
 
     automationRuns: async (
@@ -159,7 +175,7 @@ export const automationsResolvers = {
         'Access denied: You need EDITOR access to create automations for this form'
       );
 
-      return automationService.createAutomation({
+      const created = await automationService.createAutomation({
         formId,
         organizationId: accessCheck.form.organizationId,
         name,
@@ -167,6 +183,7 @@ export const automationsResolvers = {
         template,
         createdBy: context.auth.user!.id,
       });
+      return forEditor(created, accessCheck.permission);
     },
 
     duplicateAutomation: async (
@@ -176,14 +193,15 @@ export const automationsResolvers = {
     ) => {
       requireAuth(context.auth);
       const automation = await automationService.getAutomationById(id);
-      await assertFormAccess(
+      const accessCheck = await assertFormAccess(
         context,
         automation.formId,
         PermissionLevel.EDITOR,
         'Access denied: You need EDITOR access to duplicate this automation'
       );
 
-      return automationService.duplicateAutomation(automation, context.auth.user!.id);
+      const duplicate = await automationService.duplicateAutomation(automation, context.auth.user!.id);
+      return forEditor(duplicate, accessCheck.permission);
     },
 
     updateAutomation: async (
@@ -198,14 +216,15 @@ export const automationsResolvers = {
     ) => {
       requireAuth(context.auth);
       const automation = await automationService.getAutomationById(id);
-      await assertFormAccess(
+      const accessCheck = await assertFormAccess(
         context,
         automation.formId,
         PermissionLevel.EDITOR,
         'Access denied: You need EDITOR access to update this automation'
       );
 
-      return automationService.updateAutomation(automation, { name, graph, triggerConfig });
+      const updated = await automationService.updateAutomation(automation, { name, graph, triggerConfig });
+      return forEditor(updated, accessCheck.permission);
     },
 
     saveAutomationDraft: async (
@@ -221,18 +240,19 @@ export const automationsResolvers = {
     ) => {
       requireAuth(context.auth);
       const automation = await automationService.getAutomationById(id);
-      await assertFormAccess(
+      const accessCheck = await assertFormAccess(
         context,
         automation.formId,
         PermissionLevel.EDITOR,
         'Access denied: You need EDITOR access to edit this automation'
       );
 
-      return automationService.saveAutomationDraft(
+      const saved = await automationService.saveAutomationDraft(
         automation,
         { graph, triggerConfig, baseRevision, force },
         context.auth.user!.id
       );
+      return { ...saved, automation: forEditor(saved.automation, accessCheck.permission) };
     },
 
     publishAutomation: async (
@@ -242,14 +262,15 @@ export const automationsResolvers = {
     ) => {
       requireAuth(context.auth);
       const automation = await automationService.getAutomationById(id);
-      await assertFormAccess(
+      const accessCheck = await assertFormAccess(
         context,
         automation.formId,
         PermissionLevel.EDITOR,
         'Access denied: You need EDITOR access to publish this automation'
       );
 
-      return automationService.publishAutomation(automation, { baseRevision, activate }, context.auth.user!.id);
+      const published = await automationService.publishAutomation(automation, { baseRevision, activate }, context.auth.user!.id);
+      return forEditor(published, accessCheck.permission);
     },
 
     discardAutomationDraft: async (
@@ -259,14 +280,15 @@ export const automationsResolvers = {
     ) => {
       requireAuth(context.auth);
       const automation = await automationService.getAutomationById(id);
-      await assertFormAccess(
+      const accessCheck = await assertFormAccess(
         context,
         automation.formId,
         PermissionLevel.EDITOR,
         'Access denied: You need EDITOR access to discard changes to this automation'
       );
 
-      return automationService.discardAutomationDraft(automation);
+      const discarded = await automationService.discardAutomationDraft(automation);
+      return forEditor(discarded, accessCheck.permission);
     },
 
     setAutomationStatus: async (
@@ -276,14 +298,15 @@ export const automationsResolvers = {
     ) => {
       requireAuth(context.auth);
       const automation = await automationService.getAutomationById(id);
-      await assertFormAccess(
+      const accessCheck = await assertFormAccess(
         context,
         automation.formId,
         PermissionLevel.EDITOR,
         'Access denied: You need EDITOR access to change this automation status'
       );
 
-      return automationService.setAutomationStatus(automation, status);
+      const updated = await automationService.setAutomationStatus(automation, status);
+      return forEditor(updated, accessCheck.permission);
     },
 
     deleteAutomation: async (
@@ -360,6 +383,9 @@ export const automationsResolvers = {
   },
 
   Automation: {
+    graph: (parent: { graph?: unknown; _revealSecrets?: boolean }) => projectGraph(parent.graph, parent),
+    draftGraph: (parent: { draftGraph?: unknown; _revealSecrets?: boolean }) =>
+      parent.draftGraph == null ? parent.draftGraph : projectGraph(parent.draftGraph, parent),
     createdAt: (parent: { createdAt: Date | string }) => toISOString(parent.createdAt),
     updatedAt: (parent: { updatedAt: Date | string }) => toISOString(parent.updatedAt),
     lastDigestedAt: (parent: { lastDigestedAt: Date | string | null }) => toISOString(parent.lastDigestedAt),
