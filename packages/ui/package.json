@@ -78,20 +78,20 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "vitest": "^4.1.11",
-    "@oxc-parser/binding-darwin-arm64": "0.154.0",
-    "@storybook/addon-links": "^10.6.2",
-    "@storybook/addon-onboarding": "^10.6.2",
-    "@storybook/react": "^10.6.2",
-    "@storybook/react-vite": "^10.6.2",
+    "vitest": "^5.0.5",
+    "@oxc-parser/binding-darwin-arm64": "0.155.0",
+    "@storybook/addon-links": "^10.6.4",
+    "@storybook/addon-onboarding": "^10.6.4",
+    "@storybook/react": "^10.6.4",
+    "@storybook/react-vite": "^10.6.4",
     "@tailwindcss/container-queries": "0.1.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "autoprefixer": "^10.6.1",
-    "postcss": "^8.5.30",
-    "storybook": "^10.6.2",
-    "tailwindcss": "^3.4.19",
+    "postcss": "^8.5.31",
+    "storybook": "^10.6.4",
+    "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   }
 }
