@@ -183,9 +183,17 @@ Each section below is a self-contained unit of work for one agent. Sections are 
   S21-01 (rotate the R2 token), S21-02 (PgBouncer TLS and network restriction). Steps are in REMEDIATION.md. Setting
   the `CREDENTIAL_ENCRYPTION_KEY` environment secrets for `dev` and `production` is done; encryption starts on the
   next deploy.
-- **Medium (99):** triaged and remediated in code where possible (branch `fix/security-review-medium-findings`);
-  each finding was re-verified against current code. Fixed or already fixed: the large majority. Partially fixed or
-  skipped (need an infra, product or billing-design decision, or an admin-only setting): S01-04, S04-06, S06-06,
-  S07-03/07, S08-08, S09-01/02, S10-03/04/06, S14-03/04/06/09, S20-04, S21-03/06/09, S23-09, S24-01/02/04.
-  Manual steps are under "Medium findings — manual steps" in [REMEDIATION.md](./REMEDIATION.md).
+- **Medium (99):** triaged and remediated in code where possible; merged in #449 (S12-07 atomic submission limit
+  and the owner-only Pricing checkout included). Each finding was re-verified against current code. Fixed or already
+  fixed: the large majority. Partially fixed or skipped (need an infra, product or billing-design decision, or an
+  admin-only setting): S01-04, S04-06, S06-06, S07-03/07, S08-08, S09-01/02, S10-03/04/06, S14-03/04/06/09, S20-04,
+  S21-03/06/09, S23-09, S24-01/02/04. Manual steps are under "Medium findings — manual steps" in
+  [REMEDIATION.md](./REMEDIATION.md).
+- **Post-merge fixes for the Medium work (all merged, main pipeline and dev E2E green):**
+  #452 narrowed the hosted-E2E credential guard to reject only the public default password (the dev E2E account
+  password was rotated and lives only in the `E2E_INTEGRATION_TEST_PASSWORD` secret); #453 relaxed the sign-in rate
+  limit for `APP_ENV=dev` only (the dev E2E signs in from one IP across parallel workers); #454 restored the default
+  DB pool size to 2 (`DB_POOL_MAX` overrides) after 10 exhausted the shared Postgres connection slots.
+- **Release note:** the first production release needs a build run that produced the image-digest artifact, or
+  `release.yml` fails at the retag step.
 - **Low / Info:** the Low column is the original count and has not been triaged.
