@@ -2,14 +2,13 @@ import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
-import { Button } from '@dculus/ui';
+import { Button, Logo } from '@dculus/ui';
 import {
   LayoutDashboard,
   Building2,
   Users,
   FileText,
   LogOut,
-  Shield,
   Mail,
   CreditCard,
 } from 'lucide-react';
@@ -51,9 +50,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 h-14 shrink-0" style={{ borderBottom: '1px solid var(--tf-border-medium)' }}>
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: 'var(--tf-dark)' }}>
-            <Shield className="h-3.5 w-3.5 text-white" />
-          </div>
+          <Logo size={28} />
           <div className="min-w-0">
             <p className="text-sm font-semibold truncate text-primary">{t('sidebar.title')}</p>
             <p className="text-[11px] truncate text-muted-foreground">{t('sidebar.subtitle')}</p>

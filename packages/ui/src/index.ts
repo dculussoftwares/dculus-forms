@@ -1,6 +1,7 @@
 export { Button, buttonVariants } from "./button"
 export { Badge, badgeVariants } from "./badge"
 export { Chip } from "./chip"
+export { Logo } from "./logo"
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./accordion"
 export { Progress } from "./progress"
 export { Slider } from "./slider"

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router";
-import { Button, Input, Label } from "@dculus/ui";
+import { Button, Input, Label, Logo } from "@dculus/ui";
 import { signIn, emailOtp } from "../lib/auth-client";
 import { useTranslation } from "../hooks/useTranslation";
 import { FileText, CheckCircle, BarChart3, Users, Mail } from "lucide-react";
@@ -131,12 +131,7 @@ export const SignIn = () => {
         style={{ backgroundColor: 'var(--tf-darkest)' }}
       >
         {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
-            <FileText className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-white font-semibold text-lg">{t("hero.productName")}</span>
-        </div>
+        <Logo variant="full" textClassName="text-white" />
 
         {/* Features */}
         <div className="space-y-6">
