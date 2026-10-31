@@ -145,33 +145,33 @@ Each section below is a self-contained unit of work for one agent. Sections are 
 
 ## Findings tracker
 
-| Section | Agent | Status | Critical | High | High fixed | High open | Medium | Low | High remediation |
-|---------|-------|--------|----------|------|------------|-----------|--------|-----|------------------|
-| S01 | general-purpose | done | 0 | 1 | 1 | 0 | 5 | 7 | Fixed in code (#442) |
-| S02 | auth-permission-auditor | done | 0 | 3 | 3 | 0 | 3 | 4 | Fixed in code (#442) |
-| S03 | auth-permission-auditor | done | 0 | 1 | 1 | 0 | 4 | 5 | Fixed in code (#442) |
-| S04 | general-purpose | done | 0 | 2 | 2 | 0 | 5 | 3 | Fixed in code (#442) |
-| S05 | general-purpose | done | 0 | 1 | 1 | 0 | 3 | 5 | Fixed in code (#442) |
-| S06 | general-purpose | done | 0 | 1 | 1 | 0 | 5 | 7 | Fixed in code (#442) |
-| S07 | general-purpose | done | 0 | 2 | 2 | 0 | 6 | 5 | Fixed in code (#442) |
-| S08 | general-purpose | done | 0 | 3 | 3 | 0 | 6 | 5 | Fixed in code (#442) |
-| S09 | general-purpose | done | 0 | 0 | 0 | 0 | 4 | 8 | — |
-| S10 | pdf-template-expert | done | 0 | 0 | 0 | 0 | 6 | 6 | — |
-| S11 | response-filter-auditor | done | 0 | 0 | 0 | 0 | 3 | 6 | — |
-| S12 | subscription-billing-expert | done | 0 | 2 | 2 | 0 | 5 | 4 | Fixed in code (#442) |
-| S13 | general-purpose | done | 0 | 0 | 0 | 0 | 2 | 5 | — |
-| S14 | general-purpose | done | 0 | 1 | 1 | 0 | 8 | 7 | Fixed in code (#442) |
-| S15 | auth-permission-auditor | done | 0 | 0 | 0 | 0 | 2 | 5 | — |
-| S16 | general-purpose | done | 0 | 0 | 0 | 0 | 1 | 6 | — |
-| S17 | general-purpose | done | 0 | 0 | 0 | 0 | 1 | 5 | — |
-| S18 | general-purpose | done | 0 | 0 | 0 | 0 | 1 | 4 | — |
-| S19 | general-purpose | done | 0 | 0 | 0 | 0 | 1 | 4 | — |
-| S20 | general-purpose | done | 0 | 2 | 1 | 1 | 8 | 6 | Code fixed (#442): S20-02 destroy guard. **Manual:** S20-01 GitHub environment/ruleset protections |
-| S21 | general-purpose | done | 0 | 2 | 0 | 2 | 7 | 7 | Code fixed (#442): S21-01 output now sensitive, S21-02 docs. **Manual:** rotate R2 token, enable PgBouncer TLS |
-| S22 | general-purpose | done | 0 | 0 | 0 | 0 | 4 | 5 | — |
-| S23 | general-purpose | done | 0 | 2 | 2 | 0 | 5 | 6 | Fixed in code (#442) |
-| S24 | general-purpose | done | 0 | 0 | 0 | 0 | 4 | 4 | — |
-| **Total** | | | **0** | **23** | **20** | **3** | **99** | **129** | |
+| Section | Agent | Status | Critical | High | High fixed | High open | Medium | Medium open | Low | High remediation |
+|---------|-------|--------|----------|------|------------|-----------|--------|-------------|-----|------------------|
+| S01 | general-purpose | done | 0 | 1 | 1 | 0 | 5 | 1 | 7 | Fixed in code (#442) |
+| S02 | auth-permission-auditor | done | 0 | 3 | 3 | 0 | 3 | 0 | 4 | Fixed in code (#442) |
+| S03 | auth-permission-auditor | done | 0 | 1 | 1 | 0 | 4 | 0 | 5 | Fixed in code (#442) |
+| S04 | general-purpose | done | 0 | 2 | 2 | 0 | 5 | 1 | 3 | Fixed in code (#442) |
+| S05 | general-purpose | done | 0 | 1 | 1 | 0 | 3 | 0 | 5 | Fixed in code (#442) |
+| S06 | general-purpose | done | 0 | 1 | 1 | 0 | 5 | 1 | 7 | Fixed in code (#442) |
+| S07 | general-purpose | done | 0 | 2 | 2 | 0 | 6 | 2 | 5 | Fixed in code (#442) |
+| S08 | general-purpose | done | 0 | 3 | 3 | 0 | 6 | 1 | 5 | Fixed in code (#442) |
+| S09 | general-purpose | done | 0 | 0 | 0 | 0 | 4 | 2 | 8 | — |
+| S10 | pdf-template-expert | done | 0 | 0 | 0 | 0 | 6 | 3 | 6 | — |
+| S11 | response-filter-auditor | done | 0 | 0 | 0 | 0 | 3 | 0 | 6 | — |
+| S12 | subscription-billing-expert | done | 0 | 2 | 2 | 0 | 5 | 0 | 4 | Fixed in code (#442) |
+| S13 | general-purpose | done | 0 | 0 | 0 | 0 | 2 | 0 | 5 | — |
+| S14 | general-purpose | done | 0 | 1 | 1 | 0 | 8 | 4 | 7 | Fixed in code (#442) |
+| S15 | auth-permission-auditor | done | 0 | 0 | 0 | 0 | 2 | 0 | 5 | — |
+| S16 | general-purpose | done | 0 | 0 | 0 | 0 | 1 | 0 | 6 | — |
+| S17 | general-purpose | done | 0 | 0 | 0 | 0 | 1 | 0 | 5 | — |
+| S18 | general-purpose | done | 0 | 0 | 0 | 0 | 1 | 0 | 4 | — |
+| S19 | general-purpose | done | 0 | 0 | 0 | 0 | 1 | 0 | 4 | — |
+| S20 | general-purpose | done | 0 | 2 | 1 | 1 | 8 | 1 | 6 | Code fixed (#442): S20-02 destroy guard. **Manual:** S20-01 GitHub environment/ruleset protections |
+| S21 | general-purpose | done | 0 | 2 | 0 | 2 | 7 | 3 | 7 | Code fixed (#442): S21-01 output now sensitive, S21-02 docs. **Manual:** rotate R2 token, enable PgBouncer TLS |
+| S22 | general-purpose | done | 0 | 0 | 0 | 0 | 4 | 0 | 5 | — |
+| S23 | general-purpose | done | 0 | 2 | 2 | 0 | 5 | 1 | 6 | Fixed in code (#442) |
+| S24 | general-purpose | done | 0 | 0 | 0 | 0 | 4 | 3 | 4 | — |
+| **Total** | | | **0** | **23** | **20** | **3** | **99** | **23** | **129** | |
 
 **Status (as of 2026-10-29):**
 
@@ -189,6 +189,20 @@ Each section below is a self-contained unit of work for one agent. Sections are 
   admin-only setting): S01-04, S04-06, S06-06, S07-03/07, S08-08, S09-01/02, S10-03/04/06, S14-03/04/06/09, S20-04,
   S21-03/06/09, S23-09, S24-01/02/04. Manual steps are under "Medium findings — manual steps" in
   [REMEDIATION.md](./REMEDIATION.md).
+- **Medium still open (23 of 99; 76 fixed or already fixed):** counted in the "Medium open" column above and listed
+  below. Status is taken from the #449 triage and `REMEDIATION.md`, not re-verified in code for this update.
+
+| Area | Open Medium findings | Why still open |
+|------|----------------------|----------------|
+| Auth / rate limiting | S01-04, S04-06 | Needs a trusted client IP (`trust proxy`) and a shared rate-limit store, not just an in-process limiter |
+| Uploads / retention | S06-06, S08-08, S10-06 | R2 objects and run history are not purged when responses, forms or orgs are deleted |
+| Plugins / automations | S07-03, S07-07 | Webhook timeout/size caps and email recipient and quota limits are only partly done |
+| AI | S09-01, S09-02 | Prompt-injection hardening and an atomic per-org credit limit need a product decision |
+| PDF generation | S10-03, S10-04 | Auto-run and bulk runs still execute in the API process with no queue or per-org quota |
+| Database | S14-03, S14-04, S14-06, S14-09 | Audit-log coverage, purge jobs, statement timeout and separate migration/runtime roles need infra or design decisions |
+| CI / infrastructure | S20-04, S21-03, S21-06, S21-09 | Terraform state auth, Cloudflare-only ingress, WAF/rate-limit rules and database roles are manual admin work |
+| Packaging | S23-09 | Multi-stage backend Dockerfile with `--prod` and `--ignore-scripts` needs a Docker build and smoke test |
+| Privacy | S24-01, S24-02, S24-04 | Respondent-initiated deletion, external-copy deletion events and a global invite quota are not built |
 - **Post-merge fixes for the Medium work (all merged, main pipeline and dev E2E green):**
   #452 narrowed the hosted-E2E credential guard to reject only the public default password (the dev E2E account
   password was rotated and lives only in the `E2E_INTEGRATION_TEST_PASSWORD` secret); #453 relaxed the sign-in rate
