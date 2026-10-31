@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { AlertCircle, CheckCircle, FileText, Mail, Users } from 'lucide-react';
+import { AlertCircle, CheckCircle, Mail, Users } from 'lucide-react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { parseDate, isDateExpired } from '@dculus/utils';
@@ -8,7 +8,7 @@ import { authClient, organization } from '../lib/auth-client';
 import { useQuery } from '@apollo/client/react';
 import { GET_INVITATION_PUBLIC } from '../graphql/queries';
 import { useTranslation } from '../hooks/useTranslation';
-import { Button } from '@dculus/ui';
+import { Button, Logo } from '@dculus/ui';
 
 /* Reusable card wrapper */
 const InviteCard: React.FC<{ children: React.ReactNode; maxW?: string }> = ({
@@ -91,12 +91,7 @@ const InviteAcceptance: React.FC = () => {
   const Page: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{ backgroundColor: 'var(--tf-faint)' }}>
       {/* Logo */}
-      <div className="flex items-center gap-2 mb-8">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
-          <FileText className="w-4 h-4 text-white" />
-        </div>
-        <span className="text-base font-semibold text-primary">Dculus Forms</span>
-      </div>
+      <Logo variant="full" className="mb-8" />
       {children}
     </div>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router';
+import { Logo } from '@dculus/ui';
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -14,7 +15,7 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold">Form Viewer</h1>
+            <Logo variant="full" />
             <nav className="hidden md:flex space-x-4">
               {navItems.map((item) => (
                 <Link

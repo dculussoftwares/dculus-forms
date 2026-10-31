@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useMutation, useApolloClient } from '@apollo/client/react';
-import { Button, Input, Label, OTPInput } from '@dculus/ui';
-import { FileText } from 'lucide-react';
+import { Button, Input, Label, Logo, OTPInput } from '@dculus/ui';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
 import { ensureOrganization } from '../lib/ensureOrganization';
 import { ArrowLeft, Timer } from 'lucide-react';
@@ -345,12 +344,7 @@ export const SignUp = () => {
     <div className="h-screen flex overflow-hidden">
       {/* ── Left: dark aubergine brand panel ── */}
       <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: 'var(--tf-darkest)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
-            <FileText className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-white font-semibold text-lg">{t('hero.productName')}</span>
-        </div>
+        <Logo variant="full" textClassName="text-white" />
         <div className="space-y-4">
           <h2 className="text-white text-3xl font-light leading-tight">{t('hero.tagline')}</h2>
           <p className="text-sm text-[rgba(255,255,255,0.55)]">{t('hero.attribution')}</p>

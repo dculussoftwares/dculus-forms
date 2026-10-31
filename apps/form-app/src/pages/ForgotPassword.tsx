@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { Button, Input, Label } from "@dculus/ui";
+import { Button, Input, Label, Logo } from "@dculus/ui";
 import { forgetPassword, authClient } from "../lib/auth-client";
-import { CheckCircle, FileText, KeyRound } from "lucide-react";
+import { CheckCircle, KeyRound } from "lucide-react";
 import { useTranslation } from "../hooks/useTranslation";
 
 export const ForgotPassword = () => {
@@ -92,12 +92,7 @@ export const ForgotPassword = () => {
     <div className="h-screen flex overflow-hidden">
       {/* Left dark panel */}
       <div className="hidden lg:flex lg:flex-col lg:w-[480px] xl:w-[560px] shrink-0 p-10 justify-between" style={{ backgroundColor: 'var(--tf-darkest)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
-            <FileText className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-white font-semibold text-lg">{t('hero.productName')}</span>
-        </div>
+        <Logo variant="full" textClassName="text-white" />
         <div className="space-y-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-white-overlay)' }}>
             <LeftIcon className="w-6 h-6 text-[rgba(255,255,255,0.70)]" />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../hooks/useTranslation';
 import { AlertTriangle } from 'lucide-react';
-import { Button, Input, Label } from '@dculus/ui';
+import { Button, Input, Label, Logo } from '@dculus/ui';
 import { Eye, EyeOff, Shield } from 'lucide-react';
 
 export default function LoginPage() {
@@ -27,12 +27,7 @@ export default function LoginPage() {
     <div className="h-screen flex overflow-hidden">
       {/* Left dark panel */}
       <div className="hidden lg:flex lg:flex-col lg:w-[400px] shrink-0 p-10 justify-between" style={{ backgroundColor: 'var(--tf-darkest)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--tf-dark)' }}>
-            <Shield className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-white font-semibold text-lg">Admin</span>
-        </div>
+        <Logo variant="full" textClassName="text-white" />
         <div className="space-y-3">
           <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tf-white-overlay)' }}>
             <Shield className="w-6 h-6 text-[rgba(255,255,255,0.70)]" />
