@@ -13,6 +13,7 @@ import { UpgradeModal } from '../subscription/UpgradeModal';
 import { UsageChart } from '../subscription/UsageChart';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAuthContext } from '../../contexts/AuthContext';
+import { usePlanTiers } from '../../hooks/usePlanTiers';
 
 function isChargebeeUrl(url: string): boolean {
   try {
@@ -80,6 +81,7 @@ function UsageCard({
 
 export function BillingSettings() {
   const { t } = useTranslation('settings');
+  const { canUpgrade } = usePlanTiers();
   const { activeOrganization, user } = useAuthContext();
   // The backend only lets organization owners start checkout or open the billing portal
   const canManageBilling =
@@ -329,7 +331,7 @@ export function BillingSettings() {
         )}
 
         <div className="mt-6 flex items-center gap-3">
-          {planId !== 'advanced' && (
+          {canUpgrade(planId) && (
             <Button
               onClick={() => setShowUpgradeModal(true)}
               disabled={!canManageBilling}

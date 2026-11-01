@@ -1,3 +1,4 @@
+import { planBadgeStyle, planLabel } from '../lib/planBadge';
 import React, { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useNavigate } from 'react-router';
@@ -55,14 +56,6 @@ const StatCard: React.FC<{
   </div>
 );
 
-const planBadgeStyle = (planId: string) => {
-  switch (planId) {
-    case 'starter': return { backgroundColor: '#dbeafe', color: '#1d4ed8', border: '1px solid #bfdbfe' };
-    case 'advanced': return { backgroundColor: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe' };
-    default: return { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' };
-  }
-};
-
 const healthBadgeStyle = (status: string) => {
   switch (status) {
     case 'ok': return { backgroundColor: 'var(--tf-green-bg)', color: 'var(--tf-green)', border: '1px solid var(--tf-green-bg-md)' };
@@ -97,11 +90,12 @@ export default function DashboardPage() {
     { name: t('storage.postgresDB'), value: statsData?.adminStats?.postgresDbSize || '0 B', subtitle: `${statsData?.adminStats?.postgresTableCount || 0} ${t('storage.tables')}`, icon: Database,  ...STORAGE_COLORS[1] },
   ];
 
-  const planChips = [
-    { key: 'free',     count: statsData?.adminStats?.freePlanCount     ?? 0 },
-    { key: 'starter',  count: statsData?.adminStats?.starterPlanCount  ?? 0 },
-    { key: 'advanced', count: statsData?.adminStats?.advancedPlanCount ?? 0 },
-  ];
+  // Every plan id actually in use (plans are defined in Chargebee), free first then by size.
+  const planChips: { key: string; count: number }[] = [
+    ...((statsData?.adminStats?.planBreakdown ?? []) as { planId: string; count: number }[]),
+  ]
+    .map(({ planId, count }) => ({ key: planId, count }))
+    .sort((a, b) => (a.key === 'free' ? -1 : b.key === 'free' ? 1 : b.count - a.count));
 
   const orgsNearLimit: OrgNearLimit[] = statsData?.adminStats?.orgsNearLimit ?? [];
   const recentOrgs: RecentOrg[] = orgsData?.adminOrganizations?.organizations ?? [];
@@ -157,7 +151,7 @@ export default function DashboardPage() {
               ))
             : planChips.map(({ key, count }) => (
                 <span key={key} className="px-3 py-1 rounded-full text-xs font-medium" style={planBadgeStyle(key)}>
-                  {t(`plans.${key as 'free' | 'starter' | 'advanced'}`)} · {count} {t('plans.orgs')}
+                  {planLabel(key)} · {count} {t('plans.orgs')}
                 </span>
               ))
           }

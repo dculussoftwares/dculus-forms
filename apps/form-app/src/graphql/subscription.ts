@@ -22,6 +22,7 @@ export const GET_AVAILABLE_PLANS : TypedDocumentNode<any, any> = gql`
         views
         submissions
         emails
+        aiCredits
       }
     }
   }

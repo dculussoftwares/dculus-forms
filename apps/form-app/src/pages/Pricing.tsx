@@ -14,6 +14,8 @@ import {
 import { GET_AVAILABLE_PLANS, CREATE_CHECKOUT_SESSION } from '../graphql/subscription';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
+import { usePlanLimitLines } from '../hooks/usePlanTiers';
+import { sortPlansByTier, getRecommendedPlanId, type CatalogPlan } from '../lib/planTiers';
 
 type BillingCycle = 'monthly' | 'yearly';
 type Currency = 'USD' | 'INR';
@@ -33,55 +35,45 @@ export const Pricing = () => {
     useMutation(CREATE_CHECKOUT_SESSION);
 
   const plans = data?.availablePlans || [];
+  const limitLines = usePlanLimitLines();
 
-  /* Typeform field-icon palette for plan tiers */
-  const planConfig: Record<string, { icon: any; iconBg: string; iconColor: string; tagline: string; features: string[]; recommended?: boolean }> = {
-    free: {
-      icon: Zap,
-      iconBg: 'var(--tf-icon-gray)', iconColor: 'var(--tf-text)',
-      tagline: t('plans.free.tagline'),
-      features: [
-        t('plans.free.features.views'),
-        t('plans.free.features.submissions'),
-        t('plans.free.features.forms'),
-        t('plans.free.features.collaboration'),
-        t('plans.free.features.analytics'),
-        t('plans.free.features.support'),
-      ],
-    },
-    starter: {
-      icon: TrendingUp,
-      iconBg: 'var(--tf-icon-teal)', iconColor: 'var(--tf-green)',
-      tagline: t('plans.starter.tagline'),
-      features: [
-        t('plans.starter.features.views'),
-        t('plans.starter.features.submissions'),
-        t('plans.starter.features.forms'),
-        t('plans.starter.features.collaboration'),
-        t('plans.starter.features.analytics'),
-        t('plans.starter.features.support'),
-        t('plans.starter.features.customDomain'),
-        t('plans.starter.features.apiAccess'),
-      ],
-      recommended: true,
-    },
-    advanced: {
-      icon: Sparkles,
-      iconBg: 'var(--tf-icon-lavender)', iconColor: '#5c2e6b',
-      tagline: t('plans.advanced.tagline'),
-      features: [
-        t('plans.advanced.features.views'),
-        t('plans.advanced.features.submissions'),
-        t('plans.advanced.features.forms'),
-        t('plans.advanced.features.collaboration'),
-        t('plans.advanced.features.analytics'),
-        t('plans.advanced.features.support'),
-        t('plans.advanced.features.customDomain'),
-        t('plans.advanced.features.apiAccess'),
-        t('plans.advanced.features.whiteLabel'),
-      ],
-    },
-  };
+  /* Typeform field-icon palette for plan tiers — assigned by tier position, never by plan id,
+     because plans are defined in Chargebee and can be added/renamed without a deploy. */
+  const TIER_STYLES = [
+    { icon: Zap, iconBg: 'var(--tf-icon-gray)', iconColor: 'var(--tf-text)' },
+    { icon: TrendingUp, iconBg: 'var(--tf-icon-teal)', iconColor: 'var(--tf-green)' },
+    { icon: Sparkles, iconBg: 'var(--tf-icon-lavender)', iconColor: '#5c2e6b' },
+  ];
+  const tiers = sortPlansByTier(plans as CatalogPlan[]);
+  const recommendedPlanId = getRecommendedPlanId(tiers);
+  const planConfig: Record<string, { icon: any; iconBg: string; iconColor: string; tagline: string; features: string[]; recommended?: boolean }> =
+    Object.fromEntries(
+      tiers.map((plan, index) => {
+        const isFree = plan.id === 'free';
+        const isTop = index === tiers.length - 1 && !isFree;
+        const style = TIER_STYLES[Math.min(index, TIER_STYLES.length - 1)];
+        return [
+          plan.id,
+          {
+            ...style,
+            tagline: plan.description || (isFree ? t('plans.taglineFree') : t('plans.taglinePaid')),
+            // Limits come straight from the Chargebee entitlements so the page can't drift from billing.
+            features: [
+              ...limitLines(plan.features),
+              t('plans.common.forms'),
+              t('plans.common.collaboration'),
+              isFree ? t('plans.common.analyticsBasic') : t('plans.common.analyticsAdvanced'),
+              isFree
+                ? t('plans.common.supportCommunity')
+                : isTop
+                  ? t('plans.common.supportPriority')
+                  : t('plans.common.supportEmail'),
+            ],
+            recommended: plan.id === recommendedPlanId,
+          },
+        ];
+      })
+    );
 
   const getPriceForPlan = (planId: string) => {
     const plan = plans.find((p: any) => p.id === planId);
@@ -187,15 +179,15 @@ export const Pricing = () => {
       </div>
 
       {/* ── Plans ── */}
-      <div className="px-6 pb-14 max-w-5xl mx-auto">
+      <div className="px-6 pb-14 max-w-6xl mx-auto">
         {loading ? (
           <div className="text-center py-14">
             <div className="w-8 h-8 rounded-full border-2 animate-spin mx-auto mb-3" style={{ borderColor: 'var(--tf-border-strong)', borderTopColor: 'var(--tf-dark)' }} />
             <p className="text-xs text-muted-foreground">{t('loading.plans')}</p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {plans.map((plan: any) => {
+          <div className={`grid md:grid-cols-2 gap-5 ${tiers.length + 1 > 4 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'}`}>
+            {tiers.map((plan: any) => {
               const config = planConfig[plan.id];
               if (!config) return null;
               const price = getPriceForPlan(plan.id);

@@ -1635,6 +1635,246 @@ export const unarchivePlan = async (planId: string): Promise<void> => {
   logger.info('[Chargebee Service] Restored plan:', planId);
 };
 
+// ---------------------------------------------------------------------------
+// Add-on catalog — admin-app driven CRUD over Chargebee add-on items.
+//
+// An add-on is a Chargebee item (type: addon) plus item prices, with feature
+// entitlements attached at addon_price level. Each entitlement is the PER-UNIT
+// grant; the subscription item's quantity multiplies it (see applyAddonsToLimits).
+// A null grant means the add-on does not touch that meter.
+// ---------------------------------------------------------------------------
+
+export type AddonGrantsInput = PlanLimitsInput;
+
+export interface AdminAddonCatalogEntry {
+  id: string;
+  name: string;
+  description: string;
+  status: 'active' | 'archived';
+  prices: AdminPlanCatalogEntry['prices'];
+  grants: AddonGrantsInput;
+}
+
+const listAllPages = async (fetchPage: (offset?: string) => Promise<any>): Promise<any[]> => {
+  const rows: any[] = [];
+  let offset: string | undefined;
+  do {
+    const result = await fetchPage(offset);
+    rows.push(...result.list);
+    offset = result.next_offset;
+  } while (offset);
+  return rows;
+};
+
+export const getAdminAddonCatalog = async (): Promise<AdminAddonCatalogEntry[]> => {
+  const items = (
+    await listAllPages((offset) =>
+      chargebee.item.list({
+        limit: 100,
+        type: { is: 'addon' },
+        status: { in: ['active', 'archived'] },
+        ...(offset ? { offset } : {}),
+      } as any)
+    )
+  )
+    .map((entry) => entry.item)
+    .filter((item) => item.type === 'addon');
+  if (items.length === 0) return [];
+
+  const itemPrices = (
+    await listAllPages((offset) =>
+      chargebee.itemPrice.list({ limit: 100, ...(offset ? { offset } : {}) } as any)
+    )
+  ).map((entry) => entry.item_price);
+  const entitlements = (
+    await listAllPages((offset) =>
+      chargebee.entitlement.list({ limit: 100, ...(offset ? { offset } : {}) } as any)
+    )
+  ).map((entry) => entry.entitlement);
+
+  const byPriceId: Record<string, Record<string, any>> = {};
+  for (const ent of entitlements) {
+    (byPriceId[ent.entity_id] ??= {})[ent.feature_id] = ent.value;
+  }
+
+  return items.map((item) => {
+    const prices = itemPrices
+      .filter((p) => p.item_id === item.id && p.status !== 'deleted')
+      .map((p) => ({
+        id: p.id,
+        currency: String(p.currency_code ?? '').toUpperCase(),
+        period: (p.period_unit === 'year' ? 'yearly' : 'monthly') as 'monthly' | 'yearly',
+        priceInSmallestUnit: p.price ?? 0,
+        status: (p.status === 'archived' ? 'archived' : 'active') as 'active' | 'archived',
+      }));
+    const features = prices.map((p) => byPriceId[p.id]).find((f) => f) ?? {};
+    return {
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      status: (item.status === 'archived' ? 'archived' : 'active') as 'active' | 'archived',
+      prices,
+      grants: {
+        views: entitlementToLimit(features[PLAN_FEATURE_IDS.views]),
+        submissions: entitlementToLimit(features[PLAN_FEATURE_IDS.submissions]),
+        emails: entitlementToLimit(features[PLAN_FEATURE_IDS.emails]),
+        aiCredits: entitlementToLimit(features[PLAN_FEATURE_IDS.aiCredits]),
+      },
+    };
+  });
+};
+
+const GRANT_KEYS: [keyof AddonGrantsInput, string][] = [
+  ['views', PLAN_FEATURE_IDS.views],
+  ['submissions', PLAN_FEATURE_IDS.submissions],
+  ['emails', PLAN_FEATURE_IDS.emails],
+  ['aiCredits', PLAN_FEATURE_IDS.aiCredits],
+];
+
+/** Upsert granted meters; remove entitlements for meters whose grant is now null. */
+const syncAddonEntitlements = async (
+  itemPriceIds: string[],
+  grants: AddonGrantsInput
+): Promise<void> => {
+  if (itemPriceIds.length === 0) return;
+  const rowFor = (priceId: string, featureId: string, value?: string) => ({
+    entity_id: priceId,
+    entity_type: 'addon_price',
+    feature_id: featureId,
+    ...(value !== undefined ? { value } : {}),
+  });
+  const upserts = itemPriceIds.flatMap((priceId) =>
+    GRANT_KEYS.filter(([key]) => grants[key] != null).map(([key, featureId]) =>
+      rowFor(priceId, featureId, String(grants[key]))
+    )
+  );
+  const removals = itemPriceIds.flatMap((priceId) =>
+    GRANT_KEYS.filter(([key]) => grants[key] == null).map(([, featureId]) => rowFor(priceId, featureId))
+  );
+  if (upserts.length > 0) {
+    await chargebee.entitlement.create({ action: 'upsert', entitlements: upserts } as any);
+  }
+  for (const removal of removals) {
+    try {
+      await chargebee.entitlement.create({ action: 'remove', entitlements: [removal] } as any);
+    } catch (error: any) {
+      // Nothing to remove (entitlement never existed) is fine.
+      if (error?.api_error_code !== 'resource_not_found') throw error;
+    }
+  }
+};
+
+const assertValidGrants = (grants: AddonGrantsInput): void => {
+  if (GRANT_KEYS.every(([key]) => grants[key] == null)) {
+    throw new Error('An add-on must grant at least one meter');
+  }
+};
+
+export const createAddon = async (params: {
+  id: string;
+  name: string;
+  description?: string;
+  prices: PlanPriceInput[];
+  grants: AddonGrantsInput;
+}): Promise<void> => {
+  const { id, name, description, prices, grants } = params;
+
+  if (!PLAN_ID_REGEX.test(id)) {
+    throw new Error('Add-on id must be 2-49 characters of lowercase letters, numbers, and hyphens');
+  }
+  if (id === 'free' || id === 'enterprise') {
+    throw new Error(`The id "${id}" is reserved for a plan`);
+  }
+  if (prices.length === 0) {
+    throw new Error('An add-on needs at least one price');
+  }
+  assertValidGrants(grants);
+
+  try {
+    await chargebee.item.create({
+      id,
+      name,
+      external_name: name,
+      description,
+      type: 'addon',
+      item_family_id: await resolveItemFamilyId(),
+      enabled_for_checkout: true,
+    } as any);
+  } catch (error: any) {
+    logger.error('[Chargebee Service] Error creating add-on item:', error);
+    throw new Error(`Failed to create Chargebee add-on: ${error.message}`);
+  }
+
+  try {
+    for (const price of prices) {
+      await createOrUpdatePlanPrice(id, name, price);
+    }
+    await syncAddonEntitlements(
+      prices.map((p) => planItemPriceId(id, p.currency, p.period)),
+      grants
+    );
+  } catch (error: any) {
+    logger.error('[Chargebee Service] Error creating add-on prices/entitlements:', error);
+    throw new Error(
+      `Add-on "${id}" was only partially created (${error.message}). Edit and save it again to finish setting it up.`
+    );
+  }
+  logger.info('[Chargebee Service] Created add-on:', id);
+};
+
+export const updateAddon = async (params: {
+  id: string;
+  name?: string;
+  description?: string;
+  prices?: PlanPriceInput[];
+  grants?: AddonGrantsInput;
+}): Promise<void> => {
+  const { id, name, description, prices, grants } = params;
+
+  const entry = (await getAdminAddonCatalog()).find((a) => a.id === id);
+  if (!entry) {
+    throw new Error(`Add-on "${id}" does not exist in the Chargebee catalog`);
+  }
+  if (grants) assertValidGrants(grants);
+
+  try {
+    const itemUpdate: any = {};
+    if (name !== undefined) {
+      itemUpdate.name = name;
+      itemUpdate.external_name = name;
+    }
+    if (description !== undefined) itemUpdate.description = description;
+    if (Object.keys(itemUpdate).length > 0) {
+      await chargebee.item.update(id, itemUpdate);
+    }
+
+    const newPriceIds: string[] = [];
+    if (prices?.length) {
+      const existingIds = new Set(entry.prices.map((p) => p.id));
+      for (const price of prices) {
+        const priceId = planItemPriceId(id, price.currency, price.period);
+        if (existingIds.has(priceId)) {
+          await chargebee.itemPrice.update(priceId, { price: price.priceInSmallestUnit } as any);
+        } else {
+          await createOrUpdatePlanPrice(id, name ?? entry.name, price);
+          newPriceIds.push(priceId);
+        }
+      }
+    }
+
+    if (grants) {
+      const activePriceIds = entry.prices.filter((p) => p.status === 'active').map((p) => p.id);
+      await syncAddonEntitlements([...new Set([...activePriceIds, ...newPriceIds])], grants);
+    } else if (newPriceIds.length > 0) {
+      await syncAddonEntitlements(newPriceIds, entry.grants);
+    }
+  } catch (error: any) {
+    logger.error('[Chargebee Service] Error updating add-on:', error);
+    throw new Error(`Failed to update Chargebee add-on: ${error.message}`);
+  }
+  logger.info('[Chargebee Service] Updated add-on:', id);
+};
+
 /**
  * Push edited catalog limits to every organization currently on the plan.
  * Enterprise rows are excluded by definition (their planId is 'enterprise'
@@ -1647,13 +1887,52 @@ export const applyPlanLimitsToOrganizations = async (
   if (planId === 'enterprise') {
     throw new Error('Enterprise limits are managed per organization, not via the catalog');
   }
-  const result = await subscriptionRepository.updateManyByPlan(planId, {
-    viewsLimit: limits.views,
-    submissionsLimit: limits.submissions,
-    emailsLimit: limits.emails,
-    aiCreditsLimit: limits.aiCredits,
-  });
-  return result.count;
+
+  // Cached limits include capacity bought through add-ons. If the catalog has no
+  // add-ons nothing can be stacked on top of the plan, so one bulk update is exact.
+  // Otherwise each subscription is recomputed from its live Chargebee items so an
+  // admin edit to the plan never silently strips purchased add-on capacity.
+  const hasAddons = (await getAdminAddonCatalog()).length > 0;
+  if (!hasAddons) {
+    const result = await subscriptionRepository.updateManyByPlan(planId, {
+      viewsLimit: limits.views,
+      submissionsLimit: limits.submissions,
+      emailsLimit: limits.emails,
+      aiCreditsLimit: limits.aiCredits,
+    });
+    return result.count;
+  }
+
+  const rows = await subscriptionRepository.findManyByPlan(planId);
+  let updated = 0;
+  for (const row of rows) {
+    try {
+      let effective: PlanLimits = limits;
+      if (row.chargebeeSubscriptionId) {
+        const result: any = await chargebee.subscription.retrieve(row.chargebeeSubscriptionId);
+        effective = await applyAddonsToLimits(limits, result.subscription?.subscription_items);
+      }
+      await subscriptionRepository.update({
+        where: { id: row.id },
+        data: {
+          viewsLimit: effective.views,
+          submissionsLimit: effective.submissions,
+          emailsLimit: effective.emails,
+          aiCreditsLimit: effective.aiCredits,
+        },
+      });
+      updated++;
+    } catch (error) {
+      // Leave this row on its previous (plan + add-ons) limits rather than guessing;
+      // the next Chargebee webhook for it re-syncs from the catalog.
+      logger.error('[Chargebee Service] Could not re-apply plan limits for subscription', {
+        subscriptionRowId: row.id,
+        error,
+      });
+      Sentry.captureException(error);
+    }
+  }
+  return updated;
 };
 
 /**

@@ -1,0 +1,10 @@
+{
+  "views": "மாதத்திற்கு {{count}} படிவ பார்வைகள்",
+  "viewsUnlimited": "வரம்பற்ற படிவ பார்வைகள்",
+  "submissions": "மாதத்திற்கு {{count}} சமர்ப்பிப்புகள்",
+  "submissionsUnlimited": "வரம்பற்ற சமர்ப்பிப்புகள்",
+  "emails": "மாதத்திற்கு {{count}} மின்னஞ்சல்கள்",
+  "emailsUnlimited": "வரம்பற்ற மின்னஞ்சல்கள்",
+  "aiCredits": "மாதத்திற்கு {{count}} AI கிரெடிட்கள்",
+  "aiCreditsUnlimited": "வரம்பற்ற AI கிரெடிட்கள்"
+}

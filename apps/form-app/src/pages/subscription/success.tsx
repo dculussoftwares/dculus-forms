@@ -5,11 +5,15 @@ import { Button, Card } from '@dculus/ui';
 import { CheckCircle2, Sparkles, TrendingUp, ArrowRight, Info } from 'lucide-react';
 import { GET_SUBSCRIPTION, SYNC_CHECKOUT_SESSION } from '../../graphql/subscription';
 import { useTranslation } from '../../hooks/useTranslation';
+import { usePlanTiers, usePlanLimitLines } from '../../hooks/usePlanTiers';
+import { getPlanDisplayName } from '../../lib/planTiers';
 
 const POLLING_TIMEOUT_MS = 60000;
 
 export const CheckoutSuccess = () => {
   const { t } = useTranslation('checkoutSuccess');
+  const { plans: tiers } = usePlanTiers();
+  const limitLines = usePlanLimitLines();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [showConfetti, setShowConfetti] = useState(true);
@@ -104,32 +108,6 @@ export const CheckoutSuccess = () => {
         features: string[];
       }
     > = {
-      starter: {
-        name: t('plans.starter.name'),
-        icon: TrendingUp,
-        gradient: 'from-blue-500 to-blue-600',
-        color: 'blue',
-        features: [
-          t('plans.starter.features.unlimitedViews'),
-          t('plans.starter.features.submissions'),
-          t('plans.starter.features.advancedAnalytics'),
-          t('plans.starter.features.prioritySupport'),
-        ],
-      },
-      advanced: {
-        name: t('plans.advanced.name'),
-        icon: Sparkles,
-        gradient: 'from-purple-500 to-purple-600',
-        color: 'purple',
-        features: [
-          t('plans.advanced.features.unlimitedViews'),
-          t('plans.advanced.features.submissions'),
-          t('plans.advanced.features.advancedAnalytics'),
-          t('plans.advanced.features.prioritySupport'),
-          t('plans.advanced.features.customIntegrations'),
-          t('plans.advanced.features.whiteLabel'),
-        ],
-      },
       enterprise: {
         name: t('plans.enterprise.name'),
         icon: Sparkles,
@@ -143,7 +121,17 @@ export const CheckoutSuccess = () => {
       },
     };
 
-    return plans[planId] || plans['starter'];
+    // Any catalog plan (ids/limits live in Chargebee): name and limit lines come from the catalog.
+    const catalogPlan = tiers.find((p) => p.id === planId);
+    return (
+      plans[planId] || {
+        name: getPlanDisplayName(tiers, planId),
+        icon: TrendingUp,
+        gradient: 'from-blue-500 to-blue-600',
+        color: 'blue',
+        features: limitLines(catalogPlan?.features),
+      }
+    );
   };
 
   const planInfo = subscription ? getPlanInfo(subscription.planId) : null;

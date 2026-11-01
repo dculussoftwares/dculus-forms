@@ -21,6 +21,9 @@ import {
   unarchivePlan,
   applyPlanLimitsToOrganizations,
   changeOrganizationPlan,
+  getAdminAddonCatalog,
+  createAddon,
+  updateAddon,
 } from '../chargebeeService.js';
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
 import { subscriptionRepository } from '../../repositories/index.js';
@@ -2487,4 +2490,129 @@ describe('Chargebee Service', () => {
       expect(mockChargebee.itemPrice.list.mock.calls.length).toBeGreaterThan(callsAfterFirst);
     });
   });
+
+  describe('add-ons', () => {
+    const seedAddonCatalog = () => {
+      mockChargebee.item.list.mockResolvedValue({
+        list: [{ item: { id: 'extra-submissions', name: 'Extra', type: 'addon', status: 'active' } }],
+      });
+      mockChargebee.itemPrice.list.mockResolvedValue({
+        list: [
+          {
+            item_price: {
+              id: 'extra-submissions-usd-monthly',
+              item_id: 'extra-submissions',
+              item_type: 'addon',
+              status: 'active',
+              currency_code: 'USD',
+              price: 1200,
+              period_unit: 'month',
+            },
+          },
+        ],
+      });
+      mockChargebee.entitlement.list.mockResolvedValue({
+        list: [
+          { entitlement: { entity_id: 'extra-submissions-usd-monthly', feature_id: 'form_submissions', value: '10000' } },
+        ],
+      });
+    };
+
+    it('lists only add-on items, with per-unit grants and prices', async () => {
+      seedAddonCatalog();
+      const addons = await getAdminAddonCatalog();
+      expect(addons).toEqual([
+        expect.objectContaining({
+          id: 'extra-submissions',
+          status: 'active',
+          grants: { views: null, submissions: 10000, emails: null, aiCredits: null },
+          prices: [expect.objectContaining({ currency: 'USD', priceInSmallestUnit: 1200, period: 'monthly' })],
+        }),
+      ]);
+    });
+
+    it('returns an empty catalog when Chargebee has no add-on items', async () => {
+      // The seeded catalog's item.list returns plan items (no type: addon)
+      await expect(getAdminAddonCatalog()).resolves.toEqual([]);
+    });
+
+    it('creates an add-on item, prices and addon_price entitlements', async () => {
+      mockChargebee.item.retrieve.mockResolvedValue({ item: { item_family_id: 'dculus-forms' } });
+      mockChargebee.item.create.mockResolvedValue({});
+      mockChargebee.itemPrice.create.mockResolvedValue({});
+      mockChargebee.entitlement.create.mockResolvedValue({});
+
+      await createAddon({
+        id: 'extra-ai',
+        name: 'Extra AI',
+        prices: [{ currency: 'USD', period: 'monthly', priceInSmallestUnit: 500 }],
+        grants: { views: null, submissions: null, emails: null, aiCredits: 1000 },
+      });
+
+      expect(mockChargebee.item.create).toHaveBeenCalledWith(expect.objectContaining({ id: 'extra-ai', type: 'addon' }));
+      expect(mockChargebee.item.create.mock.calls[0][0]).not.toHaveProperty('item_applicability');
+      expect(mockChargebee.entitlement.create).toHaveBeenCalledWith({
+        action: 'upsert',
+        entitlements: [
+          { entity_id: 'extra-ai-usd-monthly', entity_type: 'addon_price', feature_id: 'ai_credits', value: '1000' },
+        ],
+      });
+    });
+
+    it('rejects reserved ids and add-ons that grant nothing', async () => {
+      const base = { name: 'X', prices: [{ currency: 'USD' as const, period: 'monthly' as const, priceInSmallestUnit: 100 }] };
+      const none = { views: null, submissions: null, emails: null, aiCredits: null };
+      await expect(createAddon({ ...base, id: 'enterprise', grants: { ...none, emails: 1 } })).rejects.toThrow(/reserved/);
+      await expect(createAddon({ ...base, id: 'my-addon', grants: none })).rejects.toThrow(/at least one meter/);
+      expect(mockChargebee.item.create).not.toHaveBeenCalled();
+    });
+
+    it('removes entitlements for meters whose grant is cleared on update', async () => {
+      seedAddonCatalog();
+      mockChargebee.entitlement.create.mockResolvedValue({});
+      await updateAddon({
+        id: 'extra-submissions',
+        grants: { views: null, submissions: 20000, emails: null, aiCredits: null },
+      });
+      expect(mockChargebee.entitlement.create).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'upsert' })
+      );
+      expect(mockChargebee.entitlement.create).toHaveBeenCalledWith({
+        action: 'remove',
+        entitlements: [
+          { entity_id: 'extra-submissions-usd-monthly', entity_type: 'addon_price', feature_id: 'form_views' },
+        ],
+      });
+    });
+
+    it('re-applying plan limits keeps each subscription\'s purchased add-on capacity', async () => {
+      seedAddonCatalog();
+      vi.mocked(subscriptionRepository.findManyByPlan).mockResolvedValue([
+        { id: 'sub_1', organizationId: 'o1', chargebeeSubscriptionId: 'cb_1' },
+      ] as any);
+      mockChargebee.subscription.retrieve.mockResolvedValue({
+        subscription: {
+          subscription_items: [
+            { item_id: 'extra-submissions', item_type: 'addon', item_price_id: 'extra-submissions-usd-monthly', quantity: 2 },
+          ],
+        },
+      });
+      vi.mocked(subscriptionRepository.update).mockResolvedValue({} as any);
+
+      const count = await applyPlanLimitsToOrganizations('starter', {
+        views: null,
+        submissions: 10000,
+        emails: 5000,
+        aiCredits: 2000,
+      });
+
+      expect(count).toBe(1);
+      expect(subscriptionRepository.update).toHaveBeenCalledWith({
+        where: { id: 'sub_1' },
+        data: expect.objectContaining({ submissionsLimit: 30000, viewsLimit: null }), // 10,000 + 2 x 10,000
+      });
+      expect(subscriptionRepository.updateManyByPlan).not.toHaveBeenCalled();
+    });
+  });
+
 });

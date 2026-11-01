@@ -40,6 +40,12 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
     data: Prisma.SubscriptionUncheckedUpdateManyInput
   ) => prisma.subscription.updateMany({ where: { planId }, data });
 
+  const findManyByPlan = (planId: string) =>
+    prisma.subscription.findMany({
+      where: { planId },
+      select: { id: true, organizationId: true, chargebeeSubscriptionId: true },
+    });
+
   const upsertForOrganization = async (
     organizationId: string,
     updateData: Prisma.SubscriptionUncheckedUpdateInput,
@@ -115,6 +121,7 @@ export const createSubscriptionRepository = (context?: RepositoryContext) => {
     create,
     update,
     updateManyByPlan,
+    findManyByPlan,
     createSubscription,
     upsertForOrganization,
     findByOrganizationPublic,

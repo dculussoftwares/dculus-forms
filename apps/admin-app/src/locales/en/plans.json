@@ -85,5 +85,48 @@
     "updateFailed": "Failed to update plan",
     "archiveFailed": "Failed to archive plan",
     "restoreFailed": "Failed to restore plan"
+  },
+  "addons": {
+    "title": "Add-ons",
+    "subtitle": "Extra capacity customers can add on top of their plan. Each unit grants the amounts below; the subscription's add-on quantity multiplies them.",
+    "create": "Create Add-on",
+    "empty": "No add-ons yet",
+    "error": "Unable to load add-ons.",
+    "table": {
+      "addon": "Add-on",
+      "grants": "Grants per unit"
+    },
+    "form": {
+      "createTitle": "Create Add-on",
+      "editTitle": "Edit Add-on",
+      "id": "Add-on ID",
+      "grantsTitle": "Capacity per unit",
+      "grantsHint": "Amount added to the plan limit for each unit purchased. At least one meter is required.",
+      "noGrant": "Not granted",
+      "pricesTitle": "Prices",
+      "pricesHint": "Amounts are per unit and billing period in major units (e.g. 12 = $12.00). Currency and period are fixed once created.",
+      "syncNote": "Subscriptions already using this add-on pick up changed capacity at their next Chargebee sync (renewal or plan change).",
+      "create": "Create Add-on"
+    },
+    "confirm": {
+      "archiveTitle": "Archive Add-on",
+      "archiveBody": "Archive \"{{name}}\"? It can no longer be purchased; existing subscriptions keep it until removed.",
+      "restoreTitle": "Restore Add-on",
+      "restoreBody": "Restore \"{{name}}\"? It can be purchased again."
+    },
+    "toasts": {
+      "created": "Add-on created",
+      "createdDetail": "The add-on has been created in Chargebee.",
+      "updated": "Add-on updated",
+      "updatedDetail": "Changes saved to Chargebee.",
+      "archived": "Add-on archived",
+      "archivedDetail": "The add-on can no longer be purchased.",
+      "restored": "Add-on restored",
+      "restoredDetail": "The add-on can be purchased again.",
+      "createFailed": "Failed to create add-on",
+      "updateFailed": "Failed to update add-on",
+      "archiveFailed": "Failed to archive add-on",
+      "restoreFailed": "Failed to restore add-on"
+    }
   }
 }

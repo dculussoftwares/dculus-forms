@@ -7,8 +7,10 @@ import { UpgradeModal } from './UpgradeModal';
 import { UsageChart } from './UsageChart';
 import { useTranslation } from '../../hooks/useTranslation';
 import { AITokenUsageCard } from './AITokenUsageCard';
+import { usePlanTiers } from '../../hooks/usePlanTiers';
 
 export const SubscriptionDashboard = () => {
+  const { canUpgrade } = usePlanTiers();
   const { t } = useTranslation('subscriptionDashboard');
   const { data, loading } = useQuery(GET_SUBSCRIPTION);
   const [createPortalSession, { loading: portalLoading }] = useMutation(CREATE_PORTAL_SESSION);
@@ -259,7 +261,7 @@ export const SubscriptionDashboard = () => {
             </Badge>
           </div>
           <div className="flex gap-2">
-            {planId !== 'advanced' && (
+            {canUpgrade(planId) && (
               <Button onClick={() => setShowUpgradeModal(true)}>
                 <TrendingUp className="h-4 w-4 mr-2" />
                 {t('planOverview.upgradePlan')}
