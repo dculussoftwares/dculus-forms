@@ -74,7 +74,13 @@ hidden/archived plans) and throws `PlanLimitsUnavailableError` when it cannot.
 **Add-ons** are Chargebee add-on items whose `addon_price` entitlements are *per-unit*
 grants. During webhook sync the cached `Subscription` limits become
 `plan limit + Σ (add-on grant × subscription item quantity)`; unlimited stays unlimited.
-The admin app's Plans page manages add-ons (`adminAddons`, `adminCreateAddon`, …).
+The admin app's Plans page manages add-ons (`adminAddons`, `adminCreateAddon`, …);
+saving changed grants immediately recomputes every subscription that holds the add-on.
+
+Customers buy add-ons from Billing settings (`availableAddons`, `createAddonCheckoutSession`):
+owner-only, paid non-enterprise plans in good standing. The server picks the add-on price
+that matches the subscription's currency and billing period, and a plan change keeps the
+subscription's existing add-ons (checkout carries them over).
 
 Enterprise is different in kind: its limits are **admin-set directly on the
 `Subscription` row** and never re-derived from Chargebee. Anything that

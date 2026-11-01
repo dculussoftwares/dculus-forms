@@ -875,14 +875,15 @@ export const adminResolvers = {
       const prices = input.prices?.length ? validatePlanPrices(input.prices) : undefined;
       const grants = input.grants ? validatePlanLimits(input.grants) : undefined;
 
+      let resyncedSubscriptions = 0;
       try {
-        await updateAddon({
+        ({ resyncedSubscriptions } = await updateAddon({
           id: input.id,
           name: input.name ?? undefined,
           description: input.description ?? undefined,
           prices,
           grants,
-        });
+        }));
       } catch (error: any) {
         throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
       }
@@ -896,11 +897,12 @@ export const adminResolvers = {
           name: input.name ?? null,
           prices: (prices ?? null) as any,
           grants: (grants ?? null) as any,
+          resyncedSubscriptions,
           changedBy: admin.email,
         },
       });
 
-      logger.info(`[Admin] Add-on ${input.id} updated by ${admin.email}`);
+      logger.info(`[Admin] Add-on ${input.id} updated by ${admin.email} (${resyncedSubscriptions} subscriptions resynced)`);
       const addon = (await getAdminAddonCatalog()).find((a) => a.id === input.id);
       if (!addon) {
         throw createGraphQLError('Add-on was updated but could not be read back', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);

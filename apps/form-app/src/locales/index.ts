@@ -241,8 +241,10 @@ import enCheckoutCancel from './en/checkoutCancel.json';
 import taCheckoutCancel from './ta/checkoutCancel.json';
 import enPricing from './en/pricing.json';
 import enPlanLimits from './en/planLimits.json';
+import enAddons from './en/addons.json';
 import taPricing from './ta/pricing.json';
 import taPlanLimits from './ta/planLimits.json';
+import taAddons from './ta/addons.json';
 import enEmailVerification from './en/emailVerification.json';
 import taEmailVerification from './ta/emailVerification.json';
 import enAccountSettings from './en/accountSettings.json';
@@ -406,6 +408,7 @@ const enTranslations = {
   checkoutCancel: enCheckoutCancel,
   pricing: enPricing,
   planLimits: enPlanLimits,
+  addons: enAddons,
   emailVerification: enEmailVerification,
   accountSettings: enAccountSettings,
   magicLinkCallback: enMagicLinkCallback,
@@ -550,6 +553,7 @@ const taTranslations = {
   checkoutCancel: taCheckoutCancel,
   pricing: taPricing,
   planLimits: taPlanLimits,
+  addons: taAddons,
   emailVerification: taEmailVerification,
   accountSettings: taAccountSettings,
   magicLinkCallback: taMagicLinkCallback,

@@ -164,3 +164,36 @@ export const GET_AI_TOKEN_USAGE : TypedDocumentNode<any, any> = gql`
     }
   }
 `;
+
+// Add-ons the org can buy on top of its paid plan (unitPrice already matches the
+// subscription's currency and billing period)
+export const GET_AVAILABLE_ADDONS: TypedDocumentNode<any, any> = gql`
+  query GetAvailableAddons {
+    availableAddons {
+      id
+      name
+      description
+      unitPrice {
+        id
+        currency
+        amount
+        period
+      }
+      grants {
+        views
+        submissions
+        emails
+        aiCredits
+      }
+    }
+  }
+`;
+
+export const CREATE_ADDON_CHECKOUT_SESSION: TypedDocumentNode<any, any> = gql`
+  mutation CreateAddonCheckoutSession($addonId: String!, $quantity: Int!) {
+    createAddonCheckoutSession(addonId: $addonId, quantity: $quantity) {
+      url
+      hostedPageId
+    }
+  }
+`;

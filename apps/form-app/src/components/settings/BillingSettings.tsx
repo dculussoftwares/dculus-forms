@@ -11,6 +11,7 @@ import {
 } from '../../graphql/subscription';
 import { UpgradeModal } from '../subscription/UpgradeModal';
 import { UsageChart } from '../subscription/UsageChart';
+import { AddonsCard } from '../subscription/AddonsCard';
 import { useTranslation } from '../../hooks/useTranslation';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { usePlanTiers } from '../../hooks/usePlanTiers';
@@ -342,6 +343,8 @@ export function BillingSettings() {
           )}
         </div>
       </Card>
+
+      <AddonsCard planId={planId} status={status} canManageBilling={canManageBilling} />
 
       {/* Billing details card */}
       <Card className="p-6">

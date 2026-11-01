@@ -97,7 +97,7 @@ vi.mock('../../../services/chargebeeService.js', () => ({
   changeOrganizationPlan: vi.fn().mockResolvedValue(undefined),
   getAdminAddonCatalog: vi.fn().mockResolvedValue([]),
   createAddon: vi.fn().mockResolvedValue(undefined),
-  updateAddon: vi.fn().mockResolvedValue(undefined),
+  updateAddon: vi.fn().mockResolvedValue({ resyncedSubscriptions: 0 }),
 }));
 
 vi.mock('../../../subscriptions/usageService.js', () => ({

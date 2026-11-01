@@ -24,6 +24,9 @@ import {
   getAdminAddonCatalog,
   createAddon,
   updateAddon,
+  getAvailableAddons,
+  createAddonCheckoutHostedPage,
+  resyncSubscriptionsForAddon,
 } from '../chargebeeService.js';
 import { resetUsageCounters } from '../../subscriptions/usageService.js';
 import { subscriptionRepository } from '../../repositories/index.js';
@@ -53,9 +56,11 @@ vi.mock('chargebee', () => {
       reactivate: vi.fn(),
       createWithItems: vi.fn(),
       updateForItems: vi.fn(),
+      list: vi.fn(),
     },
     itemPrice: {
       list: vi.fn(),
+      retrieve: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
     },
@@ -160,7 +165,10 @@ describe('Chargebee Service', () => {
     mockChargebee.subscription.reactivate.mockReset();
     mockChargebee.subscription.createWithItems.mockReset();
     mockChargebee.subscription.updateForItems.mockReset();
+    mockChargebee.subscription.list.mockReset();
+    mockChargebee.subscription.list.mockResolvedValue({ list: [] });
     mockChargebee.itemPrice.list.mockReset();
+    mockChargebee.itemPrice.retrieve.mockReset();
     mockChargebee.itemPrice.create.mockReset();
     mockChargebee.itemPrice.update.mockReset();
     mockChargebee.entitlement.list.mockReset();
@@ -2612,6 +2620,124 @@ describe('Chargebee Service', () => {
         data: expect.objectContaining({ submissionsLimit: 30000, viewsLimit: null }), // 10,000 + 2 x 10,000
       });
       expect(subscriptionRepository.updateManyByPlan).not.toHaveBeenCalled();
+    });
+  });
+
+
+  describe('add-on purchase and resync', () => {
+    const subItems = [
+      { item_id: 'starter', item_type: 'plan', item_price_id: 'starter-usd-monthly', quantity: 1 },
+      { item_id: 'extra-submissions', item_type: 'addon', item_price_id: 'extra-submissions-usd-monthly', quantity: 2 },
+    ];
+
+    it('plan checkout keeps add-ons the subscription already has', async () => {
+      mockChargebee.subscription.retrieve.mockResolvedValue({ subscription: { subscription_items: subItems } });
+      mockChargebee.hostedPage.checkoutExistingForItems.mockResolvedValue({ hosted_page: { url: 'https://c/h', id: 'hp' } });
+
+      await createCheckoutHostedPage('cust_1', 'standard-usd-monthly', 'sub_1');
+
+      expect(mockChargebee.hostedPage.checkoutExistingForItems).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subscription_items: [
+            { item_price_id: 'standard-usd-monthly', quantity: 1 },
+            { item_price_id: 'extra-submissions-usd-monthly', quantity: 2 },
+          ],
+          replace_items_list: true,
+        })
+      );
+    });
+
+    const mockCatalogWithAddon = () => {
+      mockChargebee.item.list.mockResolvedValue({
+        list: [{ item: { id: 'extra-submissions', name: 'Extra', type: 'addon', status: 'active' } }],
+      });
+      mockChargebee.itemPrice.list.mockResolvedValue({
+        list: [
+          { item_price: { id: 'extra-submissions-usd-monthly', item_id: 'extra-submissions', status: 'active', currency_code: 'USD', price: 1200, period_unit: 'month' } },
+          { item_price: { id: 'extra-submissions-inr-yearly', item_id: 'extra-submissions', status: 'active', currency_code: 'INR', price: 600000, period_unit: 'year' } },
+        ],
+      });
+      mockChargebee.entitlement.list.mockResolvedValue({ list: [] });
+    };
+
+    it('add-on checkout picks the price matching the subscription cycle and keeps every item', async () => {
+      mockCatalogWithAddon();
+      mockChargebee.subscription.retrieve.mockResolvedValue({ subscription: { subscription_items: subItems } });
+      mockChargebee.itemPrice.retrieve.mockResolvedValue({ item_price: { currency_code: 'USD', period_unit: 'month' } });
+      mockChargebee.hostedPage.checkoutExistingForItems.mockResolvedValue({ hosted_page: { url: 'https://c/h', id: 'hp' } });
+
+      await createAddonCheckoutHostedPage('sub_1', 'extra-submissions', 3);
+
+      expect(mockChargebee.itemPrice.retrieve).toHaveBeenCalledWith('starter-usd-monthly');
+      expect(mockChargebee.hostedPage.checkoutExistingForItems).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subscription_items: [
+            { item_price_id: 'starter-usd-monthly', quantity: 1 },
+            { item_price_id: 'extra-submissions-usd-monthly', quantity: 5 }, // 2 existing + 3
+          ],
+        })
+      );
+    });
+
+    it('add-on checkout fails when the add-on has no price for the subscription cycle', async () => {
+      mockCatalogWithAddon();
+      mockChargebee.subscription.retrieve.mockResolvedValue({ subscription: { subscription_items: [subItems[0]] } });
+      mockChargebee.itemPrice.retrieve.mockResolvedValue({ item_price: { currency_code: 'USD', period_unit: 'year' } });
+
+      await expect(createAddonCheckoutHostedPage('sub_1', 'extra-submissions', 1)).rejects.toThrow(
+        /isn't offered for your plan's currency and billing period/
+      );
+      expect(mockChargebee.hostedPage.checkoutExistingForItems).not.toHaveBeenCalled();
+    });
+
+    it('lists only active add-ons that have an active price, with major-unit amounts', async () => {
+      mockChargebee.item.list.mockResolvedValue({
+        list: [
+          { item: { id: 'extra-submissions', name: 'Extra', type: 'addon', status: 'active' } },
+          { item: { id: 'old-addon', name: 'Old', type: 'addon', status: 'archived' } },
+        ],
+      });
+      mockChargebee.itemPrice.list.mockResolvedValue({
+        list: [
+          { item_price: { id: 'extra-submissions-usd-monthly', item_id: 'extra-submissions', status: 'active', currency_code: 'USD', price: 1200, period_unit: 'month' } },
+          { item_price: { id: 'old-addon-usd-monthly', item_id: 'old-addon', status: 'archived', currency_code: 'USD', price: 100, period_unit: 'month' } },
+        ],
+      });
+      mockChargebee.entitlement.list.mockResolvedValue({ list: [] });
+
+      const addons = await getAvailableAddons();
+      expect(addons.map((a) => a.id)).toEqual(['extra-submissions']);
+      expect(addons[0].prices).toEqual([{ id: 'extra-submissions-usd-monthly', currency: 'USD', amount: 12, period: 'month' }]);
+    });
+
+    it('resync updates only subscriptions that hold the add-on, from live items', async () => {
+      mockChargebee.item.list.mockResolvedValue({ list: [] });
+      mockChargebee.entitlement.list.mockImplementation(async (params: any) =>
+        params?.entity_id?.is === 'extra-submissions-usd-monthly'
+          ? { list: [{ entitlement: { entity_id: 'extra-submissions-usd-monthly', feature_id: 'form_submissions', value: '10000' } }] }
+          : { list: TEST_CATALOG.flatMap((p) => FEATURES.map((f, i) => ({ entitlement: { entity_id: `${p.id}-usd-monthly`, feature_id: f, value: p.limits[i] } }))) }
+      );
+      mockChargebee.subscription.list.mockResolvedValue({
+        list: [
+          { subscription: { id: 'cb_holder', subscription_items: subItems } },
+          { subscription: { id: 'cb_plain', subscription_items: [subItems[0]] } },
+        ],
+      });
+      vi.mocked(subscriptionRepository.findMany).mockResolvedValue([
+        { id: 'row_1', planId: 'starter', chargebeeSubscriptionId: 'cb_holder' },
+      ] as any);
+      vi.mocked(subscriptionRepository.update).mockResolvedValue({} as any);
+
+      const count = await resyncSubscriptionsForAddon('extra-submissions');
+
+      expect(count).toBe(1);
+      expect(subscriptionRepository.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ chargebeeSubscriptionId: { in: ['cb_holder'] } }) })
+      );
+      expect(subscriptionRepository.update).toHaveBeenCalledWith({
+        where: { id: 'row_1' },
+        data: expect.objectContaining({ submissionsLimit: 30000 }), // 10,000 plan + 2 x 10,000
+      });
     });
   });
 

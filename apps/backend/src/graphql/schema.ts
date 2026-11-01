@@ -1778,6 +1778,7 @@ export const typeDefs = gql`
 
     # Subscription Queries
     availablePlans: [AvailablePlan!]!
+    availableAddons: [AvailableAddon!]!
 
     # AI Queries
     aiTokenUsage(organizationId: ID!): AITokenUsage!
@@ -1823,6 +1824,19 @@ export const typeDefs = gql`
     submissions: Int
     emails: Int
     aiCredits: Int
+  }
+
+  # Capacity add-on customers can buy on top of a paid plan. Grants are PER UNIT
+  # (purchased quantity multiplies them); null = does not grant that meter.
+  type AvailableAddon {
+    id: String!
+    name: String!
+    description: String
+    prices: [PlanPrice!]!
+    # The price that applies to the caller's current subscription (matching currency
+    # and billing period); null when it has no subscription or no matching price.
+    unitPrice: PlanPrice
+    grants: PlanFeatures!
   }
 
   type AvailablePlan {
@@ -1936,6 +1950,7 @@ export const typeDefs = gql`
 
     # Subscription Mutations
     createCheckoutSession(itemPriceId: String!): CheckoutSessionResponse!
+    createAddonCheckoutSession(addonId: String!, quantity: Int!): CheckoutSessionResponse!
     createPortalSession: PortalSessionResponse!
     initializeOrganizationSubscription(
       organizationId: ID!

@@ -498,6 +498,12 @@ export const setEnterpriseSubscription = async (
   return { checkoutUrl };
 };
 
+/** Current items (plan + add-ons) on a Chargebee subscription. */
+const fetchSubscriptionItems = async (subscriptionId: string): Promise<any[]> => {
+  const result: any = await chargebee.subscription.retrieve(subscriptionId);
+  return result?.subscription?.subscription_items ?? [];
+};
+
 /**
  * Create a Chargebee hosted page for checkout
  * Returns a URL that the user can visit to complete payment
@@ -522,9 +528,14 @@ export const createCheckoutHostedPage = async (
     // swap the items on THAT subscription — opening a second one leaves the
     // free subscription renewing and its webhooks fighting the paid plan.
     if (existingSubscriptionId) {
+      // replace_items_list swaps the whole list, so carry the org's add-ons over —
+      // otherwise a plan change would silently drop capacity the customer paid for.
+      const addonItems = (await fetchSubscriptionItems(existingSubscriptionId))
+        .filter((item) => item?.item_type === 'addon' && item.item_price_id)
+        .map((item) => ({ item_price_id: item.item_price_id, quantity: item.quantity ?? 1 }));
       const existing: any = await chargebee.hostedPage.checkoutExistingForItems({
         subscription: { id: existingSubscriptionId, auto_collection: 'on' },
-        subscription_items: [{ item_price_id: itemPriceId, quantity: 1 }],
+        subscription_items: [{ item_price_id: itemPriceId, quantity: 1 }, ...addonItems],
         replace_items_list: true,
         redirect_url: `${baseUrl}/subscription/success`,
         cancel_url: `${baseUrl}/subscription/cancel`,
@@ -558,6 +569,73 @@ export const createCheckoutHostedPage = async (
   } catch (error: any) {
     logger.error('[Chargebee Service] Error creating checkout hosted page:', error);
     throw new Error(`Failed to create checkout page: ${error.message}`);
+  }
+};
+
+/** Currency and billing period of a subscription, read from its plan item price. */
+const cycleFromItems = async (
+  items: any[]
+): Promise<{ currency: string; period: 'month' | 'year' } | null> => {
+  const planItem = items.find((item) => item?.item_type === 'plan');
+  if (!planItem?.item_price_id) return null;
+  const result: any = await chargebee.itemPrice.retrieve(planItem.item_price_id);
+  return {
+    currency: String(result?.item_price?.currency_code ?? '').toUpperCase(),
+    period: result?.item_price?.period_unit === 'year' ? 'year' : 'month',
+  };
+};
+
+export const getSubscriptionBillingCycle = async (
+  subscriptionId: string
+): Promise<{ currency: string; period: 'month' | 'year' } | null> =>
+  cycleFromItems(await fetchSubscriptionItems(subscriptionId));
+
+/**
+ * Hosted checkout that adds `quantity` units of an add-on to the org's existing
+ * subscription. A Chargebee subscription can only hold prices in its own currency and
+ * billing period, so the matching add-on price is chosen server-side from the
+ * subscription itself. Every other item (plan, add-ons already bought) is kept and an
+ * add-on already on the subscription has its quantity increased.
+ */
+export const createAddonCheckoutHostedPage = async (
+  subscriptionId: string,
+  addonId: string,
+  quantity: number
+): Promise<{ url: string; id: string }> => {
+  try {
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const current = await fetchSubscriptionItems(subscriptionId);
+    if (current.length === 0) {
+      throw new Error('The subscription has no items to add the add-on to');
+    }
+
+    const addon = (await getAvailableAddons()).find((a) => a.id === addonId);
+    if (!addon) throw new Error('Add-on is not available');
+    const cycle = await cycleFromItems(current);
+    const price = addon.prices.find((p) => p.currency === cycle?.currency && p.period === cycle?.period);
+    if (!price) {
+      throw new Error("This add-on isn't offered for your plan's currency and billing period");
+    }
+
+    const items = current.map((item) => ({
+      item_price_id: item.item_price_id,
+      quantity: item.quantity ?? 1,
+    }));
+    const already = items.find((item) => item.item_price_id === price.id);
+    if (already) already.quantity += quantity;
+    else items.push({ item_price_id: price.id, quantity });
+
+    const result: any = await chargebee.hostedPage.checkoutExistingForItems({
+      subscription: { id: subscriptionId, auto_collection: 'on' },
+      subscription_items: items,
+      replace_items_list: true,
+      redirect_url: `${baseUrl}/subscription/success`,
+      cancel_url: `${baseUrl}/subscription/cancel`,
+    } as any);
+    return { url: result.hosted_page.url!, id: result.hosted_page.id! };
+  } catch (error: any) {
+    logger.error('[Chargebee Service] Error creating add-on checkout hosted page:', error);
+    throw new Error(`Failed to create add-on checkout page: ${error.message}`);
   }
 };
 
@@ -1828,7 +1906,7 @@ export const updateAddon = async (params: {
   description?: string;
   prices?: PlanPriceInput[];
   grants?: AddonGrantsInput;
-}): Promise<void> => {
+}): Promise<{ resyncedSubscriptions: number }> => {
   const { id, name, description, prices, grants } = params;
 
   const entry = (await getAdminAddonCatalog()).find((a) => a.id === id);
@@ -1873,6 +1951,88 @@ export const updateAddon = async (params: {
     throw new Error(`Failed to update Chargebee add-on: ${error.message}`);
   }
   logger.info('[Chargebee Service] Updated add-on:', id);
+
+  // Changed per-unit grants must reach subscribers who already hold the add-on.
+  const resyncedSubscriptions = grants ? await resyncSubscriptionsForAddon(id) : 0;
+  return { resyncedSubscriptions };
+};
+
+export interface AvailableAddon {
+  id: string;
+  name: string;
+  description: string;
+  prices: { id: string; currency: string; amount: number; period: 'month' | 'year' }[];
+  grants: AddonGrantsInput;
+}
+
+/** Add-ons customers may buy: active items with at least one active price (major-unit amounts). */
+export const getAvailableAddons = async (): Promise<AvailableAddon[]> => {
+  const catalog = await getAdminAddonCatalog();
+  return catalog
+    .filter((addon) => addon.status === 'active')
+    .map((addon) => ({
+      id: addon.id,
+      name: addon.name,
+      description: addon.description,
+      prices: addon.prices
+        .filter((p) => p.status === 'active')
+        .map((p) => ({
+          id: p.id,
+          currency: p.currency,
+          amount: p.priceInSmallestUnit / 100,
+          period: (p.period === 'yearly' ? 'year' : 'month') as 'month' | 'year',
+        })),
+      grants: addon.grants,
+    }))
+    .filter((addon) => addon.prices.length > 0);
+};
+
+/**
+ * Recompute cached limits for every subscription that currently holds `addonId`, so an
+ * admin edit to the add-on's grants takes effect immediately instead of at the next
+ * webhook. Chargebee can't filter subscriptions by add-on, so subscriptions are paged
+ * in bulk (their items come back inline) and matched locally.
+ */
+export const resyncSubscriptionsForAddon = async (addonId: string): Promise<number> => {
+  const holders = (
+    await listAllPages((offset) =>
+      chargebee.subscription.list({
+        limit: 100,
+        status: { in: ['active', 'non_renewing', 'in_trial'] },
+        ...(offset ? { offset } : {}),
+      } as any)
+    )
+  )
+    .map((entry) => entry.subscription)
+    .filter((sub) => (sub?.subscription_items ?? []).some((i: any) => i.item_type === 'addon' && i.item_id === addonId));
+  if (holders.length === 0) return 0;
+
+  const rows = await subscriptionRepository.findMany({
+    where: { chargebeeSubscriptionId: { in: holders.map((h) => h.id) }, planId: { not: 'enterprise' } },
+    select: { id: true, planId: true, chargebeeSubscriptionId: true },
+  } as any);
+
+  let updated = 0;
+  for (const row of rows as any[]) {
+    const sub = holders.find((h) => h.id === row.chargebeeSubscriptionId);
+    try {
+      const limits = await applyAddonsToLimits(await getPlanLimits(row.planId), sub.subscription_items);
+      await subscriptionRepository.update({
+        where: { id: row.id },
+        data: {
+          viewsLimit: limits.views,
+          submissionsLimit: limits.submissions,
+          emailsLimit: limits.emails,
+          aiCreditsLimit: limits.aiCredits,
+        },
+      });
+      updated++;
+    } catch (error) {
+      logger.error('[Chargebee Service] Could not resync subscription for add-on', { addonId, row: row.id, error });
+      Sentry.captureException(error);
+    }
+  }
+  return updated;
 };
 
 /**

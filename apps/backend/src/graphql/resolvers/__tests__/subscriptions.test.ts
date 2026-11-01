@@ -23,6 +23,9 @@ vi.mock('../../../lib/prisma.js', () => ({
 vi.mock('../../../services/chargebeeService.js', () => ({
   getAvailablePlans: vi.fn(),
   createCheckoutHostedPage: vi.fn(),
+  createAddonCheckoutHostedPage: vi.fn(),
+  getAvailableAddons: vi.fn(),
+  getSubscriptionBillingCycle: vi.fn(),
   createPortalSession: vi.fn(),
   createChargebeeCustomer: vi.fn(),
   createFreeSubscription: vi.fn(),
@@ -1158,4 +1161,63 @@ describe('Subscription Resolvers', () => {
       expect(result.submissions.exceeded).toBe(false);
     });
   });
+
+  describe('Mutation: createAddonCheckoutSession', () => {
+    const paidSubscription = { ...mockSubscription, planId: 'starter', status: 'active' };
+    const addonCatalog = [
+      {
+        id: 'extra-submissions',
+        prices: [
+          { id: 'extra-submissions-usd-monthly', currency: 'USD', amount: 12, period: 'month' },
+          { id: 'extra-submissions-inr-yearly', currency: 'INR', amount: 6000, period: 'year' },
+        ],
+      },
+    ];
+
+    beforeEach(() => {
+      vi.mocked(betterAuthMiddleware.requireAuth).mockReturnValue(mockContext.auth);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(mockMember as any);
+      vi.mocked(chargebeeService.getAvailableAddons).mockResolvedValue(addonCatalog as any);
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue(paidSubscription as any);
+    });
+
+    const call = (args: { addonId: string; quantity: number }, ctx: any = mockContext) =>
+      subscriptionResolvers.Mutation.createAddonCheckoutSession({}, args, ctx);
+
+    it('creates a checkout for a valid add-on price on a paid plan', async () => {
+      vi.mocked(chargebeeService.createAddonCheckoutHostedPage).mockResolvedValue({ url: 'https://x.chargebee.com/h', id: 'hp_1' });
+      await expect(call({ addonId: 'extra-submissions', quantity: 2 })).resolves.toEqual({
+        url: 'https://x.chargebee.com/h',
+        hostedPageId: 'hp_1',
+      });
+      expect(chargebeeService.createAddonCheckoutHostedPage).toHaveBeenCalledWith('cb_sub_123', 'extra-submissions', 2);
+    });
+
+    it('availableAddons resolves each add-on\'s unit price for the org\'s currency and period', async () => {
+      vi.mocked(chargebeeService.getSubscriptionBillingCycle).mockResolvedValue({ currency: 'INR', period: 'year' });
+      const result: any = await subscriptionResolvers.Query.availableAddons({}, {}, mockContext);
+      expect(result[0].unitPrice).toEqual(expect.objectContaining({ id: 'extra-submissions-inr-yearly', amount: 6000 }));
+
+      vi.mocked(chargebeeService.getSubscriptionBillingCycle).mockResolvedValue({ currency: 'EUR', period: 'month' } as any);
+      const none: any = await subscriptionResolvers.Query.availableAddons({}, {}, mockContext);
+      expect(none[0].unitPrice).toBeNull();
+    });
+
+    it('rejects non-owners, plan prices, bad quantities, free/enterprise plans and inactive subscriptions', async () => {
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue({ ...mockMember, role: 'member' } as any);
+      await expect(call({ addonId: 'extra-submissions', quantity: 1 })).rejects.toThrow(/only the organization owner/);
+      vi.mocked(betterAuthMiddleware.requireOrganizationMembership).mockResolvedValue(mockMember as any);
+
+      await expect(call({ addonId: 'starter', quantity: 1 })).rejects.toThrow('Invalid add-on');
+      await expect(call({ addonId: 'extra-submissions', quantity: 0 })).rejects.toThrow(/Quantity/);
+      await expect(call({ addonId: 'extra-submissions', quantity: 1.5 })).rejects.toThrow(/Quantity/);
+
+      for (const bad of [{ planId: 'free' }, { planId: 'enterprise' }, { status: 'past_due' }]) {
+        vi.mocked(prisma.subscription.findUnique).mockResolvedValue({ ...paidSubscription, ...bad } as any);
+        await expect(call({ addonId: 'extra-submissions', quantity: 1 })).rejects.toThrow();
+      }
+      expect(chargebeeService.createAddonCheckoutHostedPage).not.toHaveBeenCalled();
+    });
+  });
+
 });
