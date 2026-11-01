@@ -1,3 +1,4 @@
+import { planBadgeStyle as planBadgeStyleBase } from '../../lib/planBadge';
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useParams, useNavigate } from 'react-router';
@@ -27,12 +28,7 @@ const CHARGEBEE_SITE = (import.meta as { env?: Record<string, string> }).env?.VI
 const MODAL_STYLE: React.CSSProperties = { border: '1px solid var(--tf-border-medium)', boxShadow: 'var(--shadow-xl)' };
 
 const planBadgeStyle = (planId: string): React.CSSProperties => {
-  switch (planId) {
-    case 'starter':    return { backgroundColor: '#dbeafe', color: '#1d4ed8', border: '1px solid #bfdbfe' };
-    case 'advanced':   return { backgroundColor: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe' };
-    case 'enterprise': return { backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
-    default:           return { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' };
-  }
+  return planBadgeStyleBase(planId);
 };
 
 // A limit input paired with an "Unlimited" toggle — null means unlimited, matching

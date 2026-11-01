@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useMutation } from '@apollo/client/react';
 import { X, Check } from 'lucide-react';
 import { cn } from '@dculus/utils';
 import { toastSuccess, toastError } from '@dculus/ui';
-import { GET_AVAILABLE_PLANS, CREATE_CHECKOUT_SESSION } from '../../graphql/subscription';
+import { CREATE_CHECKOUT_SESSION } from '../../graphql/subscription';
+import { usePlanTiers, usePlanLimitLines } from '../../hooks/usePlanTiers';
+import type { CatalogPlan } from '../../lib/planTiers';
 
 interface UpgradeModalProps {
   onClose: () => void;
@@ -13,23 +15,37 @@ interface UpgradeModalProps {
 type BillingCycle = 'monthly' | 'yearly';
 type Currency = 'USD' | 'INR';
 
-const PLAN_META: Record<string, { tagline: string; planSize: string[]; benefits: string[] }> = {
-  free: {
-    tagline: 'Build and share forms for free, forever',
-    planSize: ['10,000 form views / month', '1,000 submissions / month', '50k AI tokens / month'],
-    benefits: ['Unlimited forms', 'Real-time collaboration', 'Basic analytics'],
-  },
-  starter: {
-    tagline: 'More responses, more power',
-    planSize: ['Unlimited form views', '10,000 submissions / month', '500k AI tokens / month'],
-    benefits: ['Everything in Free', 'Advanced analytics', 'Email support', 'API access (coming soon)'],
-  },
-  advanced: {
-    tagline: 'For teams that need scale',
-    planSize: ['Unlimited form views', '100,000 submissions / month', '5M AI tokens / month'],
-    benefits: ['Everything in Starter', 'Priority support', 'Analytics export', 'White-label (coming soon)'],
-  },
-};
+interface PlanMeta {
+  tagline: string;
+  planSize: string[];
+  benefits: string[];
+}
+
+// Display copy is derived from the Chargebee catalog (tier order + entitlements), never
+// keyed by plan id — plans can be added or renamed in Chargebee without a code change.
+function buildPlanMeta(
+  plan: CatalogPlan,
+  index: number,
+  tiers: CatalogPlan[],
+  limitLines: (features: CatalogPlan['features']) => string[]
+): PlanMeta {
+  const isFree = plan.id === 'free';
+  const isTop = !isFree && index === tiers.length - 1;
+  const previous = tiers[index - 1];
+  return {
+    tagline:
+      plan.description ||
+      (isFree ? 'Build and share forms for free, forever' : 'More responses, more power'),
+    planSize: limitLines(plan.features),
+    benefits: isFree
+      ? ['Unlimited forms', 'Real-time collaboration', 'Basic analytics']
+      : [
+          previous ? `Everything in ${previous.name}` : 'Unlimited forms',
+          'Advanced analytics',
+          isTop ? 'Priority support' : 'Email support',
+        ],
+  };
+}
 
 function safeRedirect(url: string, onError: (msg: string) => void) {
   try {
@@ -48,14 +64,14 @@ function safeRedirect(url: string, onError: (msg: string) => void) {
 export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [currency, setCurrency] = useState<Currency>('USD');
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
-    currentPlan === 'free' ? 'starter' : currentPlan === 'starter' ? 'advanced' : null
-  );
-
-  const { data, loading } = useQuery(GET_AVAILABLE_PLANS);
+  const { plans, loading, getNextPlanId } = usePlanTiers();
+  const limitLines = usePlanLimitLines();
+  // Until the user picks a card, preselect the next tier up from their current plan.
+  const [pickedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const selectedPlanId = pickedPlanId ?? getNextPlanId(currentPlan);
   const [createCheckoutSession, { loading: checkoutLoading }] = useMutation(CREATE_CHECKOUT_SESSION);
-
-  const plans: any[] = data?.availablePlans || [];
+  const planMeta = (plan: CatalogPlan): PlanMeta =>
+    buildPlanMeta(plan, plans.findIndex((p) => p.id === plan.id), plans, limitLines);
 
   const getPrice = (planId: string) => {
     const plan = plans.find((p: any) => p.id === planId);
@@ -94,8 +110,8 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
   };
 
   const selectedPrice = selectedPlanId ? getPrice(selectedPlanId) : null;
-  const selectedPlanMeta = selectedPlanId ? PLAN_META[selectedPlanId] : null;
   const selectedPlanData = selectedPlanId ? plans.find((p: any) => p.id === selectedPlanId) : null;
+  const selectedPlanMeta = selectedPlanData ? planMeta(selectedPlanData) : null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#f7f7f8] overflow-y-auto">
@@ -177,11 +193,13 @@ export const UpgradeModal = ({ onClose, currentPlan }: UpgradeModalProps) => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-5 h-full">
-              {/* All plans from API — includes free if returned, skip unknowns */}
+            <div
+              className="grid gap-5 h-full"
+              style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
+            >
+              {/* Every plan in the Chargebee catalog, in tier order */}
               {plans.map((plan: any) => {
-                const meta = PLAN_META[plan.id];
-                if (!meta) return null;
+                const meta = planMeta(plan);
                 const isPlanCurrent = currentPlan === plan.id;
                 const isSelected = selectedPlanId === plan.id;
                 return (
@@ -271,7 +289,7 @@ function PlanCard({
 }: {
   planId: string;
   name: string;
-  meta: typeof PLAN_META[string];
+  meta: PlanMeta;
   price: any;
   formatAmount: (price: any) => string;
   billingCycle: BillingCycle;

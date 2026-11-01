@@ -67,9 +67,10 @@ export const ADMIN_STATS_QUERY : TypedDocumentNode<any, any> = gql`
       fileCount
       postgresDbSize
       postgresTableCount
-      freePlanCount
-      starterPlanCount
-      advancedPlanCount
+      planBreakdown {
+        planId
+        count
+      }
       orgsNearLimit {
         orgId
         orgName

@@ -1,3 +1,4 @@
+import { planBadgeStyle as planBadgeStyleBase } from '../lib/planBadge';
 import React, { useState, useCallback, useRef } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useNavigate } from 'react-router';
@@ -23,11 +24,7 @@ interface AdminOrganization {
 
 const planBadgeStyle = (planId: string, status?: string | null): React.CSSProperties => {
   if (status === 'past_due') return { backgroundColor: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' };
-  switch (planId) {
-    case 'starter':  return { backgroundColor: '#dbeafe', color: '#1d4ed8', border: '1px solid #bfdbfe' };
-    case 'advanced': return { backgroundColor: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe' };
-    default:         return { backgroundColor: 'var(--tf-faint)', color: 'var(--tf-muted)', border: '1px solid var(--tf-border)' };
-  }
+  return planBadgeStyleBase(planId);
 };
 
 const UsageMiniBar: React.FC<{ used: number; limit: number }> = ({ used, limit }) => {

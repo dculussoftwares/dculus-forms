@@ -1,0 +1,10 @@
+{
+  "views": "{{count}} form views / month",
+  "viewsUnlimited": "Unlimited form views",
+  "submissions": "{{count}} submissions / month",
+  "submissionsUnlimited": "Unlimited submissions",
+  "emails": "{{count}} emails sent / month",
+  "emailsUnlimited": "Unlimited emails",
+  "aiCredits": "{{count}} AI credits / month",
+  "aiCreditsUnlimited": "Unlimited AI credits"
+}

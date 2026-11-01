@@ -12,6 +12,8 @@ import {
   archivePlan,
   unarchivePlan,
   changeOrganizationPlan,
+  getAdminAddonCatalog,
+  createAddon,
 } from '../../../services/chargebeeService.js';
 import { resetUsageCounters } from '../../../subscriptions/usageService.js';
 import { invalidateAIBudgetCache } from '../../../services/aiUsageService.js';
@@ -93,6 +95,9 @@ vi.mock('../../../services/chargebeeService.js', () => ({
   archivePlan: vi.fn().mockResolvedValue(undefined),
   unarchivePlan: vi.fn().mockResolvedValue(undefined),
   changeOrganizationPlan: vi.fn().mockResolvedValue(undefined),
+  getAdminAddonCatalog: vi.fn().mockResolvedValue([]),
+  createAddon: vi.fn().mockResolvedValue(undefined),
+  updateAddon: vi.fn().mockResolvedValue({ resyncedSubscriptions: 0 }),
 }));
 
 vi.mock('../../../subscriptions/usageService.js', () => ({
@@ -627,14 +632,21 @@ describe('Admin Resolvers', () => {
       vi.mocked(prisma.form.count).mockResolvedValue(10);
       vi.mocked(prisma.response.count).mockResolvedValue(20);
       mockS3Send.mockRejectedValue(new Error('S3 error'));
-      vi.mocked(prisma.subscription.count)
-        .mockResolvedValueOnce(2)   // free
-        .mockResolvedValueOnce(1)   // starter
-        .mockResolvedValueOnce(0);  // advanced
+      vi.mocked(prisma.subscription.groupBy).mockResolvedValue([
+        { planId: 'free', _count: { _all: 2 } },
+        { planId: 'starter', _count: { _all: 1 } },
+        { planId: 'professional', _count: { _all: 4 } }, // plan ids are open-ended (defined in Chargebee)
+      ] as any);
       vi.mocked(prisma.subscription.findMany).mockResolvedValue([]);
 
       const result = await adminResolvers.Query.adminStats({}, {}, mockAdminContext);
 
+      expect(result.planBreakdown).toEqual([
+        { planId: 'free', count: 2 },
+        { planId: 'starter', count: 1 },
+        { planId: 'professional', count: 4 },
+      ]);
+      // Deprecated fixed-tier fields are derived from the same breakdown
       expect(result.freePlanCount).toBe(2);
       expect(result.starterPlanCount).toBe(1);
       expect(result.advancedPlanCount).toBe(0);
@@ -1779,4 +1791,53 @@ describe('Admin Resolvers', () => {
       ).rejects.toThrow();
     });
   });
+
+  describe('Add-ons', () => {
+    const addon = { id: 'extra-submissions', name: 'Extra', status: 'active', prices: [], grants: { views: null, submissions: 10000, emails: null, aiCredits: null } };
+
+    it('adminAddons lists the add-on catalog for admins only', async () => {
+      vi.mocked(getAdminAddonCatalog).mockResolvedValue([addon] as any);
+      await expect(adminResolvers.Query.adminAddons({}, {}, mockAdminContext)).resolves.toEqual([addon]);
+      await expect(adminResolvers.Query.adminAddons({}, {}, mockUserContext)).rejects.toThrow();
+    });
+
+    it('adminCreateAddon validates input and reads the new add-on back', async () => {
+      vi.mocked(getAdminAddonCatalog).mockResolvedValue([addon] as any);
+      const input = {
+        id: 'extra-submissions',
+        name: ' Extra ',
+        prices: [{ currency: 'USD', period: 'monthly', priceInSmallestUnit: 1200 }],
+        grants: { submissions: 10000 },
+      };
+      const result = await adminResolvers.Mutation.adminCreateAddon({}, { input }, mockAdminContext);
+      expect(createAddon).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'extra-submissions',
+          name: 'Extra',
+          grants: { views: null, submissions: 10000, emails: null, aiCredits: null },
+        })
+      );
+      expect(result).toEqual(addon);
+
+      await expect(
+        adminResolvers.Mutation.adminCreateAddon({}, { input: { ...input, prices: [] } }, mockAdminContext)
+      ).rejects.toThrow('At least one price is required');
+    });
+
+    it('adminArchiveAddon refuses ids that are not add-ons (cannot archive a plan through it)', async () => {
+      vi.mocked(getAdminAddonCatalog).mockResolvedValue([addon] as any);
+      vi.mocked(archivePlan).mockReset();
+      vi.mocked(archivePlan).mockResolvedValue(undefined);
+      await expect(
+        adminResolvers.Mutation.adminArchiveAddon({}, { addonId: 'starter' }, mockAdminContext)
+      ).rejects.toThrow('Add-on not found');
+      expect(archivePlan).not.toHaveBeenCalled();
+
+      await expect(
+        adminResolvers.Mutation.adminArchiveAddon({}, { addonId: 'extra-submissions' }, mockAdminContext)
+      ).resolves.toBe(true);
+      expect(archivePlan).toHaveBeenCalledWith('extra-submissions');
+    });
+  });
+
 });

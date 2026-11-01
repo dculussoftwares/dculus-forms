@@ -63,17 +63,24 @@ different clocks that reset the three different usage counters.
 
 ### The plans
 
-| Plan | Views | Submissions | AI credits |
-|---|---|---|---|
-| `free` | 10,000 | 1,000 | 200 |
-| `starter` | unlimited | 10,000 | 2,000 |
-| `advanced` | unlimited | 100,000 | 20,000 |
-| `enterprise` | negotiated | negotiated | negotiated |
+Plans are **defined in Chargebee**, not in code. The target catalog is in
+`docs/pricing-plan-catalog.json` (`free`, `starter`, `standard`, `professional`,
+`premium`, plus the hidden admin-assigned `enterprise`). Each plan price carries four
+entitlements: `form_views`, `form_submissions`, `emails_sent`, `ai_credits`
+(`null` / "Unlimited" = no limit). There are **no hardcoded limits** in the backend:
+`getPlanLimits()` reads Chargebee (public catalog, then the admin catalog for
+hidden/archived plans) and throws `PlanLimitsUnavailableError` when it cannot.
 
-`null` means unlimited. These are **fallbacks** — the live values come from
-Chargebee entitlements once `getAvailablePlans()` has populated its cache. The
-fallback map also serves as the floor a cancelled or expired org drops to, so it
-can't keep the last-synced paid tier indefinitely.
+**Add-ons** are Chargebee add-on items whose `addon_price` entitlements are *per-unit*
+grants. During webhook sync the cached `Subscription` limits become
+`plan limit + Σ (add-on grant × subscription item quantity)`; unlimited stays unlimited.
+The admin app's Plans page manages add-ons (`adminAddons`, `adminCreateAddon`, …);
+saving changed grants immediately recomputes every subscription that holds the add-on.
+
+Customers buy add-ons from Billing settings (`availableAddons`, `createAddonCheckoutSession`):
+owner-only, paid non-enterprise plans in good standing. The server picks the add-on price
+that matches the subscription's currency and billing period, and a plan change keeps the
+subscription's existing add-ons (checkout carries them over).
 
 Enterprise is different in kind: its limits are **admin-set directly on the
 `Subscription` row** and never re-derived from Chargebee. Anything that
@@ -201,7 +208,7 @@ What this exposes:
 | `checkUsageExceeded` | `submitResponse` | `{ submissionsExceeded, … }` | It starts throwing rather than returning flags |
 | `checkAITokenBudget` | AI chat route, subscription UI | `{ allowed, used, limit }` in **credits** | Units change to raw tokens |
 | `recordAITokenUsage` | AI chat route | Takes tokens plus a model tier | The tier union changes |
-| `PLAN_LIMITS_FALLBACK` | `chargebeeService`, `usageService` | Keyed by plan id, `null` = unlimited | A plan id is added to Chargebee but not here |
+| `getPlanLimits` | `chargebeeService`, `usageService`, `aiUsageService` | Chargebee entitlements; throws `PlanLimitsUnavailableError` | It starts returning guessed values instead of failing |
 | Subscription event types | `usageService` | The `SubscriptionEventType` enum | A value is renamed |
 | `Subscription` row | Pricing page, admin app, usage UI | Column names and `status` union | A new status appears without UI handling |
 
@@ -231,7 +238,7 @@ What this depends on:
 | Payment fails | Status `past_due`, owner emailed; AI and submissions blocked |
 | Renewal webhook missed | Views/submissions stay stale at last period's totals; AI credits roll over correctly regardless |
 | No `Subscription` row for an org | Usage tracking logs a warning and returns |
-| Chargebee entitlements unreachable | `PLAN_LIMITS_FALLBACK` is used |
+| Chargebee entitlements unreachable | **Fail closed**: webhook sync aborts and retries; cancelled/expired orgs and AI credits are blocked until the `free` plan's limits can be read; the plans list serves its last cached copy |
 
 ## Configuration
 
@@ -240,8 +247,7 @@ What this depends on:
 | `CHARGEBEE_SITE` / `CHARGEBEE_API_KEY` | Environment | API access |
 | `WARNING_THRESHOLD = 80` | `usageService.ts` | When `USAGE_LIMIT_REACHED` fires |
 | `AI_CREDIT_WEIGHT_NANO` / `_MINI` | Environment | Token-to-credit weights |
-| `PLAN_LIMITS_FALLBACK` | `lib/planLimits.ts` | Fallback and cancelled-org floor |
-| `AI_CREDIT_LIMITS_FALLBACK` | `lib/ai.ts` | Fallback credit ceilings |
+| Chargebee `free` plan entitlements | Chargebee | Limits for cancelled/expired orgs (no hardcoded copy) |
 
 ## Related pages
 
@@ -255,11 +261,11 @@ What this depends on:
 - **Views/submissions and AI credits reset on different clocks.** If one looks
   reset and the other doesn't, that's expected, not a bug — check whether the
   renewal webhook actually arrived.
-- **`aiCreditsLimit: null` means "not yet synced", not "unlimited".** It falls
-  back to plan defaults. Unlike `viewsLimit`, where `null` *does* mean unlimited.
+- **`aiCreditsLimit: null` means "not yet synced", not "unlimited".** It is
+  resolved from the plan's Chargebee `ai_credits` entitlement (0 if Chargebee is unreachable). Unlike `viewsLimit`, where `null` *does* mean unlimited.
   Same column type, opposite meaning.
-- **Enterprise ignores the plan catalog.** Editing `PLAN_LIMITS_FALLBACK` or
-  Chargebee entitlements has no effect on an enterprise org.
+- **Enterprise ignores the plan catalog.** Editing Chargebee
+  entitlements has no effect on an enterprise org.
 - **`past_due` means two different things.** Check
   `enterprisePendingActivation` before deciding whether to send someone to
   checkout or to the billing portal.

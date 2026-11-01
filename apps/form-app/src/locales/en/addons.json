@@ -1,0 +1,19 @@
+{
+  "title": "Add-ons",
+  "subtitle": "Need more room? Add extra capacity to your current plan.",
+  "quantity": "Units",
+  "perUnit": "{{price}} per unit / {{period}}",
+  "month": "month",
+  "year": "year",
+  "grant": "+{{count}} {{meter}} / month per unit",
+  "buy": "Buy",
+  "redirecting": "Redirecting…",
+  "unavailable": "Not offered for your billing currency",
+  "error": "Couldn't start checkout",
+  "meters": {
+    "views": "form views",
+    "submissions": "submissions",
+    "emails": "emails",
+    "aiCredits": "AI credits"
+  }
+}

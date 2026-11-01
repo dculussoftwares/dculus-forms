@@ -1,6 +1,9 @@
 import type { Subscription as PrismaSubscription } from '#prisma-client';
 import {
   createCheckoutHostedPage,
+  createAddonCheckoutHostedPage,
+  getAvailableAddons,
+  getSubscriptionBillingCycle,
   createPortalSession,
   getAvailablePlans,
   createChargebeeCustomer,
@@ -43,6 +46,31 @@ export const subscriptionResolvers = {
     availablePlans: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);
       return await getAvailablePlans();
+    },
+
+    /** Add-ons customers can buy (active items with at least one active price). */
+    availableAddons: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
+      requireAuth(context.auth);
+      const addons = await getAvailableAddons();
+
+      // Resolve each add-on's unit price for THIS org's subscription (currency + period).
+      let cycle: { currency: string; period: 'month' | 'year' } | null = null;
+      const organizationId = context.auth.session?.activeOrganizationId;
+      if (organizationId) {
+        const subscription = await getSubscriptionByOrganization(organizationId);
+        if (subscription?.chargebeeSubscriptionId) {
+          try {
+            cycle = await getSubscriptionBillingCycle(subscription.chargebeeSubscriptionId);
+          } catch (error) {
+            logger.warn('[Subscription Resolver] Could not resolve billing cycle for add-on prices', error);
+          }
+        }
+      }
+      return addons.map((addon) => ({
+        ...addon,
+        unitPrice:
+          addon.prices.find((p) => p.currency === cycle?.currency && p.period === cycle?.period) ?? null,
+      }));
     },
   },
 
@@ -114,6 +142,67 @@ export const subscriptionResolvers = {
           'Failed to create checkout session',
           GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR
         );
+      }
+    },
+
+    /**
+     * Checkout for extra units of an add-on on the org's current subscription.
+     * Owner-only; paid, in-good-standing, non-enterprise plans only (enterprise limits
+     * are admin-set per org, so an add-on would have no effect there).
+     */
+    createAddonCheckoutSession: async (
+      _: any,
+      { addonId, quantity }: { addonId: string; quantity: number },
+      context: { auth: BetterAuthContext }
+    ) => {
+      requireAuth(context.auth);
+
+      if (!addonId || !/^[a-z0-9][a-z0-9-]{1,48}$/.test(addonId)) {
+        throw new GraphQLError('Invalid add-on ID format');
+      }
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 1000) {
+        throw createGraphQLError('Quantity must be a whole number between 1 and 1000', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      const session = context.auth.session;
+      if (!session?.activeOrganizationId) {
+        throw new GraphQLError('No active organization');
+      }
+      await requireBillingOwner(context.auth, session.activeOrganizationId);
+
+      // 🔒 Only publicly purchasable add-ons (excludes archived add-ons and plans).
+      const addons = await getAvailableAddons();
+      if (!addons.some((addon) => addon.id === addonId)) {
+        throw createGraphQLError('Invalid add-on', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      const subscription = await getSubscriptionByOrganization(session.activeOrganizationId);
+      if (!subscription?.chargebeeSubscriptionId) {
+        throw new GraphQLError('No subscription found for organization');
+      }
+      if (subscription.planId === 'free' || subscription.planId === 'enterprise') {
+        throw createGraphQLError(
+          'Add-ons are available on paid plans',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+      if (subscription.status !== 'active') {
+        throw createGraphQLError(
+          'Add-ons can only be purchased while your subscription is active',
+          GRAPHQL_ERROR_CODES.BAD_USER_INPUT
+        );
+      }
+
+      try {
+        const result = await createAddonCheckoutHostedPage(
+          subscription.chargebeeSubscriptionId,
+          addonId,
+          quantity
+        );
+        return { url: result.url, hostedPageId: result.id };
+      } catch (error: any) {
+        logger.error('[Subscription Resolver] Error creating add-on checkout session:', error);
+        throw createGraphQLError('Failed to create checkout session', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 

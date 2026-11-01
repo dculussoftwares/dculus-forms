@@ -12,6 +12,7 @@ import {
   AdminPlansQueryData,
 } from '../graphql/plans';
 import { useTranslation } from '../hooks/useTranslation';
+import { AddonsSection } from '../components/plans/AddonsSection';
 
 const PLAN_ID_REGEX = /^[a-z0-9][a-z0-9-]{1,48}$/;
 
@@ -395,6 +396,8 @@ export default function PlansPage() {
           )}
         </div>
       )}
+
+      <AddonsSection />
 
       {/* Create / Edit modal */}
       {formMode && (

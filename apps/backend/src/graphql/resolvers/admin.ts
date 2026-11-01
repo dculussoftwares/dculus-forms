@@ -12,6 +12,9 @@ import {
   updatePlan,
   archivePlan,
   unarchivePlan,
+  getAdminAddonCatalog,
+  createAddon,
+  updateAddon,
   changeOrganizationPlan,
   type PlanLimitsInput,
   type PlanPriceInput,
@@ -362,21 +365,19 @@ export const adminResolvers = {
           userCount,
           s3Stats,
           pgStats,
-          freePlanCount,
-          starterPlanCount,
-          advancedPlanCount,
+          planCounts,
           subscriptionsWithLimits,
         ] = await Promise.all([
           organizationService.getPlatformCounts(),
           userService.countUsers(),
           getS3StorageStats(),
           getPostgresStats(),
-          subscriptionService.countSubscriptionsByPlan('free'),
-          subscriptionService.countSubscriptionsByPlan('starter'),
-          subscriptionService.countSubscriptionsByPlan('advanced'),
+          subscriptionService.getSubscriptionCountsByPlan(),
           subscriptionService.findSubscriptionsWithLimits(),
         ]);
         const { organizationCount, formCount, responseCount } = platformCounts;
+        const planBreakdown = (planCounts ?? []).map((c: any) => ({ planId: c.planId, count: c._count._all }));
+        const countFor = (planId: string) => planBreakdown.find((p: any) => p.planId === planId)?.count ?? 0;
 
         const orgsNearLimit = (subscriptionsWithLimits as any[])
           .filter(s => s.submissionsLimit && s.submissionsUsed / s.submissionsLimit >= 0.8)
@@ -397,9 +398,11 @@ export const adminResolvers = {
           fileCount: s3Stats.fileCount,
           postgresDbSize: pgStats.postgresDbSize,
           postgresTableCount: pgStats.postgresTableCount,
-          freePlanCount,
-          starterPlanCount,
-          advancedPlanCount,
+          // Deprecated fixed-tier counts, kept for older clients; use planBreakdown.
+          freePlanCount: countFor('free'),
+          starterPlanCount: countFor('starter'),
+          advancedPlanCount: countFor('advanced'),
+          planBreakdown,
           orgsNearLimit,
         };
       } catch (error) {
@@ -659,6 +662,16 @@ export const adminResolvers = {
       }
     },
 
+    adminAddons: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
+      requireAdminRole(context);
+      try {
+        return await getAdminAddonCatalog();
+      } catch (error) {
+        logger.error('Error fetching admin add-on catalog:', error);
+        throw createGraphQLError('Failed to fetch add-on catalog', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+    },
+
     adminPlans: async (_: any, __: any, context: { auth: BetterAuthContext }) => {
       requireAdminRole(context);
       try {
@@ -788,6 +801,155 @@ export const adminResolvers = {
         throw createGraphQLError('Plan was updated but could not be read back', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
       return plan;
+    },
+
+    adminCreateAddon: async (
+      _: any,
+      args: {
+        input: {
+          id: string;
+          name: string;
+          description?: string | null;
+          prices: AdminPlanPriceArg[];
+          grants: AdminPlanLimitsArg;
+        };
+      },
+      context: { auth: BetterAuthContext }
+    ) => {
+      const admin = requireAdminRole(context);
+      const { input } = args;
+
+      if (!input.name?.trim()) {
+        throw createGraphQLError('Add-on name is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      if (!input.prices?.length) {
+        throw createGraphQLError('At least one price is required', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      const prices = validatePlanPrices(input.prices);
+      const grants = validatePlanLimits(input.grants ?? {});
+
+      try {
+        await createAddon({
+          id: input.id,
+          name: input.name.trim(),
+          description: input.description ?? undefined,
+          prices,
+          grants,
+        });
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await auditLogService.logAction({
+        action: 'addon_created',
+        actorId: admin.id,
+        resourceType: 'Addon',
+        resourceId: input.id,
+        metadata: { name: input.name, prices: prices as any, grants: grants as any, changedBy: admin.email },
+      });
+
+      logger.info(`[Admin] Add-on ${input.id} created by ${admin.email}`);
+      const addon = (await getAdminAddonCatalog()).find((a) => a.id === input.id);
+      if (!addon) {
+        throw createGraphQLError('Add-on was created but could not be read back', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+      return addon;
+    },
+
+    adminUpdateAddon: async (
+      _: any,
+      args: {
+        input: {
+          id: string;
+          name?: string | null;
+          description?: string | null;
+          prices?: AdminPlanPriceArg[] | null;
+          grants?: AdminPlanLimitsArg | null;
+        };
+      },
+      context: { auth: BetterAuthContext }
+    ) => {
+      const admin = requireAdminRole(context);
+      const { input } = args;
+
+      const prices = input.prices?.length ? validatePlanPrices(input.prices) : undefined;
+      const grants = input.grants ? validatePlanLimits(input.grants) : undefined;
+
+      let resyncedSubscriptions = 0;
+      try {
+        ({ resyncedSubscriptions } = await updateAddon({
+          id: input.id,
+          name: input.name ?? undefined,
+          description: input.description ?? undefined,
+          prices,
+          grants,
+        }));
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+
+      await auditLogService.logAction({
+        action: 'addon_updated',
+        actorId: admin.id,
+        resourceType: 'Addon',
+        resourceId: input.id,
+        metadata: {
+          name: input.name ?? null,
+          prices: (prices ?? null) as any,
+          grants: (grants ?? null) as any,
+          resyncedSubscriptions,
+          changedBy: admin.email,
+        },
+      });
+
+      logger.info(`[Admin] Add-on ${input.id} updated by ${admin.email} (${resyncedSubscriptions} subscriptions resynced)`);
+      const addon = (await getAdminAddonCatalog()).find((a) => a.id === input.id);
+      if (!addon) {
+        throw createGraphQLError('Add-on was updated but could not be read back', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+      return addon;
+    },
+
+    adminArchiveAddon: async (_: any, args: { addonId: string }, context: { auth: BetterAuthContext }) => {
+      const admin = requireAdminRole(context);
+      if (!(await getAdminAddonCatalog()).some((a) => a.id === args.addonId)) {
+        throw createGraphQLError('Add-on not found', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      try {
+        await archivePlan(args.addonId);
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      await auditLogService.logAction({
+        action: 'addon_archived',
+        actorId: admin.id,
+        resourceType: 'Addon',
+        resourceId: args.addonId,
+        metadata: { changedBy: admin.email },
+      });
+      logger.info(`[Admin] Add-on ${args.addonId} archived by ${admin.email}`);
+      return true;
+    },
+
+    adminUnarchiveAddon: async (_: any, args: { addonId: string }, context: { auth: BetterAuthContext }) => {
+      const admin = requireAdminRole(context);
+      if (!(await getAdminAddonCatalog()).some((a) => a.id === args.addonId)) {
+        throw createGraphQLError('Add-on not found', GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      try {
+        await unarchivePlan(args.addonId);
+      } catch (error: any) {
+        throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+      }
+      await auditLogService.logAction({
+        action: 'addon_unarchived',
+        actorId: admin.id,
+        resourceType: 'Addon',
+        resourceId: args.addonId,
+        metadata: { changedBy: admin.email },
+      });
+      logger.info(`[Admin] Add-on ${args.addonId} restored by ${admin.email}`);
+      return true;
     },
 
     adminArchivePlan: async (_: any, args: { planId: string }, context: { auth: BetterAuthContext }) => {

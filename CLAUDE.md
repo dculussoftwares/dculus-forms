@@ -78,7 +78,7 @@ The backend uses a layered pattern: **Resolvers → Services → Repositories �
 **Subscriptions** (`apps/backend/src/subscriptions/`):
 - Event-driven usage tracking via `SubscriptionEventType` enum
 - Events: `FORM_VIEWED`, `FORM_SUBMITTED`, `USAGE_LIMIT_REACHED`, `USAGE_LIMIT_EXCEEDED`
-- Plan limits: `free` (10k views / 1k submissions), `starter` (unlimited views / 10k submissions), `advanced` (unlimited / 100k submissions)
+- Plan limits come ONLY from Chargebee entitlements (no hardcoded fallbacks; fails closed when Chargebee is unavailable). Plans/prices/limits are defined in Chargebee (see `docs/pricing-plan-catalog.json`, `docs/deployment/CHARGEBEE_PRODUCTION_SETUP.md`); add-ons stack capacity on top of a plan
 
 **REST routes** (auth callbacks, file uploads, and health checks only):
 - `POST /upload` — file upload with auth/permission check (allowed types: `FormTemplate`, `FormBackground`, `UserAvatar`, `OrganizationLogo`, `FormResponse`, `PdfTemplateAsset`)
@@ -296,10 +296,7 @@ Temporary export files expire after 5 hours and use the key pattern `temp-export
 
 ## Subscription / Billing (Chargebee)
 
-Plans defined in `chargebeeService.ts`:
-- `free`: 10,000 views / 1,000 submissions per period
-- `starter`: unlimited views / 10,000 submissions
-- `advanced`: unlimited views / 100,000 submissions
+Plans are defined in Chargebee (not in code). Target catalog: `free`, `starter`, `standard`, `professional`, `premium` (+ hidden admin-assigned `enterprise`) — see `docs/pricing-plan-catalog.json`. Limits are the `form_views`, `form_submissions`, `emails_sent`, `ai_credits` entitlements; add-on items add per-unit capacity (entitlement × subscription quantity) during webhook sync. Never hardcode plan ids or limits in app code — read them from the catalog (`availablePlans` / admin `adminPlans`, `adminAddons`).
 
 Usage counters are cached in the `Subscription` table and reset at billing period start. The subscription event system (`apps/backend/src/subscriptions/`) fires `USAGE_LIMIT_REACHED` (80% threshold) and `USAGE_LIMIT_EXCEEDED` events.
 

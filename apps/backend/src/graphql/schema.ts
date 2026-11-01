@@ -751,10 +751,18 @@ export const typeDefs = gql`
     fileCount: Int!
     postgresDbSize: String!
     postgresTableCount: Int!
-    freePlanCount: Int!
-    starterPlanCount: Int!
-    advancedPlanCount: Int!
+    freePlanCount: Int! @deprecated(reason: "Use planBreakdown")
+    starterPlanCount: Int! @deprecated(reason: "Use planBreakdown")
+    advancedPlanCount: Int! @deprecated(reason: "Use planBreakdown")
+    # Subscriber count for every plan id actually in use (plans are created
+    # dynamically in Chargebee) — prefer this over the fixed *PlanCount fields.
+    planBreakdown: [PlanSubscriberCount!]!
     orgsNearLimit: [OrgNearLimit!]!
+  }
+
+  type PlanSubscriberCount {
+    planId: String!
+    count: Int!
   }
 
   type OrgNearLimit {
@@ -1730,6 +1738,7 @@ export const typeDefs = gql`
     adminOrganizationById(id: String!): AdminOrganizationDetail!
     adminSystemHealth: [SystemHealthItem!]!
     adminPlans: [AdminPlan!]!
+    adminAddons: [AdminAddon!]!
 
     # Analytics Queries
     formAnalytics(formId: ID!, timeRange: TimeRangeInput): FormAnalytics!
@@ -1769,6 +1778,7 @@ export const typeDefs = gql`
 
     # Subscription Queries
     availablePlans: [AvailablePlan!]!
+    availableAddons: [AvailableAddon!]!
 
     # AI Queries
     aiTokenUsage(organizationId: ID!): AITokenUsage!
@@ -1813,6 +1823,20 @@ export const typeDefs = gql`
     views: Int
     submissions: Int
     emails: Int
+    aiCredits: Int
+  }
+
+  # Capacity add-on customers can buy on top of a paid plan. Grants are PER UNIT
+  # (purchased quantity multiplies them); null = does not grant that meter.
+  type AvailableAddon {
+    id: String!
+    name: String!
+    description: String
+    prices: [PlanPrice!]!
+    # The price that applies to the caller's current subscription (matching currency
+    # and billing period); null when it has no subscription or no matching price.
+    unitPrice: PlanPrice
+    grants: PlanFeatures!
   }
 
   type AvailablePlan {
@@ -1865,6 +1889,33 @@ export const typeDefs = gql`
     aiCredits: Int
   }
 
+  # Add-ons stack extra capacity on top of a plan. Grants are PER UNIT (the
+  # subscription's add-on quantity multiplies them); null = does not grant that meter.
+  type AdminAddon {
+    id: String!
+    name: String!
+    description: String
+    status: String!
+    prices: [AdminPlanPrice!]!
+    grants: AdminPlanLimits!
+  }
+
+  input AdminCreateAddonInput {
+    id: String!
+    name: String!
+    description: String
+    prices: [AdminPlanPriceInput!]!
+    grants: AdminPlanLimitsInput!
+  }
+
+  input AdminUpdateAddonInput {
+    id: String!
+    name: String
+    description: String
+    prices: [AdminPlanPriceInput!]
+    grants: AdminPlanLimitsInput
+  }
+
   input AdminCreatePlanInput {
     id: String!
     name: String!
@@ -1899,6 +1950,7 @@ export const typeDefs = gql`
 
     # Subscription Mutations
     createCheckoutSession(itemPriceId: String!): CheckoutSessionResponse!
+    createAddonCheckoutSession(addonId: String!, quantity: Int!): CheckoutSessionResponse!
     createPortalSession: PortalSessionResponse!
     initializeOrganizationSubscription(
       organizationId: ID!
@@ -2058,6 +2110,10 @@ export const typeDefs = gql`
     adminUpdatePlan(input: AdminUpdatePlanInput!): AdminPlan!
     adminArchivePlan(planId: String!): Boolean!
     adminUnarchivePlan(planId: String!): Boolean!
+    adminCreateAddon(input: AdminCreateAddonInput!): AdminAddon!
+    adminUpdateAddon(input: AdminUpdateAddonInput!): AdminAddon!
+    adminArchiveAddon(addonId: String!): Boolean!
+    adminUnarchiveAddon(addonId: String!): Boolean!
     adminAssignPlan(orgId: ID!, planId: String!): Boolean!
     adminSetEnterprisePlan(
       orgId: ID!
