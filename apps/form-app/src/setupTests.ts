@@ -54,6 +54,11 @@ jest.mock('@dculus/ui', () => {
       React.createElement('div', props, children),
     CardTitle: ({ children, ...props }: any) =>
       React.createElement('h3', props, children),
+    // Tooltips render their children only (no portal/positioning needed in tests).
+    Tooltip: ({ children }: any) => React.createElement(React.Fragment, null, children),
+    TooltipProvider: ({ children }: any) => React.createElement(React.Fragment, null, children),
+    TooltipTrigger: ({ children }: any) => React.createElement(React.Fragment, null, children),
+    TooltipContent: () => null,
   };
 });
 
