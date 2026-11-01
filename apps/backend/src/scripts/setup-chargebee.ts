@@ -93,6 +93,59 @@ const chargebee = new Chargebee({ site: CHARGEBEE_SITE, apiKey: CHARGEBEE_API_KE
 
 logger.info(`Chargebee setup — site: ${CHARGEBEE_SITE} — mode: ${EXECUTE ? 'EXECUTE' : 'DRY RUN'}`);
 
+/** Every distinct finite value the catalog uses for a feature (plans and add-ons). */
+function catalogValues(featureId: string): number[] {
+  const values = new Set<number>();
+  for (const plan of catalog.plans) {
+    const v = plan.entitlements[featureId];
+    if (typeof v === 'number') values.add(v);
+  }
+  for (const addon of catalog.addons) {
+    const v = addon.unit_entitlements[featureId];
+    if (typeof v === 'number') values.add(v);
+  }
+  return [...values];
+}
+
+const levelsFor = (feature: { unit: string }, values: number[]) => {
+  const levels: any[] = [...new Set(values)]
+    .sort((a, b) => a - b)
+    .map((value, level) => ({
+      value: String(value),
+      name: `${value.toLocaleString('en-US')} ${feature.unit}s`,
+      level,
+    }));
+  levels.push({ is_unlimited: true, name: 'Unlimited', level: levels.length });
+  return levels;
+};
+
+/**
+ * Chargebee only accepts entitlement values that are defined levels of the feature, so when
+ * the catalog gains a new value the feature needs that level first. Existing levels are kept
+ * (nothing in use is ever removed); only missing ones are added.
+ */
+async function ensureFeatureLevels(feature: { id: string; name: string; unit: string }) {
+  let existing: any[];
+  try {
+    const result: any = await chargebee.feature.retrieve(feature.id);
+    existing = result.feature.levels ?? [];
+  } catch {
+    return; // feature doesn't exist yet — createFeatures() builds it with all levels
+  }
+  const have = existing.filter((l) => !l.is_unlimited).map((l) => Number(l.value));
+  const missing = catalogValues(feature.id).filter((v) => !have.includes(v));
+  if (missing.length === 0) return;
+  if (!EXECUTE) {
+    logger.info(`  [dry-run] would add levels ${missing.join(', ')} to feature ${feature.id}`);
+    return;
+  }
+  await chargebee.feature.update(feature.id, {
+    name: feature.name,
+    levels: levelsFor(feature, [...have, ...missing]),
+  } as any);
+  logger.info(`  added levels ${missing.join(', ')} to feature ${feature.id}`);
+}
+
 /** Run a create call, treating "already exists" as a skip. */
 async function create(label: string, fn: () => Promise<unknown>) {
   if (!EXECUTE) {
@@ -129,26 +182,10 @@ async function createItemFamily() {
 async function createFeatures() {
   logger.info('Step 1: features (levels = every distinct value used by plans/add-ons)');
   for (const feature of FEATURES) {
-    const values = new Set<number>();
-    for (const plan of catalog.plans) {
-      const v = plan.entitlements[feature.id];
-      if (typeof v === 'number') values.add(v);
-    }
-    for (const addon of catalog.addons) {
-      const v = addon.unit_entitlements[feature.id];
-      if (typeof v === 'number') values.add(v);
-    }
     // Chargebee requires >= 2 levels on a quantity feature; if every plan is unlimited
     // (e.g. form_views) keep one finite level so the unlimited level is valid.
-    if (values.size === 0) values.add(10000);
-    const levels = [...values]
-      .sort((a, b) => a - b)
-      .map((value, level) => ({
-        value: String(value),
-        name: `${value.toLocaleString('en-US')} ${feature.unit}s`,
-        level,
-      }));
-    levels.push({ is_unlimited: true, name: 'Unlimited', level: levels.length } as any);
+    const values = catalogValues(feature.id);
+    if (values.length === 0) values.push(10000);
 
     await create(`feature ${feature.id}`, () =>
       chargebee.feature.create({
@@ -156,9 +193,10 @@ async function createFeatures() {
         name: feature.name,
         type: 'quantity',
         unit: feature.unit,
-        levels,
+        levels: levelsFor(feature, values),
       } as any)
     );
+    await ensureFeatureLevels(feature);
   }
 }
 

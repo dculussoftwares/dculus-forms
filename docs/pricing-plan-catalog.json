@@ -1,5 +1,5 @@
 {
-  "_comment": "Target Chargebee catalog (code-side spec; Chargebee itself is changed manually later). null = Unlimited. form_submissions come from docs/zoho_plans.json; emails_sent and ai_credits are PROPOSALS (Zoho has no equivalent) and need product sign-off. Add-on entitlements are per unit; the subscription item quantity multiplies them.",
+  "_comment": "Target Chargebee catalog (code-side spec; applied to Chargebee with setup-chargebee.ts). null = Unlimited. form_submissions come from docs/zoho_plans.json. emails_sent is sized to the email plugin (~1 email per submission on small plans) at AWS SES ~$0.10/1,000; ai_credits keeps typical full-use cost (SES + AI at ~$0.0015/credit) near 33-38% of the monthly price. Add-on entitlements are per unit; the subscription item quantity multiplies them. Re-check unit costs against real usage before changing prices.",
   "plans": [
     {
       "id": "free",
@@ -17,7 +17,7 @@
       "entitlements": {
         "form_views": null,
         "form_submissions": 500,
-        "emails_sent": 100,
+        "emails_sent": 250,
         "ai_credits": 200
       }
     },
@@ -37,7 +37,7 @@
       "entitlements": {
         "form_views": null,
         "form_submissions": 10000,
-        "emails_sent": 5000,
+        "emails_sent": 10000,
         "ai_credits": 2000
       }
     },
@@ -57,7 +57,7 @@
       "entitlements": {
         "form_views": null,
         "form_submissions": 25000,
-        "emails_sent": 15000,
+        "emails_sent": 25000,
         "ai_credits": 5000
       }
     },
@@ -77,8 +77,8 @@
       "entitlements": {
         "form_views": null,
         "form_submissions": 75000,
-        "emails_sent": 40000,
-        "ai_credits": 15000
+        "emails_sent": 50000,
+        "ai_credits": 12000
       }
     },
     {
@@ -98,13 +98,14 @@
         "form_views": null,
         "form_submissions": 150000,
         "emails_sent": 100000,
-        "ai_credits": 40000
+        "ai_credits": 20000
       }
     }
   ],
   "addons": [
     {
       "id": "extra-submissions",
+      "name": "Extra 10,000 submissions",
       "unit_entitlements": {
         "form_submissions": 10000
       },
@@ -112,8 +113,19 @@
         "USD": 12,
         "INR": 600
       },
-      "source": "zoho",
-      "name": "Extra 10,000 submissions"
+      "source": "zoho"
+    },
+    {
+      "id": "extra-ai-credits",
+      "name": "Extra 5,000 AI credits",
+      "unit_entitlements": {
+        "ai_credits": 5000
+      },
+      "price": {
+        "USD": 15,
+        "INR": 1199
+      },
+      "source": "cost-based: ~2x typical full-use cost at ~$0.0015/credit"
     }
   ]
 }
