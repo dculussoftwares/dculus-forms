@@ -84,7 +84,10 @@ These secrets enable Chargebee billing integration:
 |------------|-------------|---------------|
 | `CHARGEBEE_SITE` | Chargebee site name | `dculus-global` |
 | `CHARGEBEE_API_KEY` | Chargebee API key | `your-chargebee-api-key` |
+| `CHARGEBEE_WEBHOOK_PASSWORD` | Basic Auth password Chargebee sends with webhooks | `your-webhook-password` |
 | `PEXELS_API_KEY` | Pexels API key for background image search (backend proxy) | `your-pexels-api-key` |
+
+> Production uses its own Chargebee site: set these as **`production` environment** secrets (they override repo-level ones). Full runbook: [CHARGEBEE_PRODUCTION_SETUP.md](CHARGEBEE_PRODUCTION_SETUP.md).
 
 **Getting Chargebee Credentials:**
 1. Log in to your Chargebee account

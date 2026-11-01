@@ -1,4 +1,4 @@
-import { AI_CREDIT_LIMITS_FALLBACK, tokensToMilliCredits, type AIModelTier } from '../lib/ai.js';
+import { tokensToMilliCredits, type AIModelTier } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
 import { emitUsageLimitReached, emitUsageLimitExceeded } from '../subscriptions/events.js';
 import { aiUsageRepository } from '../repositories/aiUsageRepository.js';
@@ -152,12 +152,28 @@ async function migrateLegacyPeriodUsage(
 }
 
 /**
+ * Looks up a plan's AI-credit allowance from its Chargebee entitlement. `null` in the
+ * entitlement means unlimited (Infinity). There is NO hardcoded allowance: if Chargebee
+ * can't supply it we fail closed (0 credits) rather than guess.
+ * Imported lazily because chargebeeService itself imports this module.
+ */
+async function planCreditLimit(planId: string): Promise<number> {
+  try {
+    const { getPlanLimits } = await import('./chargebeeService.js');
+    const { aiCredits } = await getPlanLimits(planId);
+    return aiCredits ?? Infinity;
+  } catch (error) {
+    logger.error({ planId, error }, 'AI credit allowance unavailable from Chargebee; failing closed');
+    return 0;
+  }
+}
+
+/**
  * Effective monthly AI-credit limit for an org.
  *
  * `Subscription.aiCreditsLimit` is populated by a Chargebee webhook sync. `null`/missing
- * means "not yet synced from Chargebee" — it is NOT unlimited — so we fall back to the
- * plan's default allowance in AI_CREDIT_LIMITS_FALLBACK, defaulting to `free` if the plan
- * itself is unrecognized.
+ * means "not yet synced from Chargebee" — it is NOT unlimited — so we read the plan's
+ * `ai_credits` entitlement from Chargebee directly (and fail closed if that is unavailable).
  *
  * Enterprise is the one exception: its limits are admin-set directly (never synced from
  * a shared catalog entitlement), so `null` there is a deliberate, explicit "unlimited"
@@ -166,26 +182,24 @@ async function migrateLegacyPeriodUsage(
  *
  * A cancelled/expired subscription keeps whatever `planId`/`aiCreditsLimit` it last synced
  * from Chargebee (cancellation doesn't change which plan item was on the subscription), so
- * without this check the org would retain paid-tier AI credits indefinitely. Fall back to
- * the free allowance instead — mirrors the views/submissions enforcement in usageService.ts.
+ * without this check the org would retain paid-tier AI credits indefinitely. Use the
+ * Chargebee `free` plan's allowance instead — mirrors the views/submissions enforcement in
+ * usageService.ts.
  */
-function effectiveCreditLimit(
+async function effectiveCreditLimit(
   subscription: { planId: string; aiCreditsLimit: number | null; status: string } | null
-): number {
+): Promise<number> {
   if (subscription && (subscription.status === 'cancelled' || subscription.status === 'expired')) {
-    return AI_CREDIT_LIMITS_FALLBACK.free;
+    return planCreditLimit('free');
   }
 
   if (subscription?.planId === 'enterprise' && subscription.aiCreditsLimit == null) {
     return Infinity;
   }
 
-  const planId = subscription?.planId ?? 'free';
-  return (
-    subscription?.aiCreditsLimit ??
-    AI_CREDIT_LIMITS_FALLBACK[planId] ??
-    AI_CREDIT_LIMITS_FALLBACK.free
-  );
+  if (subscription?.aiCreditsLimit != null) return subscription.aiCreditsLimit;
+
+  return planCreditLimit(subscription?.planId ?? 'free');
 }
 
 /**
@@ -226,7 +240,7 @@ export async function checkAITokenBudget(organizationId: string): Promise<{
 
   const usage = await aiUsageRepository.findByOrganizationAndPeriod(organizationId, start);
 
-  const limit = effectiveCreditLimit(subscription);
+  const limit = await effectiveCreditLimit(subscription);
   const creditsUsedMilli = usage?.creditsUsedMilli ?? 0;
   const used = creditsUsedMilli / 1000;
 
@@ -314,7 +328,7 @@ export async function recordAITokenUsage(
       creditsUsedMilli
     );
 
-    const limitCredits = effectiveCreditLimit(subscription);
+    const limitCredits = await effectiveCreditLimit(subscription);
     checkAICreditLimits(organizationId, previousMilli, updated.creditsUsedMilli, limitCredits);
 
     const overageMilli = updated.creditsUsedMilli - limitCredits * 1000;
@@ -345,7 +359,7 @@ export async function getAITokenUsage(organizationId: string): Promise<{
 
   const usage = await aiUsageRepository.findByOrganizationAndPeriod(organizationId, start);
 
-  const creditsLimit = effectiveCreditLimit(subscription);
+  const creditsLimit = await effectiveCreditLimit(subscription);
   const creditsUsedMilli = usage?.creditsUsedMilli ?? 0;
 
   return {

@@ -117,14 +117,6 @@ export function buildPromptCacheOptions(
   return undefined;
 }
 
-// Plan allowances in AI credits per month. Fallbacks only — the live values come
-// from the Chargebee `ai_credits` entitlement, cached on Subscription.aiCreditsLimit.
-export const AI_CREDIT_LIMITS_FALLBACK: Record<string, number> = {
-  free: 200,
-  starter: 2_000,
-  advanced: 20_000,
-};
-
 export type AIModelTier = 'nano' | 'mini';
 
 // Calibrated against actual Azure OpenAI Global Standard pricing for the deployed

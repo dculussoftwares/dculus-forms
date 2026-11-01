@@ -1,0 +1,177 @@
+{
+  "service": "Zoho Forms",
+  "currency_notes": {
+    "india_tax": "Exclusive of 18% GST",
+    "us_tax": "Exclusive of state/local sales tax",
+    "portal_regions": {
+      "india": "zoho.in (IN data center)",
+      "us": "zoho.com (US data center)"
+    }
+  },
+  "plans": [
+    {
+      "id": "free",
+      "name": "Free",
+      "pricing": {
+        "us": { "currency": "USD", "monthly": 0, "annual_monthly_rate": 0 },
+        "india": { "currency": "INR", "monthly": 0, "annual_monthly_rate": 0 }
+      },
+      "usage_limits": {
+        "users_included": 1,
+        "active_forms": 3,
+        "monthly_submissions": 500,
+        "file_storage_mb": 200,
+        "payment_submissions": 10,
+        "form_views": "unlimited"
+      },
+      "features": {
+        "custom_branding": false,
+        "custom_domain": false,
+        "approval_workflows": false,
+        "advanced_email_editor": false,
+        "integrations_tier": "basic",
+        "hipaa_compliance": false,
+        "audit_logs": false
+      }
+    },
+    {
+      "id": "basic",
+      "name": "Basic",
+      "pricing": {
+        "us": { "currency": "USD", "monthly": 12, "annual_monthly_rate": 10 },
+        "india": {
+          "currency": "INR",
+          "monthly": 700,
+          "annual_monthly_rate": 580
+        }
+      },
+      "usage_limits": {
+        "users_included": 1,
+        "active_forms": "unlimited",
+        "monthly_submissions": 10000,
+        "file_storage_mb": 500,
+        "payment_submissions": "unlimited",
+        "form_views": "unlimited"
+      },
+      "features": {
+        "custom_branding": true,
+        "custom_domain": true,
+        "approval_workflows": false,
+        "advanced_email_editor": false,
+        "integrations_tier": "advanced",
+        "hipaa_compliance": false,
+        "audit_logs": false
+      }
+    },
+    {
+      "id": "standard",
+      "name": "Standard",
+      "pricing": {
+        "us": { "currency": "USD", "monthly": 30, "annual_monthly_rate": 25 },
+        "india": {
+          "currency": "INR",
+          "monthly": 1750,
+          "annual_monthly_rate": 1450
+        }
+      },
+      "usage_limits": {
+        "users_included": 10,
+        "active_forms": "unlimited",
+        "monthly_submissions": 25000,
+        "file_storage_mb": 2048,
+        "payment_submissions": "unlimited",
+        "form_views": "unlimited"
+      },
+      "features": {
+        "custom_branding": true,
+        "custom_domain": true,
+        "approval_workflows": true,
+        "advanced_email_editor": true,
+        "integrations_tier": "advanced",
+        "hipaa_compliance": false,
+        "audit_logs": false
+      }
+    },
+    {
+      "id": "professional",
+      "name": "Professional",
+      "pricing": {
+        "us": { "currency": "USD", "monthly": 60, "annual_monthly_rate": 50 },
+        "india": {
+          "currency": "INR",
+          "monthly": 3500,
+          "annual_monthly_rate": 2900
+        }
+      },
+      "usage_limits": {
+        "users_included": 25,
+        "active_forms": "unlimited",
+        "monthly_submissions": 75000,
+        "file_storage_mb": 5120,
+        "payment_submissions": "unlimited",
+        "form_views": "unlimited"
+      },
+      "features": {
+        "custom_branding": true,
+        "custom_domain": true,
+        "approval_workflows": true,
+        "advanced_email_editor": true,
+        "integrations_tier": "advanced",
+        "hipaa_compliance": false,
+        "audit_logs": false
+      }
+    },
+    {
+      "id": "premium",
+      "name": "Premium",
+      "pricing": {
+        "us": { "currency": "USD", "monthly": 110, "annual_monthly_rate": 90 },
+        "india": {
+          "currency": "INR",
+          "monthly": 7000,
+          "annual_monthly_rate": 5800
+        }
+      },
+      "usage_limits": {
+        "users_included": 100,
+        "active_forms": "unlimited",
+        "monthly_submissions": 150000,
+        "file_storage_mb": 10240,
+        "payment_submissions": "unlimited",
+        "form_views": "unlimited"
+      },
+      "features": {
+        "custom_branding": true,
+        "custom_domain": true,
+        "approval_workflows": true,
+        "advanced_email_editor": true,
+        "integrations_tier": "advanced",
+        "hipaa_compliance": true,
+        "audit_logs": true
+      }
+    }
+  ],
+  "addons": [
+    {
+      "type": "submissions",
+      "unit": 10000,
+      "billing_cycle": "monthly",
+      "price_us_usd": 12,
+      "price_in_inr": 600
+    },
+    {
+      "type": "storage_gb",
+      "unit": 5,
+      "billing_cycle": "monthly",
+      "price_us_usd": 6,
+      "price_in_inr": 300
+    },
+    {
+      "type": "additional_user",
+      "unit": 1,
+      "billing_cycle": "monthly",
+      "price_us_usd_approx": 2,
+      "price_in_inr_approx": 120
+    }
+  ]
+}

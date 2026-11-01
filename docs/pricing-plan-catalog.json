@@ -1,0 +1,119 @@
+{
+  "_comment": "Target Chargebee catalog (code-side spec; Chargebee itself is changed manually later). null = Unlimited. form_submissions come from docs/zoho_plans.json; emails_sent and ai_credits are PROPOSALS (Zoho has no equivalent) and need product sign-off. Add-on entitlements are per unit; the subscription item quantity multiplies them.",
+  "plans": [
+    {
+      "id": "free",
+      "name": "Free",
+      "prices": {
+        "USD": {
+          "monthly": 0,
+          "yearly": 0
+        },
+        "INR": {
+          "monthly": 0,
+          "yearly": 0
+        }
+      },
+      "entitlements": {
+        "form_views": null,
+        "form_submissions": 500,
+        "emails_sent": 100,
+        "ai_credits": 200
+      }
+    },
+    {
+      "id": "starter",
+      "name": "Starter",
+      "prices": {
+        "USD": {
+          "monthly": 12,
+          "yearly": 120
+        },
+        "INR": {
+          "monthly": 700,
+          "yearly": 6960
+        }
+      },
+      "entitlements": {
+        "form_views": null,
+        "form_submissions": 10000,
+        "emails_sent": 5000,
+        "ai_credits": 2000
+      }
+    },
+    {
+      "id": "standard",
+      "name": "Standard",
+      "prices": {
+        "USD": {
+          "monthly": 30,
+          "yearly": 300
+        },
+        "INR": {
+          "monthly": 1750,
+          "yearly": 17400
+        }
+      },
+      "entitlements": {
+        "form_views": null,
+        "form_submissions": 25000,
+        "emails_sent": 15000,
+        "ai_credits": 5000
+      }
+    },
+    {
+      "id": "professional",
+      "name": "Professional",
+      "prices": {
+        "USD": {
+          "monthly": 60,
+          "yearly": 600
+        },
+        "INR": {
+          "monthly": 3500,
+          "yearly": 34800
+        }
+      },
+      "entitlements": {
+        "form_views": null,
+        "form_submissions": 75000,
+        "emails_sent": 40000,
+        "ai_credits": 15000
+      }
+    },
+    {
+      "id": "premium",
+      "name": "Premium",
+      "prices": {
+        "USD": {
+          "monthly": 110,
+          "yearly": 1080
+        },
+        "INR": {
+          "monthly": 7000,
+          "yearly": 69600
+        }
+      },
+      "entitlements": {
+        "form_views": null,
+        "form_submissions": 150000,
+        "emails_sent": 100000,
+        "ai_credits": 40000
+      }
+    }
+  ],
+  "addons": [
+    {
+      "id": "extra-submissions",
+      "unit_entitlements": {
+        "form_submissions": 10000
+      },
+      "price": {
+        "USD": 12,
+        "INR": 600
+      },
+      "source": "zoho",
+      "name": "Extra 10,000 submissions"
+    }
+  ]
+}

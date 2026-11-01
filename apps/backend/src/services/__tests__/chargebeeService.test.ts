@@ -96,6 +96,50 @@ vi.mock('../emailService.js', () => ({ sendEmail: vi.fn().mockResolvedValue(unde
 const Chargebee = await import('chargebee') as any;
 const mockChargebee = Chargebee.__mockChargebee;
 
+// Plans have no hardcoded fallback — limits come only from Chargebee entitlements.
+// Seed a default catalog (free / starter / advanced) for tests that sync or create
+// subscriptions; individual tests override with their own mocks.
+const TEST_CATALOG = [
+  { id: 'free', name: 'Free', price: 0, limits: ['10000', '1000', '100', '200'] },
+  { id: 'starter', name: 'Starter', price: 1200, limits: ['Unlimited', '10000', '5000', '2000'] },
+  { id: 'advanced', name: 'Advanced', price: 3000, limits: ['Unlimited', '100000', '50000', '20000'] },
+  { id: 'pro-plus', name: 'Pro Plus', price: 5000, limits: ['Unlimited', '50000', '20000', '10000'] },
+];
+const FEATURES = ['form_views', 'form_submissions', 'emails_sent', 'ai_credits'];
+const seedCatalog = () => {
+  mockChargebee.itemPrice.list.mockResolvedValue({
+    list: TEST_CATALOG.map((p) => ({
+      item_price: {
+        id: `${p.id}-usd-monthly`,
+        item_id: p.id,
+        item_type: 'plan',
+        status: 'active',
+        currency_code: 'USD',
+        price: p.price,
+        period_unit: 'month',
+      },
+    })),
+  });
+  mockChargebee.entitlement.list.mockResolvedValue({
+    list: TEST_CATALOG.flatMap((p) =>
+      FEATURES.map((f, i) => ({
+        entitlement: { entity_id: `${p.id}-usd-monthly`, feature_id: f, value: p.limits[i] },
+      }))
+    ),
+  });
+  mockChargebee.item.retrieve.mockImplementation(async (id: string) => ({
+    item: {
+      id,
+      name: TEST_CATALOG.find((p) => p.id === id)?.name ?? id,
+      enabled_for_checkout: true,
+      status: 'active',
+    },
+  }));
+  mockChargebee.item.list.mockResolvedValue({
+    list: TEST_CATALOG.map((p) => ({ item: { id: p.id, name: p.name, status: 'active' } })),
+  });
+};
+
 describe('Chargebee Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -122,6 +166,8 @@ describe('Chargebee Service', () => {
     mockChargebee.item.create.mockReset();
     mockChargebee.item.update.mockReset();
     mockChargebee.item.list.mockReset();
+    seedCatalog();
+    invalidatePlansCache();
 
     process.env.CHARGEBEE_SITE = 'test-site';
     process.env.CHARGEBEE_API_KEY = 'test-api-key';
@@ -1492,24 +1538,81 @@ describe('Chargebee Service', () => {
       expect(mockChargebee.entitlement.list).not.toHaveBeenCalled();
     });
 
-    it('should fallback to hardcoded plans on error', async () => {
+    it('throws when Chargebee fails and nothing is cached (no hardcoded catalog)', async () => {
       const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
-      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       mockChargebee.itemPrice.list.mockRejectedValue(new Error('API error'));
 
-      const result = await getAvailablePlans();
-
-      expect(result).toHaveLength(3);
-      expect(result[0].id).toBe('free');
-      expect(result[1].id).toBe('starter');
-      expect(result[2].id).toBe('advanced');
+      await expect(getAvailablePlans()).rejects.toThrow('API error');
       expect(loggerError).toHaveBeenCalled();
-      expect(loggerWarn).toHaveBeenCalledWith(
-        '[Chargebee Service] Falling back to hardcoded plans'
-      );
+      loggerError.mockRestore();
+    });
 
+    it('serves the last good (stale) plans when Chargebee fails after the cache expires', async () => {
+      const loggerError = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      const loggerWarn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      const fresh = await getAvailablePlans();
+      expect(fresh.length).toBeGreaterThan(0);
+
+      vi.setSystemTime(new Date('2024-01-01T01:00:00.000Z')); // past the 5-minute TTL
+      mockChargebee.itemPrice.list.mockRejectedValue(new Error('API error'));
+
+      await expect(getAvailablePlans()).resolves.toEqual(fresh);
+      expect(loggerWarn).toHaveBeenCalledWith(
+        '[Chargebee Service] Serving stale plans cache after Chargebee error'
+      );
       loggerError.mockRestore();
       loggerWarn.mockRestore();
+    });
+
+    it('does not guess limits: sync aborts when the plan is not in Chargebee', async () => {
+      await expect(
+        syncSubscriptionFromWebhook({
+          id: 'sub_unknown',
+          customer_id: 'org_org-unknown',
+          status: 'active',
+          subscription_items: [{ item_id: 'ghost-plan', item_price_id: 'ghost-plan-usd-monthly' }],
+          current_term_start: 1704067200,
+          current_term_end: 1706745600,
+        })
+      ).rejects.toThrow(/unavailable from Chargebee/);
+      expect(subscriptionRepository.upsertForOrganization).not.toHaveBeenCalled();
+    });
+
+    it('adds add-on capacity (unit grant × quantity) on top of the plan limits', async () => {
+      vi.mocked(subscriptionRepository.upsertForOrganization).mockResolvedValue({} as any);
+      const base = await mockChargebee.entitlement.list();
+      mockChargebee.entitlement.list.mockImplementation(async (params: any) => {
+        if (params?.entity_id?.is === 'extra-submissions-usd-monthly') {
+          return {
+            list: [
+              { entitlement: { entity_id: 'extra-submissions-usd-monthly', feature_id: 'form_submissions', value: '10000' } },
+            ],
+          };
+        }
+        return base;
+      });
+
+      await syncSubscriptionFromWebhook({
+        id: 'sub_addon',
+        customer_id: 'org_org-addon',
+        status: 'active',
+        subscription_items: [
+          { item_id: 'starter', item_type: 'plan', item_price_id: 'starter-usd-monthly' },
+          { item_id: 'extra-submissions', item_type: 'addon', item_price_id: 'extra-submissions-usd-monthly', quantity: 3 },
+        ],
+        current_term_start: 1704067200,
+        current_term_end: 1706745600,
+      });
+
+      expect(subscriptionRepository.upsertForOrganization).toHaveBeenCalledWith(
+        'org-addon',
+        expect.objectContaining({
+          planId: 'starter',
+          submissionsLimit: 40000, // 10,000 plan + 3 × 10,000 add-on
+          viewsLimit: null, // unlimited stays unlimited
+        }),
+        expect.any(Object)
+      );
     });
 
     it('should skip non-plan items', async () => {

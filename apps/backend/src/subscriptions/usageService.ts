@@ -9,7 +9,7 @@ import { SubscriptionEventType } from './types.js';
 import type { FormViewedEvent, FormSubmittedEvent, EmailSentEvent } from './types.js';
 import { logger } from '../lib/logger.js';
 import { isLocalDatabase } from '../lib/prisma.js';
-import { PLAN_LIMITS_FALLBACK } from '../lib/planLimits.js';
+import type { PlanLimits } from '../lib/planLimits.js';
 import { subscriptionRepository } from '../repositories/subscriptionRepository.js';
 import { createGraphQLError } from '../lib/graphqlErrors.js';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
@@ -27,6 +27,22 @@ const prisma = new PrismaClient({ adapter });
  * Subscription Usage Service
  * Handles tracking and enforcing subscription usage limits
  */
+
+/**
+ * Limits applied to a cancelled/expired subscription: the Chargebee `free` plan's
+ * entitlements (the org is back on the free tier). There is no hardcoded copy —
+ * if Chargebee can't supply them this returns null and callers FAIL CLOSED.
+ * Imported lazily because chargebeeService itself imports this module.
+ */
+const getFloorLimits = async (): Promise<PlanLimits | null> => {
+  try {
+    const { getPlanLimits } = await import('../services/chargebeeService.js');
+    return await getPlanLimits('free');
+  } catch (error) {
+    logger.error('[Usage Service] Free-plan limits unavailable from Chargebee; failing closed', error);
+    return null;
+  }
+};
 
 // Warning threshold percentage (emit warning at 80% usage)
 const WARNING_THRESHOLD = 80;
@@ -144,7 +160,12 @@ export const reserveSubmissionSlot = async (
 
   // Same effective-limit rule as checkUsageExceeded: a cancelled/expired plan falls back to free.
   const isCancelledOrExpired = subscription.status === 'cancelled' || subscription.status === 'expired';
-  const limit = isCancelledOrExpired ? PLAN_LIMITS_FALLBACK.free.submissions : subscription.submissionsLimit;
+  let limit = subscription.submissionsLimit;
+  if (isCancelledOrExpired) {
+    const floor = await getFloorLimits();
+    if (!floor) throw limitExceeded();
+    limit = floor.submissions;
+  }
 
   const { count } = await subscriptionRepository.reserveSubmissionSlot(organizationId, limit);
   if (count === 0) {
@@ -302,11 +323,18 @@ export const checkUsageExceeded = async (
   // Fall back to the free plan's limits instead — mirrors the AI-credits enforcement in
   // aiUsageService.ts.
   const isCancelledOrExpired = subscription.status === 'cancelled' || subscription.status === 'expired';
-  const viewsLimit = isCancelledOrExpired ? PLAN_LIMITS_FALLBACK.free.views : subscription.viewsLimit;
-  const submissionsLimit = isCancelledOrExpired
-    ? PLAN_LIMITS_FALLBACK.free.submissions
-    : subscription.submissionsLimit;
-  const emailsLimit = isCancelledOrExpired ? PLAN_LIMITS_FALLBACK.free.emails : subscription.emailsLimit;
+  let viewsLimit = subscription.viewsLimit;
+  let submissionsLimit = subscription.submissionsLimit;
+  let emailsLimit = subscription.emailsLimit;
+  if (isCancelledOrExpired) {
+    const floor = await getFloorLimits();
+    if (!floor) {
+      return { viewsExceeded: true, submissionsExceeded: true, emailsExceeded: true };
+    }
+    viewsLimit = floor.views;
+    submissionsLimit = floor.submissions;
+    emailsLimit = floor.emails;
+  }
 
   return {
     viewsExceeded: isPastDue || (viewsLimit !== null && subscription.viewsUsed >= viewsLimit),
@@ -344,7 +372,12 @@ export const getRemainingEmailQuota = async (
   }
 
   const isCancelledOrExpired = subscription.status === 'cancelled' || subscription.status === 'expired';
-  const emailsLimit = isCancelledOrExpired ? PLAN_LIMITS_FALLBACK.free.emails : subscription.emailsLimit;
+  let emailsLimit = subscription.emailsLimit;
+  if (isCancelledOrExpired) {
+    const floor = await getFloorLimits();
+    if (!floor) return { remaining: 0, exceeded: true };
+    emailsLimit = floor.emails;
+  }
   if (emailsLimit === null) {
     return { remaining: null, exceeded: false };
   }
