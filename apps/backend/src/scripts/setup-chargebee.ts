@@ -138,6 +138,9 @@ async function createFeatures() {
       const v = addon.unit_entitlements[feature.id];
       if (typeof v === 'number') values.add(v);
     }
+    // Chargebee requires >= 2 levels on a quantity feature; if every plan is unlimited
+    // (e.g. form_views) keep one finite level so the unlimited level is valid.
+    if (values.size === 0) values.add(10000);
     const levels = [...values]
       .sort((a, b) => a - b)
       .map((value, level) => ({
@@ -264,7 +267,6 @@ async function createAddons() {
         external_name: addon.name ?? addon.id,
         type: 'addon',
         item_family_id: ITEM_FAMILY_ID,
-        item_applicability: 'all',
         enabled_for_checkout: true,
       } as any)
     );
