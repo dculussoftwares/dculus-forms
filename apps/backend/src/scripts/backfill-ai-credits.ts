@@ -8,12 +8,13 @@
  *      `tokensUsed > 0` — these were recorded before credit weighting existed. Backfilled
  *      at a flat nano weight (1 token = 1 milli-credit) since the historic per-request
  *      model mix isn't recorded anywhere. Rows from earlier months are left untouched.
- *   2. Subscription rows where `aiCreditsLimit IS NULL` — seeded from the plan's fallback
- *      allowance (`AI_CREDIT_LIMITS_FALLBACK`) so orgs don't rely on the runtime fallback
- *      computed on every read. A later Chargebee webhook sync overwrites this with the
- *      live entitlement value.
+ *   2. Subscription rows where `aiCreditsLimit IS NULL` — seeded from the plan's live
+ *      Chargebee `ai_credits` entitlement. Rows whose plan can't be resolved from Chargebee
+ *      (and enterprise rows, which are admin-set) are skipped — there is no hardcoded
+ *      allowance to fall back on.
  *
- * DB-only — no Chargebee calls. See backfill-free-subscriptions.ts for the Chargebee half.
+ * Reads Chargebee (read-only) for the entitlements. See backfill-free-subscriptions.ts for
+ * the Chargebee-side subscription backfill.
  *
  * Safety model:
  *   - Dry-run by default: prints what WOULD change and exits 0 without writing anything.
@@ -29,7 +30,7 @@
 import './load-env.js'; // MUST be first: lib/env.js validates env at import time
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
-import { AI_CREDIT_LIMITS_FALLBACK } from '../lib/ai.js';
+import { getPlanLimits } from '../services/chargebeeService.js';
 
 const EXECUTE = process.argv.includes('--execute');
 
@@ -74,29 +75,32 @@ async function backfillAIUsageCredits(periodStart: Date): Promise<{ matched: num
 
 async function backfillSubscriptionLimits(): Promise<{ matched: number; updated: number }> {
   const rows = await prisma.subscription.findMany({
-    where: { aiCreditsLimit: null },
+    where: { aiCreditsLimit: null, planId: { not: 'enterprise' } },
     select: { id: true, organizationId: true, planId: true },
   });
 
   logger.info(`[backfill-ai-credits] Subscription: found ${rows.length} row(s) with aiCreditsLimit IS NULL`);
 
-  if (!EXECUTE) {
-    for (const row of rows) {
-      const limit = AI_CREDIT_LIMITS_FALLBACK[row.planId] ?? AI_CREDIT_LIMITS_FALLBACK.free;
+  let updated = 0;
+  for (const row of rows) {
+    let limit: number | null;
+    try {
+      limit = (await getPlanLimits(row.planId)).aiCredits;
+    } catch {
+      logger.warn(`  [skipped] Subscription(${row.id}) plan=${row.planId}: not resolvable from Chargebee`);
+      continue;
+    }
+    if (limit === null) {
+      // Unlimited plan: null already means "unlimited"-after-lookup at runtime; nothing to store.
+      continue;
+    }
+    if (!EXECUTE) {
       logger.info(
         `  [dry-run] Subscription(${row.id}) org=${row.organizationId} plan=${row.planId} aiCreditsLimit null -> ${limit}`
       );
+      continue;
     }
-    return { matched: rows.length, updated: 0 };
-  }
-
-  let updated = 0;
-  for (const row of rows) {
-    const limit = AI_CREDIT_LIMITS_FALLBACK[row.planId] ?? AI_CREDIT_LIMITS_FALLBACK.free;
-    await prisma.subscription.update({
-      where: { id: row.id },
-      data: { aiCreditsLimit: limit },
-    });
+    await prisma.subscription.update({ where: { id: row.id }, data: { aiCreditsLimit: limit } });
     logger.info(
       `  [applied] Subscription(${row.id}) org=${row.organizationId} plan=${row.planId} aiCreditsLimit null -> ${limit}`
     );

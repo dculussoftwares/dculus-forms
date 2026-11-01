@@ -19,6 +19,15 @@ import {
 import { SubscriptionEventType } from '../types.js';
 import { logger } from '../../lib/logger.js';
 
+// The cancelled/expired floor is the Chargebee `free` plan (no hardcoded fallback).
+vi.mock('../../services/chargebeeService.js', () => ({ getPlanLimits: vi.fn() }));
+import { getPlanLimits } from '../../services/chargebeeService.js';
+const FREE_LIMITS = { views: 10000, submissions: 1000, emails: 100, aiCredits: 200 };
+beforeEach(() => {
+  vi.mocked(getPlanLimits).mockReset();
+  vi.mocked(getPlanLimits).mockResolvedValue(FREE_LIMITS);
+});
+
 // Mock dependencies
 vi.mock('#prisma-client', () => {
   // Create mock subscription object inside vi.mock to avoid hoisting issues
@@ -709,6 +718,26 @@ describe('usageService', () => {
         viewsExceeded: false, // free plan's views limit (10000) not yet reached
         submissionsExceeded: true, // free plan's submissions limit (1000) exceeded
         emailsExceeded: false,
+      });
+    });
+
+    it('fails closed for a cancelled org when Chargebee cannot supply the free plan limits', async () => {
+      vi.mocked(getPlanLimits).mockRejectedValue(new Error('chargebee down'));
+      mockSubscription.findUnique.mockResolvedValue({
+        organizationId: 'org-1',
+        viewsUsed: 0,
+        viewsLimit: null,
+        submissionsUsed: 0,
+        submissionsLimit: 100000,
+        emailsUsed: 0,
+        emailsLimit: null,
+        status: 'cancelled',
+      });
+
+      expect(await checkUsageExceeded('org-1')).toEqual({
+        viewsExceeded: true,
+        submissionsExceeded: true,
+        emailsExceeded: true,
       });
     });
 

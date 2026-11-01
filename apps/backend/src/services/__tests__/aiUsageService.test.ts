@@ -23,6 +23,9 @@ vi.mock('../../subscriptions/events.js', () => ({
   emitUsageLimitExceeded: vi.fn(),
 }));
 
+vi.mock('../chargebeeService.js', () => ({ getPlanLimits: vi.fn() }));
+
+import { getPlanLimits } from '../chargebeeService.js';
 import { logger } from '../../lib/logger.js';
 import {
   checkAITokenBudget,
@@ -32,9 +35,20 @@ import {
 } from '../aiUsageService.js';
 import { emitUsageLimitReached, emitUsageLimitExceeded } from '../../subscriptions/events.js';
 
+// Plan allowances come only from Chargebee entitlements (no hardcoded fallback).
+const PLAN_AI_CREDITS: Record<string, number | null> = {
+  free: 200,
+  starter: 2_000,
+  advanced: 20_000,
+};
+
 describe('aiUsageService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getPlanLimits).mockImplementation(async (planId: string) => {
+      if (!(planId in PLAN_AI_CREDITS)) throw new Error(`unknown plan ${planId}`);
+      return { views: null, submissions: null, emails: null, aiCredits: PLAN_AI_CREDITS[planId] };
+    });
   });
 
   describe('recordAITokenUsage', () => {
@@ -443,6 +457,20 @@ describe('aiUsageService', () => {
       const result = await checkAITokenBudget('org-expired');
       expect(result.limit).toBe(200);
       expect(result.allowed).toBe(false); // 250 credits used already exceeds the free 200 limit
+    });
+
+    it('fails closed (0 credits) when Chargebee cannot supply the plan allowance', async () => {
+      vi.mocked(getPlanLimits).mockRejectedValue(new Error('chargebee down'));
+      vi.mocked(prisma.subscription.findUnique).mockResolvedValue({
+        planId: 'starter',
+        aiCreditsLimit: null, // not synced yet, and no fallback to guess from
+        status: 'active',
+      } as any);
+      vi.mocked(prisma.aIUsage.findFirst).mockResolvedValue(null);
+
+      const result = await checkAITokenBudget('org-no-cb');
+      expect(result.limit).toBe(0);
+      expect(result.allowed).toBe(false);
     });
 
     it('leaves an active paid org unaffected', async () => {

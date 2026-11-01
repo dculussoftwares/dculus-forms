@@ -4,8 +4,7 @@ import { subscriptionRepository, organizationRepository } from '../repositories/
 import { logger } from '../lib/logger.js';
 import { sendEmail } from './emailService.js';
 import * as Sentry from '@sentry/node';
-import { AI_CREDIT_LIMITS_FALLBACK } from '../lib/ai.js';
-import { PLAN_LIMITS_FALLBACK } from '../lib/planLimits.js';
+import { PlanLimitsUnavailableError, type PlanLimits } from '../lib/planLimits.js';
 import { invalidateAIBudgetCache } from './aiUsageService.js';
 
 /**
@@ -33,22 +32,18 @@ const entitlementToLimit = (v: unknown): number | null => {
 };
 
 /**
- * Returns plan limits sourced from Chargebee entitlements (via the plans cache).
- * Falls back to PLAN_LIMITS_FALLBACK / AI_CREDIT_LIMITS_FALLBACK when the cache
- * is cold or the API is down.
+ * Returns a plan's limits as defined by its Chargebee entitlements (via the plans
+ * cache, then the full admin catalog for hidden/archived plans).
+ *
+ * There is NO hardcoded fallback: if Chargebee cannot supply the plan's limits this
+ * throws PlanLimitsUnavailableError and the caller decides how to fail (usage
+ * enforcement fails closed; webhook sync leaves the stored limits untouched).
  */
-const getPlanLimits = async (
-  planId: string
-): Promise<{
-  views: number | null;
-  submissions: number | null;
-  emails: number | null;
-  aiCredits: number | null;
-}> => {
+export const getPlanLimits = async (planId: string): Promise<PlanLimits> => {
   try {
     const plans = await getAvailablePlans();
     const plan = plans.find((p: any) => p.id === planId);
-    if (plan?.features) {
+    if (plan?.features && Object.keys(plan.features).length > 0) {
       return {
         views: plan.features.views ?? null,
         submissions: plan.features.submissions ?? null,
@@ -61,14 +56,63 @@ const getPlanLimits = async (
     // Look it up in the full admin catalog before giving up.
     const catalogEntry = (await getAdminPlanCatalog()).find((p) => p.id === planId);
     if (catalogEntry) return catalogEntry.limits;
-  } catch {
-    // fall through to fallback
+  } catch (error) {
+    throw new PlanLimitsUnavailableError(planId, error);
+  }
+  throw new PlanLimitsUnavailableError(planId);
+};
+
+/**
+ * Per-unit limit grants of a Chargebee add-on item price (e.g. "+10,000
+ * submissions"). The grant is the add-on price's own entitlement for the same
+ * feature ids the plans use; the subscription's add-on quantity multiplies it.
+ */
+const getAddonUnitLimits = async (addonItemPriceId: string): Promise<Partial<PlanLimits>> => {
+  const result: any = await chargebee.entitlement.list({
+    entity_id: { is: addonItemPriceId },
+    limit: 100,
+  } as any);
+  const byFeature: Record<string, unknown> = {};
+  for (const entry of result.list ?? []) {
+    byFeature[entry.entitlement.feature_id] = entry.entitlement.value;
+  }
+  const grant = (featureId: string): number | undefined => {
+    const v = entitlementToLimit(byFeature[featureId]);
+    return v == null ? undefined : v;
+  };
+  return {
+    views: grant(PLAN_FEATURE_IDS.views),
+    submissions: grant(PLAN_FEATURE_IDS.submissions),
+    emails: grant(PLAN_FEATURE_IDS.emails),
+    aiCredits: grant(PLAN_FEATURE_IDS.aiCredits),
+  };
+};
+
+/**
+ * Plan limits plus the capacity bought through add-on items on the subscription.
+ * An unlimited (null) plan limit stays unlimited; add-ons only raise finite caps.
+ */
+export const applyAddonsToLimits = async (
+  base: PlanLimits,
+  subscriptionItems: any[] | undefined
+): Promise<PlanLimits> => {
+  const addons = (subscriptionItems ?? []).filter((i) => i?.item_type === 'addon');
+  if (addons.length === 0) return base;
+
+  const extra = { views: 0, submissions: 0, emails: 0, aiCredits: 0 };
+  for (const addon of addons) {
+    const quantity = Number(addon.quantity ?? 1);
+    if (!addon.item_price_id || !Number.isFinite(quantity) || quantity <= 0) continue;
+    const unit = await getAddonUnitLimits(addon.item_price_id);
+    for (const key of Object.keys(extra) as (keyof PlanLimits)[]) {
+      extra[key] += (unit[key] ?? 0) * quantity;
+    }
   }
   return {
-    views: PLAN_LIMITS_FALLBACK[planId]?.views ?? null,
-    submissions: PLAN_LIMITS_FALLBACK[planId]?.submissions ?? null,
-    emails: PLAN_LIMITS_FALLBACK[planId]?.emails ?? null,
-    aiCredits: AI_CREDIT_LIMITS_FALLBACK[planId] ?? null,
+    views: base.views == null ? null : base.views + extra.views,
+    submissions: base.submissions == null ? null : base.submissions + extra.submissions,
+    emails: base.emails == null ? null : base.emails + extra.emails,
+    aiCredits: base.aiCredits == null ? null : base.aiCredits + extra.aiCredits,
   };
 };
 
@@ -703,9 +747,15 @@ export const syncSubscriptionFromWebhook = async (
     // the shared Chargebee catalog, so skip the catalog-driven overwrite here and
     // leave viewsLimit/submissionsLimit/aiCreditsLimit untouched on every webhook event.
     const isEnterprise = planId === 'enterprise';
+    // No hardcoded fallback: if Chargebee can't supply the plan's entitlements we abort
+    // the sync (the error is rethrown so the webhook is retried) instead of writing
+    // guessed limits. Add-on quantities on the subscription are added on top.
     const limits = isEnterprise
       ? null
-      : await getPlanLimits(planId); // falls back to hardcoded values if Chargebee API fails
+      : await applyAddonsToLimits(
+          await getPlanLimits(planId),
+          subscriptionData.subscription_items
+        );
 
     // Defense-in-depth against the enterprise checkout quantity risk (see
     // lockEnterpriseItemPriceQuantity): if a payer still managed to change
@@ -1200,59 +1250,13 @@ export const getAvailablePlans = async () => {
   } catch (error: any) {
     logger.error('[Chargebee Service] Error fetching plans from Chargebee:', error);
 
-    // Fallback to hardcoded plans if Chargebee API fails
-    logger.warn('[Chargebee Service] Falling back to hardcoded plans');
-    return [
-      {
-        id: 'free',
-        name: 'Free Plan',
-        description: 'Perfect for getting started',
-        prices: [
-          { id: 'free-usd-monthly', currency: 'USD', amount: 0, period: 'month' },
-          { id: 'free-inr-monthly', currency: 'INR', amount: 0, period: 'month' },
-        ],
-        features: {
-          views: 10000,
-          submissions: 1000,
-          emails: PLAN_LIMITS_FALLBACK.free.emails,
-          aiCredits: AI_CREDIT_LIMITS_FALLBACK.free ?? null,
-        },
-      },
-      {
-        id: 'starter',
-        name: 'Starter Plan',
-        description: 'For growing teams',
-        prices: [
-          { id: 'starter-usd-monthly', currency: 'USD', amount: 6, period: 'month' },
-          { id: 'starter-usd-yearly', currency: 'USD', amount: 66, period: 'year' },
-          { id: 'starter-inr-monthly', currency: 'INR', amount: 489, period: 'month' },
-          { id: 'starter-inr-yearly', currency: 'INR', amount: 5400, period: 'year' },
-        ],
-        features: {
-          views: null,
-          submissions: 10000,
-          emails: PLAN_LIMITS_FALLBACK.starter.emails,
-          aiCredits: AI_CREDIT_LIMITS_FALLBACK.starter ?? null,
-        },
-      },
-      {
-        id: 'advanced',
-        name: 'Advanced Plan',
-        description: 'For enterprises',
-        prices: [
-          { id: 'advanced-usd-monthly', currency: 'USD', amount: 15, period: 'month' },
-          { id: 'advanced-usd-yearly', currency: 'USD', amount: 168, period: 'year' },
-          { id: 'advanced-inr-monthly', currency: 'INR', amount: 1289, period: 'month' },
-          { id: 'advanced-inr-yearly', currency: 'INR', amount: 14268, period: 'year' },
-        ],
-        features: {
-          views: null,
-          submissions: 100000,
-          emails: PLAN_LIMITS_FALLBACK.advanced.emails,
-          aiCredits: AI_CREDIT_LIMITS_FALLBACK.advanced ?? null,
-        },
-      },
-    ];
+    // No hardcoded catalog: serve the last good (stale) copy if we have one,
+    // otherwise surface the failure to the caller.
+    if (plansCache) {
+      logger.warn('[Chargebee Service] Serving stale plans cache after Chargebee error');
+      return plansCache;
+    }
+    throw error;
   }
 };
 

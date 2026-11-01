@@ -1,18 +1,22 @@
-// Fallback limits used when Chargebee entitlements are unavailable, and as the
-// floor a cancelled/expired org's usage enforcement falls back to (it no longer
-// holds an active paid entitlement, so it must not keep the last-synced paid
-// tier's limits indefinitely).
-// Keep in sync with Chargebee entitlement config — the live values take
-// precedence once getAvailablePlans() has populated the cache.
-export const PLAN_LIMITS_FALLBACK: Record<
-  string,
-  { views: number | null; submissions: number | null; emails: number | null }
-> = {
-  free: { views: 10000, submissions: 1000, emails: 100 },
-  starter: { views: null, submissions: 10000, emails: 5000 },
-  advanced: { views: null, submissions: 100000, emails: 50000 },
-  // Enterprise limits are admin-set directly on the Subscription row (see
-  // chargebeeService.setEnterpriseSubscription), not derived from this map — this
-  // entry only guards the unlikely case that getPlanLimits('enterprise') is called.
-  enterprise: { views: null, submissions: null, emails: null },
-};
+/**
+ * Plan limits are sourced exclusively from Chargebee entitlements (see
+ * chargebeeService.getPlanLimits). There are deliberately NO hardcoded per-plan
+ * numbers in code: when Chargebee cannot supply a plan's limits we fail closed
+ * with PlanLimitsUnavailableError rather than guessing.
+ *
+ * `null` means "unlimited" (Chargebee entitlement value "Unlimited").
+ */
+export interface PlanLimits {
+  views: number | null;
+  submissions: number | null;
+  emails: number | null;
+  aiCredits: number | null;
+}
+
+export class PlanLimitsUnavailableError extends Error {
+  constructor(planId: string, cause?: unknown) {
+    super(`Plan limits for "${planId}" are unavailable from Chargebee`);
+    this.name = 'PlanLimitsUnavailableError';
+    if (cause !== undefined) (this as { cause?: unknown }).cause = cause;
+  }
+}
