@@ -3,12 +3,13 @@ import type * as React from 'react';
 /** Class every renderer root carries; all bundled styles are scoped to it. */
 export declare const SCOPE_CLASS: 'dculus-form-renderer';
 
-/** A form/template schema as stored by Dculus Forms (plain JSON). */
+/**
+ * The parts of a stored form schema the preview relies on. Extra keys are
+ * fine at runtime; Dculus' own FormSchema type is assignable to this.
+ */
 export interface TemplateFormSchema {
-  pages: Array<{ id: string; title?: string; fields: unknown[]; [key: string]: unknown }>;
-  layout: { [key: string]: unknown };
-  isShuffleEnabled?: boolean;
-  [key: string]: unknown;
+  pages: ReadonlyArray<{ id: string; fields: readonly unknown[] }>;
+  layout: object;
 }
 
 export interface TemplatePreviewProps {

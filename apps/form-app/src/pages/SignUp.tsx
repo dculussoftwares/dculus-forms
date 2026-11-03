@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
-import { Button, Input, Label, Logo, OTPInput, toastError } from '@dculus/ui';
+import { Button, Input, Label, Logo, OTPInput } from '@dculus/ui';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
 import { ensureOrganization } from '../lib/ensureOrganization';
 import { ArrowLeft, Timer } from 'lucide-react';
@@ -34,6 +34,8 @@ export const SignUp = () => {
     organizationName: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Set when the account exists but its workspace could not be created yet.
+  const [workspaceRetryName, setWorkspaceRetryName] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const apolloClient = useApolloClient();
@@ -189,6 +191,49 @@ export const SignUp = () => {
     }
   };
 
+  /** Creates (or reuses) the user's workspace and refreshes the session. False if it failed. */
+  const setUpWorkspace = async (workspaceName: string): Promise<boolean> => {
+    const orgResult = await ensureOrganization(workspaceName);
+    if (!orgResult) return false;
+
+    if (orgResult.created) {
+      try {
+        const subscriptionResult = await initializeSubscription({
+          variables: { organizationId: orgResult.organizationId },
+        });
+        if (!subscriptionResult.data?.initializeOrganizationSubscription?.success) {
+          console.error('[SignUp] ⚠️ Subscription initialization failed:', subscriptionResult.data?.initializeOrganizationSubscription?.message);
+        }
+      } catch (subscriptionError) {
+        // Log error but don't block signup flow
+        console.error('[SignUp] ⚠️ Error initializing subscription:', subscriptionError);
+      }
+    }
+
+    try {
+      await authClient.getSession();
+      // Refetch Apollo queries to ensure activeOrganization is up to date
+      await apolloClient.refetchQueries({ include: ['ActiveOrganization'] });
+    } catch (sessionError) {
+      console.error('[SignUp] Error refreshing session:', sessionError);
+    }
+    return true;
+  };
+
+  const handleRetryWorkspace = async () => {
+    if (!workspaceRetryName) return;
+    setIsLoading(true);
+    try {
+      if (await setUpWorkspace(workspaceRetryName)) {
+        setWorkspaceRetryName(null);
+        sessionStorage.removeItem('pendingSignupData');
+        navigate('/');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -270,38 +315,11 @@ export const SignUp = () => {
         const workspaceName =
           formData.organizationName.trim() ||
           tTemplates('signup.autoWorkspaceName', { values: { name: formData.name.trim() } });
-        const orgResult = await ensureOrganization(workspaceName);
-
-        if (!orgResult) {
-          // Signed in, but without a workspace nothing (incl. a picked template) can be created.
-          toastError(t('messages.workspaceFailedTitle'), t('messages.workspaceFailed'));
-        }
-
-        if (orgResult?.created) {
-          try {
-            const subscriptionResult = await initializeSubscription({
-              variables: { organizationId: orgResult.organizationId },
-            });
-
-            if (!subscriptionResult.data?.initializeOrganizationSubscription?.success) {
-              console.error('[SignUp] ⚠️ Subscription initialization failed:', subscriptionResult.data?.initializeOrganizationSubscription?.message);
-            }
-          } catch (subscriptionError) {
-            // Log error but don't block signup flow
-            console.error('[SignUp] ⚠️ Error initializing subscription:', subscriptionError);
-          }
-        }
-
-        if (orgResult) {
-          try {
-            await authClient.getSession();
-            // Refetch Apollo queries to ensure activeOrganization is up to date
-            await apolloClient.refetchQueries({
-              include: ['ActiveOrganization'],
-            });
-          } catch (sessionError) {
-            console.error('[SignUp] Error refreshing session:', sessionError);
-          }
+        if (!(await setUpWorkspace(workspaceName))) {
+          // Signed in, but without a workspace nothing (incl. a picked template) can be
+          // created — stay here and offer a retry instead of landing on an empty dashboard.
+          setWorkspaceRetryName(workspaceName);
+          return;
         }
       }
 
@@ -483,6 +501,16 @@ export const SignUp = () => {
                   ) : t('form.actions.submit')}
                 </Button>
               </form>
+            ) : workspaceRetryName ? (
+              <div className="space-y-4" role="alert" data-testid="signup-workspace-failed">
+                <div className="text-xs py-2.5 px-3 rounded-lg" style={{ backgroundColor: 'var(--tf-error-bg)', color: 'var(--tf-error)', border: '1px solid var(--tf-error-bg-md)' }}>
+                  <p className="font-semibold">{t('messages.workspaceFailedTitle')}</p>
+                  <p className="mt-1">{t('messages.workspaceFailed')}</p>
+                </div>
+                <Button type="button" onClick={handleRetryWorkspace} disabled={isLoading} className="w-full h-10">
+                  {isLoading ? t('messages.workspaceRetrying') : t('messages.workspaceRetry')}
+                </Button>
+              </div>
             ) : (
               <form onSubmit={handleVerifyOTP} className="space-y-5">
                 <div>

@@ -4,17 +4,24 @@ import React, { useMemo } from 'react';
 import { FormRenderer } from '../../ui/src/renderers/FormRenderer';
 import { RendererMode } from '@dculus/utils';
 import { deserializeFormSchema, type FormSchema } from '@dculus/types';
+import { z } from 'zod';
 
 /** Class every renderer root carries; all bundled styles are scoped to it. */
 export const SCOPE_CLASS = 'dculus-form-renderer';
 
-/** A form/template schema as stored by Dculus Forms (plain JSON). */
+/**
+ * The parts of a stored form schema the preview relies on. Extra keys are
+ * fine at runtime; Dculus' own FormSchema type is assignable to this.
+ */
 export interface TemplateFormSchema {
-  pages: Array<{ id: string; title?: string; fields: unknown[]; [key: string]: unknown }>;
-  layout: { [key: string]: unknown };
-  isShuffleEnabled?: boolean;
-  [key: string]: unknown;
+  pages: ReadonlyArray<{ id: string; fields: readonly unknown[] }>;
+  layout: object;
 }
+
+const templateFormSchema = z.object({
+  pages: z.array(z.object({ id: z.string().min(1), fields: z.array(z.unknown()) })).min(1),
+  layout: z.record(z.string(), z.unknown()),
+});
 
 export interface TemplatePreviewProps {
   formSchema: TemplateFormSchema;
@@ -33,16 +40,7 @@ export interface TemplatePreviewProps {
 
 /** Shape check at the package boundary: callers may pass any JSON at runtime. */
 export function isTemplateFormSchema(value: unknown): value is TemplateFormSchema {
-  if (!value || typeof value !== 'object') return false;
-  const schema = value as Record<string, unknown>;
-  return (
-    Array.isArray(schema.pages) &&
-    schema.pages.length > 0 &&
-    schema.pages.every((p) => p && typeof p === 'object' && Array.isArray((p as { fields?: unknown }).fields)) &&
-    !!schema.layout &&
-    typeof schema.layout === 'object' &&
-    !Array.isArray(schema.layout)
-  );
+  return templateFormSchema.safeParse(value).success;
 }
 
 /**

@@ -36,9 +36,8 @@ describe('ensureOrganization', () => {
   it('retries with a suffixed slug when the first one is taken', async () => {
     (authClient.getSession as jest.Mock).mockResolvedValue(session());
     (authClient.organization.create as jest.Mock)
-      .mockResolvedValueOnce({ data: null, error: { message: 'slug taken' } })
+      .mockResolvedValueOnce({ data: null, error: { code: 'ORGANIZATION_ALREADY_EXISTS' } })
       .mockResolvedValueOnce({ data: { id: 'org-2' } });
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     await expect(ensureOrganization("Ada's workspace")).resolves.toEqual({ organizationId: 'org-2', created: true });
     const slugs = (authClient.organization.create as jest.Mock).mock.calls.map((c) => c[0].slug);
@@ -47,12 +46,24 @@ describe('ensureOrganization', () => {
     expect(organization.setActive).toHaveBeenCalledWith({ organizationId: 'org-2' });
   });
 
-  it('returns null after every attempt fails', async () => {
+  it('gives up after every slug is taken', async () => {
     (authClient.getSession as jest.Mock).mockResolvedValue(session());
-    (authClient.organization.create as jest.Mock).mockResolvedValue({ data: null, error: {} });
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    (authClient.organization.create as jest.Mock).mockResolvedValue({ data: null, error: { code: 'ORGANIZATION_ALREADY_EXISTS' } });
     await expect(ensureOrganization('X')).resolves.toBeNull();
     expect(authClient.organization.create).toHaveBeenCalledTimes(4);
+  });
+
+  it('does not retry other errors', async () => {
+    (authClient.getSession as jest.Mock).mockResolvedValue(session());
+    (authClient.organization.create as jest.Mock).mockResolvedValue({ data: null, error: { code: 'INTERNAL_SERVER_ERROR' } });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(ensureOrganization('X')).resolves.toBeNull();
+    expect(authClient.organization.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a blank name', async () => {
+    await expect(ensureOrganization('  ')).resolves.toBeNull();
+    expect(authClient.getSession).not.toHaveBeenCalled();
   });
 
   it('returns null without a session', async () => {
