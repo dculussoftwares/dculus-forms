@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
-import { Button, Input, Label, Logo, OTPInput } from '@dculus/ui';
+import { Button, Input, Label, Logo, OTPInput, toastError } from '@dculus/ui';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
 import { ensureOrganization } from '../lib/ensureOrganization';
 import { ArrowLeft, Timer } from 'lucide-react';
@@ -271,6 +271,11 @@ export const SignUp = () => {
           formData.organizationName.trim() ||
           tTemplates('signup.autoWorkspaceName', { values: { name: formData.name.trim() } });
         const orgResult = await ensureOrganization(workspaceName);
+
+        if (!orgResult) {
+          // Signed in, but without a workspace nothing (incl. a picked template) can be created.
+          toastError(t('messages.workspaceFailedTitle'), t('messages.workspaceFailed'));
+        }
 
         if (orgResult?.created) {
           try {

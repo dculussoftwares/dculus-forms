@@ -88,7 +88,9 @@
     "resendFailed": "Failed to resend verification code. Please try again.",
     "resendGenericFailed": "Failed to resend verification code",
     "joinSuccess": "Welcome! You have successfully joined the organization.",
-    "passwordCompromised": "This password has appeared in a known data breach. Please choose a different password."
+    "passwordCompromised": "This password has appeared in a known data breach. Please choose a different password.",
+    "workspaceFailedTitle": "Could not create your workspace",
+    "workspaceFailed": "Your account is ready, but we could not set up your workspace. Refresh the page to try again, or contact support."
   },
   "links": {
     "signInPrompt": "Already have an account?",

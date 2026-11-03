@@ -44,6 +44,7 @@ const DropdownMenuSubContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
 >(({ className, ...props }, ref) => (
   <DropdownMenuPrimitive.SubContent
+    data-dculus-ui=""
     ref={ref}
     className={cn(
       "z-50 min-w-[8rem] overflow-hidden rounded-lg border border-[rgba(81,76,84,0.12)] bg-white p-1 text-[#4c414e] shadow-[0_4px_16px_rgba(60,50,62,0.12)] dark:bg-card dark:border-white/10 dark:text-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
@@ -61,6 +62,7 @@ const DropdownMenuContent = React.forwardRef<
 >(({ className, sideOffset = 4, ...props }, ref) => (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
+      data-dculus-ui=""
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
