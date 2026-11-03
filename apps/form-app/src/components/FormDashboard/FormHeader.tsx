@@ -20,6 +20,7 @@ import {
   FileText,
   PencilLine,
   Code2,
+  LayoutTemplate,
 } from 'lucide-react';
 import { useTranslation } from '../../hooks/useTranslation';
 
@@ -44,6 +45,8 @@ interface FormHeaderProps {
   onShare?: () => void;
   /** Omitted for VIEWERs — duplicating copies automations/plugins and needs EDITOR. */
   onDuplicate?: () => void;
+  /** System admins only — save this form as a (public) template. */
+  onSaveAsTemplate?: () => void;
   updateLoading: boolean;
   deleteLoading: boolean;
   duplicateLoading: boolean;
@@ -61,6 +64,7 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
   onViewAnalytics,
   onShare,
   onDuplicate,
+  onSaveAsTemplate,
   updateLoading,
   deleteLoading,
   duplicateLoading,
@@ -205,6 +209,12 @@ export const FormHeader: React.FC<FormHeaderProps> = ({
                 <DropdownMenuItem onClick={onDuplicate} disabled={duplicateLoading}>
                   <Copy className="mr-2 h-4 w-4" />
                   {duplicateLoading ? t('header.actions.duplicating') : t('header.actions.duplicate')}
+                </DropdownMenuItem>
+              )}
+              {onSaveAsTemplate && (
+                <DropdownMenuItem onClick={onSaveAsTemplate} data-testid="save-as-template-menu-item">
+                  <LayoutTemplate className="mr-2 h-4 w-4" />
+                  {t('header.actions.saveAsTemplate')}
                 </DropdownMenuItem>
               )}
               {onDelete && (

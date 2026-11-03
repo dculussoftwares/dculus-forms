@@ -8,8 +8,16 @@ import {
   deleteTemplate,
   getTemplatesByCategory,
   getTemplateCategories,
+  getPublicTemplateCatalog,
+  getPublicTemplateBySlug,
+  buildTemplateSchemaFromForm,
+  TemplateValidationError,
+  type CreateTemplateFromFormInput,
+  type TemplatePublishingInput,
 } from '../../services/templateService.js';
-import { createForm } from '../../services/formService.js';
+import { createForm, getFormById } from '../../services/formService.js';
+import { getFormSchemaFromHocuspocus } from '../../services/hocuspocus.js';
+import { constructCdnUrl } from '../../utils/cdn.js';
 import { randomUUID } from 'crypto';
 import { copyFileForForm } from '../../services/fileUploadService.js';
 import { createFormFile } from '../../services/formFileService.js';
@@ -17,8 +25,18 @@ import { requireSystemLevelRole, requireAuthentication, type AuthContext } from 
 import { requireOrganizationMembership, BetterAuthContext } from '../../middleware/better-auth-middleware.js';
 import { logger } from '../../lib/logger.js';
 
+/** Turn a service-level validation failure into a client-facing input error. */
+const rethrowValidation = (error: unknown): void => {
+  if (error instanceof TemplateValidationError) {
+    throw createGraphQLError(error.message, GRAPHQL_ERROR_CODES.BAD_USER_INPUT);
+  }
+};
+
+const toIso = (value: Date | string): string =>
+  value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+
 export interface CreateTemplateArgs {
-  input: {
+  input: TemplatePublishingInput & {
     name: string;
     description?: string;
     category?: string;
@@ -28,7 +46,7 @@ export interface CreateTemplateArgs {
 
 export interface UpdateTemplateArgs {
   id: string;
-  input: {
+  input: TemplatePublishingInput & {
     name?: string;
     description?: string;
     category?: string;
@@ -44,7 +62,36 @@ export interface CreateFormFromTemplateArgs {
 }
 
 export const templatesResolvers = {
+  FormTemplate: {
+    thumbnailUrl: (parent: { thumbnailKey?: string | null }) =>
+      constructCdnUrl(parent.thumbnailKey ?? null),
+  },
+
+  PublicTemplate: {
+    updatedAt: (parent: { updatedAt: Date | string }) => toIso(parent.updatedAt),
+  },
+
   Query: {
+    // Public gallery — deliberately unauthenticated (dculus.com builds its
+    // template pages from this, and sign-up resolves ?template=<slug> with it).
+    publicTemplateCatalog: async () => {
+      try {
+        return await getPublicTemplateCatalog();
+      } catch (error) {
+        logger.error('Error fetching public template catalog:', error);
+        throw createGraphQLError('Failed to fetch templates', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+    },
+
+    publicTemplate: async (_: any, args: { slug: string }) => {
+      try {
+        return await getPublicTemplateBySlug(args.slug);
+      } catch (error) {
+        logger.error('Error fetching public template:', error);
+        throw createGraphQLError('Failed to fetch template', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+    },
+
     templates: async (_: any, args: { category?: string }, context: AuthContext) => {
       try {
         // Template queries require any authenticated user
@@ -121,6 +168,7 @@ export const templatesResolvers = {
         requireSystemLevelRole(context);
         return await createTemplate(args.input);
       } catch (error) {
+        rethrowValidation(error);
         logger.error('Error creating template:', error);
         // Re-throw GraphQLError as-is to preserve auth error messages
         if (error instanceof GraphQLError) {
@@ -134,7 +182,13 @@ export const templatesResolvers = {
       try {
         // Only system-level roles (admin, superAdmin) can update templates
         requireSystemLevelRole(context);
-        const updatedTemplate = await updateTemplate(args.id, args.input);
+        let updatedTemplate;
+        try {
+          updatedTemplate = await updateTemplate(args.id, args.input);
+        } catch (error) {
+          rethrowValidation(error);
+          throw error;
+        }
         if (!updatedTemplate) {
           throw createGraphQLError('Template not found', GRAPHQL_ERROR_CODES.TEMPLATE_NOT_FOUND);
         }
@@ -161,6 +215,34 @@ export const templatesResolvers = {
           throw error;
         }
         throw createGraphQLError('Failed to delete template', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
+      }
+    },
+
+    createTemplateFromForm: async (
+      _: any,
+      args: { formId: string; input: CreateTemplateFromFormInput },
+      context: AuthContext
+    ) => {
+      try {
+        requireSystemLevelRole(context);
+
+        const form = await getFormById(args.formId);
+        if (!form) {
+          throw createGraphQLError('Form not found', GRAPHQL_ERROR_CODES.FORM_NOT_FOUND);
+        }
+
+        // The collaborative (Y.js) document is the live copy; the column can lag behind.
+        const liveSchema = (await getFormSchemaFromHocuspocus(args.formId)) ?? form.formSchema;
+        const formSchema = buildTemplateSchemaFromForm(liveSchema, (form as any).settings);
+
+        return await createTemplate({ ...args.input, formSchema });
+      } catch (error) {
+        rethrowValidation(error);
+        logger.error('Error creating template from form:', error);
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        throw createGraphQLError('Failed to save form as template', GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR);
       }
     },
 

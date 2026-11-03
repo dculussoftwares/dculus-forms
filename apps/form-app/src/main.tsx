@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react';
 import { getRuntimeConfig } from '@dculus/utils';
 import App from './App';
 import { client } from './services/apolloClient';
+import { capturePendingTemplateFromUrl } from './lib/pendingTemplate';
 import './index.css';
 import './styles.css';
 
@@ -18,6 +19,9 @@ if (sentryDsn) {
     tracesSampleRate: 0.1,
   });
 }
+
+// Before routing: remember ?template=<slug> from dculus.com template pages.
+capturePendingTemplateFromUrl();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

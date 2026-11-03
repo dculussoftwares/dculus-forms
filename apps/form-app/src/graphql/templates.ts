@@ -150,3 +150,26 @@ export const GET_FORM_FILES : TypedDocumentNode<any, any> = gql`
     }
   }
 `;
+
+/** No auth needed — resolves the ?template=<slug> a visitor arrived with. */
+export const GET_PUBLIC_TEMPLATE : TypedDocumentNode<any, any> = gql`
+  query PublicTemplate($slug: String!) {
+    publicTemplate(slug: $slug) {
+      id
+      slug
+      name
+      category
+    }
+  }
+`;
+
+export const CREATE_TEMPLATE_FROM_FORM : TypedDocumentNode<any, any> = gql`
+  mutation CreateTemplateFromForm($formId: ID!, $input: CreateTemplateFromFormInput!) {
+    createTemplateFromForm(formId: $formId, input: $input) {
+      id
+      name
+      slug
+      isPublic
+    }
+  }
+`;

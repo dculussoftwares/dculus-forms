@@ -20,6 +20,7 @@ import { StatsGrid } from '../components/FormDashboard/StatsGrid';
 import { QuickActions } from '../components/FormDashboard/QuickActions';
 import { BuilderNudgeBanner } from '../components/FormDashboard/BuilderNudgeBanner';
 import { DeleteDialog, UnpublishDialog } from '../components/FormDashboard/Dialogs';
+import { SaveAsTemplateDialog } from '../components/SaveAsTemplateDialog';
 import { ShareModal } from '../components/sharing/ShareModal';
 import { CollectResponsesPanel, type CollectTab } from '../components/sharing/CollectResponsesPanel';
 import { PublishSuccessAnimation } from '../components/FormDashboard/PublishSuccessAnimation';
@@ -41,6 +42,9 @@ const FormDashboard: React.FC = () => {
   // Which tab the Collect panel opens on — set by whichever entry point was used.
   const [collectTab, setCollectTab] = useState<CollectTab>('link');
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
+  // better-auth's admin plugin puts the system role on the session user.
+  const isSystemAdmin = ['admin', 'superAdmin'].includes((user as { role?: string } | null)?.role ?? '');
   const [duplicateProgress, setDuplicateProgress] = useState(0);
   const { t } = useTranslation('formDashboard');
   const [duplicateFormMutation, { loading: isDuplicating }] = useMutation(DUPLICATE_FORM);
@@ -239,6 +243,7 @@ const FormDashboard: React.FC = () => {
             }}
             onShare={form.userPermission === 'OWNER' ? handleShare : undefined}
             onDuplicate={form.userPermission === 'OWNER' || form.userPermission === 'EDITOR' ? handleDuplicate : undefined}
+            onSaveAsTemplate={isSystemAdmin ? () => setShowSaveAsTemplate(true) : undefined}
             updateLoading={updateLoading}
             deleteLoading={deleteLoading}
             duplicateLoading={isDuplicating}
@@ -277,6 +282,14 @@ const FormDashboard: React.FC = () => {
           formTitle={form.title}
           loading={deleteLoading}
         />
+
+        {isSystemAdmin && showSaveAsTemplate && (
+          <SaveAsTemplateDialog
+            open={showSaveAsTemplate}
+            onOpenChange={setShowSaveAsTemplate}
+            form={form}
+          />
+        )}
 
         <UnpublishDialog
           open={showUnpublishDialog}

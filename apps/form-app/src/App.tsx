@@ -7,6 +7,7 @@ import { Toaster, LoadingSpinner } from '@dculus/ui';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PageErrorBoundary } from './components/PageErrorBoundary';
 import { Dashboard } from './components/Dashboard';
+import { PendingTemplateHandler } from './components/PendingTemplateHandler';
 // Auth pages — kept as static imports (small, needed immediately on page load)
 import { SignUp } from './pages/SignUp';
 import { SignIn } from './pages/SignIn';
@@ -58,6 +59,7 @@ function App() {
     <LocaleProvider>
       <AuthProvider>
         <div className="min-h-screen bg-background">
+          <PendingTemplateHandler />
           <Routes>
           {/* Public routes — static imports, needed immediately */}
           <Route path="/signin" element={<SignIn />} />

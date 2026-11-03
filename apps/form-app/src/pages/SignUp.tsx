@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
-import { useMutation, useApolloClient } from '@apollo/client/react';
+import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
 import { Button, Input, Label, Logo, OTPInput } from '@dculus/ui';
 import { authClient, signUp, emailOtp, signIn, organization } from '../lib/auth-client';
 import { ensureOrganization } from '../lib/ensureOrganization';
@@ -9,6 +9,9 @@ import { GoogleIcon } from '../components/icons/GoogleIcon';
 import { INITIALIZE_ORGANIZATION_SUBSCRIPTION } from '../graphql/subscription';
 import { SET_ACCOUNT_PASSWORD } from '../graphql/mutations';
 import { useTranslation } from '../hooks/useTranslation';
+import { useAuth } from '../contexts/AuthContext';
+import { GET_PUBLIC_TEMPLATE } from '../graphql/templates';
+import { getPendingTemplate } from '../lib/pendingTemplate';
 
 const Field = ({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) => (
   <div>
@@ -43,6 +46,27 @@ export const SignUp = () => {
   // Check for invitation context
   const invitationEmail = location.state?.email;
   const pendingInvitationId = typeof window !== 'undefined' ? sessionStorage.getItem('pendingInvitationId') : null;
+
+  // Arrived from a dculus.com template page (?template=<slug>, captured in main.tsx).
+  // The workspace is then created automatically so sign-up stays short.
+  const [pendingTemplateSlug] = useState(() => getPendingTemplate());
+  const autoWorkspace = !!pendingTemplateSlug && !pendingInvitationId;
+  const { data: pendingTemplateData } = useQuery(GET_PUBLIC_TEMPLATE, {
+    variables: { slug: pendingTemplateSlug },
+    skip: !pendingTemplateSlug,
+  });
+  const pendingTemplateName: string | undefined = pendingTemplateData?.publicTemplate?.name;
+  const { t: tTemplates } = useTranslation('publicTemplates');
+
+  // Already signed in and just picked a template: skip the form — the
+  // dashboard's PendingTemplateHandler creates the form from it.
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const arrivalCheckedRef = useRef(false);
+  useEffect(() => {
+    if (arrivalCheckedRef.current || authLoading) return;
+    arrivalCheckedRef.current = true;
+    if (isAuthenticated && pendingTemplateSlug) navigate('/', { replace: true });
+  }, [authLoading, isAuthenticated, pendingTemplateSlug, navigate]);
   
   // Prefill email if coming from invitation
   useEffect(() => {
@@ -93,7 +117,7 @@ export const SignUp = () => {
     }
 
     // Organization name is only required if not joining via invitation
-    if (!pendingInvitationId && !formData.organizationName.trim()) {
+    if (!pendingInvitationId && !autoWorkspace && !formData.organizationName.trim()) {
       newErrors.organizationName = t('form.fields.organizationName.errors.required');
     }
 
@@ -243,7 +267,10 @@ export const SignUp = () => {
       // have one, in which case this just reuses it instead of creating a
       // second one.
       if (!pendingInvitationId) {
-        const orgResult = await ensureOrganization(formData.organizationName);
+        const workspaceName =
+          formData.organizationName.trim() ||
+          tTemplates('signup.autoWorkspaceName', { values: { name: formData.name.trim() } });
+        const orgResult = await ensureOrganization(workspaceName);
 
         if (orgResult?.created) {
           try {
@@ -376,6 +403,15 @@ export const SignUp = () => {
               </Button>
             )}
 
+            {step === 'form' && pendingTemplateName && (
+              <div
+                className="mb-5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-xs text-foreground"
+                data-testid="signup-template-banner"
+              >
+                {tTemplates('signup.banner', { values: { name: pendingTemplateName } })}
+              </div>
+            )}
+
             <div className="mb-7">
               <h1 className="text-2xl font-semibold mb-1.5 text-primary">{heading}</h1>
               <p className="text-sm text-muted-foreground">{description}</p>
@@ -413,7 +449,7 @@ export const SignUp = () => {
                   {pendingInvitationId && <p className="text-xs mt-1 text-muted-foreground">{t('form.fields.email.invitationNotice')}</p>}
                 </Field>
 
-                {!pendingInvitationId && (
+                {!pendingInvitationId && !autoWorkspace && (
                   <Field id="organizationName" label={t('form.fields.organizationName.label')} error={errors.organizationName}>
                     <Input id="organizationName" name="organizationName" type="text" placeholder={t('form.fields.organizationName.placeholder')} value={formData.organizationName} onChange={handleInputChange} disabled={isLoading} className={errors.organizationName ? 'border-destructive' : ''} />
                   </Field>

@@ -1,0 +1,121 @@
+/*
+ * Everything here is scoped to the renderer (see tailwind.config.cjs) so a
+ * host page keeps its own look. Theme values match apps/form-viewer.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) {
+  --background: 0 0% 100%;
+  --foreground: 240 5.9% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 5.9% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 5.9% 10%;
+  --primary: 290 11% 22%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 344 40% 96%;
+  --secondary-foreground: 290 11% 22%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 44%;
+  --accent: 344 30% 96%;
+  --accent-foreground: 290 11% 22%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 89%;
+  --input: 0 0% 89%;
+  --ring: 172 72% 27%;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --radius: 0.5rem;
+  --shadow-2xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.03);
+  --shadow-xs: 0px 4px 10px -2px hsl(0 0% 0% / 0.03);
+  --shadow-sm: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 1px 2px -3px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 1px 2px -3px hsl(0 0% 0% / 0.05);
+  --shadow-md: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 2px 4px -3px hsl(0 0% 0% / 0.05);
+  --shadow-lg: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 4px 6px -3px hsl(0 0% 0% / 0.05);
+  --shadow-xl: 0px 4px 10px -2px hsl(0 0% 0% / 0.05), 0px 8px 10px -3px hsl(0 0% 0% / 0.05);
+  --shadow-2xl: 0px 4px 10px -2px hsl(0 0% 0% / 0.13);
+  --tracking-normal: 0rem;
+  --spacing: 0.25rem;
+  /* Product palette used by a few renderer parts via inline styles */
+  --tf-green: #177767;
+  --tf-dark: #3c323e;
+  --tf-text: #4c414e;
+  --tf-muted: #655d67;
+  --tf-faint: #f7f7f8;
+  --tf-error: #ce5d55;
+  --tf-darkest: #2a222b;
+  --tf-light-muted: #a09aa2;
+  --tf-border: rgba(81, 76, 84, 0.12);
+  --tf-border-strong: rgba(81, 76, 84, 0.15);
+  --tf-border-medium: rgba(81, 76, 84, 0.1);
+  --tf-border-light: rgba(81, 76, 84, 0.08);
+  --tf-error-bg: rgba(206, 93, 85, 0.06);
+  --tf-error-bg-md: rgba(206, 93, 85, 0.14);
+  --tf-green-bg: rgba(23, 119, 103, 0.08);
+
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  letter-spacing: var(--tracking-normal);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* A scoped slice of Tailwind's preflight — just what the renderer relies on. */
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(*, ::before, ::after) {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: hsl(var(--border));
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(h1, h2, h3, h4, h5, h6) {
+  font-size: inherit;
+  font-weight: inherit;
+  margin: 0;
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(p, blockquote, figure, pre, hr, dl, dd) {
+  margin: 0;
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(ol, ul, menu) {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(a) {
+  color: inherit;
+  text-decoration: inherit;
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(button, input, optgroup, select, textarea) {
+  font-family: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(button, [type='button'], [type='submit'], [type='reset']) {
+  -webkit-appearance: button;
+  background-color: transparent;
+  background-image: none;
+  cursor: pointer;
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(img, svg, video, canvas, audio, iframe, embed, object) {
+  display: block;
+  vertical-align: middle;
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(img, video) {
+  max-width: 100%;
+  height: auto;
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(input::placeholder, textarea::placeholder) {
+  opacity: 1;
+  color: hsl(var(--muted-foreground));
+}
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) svg.lucide {
+  stroke-width: 1.5;
+}

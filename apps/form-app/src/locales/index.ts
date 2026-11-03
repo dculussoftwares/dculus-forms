@@ -20,6 +20,10 @@ import enDashboard from './en/dashboard.json';
 import taDashboard from './ta/dashboard.json';
 import enFormDashboard from './en/formDashboard.json';
 import taFormDashboard from './ta/formDashboard.json';
+import enSaveAsTemplate from './en/saveAsTemplate.json';
+import taSaveAsTemplate from './ta/saveAsTemplate.json';
+import enPublicTemplates from './en/publicTemplates.json';
+import taPublicTemplates from './ta/publicTemplates.json';
 import enSharing from './en/sharing.json';
 import taSharing from './ta/sharing.json';
 import enResponses from './en/responses.json';
@@ -294,6 +298,8 @@ const enTranslations = {
   templates: enTemplates,
   dashboard: enDashboard,
   formDashboard: enFormDashboard,
+  saveAsTemplate: enSaveAsTemplate,
+  publicTemplates: enPublicTemplates,
   sharing: enSharing,
   responses: enResponses,
   responseFiles: enResponseFiles,
@@ -439,6 +445,8 @@ const taTranslations = {
   templates: taTemplates,
   dashboard: taDashboard,
   formDashboard: taFormDashboard,
+  saveAsTemplate: taSaveAsTemplate,
+  publicTemplates: taPublicTemplates,
   sharing: taSharing,
   responses: taResponses,
   responseFiles: taResponseFiles,

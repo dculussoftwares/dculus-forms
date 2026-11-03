@@ -137,7 +137,10 @@ function generateS3Key(
   // Generate S3 path based on type
   switch (type) {
     case 'FormTemplate':
-      return `files/form-template/${uniqueFilename}`;
+      // formId doubles as the template id here, so each template's files share a folder
+      return formId
+        ? `files/form-template/${sanitizeKeySegment(formId)}/${uniqueFilename}`
+        : `files/form-template/${uniqueFilename}`;
     case 'FormBackground':
       // Include formId in the path for form-specific backgrounds
       return formId
@@ -548,6 +551,48 @@ export async function copyFileForForm(
       `Failed to copy file: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
+}
+
+/** Public-bucket folder that holds one template's own files. */
+export const templateAssetPrefix = (templateId: string): string =>
+  `files/form-template/${sanitizeKeySegment(templateId)}/`;
+
+/**
+ * Copy a public-bucket file (form background image/video) into a template's own
+ * folder, so the template never points at a file another form owns — deleting or
+ * changing that form must not break the template.
+ */
+export async function copyFileForTemplate(
+  sourceKey: string,
+  templateId: string
+): Promise<UploadFileResult> {
+  const originalFilename = sourceKey.split('/').pop() || 'background';
+  const newKey = generateS3Key(originalFilename, 'FormTemplate', templateId);
+
+  try {
+    await s3Client.send(
+      new CopyObjectCommand({
+        Bucket: s3Config.publicBucketName,
+        CopySource: `${s3Config.publicBucketName}/${sourceKey}`,
+        Key: newKey,
+        ACL: 'public-read',
+      })
+    );
+  } catch (error) {
+    logger.error('Error copying file into template folder:', error);
+    throw new Error(
+      `Failed to copy file: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
+
+  return {
+    key: newKey,
+    type: 'FormTemplate',
+    url: constructCdnUrl(newKey) || '',
+    originalName: originalFilename,
+    size: 0,
+    mimeType: getMimetypeFromExtension(originalFilename) || 'image/jpeg',
+  };
 }
 
 /**

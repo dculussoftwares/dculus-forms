@@ -329,10 +329,20 @@ model FormTemplate {
   category    String?
   formSchema  Json
   isActive    Boolean  @default(true)
+  /// URL slug for the public template page (dculus.com/forms/templates/<slug>)
+  slug           String?  @unique
+  /// Listed on the public template gallery. Requires a slug.
+  isPublic       Boolean  @default(false)
+  /// Meta description for the public template page
+  seoDescription String?
+  /// Public-bucket key of the gallery thumbnail
+  thumbnailKey   String?
+  thumbnailAlt   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@unique([name, category])
+  @@index([isPublic, isActive])
   @@map("form_template")
 }
 

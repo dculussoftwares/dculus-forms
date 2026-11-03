@@ -68,6 +68,17 @@ export const createFormTemplateRepository = (context?: RepositoryContext) => {
       where: { id },
     });
 
+  const listPublic = async () =>
+    prisma.formTemplate.findMany({
+      where: { isActive: true, isPublic: true, slug: { not: null } },
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+    });
+
+  const fetchPublicBySlug = async (slug: string) =>
+    prisma.formTemplate.findFirst({
+      where: { slug, isActive: true, isPublic: true },
+    });
+
   const listCategories = async () =>
     prisma.formTemplate.findMany({
       where: { isActive: true },
@@ -88,6 +99,8 @@ export const createFormTemplateRepository = (context?: RepositoryContext) => {
     softDeleteTemplate,
     hardDeleteTemplate,
     listCategories,
+    listPublic,
+    fetchPublicBySlug,
   };
 };
 
