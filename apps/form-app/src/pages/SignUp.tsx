@@ -419,7 +419,8 @@ export const SignUp = () => {
           <div className="w-full max-w-sm">
 
             {/* Back button (verify step) */}
-            {step === 'verify' && (
+            {/* No Back while a workspace retry is pending: the account already exists. */}
+            {step === 'verify' && !workspaceRetryName && (
               <Button variant="ghost" size="sm" onClick={handleBackToForm} className="flex items-center gap-1.5 text-xs mb-6 h-7 px-2 text-muted-foreground hover:text-primary">
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Back

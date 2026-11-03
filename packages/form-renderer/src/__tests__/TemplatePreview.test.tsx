@@ -58,6 +58,7 @@ describe('TemplatePreview', () => {
     ['no pages', { pages: [], layout: {} }],
     ['pages without fields', { pages: [{ id: 'p' }], layout: {} }],
     ['pages without an id', { pages: [{ fields: [] }], layout: {} }],
+    ['a non-text page title', { pages: [{ id: 'p', title: {}, fields: [] }], layout: {} }],
     ['an array layout', { pages: [{ id: 'p', fields: [] }], layout: [] }],
   ])('renders nothing for a schema with %s', (_label, bad) => {
     const { container } = render(<TemplatePreview formSchema={bad as never} />);

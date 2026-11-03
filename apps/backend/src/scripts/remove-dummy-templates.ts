@@ -7,7 +7,7 @@
  *   pnpm db:remove-dummy-templates --confirm --ids=<id>,<id>,...  # delete those
  *
  * Only deletes templates matching an exact seeded (name, category) pair that
- * were never published (no slug, not public). A name match can't prove a row
+ * are currently unpublished (no slug, not public). A name match can't prove a row
  * came from the seed, so --confirm only deletes ids you pass explicitly, and
  * only if they are still in that candidate list. Forms already created from these templates
  * are unaffected (they hold their own copy of the schema).
@@ -36,6 +36,13 @@ function databaseHost(): string {
   }
 }
 
+// Seeded (name, category) pairs that are currently unpublished.
+const candidateFilter = {
+  OR: DUMMY_TEMPLATES.map(({ name, category }) => ({ name, category })),
+  slug: null,
+  isPublic: false,
+};
+
 async function main() {
   const confirm = process.argv.includes('--confirm');
   const idsArg = process.argv.find((a) => a.startsWith('--ids='));
@@ -45,11 +52,7 @@ async function main() {
   logger.info(`Database: ${databaseHost()}`);
 
   const matches = await prisma.formTemplate.findMany({
-    where: {
-      OR: DUMMY_TEMPLATES.map(({ name, category }) => ({ name, category })),
-      slug: null,
-      isPublic: false,
-    },
+    where: candidateFilter,
     select: { id: true, name: true, category: true },
     orderBy: { name: 'asc' },
   });
@@ -83,7 +86,9 @@ async function main() {
   }
 
   const { count } = await prisma.formTemplate.deleteMany({
-    where: { id: { in: [...reviewedIds] } },
+    // Re-check the candidate conditions in the same statement, so a template
+    // published since the dry run is never deleted.
+    where: { AND: [candidateFilter, { id: { in: [...reviewedIds] } }] },
   });
   logger.info(`Deleted ${count} dummy template(s).`);
 }

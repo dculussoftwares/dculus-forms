@@ -19,7 +19,9 @@ export interface TemplateFormSchema {
 }
 
 const templateFormSchema = z.object({
-  pages: z.array(z.object({ id: z.string().min(1), fields: z.array(z.unknown()) })).min(1),
+  pages: z
+    .array(z.object({ id: z.string().min(1), title: z.string().optional(), fields: z.array(z.unknown()) }))
+    .min(1),
   layout: z.record(z.string(), z.unknown()),
 });
 
