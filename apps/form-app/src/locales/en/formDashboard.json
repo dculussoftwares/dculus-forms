@@ -34,7 +34,8 @@
       "embed": "Embed",
       "duplicating": "Duplicating...",
       "delete": "Delete Form",
-      "deleting": "Deleting..."
+      "deleting": "Deleting...",
+      "saveAsTemplate": "Save as template"
     }
   },
   "stats": {

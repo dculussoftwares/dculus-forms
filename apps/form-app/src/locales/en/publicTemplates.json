@@ -1,0 +1,15 @@
+{
+  "signup": {
+    "banner": "You're signing up to use the {{name}} template. We'll open it for you as soon as you're in.",
+    "autoWorkspaceName": "{{name}}'s workspace"
+  },
+  "handler": {
+    "preparing": "Setting up your template…",
+    "successTitle": "Your form is ready",
+    "successMessage": "Created from the {{name}} template. Edit anything you like.",
+    "notFoundTitle": "Template not available",
+    "notFoundMessage": "That template is no longer published. Pick another one or start from scratch.",
+    "failedTitle": "Could not open the template",
+    "failedMessage": "Something went wrong creating your form. Try again from the Templates page."
+  }
+}

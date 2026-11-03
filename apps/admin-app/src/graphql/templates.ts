@@ -10,6 +10,12 @@ export const GET_TEMPLATES : TypedDocumentNode<any, any> = gql`
       description
       category
       isActive
+      slug
+      isPublic
+      seoDescription
+      thumbnailKey
+      thumbnailUrl
+      thumbnailAlt
       createdAt
       updatedAt
     }
@@ -25,6 +31,12 @@ export const GET_TEMPLATE : TypedDocumentNode<any, any> = gql`
       category
       formSchema
       isActive
+      slug
+      isPublic
+      seoDescription
+      thumbnailKey
+      thumbnailUrl
+      thumbnailAlt
       createdAt
       updatedAt
     }
@@ -45,6 +57,12 @@ export const CREATE_TEMPLATE : TypedDocumentNode<any, any> = gql`
       description
       category
       isActive
+      slug
+      isPublic
+      seoDescription
+      thumbnailKey
+      thumbnailUrl
+      thumbnailAlt
       createdAt
       updatedAt
     }
@@ -59,6 +77,12 @@ export const UPDATE_TEMPLATE : TypedDocumentNode<any, any> = gql`
       description
       category
       isActive
+      slug
+      isPublic
+      seoDescription
+      thumbnailKey
+      thumbnailUrl
+      thumbnailAlt
       createdAt
       updatedAt
     }

@@ -5,6 +5,7 @@ import { X, FileText, Layout, Code, Loader2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { FormSchema } from '@dculus/types';
 import { CREATE_TEMPLATE, UPDATE_TEMPLATE, GET_TEMPLATE, GET_TEMPLATE_CATEGORIES } from '../../graphql/templates';
+import { getApiBaseUrl } from '../../lib/config';
 
 // Sample data templates
 const SAMPLE_FORM_SCHEMA = {
@@ -61,6 +62,12 @@ interface Template {
   description?: string;
   category?: string;
   isActive: boolean;
+  slug?: string | null;
+  isPublic?: boolean;
+  seoDescription?: string | null;
+  thumbnailKey?: string | null;
+  thumbnailUrl?: string | null;
+  thumbnailAlt?: string | null;
   createdAt: string;
   updatedAt: string;
   formSchema?: FormSchema;
@@ -79,6 +86,53 @@ interface TemplateFormData {
   category: string;
   formSchema: string; // JSON string for editing
   layout: string;     // JSON string for editing
+  // Public gallery (dculus.com/forms/templates/<slug>)
+  slug: string;
+  isPublic: boolean;
+  seoDescription: string;
+  thumbnailKey: string;
+  thumbnailUrl: string;
+  thumbnailAlt: string;
+}
+
+const EMPTY_PUBLISHING = {
+  slug: '',
+  isPublic: false,
+  seoDescription: '',
+  thumbnailKey: '',
+  thumbnailUrl: '',
+  thumbnailAlt: '',
+};
+
+const publishingFrom = (t: Partial<Template> | null | undefined) => ({
+  slug: t?.slug || '',
+  isPublic: Boolean(t?.isPublic),
+  seoDescription: t?.seoDescription || '',
+  thumbnailKey: t?.thumbnailKey || '',
+  thumbnailUrl: t?.thumbnailUrl || '',
+  thumbnailAlt: t?.thumbnailAlt || '',
+});
+
+const toSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+
+async function uploadTemplateThumbnail(file: File): Promise<{ key: string; url: string }> {
+  const body = new FormData();
+  body.append('file', file);
+  body.append('type', 'FormTemplate');
+  const response = await fetch(`${getApiBaseUrl()}/upload?type=FormTemplate`, {
+    method: 'POST',
+    body,
+    credentials: 'include',
+  });
+  if (!response.ok) throw new Error(`Upload failed (${response.status})`);
+  return response.json();
 }
 
 export default function TemplateModal({ isOpen, onClose, mode, template }: TemplateModalProps) {
@@ -100,7 +154,9 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
     category: '',
     formSchema: JSON.stringify(SAMPLE_FORM_SCHEMA, null, 2),
     layout: JSON.stringify(SAMPLE_LAYOUT, null, 2),
+    ...EMPTY_PUBLISHING,
   });
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<'basic' | 'schema' | 'layout'>('basic');
 
@@ -131,6 +187,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
           category: '',
           formSchema: JSON.stringify(SAMPLE_FORM_SCHEMA, null, 2),
           layout: JSON.stringify(SAMPLE_LAYOUT, null, 2),
+          ...EMPTY_PUBLISHING,
         });
       } else if (template) {
         setFormData({
@@ -139,6 +196,7 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
           category: template.category || '',
           formSchema: template.formSchema ? JSON.stringify(template.formSchema, null, 2) : JSON.stringify(SAMPLE_FORM_SCHEMA, null, 2),
           layout: template.formSchema?.layout ? JSON.stringify(template.formSchema.layout, null, 2) : JSON.stringify(SAMPLE_LAYOUT, null, 2),
+          ...publishingFrom(template),
         });
       }
       setErrors({});
@@ -156,9 +214,25 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
         category: fullTemplate.category || '',
         formSchema: fullTemplate.formSchema ? JSON.stringify(fullTemplate.formSchema, null, 2) : JSON.stringify(SAMPLE_FORM_SCHEMA, null, 2),
         layout: fullTemplate.formSchema?.layout ? JSON.stringify(fullTemplate.formSchema.layout, null, 2) : JSON.stringify(SAMPLE_LAYOUT, null, 2),
+        ...publishingFrom(fullTemplate),
       });
     }
   }, [templateData, mode]);
+
+  const handleThumbnailFile = async (file: File | undefined) => {
+    if (!file) return;
+    setUploadingThumbnail(true);
+    try {
+      const uploaded = await uploadTemplateThumbnail(file);
+      setFormData(prev => ({ ...prev, thumbnailKey: uploaded.key, thumbnailUrl: uploaded.url }));
+      setErrors(prev => ({ ...prev, thumbnail: '' }));
+    } catch (error) {
+      console.error('Thumbnail upload failed:', error);
+      setErrors(prev => ({ ...prev, thumbnail: 'Thumbnail upload failed. Try a PNG, JPEG or WebP under 5 MB.' }));
+    } finally {
+      setUploadingThumbnail(false);
+    }
+  };
 
   const handleInputChange = (field: keyof TemplateFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -206,6 +280,10 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
       newErrors.name = 'Template name is required';
     }
 
+    if (formData.isPublic && !formData.slug.trim()) {
+      newErrors.slug = 'A public template needs a page address';
+    }
+
     // Validate JSON fields
     if (!validateJSON(formData.formSchema, 'formSchema')) {
       return false; // Error already set in validateJSON
@@ -242,6 +320,11 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
         description: formData.description.trim() || null,
         category: formData.category.trim() || null,
         formSchema: completeFormSchema,
+        slug: formData.slug.trim() || null,
+        isPublic: formData.isPublic,
+        seoDescription: formData.seoDescription.trim() || null,
+        thumbnailKey: formData.thumbnailKey || null,
+        thumbnailAlt: formData.thumbnailAlt.trim() || null,
       };
 
       if (mode === 'create') {
@@ -258,7 +341,8 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
       onClose();
     } catch (error) {
       console.error('Error saving template:', error);
-      setErrors({ submit: 'Failed to save template. Please try again.' });
+      const message = error instanceof Error && error.message ? error.message : '';
+      setErrors({ submit: message ? `Failed to save template: ${message}` : 'Failed to save template. Please try again.' });
     }
   };
 
@@ -394,6 +478,118 @@ export default function TemplateModal({ isOpen, onClose, mode, template }: Templ
                       rows={3}
                       placeholder="Enter template description"
                     />
+                  </div>
+
+                  {/* Public gallery */}
+                  <div className="space-y-4 rounded-lg border border-border p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Public page</p>
+                        <p className="text-xs text-muted-foreground">
+                          Listed at dculus.com/forms/templates after the next site sync.
+                        </p>
+                      </div>
+                      <label className="flex items-center gap-2 text-sm text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={formData.isPublic}
+                          disabled={isReadOnly}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            isPublic: e.target.checked,
+                            slug: prev.slug || toSlug(prev.name),
+                          }))}
+                          data-testid="template-public-toggle"
+                        />
+                        Public
+                      </label>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="slug" className="block text-sm font-medium mb-1 text-foreground">
+                        Page address
+                      </Label>
+                      <div className="flex items-center gap-1 text-sm">
+                        <span className="text-muted-foreground whitespace-nowrap">dculus.com/forms/templates/</span>
+                        <Input
+                          id="slug"
+                          value={formData.slug}
+                          onChange={(e) => handleInputChange('slug', toSlug(e.target.value))}
+                          disabled={isReadOnly}
+                          placeholder="employee-onboarding-form"
+                        />
+                      </div>
+                      {errors.slug && <p className="text-destructive text-sm mt-1">{errors.slug}</p>}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="seoDescription" className="block text-sm font-medium mb-1 text-foreground">
+                        Search description ({formData.seoDescription.length}/160)
+                      </Label>
+                      <Textarea
+                        id="seoDescription"
+                        value={formData.seoDescription}
+                        maxLength={160}
+                        rows={2}
+                        onChange={(e) => handleInputChange('seoDescription', e.target.value)}
+                        disabled={isReadOnly}
+                        placeholder="Shown under the page title in Google results"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="block text-sm font-medium mb-1 text-foreground">Thumbnail</Label>
+                      <div className="flex flex-wrap items-start gap-3">
+                        {formData.thumbnailUrl ? (
+                          <img
+                            src={formData.thumbnailUrl}
+                            alt={formData.thumbnailAlt || ''}
+                            className="h-24 w-36 rounded border border-border object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-24 w-36 items-center justify-center rounded border border-dashed border-border text-xs text-muted-foreground">
+                            No thumbnail
+                          </div>
+                        )}
+                        {!isReadOnly && (
+                          <div className="space-y-2">
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              disabled={uploadingThumbnail}
+                              onChange={(e) => handleThumbnailFile(e.target.files?.[0])}
+                              className="text-xs"
+                              aria-label="Upload thumbnail"
+                            />
+                            {uploadingThumbnail && <p className="text-xs text-muted-foreground">Uploading…</p>}
+                            {formData.thumbnailKey && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setFormData(prev => ({ ...prev, thumbnailKey: '', thumbnailUrl: '' }))}
+                              >
+                                Remove thumbnail
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {errors.thumbnail && <p className="text-destructive text-sm mt-1">{errors.thumbnail}</p>}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="thumbnailAlt" className="block text-sm font-medium mb-1 text-foreground">
+                        Thumbnail alt text
+                      </Label>
+                      <Input
+                        id="thumbnailAlt"
+                        value={formData.thumbnailAlt}
+                        onChange={(e) => handleInputChange('thumbnailAlt', e.target.value)}
+                        disabled={isReadOnly}
+                        placeholder={`${formData.name || 'Template'} form template preview`}
+                      />
+                    </div>
                   </div>
 
                   {/* Status for view mode */}
