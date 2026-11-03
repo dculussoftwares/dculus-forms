@@ -2,7 +2,7 @@
   "name": "@dculus/form-renderer",
   "version": "0.1.0",
   "description": "Render Dculus Forms schemas (read-only previews) in any React 18/19 app, with styles bundled and scoped.",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "GPL-3.0-only",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -17,7 +17,8 @@
   "files": [
     "dist",
     "index.d.ts",
-    "README.md"
+    "README.md",
+    "LICENSE.md"
   ],
   "sideEffects": [
     "*.css"
