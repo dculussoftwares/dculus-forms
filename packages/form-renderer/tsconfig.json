@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "baseUrl": ".",
+    "paths": {
+      "@dculus/ui": ["../ui/src"],
+      "@dculus/utils": ["../utils/src"],
+      "@dculus/types": ["../types/src/index.ts"],
+      "@dculus/types/graphql": ["../types/src/graphql.ts"],
+      "@dculus/types/graphql.js": ["../types/src/graphql.ts"]
+    }
+  },
+  "include": ["src", "index.d.ts"]
+}

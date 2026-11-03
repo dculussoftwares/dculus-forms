@@ -1,0 +1,63 @@
+{
+  "name": "@dculus/form-renderer",
+  "version": "0.1.0",
+  "description": "Render Dculus Forms schemas (read-only previews) in any React 18/19 app, with styles bundled and scoped.",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "index.d.ts",
+    "README.md"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dculussoftwares/dculus-forms.git",
+    "directory": "packages/form-renderer"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vite build",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@dculus/types": "workspace:*",
+    "@dculus/ui": "workspace:*",
+    "@dculus/utils": "workspace:*",
+    "@tailwindcss/container-queries": "0.1.1",
+    "@testing-library/react": "^14.3.1",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.6.1",
+    "jsdom": "29.1.1",
+    "postcss": "^8.5.30",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "1.0.7",
+    "typescript": "~5.8.3",
+    "vite": "^7.3.5",
+    "vitest": "^4.1.11"
+  }
+}
