@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { prisma } from '../lib/prisma.js';
-import { seedTemplates } from './seed-templates.js';
 import { uploadFile } from '../services/fileUploadService.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -115,8 +114,8 @@ async function seed() {
     // Upload static files
     const uploadedFiles = await uploadStaticFiles();
 
-    // Seed templates with uploaded files
-    await seedTemplates(uploadedFiles);
+    // Dummy starter templates are no longer seeded (real templates are made via
+    // the builder). CI still seeds them for E2E tests via seed-templates-ci.ts.
 
     logger.info('🌱 Seed completed. Use Better Auth endpoints to create users and organizations.');
     logger.info(`📁 ${uploadedFiles.length} static files uploaded to CDN`);
