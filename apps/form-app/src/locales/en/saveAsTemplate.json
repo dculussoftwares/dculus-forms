@@ -2,14 +2,23 @@
   "title": "Save as template",
   "description": "Copy this form into the template library. Public templates get their own page on dculus.com.",
   "fields": {
-    "name": { "label": "Template name" },
-    "category": { "label": "Category", "placeholder": "e.g. HR, Events, Feedback" },
-    "description": { "label": "Short description" },
+    "name": {
+      "label": "Template name"
+    },
+    "category": {
+      "label": "Category",
+      "placeholder": "e.g. HR, Events, Feedback"
+    },
+    "description": {
+      "label": "Short description"
+    },
     "public": {
       "label": "List on the public gallery",
       "help": "Shown at dculus.com/forms/templates after the next site sync."
     },
-    "slug": { "label": "Page address" },
+    "slug": {
+      "label": "Page address"
+    },
     "seoDescription": {
       "label": "Search description",
       "placeholder": "One or two sentences shown under the page title in Google results"
@@ -18,11 +27,19 @@
       "label": "Thumbnail",
       "help": "A screenshot of this form is taken when you save. Upload an image to use that instead.",
       "upload": "Upload a thumbnail image",
-      "useScreenshot": "Use the screenshot instead"
+      "useScreenshot": "Use the screenshot instead",
+      "selected": "Using {{name}}"
     },
-    "thumbnailAlt": { "label": "Thumbnail alt text", "default": "{{name}} form template preview" }
+    "thumbnailAlt": {
+      "label": "Thumbnail alt text",
+      "default": "{{name}} form template preview"
+    }
   },
-  "actions": { "cancel": "Cancel", "save": "Save template", "saving": "Saving…" },
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save template",
+    "saving": "Saving…"
+  },
   "errors": {
     "nameRequired": "Give the template a name.",
     "slugRequired": "A public template needs a page address.",

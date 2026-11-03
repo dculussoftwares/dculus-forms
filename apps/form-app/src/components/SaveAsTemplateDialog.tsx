@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
 import {
   Button,
@@ -61,14 +61,6 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({ open
   const [error, setError] = useState<string | null>(null);
 
   const [createTemplateFromForm] = useMutation(CREATE_TEMPLATE_FROM_FORM);
-
-  const customThumbnailUrl = useMemo(
-    () => (customThumbnail ? URL.createObjectURL(customThumbnail) : null),
-    [customThumbnail]
-  );
-  useEffect(() => () => {
-    if (customThumbnailUrl) URL.revokeObjectURL(customThumbnailUrl);
-  }, [customThumbnailUrl]);
 
   const formSchema = useMemo<FormSchema | null>(() => {
     try {
@@ -229,13 +221,14 @@ export const SaveAsTemplateDialog: React.FC<SaveAsTemplateDialogProps> = ({ open
             <Label>{t('fields.thumbnail.label')}</Label>
             <p className="text-xs text-muted-foreground">{t('fields.thumbnail.help')}</p>
             <div className="flex flex-wrap items-start gap-4">
-              {customThumbnailUrl ? (
-                <img
-                  src={customThumbnailUrl}
-                  alt=""
-                  className="rounded-md border border-border object-cover"
+              {customThumbnail ? (
+                // The upload is used as-is; show its name rather than rendering the file.
+                <div
+                  className="flex items-center justify-center rounded-md border border-dashed border-border px-3 text-center text-xs text-muted-foreground"
                   style={{ width: THUMBNAIL_WIDTH * PREVIEW_SCALE, height: THUMBNAIL_HEIGHT * PREVIEW_SCALE }}
-                />
+                >
+                  {t('fields.thumbnail.selected', { values: { name: customThumbnail.name } })}
+                </div>
               ) : (
                 <div
                   className="relative overflow-hidden rounded-md border border-border bg-white"
