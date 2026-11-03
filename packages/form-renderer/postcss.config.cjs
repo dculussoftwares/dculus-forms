@@ -1,4 +1,4 @@
-const SCOPE = ':is(.dculus-form-renderer, [data-radix-popper-content-wrapper])';
+const SCOPE = ':is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui]))';
 
 /**
  * Tailwind's base layer sets its --tw-* defaults on `*, ::before, ::after`

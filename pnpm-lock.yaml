@@ -957,6 +957,9 @@ importers:
       vitest:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@20.19.43)(jsdom@29.1.1)(vite@7.3.7)
+      zod:
+        specifier: '>=4.4.3'
+        version: 4.6.7
 
   packages/plugins:
     devDependencies:

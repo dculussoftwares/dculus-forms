@@ -4,15 +4,29 @@ import React, { useMemo } from 'react';
 import { FormRenderer } from '../../ui/src/renderers/FormRenderer';
 import { RendererMode } from '@dculus/utils';
 import { deserializeFormSchema, type FormSchema } from '@dculus/types';
-
-export { FormRenderer, RendererMode, deserializeFormSchema };
+import { z } from 'zod';
 
 /** Class every renderer root carries; all bundled styles are scoped to it. */
 export const SCOPE_CLASS = 'dculus-form-renderer';
 
+/**
+ * The parts of a stored form schema the preview relies on. Extra keys are
+ * fine at runtime; Dculus' own FormSchema type is assignable to this.
+ */
+export interface TemplateFormSchema {
+  pages: ReadonlyArray<{ id: string; fields: readonly unknown[] }>;
+  layout: object;
+}
+
+const templateFormSchema = z.object({
+  pages: z
+    .array(z.object({ id: z.string().min(1), title: z.string().optional(), fields: z.array(z.unknown()) }))
+    .min(1),
+  layout: z.record(z.string(), z.unknown()),
+});
+
 export interface TemplatePreviewProps {
-  /** A form/template schema as stored (plain JSON) or already deserialized. */
-  formSchema: unknown;
+  formSchema: TemplateFormSchema;
   /** Public CDN base URL — layout background keys are resolved against it. */
   cdnEndpoint?: string;
   className?: string;
@@ -26,9 +40,15 @@ export interface TemplatePreviewProps {
   onSubmitAttempt?: () => void;
 }
 
+/** Shape check at the package boundary: callers may pass any JSON at runtime. */
+export function isTemplateFormSchema(value: unknown): value is TemplateFormSchema {
+  return templateFormSchema.safeParse(value).success;
+}
+
 /**
  * Read-only, fully interactive preview of a form: visitors can type, choose,
- * page through and press Submit, but nothing is submitted.
+ * page through and press Submit, but nothing is submitted. Renders nothing for
+ * a schema it can't read.
  */
 export function TemplatePreview({
   formSchema,
@@ -39,8 +59,9 @@ export function TemplatePreview({
   onSubmitAttempt,
 }: TemplatePreviewProps) {
   const schema = useMemo<FormSchema | null>(() => {
+    if (!isTemplateFormSchema(formSchema)) return null;
     try {
-      return deserializeFormSchema(formSchema as any);
+      return deserializeFormSchema(formSchema as never);
     } catch {
       return null;
     }

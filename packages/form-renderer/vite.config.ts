@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
@@ -9,8 +10,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [react()],
   resolve: {
     alias: [
-      // Previews never submit, so the compact phone metadata is plenty (~400 KB less).
-      { find: /^libphonenumber-js\/max$/, replacement: 'libphonenumber-js/min' },
       { find: '@dculus/ui', replacement: resolve(__dirname, '../ui/src') },
       { find: '@dculus/utils', replacement: resolve(__dirname, '../utils/src') },
       { find: '@dculus/types/graphql.js', replacement: resolve(__dirname, '../types/src/graphql.ts') },
@@ -38,4 +37,4 @@ export default defineConfig(({ mode }) => ({
     setupFiles: ['./src/__tests__/setup.ts'],
     css: false,
   },
-} as any));
+}));

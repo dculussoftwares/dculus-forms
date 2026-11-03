@@ -1,6 +1,6 @@
 {
   "name": "@dculus/form-renderer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Render Dculus Forms schemas (read-only previews) in any React 18/19 app, with styles bundled and scoped.",
   "license": "GPL-3.0-only",
   "type": "module",
@@ -59,6 +59,7 @@
     "tailwindcss-animate": "1.0.7",
     "typescript": "~5.8.3",
     "vite": "^7.3.5",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "zod": "^4.6.7"
   }
 }

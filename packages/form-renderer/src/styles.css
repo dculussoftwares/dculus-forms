@@ -6,7 +6,7 @@
 @tailwind components;
 @tailwind utilities;
 
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) {
   --background: 0 0% 100%;
   --foreground: 240 5.9% 10%;
   --card: 0 0% 100%;
@@ -65,30 +65,30 @@
 }
 
 /* A scoped slice of Tailwind's preflight — just what the renderer relies on. */
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(*, ::before, ::after) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(*, ::before, ::after) {
   box-sizing: border-box;
   border-width: 0;
   border-style: solid;
   border-color: hsl(var(--border));
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(h1, h2, h3, h4, h5, h6) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(h1, h2, h3, h4, h5, h6) {
   font-size: inherit;
   font-weight: inherit;
   margin: 0;
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(p, blockquote, figure, pre, hr, dl, dd) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(p, blockquote, figure, pre, hr, dl, dd) {
   margin: 0;
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(ol, ul, menu) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(ol, ul, menu) {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(a) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(a) {
   color: inherit;
   text-decoration: inherit;
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(button, input, optgroup, select, textarea) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(button, input, optgroup, select, textarea) {
   font-family: inherit;
   font-size: 100%;
   font-weight: inherit;
@@ -98,24 +98,24 @@
   margin: 0;
   padding: 0;
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(button, [type='button'], [type='submit'], [type='reset']) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(button, [type='button'], [type='submit'], [type='reset']) {
   -webkit-appearance: button;
   background-color: transparent;
   background-image: none;
   cursor: pointer;
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(img, svg, video, canvas, audio, iframe, embed, object) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(img, svg, video, canvas, audio, iframe, embed, object) {
   display: block;
   vertical-align: middle;
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(img, video) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(img, video) {
   max-width: 100%;
   height: auto;
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) :where(input::placeholder, textarea::placeholder) {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) :where(input::placeholder, textarea::placeholder) {
   opacity: 1;
   color: hsl(var(--muted-foreground));
 }
-:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]) svg.lucide {
+:is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui])) svg.lucide {
   stroke-width: 1.5;
 }

@@ -5,8 +5,9 @@ const viewerConfig = require('../../apps/form-viewer/tailwind.config.js');
 // Scoping: every utility is emitted under SCOPE, and preflight (Tailwind's global
 // reset) is off — a host site keeps its own styles. Radix renders dropdowns,
 // popovers and date pickers into a portal on <body>, outside our wrapper, so the
-// popper wrapper Radix puts around that content is part of the scope as well.
-const SCOPE = ':is(.dculus-form-renderer, [data-radix-popper-content-wrapper])';
+// popper wrapper around content tagged data-dculus-ui (our UI kit's popups) is
+// in scope too — a host page's own Radix popovers are not.
+const SCOPE = ':is(.dculus-form-renderer, [data-radix-popper-content-wrapper]:has(> [data-dculus-ui]))';
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {

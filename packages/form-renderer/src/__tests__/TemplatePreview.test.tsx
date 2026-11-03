@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
-import { TemplatePreview, SCOPE_CLASS } from '../index';
+import { TemplatePreview, SCOPE_CLASS, isTemplateFormSchema } from '../index';
 
 const schema = {
   isShuffleEnabled: false,
@@ -52,9 +52,18 @@ describe('TemplatePreview', () => {
     expect(container.firstElementChild?.className).toBe(`${SCOPE_CLASS} rounded-xl`);
   });
 
-  it('renders nothing for an unreadable schema', () => {
-    const { container } = render(<TemplatePreview formSchema={null} />);
+  it.each([
+    ['null', null],
+    ['no layout', { pages: [{ id: 'p', fields: [] }] }],
+    ['no pages', { pages: [], layout: {} }],
+    ['pages without fields', { pages: [{ id: 'p' }], layout: {} }],
+    ['pages without an id', { pages: [{ fields: [] }], layout: {} }],
+    ['a non-text page title', { pages: [{ id: 'p', title: {}, fields: [] }], layout: {} }],
+    ['an array layout', { pages: [{ id: 'p', fields: [] }], layout: [] }],
+  ])('renders nothing for a schema with %s', (_label, bad) => {
+    const { container } = render(<TemplatePreview formSchema={bad as never} />);
     expect(container.innerHTML).toBe('');
+    expect(isTemplateFormSchema(bad)).toBe(false);
   });
 
   it('calls onSubmitAttempt instead of submitting', async () => {
@@ -66,5 +75,13 @@ describe('TemplatePreview', () => {
     expect(submit).toBeTruthy();
     fireEvent.click(submit!);
     await waitFor(() => expect(onSubmitAttempt).toHaveBeenCalled());
+  });
+});
+
+describe('TemplateFormSchema type', () => {
+  it("accepts Dculus' own FormSchema type without a cast", () => {
+    const typed: import('@dculus/types').FormSchema = schema as never;
+    const accepts = (s: import('../index').TemplateFormSchema) => s;
+    expect(accepts(typed)).toBe(typed);
   });
 });
