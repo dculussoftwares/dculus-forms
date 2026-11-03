@@ -32,6 +32,7 @@ export const resolvers = {
     ...subscriptionResolvers.Organization,
   },
   FormTemplate: {
+    ...templatesResolvers.FormTemplate,
     createdAt: (parent: { createdAt: Date | string }) =>
       parent.createdAt instanceof Date ? parent.createdAt.toISOString() : parent.createdAt,
     updatedAt: (parent: { updatedAt: Date | string }) =>
@@ -82,6 +83,7 @@ export const resolvers = {
     ...myResponseResolvers.Mutation,
     ...adminResolvers.Mutation,
   },
+  PublicTemplate: templatesResolvers.PublicTemplate,
   Form: {
     ...formsResolvers.Form,
     ...formSharingResolvers.Form,

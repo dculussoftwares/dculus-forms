@@ -469,8 +469,36 @@ export const typeDefs = gql`
     category: String
     formSchema: JSON!
     isActive: Boolean!
+    "URL slug of the public template page (dculus.com/forms/templates/<slug>)"
+    slug: String
+    "Listed on the public template gallery"
+    isPublic: Boolean!
+    seoDescription: String
+    thumbnailKey: String
+    thumbnailUrl: String
+    thumbnailAlt: String
     createdAt: String!
     updatedAt: String!
+  }
+
+  "A template as shown on the public gallery — safe fields only, no auth needed."
+  type PublicTemplate {
+    id: ID!
+    slug: String!
+    name: String!
+    description: String
+    seoDescription: String
+    category: String
+    formSchema: JSON!
+    thumbnailUrl: String
+    thumbnailAlt: String
+    updatedAt: String!
+  }
+
+  type PublicTemplateCatalog {
+    "Public CDN base URL; resolve layout background keys against it"
+    cdnEndpoint: String!
+    templates: [PublicTemplate!]!
   }
 
   type TemplatesByCategory {
@@ -677,6 +705,11 @@ export const typeDefs = gql`
     description: String
     category: String
     formSchema: JSON!
+    slug: String
+    isPublic: Boolean
+    seoDescription: String
+    thumbnailKey: String
+    thumbnailAlt: String
   }
 
   input UpdateTemplateInput {
@@ -685,6 +718,22 @@ export const typeDefs = gql`
     category: String
     formSchema: JSON
     isActive: Boolean
+    slug: String
+    isPublic: Boolean
+    seoDescription: String
+    thumbnailKey: String
+    thumbnailAlt: String
+  }
+
+  input CreateTemplateFromFormInput {
+    name: String!
+    description: String
+    category: String
+    slug: String
+    isPublic: Boolean
+    seoDescription: String
+    thumbnailKey: String
+    thumbnailAlt: String
   }
 
   # File Upload Types
@@ -1714,6 +1763,10 @@ export const typeDefs = gql`
     template(id: ID!): FormTemplate
     templatesByCategory: [TemplatesByCategory!]!
     templateCategories: [String!]!
+    "Public template gallery. No auth required."
+    publicTemplateCatalog: PublicTemplateCatalog!
+    "One public template by slug. No auth required."
+    publicTemplate(slug: String!): PublicTemplate
 
     # Form File Queries
     getFormFiles(formId: ID!, type: String): [FormFile!]!
@@ -2004,6 +2057,8 @@ export const typeDefs = gql`
     createTemplate(input: CreateTemplateInput!): FormTemplate!
     updateTemplate(id: ID!, input: UpdateTemplateInput!): FormTemplate!
     deleteTemplate(id: ID!): Boolean!
+    "Save a form's current content as a new template (system admins only)."
+    createTemplateFromForm(formId: ID!, input: CreateTemplateFromFormInput!): FormTemplate!
     createFormFromTemplate(
       templateId: ID!
       organizationId: ID!
