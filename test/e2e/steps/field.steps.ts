@@ -87,19 +87,15 @@ When('I open the checkbox field settings', async function (this: CustomWorld) {
 // FILL-AND-SAVE HELPERS  (used by form-viewer-multipage.feature)
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Targets the field just added (last on the page), not field #1: the "first
+// template" may already contain fields (e.g. seeded public templates on dev).
 async function fillAndSaveLabel(world: CustomWorld, label: string) {
   if (!world.page) throw new Error('Page is not initialized');
-  const fieldCard = world.page.locator('[data-testid^="draggable-field-"]').first();
-  await fieldCard.hover();
-  const settingsButton = world.page.getByTestId('field-settings-button-1');
-  await expect(settingsButton).toBeVisible({ timeout: 30_000 });
-  await settingsButton.hover();
-  await settingsButton.click();
-  await expect(world.page.getByTestId('field-settings-panel')).toBeVisible({ timeout: 15_000 });
-  await world.page.waitForSelector('#field-label', { timeout: 10_000 });
+  await openLastFieldSettings(world);
   await world.page.fill('#field-label', label);
   await waitForFieldSettingsSaved(world.page);
-  await expect(world.page.getByTestId('field-content-1')).toBeVisible({ timeout: 10_000 });
+  const lastField = world.page.locator('[data-testid^="draggable-field-"]').last();
+  await expect(lastField.locator('[data-testid^="field-content-"]')).toBeVisible({ timeout: 10_000 });
 }
 
 When('I fill and save the short text field with label {string}', async function (this: CustomWorld, label: string) { await fillAndSaveLabel(this, label); });
