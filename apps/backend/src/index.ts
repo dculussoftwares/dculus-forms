@@ -27,6 +27,7 @@ import { uploadRouter } from './routes/upload.js';
 import { chargebeeWebhookRouter } from './routes/chargebee-webhooks.js';
 import { pixabayRouter } from './routes/pixabay.js';
 import { pexelsRouter } from './routes/pexels.js';
+import { ogRouter } from './routes/og.js';
 import { aiChatRouter } from './routes/aiChat.js';
 import { googleOAuthRouter } from './routes/google-oauth.js';
 import { microsoftOAuthRouter } from './routes/microsoft-oauth.js';
@@ -286,6 +287,8 @@ app.use(edgeGeolocationMiddleware);
 
 // Routes
 app.use('/health', healthRouter);
+// Public link-preview images and gallery thumbnails (no auth).
+app.use('/', ogRouter);
 app.use('/', uploadLimiter, uploadRouter);
 app.use('/api', chargebeeWebhookRouter);
 app.use('/api/ai', graphqlLimiter, aiChatRouter);

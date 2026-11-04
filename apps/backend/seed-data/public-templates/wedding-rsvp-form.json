@@ -1,0 +1,203 @@
+{
+  "slug": "wedding-rsvp-form",
+  "name": "Wedding RSVP",
+  "description": "A graceful online RSVP card: attendance, number of guests, meal choice, dietary needs and a note for the couple.",
+  "category": "Events",
+  "seoTitle": "Free Wedding RSVP Form Template — Online RSVP Card",
+  "seoDescription": "Free wedding RSVP form template with attendance, guest count, meal choice and dietary needs. Share one link with every guest and track replies live.",
+  "keywords": [
+    "wedding rsvp form",
+    "online rsvp",
+    "wedding rsvp template",
+    "rsvp card online",
+    "wedding guest form"
+  ],
+  "tags": [
+    "Wedding",
+    "RSVP",
+    "Celebration"
+  ],
+  "sortOrder": 2,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 33104578
+    }
+  ],
+  "thumbnailAlt": "Wedding RSVP form beside a photo of a long table decorated with pastel roses",
+  "content": {
+    "intro": "Skip the paper cards. Guests reply in a minute from their phone, and you see a live count of who is coming and what they will eat.",
+    "audience": "Couples and wedding planners collecting RSVPs for a wedding, engagement party or reception.",
+    "useCases": [
+      "Wedding and reception RSVPs",
+      "Engagement parties",
+      "Rehearsal dinners",
+      "Anniversary celebrations"
+    ],
+    "tips": [
+      "Put the link (or a QR code) on your printed invitation or wedding website.",
+      "Export replies to Excel to build the seating plan and send meal counts to the caterer.",
+      "Set a closing date a few weeks before the day so your numbers are final in time."
+    ],
+    "faq": [
+      {
+        "question": "Can guests reply for their whole household?",
+        "answer": "Yes. One reply covers a party — the guest count and the names field tell you exactly who is coming."
+      },
+      {
+        "question": "Can I add my own photo and colours?",
+        "answer": "Yes. Open your copy in the builder to change the photo, layout, colours and every question."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "a01e0580-71ad-5d24-a7bc-81dabe9276d8",
+        "title": "RSVP",
+        "fields": [
+          {
+            "id": "fe9b4000-6fa8-5d4b-a453-01de2953a530",
+            "type": "text_input_field",
+            "label": "Your name(s)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Meera and Karthik Raman",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "35ae588b-33da-5168-a963-db25e31f9657",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          },
+          {
+            "id": "9b225653-6e17-5b1d-a494-546adaf04054",
+            "type": "radio_field",
+            "label": "Will you attend?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Joyfully accepts",
+              "Regretfully declines"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ac48803c-b7f7-511d-a243-629d5e50df26",
+            "type": "number_field",
+            "label": "How many guests in your party?",
+            "defaultValue": "1",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 1,
+            "max": 8,
+            "__type": "number_field"
+          },
+          {
+            "id": "d7aa7e78-e672-584d-ab71-b8ebf1bbf1dc",
+            "type": "radio_field",
+            "label": "Meal preference",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Vegetarian",
+              "Non-vegetarian",
+              "Vegan",
+              "Kids’ meal"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ade56053-3464-5afd-a9f4-6649361dc12e",
+            "type": "text_input_field",
+            "label": "Allergies or dietary needs",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "17222c68-6d96-575a-ad17-e5e3274946ba",
+            "type": "text_input_field",
+            "label": "A song that will get you dancing",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d0ed0c84-d2c5-5811-a998-15eb90df0aea",
+            "type": "text_area_field",
+            "label": "A message for the couple",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L4",
+      "content": "<h1>Priya &amp; Arjun</h1><p>We would love to celebrate with you. Kindly reply by 1 March.</p>",
+      "thankYouContent": "<h1>Thank you for replying</h1><p>Your RSVP means the world to us.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "RSVP",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

@@ -1,0 +1,261 @@
+{
+  "slug": "restaurant-reservation-form",
+  "name": "Restaurant Reservation",
+  "description": "Let guests book a table online with date, time, party size, seating preference and special requests.",
+  "category": "Hospitality",
+  "seoTitle": "Free Restaurant Reservation Form Template — Online Table Booking",
+  "seoDescription": "Free restaurant reservation form template: date, time, party size, seating and allergies. Add it to your website or Instagram bio and take bookings online.",
+  "keywords": [
+    "restaurant reservation form",
+    "table booking form",
+    "online reservation form",
+    "restaurant booking form template",
+    "dinner reservation form"
+  ],
+  "tags": [
+    "Bookings",
+    "Restaurant",
+    "Mobile-friendly"
+  ],
+  "sortOrder": 1,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 17057034
+    }
+  ],
+  "thumbnailAlt": "Restaurant reservation form on a card over a photo of an elegantly set dinner table",
+  "content": {
+    "intro": "Take table bookings without phone tag. Guests choose a date, time and party size, tell you where they would like to sit and flag allergies before they arrive.",
+    "audience": "Restaurants, cafés, bars and supper clubs that want simple online reservations.",
+    "useCases": [
+      "A “Book a table” button on your website",
+      "A link in your Instagram or Google Business profile",
+      "Private dining and group booking enquiries",
+      "Special-occasion and holiday bookings"
+    ],
+    "tips": [
+      "Edit the time list to match your opening hours and sittings.",
+      "Turn on an email notification to the front-of-house inbox for every new booking.",
+      "Ask about allergies here so the kitchen knows before service starts."
+    ],
+    "faq": [
+      {
+        "question": "Does the form check table availability?",
+        "answer": "No — it collects booking requests, which you confirm by email or phone. For automatic availability you would connect it to your booking system with a webhook."
+      },
+      {
+        "question": "Can guests book from their phone?",
+        "answer": "Yes. Every layout is built mobile-first, so the form works as well on a phone as on a laptop."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "49728905-bde0-54c6-afbd-d639b3269f35",
+        "title": "Your booking",
+        "fields": [
+          {
+            "id": "81f31c1b-f7d0-5e9f-a144-1eb9e89b747b",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "13ab736f-3467-5801-a9bc-236d7ba27f75",
+            "type": "date_field",
+            "label": "Date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "81f31c1b-f7d0-5e9f-a144-1eb9e89b747b",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "4f675fd8-7c99-5cea-a195-61347fe9ecd9",
+            "type": "select_field",
+            "label": "Time",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "12:00",
+              "12:30",
+              "13:00",
+              "13:30",
+              "14:00",
+              "18:00",
+              "18:30",
+              "19:00",
+              "19:30",
+              "20:00",
+              "20:30",
+              "21:00"
+            ],
+            "gridId": "81f31c1b-f7d0-5e9f-a144-1eb9e89b747b",
+            "gridColumn": 1,
+            "__type": "select_field"
+          },
+          {
+            "id": "39f21233-8d45-5fb5-a11f-c84246fecddd",
+            "type": "number_field",
+            "label": "Number of guests",
+            "defaultValue": "2",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 1,
+            "max": 20,
+            "__type": "number_field"
+          },
+          {
+            "id": "85c8e5b2-9c1e-5cda-aee5-0724424d89e6",
+            "type": "radio_field",
+            "label": "Seating preference",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Indoor",
+              "Outdoor terrace",
+              "Bar",
+              "No preference"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "f9731243-fa33-5ed3-a766-ba55c8e09e50",
+            "type": "select_field",
+            "label": "Occasion",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "None",
+              "Birthday",
+              "Anniversary",
+              "Business meal",
+              "Date night",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "9e206f9c-4536-5152-a0dc-5bc5beb2d7fc",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "1fc91517-f9f9-59e1-a317-17a770046a29",
+            "type": "text_input_field",
+            "label": "Name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "9e206f9c-4536-5152-a0dc-5bc5beb2d7fc",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "005f5a82-5e95-5e21-a183-40a9a12fc2cb",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9e206f9c-4536-5152-a0dc-5bc5beb2d7fc",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "22d63952-52d8-56b7-a7a4-2b8a397db782",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          },
+          {
+            "id": "46f51cb8-3f20-5fce-ac7b-ee0eec698fca",
+            "type": "text_area_field",
+            "label": "Allergies or special requests",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. nut allergy, high chair, wheelchair access",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L3",
+      "content": "<h1>Book a table</h1><p>Reserve your table in seconds. We will confirm your booking by email.</p>",
+      "thankYouContent": "<h1>Request received</h1><p>Thank you! We will confirm your table by email shortly.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Book a table",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

@@ -24,6 +24,7 @@ import { getFormViewerBaseUrl } from '../../lib/config';
 import { WhoCanRespondSelect, type AudienceSettings } from './WhoCanRespondSelect';
 import { EmbedTab } from './EmbedTab';
 import { QrTab } from './QrTab';
+import { ShareLinkPreview } from './ShareLinkPreview';
 
 export type CollectTab = 'link' | 'qr' | 'embed';
 
@@ -254,6 +255,8 @@ export const CollectResponsesPanel: React.FC<CollectResponsesPanelProps> = ({
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">{t('link.help')}</p>
+
+              {isPublished && shortUrl && <ShareLinkPreview shortUrl={shortUrl} formTitle={formTitle} />}
 
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => onOpenChange(false)}>

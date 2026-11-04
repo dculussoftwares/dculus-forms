@@ -622,3 +622,34 @@ export async function copyPdfTemplateAssetForForm(
 
   return newKey;
 }
+
+/** True when a public-bucket object already exists (used to keep seed uploads idempotent). */
+export async function publicObjectExists(key: string): Promise<boolean> {
+  try {
+    await s3Client.send(new HeadObjectCommand({ Bucket: s3Config.publicBucketName, Key: key }));
+    return true;
+  } catch (error) {
+    const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode;
+    if (status === 404 || (error as { name?: string })?.name === 'NotFound') return false;
+    throw error;
+  }
+}
+
+/**
+ * Write a file to the public bucket at an exact key. For scripts that need stable keys
+ * (e.g. the public-template seed puts photos under the template's own folder);
+ * user uploads go through uploadFile(), which generates unique keys.
+ */
+export async function putPublicObject(key: string, body: Buffer, contentType: string): Promise<string> {
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: s3Config.publicBucketName,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
+      ACL: 'public-read',
+    })
+  );
+  return key;
+}

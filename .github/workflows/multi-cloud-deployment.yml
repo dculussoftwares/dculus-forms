@@ -707,6 +707,52 @@ jobs:
           echo "health_endpoint=${{ env.BACKEND_URL }}/health" >> $GITHUB_OUTPUT
           echo "container_app_name=${{ env.CONTAINER_APP_NAME }}" >> $GITHUB_OUTPUT
 
+      # Public form templates: apps/backend/seed-data/public-templates/*.json → this
+      # environment's database + public R2 bucket (photos). Runs here because the R2 keys
+      # only exist in this job (Terraform outputs above) and run-migrations has finished.
+      # Matched by slug and skipped when unchanged, so it is a no-op on most deploys.
+      # Never blocks a deploy; check the step log if a template didn't appear.
+      # Azure-only deploys (deploy_cloudflare=false) never read the R2 keys, so the seed
+      # can't upload photos there — say so instead of skipping silently.
+      - name: Public templates not seeded (no R2 credentials)
+        if: env.R2_PUBLIC_BUCKET == '' && needs.determine-environment.outputs.should_deploy == 'true'
+        run: |
+          echo "::warning title=Public templates not seeded::This run has no R2 credentials (Cloudflare step skipped), so seed-data/public-templates was not applied. Re-run with deploy_cloudflare=true, or run pnpm db:seed-public-templates --confirm with this environment's env."
+
+      - name: Setup Node.js (public templates)
+        if: env.R2_PUBLIC_BUCKET != ''
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.14.0"
+
+      - name: Setup pnpm (public templates)
+        if: env.R2_PUBLIC_BUCKET != ''
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: "8.15.0"
+
+      - name: Seed public templates
+        if: env.R2_PUBLIC_BUCKET != ''
+        continue-on-error: true
+        working-directory: dculus-forms
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ env.BACKEND_URL }}
+          PUBLIC_S3_ENDPOINT: ${{ env.R2_ENDPOINT }}
+          PUBLIC_S3_ACCESS_KEY: ${{ env.R2_ACCESS_KEY_ID }}
+          PUBLIC_S3_SECRET_KEY: ${{ env.R2_SECRET_ACCESS_KEY }}
+          PUBLIC_S3_BUCKET_NAME: ${{ env.R2_PUBLIC_BUCKET }}
+          PRIVATE_S3_BUCKET_NAME: ${{ env.R2_PRIVATE_BUCKET }}
+          PUBLIC_S3_CDN_URL: ${{ env.R2_PUBLIC_CDN_URL }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm db:generate
+          pnpm --filter backend db:seed-public-templates --confirm
+
   # ============================================================
   # PHASE 5: DOMAIN CONFIGURATION (Backend + Frontend in Parallel)
   # ============================================================

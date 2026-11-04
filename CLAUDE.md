@@ -59,7 +59,8 @@ The backend uses a layered pattern: **Resolvers → Services → Repositories �
 - `responseService.ts` — response CRUD
 - `responseDraftService.ts` — save-and-resume drafts for signed-in respondents on any form (`ResponseDraft`, one per form + user, deleted on submit, 30-day expiry). Forms that do not require sign-in show an optional "Sign in to save your progress" prompt; the account is never recorded with the response there
 - `myResponseService.ts` — respondent self-service: view and edit "my response" on identity-gated forms (edits recorded as `RESPONDENT` in edit history)
-- `templateService.ts` — form template management
+- `templateService.ts` — form template management (public gallery fields: slug, isPublic, seoTitle/seoDescription, keywords, tags, content, imageCredit, featured, sortOrder)
+- `og/` — `@vercel/og` (satori) image generator: template gallery cards (one composition per layout L1–L9), template share images, published-form share images
 - `temporaryFileService.ts` — temporary export files in private R2 bucket (5h TTL)
 - `unifiedExportService.ts` — Excel/CSV export with plugin columns via ExcelJS
 
@@ -80,7 +81,8 @@ The backend uses a layered pattern: **Resolvers → Services → Repositories �
 - Events: `FORM_VIEWED`, `FORM_SUBMITTED`, `USAGE_LIMIT_REACHED`, `USAGE_LIMIT_EXCEEDED`
 - Plan limits come ONLY from Chargebee entitlements (no hardcoded fallbacks; fails closed when Chargebee is unavailable). Plans/prices/limits are defined in Chargebee (see `docs/pricing-plan-catalog.json`, `docs/deployment/CHARGEBEE_PRODUCTION_SETUP.md`); add-ons stack capacity on top of a plan
 
-**REST routes** (auth callbacks, file uploads, and health checks only):
+**REST routes** (auth callbacks, file uploads, public images, and health checks only):
+- `GET /og/templates/:slug.png`, `/og/templates/:slug/card.png`, `/og/forms/:shortUrl.png`, `/og/forms/:shortUrl.json` — generated share images/thumbnails + link-preview meta (no auth, public data only)
 - `POST /upload` — file upload with auth/permission check (allowed types: `FormTemplate`, `FormBackground`, `UserAvatar`, `OrganizationLogo`, `FormResponse`, `PdfTemplateAsset`)
 - `/api/auth/*` — better-auth handlers
 - `/health` — health check
@@ -164,6 +166,7 @@ import { serializeFormSchema, deserializeFormSchema, serializeFormField, deseria
 Public form submission app (`apps/form-viewer/src/`). No authentication required. Uses Apollo Client.
 
 Routes: `/f/:shortUrl` (primary) and `/:shortUrl` (legacy).  
+Link previews: `public/_worker.js` (Cloudflare Pages advanced mode, limited to `/f/*` by `_routes.json`) injects og:/twitter: tags from `/og/forms/:shortUrl.json`. Cloudflare skips `_headers` for worker responses, so the worker re-applies the `/*` security headers — keep them in sync (a test enforces it).  
 Components: `FormViewer`, `Header`, `ThankYouDisplay`, `DemoPage`.
 
 ### Admin App
@@ -260,6 +263,12 @@ Form sharing scopes control the default access:
 - `PRIVATE` — explicit `FormPermission` rows only
 - `SPECIFIC_MEMBERS` — selected org members
 - `ALL_ORG_MEMBERS` — whole org gets `defaultPermission`
+
+---
+
+## Public Templates (SEO gallery)
+
+Public templates for dculus.com/forms/templates are seed data — one JSON per template in `apps/backend/seed-data/public-templates/` (outside `src/`, excluded from the Docker image; the app reads templates from the DB only). `pnpm db:seed-public-templates` (dry run by default, `--confirm` to write) upserts them by slug into the DB `DATABASE_URL` points at; `pnpm templates:preview` renders their images locally. The landing repo syncs the public catalog daily. Full guide: `docs/templates/TEMPLATE_AUTHORING.md`; agent: `template-author`.
 
 ---
 

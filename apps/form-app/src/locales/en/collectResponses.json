@@ -48,7 +48,12 @@
     "copiedToast": "Form link copied to clipboard",
     "copyFailed": "Failed to copy link",
     "clipboardUnavailable": "Unable to access clipboard",
-    "open": "Open form"
+    "open": "Open form",
+    "preview": {
+      "title": "Link preview",
+      "help": "How your link looks when you share it on WhatsApp, Slack, LinkedIn and other apps. It uses your form's title and background.",
+      "alt": "Share preview for {{title}}"
+    }
   },
   "close": "Close"
 }

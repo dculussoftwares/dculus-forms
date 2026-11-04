@@ -4,12 +4,22 @@ import {
   deserializeFormSchema,
 } from '@dculus/types';
 import { randomUUID } from 'crypto';
+import { Prisma } from '#prisma-client';
 import { slugify } from '@dculus/utils';
 import { formTemplateRepository } from '../repositories/index.js';
 import { logger } from '../lib/logger.js';
 import { copyFileForTemplate, templateAssetPrefix } from './fileUploadService.js';
 import { constructCdnUrl } from '../utils/cdn.js';
-import { s3Config } from '../lib/env.js';
+import { authConfig, s3Config } from '../lib/env.js';
+import { OG_DESIGN_VERSION } from './og/designs.js';
+import {
+  sanitizeImageCredit,
+  sanitizeStringList,
+  sanitizeTags,
+  sanitizeTemplateContent,
+  type TemplateContent,
+  type TemplateImageCredit,
+} from './templateContent.js';
 
 export interface FormTemplate {
   id: string;
@@ -23,6 +33,13 @@ export interface FormTemplate {
   seoDescription?: string;
   thumbnailKey?: string;
   thumbnailAlt?: string;
+  seoTitle?: string;
+  keywords: string[];
+  tags: string[];
+  content?: TemplateContent;
+  imageCredit?: TemplateImageCredit;
+  featured: boolean;
+  sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +51,13 @@ export interface TemplatePublishingInput {
   seoDescription?: string | null;
   thumbnailKey?: string | null;
   thumbnailAlt?: string | null;
+  seoTitle?: string | null;
+  keywords?: string[] | null;
+  tags?: string[] | null;
+  content?: unknown;
+  imageCredit?: unknown;
+  featured?: boolean;
+  sortOrder?: number;
 }
 
 export interface CreateTemplateInput extends TemplatePublishingInput {
@@ -80,6 +104,13 @@ const toTemplate = (template: any): FormTemplate => ({
   seoDescription: template.seoDescription || undefined,
   thumbnailKey: template.thumbnailKey || undefined,
   thumbnailAlt: template.thumbnailAlt || undefined,
+  seoTitle: template.seoTitle || undefined,
+  keywords: template.keywords ?? [],
+  tags: template.tags ?? [],
+  content: sanitizeTemplateContent(template.content) ?? undefined,
+  imageCredit: sanitizeImageCredit(template.imageCredit) ?? undefined,
+  featured: Boolean(template.featured),
+  sortOrder: template.sortOrder ?? 0,
   formSchema: deserializeFormSchema(template.formSchema),
 });
 
@@ -120,6 +151,15 @@ const publishingData = (input: TemplatePublishingInput) => {
   if (input.seoDescription !== undefined) data.seoDescription = blankToNull(input.seoDescription);
   if (input.thumbnailKey !== undefined) data.thumbnailKey = blankToNull(input.thumbnailKey);
   if (input.thumbnailAlt !== undefined) data.thumbnailAlt = blankToNull(input.thumbnailAlt);
+  if (input.seoTitle !== undefined) data.seoTitle = blankToNull(input.seoTitle);
+  if (input.keywords !== undefined) data.keywords = sanitizeStringList(input.keywords);
+  if (input.tags !== undefined) data.tags = sanitizeTags(input.tags);
+  // Prisma needs DbNull (not JS null) to clear a Json column; an empty object
+  // never reaches here because the sanitisers return null for "nothing usable".
+  if (input.content !== undefined) data.content = sanitizeTemplateContent(input.content) ?? Prisma.DbNull;
+  if (input.imageCredit !== undefined) data.imageCredit = sanitizeImageCredit(input.imageCredit) ?? Prisma.DbNull;
+  if (input.featured !== undefined) data.featured = Boolean(input.featured);
+  if (input.sortOrder !== undefined) data.sortOrder = Math.trunc(Number(input.sortOrder) || 0);
   return data;
 };
 
@@ -306,10 +346,20 @@ export interface PublicTemplate {
   name: string;
   description?: string;
   seoDescription?: string;
+  seoTitle?: string;
   category?: string;
   formSchema: FormSchema;
-  thumbnailUrl?: string;
+  /** Gallery card image: the uploaded thumbnail, else the generated card. */
+  thumbnailUrl: string;
   thumbnailAlt?: string;
+  /** 1200×630 share image (always generated). */
+  ogImageUrl: string;
+  keywords: string[];
+  tags: string[];
+  content?: TemplateContent;
+  imageCredit?: TemplateImageCredit;
+  featured: boolean;
+  sortOrder: number;
   updatedAt: Date;
 }
 
@@ -318,6 +368,19 @@ export interface PublicTemplateCatalog {
   cdnEndpoint: string;
   templates: PublicTemplate[];
 }
+
+const apiBaseUrl = (): string => authConfig.baseUrl.replace(/\/+$/, '');
+
+/** Version suffix so CDNs and social crawlers refetch after an edit. */
+const imageVersion = (updatedAt: Date | string): string =>
+  `${OG_DESIGN_VERSION}.${new Date(updatedAt).getTime().toString(36)}`;
+
+/** Generated images, served by routes/og.ts. */
+export const templateOgImageUrl = (slug: string, updatedAt: Date | string): string =>
+  `${apiBaseUrl()}/og/templates/${encodeURIComponent(slug)}.png?v=${imageVersion(updatedAt)}`;
+
+export const templateCardImageUrl = (slug: string, updatedAt: Date | string): string =>
+  `${apiBaseUrl()}/og/templates/${encodeURIComponent(slug)}/card.png?v=${imageVersion(updatedAt)}`;
 
 const toPublicTemplate = (template: any): PublicTemplate => {
   const schema: any = deserializeFormSchema(template.formSchema);
@@ -331,10 +394,19 @@ const toPublicTemplate = (template: any): PublicTemplate => {
     name: template.name,
     description: template.description || undefined,
     seoDescription: template.seoDescription || undefined,
+    seoTitle: template.seoTitle || undefined,
     category: template.category || undefined,
     formSchema: formSchema as FormSchema,
-    thumbnailUrl: constructCdnUrl(template.thumbnailKey) || undefined,
+    thumbnailUrl:
+      constructCdnUrl(template.thumbnailKey) || templateCardImageUrl(template.slug, template.updatedAt),
     thumbnailAlt: template.thumbnailAlt || undefined,
+    ogImageUrl: templateOgImageUrl(template.slug, template.updatedAt),
+    keywords: template.keywords ?? [],
+    tags: template.tags ?? [],
+    content: sanitizeTemplateContent(template.content) ?? undefined,
+    imageCredit: sanitizeImageCredit(template.imageCredit) ?? undefined,
+    featured: Boolean(template.featured),
+    sortOrder: template.sortOrder ?? 0,
     updatedAt: template.updatedAt,
   };
 };

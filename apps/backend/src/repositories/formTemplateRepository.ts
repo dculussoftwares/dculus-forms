@@ -71,7 +71,7 @@ export const createFormTemplateRepository = (context?: RepositoryContext) => {
   const listPublic = async () =>
     prisma.formTemplate.findMany({
       where: { isActive: true, isPublic: true, slug: { not: null } },
-      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+      orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }, { name: 'asc' }],
     });
 
   const fetchPublicBySlug = async (slug: string) =>

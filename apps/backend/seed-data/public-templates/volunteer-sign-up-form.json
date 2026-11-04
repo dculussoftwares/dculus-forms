@@ -1,0 +1,356 @@
+{
+  "slug": "volunteer-sign-up-form",
+  "name": "Volunteer Sign-up",
+  "description": "Recruit volunteers with their interests, availability, skills and an emergency contact — in two quick steps.",
+  "category": "Nonprofit",
+  "seoTitle": "Free Volunteer Sign-up Form Template",
+  "seoDescription": "Free volunteer sign-up form template: interests, availability, skills and emergency contact. Share it with your community and organise volunteers easily.",
+  "keywords": [
+    "volunteer sign up form",
+    "volunteer application form",
+    "volunteer registration form",
+    "volunteer form template",
+    "community volunteer form"
+  ],
+  "tags": [
+    "Volunteers",
+    "Community",
+    "Nonprofit"
+  ],
+  "sortOrder": 1,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6646916
+    }
+  ],
+  "thumbnailAlt": "Volunteer sign-up form over a photo of volunteers handing out food boxes",
+  "content": {
+    "intro": "Turn interest into a volunteer roster. People tell you how they want to help and when they are free, so you can match them to the right shifts.",
+    "audience": "Nonprofits, charities, schools, clubs and community groups that rely on volunteers.",
+    "useCases": [
+      "Food drives and community kitchens",
+      "Charity events and fundraisers",
+      "School and parent volunteer programmes",
+      "Ongoing volunteer recruitment"
+    ],
+    "tips": [
+      "Filter responses by availability to plan shifts in minutes.",
+      "Keep the emergency contact on its own page so it never feels like the first question.",
+      "Send new volunteers a welcome email automatically with an email notification."
+    ],
+    "faq": [
+      {
+        "question": "Is Dculus Forms free for nonprofits?",
+        "answer": "The free plan covers most small volunteer programmes. Dculus Forms is also open source, so you can self-host it at no cost."
+      },
+      {
+        "question": "Can I share this form on social media?",
+        "answer": "Yes. Every published form gets a link with a rich preview image, so it looks good on WhatsApp, Facebook and LinkedIn."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "325d8571-260e-550b-afc3-b661c000cd0f",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "423192c3-70fa-5e2c-a7a4-41e7efa8ae9c",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "b59d2b8c-fb97-5d45-a7f2-6ed7263fe93c",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "423192c3-70fa-5e2c-a7a4-41e7efa8ae9c",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c5061cef-80de-5286-a73e-f91375d777f2",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "423192c3-70fa-5e2c-a7a4-41e7efa8ae9c",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d6978a3d-7905-589b-ae4e-cae4a7a71faf",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "a946a6ed-ffd4-5089-a4e5-123e08f64f08",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "d6978a3d-7905-589b-ae4e-cae4a7a71faf",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "178e156f-c885-5672-a353-347683910c72",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "d6978a3d-7905-589b-ae4e-cae4a7a71faf",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "cf479252-c754-5fd1-ac07-143a897d2506",
+            "type": "radio_field",
+            "label": "Age group",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under 18",
+              "18–24",
+              "25–44",
+              "45–64",
+              "65+"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "794f589e-696e-5061-a828-9fcd4095035a",
+            "type": "radio_field",
+            "label": "Have you volunteered with us before?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "0b48b6f2-8cbe-59eb-a395-0dd2cdf9f87f",
+        "title": "How you would like to help",
+        "fields": [
+          {
+            "id": "321b57a4-8f40-5aab-a582-e3e3bd088501",
+            "type": "checkbox_field",
+            "label": "Areas you are interested in",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Event support",
+              "Food drive",
+              "Tutoring and mentoring",
+              "Fundraising",
+              "Office and admin",
+              "Social media"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "78c46b1b-bd9c-5f33-ab52-d20b4ce1264e",
+            "type": "checkbox_field",
+            "label": "When are you available?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Weekday mornings",
+              "Weekday afternoons",
+              "Weekday evenings",
+              "Weekends"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "80771949-6bb6-57da-a521-49a79db4242d",
+            "type": "select_field",
+            "label": "Hours per month",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1–4 hours",
+              "5–10 hours",
+              "11–20 hours",
+              "More than 20 hours"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "084a32a1-4912-5dc4-a618-a0430dddcffa",
+            "type": "text_area_field",
+            "label": "Skills or experience you would like to share",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "61ff891a-0977-52ea-a169-63925b62ed6d",
+        "title": "Emergency contact",
+        "fields": [
+          {
+            "id": "505db3e1-3b59-5679-a5ed-e5389b8d02b7",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "37892368-1881-5663-a0cb-37b195509154",
+            "type": "text_input_field",
+            "label": "Contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "505db3e1-3b59-5679-a5ed-e5389b8d02b7",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "7452e411-e3bc-5a3b-a368-535647bc58ee",
+            "type": "phone_number_field",
+            "label": "Contact phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "505db3e1-3b59-5679-a5ed-e5389b8d02b7",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "a1565f12-e86e-53d3-a469-6a90aa90b50a",
+            "type": "checkbox_field",
+            "label": "Agreement",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I agree to follow the volunteer code of conduct"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L8",
+      "content": "<h1>Volunteer with us</h1><p>Give a few hours, make a real difference. Sign up and we will match you to a role you will enjoy.</p>",
+      "thankYouContent": "<h1>Thank you for signing up!</h1><p>Our volunteer coordinator will be in touch within a week.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Sign me up",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

@@ -1,0 +1,397 @@
+{
+  "slug": "job-application-form",
+  "name": "Job Application Form",
+  "description": "A three-step job application with contact details, role preferences, experience and a résumé upload.",
+  "category": "HR & Recruiting",
+  "seoTitle": "Free Job Application Form Template with Résumé Upload",
+  "seoDescription": "Free online job application form template with résumé and cover letter upload, role, start date and experience questions. Share it on your careers page.",
+  "keywords": [
+    "job application form",
+    "job application form template",
+    "online job application",
+    "employment application form",
+    "careers page form"
+  ],
+  "tags": [
+    "Hiring",
+    "File upload",
+    "Multi-page"
+  ],
+  "featured": true,
+  "sortOrder": 1,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 5439153
+    }
+  ],
+  "thumbnailAlt": "Job application form next to a photo of a candidate shaking hands at an interview",
+  "content": {
+    "intro": "Collect complete, comparable applications. Candidates move through three short pages — about them, the role, their experience — and attach their résumé at the end.",
+    "audience": "Hiring managers, recruiters and small businesses that hire without an applicant tracking system.",
+    "useCases": [
+      "A careers page “Apply now” form",
+      "Hiring for several open roles with one form",
+      "Internship and graduate programmes",
+      "Seasonal and part-time hiring"
+    ],
+    "tips": [
+      "List your open roles in the position dropdown so one form covers every vacancy.",
+      "Filter responses by position and years of experience to shortlist faster.",
+      "Send each application to the hiring manager with an email notification."
+    ],
+    "faq": [
+      {
+        "question": "Can candidates upload a résumé?",
+        "answer": "Yes. The résumé field accepts PDF and Word files up to 10 MB, stored privately and only visible to your team."
+      },
+      {
+        "question": "Can I use one form for several jobs?",
+        "answer": "Yes. Add every open role to the position dropdown, then filter or export responses by role."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "32b448b9-07df-5115-a1f8-1b9bf7fdeabc",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "3698ffd1-9a5f-5c18-a130-5ad8e37847df",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "3152a64f-5956-5b67-af8a-75778e2b8250",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "3698ffd1-9a5f-5c18-a130-5ad8e37847df",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "bbc3ce7e-f4d3-5fee-aa41-c6b8afdb4e90",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "3698ffd1-9a5f-5c18-a130-5ad8e37847df",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "86feaa4b-d36e-58d0-aa73-11862c9364a9",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "6767ccdf-6089-548f-a544-d168f223942c",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "86feaa4b-d36e-58d0-aa73-11862c9364a9",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "bde18816-6330-5867-a0c0-6fbd8a0ff990",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "86feaa4b-d36e-58d0-aa73-11862c9364a9",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "a2a544d5-ca4d-5183-ab6b-f2d2115f58b7",
+            "type": "text_input_field",
+            "label": "City and country",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Chennai, India",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d085885a-70fd-51f9-a3c8-99b8b678f1aa",
+            "type": "text_input_field",
+            "label": "LinkedIn or portfolio URL",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "https://",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "c0e8e7f9-c5b6-54fe-afe6-ad39b251b358",
+        "title": "The role",
+        "fields": [
+          {
+            "id": "41a05e3d-cd18-584f-ace1-a1dec7c49d5f",
+            "type": "select_field",
+            "label": "Position you are applying for",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Software Engineer",
+              "Product Designer",
+              "Customer Success Manager",
+              "Marketing Specialist",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "7c80944b-08f7-5c77-ab27-e86b7dd9415d",
+            "type": "radio_field",
+            "label": "Employment type",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Full-time",
+              "Part-time",
+              "Contract",
+              "Internship"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "9d7d7dc0-8b00-51a7-a202-4e44bf84c3df",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "4961d9ec-59fd-5841-acb0-0e0f6cbbf919",
+            "type": "date_field",
+            "label": "Earliest start date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9d7d7dc0-8b00-51a7-a202-4e44bf84c3df",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "6add27f9-ca3b-5d52-a719-84829f1b01dc",
+            "type": "number_field",
+            "label": "Expected salary",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional, per year",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9d7d7dc0-8b00-51a7-a202-4e44bf84c3df",
+            "gridColumn": 1,
+            "__type": "number_field"
+          },
+          {
+            "id": "5fcd4c7d-ae52-518f-a6ea-1f710ccc8f67",
+            "type": "radio_field",
+            "label": "Are you legally allowed to work in this country?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No",
+              "I will need sponsorship"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "7e33d77c-2eed-5835-a710-a8f541a8cbac",
+        "title": "Experience",
+        "fields": [
+          {
+            "id": "38d43481-2cfe-56b9-abe0-c87fd0731e0d",
+            "type": "number_field",
+            "label": "Years of relevant experience",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 50,
+            "__type": "number_field"
+          },
+          {
+            "id": "9086255a-1a0b-5044-a56d-fd01528b54e4",
+            "type": "text_area_field",
+            "label": "Why are you interested in this role?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "d387cb89-59a4-5744-a0bd-5b9722dd7cf6",
+            "type": "file_upload_field",
+            "label": "Résumé / CV",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "PDF or Word, up to 10 MB",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "application/msword",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 1,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "797bfc87-a6d2-5885-a228-6161bcdcbe97",
+            "type": "file_upload_field",
+            "label": "Cover letter",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 1,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "35fa1794-3f2f-5994-abe2-98a25a617a7b",
+            "type": "checkbox_field",
+            "label": "Privacy",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I agree that my details are stored to process this application"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L2",
+      "content": "<h1>Join our team</h1><p>Tell us about yourself and the role you are interested in. It takes about five minutes.</p>",
+      "thankYouContent": "<h1>Application received</h1><p>Thank you for applying. We review every application and will be in touch within two weeks.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start application",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

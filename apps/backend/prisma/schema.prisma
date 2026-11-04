@@ -338,6 +338,20 @@ model FormTemplate {
   /// Public-bucket key of the gallery thumbnail
   thumbnailKey   String?
   thumbnailAlt   String?
+  /// <title> override for the public template page (otherwise "Free <Name> Template")
+  seoTitle       String?
+  /// Search phrases the public page targets, most important first
+  keywords       String[] @default([])
+  /// Short use-case tags shown on gallery cards and used by gallery search
+  tags           String[] @default([])
+  /// Long-form public page copy: { intro, audience, useCases[], tips[], faq[] } (see TemplateContent)
+  content        Json?
+  /// Attribution for the background photo: { source, photographer, photographerUrl, sourceUrl }
+  imageCredit    Json?
+  /// Shown first on the public gallery
+  featured       Boolean  @default(false)
+  /// Gallery order inside a category (ascending), before name
+  sortOrder      Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
