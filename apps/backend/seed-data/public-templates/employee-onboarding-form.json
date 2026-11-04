@@ -26,7 +26,7 @@
   ],
   "thumbnailAlt": "Employee onboarding form beside a photo of a team stacking hands together",
   "content": {
-    "intro": "Send one link before a new hire starts and have everything ready on day one: their details, an emergency contact, the laptop and accounts they need, and signed documents.",
+    "intro": "Send one link before a new hire starts and have everything ready on day one: their details, an emergency contact, the laptop and accounts they need and a photo ID.",
     "audience": "HR teams, office managers and founders onboarding new employees.",
     "useCases": [
       "Pre-boarding a new full-time employee",
@@ -36,7 +36,7 @@
     ],
     "tips": [
       "Send it a week before the start date so IT has time to order equipment.",
-      "Use a file field for ID and signed paperwork — files are stored privately.",
+      "Uploaded ID documents are stored privately — add a file field for any other paperwork you need.",
       "Share the form only with the new hire, and restrict who on your team can view responses."
     ],
     "faq": [

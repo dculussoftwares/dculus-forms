@@ -1,7 +1,7 @@
 # Public templates — technical flow
 
 How a template goes from a JSON file to a page on dculus.com, how its images are made,
-and how a visitor turns it into their own form. Five flows:
+and how a visitor turns it into their own form. Six flows:
 
 1. [Big picture](#1-big-picture)
 2. [Seeding a template into an environment](#2-seeding-a-template-into-an-environment)

@@ -1,9 +1,10 @@
 import { execFileSync } from 'child_process';
-import { readdirSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '#prisma-client';
+import { isRerunnableMigration } from '../lib/migrationSql.js';
 
 // Migrations require a direct PostgreSQL connection — not PgBouncer.
 // PgBouncer transaction mode does not support the session-level advisory locks
@@ -44,6 +45,14 @@ function getAllMigrationNames(): string[] {
     .sort();
 }
 
+function readMigrationSql(name: string): string {
+  try {
+    return readFileSync(join(MIGRATIONS_DIR, name, 'migration.sql'), 'utf8');
+  } catch {
+    return '';
+  }
+}
+
 async function main() {
   const adapter = new PrismaPg({ connectionString: MIGRATION_URL });
   const prisma = new PrismaClient({ adapter });
@@ -68,9 +77,14 @@ async function main() {
 
       if (has_schema) {
         // Existing database with full schema but no migration history.
-        // Resolve ALL migrations as already applied so none are re-run.
-        const migrations = getAllMigrationNames();
-        console.log(`Existing database detected (no migration history). Resolving ${migrations.length} migrations as baseline...`);
+        // Resolve migrations as already applied so none are re-run — except
+        // guarded (re-runnable) ones, which `migrate deploy` runs below.
+        const all = getAllMigrationNames();
+        const migrations = all.filter(name => !isRerunnableMigration(readMigrationSql(name)));
+        console.log(
+          `Existing database detected (no migration history). Resolving ${migrations.length} migrations as baseline` +
+            ` (${all.length - migrations.length} guarded migration(s) will run instead)...`
+        );
         for (const migration of migrations) {
           execFileSync('npx', ['prisma', 'migrate', 'resolve', '--applied', migration], { stdio: 'inherit' });
         }

@@ -72,10 +72,12 @@ function injectMeta(html, meta, pageUrl) {
     `<meta name="twitter:image" content="${image}">`,
   ].join('\n    ');
 
+  // Function replacers: a replacement *string* would interpret "$$", "$&", "$'" in
+  // owner-controlled titles and splice page markup into the head.
   const withTitle = /<title>[\s\S]*?<\/title>/i.test(html)
-    ? html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${title}</title>`)
+    ? html.replace(/<title>[\s\S]*?<\/title>/i, () => `<title>${title}</title>`)
     : html;
-  return withTitle.includes('</head>') ? withTitle.replace('</head>', `    ${tags}\n  </head>`) : withTitle;
+  return withTitle.includes('</head>') ? withTitle.replace('</head>', () => `    ${tags}\n  </head>`) : withTitle;
 }
 
 function withSecurityHeaders(response, extra) {
@@ -99,8 +101,9 @@ async function fetchMeta(apiUrl, shortUrl, fetchImpl) {
   const res = await fetchImpl(`${apiUrl}/og/forms/${encodeURIComponent(shortUrl)}.json`, {
     headers: { accept: 'application/json' },
     signal: AbortSignal.timeout(META_TIMEOUT_MS),
-    // Edge-cache the lookup so a burst of unfurls hits the API once.
-    cf: { cacheTtl: 300, cacheEverything: true },
+    // Edge-cache successful lookups so a burst of unfurls hits the API once; a 404 (link
+    // shared just before publishing) briefly, errors never.
+    cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': 300, '404': 30, '500-599': 0 } },
   });
   if (!res.ok) return null;
   const meta = await res.json();

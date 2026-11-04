@@ -10,7 +10,9 @@
  * Cache-Control so Cloudflare serves repeats. Every URL we hand out carries ?v=<updatedAt>,
  * so an edit produces a new URL instead of waiting for caches to expire.
  */
+import { createHash } from 'crypto';
 import sharp from 'sharp';
+import { requiresRespondentIdentity } from '@dculus/types';
 import { describeSchema, type SchemaSummary } from './describe.js';
 import { CARD_SIZE, OG_DESIGN_VERSION, SHARE_SIZE, formShare, templateCard, templateShare } from './designs.js';
 import { renderPng } from './render.js';
@@ -137,6 +139,8 @@ interface LoadedForm {
   description?: string;
   summary: SchemaSummary;
   updatedAt: Date;
+  /** Sign-in / domain-restricted: anonymous viewers only see a gate, so we show no questions. */
+  restricted: boolean;
 }
 
 const FORM_TTL_MS = 60_000;
@@ -161,16 +165,27 @@ const loadPublishedForm = (shortUrl: string): Promise<LoadedForm | null> => {
 const fetchPublishedForm = async (shortUrl: string): Promise<LoadedForm | null> => {
   const form: any = await getFormByShortUrl(shortUrl);
   if (!form || !form.isPublished || form.deletedAt) return null;
+  const settings = typeof form.settings === 'string' ? JSON.parse(form.settings) : form.settings;
+  const restricted = requiresRespondentIdentity(settings?.accessControl, settings?.collectRespondentEmail);
+  const title = String(form.title ?? '').trim() || 'Untitled form';
+  if (restricted) {
+    // Same as what an anonymous visitor gets from formByShortUrl: the title and a sign-in
+    // gate. Questions, intro and description stay private.
+    const summary = describeSchema(null);
+    return { title, summary, updatedAt: new Date(form.updatedAt ?? Date.now()), restricted };
+  }
   const schema = (await getFormSchemaFromHocuspocus(form.id)) ?? form.formSchema;
   return {
-    title: String(form.title ?? '').trim() || 'Untitled form',
+    title,
     description: typeof form.description === 'string' && form.description.trim() ? form.description.trim() : undefined,
     summary: describeSchema(schema),
     updatedAt: new Date(form.updatedAt ?? Date.now()),
+    restricted,
   };
 };
 
 const formDescription = (f: LoadedForm): string => {
+  if (f.restricted) return 'Sign in to fill out this form.';
   const base = f.description ?? f.summary.intro;
   if (base) return base.length > 200 ? `${base.slice(0, 197).trimEnd()}…` : base;
   const n = f.summary.questionCount;
@@ -180,15 +195,16 @@ const formDescription = (f: LoadedForm): string => {
 };
 
 /**
- * The image version folds in the layout's background so swapping a photo (which
- * may not bump Form.updatedAt — layout lives in Y.js) still changes the URL.
+ * Image version: a hash of everything the image draws (title, description, the whole
+ * schema summary — labels, options, intro, layout, tint) plus the design version. Layout
+ * and question edits live in Y.js and may not bump Form.updatedAt, so updatedAt alone
+ * would leave a stale image behind an immutable cache.
  */
-const formVersion = (f: LoadedForm): string => {
-  const seed = `${OG_DESIGN_VERSION}|${f.updatedAt.getTime()}|${f.title}|${f.summary.backgroundImageKey ?? ''}|${f.summary.questionCount}`;
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  return (hash >>> 0).toString(36);
-};
+const formVersion = (f: LoadedForm): string =>
+  createHash('sha1')
+    .update(JSON.stringify([OG_DESIGN_VERSION, f.title, f.description ?? null, f.restricted, f.summary]))
+    .digest('hex')
+    .slice(0, 12);
 
 export const getFormShareMeta = async (shortUrl: string): Promise<FormShareMeta | null> => {
   const form = await loadPublishedForm(shortUrl);

@@ -712,6 +712,13 @@ jobs:
       # only exist in this job (Terraform outputs above) and run-migrations has finished.
       # Matched by slug and skipped when unchanged, so it is a no-op on most deploys.
       # Never blocks a deploy; check the step log if a template didn't appear.
+      # Azure-only deploys (deploy_cloudflare=false) never read the R2 keys, so the seed
+      # can't upload photos there — say so instead of skipping silently.
+      - name: Public templates not seeded (no R2 credentials)
+        if: env.R2_PUBLIC_BUCKET == '' && needs.determine-environment.outputs.should_deploy == 'true'
+        run: |
+          echo "::warning title=Public templates not seeded::This run has no R2 credentials (Cloudflare step skipped), so seed-data/public-templates was not applied. Re-run with deploy_cloudflare=true, or run pnpm db:seed-public-templates --confirm with this environment's env."
+
       - name: Setup Node.js (public templates)
         if: env.R2_PUBLIC_BUCKET != ''
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4

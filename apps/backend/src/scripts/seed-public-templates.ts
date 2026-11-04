@@ -134,7 +134,9 @@ const seedOne = async (def: PublicTemplateDefinition) => {
     logger.info(`  = unchanged ${def.slug}`);
     return;
   }
-  await updateTemplate(id, { ...desired, formSchema: schema });
+  // updateTemplate returns null (after logging) on any non-validation failure.
+  const saved = await updateTemplate(id, { ...desired, formSchema: schema });
+  if (!saved) throw new Error(`Could not save ${def.slug} — see the error above`);
   logger.info(`  ✔ ${action}d ${def.slug}${row ? ` (${changes.join(', ')})` : ''} → ${constructCdnUrl(photo.key)}`);
 };
 
@@ -153,7 +155,16 @@ async function main() {
   logger.info(
     `${confirm ? '🌱 Seeding' : '🔎 Dry run —'} ${selected.length} public template(s) into ${databaseHost()}${draft ? ' as drafts' : ''}`
   );
-  for (const def of selected) await seedOne(def);
+  const failed: string[] = [];
+  for (const def of selected) {
+    try {
+      await seedOne(def);
+    } catch (error) {
+      failed.push(def.slug);
+      logger.error(`  ✖ ${def.slug}: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+  if (failed.length) throw new Error(`${failed.length} template(s) failed: ${failed.join(', ')}`);
 
   if (!confirm) {
     logger.info('Nothing written. Re-run with --confirm to apply.');

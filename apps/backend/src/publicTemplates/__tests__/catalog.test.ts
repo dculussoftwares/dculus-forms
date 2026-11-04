@@ -72,4 +72,34 @@ describe('validation rules', () => {
     expect(problems).toMatch(/is used by both/);
     expect(problems).toMatch(/category slug "business" clashes/);
   });
+
+  it('reports missing or wrongly-typed fields instead of throwing', () => {
+    const broken: any = { slug: 'x-form', formSchema: { pages: 'nope' } };
+    const problems = validateDefinition(broken).join('\n');
+    expect(problems).toMatch(/seoDescription must be a non-empty string/);
+    expect(problems).toMatch(/keywords must be a list/);
+    expect(problems).toMatch(/formSchema.pages must be a list/);
+  });
+
+  it('counts keywords and tags after removing blanks and duplicates', () => {
+    const problems = validateDefinition({ ...base, keywords: ['contact form', 'CONTACT FORM', ''], tags: [' '] } as any).join('\n');
+    expect(problems).toMatch(/keywords: .*\(1 after/);
+    expect(problems).toMatch(/tags: .*\(0 after/);
+  });
+
+  it('reports a non-list fields value without changing the definition', () => {
+    const page = { id: 'p-x', title: 'Bad', fields: 'oops' };
+    const def: any = { ...base, formSchema: { ...base.formSchema, pages: [...base.formSchema.pages, page] } };
+    expect(validateDefinition(def).join('\n')).toMatch(/page "Bad": fields must be a list/);
+    expect(page.fields).toBe('oops');
+  });
+
+  it('catches page ids shared between templates', () => {
+    const other: any = { ...catalog[1], formSchema: { ...catalog[1].formSchema, pages: [{ ...catalog[1].formSchema.pages[0], id: base.formSchema.pages[0].id }] } };
+    const problems = validateCatalog([
+      { file: `${base.slug}.json`, def: base },
+      { file: `${other.slug}.json`, def: other },
+    ]).join('\n');
+    expect(problems).toMatch(/page id .* is used by both/);
+  });
 });

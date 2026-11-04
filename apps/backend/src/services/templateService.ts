@@ -373,7 +373,7 @@ const apiBaseUrl = (): string => authConfig.baseUrl.replace(/\/+$/, '');
 
 /** Version suffix so CDNs and social crawlers refetch after an edit. */
 const imageVersion = (updatedAt: Date | string): string =>
-  `${OG_DESIGN_VERSION}.${Math.floor(new Date(updatedAt).getTime() / 1000).toString(36)}`;
+  `${OG_DESIGN_VERSION}.${new Date(updatedAt).getTime().toString(36)}`;
 
 /** Generated images, served by routes/og.ts. */
 export const templateOgImageUrl = (slug: string, updatedAt: Date | string): string =>

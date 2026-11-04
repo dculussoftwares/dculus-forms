@@ -65,10 +65,10 @@ Images (backend, @vercel/og):
 Merging a new or edited JSON file is enough; the next deploy of each environment publishes
 it. The step never fails a deploy — check its log if a template is missing.
 
-Re-running the seed is safe: templates whose data hasn't changed are skipped (`= unchanged`),
-so `updatedAt` and the image URLs only change when the template does.
- rows are matched by slug, field ids come from the file, and the
-photo is only downloaded when the pinned id changes. **Never change the ids of a live
+Re-running the seed is safe: rows are matched by slug, field ids come from the file, the
+photo is only downloaded when the pinned id changes, and templates whose data hasn't changed
+are skipped (`= unchanged`), so `updatedAt` and the image URLs only change when the template
+does. **Never change the ids of a live
 template** — forms copied from it and the landing sync rely on them.
 
 ## 3. Definition reference and SEO rules
@@ -127,7 +127,7 @@ Form-design rules that make templates convert:
 - **Order**: easy → personal → effortful. Identity first for applications/registrations;
   the key question first for surveys (NPS before demographics).
 - **Multi-page** when there are > 8 questions or natural sections; 3–6 questions per page.
-- First + last name in a `row`; email + phone in a `row`.
+- First + last name side by side in a `grid_field`; email + phone in another.
 - Options are mutually exclusive, ordered (scale from best to worst, or natural order), and
   include "Other"/"Prefer not to say" where real people need it.
 - Labels are questions or nouns in sentence case, no trailing colon.

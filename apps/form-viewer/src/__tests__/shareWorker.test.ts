@@ -85,6 +85,14 @@ describe('form-viewer share worker', () => {
     expect(res.headers.get('etag')).toBeNull();
   });
 
+  it('inserts titles containing $ patterns literally', async () => {
+    const res = await t.handle(new Request('https://forms.example.com/f/abc123'), env(), ok({ ...META, title: "Save $$ and $' now $&" }));
+    const html = await res.text();
+    expect(html).toContain('<title>Save $$ and $&#39; now $&amp;</title>');
+    expect(html.match(/<head>/g)).toHaveLength(1);
+    expect(html.match(/<div id="root">/g)).toHaveLength(1);
+  });
+
   it('serves the untouched page when the form is missing or the API fails', async () => {
     const missing = vi.fn<typeof fetch>(async () => new Response('{}', { status: 404 }));
     const a = await t.handle(new Request('https://forms.example.com/f/nope'), env(), missing);
