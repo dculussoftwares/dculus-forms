@@ -14,6 +14,10 @@ describe('introFromHtml', () => {
     });
   });
 
+  it('decodes entities once, without double unescaping', () => {
+    expect(introFromHtml('<h1>A &amp;lt;b&amp;gt; &lt;tag&gt;</h1>').headline).toBe('A &lt;b&gt; <tag>');
+  });
+
   it('handles empty and non-string content', () => {
     expect(introFromHtml('')).toEqual({});
     expect(introFromHtml(undefined)).toEqual({});

@@ -3,9 +3,22 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+interface WorkerEnv {
+  ASSETS: { fetch: (req: Request) => Promise<Response> };
+}
+interface WorkerTestApi {
+  SECURITY_HEADERS: Record<string, string>;
+  shortUrlFromPath: (pathname: string) => string | null;
+  apiUrlFromConfig: (configJs: string) => string | null;
+  handle: (request: Request, env: WorkerEnv, fetchImpl: typeof fetch) => Promise<Response>;
+  reset: () => void;
+}
+
 // public/_worker.js is plain JS shipped verbatim to Cloudflare Pages.
-const worker: any = (await import(/* @vite-ignore */ path.resolve(__dirname, '../../public/_worker.js'))).default;
-const t = worker._test;
+const workerModule = (await import(/* @vite-ignore */ path.resolve(__dirname, '../../public/_worker.js'))) as {
+  default: { _test: WorkerTestApi };
+};
+const t = workerModule.default._test;
 
 const SHELL = '<!doctype html><html><head><meta charset="UTF-8" /><title>Dculus Forms</title></head><body><div id="root"></div></body></html>';
 const META = {
@@ -25,7 +38,7 @@ const env = (config = 'window.__APP_CONFIG__ = {"VITE_API_URL":"https://api.exam
   },
 });
 
-const ok = (body: unknown) => vi.fn(async () => new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
+const ok = (body: unknown) => vi.fn<typeof fetch>(async () => new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } }));
 
 describe('form-viewer share worker', () => {
   beforeEach(() => t.reset());
@@ -73,13 +86,13 @@ describe('form-viewer share worker', () => {
   });
 
   it('serves the untouched page when the form is missing or the API fails', async () => {
-    const missing = vi.fn(async () => new Response('{}', { status: 404 }));
+    const missing = vi.fn<typeof fetch>(async () => new Response('{}', { status: 404 }));
     const a = await t.handle(new Request('https://forms.example.com/f/nope'), env(), missing);
     expect(await a.text()).toBe(SHELL);
     expect(a.headers.get('x-content-type-options')).toBe('nosniff');
 
     t.reset();
-    const broken = vi.fn(async () => {
+    const broken = vi.fn<typeof fetch>(async () => {
       throw new Error('timeout');
     });
     const b = await t.handle(new Request('https://forms.example.com/f/abc123'), env(), broken);

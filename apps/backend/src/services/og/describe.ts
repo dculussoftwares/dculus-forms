@@ -55,14 +55,10 @@ const SECONDS: Record<MockFieldKind, number> = {
   file: 30,
 };
 
-const decode = (s: string): string =>
-  s
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'");
+const ENTITIES: Record<string, string> = { nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", '#39': "'" };
+
+/** One pass over the text, so "&amp;lt;" stays "&lt;" (no double unescaping). */
+const decode = (s: string): string => s.replace(/&(nbsp|amp|lt|gt|quot|apos|#39);/g, (_m, name: string) => ENTITIES[name]);
 
 const stripTags = (html: string): string => decode(html.replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
 
