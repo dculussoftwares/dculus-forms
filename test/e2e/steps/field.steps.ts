@@ -89,13 +89,27 @@ When('I open the checkbox field settings', async function (this: CustomWorld) {
 
 // Targets the field just added (last on the page), not field #1: the "first
 // template" may already contain fields (e.g. seeded public templates on dev).
+// The new field then sits low on the canvas, where the floating "Ask AI" pill
+// can cover its settings button, so centre it and click without `force` (a
+// forced click lands on whatever is on top and opens the AI panel instead).
 async function fillAndSaveLabel(world: CustomWorld, label: string) {
   if (!world.page) throw new Error('Page is not initialized');
-  await openLastFieldSettings(world);
-  await world.page.fill('#field-label', label);
-  await waitForFieldSettingsSaved(world.page);
-  const lastField = world.page.locator('[data-testid^="draggable-field-"]').last();
-  await expect(lastField.locator('[data-testid^="field-content-"]')).toBeVisible({ timeout: 10_000 });
+  const page = world.page;
+  const lastField = page.locator('[data-testid^="draggable-field-"]').last();
+  await expect(lastField).toBeVisible({ timeout: 10_000 });
+  // PageBuilderTab auto-scrolls a new field to "nearest" 750ms after it is added;
+  // let that finish so it doesn't undo the centring below.
+  await page.waitForTimeout(1_000);
+  await lastField.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await lastField.hover();
+  const settingsBtn = lastField.locator('[data-testid^="field-settings-button-"]');
+  await expect(settingsBtn).toBeVisible({ timeout: 10_000 });
+  await settingsBtn.click({ timeout: 15_000 });
+  await expect(page.getByTestId('field-settings-panel')).toBeVisible({ timeout: 15_000 });
+  await page.waitForSelector('#field-label', { timeout: 10_000 });
+  await page.fill('#field-label', label);
+  await waitForFieldSettingsSaved(page);
+  await expect(lastField.locator('[data-testid^="field-content-"]')).toContainText(label, { timeout: 10_000 });
 }
 
 When('I fill and save the short text field with label {string}', async function (this: CustomWorld, label: string) { await fillAndSaveLabel(this, label); });

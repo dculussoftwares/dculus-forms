@@ -123,9 +123,12 @@ export async function addFieldToPage(world: CustomWorld, fieldTestId: string): P
     await world.page.getByTestId('rail-add-content-button').click();
     await expect(tile).toBeVisible({ timeout: 10_000 });
   }
+  // Wait for the field count to grow: the page may already hold template fields,
+  // so "some field is visible" would pass even if nothing was added.
+  const fieldCards = world.page.locator('[data-testid^="draggable-field-"]');
+  const before = await fieldCards.count();
   await tile.click();
-  const droppable = world.page.getByTestId('droppable-page').first();
-  await expect(droppable.locator('[data-testid^="field-content-"]').first()).toBeVisible({ timeout: 15_000 });
+  await expect(fieldCards).toHaveCount(before + 1, { timeout: 15_000 });
 }
 
 /**
