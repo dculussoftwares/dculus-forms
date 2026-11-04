@@ -1,0 +1,233 @@
+{
+  "slug": "workshop-feedback-form",
+  "name": "Workshop Feedback Form",
+  "description": "Rate the content, pace and instructor of a workshop or training, and collect ideas for the next session.",
+  "category": "Education",
+  "seoTitle": "Free Workshop Feedback Form Template — Training Evaluation",
+  "seoDescription": "Free workshop feedback form template to rate content, pace and instructor, plus what to improve. Ideal for trainings, classes, webinars and seminars.",
+  "keywords": [
+    "workshop feedback form",
+    "training feedback form",
+    "training evaluation form",
+    "course feedback form",
+    "seminar feedback form"
+  ],
+  "tags": [
+    "Training",
+    "Evaluation",
+    "Education"
+  ],
+  "sortOrder": 1,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 5756649
+    }
+  ],
+  "thumbnailAlt": "Workshop feedback form over a soft photo of adults in a training session",
+  "content": {
+    "intro": "Find out what landed and what did not while the session is fresh. Participants rate the content, pace and instructor, then tell you what to change next time.",
+    "audience": "Trainers, teachers, L&D teams and event hosts running workshops, classes and webinars.",
+    "useCases": [
+      "End-of-workshop evaluation",
+      "Corporate training and onboarding sessions",
+      "Webinars and online classes",
+      "Conference talks and seminars"
+    ],
+    "tips": [
+      "Show a QR code on your last slide and give people two minutes before they leave.",
+      "Keep the ratings the same across sessions so you can compare them over time.",
+      "Offer a certificate or slides in exchange for an email address."
+    ],
+    "faq": [
+      {
+        "question": "Can I make the feedback anonymous?",
+        "answer": "Yes. The email question is optional — remove it entirely if you want fully anonymous responses."
+      },
+      {
+        "question": "Can I reuse it for every session?",
+        "answer": "Yes. Duplicate the form for each session, or add a session question and filter responses by it."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "7191f71b-cb8f-5578-ad5a-77f320f6ba5e",
+        "title": "Feedback",
+        "fields": [
+          {
+            "id": "0cd31d4a-114a-575e-a023-0bc1ca9a2393",
+            "type": "text_input_field",
+            "label": "Workshop name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Design Thinking 101",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "b4d0ebac-bd21-509a-a010-970cab87e400",
+            "type": "radio_field",
+            "label": "Overall, how would you rate the workshop?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Excellent",
+              "Good",
+              "Average",
+              "Poor"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "772e5e0e-12fb-5497-a61d-bbe9fc7f8b9a",
+            "type": "radio_field",
+            "label": "How relevant was the content to your work?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Very relevant",
+              "Somewhat relevant",
+              "Not relevant"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "4137cfd9-e372-55c9-afc8-6b49af3c374e",
+            "type": "radio_field",
+            "label": "How was the pace?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Too slow",
+              "Just right",
+              "Too fast"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "cfc05851-97cd-5e17-a586-620a4e5bce26",
+            "type": "radio_field",
+            "label": "How clear was the instructor?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Very clear",
+              "Mostly clear",
+              "Hard to follow"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ba4f8d81-bc3d-5baf-a8ac-8b904acbe016",
+            "type": "text_area_field",
+            "label": "What was the most valuable part?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "6bef9013-c13c-542f-a188-85559f858a3f",
+            "type": "text_area_field",
+            "label": "What should we improve?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "b36a082f-358c-5c54-a29a-8ab46d3689cb",
+            "type": "checkbox_field",
+            "label": "Which topics would you like next?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Advanced session",
+              "Hands-on lab",
+              "Q&A clinic",
+              "Case studies"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "fc0f3c4c-799e-5d84-a905-bfaf08d4fdb1",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional — to receive the slides and certificate",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L7",
+      "content": "<h1>How was the workshop?</h1><p>Two minutes of feedback helps us make the next session even better.</p>",
+      "thankYouContent": "<h1>Thanks for your feedback!</h1><p>We read every comment and use it to improve future sessions.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Give feedback",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

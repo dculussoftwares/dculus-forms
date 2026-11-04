@@ -1,0 +1,3 @@
+# Seed data for public templates: loaded by `pnpm db:seed-public-templates` from a
+# checkout, never by the running app, so it stays out of the image.
+apps/backend/seed-data

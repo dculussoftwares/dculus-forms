@@ -1,0 +1,461 @@
+{
+  "slug": "patient-intake-form",
+  "name": "Patient Intake Form",
+  "description": "A new-patient form covering contact details, insurance, medical history, medications and consent.",
+  "category": "Healthcare",
+  "seoTitle": "Free Patient Intake Form Template — New Patient Registration",
+  "seoDescription": "Free patient intake form template: contact and insurance details, reason for visit, medical history, medications, allergies and consent. Fill it in online.",
+  "keywords": [
+    "patient intake form",
+    "new patient form",
+    "patient registration form",
+    "medical intake form",
+    "clinic intake form template"
+  ],
+  "tags": [
+    "Clinic",
+    "Intake",
+    "Multi-page"
+  ],
+  "sortOrder": 1,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6129159
+    },
+    {
+      "source": "pexels",
+      "id": 4269274
+    }
+  ],
+  "thumbnailAlt": "Patient intake form below a photo of nurses at a clinic front desk",
+  "content": {
+    "intro": "Have new patients complete their paperwork before they arrive. Shorter waiting-room queues, legible answers and records your team can search.",
+    "audience": "Clinics, dental practices, physiotherapists, therapists and wellness centres registering new patients.",
+    "useCases": [
+      "New-patient registration before the first visit",
+      "Dental and physiotherapy intake",
+      "Telehealth appointment intake",
+      "Annual health-record updates"
+    ],
+    "tips": [
+      "Send the link with the appointment confirmation so patients fill it in at home.",
+      "Check your local health-privacy rules (for example HIPAA or GDPR) before collecting medical information online.",
+      "Limit who in your workspace can view responses with form permissions."
+    ],
+    "faq": [
+      {
+        "question": "Where is patient data stored?",
+        "answer": "Responses are stored in your Dculus Forms workspace and uploaded files in private storage. For full control, self-host Dculus Forms and keep every record in your own database."
+      },
+      {
+        "question": "Can patients upload their insurance card?",
+        "answer": "Yes. The insurance step includes an optional file upload for a photo of the card."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "57e9079c-7913-57a8-a597-4ff847f3c2db",
+        "title": "Patient details",
+        "fields": [
+          {
+            "id": "15e1c66e-d203-56af-a0fb-29fd963eb0a1",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "76b5ed2b-8e5b-5655-a8be-a93bc8e4312b",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "15e1c66e-d203-56af-a0fb-29fd963eb0a1",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "df002506-127f-514e-a9af-f9677779a472",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "15e1c66e-d203-56af-a0fb-29fd963eb0a1",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "df89d266-1bbd-5bfa-a93c-65dc873defcb",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "caab413e-8a4f-550f-af3f-73115a7cbc09",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "df89d266-1bbd-5bfa-a93c-65dc873defcb",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "6e3ef269-713a-5813-adb8-3c9c9a385354",
+            "type": "select_field",
+            "label": "Gender",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Female",
+              "Male",
+              "Non-binary",
+              "Prefer not to say"
+            ],
+            "gridId": "df89d266-1bbd-5bfa-a93c-65dc873defcb",
+            "gridColumn": 1,
+            "__type": "select_field"
+          },
+          {
+            "id": "688b40e4-3372-500b-a5f8-65eb699c23ef",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "da7598ca-d7df-5445-a276-73cff758e8c7",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "688b40e4-3372-500b-a5f8-65eb699c23ef",
+            "gridColumn": 0,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "a9d1fb5e-8cda-5f32-af39-1e72c9edc3f9",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "688b40e4-3372-500b-a5f8-65eb699c23ef",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "d592620e-ac30-516f-a265-f4a66f7fd398",
+            "type": "text_area_field",
+            "label": "Home address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "0581434b-e977-5b67-aa5c-519b175b8746",
+        "title": "Insurance",
+        "fields": [
+          {
+            "id": "1995cd12-7e9f-55f3-a557-6428facbad1c",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "2c040746-2d91-5831-ad7c-73c118a14e07",
+            "type": "text_input_field",
+            "label": "Insurance provider",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "1995cd12-7e9f-55f3-a557-6428facbad1c",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c8a74191-cb90-562b-a910-e9f6930a9613",
+            "type": "text_input_field",
+            "label": "Policy or member number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "1995cd12-7e9f-55f3-a557-6428facbad1c",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "9b4fb21a-e446-5dd6-ad97-1709661371e9",
+            "type": "file_upload_field",
+            "label": "Photo of insurance card",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Front and back, optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/jpeg",
+              "image/png",
+              "application/pdf"
+            ],
+            "maxFiles": 2,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "62e3028b-2070-58a3-a170-6889bbdb81ae",
+        "title": "Medical history",
+        "fields": [
+          {
+            "id": "d26fcb6a-e0a8-5ae3-a3da-5c4783e371ef",
+            "type": "text_area_field",
+            "label": "Reason for your visit",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "d305ec6c-2f34-53ad-a5f3-19624cdfc583",
+            "type": "checkbox_field",
+            "label": "Do you have any of these conditions?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Asthma",
+              "Diabetes",
+              "High blood pressure",
+              "Heart disease",
+              "Thyroid disorder",
+              "None of these"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "903f4972-d916-5861-a218-bba72ce71177",
+            "type": "text_area_field",
+            "label": "Current medications and doses",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "692d8783-1993-5ec6-a18e-eef7854a337f",
+            "type": "text_area_field",
+            "label": "Allergies",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Medicines, foods, latex or other",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "edc25bbc-d198-523d-a397-81ff4a4d9cf3",
+            "type": "radio_field",
+            "label": "Do you smoke?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Never",
+              "Former smoker",
+              "Current smoker"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "0c6b5455-405c-56d7-a07a-3a2ac6e573b6",
+        "title": "Emergency contact and consent",
+        "fields": [
+          {
+            "id": "7b578cbe-256f-508b-ab9e-93fddcb693b4",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "cc52f15f-601f-582b-a043-81d5a0ff1375",
+            "type": "text_input_field",
+            "label": "Emergency contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "7b578cbe-256f-508b-ab9e-93fddcb693b4",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "fc2ad73b-5e01-5ef5-acee-f230af37d6a4",
+            "type": "phone_number_field",
+            "label": "Emergency contact phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "7b578cbe-256f-508b-ab9e-93fddcb693b4",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "b16123c3-d908-5bd5-aac6-5f9c77a35736",
+            "type": "rich_text_field",
+            "content": "<p>By submitting this form you confirm the information is accurate and consent to the clinic using it to provide your care.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "59450164-f417-56ad-a8cf-5c2756d4d98f",
+            "type": "checkbox_field",
+            "label": "Consent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I consent to treatment and to the clinic storing my information"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L6",
+      "content": "<h1>New patient registration</h1><p>Please complete this form before your first visit. It takes about six minutes.</p>",
+      "thankYouContent": "<h1>Thank you</h1><p>Your details have been sent to the clinic. Please bring a photo ID to your appointment.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

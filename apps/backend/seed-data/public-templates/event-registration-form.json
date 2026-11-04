@@ -1,0 +1,332 @@
+{
+  "slug": "event-registration-form",
+  "name": "Event Registration Form",
+  "description": "Collect attendee details, ticket type, sessions and dietary needs for a conference, meetup or workshop.",
+  "category": "Events",
+  "seoTitle": "Free Event Registration Form Template",
+  "seoDescription": "Free event registration form template: attendee details, ticket type, session picks, dietary and accessibility needs. Share a link and track sign-ups live.",
+  "keywords": [
+    "event registration form",
+    "event registration form template",
+    "conference registration form",
+    "online registration form",
+    "event sign up form"
+  ],
+  "tags": [
+    "Conference",
+    "Tickets",
+    "RSVP"
+  ],
+  "featured": true,
+  "sortOrder": 1,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 22669860
+    }
+  ],
+  "thumbnailAlt": "Event registration form over a photo of a full conference hall",
+  "content": {
+    "intro": "Register attendees in two short steps: who they are, then the ticket and sessions they want. Dietary and accessibility questions help you plan the day properly.",
+    "audience": "Event organisers running conferences, meetups, workshops, webinars and community events.",
+    "useCases": [
+      "Conference and summit registration",
+      "Meetups and community events",
+      "Workshops with limited seats",
+      "Hybrid events with in-person and virtual passes"
+    ],
+    "tips": [
+      "Put the ticket question on its own page so people commit to their details first.",
+      "Export registrations to Excel or send them to Google Sheets for badge printing.",
+      "Ask about dietary and accessibility needs up front — it is far easier than fixing it on the day."
+    ],
+    "faq": [
+      {
+        "question": "Can I limit the number of registrations?",
+        "answer": "Yes. Set a response limit or a closing date in the form settings and the form closes automatically."
+      },
+      {
+        "question": "Can attendees get a confirmation email?",
+        "answer": "Yes. Add an email notification to the respondent and include their ticket type and sessions in the message."
+      },
+      {
+        "question": "Does this work for virtual events?",
+        "answer": "Yes. Keep the Virtual pass option and remove the dietary question, or add a field for their time zone."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "125aca5b-e594-5440-ab5b-5541bf1f2902",
+        "title": "Your details",
+        "fields": [
+          {
+            "id": "473d6b1b-61d9-586f-a8b7-ec764b4551cb",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "df2d7660-8f95-5f07-af42-8de321e162f4",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "473d6b1b-61d9-586f-a8b7-ec764b4551cb",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "60d718cd-bee2-54cd-a8eb-f171f44ecad5",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "473d6b1b-61d9-586f-a8b7-ec764b4551cb",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "43c25ac1-89ca-5eff-a285-ff4c2f1204a5",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "8a74b929-d056-5410-a99d-263a16a97893",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "43c25ac1-89ca-5eff-a285-ff4c2f1204a5",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "554e7a51-d92b-51e0-a49e-caf8e146abb9",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "43c25ac1-89ca-5eff-a285-ff4c2f1204a5",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "563ed131-87f5-5b0e-a026-b391bda2faa4",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "f65dfb24-776b-58df-a757-1a3f746256e8",
+            "type": "text_input_field",
+            "label": "Company or organisation",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "563ed131-87f5-5b0e-a026-b391bda2faa4",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "6e66ef4d-2d3f-5d7f-acbf-ec1969928ca4",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "563ed131-87f5-5b0e-a026-b391bda2faa4",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "ba1221cb-36e1-5009-a841-e85f3c2fac99",
+        "title": "Your ticket",
+        "fields": [
+          {
+            "id": "08643369-4ce1-521d-a4b2-f8e5a92cb527",
+            "type": "radio_field",
+            "label": "Ticket type",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "General admission",
+              "VIP",
+              "Student",
+              "Virtual pass"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "2b257c78-0ac9-537a-ac99-25174f00b9bb",
+            "type": "checkbox_field",
+            "label": "Which sessions will you attend?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Opening keynote",
+              "Product workshops",
+              "Panel discussion",
+              "Networking evening"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "a71be538-9c2f-55f8-a829-99a715841945",
+            "type": "radio_field",
+            "label": "Dietary requirements",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "None",
+              "Vegetarian",
+              "Vegan",
+              "Gluten-free",
+              "Halal",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "62a28a61-1c4c-5c5f-a0fe-86da2fdd517d",
+            "type": "text_area_field",
+            "label": "Accessibility needs",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Tell us anything that would make the event easier for you.",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "c3ab403e-a98b-5d0e-a72e-9c934dede95d",
+            "type": "select_field",
+            "label": "How did you hear about us?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Email",
+              "Social media",
+              "A colleague or friend",
+              "Search engine",
+              "Previous event",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "798f5a51-6282-55a5-ae94-e37b84ba2885",
+            "type": "checkbox_field",
+            "label": "Photography",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "I am happy to appear in event photos and videos"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L8",
+      "content": "<h1>Register for the summit</h1><p>Two days of talks, workshops and good company. Save your seat in under two minutes.</p>",
+      "thankYouContent": "<h1>You are registered!</h1><p>A confirmation is on its way to your inbox. See you there.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Register now",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

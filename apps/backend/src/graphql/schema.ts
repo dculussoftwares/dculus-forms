@@ -477,6 +477,13 @@ export const typeDefs = gql`
     thumbnailKey: String
     thumbnailUrl: String
     thumbnailAlt: String
+    seoTitle: String
+    keywords: [String!]!
+    tags: [String!]!
+    content: JSON
+    imageCredit: JSON
+    featured: Boolean!
+    sortOrder: Int!
     createdAt: String!
     updatedAt: String!
   }
@@ -490,8 +497,20 @@ export const typeDefs = gql`
     seoDescription: String
     category: String
     formSchema: JSON!
-    thumbnailUrl: String
+    "Uploaded thumbnail, or the generated 1200×800 card"
+    thumbnailUrl: String!
     thumbnailAlt: String
+    "Generated 1200×630 share image"
+    ogImageUrl: String!
+    seoTitle: String
+    keywords: [String!]!
+    tags: [String!]!
+    "{ intro, audience, useCases[], tips[], faq[{question, answer}] }"
+    content: JSON
+    "{ source, photographer, photographerUrl, sourceUrl }"
+    imageCredit: JSON
+    featured: Boolean!
+    sortOrder: Int!
     updatedAt: String!
   }
 
@@ -710,6 +729,17 @@ export const typeDefs = gql`
     seoDescription: String
     thumbnailKey: String
     thumbnailAlt: String
+    seoTitle: String
+    "Search phrases the public page targets, most important first"
+    keywords: [String!]
+    "Short use-case labels shown on gallery cards"
+    tags: [String!]
+    "Public page copy: { intro, audience, useCases[], tips[], faq[{question, answer}] }"
+    content: JSON
+    "Background photo attribution: { source: pexels|pixabay|other, photographer, photographerUrl, sourceUrl }"
+    imageCredit: JSON
+    featured: Boolean
+    sortOrder: Int
   }
 
   input UpdateTemplateInput {
@@ -723,6 +753,17 @@ export const typeDefs = gql`
     seoDescription: String
     thumbnailKey: String
     thumbnailAlt: String
+    seoTitle: String
+    "Search phrases the public page targets, most important first"
+    keywords: [String!]
+    "Short use-case labels shown on gallery cards"
+    tags: [String!]
+    "Public page copy: { intro, audience, useCases[], tips[], faq[{question, answer}] }"
+    content: JSON
+    "Background photo attribution: { source: pexels|pixabay|other, photographer, photographerUrl, sourceUrl }"
+    imageCredit: JSON
+    featured: Boolean
+    sortOrder: Int
   }
 
   input CreateTemplateFromFormInput {
@@ -734,6 +775,17 @@ export const typeDefs = gql`
     seoDescription: String
     thumbnailKey: String
     thumbnailAlt: String
+    seoTitle: String
+    "Search phrases the public page targets, most important first"
+    keywords: [String!]
+    "Short use-case labels shown on gallery cards"
+    tags: [String!]
+    "Public page copy: { intro, audience, useCases[], tips[], faq[{question, answer}] }"
+    content: JSON
+    "Background photo attribution: { source: pexels|pixabay|other, photographer, photographerUrl, sourceUrl }"
+    imageCredit: JSON
+    featured: Boolean
+    sortOrder: Int
   }
 
   # File Upload Types

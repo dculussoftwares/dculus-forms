@@ -1,0 +1,196 @@
+{
+  "slug": "customer-satisfaction-survey",
+  "name": "Customer Satisfaction Survey",
+  "description": "Measure satisfaction and Net Promoter Score (NPS), learn what customers love and what to fix next.",
+  "category": "Feedback & Surveys",
+  "seoTitle": "Free Customer Satisfaction Survey Template (CSAT + NPS)",
+  "seoDescription": "Free customer satisfaction survey template with an NPS question, CSAT rating and open feedback. Send it after a purchase or visit and see results instantly.",
+  "keywords": [
+    "customer satisfaction survey",
+    "customer satisfaction survey template",
+    "nps survey template",
+    "csat survey",
+    "customer feedback form"
+  ],
+  "tags": [
+    "NPS",
+    "CSAT",
+    "Feedback"
+  ],
+  "featured": true,
+  "sortOrder": 1,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6612709
+    }
+  ],
+  "thumbnailAlt": "Customer satisfaction survey card over a photo of a customer paying at a café counter",
+  "content": {
+    "intro": "Find out how customers really feel in under a minute. The survey opens with the Net Promoter question, then asks what worked and what did not.",
+    "audience": "Shops, cafés, SaaS products, agencies and service businesses that want regular customer feedback.",
+    "useCases": [
+      "After a purchase or delivery",
+      "After a support conversation",
+      "Quarterly customer health checks",
+      "Post-visit feedback via a QR code at the counter"
+    ],
+    "tips": [
+      "Send it within 24 hours of the experience, while it is still fresh.",
+      "NPS = % of 9–10 answers minus % of 0–6 answers. Track it month by month.",
+      "Follow up with everyone who scores 6 or below — they tell you what to fix."
+    ],
+    "faq": [
+      {
+        "question": "What is the difference between CSAT and NPS?",
+        "answer": "CSAT asks how satisfied someone is with one experience. NPS asks how likely they are to recommend you, which tracks long-term loyalty. This template asks both."
+      },
+      {
+        "question": "Can I see the results as charts?",
+        "answer": "Yes. Field analytics show the answer breakdown for every question, and you can export everything to Excel."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "38d83056-2b69-54f0-a5a7-9d13653ceca3",
+        "title": "Your feedback",
+        "fields": [
+          {
+            "id": "81335b5e-c285-5c4f-a56a-f1f7c2e23c24",
+            "type": "radio_field",
+            "label": "How likely are you to recommend us to a friend or colleague? (0 = not at all, 10 = extremely)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "dceb94d1-49e0-5887-a828-e48a86ca6368",
+            "type": "radio_field",
+            "label": "Overall, how satisfied are you with us?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Very satisfied",
+              "Satisfied",
+              "Neutral",
+              "Dissatisfied",
+              "Very dissatisfied"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "b3a89436-9085-5902-a122-5163613f0816",
+            "type": "checkbox_field",
+            "label": "What did you like most?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Product quality",
+              "Value for money",
+              "Speed of service",
+              "Friendly staff",
+              "Easy to use"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "e0b1a922-594b-5255-a18f-0c4c288687af",
+            "type": "text_area_field",
+            "label": "What is one thing we could do better?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "5b6954d3-27b0-5846-a8c3-3eab76d16649",
+            "type": "radio_field",
+            "label": "May we contact you about your feedback?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "80088360-47e6-5740-a524-9de3683d8334",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Only if you said yes above",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L9",
+      "content": "<h1>How did we do?</h1><p>Your feedback takes about a minute and helps us get better.</p>",
+      "thankYouContent": "<h1>Thank you!</h1><p>We read every response. Your feedback goes straight to the team.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Send feedback",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

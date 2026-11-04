@@ -1,0 +1,493 @@
+{
+  "slug": "employee-onboarding-form",
+  "name": "Employee Onboarding Form",
+  "description": "Gather a new hire’s personal details, emergency contact, equipment needs and documents before day one.",
+  "category": "HR & Recruiting",
+  "seoTitle": "Free Employee Onboarding Form Template",
+  "seoDescription": "Free employee onboarding form template: personal details, emergency contact, equipment and system access, ID upload. Send it before a new hire’s first day.",
+  "keywords": [
+    "employee onboarding form",
+    "new hire form",
+    "employee information form",
+    "onboarding checklist form",
+    "new employee form template"
+  ],
+  "tags": [
+    "New hire",
+    "HR",
+    "Multi-page"
+  ],
+  "sortOrder": 2,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 3865537
+    }
+  ],
+  "thumbnailAlt": "Employee onboarding form beside a photo of a team stacking hands together",
+  "content": {
+    "intro": "Send one link before a new hire starts and have everything ready on day one: their details, an emergency contact, the laptop and accounts they need, and signed documents.",
+    "audience": "HR teams, office managers and founders onboarding new employees.",
+    "useCases": [
+      "Pre-boarding a new full-time employee",
+      "Onboarding contractors and interns",
+      "Collecting IT and equipment requests",
+      "Updating employee records"
+    ],
+    "tips": [
+      "Send it a week before the start date so IT has time to order equipment.",
+      "Use a file field for ID and signed paperwork — files are stored privately.",
+      "Share the form only with the new hire, and restrict who on your team can view responses."
+    ],
+    "faq": [
+      {
+        "question": "Is it safe to collect personal details with this form?",
+        "answer": "Uploaded files go to private storage and are only reachable by signed-in members with access to the form. You can also self-host Dculus Forms to keep data on your own servers."
+      },
+      {
+        "question": "Can new hires save and finish later?",
+        "answer": "Yes. Signed-in respondents can save their progress and come back to finish the form."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "ee3571a5-bea7-5feb-aea6-c47f6cf5ca42",
+        "title": "Personal details",
+        "fields": [
+          {
+            "id": "cd838c2a-7aa4-5637-a608-11092b0e7793",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "0778dbf8-a30a-5be6-a084-e49343b13f6c",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "cd838c2a-7aa4-5637-a608-11092b0e7793",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "951cc91b-4a4c-58fd-ac91-3c9e03081b15",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "cd838c2a-7aa4-5637-a608-11092b0e7793",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "0cd1c0f0-7b36-5748-ab2e-e4d203bb3364",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "10717590-abc0-5c6c-a1ef-4c1a360a4a89",
+            "type": "text_input_field",
+            "label": "Preferred name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "0cd1c0f0-7b36-5748-ab2e-e4d203bb3364",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "54bd2315-1046-5f92-acc9-6ec6b506c510",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "0cd1c0f0-7b36-5748-ab2e-e4d203bb3364",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "ec7222ab-4fa7-5008-a5bc-67e350809b36",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "aed9bc0e-76a5-56ee-a75f-fa62fb500d89",
+            "type": "email_field",
+            "label": "Personal email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "ec7222ab-4fa7-5008-a5bc-67e350809b36",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "f6f3e41b-7ce6-566f-abde-3fa65f86ced2",
+            "type": "phone_number_field",
+            "label": "Mobile number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "ec7222ab-4fa7-5008-a5bc-67e350809b36",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "88cc5fef-d402-5b62-a5e1-97373a8f8bef",
+            "type": "text_area_field",
+            "label": "Home address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "811282e6-231a-5eef-ad4a-a5331a8d0eda",
+        "title": "Your role",
+        "fields": [
+          {
+            "id": "cd75e964-d54f-5ddd-a6d8-8f2b02c87ba3",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "4d6276bd-5267-56c3-a859-afe52ad228c5",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "15da2b17-8287-5bf3-aefb-1d83345783a8",
+            "type": "select_field",
+            "label": "Department",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Engineering",
+              "Product",
+              "Design",
+              "Sales",
+              "Marketing",
+              "Customer Success",
+              "Operations",
+              "Finance",
+              "People"
+            ],
+            "gridId": "4d6276bd-5267-56c3-a859-afe52ad228c5",
+            "gridColumn": 0,
+            "__type": "select_field"
+          },
+          {
+            "id": "12279690-caa1-5356-a583-a7a3d019ae29",
+            "type": "date_field",
+            "label": "Start date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "4d6276bd-5267-56c3-a859-afe52ad228c5",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "d589c75c-2199-5751-a1ff-9732d4aa69c2",
+            "type": "text_input_field",
+            "label": "Manager’s name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "157f4afc-3dc0-5274-a9f6-4643b49c24b8",
+            "type": "radio_field",
+            "label": "Work arrangement",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "On-site",
+              "Hybrid",
+              "Remote"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "19379282-e152-5dd8-ae6a-994426775155",
+        "title": "Emergency contact",
+        "fields": [
+          {
+            "id": "54ec0e8e-fa58-5abc-a270-4001abe51a08",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "1296b41d-4039-58cd-a403-84631212979f",
+            "type": "text_input_field",
+            "label": "Contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "54ec0e8e-fa58-5abc-a270-4001abe51a08",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "3e786aeb-e815-5c3a-a565-eadcf2600be6",
+            "type": "text_input_field",
+            "label": "Relationship",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "54ec0e8e-fa58-5abc-a270-4001abe51a08",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "34eebc4f-7e7f-50c1-af5b-b4f3bf39897d",
+            "type": "phone_number_field",
+            "label": "Contact phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "phone_number_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "88db13db-eb69-557e-aa8c-78ae1143702d",
+        "title": "Equipment and access",
+        "fields": [
+          {
+            "id": "16cf183a-f0d7-587e-a346-1a497a4b15a6",
+            "type": "radio_field",
+            "label": "Laptop preference",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Mac",
+              "Windows",
+              "No preference"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6668fabf-49eb-5c5d-a3ae-df733ea4f100",
+            "type": "select_field",
+            "label": "T-shirt size",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "XS",
+              "S",
+              "M",
+              "L",
+              "XL",
+              "XXL"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "5a6d24ff-260e-594c-a872-6ea6f0e74283",
+            "type": "checkbox_field",
+            "label": "Which tools will you need?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Email and calendar",
+              "Slack",
+              "GitHub",
+              "Figma",
+              "CRM",
+              "Accounting software"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "9f16306b-4e68-5594-a3af-bf5ecba021ca",
+            "type": "file_upload_field",
+            "label": "Photo ID",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Passport, driving licence or national ID",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "maxFileSizeMb": 10,
+            "maxFiles": 1,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "af85141d-c14e-5426-a83c-8b685a0b1ba4",
+            "type": "checkbox_field",
+            "label": "Confirmation",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "The information I have provided is accurate"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L1",
+      "content": "<h1>Welcome to the team!</h1><p>Help us get everything ready for your first day. It takes about five minutes.</p>",
+      "thankYouContent": "<h1>You are all set</h1><p>Thanks! Your manager and IT now have what they need. See you on day one.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Let’s get started",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

@@ -196,7 +196,10 @@ describe('template publishing', () => {
       vi.mocked(formTemplateRepository.fetchPublicBySlug).mockResolvedValue(row({ thumbnailKey: null }) as any);
       const t = await getPublicTemplateBySlug('employee-onboarding');
       expect(t?.name).toBe('Employee Onboarding');
-      expect(t?.thumbnailUrl).toBeUndefined();
+      // No uploaded thumbnail: fall back to the generated gallery card, versioned by updatedAt.
+      expect(t?.thumbnailUrl).toMatch(/\/og\/templates\/employee-onboarding\/card\.png\?v=\d+\.[a-z0-9]+$/);
+      expect(t?.ogImageUrl).toMatch(/\/og\/templates\/employee-onboarding\.png\?v=\d+\.[a-z0-9]+$/);
+      expect(t).toMatchObject({ keywords: [], tags: [], featured: false, sortOrder: 0 });
     });
 
     it('returns null for an unknown slug', async () => {

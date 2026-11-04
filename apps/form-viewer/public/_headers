@@ -28,6 +28,9 @@
 # there and the ordering above is what makes it work.
 # See docs/form-embed-v1-spec.md §11 and §15.6.
 
+# Keep in sync with SECURITY_HEADERS in _worker.js: /f/* is served by that worker
+# (link-preview tags for shared forms) and Cloudflare skips this file for worker
+# responses. src/__tests__/shareWorker.test.ts fails if the two drift apart.
 /*
   Content-Security-Policy: frame-ancestors 'self'
   X-Content-Type-Options: nosniff
