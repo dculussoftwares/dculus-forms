@@ -1,0 +1,547 @@
+{
+  "slug": "loan-application-form",
+  "name": "Loan Application",
+  "description": "Personal loan application: applicant details, loan amount and purpose, term, employment, income, housing costs and documents.",
+  "category": "Finance & Legal",
+  "seoTitle": "Free Personal Loan Application Form Template",
+  "seoDescription": "Loan application form template for personal loans: amount, purpose, term, employment, monthly income, debts and housing costs, plus ID and pay stub uploads.",
+  "keywords": [
+    "loan application form",
+    "personal loan application form",
+    "loan request form",
+    "loan application template",
+    "credit application form",
+    "online loan application"
+  ],
+  "tags": [
+    "Finance",
+    "Multi-page",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 8292830
+    },
+    {
+      "source": "pexels",
+      "id": 3760067
+    }
+  ],
+  "thumbnailAlt": "Loan Application form beside a photo of a mortgage broker and client discussing loan options in a modern office setting",
+  "content": {
+    "intro": "A loan application form is a form that collects an applicant's identity and contact details, the loan amount, purpose and term, employment, income, existing debts and supporting documents so a lender can assess affordability and decide whether to make an offer. This template gathers everything a loan officer needs for a first review in four short steps, and applicants can save progress and come back to upload documents.",
+    "audience": "Credit unions, community lenders, microfinance institutions, loan brokers and employers running staff loan programs.",
+    "useCases": [
+      "Online personal loan applications from your website",
+      "Credit union members applying for a car or debt consolidation loan",
+      "Broker pre-qualification before submitting to a lender",
+      "Employee salary advance or hardship loan programs"
+    ],
+    "tips": [
+      "Turn on save-and-resume so applicants can come back to upload pay stubs without starting over.",
+      "Uploads are stored privately; limit who in your team can see responses and export only what you need.",
+      "Use conditional logic to ask for employer details only when the applicant is employed, and business details only when self-employed."
+    ],
+    "faq": [
+      {
+        "question": "What should a loan application form include?",
+        "answer": "The applicant's name, date of birth, contact details and address, the loan amount, purpose and term, employment status and employer, monthly income, housing costs and existing debts, consent to a credit check and uploads of ID and proof of income."
+      },
+      {
+        "question": "What documents are usually needed for a personal loan?",
+        "answer": "Most lenders ask for a government photo ID, proof of address, recent pay stubs or bank statements, and tax returns for self-employed applicants. Exact requirements vary by lender and country."
+      },
+      {
+        "question": "Is a credit check consent needed on a loan application?",
+        "answer": "Lenders generally need the applicant's permission before running a credit check, and the wording required differs by country. Have your compliance team or legal adviser review the consent text and check your local rules before going live."
+      },
+      {
+        "question": "Is it safe to collect loan applications with an online form?",
+        "answer": "Files are stored privately and only people you give access to can view responses. Avoid asking for full card or bank login details on any form, and collect only the personal data you need for the decision."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "91bda192-906e-5a85-ad71-783d702e2441",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "87fbcc4e-984b-5942-8870-3c1c68faf9c2",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "6e4a39de-a2e6-5c82-a3b5-a8e35fc88733",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "87fbcc4e-984b-5942-8870-3c1c68faf9c2",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "9ebf10a2-72fa-50cc-a7b3-1db9759dd6fd",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "87fbcc4e-984b-5942-8870-3c1c68faf9c2",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "01945752-9e3e-5b0f-a724-abe83df9968a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "a2115750-c0ff-5a9d-ba52-be8f1cc7d59e",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "01945752-9e3e-5b0f-a724-abe83df9968a",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "246b13ec-4f21-5938-acbf-51d95cd6a68a",
+            "type": "phone_number_field",
+            "label": "Mobile number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "01945752-9e3e-5b0f-a724-abe83df9968a",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "edfb4a98-f0d2-5d94-8363-1be33c8a518a",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "1b7153de-c0a6-5d13-b33f-414ce3e1dc1f",
+            "type": "text_area_field",
+            "label": "Current home address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "92edc4e2-339a-5631-b895-9ed74e1f39fe",
+            "type": "radio_field",
+            "label": "Time at this address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Less than 1 year",
+              "1-3 years",
+              "3-5 years",
+              "More than 5 years"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "b7f163d8-4e35-585b-ad7e-10b1a55a35c4",
+        "title": "Your loan",
+        "fields": [
+          {
+            "id": "621c834b-d984-5978-be87-5b501771d8cf",
+            "type": "number_field",
+            "label": "How much would you like to borrow?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 500,
+            "max": 100000,
+            "suffix": "USD",
+            "__type": "number_field"
+          },
+          {
+            "id": "ce172cf5-1af5-583c-a93f-50f95660d74f",
+            "type": "select_field",
+            "label": "What is the loan for?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Debt consolidation",
+              "Home improvement",
+              "Car purchase or repair",
+              "Medical expenses",
+              "Education",
+              "Wedding",
+              "Moving or relocation",
+              "Emergency expenses",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "5dce7fd8-7491-5821-9eb5-de98d51a34c3",
+            "type": "radio_field",
+            "label": "Preferred loan term",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "12 months",
+              "24 months",
+              "36 months",
+              "48 months",
+              "60 months"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "e1fef572-9c63-5d26-92ae-7b1ba479d368",
+        "title": "Work and finances",
+        "fields": [
+          {
+            "id": "91b11210-78b4-5dfa-b0f0-e65d65d32bca",
+            "type": "radio_field",
+            "label": "Employment status",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Employed full-time",
+              "Employed part-time",
+              "Self-employed",
+              "Retired",
+              "Not employed",
+              "Student"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "772a37fd-e195-51c7-9e59-ab355e7c7ad3",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "9163e26d-5ce6-5876-810b-89d8d7cbc3ce",
+            "type": "text_input_field",
+            "label": "Employer or business name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "If employed or self-employed",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "gridId": "772a37fd-e195-51c7-9e59-ab355e7c7ad3",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "9f322b2f-8cd7-5a5c-8355-06f1677b6b9c",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "gridId": "772a37fd-e195-51c7-9e59-ab355e7c7ad3",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d14f7aff-6e8a-5077-965e-95285191d2a7",
+            "type": "radio_field",
+            "label": "Time with current employer",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Less than 6 months",
+              "6-12 months",
+              "1-3 years",
+              "More than 3 years"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "fd1be70c-e3aa-5af7-808a-97044d14c156",
+            "type": "number_field",
+            "label": "Monthly income before tax",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 1000000,
+            "suffix": "USD",
+            "__type": "number_field"
+          },
+          {
+            "id": "76c8c4f1-4aae-5e77-b1ae-106b298d3184",
+            "type": "radio_field",
+            "label": "Housing status",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Own outright",
+              "Own with mortgage",
+              "Rent",
+              "Live with family",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ef1bb592-386d-55b2-ab67-abcd76ce5b6d",
+            "type": "number_field",
+            "label": "Monthly rent or mortgage",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 100000,
+            "suffix": "USD",
+            "__type": "number_field"
+          },
+          {
+            "id": "72c67f21-1e82-57b5-8a6a-9a839b338ab8",
+            "type": "number_field",
+            "label": "Other monthly debt costs",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Credit cards, car loans, student loans",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 100000,
+            "suffix": "USD",
+            "__type": "number_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "06882a54-c2f5-55c2-832b-c069f88f1cf1",
+        "title": "Documents and consent",
+        "fields": [
+          {
+            "id": "743af897-6843-57af-9cbd-a4ec6fda2ce3",
+            "type": "file_upload_field",
+            "label": "Government photo ID",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional now, needed before approval",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*",
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 2,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "08f13183-7507-59f5-a152-f897c4a0894a",
+            "type": "file_upload_field",
+            "label": "Proof of income",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Last 2 pay stubs or 3 months of bank statements",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*",
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 4,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "02ed03e7-9538-5434-96bd-c0b10ad27343",
+            "type": "rich_text_field",
+            "content": "<p>By submitting, you authorize us to verify the information you provided and to obtain a credit report to assess your application. Submitting does not guarantee a loan offer. Terms and rates depend on our review.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "cc27c536-b7f4-59d7-b6c7-efba24852646",
+            "type": "text_input_field",
+            "label": "Type your full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "8f28a6f8-f9c4-5e60-8320-90d511340554",
+            "type": "checkbox_field",
+            "label": "Consent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I confirm the information is accurate and I consent to a credit check"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L6",
+      "content": "<h1>Apply for a personal loan</h1><p>Four short steps. Have your ID and recent pay stubs ready. About ten minutes.</p>",
+      "thankYouContent": "<h1>Application received</h1><p>A loan officer will review your application and contact you within two business days. Submitting does not guarantee approval.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start application",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

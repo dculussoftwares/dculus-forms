@@ -1,0 +1,575 @@
+{
+  "slug": "summer-camp-registration-form",
+  "name": "Summer Camp Registration",
+  "description": "Register campers for summer camp: camper details, weeks, day type, pickup authorization, allergies, medication and parent consent.",
+  "category": "Education",
+  "seoTitle": "Free Summer Camp Registration Form Template",
+  "seoDescription": "Summer camp registration form template with camper details, weeks, extended care, authorized pickups, allergies, medications, EpiPen and swim level.",
+  "keywords": [
+    "summer camp registration form",
+    "camp registration form",
+    "summer camp sign up form",
+    "day camp registration form",
+    "camp enrollment form",
+    "kids camp registration form"
+  ],
+  "tags": [
+    "Registration",
+    "Consent",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 5036946
+    },
+    {
+      "source": "pexels",
+      "id": 9299915
+    }
+  ],
+  "thumbnailAlt": "Summer Camp Registration form beside a photo of children enjoying a camping trip by a lake, preparing for a campfire, surrounded by nature at sunset",
+  "content": {
+    "intro": "A summer camp registration form is a form that collects a camper's details, the weeks they will attend, who may pick them up, and their allergies, medications and swim ability so camp staff can keep every child safe. This template groups it into four pages and ends with medical-treatment and photo consent from the parent.",
+    "audience": "Day camps, overnight camps, YMCA and community center programs, sports and arts camps, and church or school holiday programs.",
+    "useCases": [
+      "Weekly day camp where families pick which weeks to book",
+      "Overnight camp needing full medical and medication details",
+      "Specialty camps such as coding, art, soccer or swim",
+      "City recreation department summer programs"
+    ],
+    "tips": [
+      "Use conditional logic to ask for EpiPen or inhaler details only when a parent reports an allergy or asthma.",
+      "Check the per-question chart for the weeks question to see how many campers are booked into each week.",
+      "Generate a filled PDF per camper with a PDF template so counselors have a printed health sheet on site."
+    ],
+    "faq": [
+      {
+        "question": "What should a summer camp registration form include?",
+        "answer": "Camper name, date of birth and grade; the weeks and day type booked; parent and emergency contacts; people authorized to pick up; allergies, medications, EpiPen or inhaler use and dietary needs; swim ability; and parent consent for activities, emergency medical treatment and photos."
+      },
+      {
+        "question": "What medical information should a camp collect?",
+        "answer": "At minimum: allergies, current medications with doses, conditions such as asthma, diabetes or seizures, emergency medication carried, and immunization records if your camp requires them. Many states license camps and set their own health-form rules, so check your local requirements."
+      },
+      {
+        "question": "Who can see camper health information?",
+        "answer": "Only people you give access to the form can see responses, and uploaded health forms are stored privately rather than publicly. Share access only with staff who need it."
+      },
+      {
+        "question": "Can I limit the number of campers?",
+        "answer": "Yes. Set a response limit and closing date in Form Settings to cap total registrations. For per-week capacity, watch the weeks question's chart and remove a full week from the options."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "05ca2963-59fb-5cb8-ad2b-1592c544bcbf",
+        "title": "Camper",
+        "fields": [
+          {
+            "id": "a86c2d7b-407b-5608-9e76-b89c256a9d7e",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "9f450d26-e388-5800-a303-4b548c9ea108",
+            "type": "text_input_field",
+            "label": "Camper first name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a86c2d7b-407b-5608-9e76-b89c256a9d7e",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d8f9abda-630b-5215-bdeb-c0d0321f94d7",
+            "type": "text_input_field",
+            "label": "Camper last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a86c2d7b-407b-5608-9e76-b89c256a9d7e",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "379ccc51-42d7-5abb-8045-8960b65985b0",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "62a61b1f-a4b6-5743-8c2a-ce1d83a872bf",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "379ccc51-42d7-5abb-8045-8960b65985b0",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "20611549-e585-5aba-881d-42658374f83e",
+            "type": "text_input_field",
+            "label": "Grade completed this school year",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 20
+            },
+            "gridId": "379ccc51-42d7-5abb-8045-8960b65985b0",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "5e796cb0-e8ac-5d78-a61e-a062baf9c281",
+            "type": "select_field",
+            "label": "T-shirt size",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Youth XS",
+              "Youth S",
+              "Youth M",
+              "Youth L",
+              "Youth XL",
+              "Adult S",
+              "Adult M",
+              "Adult L"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "cbcb2938-909e-53ef-a75e-9e85815f38bd",
+            "type": "radio_field",
+            "label": "Swim ability",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Non-swimmer",
+              "Beginner, needs a flotation aid",
+              "Can swim one length unaided",
+              "Strong swimmer"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "bf774059-56a8-5919-a5bc-4807684081a3",
+        "title": "Weeks and care",
+        "fields": [
+          {
+            "id": "f888a5f2-f167-5724-b50b-3cb06c8b8c95",
+            "type": "checkbox_field",
+            "label": "Which weeks will your camper attend?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Week 1",
+              "Week 2",
+              "Week 3",
+              "Week 4",
+              "Week 5",
+              "Week 6",
+              "Week 7",
+              "Week 8"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "dbfb35b9-b6a9-5810-981e-72df4ce7d7fe",
+            "type": "radio_field",
+            "label": "Day type",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Full day",
+              "Morning half day",
+              "Afternoon half day"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "2a60a247-e076-5e0c-8c9b-e18735638b72",
+            "type": "checkbox_field",
+            "label": "Extended care",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Early drop-off",
+              "Late pickup"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "ea029a2e-8603-588a-98fe-dbbd85919fab",
+            "type": "text_input_field",
+            "label": "Friend or group request",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "fa463a2f-7e4d-57e4-adc2-0e0e58da264f",
+        "title": "Parents and pickup",
+        "fields": [
+          {
+            "id": "0351a9ab-d09c-5fff-aa10-53be2e73b246",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "d7d553e4-2bbc-5fbe-90b2-2c07d3fa09ff",
+            "type": "text_input_field",
+            "label": "Parent or guardian name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "0351a9ab-d09c-5fff-aa10-53be2e73b246",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "eb4fea29-da0e-5147-adde-d15c4f6f5203",
+            "type": "phone_number_field",
+            "label": "Parent or guardian phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "0351a9ab-d09c-5fff-aa10-53be2e73b246",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "35128b61-7d5d-5529-8a8d-f0f4d5841c13",
+            "type": "email_field",
+            "label": "Parent or guardian email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          },
+          {
+            "id": "9cca6e84-0a7b-59ea-b929-4c364561e069",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "1bb64433-47e1-5b34-a625-bd6154a0e3cb",
+            "type": "text_input_field",
+            "label": "Emergency contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "9cca6e84-0a7b-59ea-b929-4c364561e069",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "853c79b6-4beb-531b-823d-a7673add5373",
+            "type": "phone_number_field",
+            "label": "Emergency contact phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9cca6e84-0a7b-59ea-b929-4c364561e069",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "d97dd02a-cd5d-5232-ae91-409be1cf621e",
+            "type": "text_area_field",
+            "label": "Who else may pick up your camper?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Name and relationship for each person. Staff will check photo ID",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "56638c70-2724-5af6-a9fb-a43bf04b635b",
+        "title": "Health and consent",
+        "fields": [
+          {
+            "id": "a052d13f-5e8a-56ef-8f6a-6625a4607004",
+            "type": "text_area_field",
+            "label": "Allergies (food, insect, medication)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Write none if there are none",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "bfadaf74-d9e5-5541-b9ca-8c18e6d82ee4",
+            "type": "radio_field",
+            "label": "Does your camper carry emergency medication?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "EpiPen",
+              "Inhaler",
+              "Both",
+              "Neither"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "cc6418ef-6425-536c-b206-690bd6041795",
+            "type": "text_area_field",
+            "label": "Daily medications, doses and times",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "d03e166d-4e0b-5ded-86a5-0fa867cc836b",
+            "type": "text_area_field",
+            "label": "Medical, behavioral or dietary needs our counselors should know",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "7272e665-b794-5d10-a800-95661ef88c71",
+            "type": "file_upload_field",
+            "label": "Health form or immunization record",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional, if your camp requires one",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 2,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "68bff8c8-b64e-5ba5-9ffe-9550d245ac63",
+            "type": "rich_text_field",
+            "content": "<p>I give permission for my child to take part in all camp activities, including swimming and field trips. If I cannot be reached in an emergency, I authorize camp staff to arrange first aid and emergency medical treatment.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "691df4d5-3a31-5399-bdaf-bb771f419c0f",
+            "type": "radio_field",
+            "label": "May the camp share photos of your camper in newsletters and on social media?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5f8eb47e-5d9e-5b3d-88fb-8f1139b53462",
+            "type": "text_input_field",
+            "label": "Type your full name as the parent or guardian",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "689d3a80-47a3-5ee9-88d2-0972f4f253be",
+            "type": "checkbox_field",
+            "label": "Consent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I am the camper's parent or legal guardian and I agree to the statement above"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L1",
+      "content": "<h1>Summer camp registration</h1><p>Register one camper per form. It takes about eight minutes.</p>",
+      "thankYouContent": "<h1>Your camper is registered</h1><p>We'll email a packing list, drop-off times and the first-day plan two weeks before camp starts.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Register camper",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

@@ -1,0 +1,465 @@
+{
+  "slug": "it-access-request-form",
+  "name": "IT Access Request",
+  "description": "Request access to systems, apps, shared drives or admin rights, with access level, business reason, manager approval and end date.",
+  "category": "Operations & IT",
+  "seoTitle": "Free IT Access Request Form Template",
+  "seoDescription": "IT access request form template that captures the system, access level, business reason, approving manager and end date, giving you an audit trail per grant.",
+  "keywords": [
+    "it access request form",
+    "system access request form",
+    "user access request form",
+    "application access request template",
+    "network access request form",
+    "access provisioning form"
+  ],
+  "tags": [
+    "Approval",
+    "Multi-page",
+    "Security"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 31112222
+    },
+    {
+      "source": "pexels",
+      "id": 37605911
+    }
+  ],
+  "thumbnailAlt": "IT Access Request form beside a photo of woman in office workspace using a computer focused on work tasks",
+  "content": {
+    "intro": "An IT access request form is a form that records who needs access to which system, at what permission level, for what business reason and with whose approval so IT can grant only the access people need. This template captures the requester, the systems, the role level, the approving manager and an optional end date, which gives you a written trail for access reviews and audits.",
+    "audience": "IT and security teams, system owners, HR and onboarding coordinators, and compliance staff preparing for SOC 2 or ISO 27001 access reviews.",
+    "useCases": [
+      "Granting app and shared-drive access to new joiners on day one",
+      "Temporary access for contractors with a fixed end date",
+      "Admin or privileged rights that need a written justification",
+      "Changing access when someone moves to a new team"
+    ],
+    "tips": [
+      "Use conditional logic so the 'Why do you need admin rights?' question only appears when someone picks Admin access.",
+      "Send each request to the approving manager and IT with email notifications, and export the log to Excel for your quarterly access review.",
+      "Require sign-in so the requester's identity comes from their account, not a typed name."
+    ],
+    "faq": [
+      {
+        "question": "What should an IT access request form include?",
+        "answer": "The requester's name, email, department and employment type, who the access is for, the systems or applications needed, the access level (read-only, standard, admin), the business reason, the approving manager, a start date and an end date for temporary access."
+      },
+      {
+        "question": "What is the principle of least privilege?",
+        "answer": "It means giving each person only the access they need to do their job, and no more. An access request form supports it by making people name the specific system and level, and give a reason, before anything is granted."
+      },
+      {
+        "question": "Why record an end date on access requests?",
+        "answer": "Contractor, project and temporary access is often forgotten after the work ends. An end date tells IT when to remove access and makes it easy to check during periodic access reviews."
+      },
+      {
+        "question": "Does this form grant the access automatically?",
+        "answer": "No. It collects and records the request; IT or the system owner still grants the access. You can send each request to your ticketing or identity tool with a webhook."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "213f5481-6765-542f-90c4-2f25dfc9fee4",
+        "title": "Requester",
+        "fields": [
+          {
+            "id": "e89d3701-7f6f-5880-9c7f-1cd39cd334c9",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "99e100fe-3094-5c3c-8891-a6e7fed9070b",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "e89d3701-7f6f-5880-9c7f-1cd39cd334c9",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "08c8dd5c-2159-54aa-a2f7-59069afda28d",
+            "type": "email_field",
+            "label": "Work email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "e89d3701-7f6f-5880-9c7f-1cd39cd334c9",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "8e899922-ed12-52d8-beab-4d36459f19e5",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "a1e57184-db54-5f0a-8842-b4d1c73ad893",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "gridId": "8e899922-ed12-52d8-beab-4d36459f19e5",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "8865729e-6668-5516-98e1-8165bb432a99",
+            "type": "text_input_field",
+            "label": "Department or team",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "gridId": "8e899922-ed12-52d8-beab-4d36459f19e5",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "5140ab51-6ec4-56ac-b546-4f78b8fcef61",
+            "type": "radio_field",
+            "label": "Employment type",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Employee",
+              "Contractor or freelancer",
+              "Intern",
+              "Vendor or partner"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "f49cb7b9-62c7-513e-999f-7e534c71c0a7",
+            "type": "radio_field",
+            "label": "Who is this access for?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Me",
+              "A new joiner",
+              "Someone on my team"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1562fb1e-155b-52a4-8bc6-1155b6d716a7",
+            "type": "text_input_field",
+            "label": "Name of the person who needs access",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Leave blank if it is for you",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "3385617b-cf6d-569d-ac8e-6f3861bd0322",
+        "title": "Access needed",
+        "fields": [
+          {
+            "id": "90c605c5-c3d9-506e-805f-401cf54ea527",
+            "type": "radio_field",
+            "label": "Request type",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "New access",
+              "Change existing access",
+              "Remove access"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "a0003cac-5cb9-5afd-8da7-ad9b16bdd803",
+            "type": "checkbox_field",
+            "label": "Which systems or resources?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Email and calendar",
+              "Shared drive or folder",
+              "CRM",
+              "Finance or accounting system",
+              "HR system",
+              "Code repository",
+              "Cloud console",
+              "VPN",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "be211190-42cc-5250-b981-53faf9b1aded",
+            "type": "text_input_field",
+            "label": "Specific app, folder or group name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "e.g. Finance > 2026 Budgets folder",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 200
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "3e6fda18-3fd9-58e9-91fd-e87c1769b733",
+            "type": "radio_field",
+            "label": "Access level",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Read-only",
+              "Standard user",
+              "Editor or contributor",
+              "Admin"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "f742df7b-59de-5476-9461-2a667dec2052",
+            "type": "text_area_field",
+            "label": "Business reason",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "What will you use this access for?",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "56a37491-1e0c-598a-9788-ad3236eeef37",
+            "type": "text_area_field",
+            "label": "Why do you need admin rights?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Only if you chose Admin",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "7c0b4f24-afe1-5be4-9d28-cc7f5ea2f0ef",
+        "title": "Approval and dates",
+        "fields": [
+          {
+            "id": "e72e94f4-b967-54f1-bd14-e5ce9df54fff",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ad5e90c3-f76d-5e9c-8695-d5e0cffe98e1",
+            "type": "text_input_field",
+            "label": "Approving manager",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "e72e94f4-b967-54f1-bd14-e5ce9df54fff",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "958b0ba9-b1bc-5a74-962e-0c91da465886",
+            "type": "email_field",
+            "label": "Manager's email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "e72e94f4-b967-54f1-bd14-e5ce9df54fff",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "cfeae04d-27a4-59b5-a3ab-c5a97efb157d",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "38846b43-6012-53dc-8ca3-369a6faf2ec9",
+            "type": "date_field",
+            "label": "Access needed from",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "cfeae04d-27a4-59b5-a3ab-c5a97efb157d",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "c3dc6d47-ad33-5df8-bd91-b4ef97a5671f",
+            "type": "date_field",
+            "label": "Access end date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "For temporary access",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "cfeae04d-27a4-59b5-a3ab-c5a97efb157d",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "973f7de5-fc3a-5b99-b90d-dcd03b71ffa7",
+            "type": "rich_text_field",
+            "content": "<p>Access is granted for business use only. Do not share your login, and tell IT when you no longer need this access.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "50329704-8816-530c-a661-0e6887a3a932",
+            "type": "checkbox_field",
+            "label": "Acknowledgement",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I will follow the acceptable use and security policy"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L2",
+      "content": "<h1>Request system access</h1><p>Tell IT what you need and why. Your manager approves it. About three minutes.</p>",
+      "thankYouContent": "<h1>Request submitted</h1><p>IT will confirm with your manager and email you once access is set up or if anything is missing.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Request access",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

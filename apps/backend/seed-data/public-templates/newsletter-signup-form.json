@@ -1,0 +1,198 @@
+{
+  "slug": "newsletter-signup-form",
+  "name": "Newsletter Signup",
+  "description": "Grow your email list: first name, email, topics of interest, how often to send, and a clear opt-in consent box.",
+  "category": "Marketing & Sales",
+  "seoTitle": "Free Newsletter Signup Form Template",
+  "seoDescription": "Newsletter signup form template with first name, email, topic preferences, email frequency and an opt-in consent checkbox. Grow a list people actually want.",
+  "keywords": [
+    "newsletter signup form",
+    "email signup form",
+    "newsletter subscription form",
+    "mailing list signup form",
+    "email list opt-in form",
+    "subscribe form template"
+  ],
+  "tags": [
+    "Consent",
+    "Lead Capture"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6816989
+    },
+    {
+      "source": "pexels",
+      "id": 4255405
+    }
+  ],
+  "thumbnailAlt": "Newsletter Signup form beside a photo of african American woman sitting and using smartphone in cozy café environment",
+  "content": {
+    "intro": "A newsletter signup form is a form that collects a subscriber's name, email address and explicit consent so a business, creator or nonprofit can send them regular email updates. This template also asks which topics and how often, so you can segment from day one and send fewer emails people ignore.",
+    "audience": "Creators, bloggers, small shops, restaurants, nonprofits, schools, local businesses and B2B marketers building an email list.",
+    "useCases": [
+      "A footer or sidebar signup embedded on a blog or online store",
+      "A QR code at a café counter, market stall or event table",
+      "A link in an Instagram or LinkedIn bio",
+      "Collecting interest before launching a product or podcast"
+    ],
+    "tips": [
+      "Embed the form on your website and print its QR code on receipts, flyers and packaging.",
+      "Send signups to Google Sheets, or use a webhook to add them to the email tool you already use.",
+      "Turn on the email copy for the respondent to send a welcome note confirming what they signed up for."
+    ],
+    "faq": [
+      {
+        "question": "What should a newsletter signup form include?",
+        "answer": "An email address, ideally a first name for personal greetings, optional topic or frequency preferences, and a clear consent checkbox that says what you will send and that people can unsubscribe at any time. Link to your privacy policy near the consent box."
+      },
+      {
+        "question": "Do I need a consent checkbox on a newsletter form?",
+        "answer": "For subscribers in the EU, UK and Canada, laws such as GDPR and CASL generally require clear, opt-in consent, so an unticked checkbox is the safe choice. US rules under CAN-SPAM focus on an easy unsubscribe. Check the rules for where your subscribers live."
+      },
+      {
+        "question": "What is double opt-in?",
+        "answer": "Double opt-in means a new subscriber confirms by clicking a link in a follow-up email before you add them. It keeps typos and fake addresses off your list. Most email marketing tools handle this step after you send them the signup."
+      },
+      {
+        "question": "How do I get more newsletter signups?",
+        "answer": "Say exactly what people will get and how often, keep the form to two or three fields, and place it where readers already are: the end of articles, your checkout page and your social bios."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "3cc1d0d9-b4fd-552f-a22d-281e983a3fd3",
+        "title": "Subscribe",
+        "fields": [
+          {
+            "id": "7da3ca7d-5ff6-5da8-9fe0-bf96bcbe7b49",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "a207d945-574b-5966-a0e5-554d12a9d0c3",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "7da3ca7d-5ff6-5da8-9fe0-bf96bcbe7b49",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "cccebfe0-993e-5f1e-affe-c255b53dbce6",
+            "type": "email_field",
+            "label": "Email address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "7da3ca7d-5ff6-5da8-9fe0-bf96bcbe7b49",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "c09dd15c-3e89-59a3-a4e8-f920b5720737",
+            "type": "checkbox_field",
+            "label": "What would you like to hear about?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Pick any",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "New products",
+              "Tips and how-tos",
+              "Events",
+              "Offers and discounts",
+              "Company news"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "64231246-4dc0-58ca-be11-2d1eb8f94a7c",
+            "type": "radio_field",
+            "label": "How often should we email you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Weekly",
+              "Twice a month",
+              "Monthly"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "73c98f5a-cdcd-55a6-a06e-9ab4a496310f",
+            "type": "rich_text_field",
+            "content": "<p>We send only what you choose above. Every email has an unsubscribe link, and we never sell or share your address. See our privacy policy for details.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "23a74ab4-a90d-5c9c-bf14-289e366d0153",
+            "type": "checkbox_field",
+            "label": "Consent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Yes, send me the newsletter by email"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L8",
+      "content": "<h1>Get the newsletter</h1><p>Useful updates in your inbox, no spam. It takes 30 seconds.</p>",
+      "thankYouContent": "<h1>You're on the list</h1><p>Look out for a welcome email in the next few minutes. Check your spam folder if it doesn't arrive.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Subscribe",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

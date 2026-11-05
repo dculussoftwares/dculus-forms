@@ -1,0 +1,379 @@
+{
+  "slug": "photo-release-form",
+  "name": "Photo Release Form",
+  "description": "Get written permission to photograph someone and use the images, with permitted uses, minor consent and a typed name.",
+  "category": "Finance & Legal",
+  "seoTitle": "Free Photo Release Form Template",
+  "seoDescription": "Photo release form template with the person's details, where photos may be used, name credit choice, parent or guardian consent for minors and a typed name.",
+  "keywords": [
+    "photo release form",
+    "photography release form",
+    "photo consent form",
+    "model release form",
+    "image release form",
+    "photo permission form"
+  ],
+  "tags": [
+    "Consent",
+    "Legal"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 8117810
+    },
+    {
+      "source": "pexels",
+      "id": 14279584
+    }
+  ],
+  "thumbnailAlt": "Photo Release Form form beside a photo of a photographer captures a smiling woman against a brick wall using a smartphone",
+  "content": {
+    "intro": "A photo release form is a form that records a person's permission to be photographed and for those images to be used in specific places, such as a website, social media or print, so the photographer or organization has a clear record of consent. This template lets people choose exactly which uses they agree to and includes a parent or guardian section for minors.",
+    "audience": "Photographers, schools, nonprofits, event organizers, marketing teams and small businesses using photos of real people.",
+    "useCases": [
+      "Consent from attendees photographed at a conference, gala or fun run",
+      "Model releases for a brand or product photo shoot",
+      "School, camp or sports club photos of children, signed by a parent",
+      "Customer or staff photos for testimonials, case studies and social media"
+    ],
+    "tips": [
+      "Share a QR code at the event check-in desk so people give consent on their phone before the cameras come out.",
+      "Use conditional logic to show the parent or guardian questions only when the person is under 18.",
+      "Use the PDF templates feature to generate a filled release for each response, and keep a copy with the photo files."
+    ],
+    "faq": [
+      {
+        "question": "What should a photo release form include?",
+        "answer": "The person's name and contact details, what the photos are for, where they may be used (website, social media, print, advertising), whether they want a name credit, how long consent lasts and how to withdraw it, parent or guardian consent for minors, a typed full name and the date."
+      },
+      {
+        "question": "Do I need a photo release form for every photo?",
+        "answer": "Not always. Rules vary by country and by use. Commercial use, such as advertising, usually needs a release, while editorial or news use often does not. Check your local rules or ask a lawyer for anything high-risk."
+      },
+      {
+        "question": "Is a typed name valid instead of a signature?",
+        "answer": "In many places a typed name with a clear consent checkbox and a timestamp is accepted as agreement, but requirements differ by country and use. For high-value commercial shoots, check with a lawyer."
+      },
+      {
+        "question": "Can someone withdraw their photo consent?",
+        "answer": "Usually yes, for future use. Say in the form how people can withdraw and what happens to photos already published. Data protection laws such as GDPR give people specific rights over images of them."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "b9db36a6-e1c4-5295-b607-2df7bc514d60",
+        "title": "Your details",
+        "fields": [
+          {
+            "id": "f80a82bb-08e6-518d-9c69-8825fa0bcdfa",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "65826552-c5ab-5a5e-9925-0c5b9df3569f",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "gridId": "f80a82bb-08e6-518d-9c69-8825fa0bcdfa",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d9e00681-0868-5bd0-9ea4-5c75ac10fd82",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "gridId": "f80a82bb-08e6-518d-9c69-8825fa0bcdfa",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "93de0226-23db-553b-8af9-27614229c5d6",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c3e7c15c-a9cd-5572-ad62-2a2cac10cfc5",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "93de0226-23db-553b-8af9-27614229c5d6",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "a26f301e-7b13-5b43-bd7d-915cd7532df4",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "93de0226-23db-553b-8af9-27614229c5d6",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "9c696dae-4af8-5926-b00c-ffd81bc76901",
+            "type": "text_input_field",
+            "label": "Event, shoot or project name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 150
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "59d61dcf-90d9-5f36-8bd1-9cb1aa80323d",
+            "type": "radio_field",
+            "label": "Are you 18 or older?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "76b28cb4-8686-5ef2-bef6-e47b14d9b95e",
+        "title": "How photos may be used",
+        "fields": [
+          {
+            "id": "ae89f170-570a-56fe-bf74-5e0051d01ea4",
+            "type": "checkbox_field",
+            "label": "Where may we use photos of you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Our website",
+              "Social media",
+              "Newsletters and email",
+              "Printed materials such as brochures and posters",
+              "Paid advertising",
+              "Internal use only"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "7c31fea9-811d-5124-b55a-ef1ec20f9094",
+            "type": "radio_field",
+            "label": "How should we credit you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Use my full name",
+              "First name only",
+              "Do not name me"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6c9831ad-dd7c-507e-9ea5-a88d8ee8c917",
+            "type": "text_area_field",
+            "label": "Any limits or requests",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "For example: no close-ups, do not tag me on social media",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "97a2a7b5-21d6-5b17-8f78-05036aec6f5b",
+        "title": "Consent",
+        "fields": [
+          {
+            "id": "52548806-d5e1-55b2-b05f-e0f67dea5604",
+            "type": "text_input_field",
+            "label": "Parent or guardian full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Required if the person photographed is under 18",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "1742587f-5fc4-57b9-8a56-373f3d7fd3e8",
+            "type": "text_input_field",
+            "label": "Relationship to the minor",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Required if the person photographed is under 18",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "fb03d913-4dda-50ed-b53f-1c92672f4f39",
+            "type": "rich_text_field",
+            "content": "<p>I grant permission for photographs and video of me (or of the minor named above) taken at the event or shoot named above to be used for the purposes I selected, without compensation. I understand I can withdraw consent for future use at any time by contacting the organizer, and that images already published may not be removable.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "0e831484-bad7-54e0-8624-fd6657a698fc",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "2481518c-7dca-505e-8e24-1da2b1a7338a",
+            "type": "text_input_field",
+            "label": "Full name (typed)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "0e831484-bad7-54e0-8624-fd6657a698fc",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "46dac2b3-4fec-5a5e-8841-62417a19ff0d",
+            "type": "date_field",
+            "label": "Date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "0e831484-bad7-54e0-8624-fd6657a698fc",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "f56373e7-62d1-5aa1-8a27-3dacea413944",
+            "type": "checkbox_field",
+            "label": "Agreement",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I agree to the photo release terms above"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L4",
+      "content": "<h1>Photo consent</h1><p>Choose how we may use your photos. About two minutes.</p>",
+      "thankYouContent": "<h1>Thank you</h1><p>Your choices are recorded. Contact us at any time if you want to change or withdraw your consent.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Give consent",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

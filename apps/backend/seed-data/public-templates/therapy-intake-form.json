@@ -1,0 +1,512 @@
+{
+  "slug": "therapy-intake-form",
+  "name": "Therapy Intake",
+  "description": "Gather a new counseling client's reasons for seeking help, symptoms, history, safety screening, goals and informed consent.",
+  "category": "Healthcare",
+  "seoTitle": "Free Therapy Intake Form Template for Counselors",
+  "seoDescription": "Therapy intake form template for counselors: reason for seeking help, symptoms, past treatment, safety check, goals and informed consent before the first visit.",
+  "keywords": [
+    "therapy intake form",
+    "counseling intake form",
+    "mental health intake form",
+    "psychotherapy intake questionnaire",
+    "new client therapy intake",
+    "therapist intake paperwork"
+  ],
+  "tags": [
+    "Intake",
+    "Consent",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 23496505
+    },
+    {
+      "source": "pexels",
+      "id": 6255882
+    }
+  ],
+  "thumbnailAlt": "Therapy Intake form beside a photo of a therapist and a client engaging in a counseling session in a bright, modern office",
+  "content": {
+    "intro": "A therapy intake form is a form that collects a new client's contact details, reasons for seeking support, current symptoms, past mental health treatment, safety concerns and goals so a therapist can prepare for the first session and confirm the client is a good fit. This template uses plain, non-judgmental wording, keeps sensitive questions optional where it can, and ends with an informed consent statement covering confidentiality and its limits.",
+    "audience": "Licensed therapists, counselors, psychologists, social workers in private practice, group practices and campus or employee counseling services.",
+    "useCases": [
+      "Sending paperwork to a new client after the free consultation call",
+      "Screening referrals for a group practice before matching to a clinician",
+      "Intake for telehealth clients who never visit the office",
+      "University counseling centers handling student sign-ups at the start of term"
+    ],
+    "tips": [
+      "Require sign-in and one response per person so each client completes intake once and can save and come back later.",
+      "Turn on email notifications so you see answers to the safety questions as soon as a form arrives, not on the day of the session.",
+      "Use a PDF template to turn each completed intake into a tidy file for the client's record."
+    ],
+    "faq": [
+      {
+        "question": "What should a therapy intake form include?",
+        "answer": "Contact and emergency contact details, the main reason the client is seeking therapy, current symptoms and how long they have lasted, past therapy or psychiatric treatment, current medications, a safety question about thoughts of self-harm, substance use, goals for therapy, session preferences, and informed consent covering confidentiality and its limits."
+      },
+      {
+        "question": "Should I ask about suicidal thoughts on an intake form?",
+        "answer": "Many clinicians include a short safety question so they can follow up at the first session, but a form is not a crisis service. Tell clients clearly who to contact in an emergency, and review safety answers promptly; this template includes that wording."
+      },
+      {
+        "question": "Is an online therapy intake form private?",
+        "answer": "Responses are kept in your private account and are not shown publicly. Rules for mental health records vary by country and state, so check your local health-privacy and licensing requirements before you collect client information online."
+      },
+      {
+        "question": "How long should a therapy intake form be?",
+        "answer": "Long enough to prepare for the first session, short enough to finish in about 10 to 15 minutes. Leave detailed history for the session itself and mark deeper questions as optional."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "edd0bbec-0da6-5f22-aa25-64538d52de7b",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "93ff5c01-60fe-5b80-9381-df2ab7117e2d",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "383cf989-3dc5-5e06-bb13-0698b51ea479",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "93ff5c01-60fe-5b80-9381-df2ab7117e2d",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "1babab13-aa35-50d4-97d2-c0cfae736620",
+            "type": "text_input_field",
+            "label": "Preferred name and pronouns",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "93ff5c01-60fe-5b80-9381-df2ab7117e2d",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "e7db79f9-6216-59d2-aad1-2873fe5ae35a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "2806e1b7-c913-534d-8c97-bb9ec5657536",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "e7db79f9-6216-59d2-aad1-2873fe5ae35a",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "d6a85da4-d4e7-5dee-a8c0-81d332a76f3e",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "e7db79f9-6216-59d2-aad1-2873fe5ae35a",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "bb42c093-cde3-5bbb-afec-79022baa2436",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "ac8844cf-251e-550f-95b2-afddf0b83197",
+            "type": "radio_field",
+            "label": "Is it OK to leave a voicemail at this number?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No, please text or email instead"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5ebd0282-f82a-57ef-ae91-e2711611385f",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "6a8ff671-e11e-56c3-93c6-45ebcaee8bc4",
+            "type": "text_input_field",
+            "label": "Emergency contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "5ebd0282-f82a-57ef-ae91-e2711611385f",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "e86bc073-093e-5797-8457-be3d419c876d",
+            "type": "phone_number_field",
+            "label": "Emergency contact phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "5ebd0282-f82a-57ef-ae91-e2711611385f",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "56a93376-94a7-50f1-bb8e-1109cd40132c",
+        "title": "What brings you here",
+        "fields": [
+          {
+            "id": "faff6f6b-e101-5e77-9455-1aab3b085f3e",
+            "type": "text_area_field",
+            "label": "In your own words, what made you look for therapy now?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "85c39428-20ff-5c6c-98f7-02df28c80ff0",
+            "type": "checkbox_field",
+            "label": "Which of these have you noticed in the past month?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Low mood or sadness",
+              "Worry or anxiety",
+              "Panic attacks",
+              "Trouble sleeping",
+              "Changes in appetite",
+              "Anger or irritability",
+              "Grief or loss",
+              "Relationship problems",
+              "Stress at work or school",
+              "Trauma memories",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "56112335-cc26-5293-a98b-badfb028fc7b",
+            "type": "radio_field",
+            "label": "How much are these affecting your daily life?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A little",
+              "Somewhat",
+              "A lot",
+              "Severely"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1ef1f37b-3898-5a06-b3ea-6758fca0c673",
+            "type": "radio_field",
+            "label": "Have you seen a therapist, counselor or psychiatrist before?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, currently",
+              "Yes, in the past",
+              "No, this is my first time"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "fd08efc1-a9d6-5b08-934a-44154130b889",
+            "type": "text_area_field",
+            "label": "Current medications for mental or physical health",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "ff36dddc-ac09-59ce-93a5-01650f3c5ba1",
+        "title": "Safety and wellbeing",
+        "fields": [
+          {
+            "id": "e0ebd7c9-c5de-5103-a37c-84c2159ea11d",
+            "type": "rich_text_field",
+            "content": "<p>This form is not monitored around the clock. If you are thinking about harming yourself or someone else, call your local emergency number or a crisis line right away.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "cf94c637-448d-56c0-98e8-e31ce8886daf",
+            "type": "radio_field",
+            "label": "In the past two weeks, have you had thoughts of harming yourself or ending your life?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Yes, in passing",
+              "Yes, often",
+              "Prefer to discuss in session"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "51a54663-aa6e-5155-878e-0907ea8cc001",
+            "type": "radio_field",
+            "label": "How often do you drink alcohol or use recreational drugs?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Never",
+              "Monthly or less",
+              "Weekly",
+              "Several times a week",
+              "Daily",
+              "Prefer not to say"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "c4378e24-2390-5f9c-bf13-453b7c61c75a",
+            "type": "text_area_field",
+            "label": "What would you like to be different after therapy?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "a8e1ae85-f4c0-5dc8-8d03-e9e23f550135",
+        "title": "Preferences and consent",
+        "fields": [
+          {
+            "id": "a9a43421-7175-5c0d-8672-2d38f42a1ed3",
+            "type": "radio_field",
+            "label": "How would you like to meet?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "In person",
+              "Video",
+              "Phone",
+              "No preference"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5c757e76-f515-5317-b728-e1b80a277d85",
+            "type": "checkbox_field",
+            "label": "When are you usually free?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Weekday mornings",
+              "Weekday afternoons",
+              "Weekday evenings",
+              "Weekends"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "e5b6e3ff-c980-55d1-b0ec-318614c949ca",
+            "type": "rich_text_field",
+            "content": "<p>What you share in therapy is confidential. Your therapist may need to break confidentiality if there is a serious risk of harm to you or others, if a child or vulnerable adult is at risk, or if required by law. You can ask about this at any time.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "14f37345-be4d-5e1e-938b-65591035991e",
+            "type": "checkbox_field",
+            "label": "Informed consent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I have read and understand the confidentiality statement and agree to begin therapy"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "b36228df-7f4a-5be3-a348-f13ed0d4e4cb",
+            "type": "text_input_field",
+            "label": "Type your full name to confirm",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L1",
+      "content": "<h1>Before your first session</h1><p>These questions help your therapist get to know you. About ten minutes, and you can skip anything optional.</p>",
+      "thankYouContent": "<h1>Thank you for sharing</h1><p>Your therapist will read your answers before your first session. If you are in crisis, call your local emergency number now.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Begin",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

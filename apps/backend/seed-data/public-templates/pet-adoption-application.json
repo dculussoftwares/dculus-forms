@@ -1,0 +1,553 @@
+{
+  "slug": "pet-adoption-application",
+  "name": "Pet Adoption Application",
+  "description": "Screen adopters with household, home type, landlord permission, other pets, vet reference, daily routine and the pet they want.",
+  "category": "Nonprofit",
+  "seoTitle": "Free Pet Adoption Application Template",
+  "seoDescription": "Pet adoption application template for shelters and rescues: home type, landlord permission, household, other pets, vet reference and daily routine. Match well.",
+  "keywords": [
+    "pet adoption application",
+    "dog adoption application",
+    "cat adoption application form",
+    "animal rescue adoption form",
+    "pet adoption form",
+    "shelter adoption application"
+  ],
+  "tags": [
+    "Application",
+    "Multi-page",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 16465605
+    },
+    {
+      "source": "pexels",
+      "id": 12195429
+    }
+  ],
+  "thumbnailAlt": "Pet Adoption Application form beside a photo of a group of happy dogs standing behind a fence in an animal shelter yard",
+  "content": {
+    "intro": "A pet adoption application is a form that collects an adopter's household, home type, landlord permission, current and past pets, vet reference and daily routine so a shelter or rescue can match the right animal to the right home. This template asks the questions that predict a lasting adoption, such as hours alone, yard and fencing, and plans if circumstances change, and lets applicants upload a home photo or lease clause.",
+    "audience": "Animal shelters, foster-based rescues, breed rescues, humane societies, cat cafés and responsible breeders rehoming retired animals.",
+    "useCases": [
+      "An Adopt Me button on every animal profile on your website",
+      "Adoption events where visitors apply on their phone by QR code",
+      "Breed rescues screening applicants across several states",
+      "Foster-to-adopt programs where fosters apply to keep their pet"
+    ],
+    "tips": [
+      "Use conditional logic to ask for landlord permission only when the applicant rents.",
+      "Turn on edit history so your team can see who updated an application after the home check.",
+      "Add the email copy to the respondent so applicants have a record and know what happens next."
+    ],
+    "faq": [
+      {
+        "question": "What should a pet adoption application include?",
+        "answer": "Contact details and age confirmation, the animal they are applying for, household members and children's ages, home type, whether they own or rent and have landlord permission, yard and fencing, current and past pets with vaccination status, a vet reference, hours the pet will be alone, exercise and care plans, what they would do if they could no longer keep the pet, and consent to a home check."
+      },
+      {
+        "question": "Why do rescues ask for landlord permission?",
+        "answer": "Housing that does not allow pets is a common reason animals are returned to shelters. Confirming permission before adoption protects the animal and the adopter."
+      },
+      {
+        "question": "Do shelters contact my vet?",
+        "answer": "Many do, to confirm that current pets are vaccinated, neutered and seen regularly. The application asks for permission before anyone calls."
+      },
+      {
+        "question": "How long does pet adoption approval take?",
+        "answer": "It varies by organization, from same-day approvals at some shelters to one or two weeks at foster-based rescues that do reference and home checks."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "67640c8f-f504-505d-9fb5-05e71d6d4c32",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "b31f090f-d4c0-578d-9da2-3d01b1a02a76",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "7ce25335-d8f6-5071-9912-43757f889986",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "b31f090f-d4c0-578d-9da2-3d01b1a02a76",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "fd0a0a6c-390c-516a-a284-699f904f5ae2",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "b31f090f-d4c0-578d-9da2-3d01b1a02a76",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "bf41fdf6-0026-5c9b-bc7f-5c9cfcf480ed",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "43282f7b-b707-5085-a4e7-f82217b11d70",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "bf41fdf6-0026-5c9b-bc7f-5c9cfcf480ed",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "e8f5a615-430b-527c-924c-7bc957b1d898",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "bf41fdf6-0026-5c9b-bc7f-5c9cfcf480ed",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "05716712-1d6b-587a-a34a-491c0305697f",
+            "type": "text_area_field",
+            "label": "Home address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "d6242e7b-3395-5acb-98e7-add890078308",
+            "type": "text_input_field",
+            "label": "Name of the pet you are applying for",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Leave blank if you'd like us to suggest a match",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "a1d3dafb-f644-5068-9810-05b4a7acb71a",
+            "type": "radio_field",
+            "label": "Type of pet",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Dog",
+              "Cat",
+              "Rabbit",
+              "Other small animal",
+              "Open to suggestions"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "56806e87-1bd2-5b6b-b55c-543dc19367c9",
+        "title": "Your home",
+        "fields": [
+          {
+            "id": "a8683e6c-27df-53bb-b6a8-e66282c63ffc",
+            "type": "radio_field",
+            "label": "Type of home",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "House",
+              "Apartment or flat",
+              "Townhouse",
+              "Mobile home",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "f263ffcc-cdd2-541f-bfe1-155f0ca7deb4",
+            "type": "radio_field",
+            "label": "Do you own or rent?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Own",
+              "Rent",
+              "Live with family"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5ba5ca4e-fa6e-5d93-a426-7539eb75d797",
+            "type": "radio_field",
+            "label": "If you rent, does your landlord allow pets?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, in writing",
+              "Yes, verbally",
+              "Not yet asked",
+              "Not applicable"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "36f3fe0a-d18d-5bdc-806a-0451dcfcc61a",
+            "type": "radio_field",
+            "label": "Do you have a fenced yard?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, fully fenced",
+              "Partly fenced",
+              "No yard"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "7f24c4d6-2f63-509f-bad5-1785a705ac4d",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "3dfdc9d8-db47-5457-9579-5d2ce5399d6d",
+            "type": "number_field",
+            "label": "Adults in the home",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 1,
+            "max": 12,
+            "suffix": "adults",
+            "gridId": "7f24c4d6-2f63-509f-bad5-1785a705ac4d",
+            "gridColumn": 0,
+            "__type": "number_field"
+          },
+          {
+            "id": "696e1065-e0c4-548d-9162-ecefe48417ed",
+            "type": "number_field",
+            "label": "Children in the home",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 12,
+            "suffix": "children",
+            "gridId": "7f24c4d6-2f63-509f-bad5-1785a705ac4d",
+            "gridColumn": 1,
+            "__type": "number_field"
+          },
+          {
+            "id": "0889454f-eb36-56d3-b1c7-9aafafae2ca3",
+            "type": "text_input_field",
+            "label": "Ages of children",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "1eb725ac-2f5c-5382-8429-4cb4fe11716c",
+            "type": "file_upload_field",
+            "label": "Lease pet clause or photos of your home and yard",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*",
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 4,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "ef6380c5-8c73-593f-8390-60e76c17a47f",
+        "title": "Pets and lifestyle",
+        "fields": [
+          {
+            "id": "80378dd4-eb21-56a0-87ac-d1dc3d8273bf",
+            "type": "text_area_field",
+            "label": "Current pets: species, age, and whether spayed or neutered and vaccinated",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Write none if you have no pets",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "574ac534-4a1d-5574-994e-bb1a7243b797",
+            "type": "text_area_field",
+            "label": "Pets you've had in the past five years and what happened to them",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "90594154-7b35-534c-800a-22c977d5af2f",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "29e1fc3b-0fca-5c34-b66f-bfae453a0eef",
+            "type": "text_input_field",
+            "label": "Vet clinic name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "90594154-7b35-534c-800a-22c977d5af2f",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "7a9b31bc-d216-54ef-99d3-c757ec81ef5e",
+            "type": "phone_number_field",
+            "label": "Vet clinic phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "90594154-7b35-534c-800a-22c977d5af2f",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "99ed3382-a6a0-5c7f-8abd-5b3a9e8a806e",
+            "type": "number_field",
+            "label": "On a typical day, how many hours will the pet be alone?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 24,
+            "suffix": "hours",
+            "__type": "number_field"
+          },
+          {
+            "id": "f0b0cf3a-7603-58c7-b399-3e99a34956bb",
+            "type": "text_area_field",
+            "label": "Where will the pet sleep and stay when you are out?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "447d8425-91c1-5a91-b9d7-1c0ab154ceb9",
+            "type": "text_area_field",
+            "label": "What would you do if you moved or could no longer care for the pet?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "5f8c58af-45b2-55b5-abb8-85a6890afb5a",
+        "title": "Agreement",
+        "fields": [
+          {
+            "id": "ba346a29-e667-5d85-86dc-15ab0b7bd81d",
+            "type": "rich_text_field",
+            "content": "<p>Submitting this application does not guarantee adoption. We may contact your references and vet and arrange a home visit. If you can ever no longer keep the animal, we ask that you return it to us rather than rehome it yourself.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "408620dc-d099-572d-8ca5-5b6315ce9937",
+            "type": "checkbox_field",
+            "label": "Consent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "My answers are true, I am 18 or older, and I agree to reference, vet and home checks"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L2",
+      "content": "<h1>Apply to adopt</h1><p>Tell us about your home so we can find the right match. About eight minutes.</p>",
+      "thankYouContent": "<h1>Thank you for choosing adoption</h1><p>An adoption coordinator will review your application, contact your references and be in touch within a week to arrange a meet-and-greet.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Apply",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

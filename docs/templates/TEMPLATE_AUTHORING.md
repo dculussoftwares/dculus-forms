@@ -227,6 +227,60 @@ untouched.
 | `workshop-feedback-form` | Education | L7 | 1 | 9 | ~3 min | pexels 5756649 | text_input, radio, text_area, checkbox, email |
 | `patient-intake-form` | Healthcare | L6 | 4 | 18 | ~6 min | pexels 6129159 (fallback 4269274) | grid, text_input, date, select, phone_number, email, text_area, file_upload, checkbox, radio, rich_text |
 
-Ideas for the next batch (high search volume, no overlap): lead generation, product order,
-support ticket, course registration, membership application, gym/class booking, NPS-only
-survey, employee feedback, quiz (uses `formSchema.settings.quiz`), appointment request.
+
+**Expansion batch (50 templates).** Specs were written per niche (one search intent each) and expanded to these files; categories were chosen so every category page has at least 3 templates (the landing site keeps thinner category pages out of search).
+
+| Slug | Category | Layout | Pages | Questions | Photo | Field types |
+|---|---|---|---|---|---|---|
+| `catering-inquiry-form` | Hospitality | L5 | 2 | 16 | pexels 34321369 | grid, text_input, email, phone_number, select, date, number, radio, text_area, checkbox |
+| `church-membership-form` | Nonprofit | L1 | 3 | 16 | pexels 8674809 | grid, text_input, email, phone_number, text_area, date, radio, checkbox, rich_text |
+| `client-intake-form` | Business | L6 | 4 | 22 | pexels 7821711 | grid, text_input, email, phone_number, select, radio, checkbox, text_area, date, file_upload |
+| `conference-registration-form` | Events | L8 | 3 | 18 | pexels 9275222 | grid, text_input, email, phone_number, radio, checkbox, text_area |
+| `creative-brief-form` | Business | L4 | 4 | 18 | pexels 7763078 | grid, text_input, email, radio, text_area, checkbox, file_upload, date |
+| `customer-complaint-form` | Customer Support | L7 | 1 | 12 | pexels 13735967 | grid, text_input, email, phone_number, date, radio, text_area, file_upload |
+| `customer-feedback-form` | Feedback & Surveys | L3 | 1 | 12 | pexels 4921263 | radio, text_area, grid, text_input, email, checkbox |
+| `donation-pledge-form` | Nonprofit | L5 | 1 | 16 | pexels 6646918 | grid, text_input, email, phone_number, radio, number, date, rich_text, checkbox |
+| `employee-performance-review-form` | HR & Recruiting | L6 | 4 | 25 | pexels 18955789 | grid, text_input, date, radio, rich_text, text_area, checkbox |
+| `employee-satisfaction-survey` | Feedback & Surveys | L7 | 3 | 14 | pexels 7888760 | rich_text, select, radio, text_area |
+| `field-trip-permission-slip` | Education | L7 | 1 | 11 | pexels 39505454 | rich_text, grid, text_input, radio, phone_number, email, text_area, checkbox |
+| `grant-application-form` | Nonprofit | L2 | 3 | 24 | pexels 7674594 | text_input, radio, grid, email, phone_number, select, text_area, date, number, file_upload, checkbox |
+| `gym-membership-application-form` | Wellness & Beauty | L2 | 3 | 15 | pexels 9958674 | grid, text_input, email, phone_number, date, text_area, radio, checkbox, rich_text |
+| `hotel-booking-request-form` | Hospitality | L3 | 1 | 14 | pexels 5378703 | grid, date, number, radio, text_input, email, phone_number, text_area, checkbox |
+| `incident-report-form` | Operations & IT | L6 | 4 | 20 | pexels 12234106 | grid, text_input, email, phone_number, radio, date, text_area, file_upload, checkbox |
+| `internship-application-form` | HR & Recruiting | L2 | 4 | 22 | pexels 6913297 | grid, text_input, email, phone_number, radio, date, select, number, text_area, file_upload |
+| `it-access-request-form` | Operations & IT | L2 | 3 | 18 | pexels 31112222 | grid, text_input, email, radio, checkbox, text_area, date, rich_text |
+| `it-support-request-form` | Customer Support | L9 | 1 | 11 | pexels 7639370 | grid, text_input, email, select, radio, text_area, file_upload |
+| `lead-generation-form` | Marketing & Sales | L9 | 1 | 11 | pexels 36766751 | grid, text_input, email, phone_number, radio, text_area, select, checkbox |
+| `liability-waiver` | Finance & Legal | L9 | 1 | 14 | pexels 13737937 | grid, text_input, date, email, phone_number, radio, text_area, rich_text, checkbox |
+| `loan-application-form` | Finance & Legal | L6 | 4 | 22 | pexels 8292830 | grid, text_input, email, phone_number, date, text_area, radio, number, select, file_upload, rich_text, checkbox |
+| `maintenance-request-form` | Real Estate | L3 | 1 | 12 | pexels 7641255 | grid, text_input, phone_number, email, select, radio, text_area, file_upload |
+| `medical-history-form` | Healthcare | L6 | 4 | 20 | pexels 7578799 | grid, text_input, date, radio, email, phone_number, checkbox, text_area, rich_text |
+| `newsletter-signup-form` | Marketing & Sales | L8 | 1 | 5 | pexels 6816989 | grid, text_input, email, checkbox, radio, rich_text |
+| `nps-survey` | Feedback & Surveys | L9 | 1 | 6 | pexels 5990939 | radio, text_area, email, checkbox |
+| `order-form` | Marketing & Sales | L7 | 1 | 13 | pexels 7310197 | grid, text_input, phone_number, email, select, number, radio, text_area, date |
+| `party-rsvp-form` | Events | L4 | 1 | 9 | pexels 23495684 | text_input, radio, grid, number, checkbox, email, phone_number, text_area |
+| `permit-application-form` | Government | L2 | 3 | 20 | pexels 6285155 | grid, text_input, email, phone_number, radio, text_area, select, number, date, file_upload, rich_text, checkbox |
+| `personal-training-intake-form` | Wellness & Beauty | L8 | 3 | 21 | pexels 6455906 | grid, text_input, date, email, phone_number, radio, text_area, number, checkbox, file_upload |
+| `personality-quiz` | Quizzes | L8 | 1 | 10 | pexels 5253854 | grid, text_input, email, radio |
+| `pet-adoption-application` | Nonprofit | L2 | 4 | 23 | pexels 16465605 | grid, text_input, date, email, phone_number, text_area, radio, number, file_upload, rich_text, checkbox |
+| `photo-release-form` | Finance & Legal | L4 | 3 | 14 | pexels 8117810 | grid, text_input, email, phone_number, radio, checkbox, text_area, rich_text, date |
+| `property-inquiry-form` | Real Estate | L5 | 1 | 11 | pexels 8815820 | grid, text_input, phone_number, email, checkbox, text_area, radio |
+| `public-records-request-form` | Government | L4 | 3 | 17 | pexels 8369203 | grid, text_input, email, phone_number, text_area, radio, select, date, file_upload, number, rich_text, checkbox |
+| `rental-application-form` | Real Estate | L2 | 4 | 28 | pexels 29871187 | text_input, grid, email, phone_number, date, radio, text_area, number, file_upload, rich_text, checkbox |
+| `request-for-quote-form` | Business | L5 | 3 | 14 | pexels 33559565 | grid, text_input, email, phone_number, radio, text_area, number, select, file_upload, date |
+| `safety-training-quiz` | Quizzes | L1 | 2 | 14 | pexels 8961130 | grid, text_input, date, radio, checkbox |
+| `salon-client-intake-form` | Wellness & Beauty | L4 | 3 | 16 | pexels 3992861 | grid, text_input, email, phone_number, select, radio, checkbox, text_area, file_upload, rich_text |
+| `scholarship-application-form` | Education | L2 | 4 | 21 | pexels 6549912 | grid, text_input, email, phone_number, date, text_area, radio, number, file_upload, checkbox |
+| `sports-registration-form` | Events | L8 | 3 | 20 | pexels 10475536 | grid, text_input, date, radio, select, email, phone_number, checkbox, text_area, rich_text |
+| `student-registration-form` | Education | L6 | 4 | 25 | pexels 39191140 | grid, text_input, date, radio, select, email, phone_number, text_area, checkbox, file_upload, rich_text |
+| `summer-camp-registration-form` | Education | L1 | 4 | 24 | pexels 5036946 | grid, text_input, date, select, radio, checkbox, phone_number, email, text_area, file_upload, rich_text |
+| `support-ticket-form` | Customer Support | L1 | 2 | 12 | pexels 5453809 | grid, text_input, email, radio, select, text_area, file_upload |
+| `therapy-intake-form` | Healthcare | L1 | 4 | 20 | pexels 23496505 | grid, text_input, email, phone_number, date, radio, text_area, checkbox, rich_text |
+| `time-off-request-form` | HR & Recruiting | L5 | 1 | 11 | pexels 6170647 | grid, text_input, email, select, date, number, radio, text_area |
+| `travel-booking-form` | Hospitality | L7 | 2 | 16 | pexels 7642122 | text_input, grid, date, radio, number, checkbox, text_area, email, phone_number |
+| `trivia-quiz` | Quizzes | L9 | 2 | 12 | pexels 7022167 | text_input, email, radio, number |
+| `vehicle-service-request-form` | Business | L3 | 4 | 18 | pexels 8985452 | grid, text_input, phone_number, email, number, checkbox, text_area, file_upload, date, radio |
+| `vendor-registration-form` | Business | L1 | 4 | 23 | pexels 6169643 | grid, text_input, radio, text_area, number, email, phone_number, checkbox, file_upload, rich_text |
+| `work-order-form` | Operations & IT | L5 | 3 | 15 | pexels 6419128 | grid, text_input, email, phone_number, text_area, select, radio, file_upload, date |
+
+Ideas for the next batch (high search volume, no overlap): dental intake, chiropractic intake, demo request, feature request, refund request, event volunteer, class registration, catering order, home buyer questionnaire, employee information form — and more Government templates (only 2 today, so that category page is noindex until it reaches 3).

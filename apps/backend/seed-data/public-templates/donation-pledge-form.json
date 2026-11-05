@@ -1,0 +1,408 @@
+{
+  "slug": "donation-pledge-form",
+  "name": "Donation Pledge",
+  "description": "Record donor pledges without taking money: donor details, pledge amount, schedule, fund designation and how they want to be recognized.",
+  "category": "Nonprofit",
+  "seoTitle": "Free Donation Pledge Form Template",
+  "seoDescription": "Donation pledge form template that records pledges without collecting money. Captures donor details, amount, schedule, fund, recognition and matching gifts.",
+  "keywords": [
+    "donation pledge form",
+    "pledge form template",
+    "pledge card",
+    "fundraising pledge form",
+    "capital campaign pledge form",
+    "church pledge form"
+  ],
+  "tags": [
+    "Fundraising",
+    "Pledge"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6646918
+    },
+    {
+      "source": "pexels",
+      "id": 6646952
+    }
+  ],
+  "thumbnailAlt": "Donation Pledge form beside a photo of volunteers distributing aid at an outdoor donation center, promoting social impact and diversity",
+  "content": {
+    "intro": "A donation pledge form is a form that records a donor's promise to give a set amount over a set period, along with their contact details, the fund it supports and how they want to be recognized, so a nonprofit can track commitments and send reminders. This template collects no money: it captures the pledge, and you share your giving options with the donor afterward.",
+    "audience": "Churches, schools, capital campaign committees, community foundations, alumni groups and charity gala organizers.",
+    "useCases": [
+      "A capital campaign for a new building with multi-year pledges",
+      "An annual church stewardship drive",
+      "Pledge cards at a gala or fundraising dinner, filled in by QR code",
+      "A school or alumni giving day"
+    ],
+    "tips": [
+      "Put a QR code to the form on each table at your event so guests can pledge from their phones during the appeal.",
+      "Send the donor an email copy of their pledge with your giving options, using the donor's email field as the recipient.",
+      "Send pledges to Google Sheets or export to Excel, then add a column to track gifts received against each pledge."
+    ],
+    "faq": [
+      {
+        "question": "What should a donation pledge form include?",
+        "answer": "The donor's name and contact details, the total pledge amount, how often and over what period they plan to give, the date of the first gift, the fund or project it supports, how they want to be listed in recognition, any tribute or matching gift details, and a short statement of intent."
+      },
+      {
+        "question": "Is a donation pledge legally binding?",
+        "answer": "It depends on the wording and where you are. Many charities treat pledges as statements of intent rather than enforceable contracts, while some written pledges can be enforceable. Check your local rules and accounting guidance."
+      },
+      {
+        "question": "Can donors give money through this form?",
+        "answer": "No. This form records the pledge only. Share your online giving page, bank details or check instructions in the confirmation email or thank-you message."
+      },
+      {
+        "question": "How do I follow up on pledges?",
+        "answer": "Keep pledges in a spreadsheet using the Google Sheets plugin or an Excel export, note each gift as it arrives, and send reminders before each scheduled date to donors who asked for them."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "bdbea487-a620-5416-ba80-ece84f48f7a3",
+        "title": "Your pledge",
+        "fields": [
+          {
+            "id": "3801e898-22f9-5cd2-8351-c8c88ec9d358",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ca07f1b0-4ccb-5e87-a691-d1d8180da772",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "3801e898-22f9-5cd2-8351-c8c88ec9d358",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c0d4a70a-4cef-58a8-a6dd-527e7daefe67",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "3801e898-22f9-5cd2-8351-c8c88ec9d358",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "7da6835f-2f62-5280-be7f-9ad01b25a9ad",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "e9b1c85d-8903-52d5-b49a-ade69db52958",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "7da6835f-2f62-5280-be7f-9ad01b25a9ad",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "e9ffeb9d-c084-5341-84d1-b914dcacf442",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "7da6835f-2f62-5280-be7f-9ad01b25a9ad",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "67ff791c-5b73-5247-9f10-9e87b50a6ee8",
+            "type": "radio_field",
+            "label": "Pledging as",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "An individual",
+              "A couple or family",
+              "A business or organization"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "2787d948-6ff9-55c5-bb59-5053988e69ff",
+            "type": "number_field",
+            "label": "Total pledge amount",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 1,
+            "max": 10000000,
+            "suffix": "USD",
+            "__type": "number_field"
+          },
+          {
+            "id": "41276450-9afa-5aa1-aad4-6163945c0907",
+            "type": "radio_field",
+            "label": "How would you like to give it?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "One gift",
+              "Monthly",
+              "Quarterly",
+              "Once a year"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "9f9d4770-bae7-5551-addf-611487a927cb",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "f7bac20c-b991-5894-9e81-42ca00bec5b4",
+            "type": "radio_field",
+            "label": "Pledge period",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Within 3 months",
+              "1 year",
+              "2 years",
+              "3 years",
+              "5 years"
+            ],
+            "gridId": "9f9d4770-bae7-5551-addf-611487a927cb",
+            "gridColumn": 0,
+            "__type": "radio_field"
+          },
+          {
+            "id": "a98fa380-1328-584b-b1e9-d771dc3472c5",
+            "type": "date_field",
+            "label": "Date of first gift",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9f9d4770-bae7-5551-addf-611487a927cb",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "7e606437-c5a3-57e6-86a7-20f3904ab9e9",
+            "type": "radio_field",
+            "label": "Which fund should your pledge support?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Where it's needed most",
+              "Building fund",
+              "Scholarships",
+              "Programs and services",
+              "Endowment"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "2ad772e6-6abc-55cb-bc75-71265853040f",
+            "type": "text_input_field",
+            "label": "Is this gift in honor or memory of someone?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Their name",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "f3b5012a-3313-5a34-9e46-38ed8619483c",
+            "type": "radio_field",
+            "label": "Recognition",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "List my name as written below",
+              "List me as Anonymous"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "309d3bc0-d8c4-558d-a4fc-74537b1c0dcc",
+            "type": "text_input_field",
+            "label": "Name as it should appear",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional, for example The Garcia Family",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "1d29e862-be84-513a-8c31-f1850b339c2c",
+            "type": "radio_field",
+            "label": "Will your employer match this gift?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "d63023b4-986a-5f74-b90f-86a242d1bbae",
+            "type": "radio_field",
+            "label": "Would you like a reminder before each gift is due?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, email me a reminder",
+              "No reminders, thanks"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "a0d2d7a6-55d3-5ffd-b6f6-da65eabd1ef5",
+            "type": "rich_text_field",
+            "content": "<p>This pledge is a statement of my intention to give. No money is collected on this form. I can change or cancel my pledge by contacting the development office.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "0f37dbdf-b466-5e65-8df5-ed32f95b2b05",
+            "type": "checkbox_field",
+            "label": "Confirmation",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I confirm my pledge as described above"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L5",
+      "content": "<h1>Make a pledge</h1><p>Tell us what you plan to give and when. It takes about two minutes, and no money is taken here.</p>",
+      "thankYouContent": "<h1>Thank you for your pledge</h1><p>We'll email you a copy of your pledge with ways to give, plus a reminder before each date you chose.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Make my pledge",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

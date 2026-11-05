@@ -1,0 +1,500 @@
+{
+  "slug": "sports-registration-form",
+  "name": "Sports Registration",
+  "description": "Sign players up for a youth or adult sports season: player details, division, experience, kit size, medical notes and consent.",
+  "category": "Events",
+  "seoTitle": "Free Sports Registration Form Template",
+  "seoDescription": "Sports registration form template for youth and adult leagues. Collects player details, division, experience, jersey size, emergency contact and risk consent.",
+  "keywords": [
+    "sports registration form",
+    "youth sports registration form",
+    "league registration form",
+    "sports team sign up form",
+    "player registration form",
+    "season registration form"
+  ],
+  "tags": [
+    "Registration",
+    "Consent",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 10475536
+    },
+    {
+      "source": "pexels",
+      "id": 38116797
+    }
+  ],
+  "thumbnailAlt": "Sports Registration form beside a photo of young boys playing a competitive soccer match outdoors on a sunny day",
+  "content": {
+    "intro": "A sports registration form is a form that collects a player's details, age division, experience level, uniform size, emergency contact and medical notes, plus an acknowledgement of risk, so a league or club can build balanced teams for the season. This template works for youth leagues with a parent or guardian filling it in and for adult leagues where players sign themselves up.",
+    "audience": "Youth soccer, basketball, baseball and netball leagues, community sports clubs, rec departments and adult social leagues.",
+    "useCases": [
+      "Spring or fall season sign-up for a youth soccer league",
+      "Adult rec basketball or volleyball league registration",
+      "Club tryout registration before team selection",
+      "Summer clinic or skills program sign-up"
+    ],
+    "tips": [
+      "Export registrations to Excel and sort by division and experience to draft balanced teams.",
+      "Use conditional logic to show the parent or guardian section only when the player is under 18.",
+      "Set a response limit per form in Form Settings so registration closes when the season's roster spots are filled."
+    ],
+    "faq": [
+      {
+        "question": "What should a sports registration form include?",
+        "answer": "The player's name and date of birth, division or age group, experience level and position, jersey size, parent or guardian contact for minors, an emergency contact, medical conditions or allergies, and agreement to the league's code of conduct and risk acknowledgement."
+      },
+      {
+        "question": "How do leagues place players in age divisions?",
+        "answer": "Most youth leagues place players by their age on a set cutoff date or by birth year, as set by their governing body. Asking for date of birth lets you check each player's division before you build teams."
+      },
+      {
+        "question": "Is the consent section in this template a legal waiver?",
+        "answer": "It is a plain-language acknowledgement of risk with a typed name and a consent box. Waiver rules differ by state, country and sport, so have the wording reviewed for your local rules and your insurer's requirements."
+      },
+      {
+        "question": "Can parents register more than one child?",
+        "answer": "Yes. Parents submit the form once per child, which keeps each player's medical notes and division separate in your responses and exports."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "f0ff5abb-e7bb-5c30-8185-84bdef7bc7de",
+        "title": "Player",
+        "fields": [
+          {
+            "id": "c6a3872a-c17c-5ea9-8b6a-32f580bb9717",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c6250d03-98ec-5f61-9280-24f69a4a8242",
+            "type": "text_input_field",
+            "label": "Player first name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "c6a3872a-c17c-5ea9-8b6a-32f580bb9717",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "f12bc1f8-cf63-510c-b1fe-4482d278f144",
+            "type": "text_input_field",
+            "label": "Player last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "c6a3872a-c17c-5ea9-8b6a-32f580bb9717",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "7f35dc4f-5606-5ddb-851d-6a47a0aafa0a",
+            "type": "date_field",
+            "label": "Player date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "4a3c8ace-e895-53ab-8f51-a7382cc60f96",
+            "type": "radio_field",
+            "label": "Player gender",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Used for division placement where the league has separate divisions",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Female",
+              "Male",
+              "Non-binary",
+              "Prefer not to say"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "99033f09-e202-5027-9455-a224f66a9a9a",
+            "type": "select_field",
+            "label": "Division",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under 6",
+              "Under 8",
+              "Under 10",
+              "Under 12",
+              "Under 14",
+              "Under 16",
+              "Under 18",
+              "Adult open",
+              "Adult over 35"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "9a41aa9d-146d-5497-9981-e67d20641e81",
+            "type": "radio_field",
+            "label": "Experience level",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "New to the sport",
+              "1 to 2 seasons",
+              "3 or more seasons",
+              "Club or competitive level"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "dbeb11e2-0b64-5f11-bc9e-ea41d52ff2ba",
+            "type": "text_input_field",
+            "label": "Preferred position",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "7c02b224-60cd-538a-b2e1-513c77f94a19",
+            "type": "select_field",
+            "label": "Jersey size",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Youth XS",
+              "Youth S",
+              "Youth M",
+              "Youth L",
+              "Adult S",
+              "Adult M",
+              "Adult L",
+              "Adult XL",
+              "Adult XXL"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "df46d310-a81f-57b9-9f07-307d95b7241e",
+            "type": "text_input_field",
+            "label": "Teammate or coach request",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. We'll try but can't promise",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "2311b952-cfbd-54ba-8f33-e89c51c446a1",
+        "title": "Contacts",
+        "fields": [
+          {
+            "id": "e38c07e8-864f-5b75-bd22-68446ed2aacb",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c5de1347-adf2-5532-b39c-d1dbf942bf1b",
+            "type": "text_input_field",
+            "label": "Parent or guardian name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Required if the player is under 18",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "e38c07e8-864f-5b75-bd22-68446ed2aacb",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "956e5c9b-48e7-56a4-938b-73ff8acf95b2",
+            "type": "text_input_field",
+            "label": "Relationship to player",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "e38c07e8-864f-5b75-bd22-68446ed2aacb",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "6e9e2444-6670-5582-930e-bfd13fd0e46f",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "65699ede-130e-5574-9971-9a4cd6dca459",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "6e9e2444-6670-5582-930e-bfd13fd0e46f",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "545fcc08-29be-52cd-931e-2e9842fff48c",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "6e9e2444-6670-5582-930e-bfd13fd0e46f",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "53a9049c-c32d-5ded-a8b3-f7e81f90fff8",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "7ae6f99e-2f5c-59ec-b4cf-5253bddadb36",
+            "type": "text_input_field",
+            "label": "Emergency contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "53a9049c-c32d-5ded-a8b3-f7e81f90fff8",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "0179fa63-1d97-590c-a4be-29e85db1ec01",
+            "type": "phone_number_field",
+            "label": "Emergency contact phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "53a9049c-c32d-5ded-a8b3-f7e81f90fff8",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "24dfe519-6fd6-5f56-9ebc-d521b3de0065",
+            "type": "checkbox_field",
+            "label": "Can you help out this season?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Head or assistant coach",
+              "Team manager",
+              "Referee or umpire",
+              "Snack and drinks rota",
+              "Field setup"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "db2b02ab-a154-5d76-94e4-328e908bfba4",
+        "title": "Health and consent",
+        "fields": [
+          {
+            "id": "747a62ca-5cf0-52ff-bca5-7648f33d7a91",
+            "type": "text_area_field",
+            "label": "Medical conditions, allergies or injuries the coach should know about",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. For example asthma, diabetes or a recent injury",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "47e677cd-adbd-5a5c-824a-95d938bd9b95",
+            "type": "rich_text_field",
+            "content": "<p><strong>Acknowledgement of risk.</strong> Sports involve physical contact and a risk of injury. By registering, I confirm the player is fit to take part, agree to follow the league's code of conduct, and allow coaches to arrange first aid or emergency medical care if I cannot be reached.</p><p>Team photos may be taken during the season for league use.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "0702100b-e200-5f57-a055-9d56096b3dac",
+            "type": "radio_field",
+            "label": "May we use photos of the player on league channels?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "a204cc12-8993-5677-9b35-a33d6be64a27",
+            "type": "text_input_field",
+            "label": "Full name of player (18+) or parent/guardian",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Typing your name confirms the agreement below",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "6babe709-c7eb-5e47-bace-cd07bc9968a5",
+            "type": "checkbox_field",
+            "label": "Agreement",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I have read and agree to the acknowledgement of risk and code of conduct"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L8",
+      "content": "<h1>Register for the new season</h1><p>Sign up a player for this season. It takes about four minutes.</p>",
+      "thankYouContent": "<h1>Registration received</h1><p>We'll email team placements and the practice schedule before the season starts.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Sign up",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

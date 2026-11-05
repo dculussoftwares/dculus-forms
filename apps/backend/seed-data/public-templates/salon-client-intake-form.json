@@ -1,0 +1,433 @@
+{
+  "slug": "salon-client-intake-form",
+  "name": "Salon Client Intake",
+  "description": "Learn a new salon client's hair type, color and chemical history, scalp sensitivities, allergies, styling routine and inspiration photos.",
+  "category": "Wellness & Beauty",
+  "seoTitle": "Free Salon Client Intake Form Template",
+  "seoDescription": "Salon client intake form template for hair history, color and chemical services, allergies, scalp concerns, styling habits and inspiration photos. Plan well.",
+  "keywords": [
+    "salon client intake form",
+    "hair salon client consultation form",
+    "new client salon form",
+    "hair stylist intake form",
+    "salon client record card",
+    "hair color consultation form"
+  ],
+  "tags": [
+    "Intake",
+    "File Upload",
+    "Consent"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 3992861
+    },
+    {
+      "source": "pexels",
+      "id": 3992875
+    }
+  ],
+  "thumbnailAlt": "Salon Client Intake form beside a photo of two women engaged in a hair consultation at a salon, reflecting professionalism and style",
+  "content": {
+    "intro": "A salon client intake form is a form that collects a new client's hair type, past color and chemical treatments, allergies, scalp sensitivities and the look they want so a stylist can plan the service and run any needed patch tests before the client sits in the chair. This template asks the questions that change a color formula or rule out a relaxer, and lets clients upload inspiration photos so the consultation starts from a picture, not a guess.",
+    "audience": "Hair salons, independent stylists, colorists, barbers, booth renters and extension or keratin specialists welcoming new clients.",
+    "useCases": [
+      "Sending a link with every new-client booking confirmation",
+      "Balayage, color correction or blonding consultations booked in advance",
+      "Bridal hair trials where you need photos of the dress and veil",
+      "Updating the client record card when a regular has a big change"
+    ],
+    "tips": [
+      "Use conditional logic to ask about past reactions only when a client says they have had one.",
+      "Turn on email notifications so the stylist on the booking sees the inspiration photos the night before.",
+      "Use a PDF template to print each intake as a client record card that sits with the color formula."
+    ],
+    "faq": [
+      {
+        "question": "What should a salon client intake form include?",
+        "answer": "Contact details, hair type and texture, natural and current color, color and chemical treatments in the last two years, use of box dye or henna, allergies and past reactions to hair products, scalp conditions, daily styling routine and heat use, the service and look they want, inspiration photos, and consent for a patch test."
+      },
+      {
+        "question": "Why do salons ask about box dye and henna?",
+        "answer": "Home dyes and henna can react unpredictably with lightener and professional color, causing uneven results or damage. Knowing about them in advance lets the colorist plan a strand test or change the service."
+      },
+      {
+        "question": "Do I need a patch test before coloring hair?",
+        "answer": "Many color manufacturers recommend a skin allergy test 48 hours before every oxidation color service, and some insurers require it. Follow the instructions on the products you use and your insurer's terms."
+      },
+      {
+        "question": "Can clients send inspiration photos with the form?",
+        "answer": "Yes. The form has an upload field for up to five photos, stored privately with the client's answers."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "2e4b2bf7-18cb-51ae-9670-c097599f6307",
+        "title": "Your details",
+        "fields": [
+          {
+            "id": "a79f3ebf-ecd4-5d90-b152-45fb710f545a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "dfa89974-5599-54e0-b98f-9f32333e90d7",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a79f3ebf-ecd4-5d90-b152-45fb710f545a",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "479df24b-7c31-5141-a398-a5f3c4a0ec17",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a79f3ebf-ecd4-5d90-b152-45fb710f545a",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "0a333933-c54c-5f54-8717-86ec289489bd",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "09a6d4f2-2489-5861-b32c-d07cbb4acf87",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "0a333933-c54c-5f54-8717-86ec289489bd",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "b3bb5af0-5e31-52ea-8bfe-0eb9f1e3a4a0",
+            "type": "phone_number_field",
+            "label": "Mobile number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "0a333933-c54c-5f54-8717-86ec289489bd",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "2f991d55-4d8d-5ba5-b9a8-5d1d2369b1cd",
+            "type": "select_field",
+            "label": "Which service are you booked for?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Cut and style",
+              "All-over color",
+              "Highlights or balayage",
+              "Color correction",
+              "Perm or relaxer",
+              "Keratin or smoothing treatment",
+              "Extensions",
+              "Bridal or event styling",
+              "Not sure yet"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "502e73b7-cd40-5db3-8816-1397fa1ff54d",
+            "type": "radio_field",
+            "label": "How did you hear about us?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Instagram or TikTok",
+              "Google search",
+              "Friend or family",
+              "Walked past",
+              "Other"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "27f7e13b-0686-52f1-8142-ad2e3e73f27b",
+        "title": "Hair history",
+        "fields": [
+          {
+            "id": "97ef9720-ed34-579e-9c36-bdf1de5ec6ce",
+            "type": "radio_field",
+            "label": "Hair texture",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Straight",
+              "Wavy",
+              "Curly",
+              "Coily"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5a4dcfa9-e30d-58fe-985d-ef17e895309d",
+            "type": "radio_field",
+            "label": "Hair thickness",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Fine",
+              "Medium",
+              "Thick"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "00fe1142-78ab-5c63-be7c-640eab409dab",
+            "type": "checkbox_field",
+            "label": "Which treatments have you had in the last two years?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Salon color",
+              "Box dye at home",
+              "Henna",
+              "Bleach or lightener",
+              "Perm",
+              "Relaxer",
+              "Keratin treatment",
+              "None"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "d584f522-24ff-5505-a698-0328666f5e64",
+            "type": "radio_field",
+            "label": "Have you ever reacted to hair dye or a hair product?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Yes",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1199c39c-8bb7-566f-bfd0-29b38c155919",
+            "type": "text_area_field",
+            "label": "Allergies, scalp conditions or sensitivities",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. For example: psoriasis, itchy scalp after color, nickel allergy",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "9b22d80f-a260-5529-a97c-c622ad5c4556",
+            "type": "radio_field",
+            "label": "How often do you use heat tools?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Rarely",
+              "Once or twice a week",
+              "Most days",
+              "Every day"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "78173f2b-a507-5415-b7e3-f77401a3d5f1",
+        "title": "The look you want",
+        "fields": [
+          {
+            "id": "6a00631e-0c1d-5105-9160-0b7863ae18c2",
+            "type": "text_area_field",
+            "label": "Describe the look you want",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "What you love, what you never want again",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "837cef33-0abc-5a3a-b129-2a5a02c342c1",
+            "type": "radio_field",
+            "label": "How much time do you spend styling each morning?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under 5 minutes",
+              "5 to 15 minutes",
+              "15 to 30 minutes",
+              "Over 30 minutes"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ac1bbe41-b20f-57aa-8ba1-d6422b6b0631",
+            "type": "file_upload_field",
+            "label": "Inspiration photos",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 5 photos",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 5,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "4dc12d0b-0b80-5985-96b5-ef043b52be5c",
+            "type": "rich_text_field",
+            "content": "<p>For color services, we may ask you to come in for a skin allergy test at least 48 hours before your appointment. Results depend on your hair's history, so please tell us everything above.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "263f6287-7dd2-598f-aaf9-9b334d64d049",
+            "type": "checkbox_field",
+            "label": "Agreement",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "My answers are accurate and I agree to a patch or strand test if my stylist needs one"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L4",
+      "content": "<h1>Tell us about your hair</h1><p>A few questions so your stylist can plan the perfect appointment. About four minutes.</p>",
+      "thankYouContent": "<h1>See you in the chair</h1><p>Your stylist will review your answers and photos before your visit. If you need a patch test, we will contact you to arrange it.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Continue",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

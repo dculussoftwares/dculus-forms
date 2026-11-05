@@ -1,0 +1,389 @@
+{
+  "slug": "gym-membership-application-form",
+  "name": "Gym Membership Application",
+  "description": "Sign up new gym members online: contact details, membership plan, fitness goals, health check and liability waiver.",
+  "category": "Wellness & Beauty",
+  "seoTitle": "Free Gym Membership Application Form Template",
+  "seoDescription": "Gym membership application form template with contact details, plan choice, emergency contact, health questions and waiver consent. Sign members up online.",
+  "keywords": [
+    "gym membership application form",
+    "gym membership form",
+    "fitness center registration form",
+    "gym sign up form",
+    "health club membership form"
+  ],
+  "tags": [
+    "Membership",
+    "Waiver",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 9958674
+    },
+    {
+      "source": "pexels",
+      "id": 13211514
+    }
+  ],
+  "thumbnailAlt": "Gym Membership Application form beside a photo of group of adults practicing CrossFit with weights in an industrial-style gym",
+  "content": {
+    "intro": "A gym membership application form collects a new member's contact details, chosen plan, emergency contact and health information, plus their agreement to your gym rules. This template puts all of it in one mobile-friendly form so members can join before they walk in.",
+    "audience": "Gyms, fitness studios, CrossFit boxes and community leisure centres signing up new members.",
+    "useCases": [
+      "New member sign-ups at the front desk on a tablet",
+      "Online joining from your website or Instagram bio",
+      "Corporate wellness programme enrolment",
+      "Seasonal or student membership drives"
+    ],
+    "tips": [
+      "Share the form as a QR code at reception so walk-ins can join on their phone.",
+      "Turn on email notifications so the front desk sees each new application right away.",
+      "Export applications to Excel or send them to Google Sheets to keep your member list in one place."
+    ],
+    "faq": [
+      {
+        "question": "What should a gym membership application include?",
+        "answer": "Contact details, date of birth, the membership plan, an emergency contact, a short health questionnaire (PAR-Q style) and agreement to the gym's rules and liability waiver. This template includes all of them."
+      },
+      {
+        "question": "Can members sign up from their phone?",
+        "answer": "Yes. Every layout is mobile-first, so members can fill it in from a link, your website or a QR code at the front desk."
+      },
+      {
+        "question": "Can I change the membership plans?",
+        "answer": "Yes. Copy the template into your free account and edit the plan options, prices in the labels and every other question in the builder."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "67fff508-7bab-5dfd-98d6-c2aa50c6e669",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "14e279d0-c346-5d8b-b920-6bf0cc26081b",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ef999d7b-1069-5b73-ae8a-b19450f8e326",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "14e279d0-c346-5d8b-b920-6bf0cc26081b",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "6d713acb-53d6-51d8-8781-4ab7dc19f8ef",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "14e279d0-c346-5d8b-b920-6bf0cc26081b",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "40a9ea57-5242-5d69-bcdc-4aa33cb45e01",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "29fcfcae-45f9-54de-a904-1f67ebd4903a",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "40a9ea57-5242-5d69-bcdc-4aa33cb45e01",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "0cdd2b94-18ed-5483-8d2e-145bbcb72b78",
+            "type": "phone_number_field",
+            "label": "Mobile number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "40a9ea57-5242-5d69-bcdc-4aa33cb45e01",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "09c6080f-28d7-53e7-9400-87306678d165",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "faebde2a-386e-55d1-b6f5-b7eaf6712642",
+            "type": "text_area_field",
+            "label": "Home address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "26b245b5-348b-501f-92a6-6649724a659d",
+        "title": "Membership",
+        "fields": [
+          {
+            "id": "b5b0c2ea-3220-5f89-bfee-f401d3622371",
+            "type": "radio_field",
+            "label": "Membership plan",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Monthly",
+              "Quarterly",
+              "Annual",
+              "Student",
+              "Off-peak"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "cc7943ab-9bde-5f41-a3cb-237991034a70",
+            "type": "date_field",
+            "label": "Preferred start date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "fc566cd3-a8df-5258-87fd-f5d739bbd6ad",
+            "type": "checkbox_field",
+            "label": "What are your fitness goals?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Lose weight",
+              "Build strength",
+              "Improve fitness",
+              "Train for an event",
+              "Rehab or mobility",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "f0502eeb-b9e0-57d7-93cd-b4507a091fc7",
+            "type": "radio_field",
+            "label": "Would you like a free induction session?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, please",
+              "No, thanks"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "ca733b16-bba8-5026-9cec-10dcd9732de8",
+        "title": "Health and consent",
+        "fields": [
+          {
+            "id": "304eb71e-71ec-55b6-9844-8d90a3eeae1e",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "2fedb35c-7550-57d0-85fd-48949a2dcace",
+            "type": "text_input_field",
+            "label": "Emergency contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "304eb71e-71ec-55b6-9844-8d90a3eeae1e",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "e6c79c01-034f-5111-b838-86648d4731bf",
+            "type": "phone_number_field",
+            "label": "Emergency contact phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "304eb71e-71ec-55b6-9844-8d90a3eeae1e",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "edaa6b5e-cc6e-5c3e-9a06-2bd88308f49c",
+            "type": "radio_field",
+            "label": "Has a doctor ever advised you to exercise only under supervision?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "2eae0cc6-51bb-5de6-a5ab-28251c2ae950",
+            "type": "text_area_field",
+            "label": "Injuries or medical conditions we should know about",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "c9c9d48c-7802-554b-aed8-4226395c47a6",
+            "type": "rich_text_field",
+            "content": "<p>By joining you agree to follow the gym rules and accept that you exercise at your own risk.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "937b59dc-efc2-5cf3-ae34-3e836937eb4c",
+            "type": "checkbox_field",
+            "label": "Agreement",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I agree to the gym rules and liability waiver"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L2",
+      "content": "<h1>Join the gym</h1><p>Fill in your details and pick a plan. It takes about three minutes.</p>",
+      "thankYouContent": "<h1>Welcome aboard</h1><p>We have your application. Bring a photo ID on your first visit to collect your member card.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Join now",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

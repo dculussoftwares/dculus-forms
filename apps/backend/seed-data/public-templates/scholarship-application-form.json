@@ -1,0 +1,486 @@
+{
+  "slug": "scholarship-application-form",
+  "name": "Scholarship Application",
+  "description": "Take merit and need-based scholarship applications: academics, activities, household finances, an essay and transcript upload.",
+  "category": "Education",
+  "seoTitle": "Free Scholarship Application Form Template",
+  "seoDescription": "Scholarship application form template for merit and need-based awards. Collects GPA, activities, household income range, an essay, transcript and references.",
+  "keywords": [
+    "scholarship application form",
+    "scholarship application template",
+    "scholarship form",
+    "college scholarship application",
+    "need based scholarship application",
+    "merit scholarship application"
+  ],
+  "tags": [
+    "Application",
+    "File Upload",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6549912
+    },
+    {
+      "source": "pexels",
+      "id": 6550173
+    }
+  ],
+  "thumbnailAlt": "Scholarship Application form beside a photo of young woman engaged in research and writing in a library setting",
+  "content": {
+    "intro": "A scholarship application form is a form that collects a student's academic record, activities, financial circumstances, a personal essay and supporting documents so a selection committee can award funding on merit, need or both. This template keeps the financial questions optional for merit-only applicants and gathers transcripts and references as private uploads.",
+    "audience": "Community foundations, alumni associations, rotary and civic clubs, schools, colleges and family scholarship funds.",
+    "useCases": [
+      "A local foundation's annual scholarship for graduating high school seniors",
+      "A university department award for continuing students",
+      "A need-based grant for first-generation college students",
+      "A memorial scholarship run by a family or alumni group"
+    ],
+    "tips": [
+      "Use conditional logic to show the household finance page only to applicants who ask for need-based consideration.",
+      "Invite committee members to the form so several reviewers can read applications and compare per-question charts.",
+      "Set a closing date and time in Form Settings so applications stop exactly at your deadline."
+    ],
+    "faq": [
+      {
+        "question": "What should a scholarship application form include?",
+        "answer": "Contact details, school and year of study, GPA or grades, intended major, activities and awards, a personal essay, transcript and recommendation letter uploads, and, for need-based awards, household size and income range. End with a statement that the information is true."
+      },
+      {
+        "question": "How long should a scholarship essay be?",
+        "answer": "Most scholarships ask for 250 to 650 words. This template caps the essay at 4,000 characters, about 600 to 700 words; change the limit to match your prompt."
+      },
+      {
+        "question": "Should I ask for exact household income?",
+        "answer": "Only if your award is need-based, and income ranges are usually enough at the application stage. Ask for tax documents later from finalists only, which limits how much sensitive data you hold."
+      },
+      {
+        "question": "How do I compare applications fairly?",
+        "answer": "Export applications to Excel or CSV and score each one against the same rubric, such as academics, essay, activities and need. Removing names from the copy reviewers see helps reduce bias."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "d7266b5e-c723-5932-ba8b-e5949d897b23",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "06c60d68-8438-50ab-9882-8898df9c8017",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "12db8553-e853-590a-90ff-c963ac1068a9",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "06c60d68-8438-50ab-9882-8898df9c8017",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "5d4f6590-3b44-5a15-adaa-b5ef5a5919a4",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "06c60d68-8438-50ab-9882-8898df9c8017",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "b671ac5e-093f-5027-8c51-ff639187c3fd",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ee1e0297-3186-5182-b7cc-acd349827f03",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "b671ac5e-093f-5027-8c51-ff639187c3fd",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "3cf2f7fd-9880-5d4b-b9bc-93a382625dce",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "b671ac5e-093f-5027-8c51-ff639187c3fd",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "58c5888b-ce03-5d7a-97e6-58fdfbeb90ee",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "8731b818-6fc3-5181-a26b-7ab4e038e813",
+            "type": "text_area_field",
+            "label": "Mailing address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "c8acf096-1208-562b-8d5c-158f117994ab",
+        "title": "Academics and activities",
+        "fields": [
+          {
+            "id": "9084fea2-231c-5586-bb3a-b0a1614f7270",
+            "type": "text_input_field",
+            "label": "Current school, college or university",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "b679a943-4d40-57bd-a48c-02ff1385e35e",
+            "type": "radio_field",
+            "label": "Year of study this fall",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Incoming first-year",
+              "Second year",
+              "Third year",
+              "Fourth year or above",
+              "Graduate student"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "e91a6022-b1a3-52c1-adc1-9f64067ac454",
+            "type": "number_field",
+            "label": "Cumulative GPA",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "On a 4.0 scale",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 5,
+            "__type": "number_field"
+          },
+          {
+            "id": "875250f1-58d8-570d-8bcb-9ebc5961cc26",
+            "type": "text_input_field",
+            "label": "Intended major or field of study",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "57e71618-7f57-5d91-b9e5-b53bec0efe72",
+            "type": "text_area_field",
+            "label": "Activities, work and volunteering",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "List each with your role and hours per week",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "985fa45b-ed58-5e70-a0c0-970b635c51c8",
+            "type": "text_area_field",
+            "label": "Honors and awards",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "1282fd84-31a7-5136-a987-0046f2a7f5e2",
+        "title": "Financial need",
+        "fields": [
+          {
+            "id": "ef0bd720-675f-5499-ab44-641bf2ff43a7",
+            "type": "radio_field",
+            "label": "Would you like to be considered for need-based funding?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No, merit only"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5abc8cc3-d70d-5d45-9253-bd03f059c416",
+            "type": "number_field",
+            "label": "People in your household",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Answer if applying for need-based funding",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 1,
+            "max": 15,
+            "suffix": "people",
+            "__type": "number_field"
+          },
+          {
+            "id": "bcbc6daf-409f-5244-8dc9-2e3a3a11d0b6",
+            "type": "radio_field",
+            "label": "Annual household income",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Answer if applying for need-based funding",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under $30,000",
+              "$30,000 to $59,999",
+              "$60,000 to $99,999",
+              "$100,000 to $149,999",
+              "$150,000 or more",
+              "Prefer not to say"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1cee457a-7aaa-508e-a6da-21da4c31ddd8",
+            "type": "radio_field",
+            "label": "Will you be the first in your family to attend college?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "0308bd38-7c92-55a8-99d4-556871be9132",
+            "type": "text_area_field",
+            "label": "Other scholarships or aid you have received",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "8886238d-390d-5059-a23c-90d58616b90b",
+        "title": "Essay and documents",
+        "fields": [
+          {
+            "id": "c961b514-6a7d-55b6-a507-a6dabf508bf1",
+            "type": "text_area_field",
+            "label": "Essay: describe a challenge you have faced and what you learned from it",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "About 500 words",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 4000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "7db0d0c2-6b8f-5e27-b467-b43e6dd1a054",
+            "type": "file_upload_field",
+            "label": "Unofficial transcript",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 1,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "403e811f-4a9a-5e9c-a851-84892c672a27",
+            "type": "file_upload_field",
+            "label": "Recommendation letter",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. From a teacher, counselor or employer",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 2,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "e52eda27-4e2c-530e-be6d-2642b84588e7",
+            "type": "checkbox_field",
+            "label": "Certification",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I certify that this application is my own work and the information is true"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L2",
+      "content": "<h1>Apply for the scholarship</h1><p>Four sections: you, your studies, your finances and your essay. Allow about 20 minutes.</p>",
+      "thankYouContent": "<h1>Application received</h1><p>The selection committee reviews every application after the deadline. Finalists will be contacted by email for an interview.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Apply now",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

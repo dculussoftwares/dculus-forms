@@ -1,0 +1,414 @@
+{
+  "slug": "church-membership-form",
+  "name": "Church Membership",
+  "description": "Welcome new church members with household details, faith journey, baptism status, ministry interests and a statement of commitment.",
+  "category": "Nonprofit",
+  "seoTitle": "Free Church Membership Form Template",
+  "seoDescription": "Church membership form template with household members, faith background, baptism status, previous church, ministry interests and a covenant. Join online.",
+  "keywords": [
+    "church membership form",
+    "church membership application",
+    "new member church form",
+    "church registration form",
+    "join church form",
+    "parish registration form"
+  ],
+  "tags": [
+    "Membership",
+    "Consent"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 8674809
+    },
+    {
+      "source": "pexels",
+      "id": 8674117
+    }
+  ],
+  "thumbnailAlt": "Church Membership form beside a photo of a clergy member in green cassock smiling and interacting with parishioners seated in church pews",
+  "content": {
+    "intro": "A church membership form is a form that collects a person's contact and household details, faith background, baptism status, previous church and ministry interests so pastors and church staff can welcome them, plan a membership class and connect them to a team. This template lets one person register their whole household, asks gently about their faith journey, and ends with a commitment statement you can replace with your own covenant.",
+    "audience": "Churches, parishes, chapels and faith communities of any size, plus church administrators, membership coordinators and pastors.",
+    "useCases": [
+      "Membership Sunday sign-ups after a newcomers' class",
+      "A Join Us link in the weekly bulletin or church app",
+      "Updating the church directory when families move or grow",
+      "Parish registration for families moving into the area"
+    ],
+    "tips": [
+      "Put a QR code on the welcome card and the screens so people can join from their pew.",
+      "Send new members to Google Sheets so ministry leaders see who picked their team.",
+      "Turn on the email copy to the respondent so each new member gets a note with your next membership class."
+    ],
+    "faq": [
+      {
+        "question": "What should a church membership form include?",
+        "answer": "Name, contact details and address, household members and children's birthdates, how long they have attended, faith background and baptism status, previous church, interest in a membership class, ministries they would like to serve in, permission for the church directory, and a statement of faith or covenant."
+      },
+      {
+        "question": "Do people have to be baptized to become members?",
+        "answer": "It depends on the church and denomination. Many require baptism or a profession of faith, while others welcome people as they prepare for it; adjust the question to match your own rules."
+      },
+      {
+        "question": "How should a church protect members' personal information?",
+        "answer": "Collect only what you use, limit access to staff who need it, and ask before publishing anyone in a directory. Data protection rules for charities and churches vary by country, so check your local requirements."
+      },
+      {
+        "question": "Can one person register a whole family?",
+        "answer": "Yes. The form has space to list spouses and children, so one adult can register the household in one go."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "6739c25c-bdf8-5611-8d74-7593e6cfcb4f",
+        "title": "You and your household",
+        "fields": [
+          {
+            "id": "bba8fbd5-50c1-54ff-a682-8dc79575c8eb",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "77f51f4a-d905-5e88-b7ae-8cfb71620faf",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "bba8fbd5-50c1-54ff-a682-8dc79575c8eb",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "bc5b92f6-8947-5d2b-ad7b-2d77b687ee47",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "bba8fbd5-50c1-54ff-a682-8dc79575c8eb",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c27f3825-482b-5fda-8280-9c5962ce0e09",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "331ace54-671f-5d7b-895d-543f5e7338e1",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c27f3825-482b-5fda-8280-9c5962ce0e09",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "428dee7d-759e-5f99-92ee-741c88a3604d",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c27f3825-482b-5fda-8280-9c5962ce0e09",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "fd5af1fb-99fc-526a-aeee-f714496a717c",
+            "type": "text_area_field",
+            "label": "Home address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "424670a1-7ae3-5e57-b3da-b65a77bff6e9",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "58dd68dd-9257-59c3-ab63-99aacb291791",
+            "type": "radio_field",
+            "label": "Marital status",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Single",
+              "Married",
+              "Widowed",
+              "Divorced",
+              "Prefer not to say"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "7c0b9c6c-248f-550a-88c1-cd1c681d0687",
+            "type": "text_area_field",
+            "label": "Other household members joining with you",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Name, relationship and children's birthdates",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "12c9cb76-f1af-5ca0-a7b7-0c00b9332062",
+        "title": "Faith journey",
+        "fields": [
+          {
+            "id": "abb6aa57-b317-56b7-a706-e716b732ac50",
+            "type": "radio_field",
+            "label": "How long have you been attending?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "This is my first month",
+              "Less than 6 months",
+              "6 months to a year",
+              "More than a year"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "dec2f915-9240-5a1d-9d1a-a14aa989c42e",
+            "type": "radio_field",
+            "label": "Have you been baptized?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No",
+              "I would like to be",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "583c3f43-ba49-5ab2-8e44-c29509a4b3b8",
+            "type": "text_input_field",
+            "label": "Previous church and city",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 150
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "e8a53c3f-6f6a-5756-92e7-612961ca42a3",
+            "type": "radio_field",
+            "label": "How would you like to become a member?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Profession of faith",
+              "Transfer from another church",
+              "Baptism",
+              "I'd like to talk to a pastor first"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "a5e26abb-34a3-55ca-bd54-992570b6aa93",
+            "type": "text_area_field",
+            "label": "Share a little about your faith journey",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "68e4864e-21aa-558a-8073-67de282f8c08",
+        "title": "Getting involved",
+        "fields": [
+          {
+            "id": "3e9285b1-68a8-5147-862c-f9e390badf6e",
+            "type": "checkbox_field",
+            "label": "Where would you like to serve?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Worship and music",
+              "Children's ministry",
+              "Youth ministry",
+              "Small groups",
+              "Hospitality and welcome",
+              "Outreach and missions",
+              "Prayer team",
+              "Media and tech",
+              "Facilities"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "cb2886ec-aee8-53dd-b806-c9563ec36d2b",
+            "type": "radio_field",
+            "label": "Can we list you in the church directory?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, name and contact details",
+              "Name only",
+              "No, please keep me private"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "a3448853-8b8f-54fa-ad1b-8c6b26304b13",
+            "type": "rich_text_field",
+            "content": "<p>As a member, I commit to growing in faith, taking part in the life of this church, supporting its mission with my time and gifts, and caring for my fellow members. Replace this text with your church's own covenant or statement of faith.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "530d3f34-3872-5775-b9dd-b7b71f338bba",
+            "type": "checkbox_field",
+            "label": "Commitment",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I have read the membership commitment and wish to become a member"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L1",
+      "content": "<h1>Become a member</h1><p>We're glad you're here. Tell us about you and your household. About five minutes.</p>",
+      "thankYouContent": "<h1>Welcome to the family</h1><p>A pastor or member of our welcome team will contact you this week about the next membership class.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Join",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

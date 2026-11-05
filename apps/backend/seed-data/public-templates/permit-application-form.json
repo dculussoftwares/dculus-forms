@@ -1,0 +1,501 @@
+{
+  "slug": "permit-application-form",
+  "name": "Permit Application",
+  "description": "Municipal permit application: applicant, property and parcel, permit type, project scope, valuation, contractor and plans upload.",
+  "category": "Government",
+  "seoTitle": "Free Permit Application Form Template",
+  "seoDescription": "Permit application form template for city permits: applicant and owner, property and parcel number, permit type, scope, valuation, contractor and site plans.",
+  "keywords": [
+    "permit application form",
+    "building permit application form",
+    "municipal permit application",
+    "construction permit form",
+    "city permit application template",
+    "event permit application form"
+  ],
+  "tags": [
+    "Government",
+    "File Upload",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6285155
+    },
+    {
+      "source": "pexels",
+      "id": 8961295
+    }
+  ],
+  "thumbnailAlt": "Permit Application form beside a photo of two architects in hard hats discuss blueprints in a modern office setting, highlighting teamwork and planning",
+  "content": {
+    "intro": "A permit application form is a form that collects the applicant and property owner details, the property address and parcel number, the type of permit, the project scope and value, the contractor and supporting plans so a city or county can review whether work or an activity may go ahead. This template handles building, electrical, plumbing, demolition, sign and special event permits in one intake, with plan uploads attached to the application.",
+    "audience": "City and county permit offices, building departments, planning and zoning staff, and small towns moving paper permit counters online.",
+    "useCases": [
+      "Residential building permits for decks, sheds and remodels",
+      "Trade permits for electrical, plumbing and HVAC work",
+      "Sign, fence and driveway permits",
+      "Special event, block party and street use permits"
+    ],
+    "tips": [
+      "Use conditional logic to show contractor license questions only when a licensed contractor is doing the work, and event questions only for event permits.",
+      "Accept site plans and drawings as private file uploads so reviewers can open them straight from the response.",
+      "Use PDF templates to generate a filled permit application per submission for your review file or archive."
+    ],
+    "faq": [
+      {
+        "question": "What should a permit application form include?",
+        "answer": "The applicant's and owner's details, the property address and parcel number (APN), the permit type, a description of the work or activity, estimated project value, start and end dates, contractor name and license number, and uploads such as site plans, drawings or a certificate of insurance."
+      },
+      {
+        "question": "What work usually needs a permit?",
+        "answer": "New buildings, additions, structural changes, most electrical, plumbing and gas work, demolition, and often fences, decks, signs and large events. Small cosmetic work like painting usually does not. Requirements vary a lot, so check your local building department's rules."
+      },
+      {
+        "question": "What is a parcel number and where do I find it?",
+        "answer": "A parcel number, often called an APN, is the ID your county assessor gives each piece of land. You can usually find it on your property tax bill or the county assessor's online map."
+      },
+      {
+        "question": "Is submitting this form the same as getting a permit?",
+        "answer": "No. The form starts the application; the agency reviews it, may ask for more documents or fees, and issues the permit only once it is approved. Do not start work until you have the approved permit."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "3492b0a2-3956-52f1-b530-d29d6a57f956",
+        "title": "Applicant",
+        "fields": [
+          {
+            "id": "e82024a2-a4c8-52c3-8b1c-d58035ac2250",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "b3773114-c644-57bc-9911-7359589effbd",
+            "type": "text_input_field",
+            "label": "Applicant full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "e82024a2-a4c8-52c3-8b1c-d58035ac2250",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "08eeaaaa-f2d7-5e30-a44b-d1290d5af5b6",
+            "type": "text_input_field",
+            "label": "Company",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "gridId": "e82024a2-a4c8-52c3-8b1c-d58035ac2250",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "aecb88f6-4bb6-5d33-949a-0ad34ad6aac1",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "0666a3bc-e825-54db-88d0-a1021f3e382a",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "aecb88f6-4bb6-5d33-949a-0ad34ad6aac1",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "0673a421-7852-59b5-9626-3fb5dd820a11",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "aecb88f6-4bb6-5d33-949a-0ad34ad6aac1",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "fee73fe7-47c2-51e5-925c-851dcc7e1ec6",
+            "type": "radio_field",
+            "label": "You are the",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Property owner",
+              "Contractor",
+              "Architect or designer",
+              "Tenant",
+              "Event organizer",
+              "Other agent"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "dc74dbd9-e2cb-5fec-b5de-737160ef6ae3",
+            "type": "text_input_field",
+            "label": "Property owner name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "If different from applicant",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "b34fe3df-458e-5c02-bbf5-fd4ddb772585",
+        "title": "Property and permit",
+        "fields": [
+          {
+            "id": "d9fe3e59-672c-5878-a3ff-17499c2ce01a",
+            "type": "text_area_field",
+            "label": "Property or site address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "d78cf4e0-548e-5adc-8765-ec07a8868142",
+            "type": "text_input_field",
+            "label": "Parcel number (APN)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. On your property tax bill",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 40
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "f44baecf-1e62-5661-842b-620a4f9eafa2",
+            "type": "select_field",
+            "label": "Permit type",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Building - new construction",
+              "Building - addition or remodel",
+              "Electrical",
+              "Plumbing",
+              "Mechanical or HVAC",
+              "Demolition",
+              "Fence, deck or shed",
+              "Sign",
+              "Special event",
+              "Right-of-way or street use",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "581e5d41-0b2b-5dca-8e64-7f5e313fdfbb",
+            "type": "radio_field",
+            "label": "Property use",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Single-family residential",
+              "Multi-family residential",
+              "Commercial",
+              "Industrial",
+              "Public land or street"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ab4c14ff-9de1-5a15-8857-f757969edcc6",
+            "type": "text_area_field",
+            "label": "Description of work or activity",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Build a 12 x 16 ft rear deck, 30 in. above grade",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 2000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "63b2f226-81ba-5814-b65e-dd4b9586973a",
+            "type": "number_field",
+            "label": "Estimated project value",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Labor and materials",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 100000000,
+            "suffix": "USD",
+            "__type": "number_field"
+          },
+          {
+            "id": "5d775c6a-5d01-5c7d-9681-a25024a3dfa4",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ca69135c-9c9a-5240-923a-ff516e6e5998",
+            "type": "date_field",
+            "label": "Planned start date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "5d775c6a-5d01-5c7d-9681-a25024a3dfa4",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "a011a397-ec37-572f-b837-840c04326520",
+            "type": "date_field",
+            "label": "Planned end date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "5d775c6a-5d01-5c7d-9681-a25024a3dfa4",
+            "gridColumn": 1,
+            "__type": "date_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "4b8884f4-34ab-5579-ae70-dac2f3f5df5d",
+        "title": "Contractor and documents",
+        "fields": [
+          {
+            "id": "faceea38-aa8e-5f54-b9d4-74311523e65b",
+            "type": "radio_field",
+            "label": "Who is doing the work?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Licensed contractor",
+              "Owner-builder",
+              "Not applicable"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1a469b0d-83cc-5f68-ac62-eac9d6fb16d0",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "e7e24938-1c6b-5636-92f9-65cbfaa16a17",
+            "type": "text_input_field",
+            "label": "Contractor business name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "If applicable",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "gridId": "1a469b0d-83cc-5f68-ac62-eac9d6fb16d0",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "fa752159-e916-5fd4-a38b-45c9dcdaa6c8",
+            "type": "text_input_field",
+            "label": "Contractor license number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "If applicable",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 40
+            },
+            "gridId": "1a469b0d-83cc-5f68-ac62-eac9d6fb16d0",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "36d2886f-d42e-5aa6-8e13-35b8c7966ce8",
+            "type": "file_upload_field",
+            "label": "Site plan, drawings or supporting documents",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Up to 5 files. PDF preferred",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 25,
+            "maxFiles": 5,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "5e0e6b41-ba0e-552d-8525-fae282746370",
+            "type": "rich_text_field",
+            "content": "<p>Submitting this form does not grant a permit. Work must not start until a permit is issued. Fees, inspections and extra documents may be required; check your local permit office's rules.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "0ca924eb-12d8-561e-a57c-eabbff02c98e",
+            "type": "text_input_field",
+            "label": "Type your full name to certify",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "f8c603a0-2a73-5392-846a-6d431b4bbb71",
+            "type": "checkbox_field",
+            "label": "Certification",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I certify the information is correct and I am the owner or authorized by the owner to apply"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L2",
+      "content": "<h1>Apply for a permit</h1><p>Tell us about the project and upload your plans. About eight minutes.</p>",
+      "thankYouContent": "<h1>Application received</h1><p>Permit staff will review it and email you about fees, missing documents or the inspection process.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start application",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

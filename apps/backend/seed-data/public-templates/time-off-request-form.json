@@ -1,0 +1,306 @@
+{
+  "slug": "time-off-request-form",
+  "name": "Time Off Request",
+  "description": "Let employees request vacation, PTO, sick or personal days with dates, total days, cover plan and manager details.",
+  "category": "HR & Recruiting",
+  "seoTitle": "Free Time Off Request Form Template (PTO)",
+  "seoDescription": "Time off request form template with leave type, start and end dates, total days, half days, cover plan and manager email. Replace PTO emails with one form.",
+  "keywords": [
+    "time off request form",
+    "pto request form",
+    "vacation request form",
+    "leave request form",
+    "employee time off request",
+    "annual leave request form"
+  ],
+  "tags": [
+    "HR",
+    "Request"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6170647
+    },
+    {
+      "source": "pexels",
+      "id": 7845074
+    }
+  ],
+  "thumbnailAlt": "Time Off Request form beside a photo of a woman writing at her desk in a professional office with legal books and an American flag",
+  "content": {
+    "intro": "A time off request form is a form that collects an employee's leave type, dates, number of days and cover plan, so managers and HR can approve PTO and keep a record in one place. This template replaces scattered emails and chat messages with one consistent request that lands in a single list.",
+    "audience": "Small business owners, HR coordinators, shift managers and team leads handling vacation and PTO requests.",
+    "useCases": [
+      "Vacation and PTO requests for an office team",
+      "Shift-based teams in retail, restaurants or care homes booking days off",
+      "Sick, bereavement or jury duty notices that need a record",
+      "Seasonal blackout planning, such as holiday-period requests"
+    ],
+    "tips": [
+      "Turn on 'require sign-in' so each request is tied to the employee's account and nobody can submit on someone else's behalf.",
+      "Use the email plugin with 'recipient from field' to send a copy to the manager email entered in the form, and a confirmation to the employee.",
+      "Send requests to Google Sheets or Microsoft Sheets to build a shared leave calendar, and export to Excel for payroll."
+    ],
+    "faq": [
+      {
+        "question": "What should a time off request form include?",
+        "answer": "Employee name and email, department, manager, type of leave (vacation, sick, personal, bereavement and so on), first and last day off, total working days, whether any days are half days, who covers the work, and space for notes."
+      },
+      {
+        "question": "How much notice should employees give for time off?",
+        "answer": "It depends on company policy. Two to four weeks for vacation is common, while sick and bereavement leave are usually requested as soon as possible. State your rule in the form intro so people know it."
+      },
+      {
+        "question": "Are employers required to give paid time off?",
+        "answer": "It varies by country and state. Many countries require a minimum amount of paid annual leave, while in the US paid vacation is largely set by employer policy, with some state and local sick leave laws. Check your local rules."
+      },
+      {
+        "question": "How do managers approve requests?",
+        "answer": "Managers get an email notification for each request and can review it in the responses list. Many teams add an internal 'Approved' note by editing the response, which keeps a full edit history."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "e84f6a73-b247-5211-b875-5078c7adb18e",
+        "title": "Time off request",
+        "fields": [
+          {
+            "id": "03e21c20-9c0e-5109-be94-e7e310bb397e",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "f246afde-44a5-57ae-a0da-04a56ed6d017",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "03e21c20-9c0e-5109-be94-e7e310bb397e",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "37039fa4-7b9e-579c-8bc3-ecea92bc2170",
+            "type": "email_field",
+            "label": "Work email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "03e21c20-9c0e-5109-be94-e7e310bb397e",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "b9e02b02-4087-5a39-a91d-9106d524949f",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "0121507f-83cc-5f07-831d-c1715068fa1e",
+            "type": "text_input_field",
+            "label": "Department or team",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "gridId": "b9e02b02-4087-5a39-a91d-9106d524949f",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "b4bfb7e0-0086-5f27-9871-b7a40c618dae",
+            "type": "email_field",
+            "label": "Manager's email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "b9e02b02-4087-5a39-a91d-9106d524949f",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "12def681-d6bf-5de6-9efd-b03fc8b3b71c",
+            "type": "select_field",
+            "label": "Type of leave",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Vacation / PTO",
+              "Sick leave",
+              "Personal day",
+              "Bereavement",
+              "Jury duty",
+              "Parental leave",
+              "Unpaid leave",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "9384778f-8b38-524c-af37-183583f6b2c8",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "18daef35-d549-5f12-99b4-d939c4f4a86b",
+            "type": "date_field",
+            "label": "First day off",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9384778f-8b38-524c-af37-183583f6b2c8",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "1c1481e3-509e-5b89-b723-d55673724a39",
+            "type": "date_field",
+            "label": "Last day off",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9384778f-8b38-524c-af37-183583f6b2c8",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "90cec0cd-e425-58a7-98a9-8942a3752224",
+            "type": "number_field",
+            "label": "Total working days requested",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Use 0.5 for a half day",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0.5,
+            "max": 60,
+            "suffix": "days",
+            "__type": "number_field"
+          },
+          {
+            "id": "ac4a6eb7-ae07-553f-91dd-961db9bd1531",
+            "type": "radio_field",
+            "label": "Does this include a half day?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Yes, morning off",
+              "Yes, afternoon off"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "33817aad-57c7-5ae5-b43b-b1ce44e11186",
+            "type": "text_input_field",
+            "label": "Who will cover your work?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 150
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "4b618798-3799-5add-a0a6-c4766431a273",
+            "type": "text_area_field",
+            "label": "Notes for your manager",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "Handover details, flexibility on dates, anything else",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L5",
+      "content": "<h1>Request time off</h1><p>Pick your dates and leave type. About two minutes.</p>",
+      "thankYouContent": "<h1>Request sent</h1><p>Your manager has been notified. You will hear back by email, usually within two working days.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Submit request",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

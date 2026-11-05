@@ -1,0 +1,310 @@
+{
+  "slug": "it-support-request-form",
+  "name": "IT Support Request",
+  "description": "Internal IT helpdesk request: employee, department, issue type, device or asset tag, urgency, error message and screenshot.",
+  "category": "Customer Support",
+  "seoTitle": "Free IT Support Request Form Template",
+  "seoDescription": "IT support request form template for employees to report hardware, software, network and login issues with asset tag, urgency, error details and a screenshot.",
+  "keywords": [
+    "it support request form",
+    "it helpdesk ticket form",
+    "it service request form",
+    "computer repair request form",
+    "it help request template",
+    "internal it ticket form"
+  ],
+  "tags": [
+    "Helpdesk",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 7639370
+    },
+    {
+      "source": "pexels",
+      "id": 10558598
+    }
+  ],
+  "thumbnailAlt": "IT Support Request form beside a photo of technician repairing a laptop motherboard, focusing on electronic components",
+  "content": {
+    "intro": "An IT support request form is a form that collects an employee's details, the type of problem, the affected device or asset tag, the urgency and any error message so an IT helpdesk can triage and fix issues in order. This template keeps the employee side short while capturing the details technicians usually have to chase, like the asset tag and whether other people are affected.",
+    "audience": "In-house IT teams, managed service providers (MSPs), school and university IT offices, and office managers who handle IT for a small company.",
+    "useCases": [
+      "The 'Get IT help' link on your intranet or Teams/Slack channel",
+      "MSPs taking tickets from several client companies through one form",
+      "School staff reporting classroom projector and laptop issues",
+      "Logging walk-up requests at the IT desk so nothing is lost"
+    ],
+    "tips": [
+      "Print a QR code on asset tag stickers or meeting room walls so people can report a fault from their phone when their laptop is the problem.",
+      "Send each request to your ticket queue with a webhook, or log it in Google Sheets or Microsoft Sheets for a simple tracker.",
+      "Require sign-in so you know exactly who raised each request without asking for their name and email."
+    ],
+    "faq": [
+      {
+        "question": "What should an IT support request form include?",
+        "answer": "The employee's name, email, department and location, the issue type (hardware, software, network, account or access), the device or asset tag, how urgent it is and how many people are affected, the error message, what they already tried and an optional screenshot."
+      },
+      {
+        "question": "How do IT teams prioritize support requests?",
+        "answer": "Most use impact and urgency: how many people are affected and whether they can still work. An outage for a whole team ranks above a single user's slow laptop. Asking both questions on the form lets you sort tickets before reading them."
+      },
+      {
+        "question": "What is an asset tag and why ask for it?",
+        "answer": "An asset tag is the label or ID number IT puts on a company device. Asking for it lets a technician look up the device's model, warranty and history straight away instead of guessing which laptop is broken."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "e937393d-9847-5933-8cc4-19e1dd1f5152",
+        "title": "IT support request",
+        "fields": [
+          {
+            "id": "b21b44b3-2a94-55b8-8552-09eed706ee73",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "1605d29e-a54a-5942-b926-7fe13678e848",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "b21b44b3-2a94-55b8-8552-09eed706ee73",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "34aea179-8eb3-5cf5-b838-2a5f9ce8ace1",
+            "type": "email_field",
+            "label": "Work email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "b21b44b3-2a94-55b8-8552-09eed706ee73",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "612577b4-60b0-5f3b-966e-e06bcdb71402",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c4bdca02-6ecd-5003-94e7-b426ee880f69",
+            "type": "select_field",
+            "label": "Department",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Finance",
+              "HR",
+              "Sales",
+              "Marketing",
+              "Operations",
+              "Engineering",
+              "Customer support",
+              "Management",
+              "Other"
+            ],
+            "gridId": "612577b4-60b0-5f3b-966e-e06bcdb71402",
+            "gridColumn": 0,
+            "__type": "select_field"
+          },
+          {
+            "id": "66e0401c-8271-58e8-935e-5825046b00b0",
+            "type": "text_input_field",
+            "label": "Office, floor or desk",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "gridId": "612577b4-60b0-5f3b-966e-e06bcdb71402",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "707bcc39-8924-5949-8b63-09e1ce9ca03f",
+            "type": "select_field",
+            "label": "What kind of issue is it?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Computer or laptop hardware",
+              "Printer or scanner",
+              "Software or app error",
+              "Email or calendar",
+              "Wi-Fi, VPN or network",
+              "Password or account locked",
+              "Phone or video calls",
+              "New equipment request",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "5c87101d-b7f5-5247-9011-e0d1a6308f5b",
+            "type": "text_input_field",
+            "label": "Device or asset tag number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Usually on a sticker on the device",
+            "placeholder": "e.g. LT-0423",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 40
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c4a7b68a-855e-58be-82d4-d70aa59624f8",
+            "type": "radio_field",
+            "label": "How urgent is it?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Low - when you get a chance",
+              "Medium - slowing me down",
+              "High - I cannot do my job",
+              "Critical - many people are affected"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ecc89143-f557-52b5-a2e7-29d5516021f6",
+            "type": "radio_field",
+            "label": "Who is affected?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Just me",
+              "My team",
+              "The whole office",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "915d70b6-c2ed-5fbe-8767-24cd1e62b72c",
+            "type": "text_area_field",
+            "label": "Describe the problem",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "Include any error message word for word",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "0ad22ad1-689a-5f8e-85e5-c7a623f35522",
+            "type": "text_area_field",
+            "label": "What have you already tried?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "e.g. restarted, logged out and back in",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "cb9242ad-ac99-56bd-9cbf-e24706f9e7a8",
+            "type": "file_upload_field",
+            "label": "Screenshot of the error",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 2,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L9",
+      "content": "<h1>Get IT help</h1><p>Report a problem and the IT team will pick it up. About two minutes.</p>",
+      "thankYouContent": "<h1>Request logged</h1><p>The IT team will contact you shortly. If you cannot work at all, call the IT desk as well.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Request help",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

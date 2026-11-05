@@ -1,0 +1,327 @@
+{
+  "slug": "customer-feedback-form",
+  "name": "Customer Feedback",
+  "description": "Collect star-style ratings, what customers liked, what went wrong and whether they would buy again, with optional follow-up.",
+  "category": "Feedback & Surveys",
+  "seoTitle": "Free Customer Feedback Form Template",
+  "seoDescription": "Customer feedback form template with an overall rating, what went well, what to fix, repeat-purchase intent and follow-up permission. Hear what customers think.",
+  "keywords": [
+    "customer feedback form",
+    "customer feedback survey",
+    "client feedback form",
+    "customer satisfaction form",
+    "feedback form for business",
+    "service feedback form"
+  ],
+  "tags": [
+    "Rating",
+    "Survey"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 4921263
+    },
+    {
+      "source": "pexels",
+      "id": 36729730
+    }
+  ],
+  "thumbnailAlt": "Customer Feedback form beside a photo of two customers enjoy a lively interaction with a barista at a modern café counter, creating a warm and inviting atmosphere",
+  "content": {
+    "intro": "A customer feedback form is a form that collects a customer's overall rating, what they liked, what disappointed them and whether they would come back, so a business can fix problems and repeat what works. This template pairs quick rating questions with two open text boxes, so you get numbers to track and the reasons behind them.",
+    "audience": "Shops, cafes, salons, agencies, online stores and service businesses that want honest feedback after a purchase or visit.",
+    "useCases": [
+      "A QR code on receipts or table cards after a meal or visit",
+      "A link in the order-delivered email from an online store",
+      "Feedback after a completed service job, such as a repair or cleaning",
+      "Checking how a new product, menu or opening hours land with regulars"
+    ],
+    "tips": [
+      "Use conditional logic to show the 'What went wrong?' box only when someone rates 1 or 2, so happy customers finish faster.",
+      "Turn on email notifications so a manager sees low scores the same day and can reply while the customer still cares.",
+      "Open the per-question charts in response analytics each month to see if your average rating is moving."
+    ],
+    "faq": [
+      {
+        "question": "What should a customer feedback form include?",
+        "answer": "An overall satisfaction rating, a few ratings on specific things (quality, speed, staff, value), an open question about what went well, an open question about what to improve, a repeat or recommend question, and optional contact details with permission to follow up."
+      },
+      {
+        "question": "How long should a customer feedback form be?",
+        "answer": "Short enough to finish in under two minutes. Six to ten questions with mostly taps and one or two text boxes keeps completion rates high."
+      },
+      {
+        "question": "Should customer feedback be anonymous?",
+        "answer": "Give people the choice. This template makes name and email optional and asks for permission before you contact anyone, which tends to produce more honest answers."
+      },
+      {
+        "question": "When is the best time to ask for customer feedback?",
+        "answer": "Right after the experience, while it is fresh: at the table, at checkout, or within a day of delivery or service. Feedback gathered weeks later is vaguer and less useful."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "5d0275c0-d745-549a-84b8-c6a61ff92075",
+        "title": "Your feedback",
+        "fields": [
+          {
+            "id": "05697560-4839-5ed5-9962-5ee30109b7b8",
+            "type": "radio_field",
+            "label": "Overall, how satisfied were you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "1 = very unsatisfied, 5 = very satisfied",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6cea25fa-d315-5030-b474-96721f266df0",
+            "type": "radio_field",
+            "label": "What did you buy or use?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "In-store purchase",
+              "Online order",
+              "Service or appointment",
+              "Support request",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6a4b53b7-5bac-5162-a713-50b661017ab5",
+            "type": "radio_field",
+            "label": "Quality of the product or service",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "09ef7e9c-a18f-5c64-ad6f-568c25e05bbc",
+            "type": "radio_field",
+            "label": "Speed and convenience",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "d2ed9069-61e6-5700-a6f0-2ede240bb5f2",
+            "type": "radio_field",
+            "label": "Friendliness and helpfulness of our staff",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6028e941-7df9-5abe-ad76-1ee34e4d9234",
+            "type": "radio_field",
+            "label": "Was it good value for money?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Poor value",
+              "Fair value",
+              "Good value",
+              "Excellent value"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "01c00563-ad61-50d7-9e3f-07cd6768ce1f",
+            "type": "text_area_field",
+            "label": "What did we do well?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "The thing you'd tell a friend about",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "0a62dc8d-7d80-55f7-b816-d88caf2b3720",
+            "type": "text_area_field",
+            "label": "What went wrong, or what should we improve?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "f1e6b099-50f6-5d19-a43e-7521d4ed8664",
+            "type": "radio_field",
+            "label": "Would you buy from us again?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Definitely",
+              "Probably",
+              "Not sure",
+              "Probably not",
+              "Definitely not"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6259cad9-d02a-5694-8c18-a4f225915008",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "2183a6a6-85d8-550b-973c-f5920681fa5a",
+            "type": "text_input_field",
+            "label": "Your name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "gridId": "6259cad9-d02a-5694-8c18-a4f225915008",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "f20274ab-541e-5ca8-8020-36d3f140f1b6",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "6259cad9-d02a-5694-8c18-a4f225915008",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "656a287d-c941-54d7-84bf-97d5d04f803f",
+            "type": "checkbox_field",
+            "label": "Follow-up",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "You may contact me about this feedback"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L3",
+      "content": "<h1>How did we do?</h1><p>Tell us about your visit or order. It takes about two minutes.</p>",
+      "thankYouContent": "<h1>Thank you for the feedback</h1><p>We read every response. If you asked us to follow up, we will be in touch within two working days.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Send feedback",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

@@ -1,0 +1,409 @@
+{
+  "slug": "travel-booking-form",
+  "name": "Travel Booking",
+  "description": "Take trip requests with destination, travel dates, travelers, departure city, budget, stay style and must-dos for a custom itinerary.",
+  "category": "Hospitality",
+  "seoTitle": "Free Travel Booking Form Template for Agents",
+  "seoDescription": "Travel booking form template for agents and tour operators: destination, dates, travelers, departure city, budget, hotel style and interests. Quote trips fast.",
+  "keywords": [
+    "travel booking form",
+    "travel request form",
+    "trip inquiry form",
+    "travel agency booking form",
+    "tour booking form",
+    "holiday booking form"
+  ],
+  "tags": [
+    "Booking",
+    "Quote",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 7642122
+    },
+    {
+      "source": "pexels",
+      "id": 8293753
+    }
+  ],
+  "thumbnailAlt": "Travel Booking form beside a photo of a couple consults a real estate agent in a modern office setting",
+  "content": {
+    "intro": "A travel booking form is a form that collects a traveler's destination, dates, party size, departure city, budget and trip style so a travel agent or tour operator can price flights, hotels and tours before the first call. This template asks how flexible the dates are and what each traveler cares about, so the first proposal is close to right and fewer emails go back and forth.",
+    "audience": "Independent travel agents, tour operators, destination management companies, honeymoon and group-travel planners, and school or club trip organizers.",
+    "useCases": [
+      "A Plan My Trip page on a travel agency website",
+      "Honeymoon and anniversary planning leads",
+      "Group tours where each family registers its own travelers",
+      "Corporate travel requests sent to an in-house travel desk"
+    ],
+    "tips": [
+      "Use conditional logic to ask for children's ages only when someone is traveling with kids.",
+      "Share the form by QR code at travel fairs and on printed brochures.",
+      "Use per-question charts in analytics to see which destinations and budgets your leads ask for most."
+    ],
+    "faq": [
+      {
+        "question": "What should a travel booking form include?",
+        "answer": "The lead traveler's contact details, destination or region, departure city, travel dates and how flexible they are, number of adults and children with ages, total budget, trip type, accommodation style, interests and must-do experiences, and any accessibility, dietary or passport and visa notes."
+      },
+      {
+        "question": "Should I collect passport numbers on the first form?",
+        "answer": "Usually not. Collect passport details only once the trip is confirmed and you need them for ticketing, and only through a secure channel your suppliers accept."
+      },
+      {
+        "question": "Can this form confirm a booking?",
+        "answer": "No. It collects a trip request so you can check availability and prices; the booking is confirmed when you send the proposal and your terms and the traveler accepts."
+      },
+      {
+        "question": "How do I handle group trips?",
+        "answer": "Share one link with the group and ask each family or room to submit their own form, then export all responses to Excel to build the rooming list."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "3e5150da-b43c-51f5-bdb2-6e41b13d62c3",
+        "title": "The trip",
+        "fields": [
+          {
+            "id": "fda45fef-d70d-5780-b363-a4efe5c938f4",
+            "type": "text_input_field",
+            "label": "Where would you like to go?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Japan, the Amalfi Coast, or not sure yet",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 150
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "bedcc61d-db4b-5c4c-b3cd-55361c4296f4",
+            "type": "text_input_field",
+            "label": "Departure city or airport",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "de28a04d-e116-5063-81fc-0edcfb6691e2",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "37c41f8d-9eb3-59e3-bed9-b7a48ae8e197",
+            "type": "date_field",
+            "label": "Departure date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "de28a04d-e116-5063-81fc-0edcfb6691e2",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "fceaa7ec-bd2d-5daf-a1ad-bd4eab83c59d",
+            "type": "date_field",
+            "label": "Return date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "de28a04d-e116-5063-81fc-0edcfb6691e2",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "c7ffbccf-a258-56e4-883d-8ccca67b44cf",
+            "type": "radio_field",
+            "label": "How flexible are your dates?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Fixed",
+              "A few days either way",
+              "Very flexible"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "9c772e7e-8019-5d8e-810c-43d69b3c1d90",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "e08db80c-b9bb-51a2-b8b1-69755a3af12a",
+            "type": "number_field",
+            "label": "Adults",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 1,
+            "max": 50,
+            "suffix": "adults",
+            "gridId": "9c772e7e-8019-5d8e-810c-43d69b3c1d90",
+            "gridColumn": 0,
+            "__type": "number_field"
+          },
+          {
+            "id": "796facfd-d405-5fd4-b2b9-d5bb0d23b8c2",
+            "type": "number_field",
+            "label": "Children",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 20,
+            "suffix": "children",
+            "gridId": "9c772e7e-8019-5d8e-810c-43d69b3c1d90",
+            "gridColumn": 1,
+            "__type": "number_field"
+          },
+          {
+            "id": "42b076e6-c654-560a-87f6-dc436bcb82ce",
+            "type": "text_input_field",
+            "label": "Children's ages",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "ce6b0d21-859d-542c-a164-18b759133d1f",
+        "title": "Your style and budget",
+        "fields": [
+          {
+            "id": "1fab0582-60b3-5470-927e-f38f4789ee99",
+            "type": "radio_field",
+            "label": "Type of trip",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Beach and relaxation",
+              "City break",
+              "Adventure or outdoors",
+              "Honeymoon or romance",
+              "Family holiday",
+              "Culture and food"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "191793b6-cca1-5998-80ae-68ad025bcfc3",
+            "type": "radio_field",
+            "label": "Where would you like to stay?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Budget hotels or hostels",
+              "Mid-range hotels",
+              "Luxury hotels or resorts",
+              "Villas or apartments",
+              "No preference"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "7d45f7af-5da7-5be8-91d0-fd77f869bd82",
+            "type": "radio_field",
+            "label": "Total budget per person, excluding flights",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under $1,000",
+              "$1,000 to $2,500",
+              "$2,500 to $5,000",
+              "Over $5,000",
+              "Not sure yet"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "eb1273f8-e483-5fdf-afbe-c316f100d92f",
+            "type": "checkbox_field",
+            "label": "What should we book for you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Flights",
+              "Hotels",
+              "Airport transfers",
+              "Tours and activities",
+              "Car hire",
+              "Travel insurance"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "51d62779-b80a-539c-9e15-280c10c8af13",
+            "type": "text_area_field",
+            "label": "Must-dos, special occasions or accessibility needs",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "15dd9fa6-247a-5080-8018-83dd72f4ce1c",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "bd68b2f7-d398-5f18-97ce-76e4a79460ad",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "15dd9fa6-247a-5080-8018-83dd72f4ce1c",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "8147ded9-fc33-55ab-8ba6-56a182d23772",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "15dd9fa6-247a-5080-8018-83dd72f4ce1c",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "287aa6ef-54be-5747-ab1b-10e133a50ab6",
+            "type": "phone_number_field",
+            "label": "Phone or WhatsApp number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "phone_number_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L7",
+      "content": "<h1>Plan your next trip</h1><p>Tell us where and when, and we'll build a trip around you. About three minutes.</p>",
+      "thankYouContent": "<h1>Your trip request is in</h1><p>A travel planner will email you a first itinerary and price within two business days.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Plan my trip",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}
