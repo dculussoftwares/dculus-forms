@@ -28,7 +28,7 @@
       "id": 18848929
     }
   ],
-  "thumbnailAlt": "Employee Performance Review form beside a photo of two women having a cheerful work conversation at an office table with a laptop",
+  "thumbnailAlt": "Employee Performance Review form beside a photo of two colleagues talking at an office table with a laptop",
   "content": {
     "intro": "An employee performance review form is a form that records a manager's ratings of an employee's core competencies, progress on goals, strengths, development areas and goals for the next period, so both sides have a clear, written record of the review. This template follows the usual annual review structure and ends with employee comments and a typed acknowledgment.",
     "audience": "People managers, HR business partners and small business owners running annual, mid-year or probation reviews.",
@@ -573,6 +573,20 @@
             "gridId": "5e41266d-b108-55be-8d02-607c105e753d",
             "gridColumn": 1,
             "__type": "date_field"
+          },
+          {
+            "id": "789d539c-12a5-5acb-bd86-98b5bcc6b5e3",
+            "type": "text_input_field",
+            "label": "Employee full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Typed by the employee to acknowledge the review",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
           },
           {
             "id": "bc5b6f29-d049-5fae-9b99-faad7d0002a9",

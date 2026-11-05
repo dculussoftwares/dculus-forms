@@ -29,7 +29,7 @@
       "id": 31663643
     }
   ],
-  "thumbnailAlt": "Rental Application form beside a photo of a hand holds keys with a house keychain inside a modern, well-lit living space",
+  "thumbnailAlt": "Rental Application form beside a photo of a hand holding house keys in a bright living room",
   "content": {
     "intro": "A rental application form is a form that collects a prospective tenant's identity, rental history, employment, income, references and consent to screening so a landlord or property manager can choose a reliable tenant. This template follows the order most landlords review in — current home, then job and income, then references — and lets applicants upload pay stubs securely.",
     "audience": "Independent landlords, property managers, letting agents, student housing providers and housing co-ops.",
@@ -291,7 +291,7 @@
             },
             "min": 0,
             "max": 100000,
-            "suffix": "$",
+            "suffix": "USD",
             "gridId": "7ee2433d-4388-50c9-9a79-0a88cd87c491",
             "gridColumn": 1,
             "__type": "number_field"
@@ -455,7 +455,7 @@
             },
             "min": 0,
             "max": 1000000,
-            "suffix": "$",
+            "suffix": "USD",
             "__type": "number_field"
           },
           {

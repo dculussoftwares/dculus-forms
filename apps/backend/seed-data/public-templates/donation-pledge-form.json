@@ -28,7 +28,7 @@
       "id": 6646952
     }
   ],
-  "thumbnailAlt": "Donation Pledge form beside a photo of volunteers distributing aid at an outdoor donation center, promoting social impact and diversity",
+  "thumbnailAlt": "Donation Pledge form beside a photo of volunteers handing out donations at an outdoor aid table",
   "content": {
     "intro": "A donation pledge form is a form that records a donor's promise to give a set amount over a set period, along with their contact details, the fund it supports and how they want to be recognized, so a nonprofit can track commitments and send reminders. This template collects no money: it captures the pledge, and you share your giving options with the donor afterward.",
     "audience": "Churches, schools, capital campaign committees, community foundations, alumni groups and charity gala organizers.",
@@ -396,7 +396,7 @@
       "spacing": "normal",
       "code": "L5",
       "content": "<h1>Make a pledge</h1><p>Tell us what you plan to give and when. It takes about two minutes, and no money is taken here.</p>",
-      "thankYouContent": "<h1>Thank you for your pledge</h1><p>We'll email you a copy of your pledge with ways to give, plus a reminder before each date you chose.</p>",
+      "thankYouContent": "<h1>Thank you for your pledge</h1><p>We'll email you a copy of your pledge with ways to give. If you asked for reminders, we'll send one before your gift date.</p>",
       "customBackGroundColor": "#ffffff",
       "customCTAButtonName": "Make my pledge",
       "backgroundImageKey": "",

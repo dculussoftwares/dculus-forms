@@ -280,6 +280,9 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     invalid={hasError}
                     min={nf.min}
                     max={nf.max}
+                    // The schema accepts decimals; without this the browser's default step of 1
+                    // (based on min) rejects valid values, e.g. 2 when min is 0.5.
+                    step="any"
                     placeholder={fillableField?.placeholder || '0'}
                     disabled={!isInteractive}
                     className={errCls}

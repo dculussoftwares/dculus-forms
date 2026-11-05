@@ -28,7 +28,7 @@
       "id": 13211514
     }
   ],
-  "thumbnailAlt": "Gym Membership Application form beside a photo of group of adults practicing CrossFit with weights in an industrial-style gym",
+  "thumbnailAlt": "Gym Membership Application form beside a photo of adults training with barbells in a gym",
   "content": {
     "intro": "A gym membership application form collects a new member's contact details, chosen plan, emergency contact and health information, plus their agreement to your gym rules. This template puts all of it in one mobile-friendly form so members can join before they walk in.",
     "audience": "Gyms, fitness studios, CrossFit boxes and community leisure centres signing up new members.",
@@ -344,7 +344,7 @@
           {
             "id": "c9c9d48c-7802-554b-aed8-4226395c47a6",
             "type": "rich_text_field",
-            "content": "<p>By joining you agree to follow the gym rules and accept that you exercise at your own risk.</p>",
+            "content": "<p><strong>Gym rules and liability waiver.</strong> I will follow the gym rules and staff instructions, use equipment only as shown, and tell staff about any injury or health change. I understand that exercise carries a risk of injury, I take part at my own risk, and I release the gym and its staff from liability for injuries that are not caused by their negligence. Have this wording reviewed for your local rules before you use it.</p>",
             "__type": "rich_text_field"
           },
           {

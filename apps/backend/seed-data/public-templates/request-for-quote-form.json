@@ -28,12 +28,12 @@
       "id": 32845684
     }
   ],
-  "thumbnailAlt": "Request for Quote form beside a photo of close-up of a technician's hands assembling a metal connecting rod with precision and care",
+  "thumbnailAlt": "Request for Quote form beside a photo of a technician assembling a machined metal part",
   "content": {
     "intro": "A request for quote form is a form that collects a buyer's contact details, product specifications, quantities, delivery location and required date so a supplier can send an accurate price. This template asks for units, tolerances and drawings in the same submission, so your estimator can quote without a round of follow-up emails.",
     "audience": "Manufacturers, machine shops, printers, wholesalers, packaging suppliers, contractors and B2B service firms that price each job.",
     "useCases": [
-      "Quoting custom CNC, sheet metal or 3D-printed parts from uploaded CAD drawings",
+      "Quoting custom CNC, sheet metal or 3D-printed parts from uploaded drawings",
       "Pricing bulk orders of promotional products or printed packaging",
       "Wholesale price requests from retailers and distributors",
       "Scoping installation or maintenance work for commercial sites"
@@ -261,10 +261,10 @@
           {
             "id": "295d045b-4ebe-5be6-b670-76531731f1b3",
             "type": "file_upload_field",
-            "label": "Drawings, CAD files or photos",
+            "label": "Drawings or photos",
             "defaultValue": "",
             "prefix": "",
-            "hint": "Optional. Up to 5 files",
+            "hint": "PDF or image. Export CAD drawings to PDF first.",
             "placeholder": "",
             "validation": {
               "required": false,

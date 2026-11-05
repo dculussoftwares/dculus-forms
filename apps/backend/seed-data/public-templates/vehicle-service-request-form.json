@@ -28,7 +28,7 @@
       "id": 8985450
     }
   ],
-  "thumbnailAlt": "Vehicle Service Request form beside a photo of mechanic in blue uniform inspecting a car engine in a workshop",
+  "thumbnailAlt": "Vehicle Service Request form beside a photo of a mechanic inspecting a car engine",
   "content": {
     "intro": "A vehicle service request form is a form that collects the owner's contact details, the vehicle's make, model, VIN and mileage, and the service or problem so an auto repair shop can prepare before the car arrives. This template asks about warning lights, symptoms and photos, so your service advisor can order parts and plan bay time before drop-off.",
     "audience": "Independent garages, auto repair shops, tire and quick-lube centers, dealership service departments, mobile mechanics and fleet managers.",
@@ -180,7 +180,6 @@
               "type": "fillable_form_field"
             },
             "min": 1950,
-            "max": 2027,
             "gridId": "0b1365e6-8157-5041-97c4-63ec5394e2a2",
             "gridColumn": 0,
             "__type": "number_field"

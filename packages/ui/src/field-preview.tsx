@@ -260,6 +260,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             defaultValue={defaultValue}
             min={numberField.min}
             max={numberField.max}
+            step="any"
             disabled={disabled}
             className="text-sm"
           />
