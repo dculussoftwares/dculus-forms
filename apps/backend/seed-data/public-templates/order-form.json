@@ -27,7 +27,7 @@
       "id": 7289709
     }
   ],
-  "thumbnailAlt": "Order Form form beside a photo of man packing blue coffee mugs for delivery in a bright, artistic workspace",
+  "thumbnailAlt": "Order form beside a photo of a man packing coffee mugs for delivery",
   "content": {
     "intro": "An order form is a form that collects a customer's contact details, the products and quantities they want, and how and when they want them delivered so a seller can fulfill the order correctly. This template works for small sellers without a web store: share one link, and every order arrives with the item list, delivery choice and notes in one place.",
     "audience": "Home bakers, caterers, craft and gift sellers, farm shops, print shops, school and club merchandise sellers, and wholesalers taking repeat orders.",
@@ -49,7 +49,7 @@
       },
       {
         "question": "Can customers order several products in one form?",
-        "answer": "Yes. This template has numbered product lines with their own quantity and variant fields, and you can add more lines in the builder. Conditional logic can hide extra lines until the customer needs them."
+        "answer": "Yes. This template has numbered product lines, each with its own quantity (the first also has a size or variant field), and you can add more lines in the builder. Conditional logic can hide extra lines until the customer needs them."
       },
       {
         "question": "Does this form take card details?",

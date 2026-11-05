@@ -228,7 +228,7 @@ untouched.
 | `patient-intake-form` | Healthcare | L6 | 4 | 18 | ~6 min | pexels 6129159 (fallback 4269274) | grid, text_input, date, select, phone_number, email, text_area, file_upload, checkbox, radio, rich_text |
 
 
-**Expansion batch (50 templates).** Specs were written per niche (one search intent each) and expanded to these files; categories were chosen so every category page has at least 3 templates (the landing site keeps thinner category pages out of search).
+**Expansion batch (50 templates).** Specs were written per niche (one search intent each) and expanded to these files; categories were chosen so category pages have at least 3 templates, except Government (2). The landing site keeps category pages with fewer than 3 templates out of search until they grow.
 
 | Slug | Category | Layout | Pages | Questions | Photo | Field types |
 |---|---|---|---|---|---|---|
@@ -277,8 +277,8 @@ untouched.
 | `support-ticket-form` | Customer Support | L1 | 2 | 12 | pexels 5453809 | grid, text_input, email, radio, select, text_area, file_upload |
 | `therapy-intake-form` | Healthcare | L1 | 4 | 20 | pexels 23496505 | grid, text_input, email, phone_number, date, radio, text_area, checkbox, rich_text |
 | `time-off-request-form` | HR & Recruiting | L5 | 1 | 11 | pexels 6170647 | grid, text_input, email, select, date, number, radio, text_area |
-| `travel-booking-form` | Hospitality | L7 | 2 | 16 | pexels 7642122 | text_input, grid, date, radio, number, checkbox, text_area, email, phone_number |
-| `trivia-quiz` | Quizzes | L9 | 2 | 12 | pexels 7022167 | text_input, email, radio, number |
+| `travel-booking-form` | Hospitality | L7 | 2 | 16 | pexels 7446963 | text_input, grid, date, radio, number, checkbox, text_area, email, phone_number |
+| `trivia-quiz` | Quizzes | L9 | 2 | 12 | pexels 8111367 | text_input, email, radio, number |
 | `vehicle-service-request-form` | Business | L3 | 4 | 18 | pexels 8985452 | grid, text_input, phone_number, email, number, checkbox, text_area, file_upload, date, radio |
 | `vendor-registration-form` | Business | L1 | 4 | 23 | pexels 6169643 | grid, text_input, radio, text_area, number, email, phone_number, checkbox, file_upload, rich_text |
 | `work-order-form` | Operations & IT | L5 | 3 | 15 | pexels 6419128 | grid, text_input, email, phone_number, text_area, select, radio, file_upload, date |
