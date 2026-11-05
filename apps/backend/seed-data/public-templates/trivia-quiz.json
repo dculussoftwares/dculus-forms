@@ -1,0 +1,415 @@
+{
+  "slug": "trivia-quiz",
+  "name": "Trivia Quiz",
+  "description": "A ten-question general knowledge trivia quiz on science, geography, history and arts, with automatic scoring and instant results.",
+  "category": "Quizzes",
+  "seoTitle": "Free Trivia Quiz Template with Auto Scoring",
+  "seoDescription": "Trivia quiz template with ten general knowledge questions on science, geography, history and the arts, auto-graded with an instant score and a pass mark.",
+  "keywords": [
+    "trivia quiz",
+    "general knowledge quiz",
+    "trivia quiz template",
+    "online trivia quiz maker",
+    "pub quiz questions",
+    "trivia night quiz"
+  ],
+  "tags": [
+    "Quiz",
+    "Auto-graded"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 7022167
+    },
+    {
+      "source": "pexels",
+      "id": 27381460
+    }
+  ],
+  "thumbnailAlt": "Trivia Quiz form beside a photo of group of friends enjoying a lively beer pong game at a Denver bar, capturing the spirit of fun and camaraderie",
+  "content": {
+    "intro": "A trivia quiz is a form that asks multiple-choice or short-answer general knowledge questions and scores each answer, so hosts can run a fun competition and players see how much they know. This template has ten tested questions across science, geography, history and the arts, with quiz mode grading every entry automatically.",
+    "audience": "Pub and bar quiz hosts, teachers, team leads running Friday socials, libraries and community groups.",
+    "useCases": [
+      "A weekly trivia night where teams answer on their phones by QR code",
+      "A remote team social or virtual happy hour",
+      "A classroom warm-up or end-of-term quiz",
+      "A newsletter or social media challenge with a prize for top scorers"
+    ],
+    "tips": [
+      "Quiz mode grades every submission and shows the score instantly; the pass mark is set to 70%, so seven correct answers count as a pass.",
+      "Set an open and close time window in Form Settings so answers only count during the round, then export to Excel to rank teams.",
+      "Turn on 'one response per person' with sign-in for competitive quizzes so nobody resubmits after seeing their score."
+    ],
+    "faq": [
+      {
+        "question": "What should a trivia quiz include?",
+        "answer": "Eight to twelve questions with one clear correct answer each, a mix of topics (science, geography, history, arts, sport), a mix of easy and harder questions, player or team name, and a way to score and show results."
+      },
+      {
+        "question": "How is the trivia quiz scored?",
+        "answer": "Each question has an answer key. When someone submits, quiz mode grades their answers automatically, shows their score straight away, and records it with the response so you can sort by score."
+      },
+      {
+        "question": "Can I write my own trivia questions?",
+        "answer": "Yes. Copy the template into your free account, replace the questions and options, and set the correct answer for each one. You can also ask the AI form builder to draft a themed round."
+      },
+      {
+        "question": "How do I stop players looking up answers?",
+        "answer": "You can't fully prevent it online, but a short open window in Form Settings helps, and so does running the quiz live in a room. Questions that need reasoning rather than a quick search also help."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "e8064f50-dd4f-56d3-8a42-6b3f7b2a6a08",
+        "title": "Player",
+        "fields": [
+          {
+            "id": "ab74f95f-e511-54b3-b6b0-9654e8202e6b",
+            "type": "text_input_field",
+            "label": "Player or team name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "10f53faf-7bbe-5577-b16f-6260b94afb5c",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional, to receive your score",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "1848aede-8006-593d-bd7d-e05ea52fbd77",
+        "title": "Questions",
+        "fields": [
+          {
+            "id": "b8f3740f-aff7-5041-abfb-d620d6e2f579",
+            "type": "radio_field",
+            "label": "Which is the largest planet in our solar system?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Saturn",
+              "Jupiter",
+              "Neptune",
+              "Earth"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Jupiter"
+              ],
+              "general": "Jupiter is more than twice as massive as all the other planets combined."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "d8e81771-802f-5c53-8d4b-f44d80a4b30c",
+            "type": "radio_field",
+            "label": "What is the chemical symbol for gold?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Ag",
+              "Gd",
+              "Au",
+              "Go"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Au"
+              ],
+              "general": "Au comes from the Latin word for gold, aurum."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "1e8be10b-8983-56a7-a8bf-78ccddba9861",
+            "type": "radio_field",
+            "label": "What is the capital of Australia?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Sydney",
+              "Melbourne",
+              "Canberra",
+              "Perth"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Canberra"
+              ],
+              "general": "Canberra was purpose-built as the capital and has been the seat of government since 1927."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "fae06b8b-0c44-5b4d-a21e-22764ecba984",
+            "type": "radio_field",
+            "label": "Who painted the Mona Lisa?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Michelangelo",
+              "Leonardo da Vinci",
+              "Raphael",
+              "Vincent van Gogh"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Leonardo da Vinci"
+              ]
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "5ec32181-5b3f-5e22-a37c-ba1f04a54b11",
+            "type": "number_field",
+            "label": "How many bones are in the typical adult human body?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 1000,
+            "grading": {
+              "mode": "numeric",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "206"
+              ],
+              "general": "Babies are born with around 300 bones; many fuse as we grow, leaving 206."
+            },
+            "__type": "number_field"
+          },
+          {
+            "id": "43613872-66dc-5c6b-a0a6-72d64b054a1c",
+            "type": "radio_field",
+            "label": "Which is the largest ocean on Earth?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Atlantic",
+              "Indian",
+              "Arctic",
+              "Pacific"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Pacific"
+              ]
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "6ca3ab43-6b39-56a7-9e75-e7f06eef5642",
+            "type": "radio_field",
+            "label": "In what year did humans first land on the Moon?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1965",
+              "1969",
+              "1972",
+              "1959"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "1969"
+              ],
+              "general": "Apollo 11 landed on July 20, 1969."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "37eedb0a-536a-5fcd-ad07-c3a62b7749c2",
+            "type": "radio_field",
+            "label": "Who wrote Romeo and Juliet?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Charles Dickens",
+              "Jane Austen",
+              "William Shakespeare",
+              "Mark Twain"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "William Shakespeare"
+              ]
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "f43fdb3c-65ed-56af-9566-96649d56e355",
+            "type": "radio_field",
+            "label": "What is the hardest natural substance?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Gold",
+              "Iron",
+              "Quartz",
+              "Diamond"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Diamond"
+              ]
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "d37087f2-b4a8-51ff-92b5-0b1c331a017c",
+            "type": "radio_field",
+            "label": "Which planet is known as the Red Planet?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Venus",
+              "Mars",
+              "Mercury",
+              "Jupiter"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Mars"
+              ],
+              "general": "Iron oxide (rust) in its soil gives Mars its red color."
+            },
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L9",
+      "content": "<h1>Trivia time</h1><p>Ten questions, one shot. About five minutes.</p>",
+      "thankYouContent": "<h1>Pencils down</h1><p>Your score is ready. Check which answers you got right and challenge a friend to beat you.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start quiz",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false,
+    "settings": {
+      "quiz": {
+        "enabled": true,
+        "passThresholdPercent": 70,
+        "gradeRelease": "immediate",
+        "respondentVisibility": {
+          "totalScore": true,
+          "perQuestionCorrectness": true,
+          "correctAnswers": true,
+          "pointValues": false,
+          "feedback": true,
+          "passFailBadge": true
+        }
+      }
+    }
+  }
+}

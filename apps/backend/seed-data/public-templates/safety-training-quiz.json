@@ -1,0 +1,483 @@
+{
+  "slug": "safety-training-quiz",
+  "name": "Safety Training Quiz",
+  "description": "Check workplace safety knowledge after training: fire, PPE, lifting, ladders, SDS, lockout/tagout and incident reporting.",
+  "category": "Quizzes",
+  "seoTitle": "Free Safety Training Quiz Template (Auto-Graded)",
+  "seoDescription": "Safety training quiz template with ten auto-graded questions on fire safety, PPE, lifting, ladders, SDS, lockout/tagout and reporting. Keep a record per worker.",
+  "keywords": [
+    "safety training quiz",
+    "workplace safety quiz",
+    "safety quiz questions",
+    "osha safety quiz",
+    "safety training test",
+    "employee safety quiz"
+  ],
+  "tags": [
+    "Quiz",
+    "Training",
+    "Auto-graded"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 8961130
+    },
+    {
+      "source": "pexels",
+      "id": 8961003
+    }
+  ],
+  "thumbnailAlt": "Safety Training Quiz form beside a photo of male and female construction workers discussing plans at a building site",
+  "content": {
+    "intro": "A safety training quiz is a form that tests workers on hazards, safe procedures and emergency steps after training, so employers can confirm understanding and keep a record for each person. This template covers ten core topics, from the PASS fire extinguisher method to lockout/tagout, and grades every answer automatically against an 80% pass mark.",
+    "audience": "Safety officers, HR and training coordinators, site supervisors and operations managers in warehouses, manufacturing, construction and offices.",
+    "useCases": [
+      "A knowledge check at the end of new-hire safety induction",
+      "Annual refresher training for existing staff",
+      "Toolbox talk follow-ups on a construction site",
+      "Checking contractors understand site rules before starting work"
+    ],
+    "tips": [
+      "Quiz mode shows each worker their score instantly; set the pass mark to match your policy and ask anyone below it to retake after a refresher.",
+      "Turn on 'require sign-in' and 'one response per person' so each result is tied to one named worker for your training records.",
+      "Use the PDF templates feature to generate a completion record per response, and export results to Excel for audits."
+    ],
+    "faq": [
+      {
+        "question": "What should a safety training quiz include?",
+        "answer": "Questions on the hazards your workers actually face: fire and evacuation, PPE, manual handling, ladders and working at height, chemicals and Safety Data Sheets, lockout/tagout, housekeeping and how to report incidents and near misses, plus the worker's name, ID, site and training date."
+      },
+      {
+        "question": "Does a safety quiz count as OSHA training documentation?",
+        "answer": "A quiz can be part of your records, showing the worker was trained and understood it, but it does not replace the training itself or any specific documentation a standard requires. Check the rules that apply to your industry and country."
+      },
+      {
+        "question": "What pass mark should a safety quiz use?",
+        "answer": "Many employers use 80% or higher for safety topics, and some require 100% on critical questions like lockout/tagout. Whatever you choose, have a clear retake process."
+      },
+      {
+        "question": "Can I add questions specific to my site?",
+        "answer": "Yes, and you should. Copy the template and add questions on your own hazards, emergency exits, assembly points and equipment, each with its correct answer set."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "458c6ca7-a14d-5306-8e88-3fdfbc8280eb",
+        "title": "Your details",
+        "fields": [
+          {
+            "id": "866a7992-c071-549b-8979-1f795795917b",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "d237caaf-906b-557b-b314-8bf49bc27936",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "866a7992-c071-549b-8979-1f795795917b",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c1d77b29-2d8a-587e-b7ca-e13f34056257",
+            "type": "text_input_field",
+            "label": "Employee ID",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 40
+            },
+            "gridId": "866a7992-c071-549b-8979-1f795795917b",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "41a469ff-f8c4-5eb2-a04c-acd4c7318c7a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "a09185ef-94d0-5891-a803-c65d81af31c9",
+            "type": "text_input_field",
+            "label": "Site or department",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "41a469ff-f8c4-5eb2-a04c-acd4c7318c7a",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "2070a401-0b15-51ea-8a09-0145924da3ff",
+            "type": "date_field",
+            "label": "Training date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "41a469ff-f8c4-5eb2-a04c-acd4c7318c7a",
+            "gridColumn": 1,
+            "__type": "date_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "1d771067-d496-5fd7-bfcb-170610e6ea33",
+        "title": "Safety questions",
+        "fields": [
+          {
+            "id": "5ae34d3e-0a13-5912-9481-949e739447ac",
+            "type": "radio_field",
+            "label": "What does PASS stand for when using a fire extinguisher?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Pull, Aim, Squeeze, Sweep",
+              "Push, Alert, Spray, Stop",
+              "Point, Activate, Spray, Secure",
+              "Pull, Alarm, Stand, Spray"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Pull, Aim, Squeeze, Sweep"
+              ],
+              "general": "Pull the pin, aim at the base of the fire, squeeze the handle, sweep side to side."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "30bd31e8-57f3-523b-a974-5ca55173e61f",
+            "type": "radio_field",
+            "label": "When lifting a heavy box from the floor, you should",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Bend at the waist and keep your legs straight",
+              "Bend your knees, keep the load close and lift with your legs",
+              "Twist your body to reach it faster",
+              "Jerk it up quickly to reduce strain"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Bend your knees, keep the load close and lift with your legs"
+              ]
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "4ecb6918-5d23-5ba7-adc1-abfe56ce44e7",
+            "type": "radio_field",
+            "label": "How many points of contact should you keep when climbing a ladder?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "One",
+              "Two",
+              "Three",
+              "Four"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Three"
+              ],
+              "general": "Two hands and one foot, or two feet and one hand, at all times."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "4ae284e8-a2ba-569a-b7b4-f45e7cbc556a",
+            "type": "radio_field",
+            "label": "For an extension ladder, the base should be about 1 foot out from the wall for every",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "2 feet of height",
+              "4 feet of height",
+              "6 feet of height",
+              "10 feet of height"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "4 feet of height"
+              ],
+              "general": "This is the 4-to-1 rule, which gives a safe angle of about 75 degrees."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "86e28760-a831-57c5-a0c4-6ced4b2623e7",
+            "type": "radio_field",
+            "label": "What does SDS stand for?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Safety Data Sheet",
+              "Standard Disposal System",
+              "Site Danger Signal",
+              "Safe Distance Standard"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Safety Data Sheet"
+              ],
+              "general": "An SDS lists a chemical's hazards, safe handling, PPE and first aid."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "ea587046-b656-5ef8-af6b-acbe2e87bca4",
+            "type": "radio_field",
+            "label": "What is the purpose of lockout/tagout?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "To lock tool cabinets at the end of a shift",
+              "To stop machines restarting or releasing energy during maintenance",
+              "To mark equipment that is due for replacement",
+              "To record who used a machine last"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "To stop machines restarting or releasing energy during maintenance"
+              ]
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "b51d2da1-c765-5c55-988d-229e764a5423",
+            "type": "radio_field",
+            "label": "In the hierarchy of controls, which is the most effective way to reduce a hazard?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Personal protective equipment",
+              "Administrative controls",
+              "Elimination",
+              "Warning signs"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Elimination"
+              ],
+              "general": "Removing the hazard entirely beats every other control. PPE is the last line of defense."
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "9dbe0c0f-ed0f-5b59-9421-ed9ac38e25ab",
+            "type": "radio_field",
+            "label": "A coworker slips but is not hurt. What should you do?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Nothing, nobody was injured",
+              "Report it as a near miss so the cause can be fixed",
+              "Tell them to be more careful next time",
+              "Wait to see if it happens again"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Report it as a near miss so the cause can be fixed"
+              ]
+            },
+            "__type": "radio_field"
+          },
+          {
+            "id": "bc5cf56a-2d9b-53e6-b08f-359e57e0642c",
+            "type": "checkbox_field",
+            "label": "Which of these are examples of PPE? Select all that apply.",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Safety glasses",
+              "Hard hat",
+              "Machine guard",
+              "Hearing protection",
+              "Ventilation fan"
+            ],
+            "defaultValues": [],
+            "grading": {
+              "mode": "set",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Safety glasses",
+                "Hard hat",
+                "Hearing protection"
+              ],
+              "general": "Machine guards and ventilation are engineering controls, not PPE.",
+              "set": {
+                "scoring": "all"
+              }
+            },
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "e929cbb7-9504-5def-abc5-5a5f402ecbbc",
+            "type": "radio_field",
+            "label": "When the fire alarm sounds, you should",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Finish your task, then leave",
+              "Use the elevator to get out faster",
+              "Leave by the nearest safe exit and go to the assembly point",
+              "Wait at your desk for instructions"
+            ],
+            "grading": {
+              "mode": "exact",
+              "pointValue": 1,
+              "acceptedAnswers": [
+                "Leave by the nearest safe exit and go to the assembly point"
+              ]
+            },
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L1",
+      "content": "<h1>Safety training check</h1><p>Ten questions on what you just learned. About eight minutes.</p>",
+      "thankYouContent": "<h1>Quiz complete</h1><p>Your score has been recorded. If you did not pass, your supervisor will arrange a refresher and a retake.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Begin quiz",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false,
+    "settings": {
+      "quiz": {
+        "enabled": true,
+        "passThresholdPercent": 80,
+        "gradeRelease": "immediate",
+        "respondentVisibility": {
+          "totalScore": true,
+          "perQuestionCorrectness": true,
+          "correctAnswers": true,
+          "pointValues": false,
+          "feedback": true,
+          "passFailBadge": true
+        }
+      }
+    }
+  }
+}

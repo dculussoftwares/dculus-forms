@@ -1,0 +1,579 @@
+{
+  "slug": "vendor-registration-form",
+  "name": "Vendor Registration",
+  "description": "Register new suppliers: company and legal details, tax ID, products supplied, contacts, certificates and insurance documents.",
+  "category": "Business",
+  "seoTitle": "Free Vendor Registration Form Template",
+  "seoDescription": "Vendor registration form template for supplier onboarding: legal entity, tax ID, contacts, product categories, W-9, insurance certificate and code of conduct.",
+  "keywords": [
+    "vendor registration form",
+    "supplier registration form",
+    "vendor onboarding form",
+    "new vendor form",
+    "supplier information form",
+    "vendor setup form"
+  ],
+  "tags": [
+    "Onboarding",
+    "File Upload",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6169643
+    },
+    {
+      "source": "pexels",
+      "id": 7843976
+    }
+  ],
+  "thumbnailAlt": "Vendor Registration form beside a photo of courier checking packages in a warehouse, ensuring fragile handling",
+  "content": {
+    "intro": "A vendor registration form is a form that collects a supplier's legal company details, tax ID, contacts, product categories and compliance documents so a procurement or accounts team can approve and set up the vendor. This template asks for documents like a W-9 and certificate of insurance up front, and it deliberately leaves out bank details so sensitive account numbers go through your finance system instead.",
+    "audience": "Procurement teams, accounts payable, facilities managers, restaurants, construction firms, hospitals and event organizers onboarding suppliers and contractors.",
+    "useCases": [
+      "Adding a new raw-materials supplier to an approved vendor list",
+      "Onboarding subcontractors who must show a certificate of insurance before site work",
+      "Registering food, beverage or catering suppliers for a hotel group",
+      "Collecting exhibitor and service vendor details for a trade show"
+    ],
+    "tips": [
+      "Send each registration to Google Sheets or Microsoft Sheets so procurement and finance work from the same vendor list.",
+      "Use conditional logic to ask for the W-9 only when the vendor says it is a US business.",
+      "Allow edits with full edit history so you can see when a vendor updated their insurance certificate or address."
+    ],
+    "faq": [
+      {
+        "question": "What should a vendor registration form include?",
+        "answer": "The vendor's legal name and trading name, business type, registration number and tax ID, address, primary and accounts contacts, products or services supplied, diversity or small-business status, and compliance documents such as a W-9 and certificate of insurance. This template covers each of these."
+      },
+      {
+        "question": "Should I collect bank details in a vendor registration form?",
+        "answer": "It is safer not to. Collect bank details through your accounting or AP system, or confirm them by phone with a known contact, because changed bank details in emails and forms are a common fraud route."
+      },
+      {
+        "question": "What is a W-9 and do all vendors need one?",
+        "answer": "A W-9 is the IRS form a US vendor uses to give you its taxpayer identification number. US businesses typically request it from US vendors they pay; foreign vendors usually provide a W-8 form instead. Check with your accountant for your situation."
+      },
+      {
+        "question": "What is a certificate of insurance (COI)?",
+        "answer": "A COI is a one-page summary from the vendor's insurer showing their coverage types, limits and policy dates. Many companies require one before a contractor works on site, and it should be renewed when the policy expires."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "9bad8c5e-a447-5c46-8b6a-cce8537eddd1",
+        "title": "Company details",
+        "fields": [
+          {
+            "id": "ddff2447-7dcc-5377-bb45-d4d9e888e20d",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "6a64f88e-8e82-5fbd-b758-86bd46b86b08",
+            "type": "text_input_field",
+            "label": "Legal company name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "ddff2447-7dcc-5377-bb45-d4d9e888e20d",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "7a5c246e-e9cb-5d7d-98ba-bde318781492",
+            "type": "text_input_field",
+            "label": "Trading name (DBA)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "ddff2447-7dcc-5377-bb45-d4d9e888e20d",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "1191527c-90d5-5c4e-8f23-147e57747103",
+            "type": "radio_field",
+            "label": "Business type",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Sole proprietor",
+              "Partnership",
+              "LLC",
+              "Corporation",
+              "Nonprofit",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ad362394-522d-54a3-8b02-ee3d929993fe",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ac2bac04-8afc-50de-afd8-90bd17c01270",
+            "type": "text_input_field",
+            "label": "Tax ID (EIN or VAT number)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "ad362394-522d-54a3-8b02-ee3d929993fe",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "bfb4649c-3d10-5f6b-81fa-c9c0d56b29b9",
+            "type": "text_input_field",
+            "label": "Company registration number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "ad362394-522d-54a3-8b02-ee3d929993fe",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "6daadb6a-2758-5525-9d2a-9df8a7874530",
+            "type": "text_area_field",
+            "label": "Registered business address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "ecb97e40-4c8f-5402-a0ea-702de48389a0",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "bc9ed4a7-ea3a-58e4-b445-b5e29727970a",
+            "type": "text_input_field",
+            "label": "Website",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "https://",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "ecb97e40-4c8f-5402-a0ea-702de48389a0",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "b701bc65-aaf9-547a-b889-a2f562ffa7b7",
+            "type": "number_field",
+            "label": "Years in business",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 200,
+            "suffix": "years",
+            "gridId": "ecb97e40-4c8f-5402-a0ea-702de48389a0",
+            "gridColumn": 1,
+            "__type": "number_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "b34a5894-94fe-5f67-96bd-b455c826fc3e",
+        "title": "Contacts",
+        "fields": [
+          {
+            "id": "5db7e2db-63af-57ba-aceb-38debf4f8880",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "68ca30a5-bb45-59f2-a87c-dbed8a53d720",
+            "type": "text_input_field",
+            "label": "Primary contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "5db7e2db-63af-57ba-aceb-38debf4f8880",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "0d1ccfa8-5993-50e9-848a-5d24994c763a",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "5db7e2db-63af-57ba-aceb-38debf4f8880",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "bc92c069-3a40-58da-b8a8-8ec76df1560b",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "f9d748ef-c169-556d-b1c8-1c1eff2694c0",
+            "type": "email_field",
+            "label": "Primary contact email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "bc92c069-3a40-58da-b8a8-8ec76df1560b",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "e20ffa76-5fd8-5c8b-ab09-0f4f4fd23a1f",
+            "type": "phone_number_field",
+            "label": "Primary contact phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "bc92c069-3a40-58da-b8a8-8ec76df1560b",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "9286942f-8810-518b-ac37-68c9c2fd5197",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "fcd16092-2ed7-57cd-92e7-a381954cc16c",
+            "type": "text_input_field",
+            "label": "Accounts receivable contact",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Who receives purchase orders and remittances",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "9286942f-8810-518b-ac37-68c9c2fd5197",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "a95195ee-6872-56ed-82e4-981075b7ea9d",
+            "type": "email_field",
+            "label": "Accounts receivable email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9286942f-8810-518b-ac37-68c9c2fd5197",
+            "gridColumn": 1,
+            "__type": "email_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "f6435e04-1e96-5e85-8141-7f516688ff56",
+        "title": "Products and services",
+        "fields": [
+          {
+            "id": "7a454ba3-1b46-56f0-b53c-2abf369779e7",
+            "type": "checkbox_field",
+            "label": "What do you supply?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Raw materials",
+              "Finished goods",
+              "Office supplies",
+              "IT hardware or software",
+              "Professional services",
+              "Facilities and maintenance",
+              "Food and beverage",
+              "Logistics",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "680b1614-d4c2-5508-a448-2a38d17dc81c",
+            "type": "text_area_field",
+            "label": "Describe your main products or services",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "d393bbd3-e27b-51df-85c3-d59e80c5595e",
+            "type": "text_area_field",
+            "label": "Regions or locations you can serve",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "a0c4ec3b-a995-5334-8241-f8a3949dfed8",
+            "type": "checkbox_field",
+            "label": "Supplier classifications",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Select any that apply",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Small business",
+              "Minority-owned",
+              "Women-owned",
+              "Veteran-owned",
+              "None of these"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "20d9c8a7-715d-5c1e-937a-6606f1af28fd",
+        "title": "Documents and agreement",
+        "fields": [
+          {
+            "id": "736e86bb-cc33-586e-bf1b-453cd2930d4a",
+            "type": "file_upload_field",
+            "label": "W-9 or W-8 tax form",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "US vendors: W-9. Non-US vendors: W-8 or local equivalent",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 1,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "453dfbc0-4020-5382-a5e9-47d02faf3f5d",
+            "type": "file_upload_field",
+            "label": "Certificate of insurance (COI)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional unless you will work on our premises",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 2,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "27f5ef35-d01b-5ead-8313-45b9571a4279",
+            "type": "file_upload_field",
+            "label": "Licenses or quality certifications (e.g. ISO 9001)",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 5,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "28f28a4e-5b59-535a-915b-99d20453d661",
+            "type": "rich_text_field",
+            "content": "<p>By registering you confirm that the information is accurate and that you will follow our supplier code of conduct, including fair labor, anti-bribery and confidentiality rules. Registration does not guarantee orders.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "330a3229-6d31-50b7-9f5e-bf0d79316471",
+            "type": "text_input_field",
+            "label": "Your full name as authorized representative",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "9cf97878-3171-5157-9f6c-b6b23552bd29",
+            "type": "checkbox_field",
+            "label": "Declaration",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I confirm these details are accurate and agree to the supplier code of conduct"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L1",
+      "content": "<h1>Become an approved vendor</h1><p>Register your company and upload your documents. It takes about six minutes.</p>",
+      "thankYouContent": "<h1>Registration received</h1><p>Our procurement team will review your details and documents and email you within five business days.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Register",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

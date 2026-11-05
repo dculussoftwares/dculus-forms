@@ -1,0 +1,265 @@
+{
+  "slug": "party-rsvp-form",
+  "name": "Party RSVP",
+  "description": "Collect RSVPs for a birthday or house party: who's coming, how many adults and kids, food needs and a note for the host.",
+  "category": "Events",
+  "seoTitle": "Free Party RSVP Form Template",
+  "seoDescription": "Party RSVP form template for birthdays and house parties. Collects replies, adult and child headcount, food allergies and song requests. Share by link.",
+  "keywords": [
+    "party rsvp form",
+    "birthday party rsvp form",
+    "online rsvp form for party",
+    "house party rsvp",
+    "party invitation rsvp",
+    "rsvp form template"
+  ],
+  "tags": [
+    "RSVP",
+    "Invitation"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 23495684
+    },
+    {
+      "source": "pexels",
+      "id": 5805034
+    }
+  ],
+  "thumbnailAlt": "Party RSVP form beside a photo of group of friends celebrating a birthday with a cake and party hats indoors",
+  "content": {
+    "intro": "A party RSVP form is a form that collects who is coming, how many adults and children they are bringing, and any food allergies so the host can plan food, drinks and space. This template is one short page guests can answer from the invite link in under a minute, with the headcount questions hidden for anyone who can't make it.",
+    "audience": "Parents planning a kid's birthday, friends hosting a house party, and anyone throwing a milestone birthday, graduation or housewarming.",
+    "useCases": [
+      "A child's birthday party where you need to know which kids are coming and who has allergies",
+      "A 30th, 40th or 50th birthday dinner with a fixed number of seats",
+      "A housewarming where guests can bring a partner or their kids",
+      "A surprise party where friends RSVP by a private link"
+    ],
+    "tips": [
+      "Use conditional logic so the headcount and food questions only appear when a guest answers Yes or Maybe.",
+      "Set a closing date in Form Settings a few days before the party so you can confirm numbers with the venue or caterer.",
+      "Share the form as a QR code printed on paper invites, or paste the link into your group chat."
+    ],
+    "faq": [
+      {
+        "question": "What should a party RSVP form include?",
+        "answer": "The guest's name, whether they are coming, how many adults and children will attend, food allergies or dietary needs, a way to reach them, and an optional message for the host. Song requests or a gift-free note are nice extras."
+      },
+      {
+        "question": "How early should I send party RSVPs?",
+        "answer": "For most birthday and house parties, send the invite two to three weeks ahead and ask guests to reply about a week before the date. That leaves time to order food and chase anyone who hasn't answered."
+      },
+      {
+        "question": "What if a guest needs to change their RSVP?",
+        "answer": "They can send a new reply, or you can edit their response yourself. Every change is kept in the response's edit history, so you can see the latest answer."
+      },
+      {
+        "question": "Do guests need an account to RSVP?",
+        "answer": "No. Guests open the link and reply without signing up. Only you need a free account to create the form and see the replies."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "29e417dd-f484-504d-8918-a4ce83d34c27",
+        "title": "RSVP",
+        "fields": [
+          {
+            "id": "10d2a0cc-e7e2-5b4f-82b6-05d337471ca4",
+            "type": "text_input_field",
+            "label": "Your name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "First and last name",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "6d394ca4-f1d7-5ce4-a6bd-6ed5faef5957",
+            "type": "radio_field",
+            "label": "Can you come?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, I'll be there",
+              "Maybe",
+              "Sorry, I can't make it"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "3eb221d6-f347-529e-a6dd-5d9edd2db8eb",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "87864c63-bc66-57f6-abf6-12df0519f192",
+            "type": "number_field",
+            "label": "Adults coming, including you",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 10,
+            "suffix": "adults",
+            "gridId": "3eb221d6-f347-529e-a6dd-5d9edd2db8eb",
+            "gridColumn": 0,
+            "__type": "number_field"
+          },
+          {
+            "id": "f721b0f4-9e07-5f30-8309-c1ea9ce8a831",
+            "type": "number_field",
+            "label": "Children coming",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 10,
+            "suffix": "kids",
+            "gridId": "3eb221d6-f347-529e-a6dd-5d9edd2db8eb",
+            "gridColumn": 1,
+            "__type": "number_field"
+          },
+          {
+            "id": "63c35493-a5b2-5853-b0ac-4bbab787f953",
+            "type": "checkbox_field",
+            "label": "Any food allergies or dietary needs?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Vegetarian",
+              "Vegan",
+              "Gluten-free",
+              "Nut allergy",
+              "Dairy-free",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "6e2dd4eb-98cb-5265-a44a-b5222aae9cdc",
+            "type": "text_input_field",
+            "label": "Song request",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c6403454-cadb-5ef7-8a4d-3832b036592f",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "67c45480-02b0-515c-a172-423ec60ab1c0",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional, for party updates",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c6403454-cadb-5ef7-8a4d-3832b036592f",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "ea863327-0070-5923-a079-5dd878ecffb7",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c6403454-cadb-5ef7-8a4d-3832b036592f",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "e215a752-944c-5ca4-86af-8f6c12fb5397",
+            "type": "text_area_field",
+            "label": "A note for the host",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L4",
+      "content": "<h1>You're invited</h1><p>Let us know if you can make it. It takes less than a minute.</p>",
+      "thankYouContent": "<h1>Thanks for letting us know</h1><p>Your RSVP is in. We'll send the address and any updates a few days before the party.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Send RSVP",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

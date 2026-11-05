@@ -1,0 +1,290 @@
+{
+  "slug": "property-inquiry-form",
+  "name": "Property Inquiry",
+  "description": "Let buyers ask about a listing: contact details, property address or MLS number, questions, financing status and showing times.",
+  "category": "Real Estate",
+  "seoTitle": "Free Property Inquiry Form Template for Realtors",
+  "seoDescription": "Property inquiry form template for real estate agents: buyer contact, listing address or MLS number, questions, budget, mortgage pre-approval and showing times.",
+  "keywords": [
+    "property inquiry form",
+    "real estate inquiry form",
+    "property enquiry form",
+    "home buyer inquiry form",
+    "listing inquiry form",
+    "realtor contact form"
+  ],
+  "tags": [
+    "Lead Capture"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 8815820
+    },
+    {
+      "source": "pexels",
+      "id": 7937330
+    }
+  ],
+  "thumbnailAlt": "Property Inquiry form beside a photo of a realtor conducting a house tour with potential buyers on the stairs of a modern home",
+  "content": {
+    "intro": "A property inquiry form is a form that collects a buyer's contact details, the listing they are interested in, their questions, budget and financing status so a real estate agent can reply with the right information and arrange a showing. This template asks whether the buyer is pre-approved and already working with an agent, so you know who to call first.",
+    "audience": "Real estate agents, brokerages, new-home builders, property developers and for-sale-by-owner sellers.",
+    "useCases": [
+      "A 'Request info' form on each listing page of an agent website",
+      "A QR code on yard signs and open-house flyers",
+      "Inquiries from a new development's pre-launch landing page",
+      "Capturing buyer leads from social media property posts"
+    ],
+    "tips": [
+      "Print the form's QR code on yard signs and open-house handouts so drive-by buyers can ask right away.",
+      "Turn on email notifications so the listing agent gets each inquiry on their phone within minutes.",
+      "Use a webhook to send inquiries into the tools your brokerage already uses."
+    ],
+    "faq": [
+      {
+        "question": "What should a property inquiry form include?",
+        "answer": "The buyer's name, email and phone; the property address or MLS number; what they want to know; whether they want a showing and when; their budget; whether they are pre-approved for a mortgage; whether they already have an agent; and how they prefer to be contacted."
+      },
+      {
+        "question": "Why ask if the buyer already has an agent?",
+        "answer": "Many agents and brokerages have rules about contacting buyers who are already represented. Asking up front lets you include the buyer's agent and avoid conflicts. Check your local association's rules."
+      },
+      {
+        "question": "What is mortgage pre-approval?",
+        "answer": "Pre-approval is a lender's conditional statement of how much a buyer can borrow, based on a check of their income, credit and assets. Sellers and agents often treat pre-approved buyers as more ready to make an offer."
+      },
+      {
+        "question": "Can I use one form for all my listings?",
+        "answer": "Yes. Buyers type the address or MLS number, so one form works across every listing. You can also copy the form per listing and add photos and details for a single property."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "1cc0431b-f538-5826-9002-c75b9dd7f50a",
+        "title": "Your inquiry",
+        "fields": [
+          {
+            "id": "c20bb910-1e7a-50e8-8890-ef7bafa5848f",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "a44bc4aa-e5c4-5126-9d08-33ba49790b34",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "c20bb910-1e7a-50e8-8890-ef7bafa5848f",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "0c3a469f-1cb4-57ce-af6b-1cd7ca508989",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c20bb910-1e7a-50e8-8890-ef7bafa5848f",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "88ae3557-e82c-5a10-98bf-aa308ab35d46",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          },
+          {
+            "id": "f1d7c6e4-2693-52c9-9f28-2b5d4cf1d0b2",
+            "type": "text_input_field",
+            "label": "Property address or MLS number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. 42 Oak Lane or MLS #1234567",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c6b72010-50a0-5a1b-9af1-c85ec69222c3",
+            "type": "checkbox_field",
+            "label": "What would you like?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Schedule a showing",
+              "More photos or a video tour",
+              "Disclosures and HOA details",
+              "Price history and recent sales nearby",
+              "Help making an offer"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "c83c3b05-8daf-50ea-b355-362e89f26be1",
+            "type": "text_area_field",
+            "label": "Your questions",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "332f8ee7-4a97-5a9f-80f8-e64c1d4e96c7",
+            "type": "radio_field",
+            "label": "Price range you are considering",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under $300,000",
+              "$300,000–$500,000",
+              "$500,000–$800,000",
+              "$800,000–$1.2M",
+              "$1.2M+"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "a359d7c2-35c6-5546-b158-5ac54da56312",
+            "type": "radio_field",
+            "label": "Are you pre-approved for a mortgage?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "Not yet, but working on it",
+              "Paying cash",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "c4f97d49-2fc0-5014-adda-6a0ade361521",
+            "type": "radio_field",
+            "label": "Are you working with a real estate agent?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "42639b74-9824-5b74-8c29-0cdc2548e604",
+            "type": "text_area_field",
+            "label": "Days and times that work for a showing",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "ddd3a641-da59-515b-91d0-d72d8e8e9f7c",
+            "type": "radio_field",
+            "label": "Best way to reach you",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Phone call",
+              "Text message",
+              "Email"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L5",
+      "content": "<h1>Ask about this home</h1><p>Send your questions or request a showing. It takes about two minutes.</p>",
+      "thankYouContent": "<h1>Thanks for your interest</h1><p>The listing agent will reply within a few hours with answers and showing times.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Send inquiry",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "slug": "nps-survey",
+  "name": "NPS Survey",
+  "description": "Ask the 0–10 'how likely are you to recommend us' question, then the reason behind the score and one thing to improve.",
+  "category": "Feedback & Surveys",
+  "seoTitle": "Free NPS Survey Template (Net Promoter Score)",
+  "seoDescription": "NPS survey template with the 0–10 Net Promoter Score question, a why follow-up, the main reason for the score and one improvement. Track loyalty over time.",
+  "keywords": [
+    "nps survey",
+    "net promoter score survey",
+    "nps survey template",
+    "nps form",
+    "customer loyalty survey",
+    "how likely are you to recommend survey"
+  ],
+  "tags": [
+    "NPS",
+    "Survey"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 5990939
+    },
+    {
+      "source": "pexels",
+      "id": 3777552
+    }
+  ],
+  "thumbnailAlt": "NPS Survey form beside a photo of adult man using smartphone comfortably indoors, conveying modern lifestyle",
+  "content": {
+    "intro": "An NPS survey is a form that asks customers how likely they are to recommend you on a 0 to 10 scale, then why, so a company can measure loyalty as a single Net Promoter Score and see what drives it. This template keeps the score question first and adds just two follow-ups, so it works in an email, in-app or after support.",
+    "audience": "SaaS teams, ecommerce brands, agencies, clinics and service companies that track customer loyalty quarter by quarter.",
+    "useCases": [
+      "A quarterly relationship survey sent to all active customers",
+      "A transactional NPS after onboarding or a support ticket closes",
+      "Comparing loyalty across plans, regions or customer segments",
+      "Benchmarking before and after a big product or pricing change"
+    ],
+    "tips": [
+      "Use conditional logic to change the follow-up question by score: ask detractors (0–6) what went wrong and promoters (9–10) what they value most.",
+      "Connect the Google Sheets plugin and add a formula column to calculate your NPS automatically as responses arrive.",
+      "Send the survey through the same channel each time and at the same point in the customer journey so your scores are comparable."
+    ],
+    "faq": [
+      {
+        "question": "What should an NPS survey include?",
+        "answer": "The standard question 'How likely are you to recommend us to a friend or colleague?' on a 0–10 scale, an open 'Why did you give that score?' follow-up, and optionally one question about the main reason and one about what to improve. Keep it under a minute."
+      },
+      {
+        "question": "How do you calculate a Net Promoter Score?",
+        "answer": "Group answers into promoters (9–10), passives (7–8) and detractors (0–6). NPS is the percentage of promoters minus the percentage of detractors, giving a score from -100 to +100."
+      },
+      {
+        "question": "What is a good NPS score?",
+        "answer": "Any score above 0 means you have more promoters than detractors. Many companies treat 30 or more as good and 50 or more as excellent, but benchmarks vary a lot by industry, so compare yourself mainly with your own past scores."
+      },
+      {
+        "question": "How often should you send an NPS survey?",
+        "answer": "Most teams run a relationship NPS every quarter or every six months and a transactional NPS after key moments like onboarding or support. Avoid surveying the same person more than a few times a year."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "e5195716-b364-5909-a2b3-22013d8458f4",
+        "title": "Net Promoter Score",
+        "fields": [
+          {
+            "id": "12bee0ab-7cd6-5983-b09c-720c5513a6e7",
+            "type": "radio_field",
+            "label": "How likely are you to recommend us to a friend or colleague?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "0 = not at all likely, 10 = extremely likely",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "93a9e335-4f19-5a60-9cbd-45b53f5c344b",
+            "type": "text_area_field",
+            "label": "What is the main reason for your score?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "251299f7-ebc4-5fcd-823d-d94fcf08b5e0",
+            "type": "radio_field",
+            "label": "Which of these matters most to you about us?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Product quality",
+              "Ease of use",
+              "Customer support",
+              "Price",
+              "Reliability",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "f3bd748f-37f0-53f5-9075-cc254fddbf1e",
+            "type": "text_area_field",
+            "label": "What is one thing we could do to improve?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "22eeb148-04bb-5218-ae3d-169f54acad28",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional, only if you are happy for us to follow up",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          },
+          {
+            "id": "cd3ec9c2-b35c-5302-b985-3071511c5a1c",
+            "type": "checkbox_field",
+            "label": "Follow-up",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "You may contact me about my answers"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L9",
+      "content": "<h1>One quick question</h1><p>Three questions, under a minute.</p>",
+      "thankYouContent": "<h1>Thanks for telling us</h1><p>Your score and comments go straight to our team and shape what we work on next.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Send",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

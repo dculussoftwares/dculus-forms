@@ -1,0 +1,302 @@
+{
+  "slug": "field-trip-permission-slip",
+  "name": "Field Trip Permission Slip",
+  "description": "Get parent permission for a school trip online: student, attendance yes or no, health notes, chaperone offer and typed consent.",
+  "category": "Education",
+  "seoTitle": "Free Field Trip Permission Slip Template",
+  "seoDescription": "Field trip permission slip template collects parent consent, student details, medical and allergy notes, lunch plans and chaperone volunteers online.",
+  "keywords": [
+    "field trip permission slip",
+    "field trip permission form",
+    "school trip permission slip",
+    "permission slip template",
+    "online permission slip",
+    "parent permission form for field trip"
+  ],
+  "tags": [
+    "Consent",
+    "School"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 39505454
+    },
+    {
+      "source": "pexels",
+      "id": 5578920
+    }
+  ],
+  "thumbnailAlt": "Field Trip Permission Slip form beside a photo of engaged children exploring a museum exhibit in Hanoi, showcasing education and curiosity",
+  "content": {
+    "intro": "A field trip permission slip is a form that gives a parent or guardian's consent for a student to leave school on a trip and collects emergency contacts, medical and allergy notes, and lunch plans so teachers can supervise safely. This template puts the trip details at the top and ends with a typed parent name and consent box, so no slips get lost in backpacks.",
+    "audience": "Teachers, school office staff, PTA trip coordinators, scout leaders and youth group organizers.",
+    "useCases": [
+      "A class trip to a museum, zoo or science center",
+      "An overnight outdoor education or camp trip",
+      "A sports team traveling to an away tournament",
+      "A youth group outing to a theme park"
+    ],
+    "tips": [
+      "Edit the trip details block at the top for each outing, and set a closing date in Form Settings for the day slips are due.",
+      "Send replies to Google Sheets and match them against your class list to see who still needs to reply.",
+      "Turn on an email copy to the parent so families keep a record of what they agreed to."
+    ],
+    "faq": [
+      {
+        "question": "What should a field trip permission slip include?",
+        "answer": "The destination, date, departure and return times, transport and cost; the student's name and class; whether the child may attend; a parent or guardian contact for the day; allergies, medications and medical notes; lunch arrangements; and a typed parent name with a consent statement."
+      },
+      {
+        "question": "Are online permission slips accepted instead of paper?",
+        "answer": "Many schools and districts accept online slips with a typed name and a consent box, but rules differ between districts, states and countries. Have your wording reviewed for your local rules and school policy before you use it."
+      },
+      {
+        "question": "How do I ask parents to chaperone?",
+        "answer": "Add a question asking whether they can volunteer, as this template does. Parents who say yes leave a phone number, and you can follow up about any background check your school requires."
+      },
+      {
+        "question": "Can I reuse this permission slip for every trip?",
+        "answer": "Yes. Change the trip details text and the due date for each outing. Each trip's replies stay in their own form, so records do not get mixed."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "082b00c4-150a-5bc2-b541-1567403eb1f0",
+        "title": "Permission slip",
+        "fields": [
+          {
+            "id": "8dd34783-908f-5359-9f7a-9a0d44230458",
+            "type": "rich_text_field",
+            "content": "<p><strong>Trip:</strong> City Science Museum<br><strong>Date:</strong> Friday, [date]<br><strong>Leaves school:</strong> 9:00 am · <strong>Returns:</strong> 2:30 pm<br><strong>Transport:</strong> School bus<br><strong>Cost:</strong> $[amount], due to the school office by [date]</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "9418bf1a-dd2c-5cda-864d-84b9395392ba",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c4751709-193b-54a2-9ce6-a9ea6c99f7ab",
+            "type": "text_input_field",
+            "label": "Student full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "9418bf1a-dd2c-5cda-864d-84b9395392ba",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "0e4e615f-00c5-5590-b655-7cd6dc85af5a",
+            "type": "text_input_field",
+            "label": "Class or teacher",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "9418bf1a-dd2c-5cda-864d-84b9395392ba",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "f983e212-64fb-534f-8033-4ce10553bff9",
+            "type": "radio_field",
+            "label": "May your child attend this trip?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, my child may attend",
+              "No, my child will not attend"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6ff1d7e5-29b6-5d30-8f08-73f9185a6f07",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ed7f2455-f8fb-550b-9aef-792c68081739",
+            "type": "text_input_field",
+            "label": "Parent or guardian name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "6ff1d7e5-29b6-5d30-8f08-73f9185a6f07",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "5f4e118f-6404-52fb-8ef4-fe214bf93d98",
+            "type": "phone_number_field",
+            "label": "Phone number on the trip day",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "6ff1d7e5-29b6-5d30-8f08-73f9185a6f07",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "c383a744-ee70-507b-ba34-fc932a8a836c",
+            "type": "email_field",
+            "label": "Parent or guardian email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          },
+          {
+            "id": "4cc922c3-ca3c-57cf-a0e7-4be9e3890598",
+            "type": "text_area_field",
+            "label": "Allergies, medical conditions or medication your child needs on the trip",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Medication must be handed to the teacher in its original packaging",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "b08a7ebd-aef1-5859-9cc0-e45f70836a69",
+            "type": "radio_field",
+            "label": "Lunch",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "My child will bring a packed lunch",
+              "My child needs a school lunch"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "c77cd72e-7b6b-5895-89ea-41b44e29697b",
+            "type": "radio_field",
+            "label": "Can you volunteer as a chaperone?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "Maybe",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "3b3a922a-b669-5599-9750-d2cb9a57da42",
+            "type": "rich_text_field",
+            "content": "<p>I give permission for my child to take part in this trip and travel by the transport listed. I understand students must follow staff instructions. In an emergency, if I cannot be reached, I authorize staff to seek medical treatment for my child.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "f36cd2d8-c54b-5c94-9ab9-fbfc069e5737",
+            "type": "text_input_field",
+            "label": "Type your full name as the parent or guardian",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "3b761243-2b2e-5d97-a3a1-8fe6805c50c9",
+            "type": "checkbox_field",
+            "label": "Consent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I am the parent or legal guardian and I agree to the statement above"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L7",
+      "content": "<h1>Field trip permission</h1><p>Read the trip details and give permission. It takes about two minutes.</p>",
+      "thankYouContent": "<h1>Permission slip received</h1><p>Thank you. Your child's teacher has your reply and will contact you if anything about the trip changes.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Submit slip",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

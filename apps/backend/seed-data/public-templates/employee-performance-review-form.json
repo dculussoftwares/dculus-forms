@@ -1,0 +1,616 @@
+{
+  "slug": "employee-performance-review-form",
+  "name": "Employee Performance Review",
+  "description": "Run annual or mid-year reviews: competency ratings, goal results, strengths, development areas, next goals and sign-off.",
+  "category": "HR & Recruiting",
+  "seoTitle": "Free Employee Performance Review Form Template",
+  "seoDescription": "Employee performance review form template with competency ratings, goal results, strengths, areas to improve, next-period goals and an overall rating.",
+  "keywords": [
+    "employee performance review form",
+    "performance review template",
+    "performance appraisal form",
+    "annual review form",
+    "employee evaluation form",
+    "performance evaluation template"
+  ],
+  "tags": [
+    "HR",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 18955789
+    },
+    {
+      "source": "pexels",
+      "id": 18848929
+    }
+  ],
+  "thumbnailAlt": "Employee Performance Review form beside a photo of two women having a cheerful work conversation at an office table with a laptop",
+  "content": {
+    "intro": "An employee performance review form is a form that records a manager's ratings of an employee's core competencies, progress on goals, strengths, development areas and goals for the next period, so both sides have a clear, written record of the review. This template follows the usual annual review structure and ends with employee comments and a typed acknowledgment.",
+    "audience": "People managers, HR business partners and small business owners running annual, mid-year or probation reviews.",
+    "useCases": [
+      "Annual performance reviews tied to raises or promotions",
+      "Mid-year check-ins on goals set at the start of the year",
+      "End-of-probation reviews for new hires",
+      "Project-based reviews for contractors or rotating team members"
+    ],
+    "tips": [
+      "Use the PDF templates feature to generate a filled PDF of each review for the employee's personnel file.",
+      "Let managers save progress and resume, since a thoughtful review is often written over more than one sitting.",
+      "Edit responses after the review meeting to add the employee's comments; the edit history shows what changed and when."
+    ],
+    "faq": [
+      {
+        "question": "What should an employee performance review form include?",
+        "answer": "Employee and reviewer details, the review period, ratings on core competencies (job knowledge, quality, productivity, communication, teamwork, initiative, reliability), results against last period's goals, strengths, areas to develop, goals for the next period, an overall rating and space for employee comments and acknowledgment."
+      },
+      {
+        "question": "What rating scale works best for performance reviews?",
+        "answer": "A five-point scale from 'Unsatisfactory' to 'Outstanding' is the most common because it is easy to explain. Define each level in writing so different managers rate the same way."
+      },
+      {
+        "question": "Should employees write a self-review first?",
+        "answer": "Many companies ask for one. You can copy this form, change the wording to the first person and send it to employees a week before the manager's review."
+      },
+      {
+        "question": "Does the employee's acknowledgment mean they agree?",
+        "answer": "No. It usually only confirms the employee has seen and discussed the review. Employees can record disagreement in the comments box."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "b9302077-2a8d-57dc-a1f5-5e224ee17ec2",
+        "title": "Review details",
+        "fields": [
+          {
+            "id": "cc2d4e2d-b7d5-54e2-9caf-dfb37cd9368f",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ec343a8c-e37b-57d2-9d87-93374e189f80",
+            "type": "text_input_field",
+            "label": "Employee name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "cc2d4e2d-b7d5-54e2-9caf-dfb37cd9368f",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "82707599-49ca-5fc7-9576-bf53a57200b0",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "cc2d4e2d-b7d5-54e2-9caf-dfb37cd9368f",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c121a8d1-6298-5bb3-8381-b583bd1fef8e",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "205b883c-a53f-5a73-8702-90887b6f722d",
+            "type": "text_input_field",
+            "label": "Department",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "gridId": "c121a8d1-6298-5bb3-8381-b583bd1fef8e",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "dcc8f8a2-6958-57ae-9e12-a42234c5c75d",
+            "type": "text_input_field",
+            "label": "Reviewer name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "c121a8d1-6298-5bb3-8381-b583bd1fef8e",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c426ee59-c86e-5e79-a46e-67848adc1c22",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c5498190-1a4e-5daa-a1a6-1e20f3a863f9",
+            "type": "date_field",
+            "label": "Review period start",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c426ee59-c86e-5e79-a46e-67848adc1c22",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "eee5cb1f-53e5-5dc1-a970-095f68944f8d",
+            "type": "date_field",
+            "label": "Review period end",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c426ee59-c86e-5e79-a46e-67848adc1c22",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "d49a686a-3014-53c8-9152-3989d4e3f58d",
+            "type": "radio_field",
+            "label": "Type of review",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Annual",
+              "Mid-year",
+              "End of probation",
+              "Project",
+              "Other"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "2a6a225d-aeb6-51ff-b1c4-503eea1e40e4",
+        "title": "Competency ratings",
+        "fields": [
+          {
+            "id": "a86a139f-cd24-5e7c-bdad-6d0650f934c7",
+            "type": "rich_text_field",
+            "content": "<p>1 = unsatisfactory, 2 = needs improvement, 3 = meets expectations, 4 = exceeds expectations, 5 = outstanding.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "b85486eb-4ff4-50ec-9ed8-73d2d71f7187",
+            "type": "radio_field",
+            "label": "Job knowledge and skills",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "9900b276-c77d-5919-a3d1-96d73bb88856",
+            "type": "radio_field",
+            "label": "Quality and accuracy of work",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6182ac94-e69d-5413-8cb7-cc97cd3b9141",
+            "type": "radio_field",
+            "label": "Productivity and meeting deadlines",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "e3735117-a7c1-5c32-b4f8-ef7048b58673",
+            "type": "radio_field",
+            "label": "Communication",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "957e49ff-5fac-53a4-9e0e-8a14516e76a6",
+            "type": "radio_field",
+            "label": "Teamwork and collaboration",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "260110d2-1e81-5d7b-8d38-37c69468935e",
+            "type": "radio_field",
+            "label": "Initiative and problem solving",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6ccd5256-8720-5007-a943-b3e86f1d3a6b",
+            "type": "radio_field",
+            "label": "Reliability and attendance",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "0773b94b-2c0c-5888-812e-eb777f5a80b1",
+        "title": "Goals and development",
+        "fields": [
+          {
+            "id": "e74b872e-6cef-5364-ac53-5cbd12dbab5c",
+            "type": "radio_field",
+            "label": "How well were last period's goals met?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Not met",
+              "Partly met",
+              "Mostly met",
+              "Fully met",
+              "Exceeded",
+              "No goals were set"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "bb1e101b-7628-5c66-a52e-f24dc09232a2",
+            "type": "text_area_field",
+            "label": "Key achievements this period",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 2000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "0deec02e-fcb2-57e2-a895-2736bc6e4ace",
+            "type": "text_area_field",
+            "label": "Strengths to keep building on",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "787e552f-6521-585a-9089-c3cf498968b2",
+            "type": "text_area_field",
+            "label": "Areas for development",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "be8819db-283b-5cf3-bd25-41c2586712ae",
+            "type": "text_area_field",
+            "label": "Goals for the next period",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Specific, measurable goals with target dates",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 2000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "ce407547-06bf-57d7-a1d7-b90acae53e17",
+            "type": "text_area_field",
+            "label": "Training or support needed",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "bc37450c-8ebb-5618-b885-62e4bdbedac7",
+        "title": "Overall and sign-off",
+        "fields": [
+          {
+            "id": "007965ad-8402-5300-879c-1c8b52fc172b",
+            "type": "radio_field",
+            "label": "Overall performance rating",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Unsatisfactory",
+              "Needs improvement",
+              "Meets expectations",
+              "Exceeds expectations",
+              "Outstanding"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "16c1f858-25c4-5c59-9391-de1cbf3e2028",
+            "type": "text_area_field",
+            "label": "Employee comments",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "3a8c5da3-bbcc-5a66-9b2f-3ff2975d5c4b",
+            "type": "rich_text_field",
+            "content": "<p>Typing your name below confirms this review was discussed. It does not mean the employee agrees with every rating.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "5e41266d-b108-55be-8d02-607c105e753d",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "b4176409-d48a-5a7e-a287-a5b10e326175",
+            "type": "text_input_field",
+            "label": "Reviewer full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "gridId": "5e41266d-b108-55be-8d02-607c105e753d",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "e2c70681-f6a8-50ca-a47c-c16da1cbd13a",
+            "type": "date_field",
+            "label": "Review meeting date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "5e41266d-b108-55be-8d02-607c105e753d",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "bc5b6f29-d049-5fae-9b99-faad7d0002a9",
+            "type": "checkbox_field",
+            "label": "Acknowledgment",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I confirm this review was discussed with the employee"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L6",
+      "content": "<h1>Performance review</h1><p>Rate, reflect and set next goals. About 15 minutes.</p>",
+      "thankYouContent": "<h1>Review submitted</h1><p>HR has a copy. Schedule the review conversation with your employee if you have not already.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start review",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

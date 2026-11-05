@@ -1,0 +1,495 @@
+{
+  "slug": "vehicle-service-request-form",
+  "name": "Vehicle Service Request",
+  "description": "Take car service requests online: owner details, make, model, VIN, mileage, service needed, symptoms and preferred drop-off date.",
+  "category": "Business",
+  "seoTitle": "Free Vehicle Service Request Form Template",
+  "seoDescription": "Vehicle service request form template for auto repair shops: owner contact, make, model, VIN, mileage, service type, warning lights, symptoms and drop-off date.",
+  "keywords": [
+    "vehicle service request form",
+    "car service request form",
+    "auto repair request form",
+    "car service booking form",
+    "auto repair work order form",
+    "mechanic service request form"
+  ],
+  "tags": [
+    "Booking",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 8985452
+    },
+    {
+      "source": "pexels",
+      "id": 8985450
+    }
+  ],
+  "thumbnailAlt": "Vehicle Service Request form beside a photo of mechanic in blue uniform inspecting a car engine in a workshop",
+  "content": {
+    "intro": "A vehicle service request form is a form that collects the owner's contact details, the vehicle's make, model, VIN and mileage, and the service or problem so an auto repair shop can prepare before the car arrives. This template asks about warning lights, symptoms and photos, so your service advisor can order parts and plan bay time before drop-off.",
+    "audience": "Independent garages, auto repair shops, tire and quick-lube centers, dealership service departments, mobile mechanics and fleet managers.",
+    "useCases": [
+      "Online service requests from a garage website outside opening hours",
+      "Fleet drivers reporting a vehicle problem to the fleet manager",
+      "Seasonal tire change and winter check sign-ups",
+      "Mobile mechanics collecting job details before driving out"
+    ],
+    "tips": [
+      "Turn on the email copy for the respondent so the customer has their request details and your shop address.",
+      "Use conditional logic to show the symptom questions only when the customer chooses a repair or diagnostic.",
+      "Set daily response limits in Form Settings so you never take more requests than your bays can handle."
+    ],
+    "faq": [
+      {
+        "question": "What should a vehicle service request form include?",
+        "answer": "The owner's name, phone and email; the vehicle year, make, model, VIN, license plate and mileage; the service needed; any warning lights or symptoms; photos if useful; preferred drop-off date; whether they need a loaner or shuttle; and consent to contact them before extra work."
+      },
+      {
+        "question": "Where do I find my VIN?",
+        "answer": "The 17-character vehicle identification number is usually on a plate at the base of the windshield on the driver's side, on the driver's door jamb sticker, and on your registration and insurance documents."
+      },
+      {
+        "question": "Does this form book a fixed appointment time?",
+        "answer": "No. Customers give a preferred date and time of day, and your shop confirms the actual slot by phone or email. That keeps your schedule in your hands."
+      },
+      {
+        "question": "Why ask customers to approve extra work in advance?",
+        "answer": "Inspections often find other issues. Asking whether to call first or proceed up to an agreed amount avoids surprise bills and delays. Rules on written estimates vary by state, so check your local requirements."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "1e36be96-40d4-5aa3-841c-18a41d23c952",
+        "title": "Your details",
+        "fields": [
+          {
+            "id": "f89d402f-7297-5394-aded-4f2a67cea5e7",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "63cd5efd-6d93-56ce-b941-462afc2533aa",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "f89d402f-7297-5394-aded-4f2a67cea5e7",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "0d2fa50d-ffbd-54a7-9320-3c17e1416ba1",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "f89d402f-7297-5394-aded-4f2a67cea5e7",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d0b150bc-0fcc-5a6a-9cc1-1a30aa9fd3d8",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "bb706966-05b6-5203-bf91-795b50bcfe0e",
+            "type": "phone_number_field",
+            "label": "Mobile number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "d0b150bc-0fcc-5a6a-9cc1-1a30aa9fd3d8",
+            "gridColumn": 0,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "5291052c-546f-562f-b036-624aa813dd3e",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "d0b150bc-0fcc-5a6a-9cc1-1a30aa9fd3d8",
+            "gridColumn": 1,
+            "__type": "email_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "6afe83c8-33db-52a4-bf39-e623795be960",
+        "title": "Your vehicle",
+        "fields": [
+          {
+            "id": "0b1365e6-8157-5041-97c4-63ec5394e2a2",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "6ab7f0b3-f95c-5475-8e31-8a88bc6d3119",
+            "type": "number_field",
+            "label": "Year",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 1950,
+            "max": 2027,
+            "gridId": "0b1365e6-8157-5041-97c4-63ec5394e2a2",
+            "gridColumn": 0,
+            "__type": "number_field"
+          },
+          {
+            "id": "a41a85d0-59a9-5f21-8c7e-df83e565fb08",
+            "type": "text_input_field",
+            "label": "Make",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Toyota",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "0b1365e6-8157-5041-97c4-63ec5394e2a2",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "a44f4bd6-c82f-5539-88bc-a83e7030beab",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "b2f6ac81-60fc-5245-87bc-62c281d4992e",
+            "type": "text_input_field",
+            "label": "Model",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. RAV4",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a44f4bd6-c82f-5539-88bc-a83e7030beab",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "b5b441cc-a7a9-5cf6-8b43-243233b46873",
+            "type": "text_input_field",
+            "label": "License plate",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a44f4bd6-c82f-5539-88bc-a83e7030beab",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c4644dab-1a9f-5911-8250-d8d926219457",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "b4308bd2-9cc7-591a-b494-bea18e27ac79",
+            "type": "text_input_field",
+            "label": "VIN",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. 17 characters",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 17
+            },
+            "gridId": "c4644dab-1a9f-5911-8250-d8d926219457",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "5b663506-fea9-5209-b20f-2354c4c5d7c4",
+            "type": "number_field",
+            "label": "Current mileage",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 999999,
+            "suffix": "miles",
+            "gridId": "c4644dab-1a9f-5911-8250-d8d926219457",
+            "gridColumn": 1,
+            "__type": "number_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "7e8be2bc-9845-5a21-b211-75ac96104841",
+        "title": "Service needed",
+        "fields": [
+          {
+            "id": "45e2615f-4e55-56b9-bc77-d02a785f155c",
+            "type": "checkbox_field",
+            "label": "What does the vehicle need?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Oil and filter change",
+              "Scheduled maintenance",
+              "Brakes",
+              "Tires or alignment",
+              "Battery or electrical",
+              "Air conditioning",
+              "Diagnostic for a problem",
+              "State inspection",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "44d86605-2876-5671-b505-bcfe203d3109",
+            "type": "checkbox_field",
+            "label": "Are any warning lights on?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Check engine",
+              "ABS",
+              "Battery",
+              "Oil pressure",
+              "Tire pressure (TPMS)",
+              "None"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "aabf15be-112e-5b05-983f-44f8187a3c72",
+            "type": "text_area_field",
+            "label": "Describe any symptoms",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Noises, smells, when it happens",
+            "placeholder": "e.g. Grinding noise when braking at low speed",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "da1ed8fe-ce67-5c6f-9a5f-0cc9d377d345",
+            "type": "file_upload_field",
+            "label": "Photos of the problem or dashboard",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 3,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "8be74ab2-b19a-5e3e-8796-a6cd61f20f9b",
+        "title": "Drop-off",
+        "fields": [
+          {
+            "id": "2108515a-ca4f-55b6-b76a-47ac9cfa692b",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "8a378d19-4b66-51ea-b8a1-4f4d2973db38",
+            "type": "date_field",
+            "label": "Preferred drop-off date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "2108515a-ca4f-55b6-b76a-47ac9cfa692b",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "3107dbdb-0c45-5d5e-b1f9-83c9257afa7b",
+            "type": "radio_field",
+            "label": "Time of day",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Early morning",
+              "Morning",
+              "Afternoon"
+            ],
+            "gridId": "2108515a-ca4f-55b6-b76a-47ac9cfa692b",
+            "gridColumn": 1,
+            "__type": "radio_field"
+          },
+          {
+            "id": "6dd8822f-b211-5932-b500-6c959037be39",
+            "type": "radio_field",
+            "label": "Will you wait or leave the vehicle?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "I'll wait",
+              "Leave it, I need a shuttle ride",
+              "Leave it, I need a loaner car",
+              "Leave it, I have my own ride"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "59a44155-3391-529a-9fec-d9f0d7632431",
+            "type": "radio_field",
+            "label": "If we find other issues",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Call me before any extra work",
+              "Go ahead with repairs under $200",
+              "Go ahead with safety-critical repairs"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L3",
+      "content": "<h1>Book your car in</h1><p>Tell us about your vehicle and what it needs. It takes about three minutes.</p>",
+      "thankYouContent": "<h1>Request received</h1><p>Our service advisor will call or email to confirm your drop-off time and a rough estimate.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Request service",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

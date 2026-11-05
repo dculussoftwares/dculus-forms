@@ -1,0 +1,374 @@
+{
+  "slug": "request-for-quote-form",
+  "name": "Request for Quote",
+  "description": "Let buyers request a quote: product or service, specifications, quantities, delivery location, required date and drawings.",
+  "category": "Business",
+  "seoTitle": "Free Request for Quote Form Template (RFQ)",
+  "seoDescription": "Request for quote form template that collects buyer details, specifications, quantities, delivery address, target date and drawings so you can price jobs fast.",
+  "keywords": [
+    "request for quote form",
+    "RFQ form",
+    "quote request form",
+    "request a quote form",
+    "price quote request form",
+    "B2B quote request form"
+  ],
+  "tags": [
+    "Lead Capture",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 33559565
+    },
+    {
+      "source": "pexels",
+      "id": 32845684
+    }
+  ],
+  "thumbnailAlt": "Request for Quote form beside a photo of close-up of a technician's hands assembling a metal connecting rod with precision and care",
+  "content": {
+    "intro": "A request for quote form is a form that collects a buyer's contact details, product specifications, quantities, delivery location and required date so a supplier can send an accurate price. This template asks for units, tolerances and drawings in the same submission, so your estimator can quote without a round of follow-up emails.",
+    "audience": "Manufacturers, machine shops, printers, wholesalers, packaging suppliers, contractors and B2B service firms that price each job.",
+    "useCases": [
+      "Quoting custom CNC, sheet metal or 3D-printed parts from uploaded CAD drawings",
+      "Pricing bulk orders of promotional products or printed packaging",
+      "Wholesale price requests from retailers and distributors",
+      "Scoping installation or maintenance work for commercial sites"
+    ],
+    "tips": [
+      "Embed the form on your product pages so buyers can request a quote without leaving the page.",
+      "Send each request to your sales inbox with email notifications and to Google Sheets to track quote turnaround.",
+      "Use webhooks to push new RFQs into your own quoting or ERP system."
+    ],
+    "faq": [
+      {
+        "question": "What should a request for quote form include?",
+        "answer": "The buyer's name, company, email and phone; what they need; specifications such as material, size, finish or tolerances; quantity and unit; delivery address and Incoterms if relevant; the date they need it; their budget or target price; and any drawings or files. This template has each of these."
+      },
+      {
+        "question": "What is the difference between an RFQ and an RFP?",
+        "answer": "An RFQ asks for a price on something already well defined, like 5,000 units of a part. An RFP asks suppliers to propose how they would solve a problem, and price is only one part of the answer."
+      },
+      {
+        "question": "How fast should I respond to a quote request?",
+        "answer": "As fast as you can. Buyers often send the same RFQ to several suppliers, so a same-day acknowledgment and a clear date for the full quote help you stay in the running."
+      },
+      {
+        "question": "Can buyers upload drawings or CAD files?",
+        "answer": "Yes. The file upload question accepts PDFs and images by default, and you can add other file types in the builder. Uploaded files are stored privately and only your team can open them."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "737fecf0-8c3d-523d-a5cc-04f0e93b7621",
+        "title": "Your details",
+        "fields": [
+          {
+            "id": "ef4537ca-b436-59ef-ab4f-b88c2f24f153",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "6c67664b-3f47-5b1d-ab60-ee18be818e47",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "ef4537ca-b436-59ef-ab4f-b88c2f24f153",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "f1d31b13-d11b-5bbb-b097-4e03d95b0369",
+            "type": "text_input_field",
+            "label": "Company",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "ef4537ca-b436-59ef-ab4f-b88c2f24f153",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "6aa06362-98e4-5647-89a8-ebbb7810fe93",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c7d4aea9-57c5-561b-adcd-2f308d447ffc",
+            "type": "email_field",
+            "label": "Work email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "6aa06362-98e4-5647-89a8-ebbb7810fe93",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "f0c9d6df-80c2-51f7-998c-43ac66baf734",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "6aa06362-98e4-5647-89a8-ebbb7810fe93",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "c444b04f-ae5b-5eed-95a1-c27cd5a623cc",
+            "type": "radio_field",
+            "label": "Is this for a new or repeat order?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "New order",
+              "Repeat of a previous order",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "b5b284f2-29b7-5485-affb-8e2739ef4293",
+        "title": "What you need",
+        "fields": [
+          {
+            "id": "c7943953-4082-5f42-9526-46cf03f84ef5",
+            "type": "text_input_field",
+            "label": "Product or service",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Aluminum mounting bracket, part #AB-102",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "ff7ea551-0232-5593-bef5-9337e2a36ab5",
+            "type": "text_area_field",
+            "label": "Specifications",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Material, dimensions, finish, tolerances, color or standards",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 2000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "3e7ab16c-71d8-5bd6-b93f-0853493bc914",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "caf24547-ab33-5418-8d38-e2eeed4a3480",
+            "type": "number_field",
+            "label": "Quantity",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 1,
+            "max": 10000000,
+            "gridId": "3e7ab16c-71d8-5bd6-b93f-0853493bc914",
+            "gridColumn": 0,
+            "__type": "number_field"
+          },
+          {
+            "id": "f2cbaf44-7fb6-5a44-a1d1-66c6343a7ad5",
+            "type": "select_field",
+            "label": "Unit",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Pieces",
+              "Boxes",
+              "Pallets",
+              "Kilograms",
+              "Meters",
+              "Hours",
+              "Lots"
+            ],
+            "gridId": "3e7ab16c-71d8-5bd6-b93f-0853493bc914",
+            "gridColumn": 1,
+            "__type": "select_field"
+          },
+          {
+            "id": "295d045b-4ebe-5be6-b670-76531731f1b3",
+            "type": "file_upload_field",
+            "label": "Drawings, CAD files or photos",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 5 files",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 25,
+            "maxFiles": 5,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "58b6b63f-2071-5139-bc62-e546ac475c9a",
+        "title": "Delivery and timing",
+        "fields": [
+          {
+            "id": "51c0f1d2-7fbb-5df8-9fd9-1b914c01f2fd",
+            "type": "text_area_field",
+            "label": "Delivery address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "cc3e1f67-46d2-5a49-abae-78b96a8dddd4",
+            "type": "date_field",
+            "label": "Date you need it by",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "4918d0e7-b5c7-52ad-8e69-869a13835917",
+            "type": "radio_field",
+            "label": "Target budget",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under $1,000",
+              "$1,000–$10,000",
+              "$10,000–$50,000",
+              "$50,000+",
+              "Prefer not to say"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "75d61311-3237-5f4d-94e8-2c18a43b8908",
+            "type": "text_area_field",
+            "label": "Anything else we should know?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Packaging, certifications or delivery restrictions",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L5",
+      "content": "<h1>Request a quote</h1><p>Send us your specs and quantities and we will price it. It takes about four minutes.</p>",
+      "thankYouContent": "<h1>Quote request received</h1><p>An estimator will review your specs and email a quote, usually within one business day.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Get a quote",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

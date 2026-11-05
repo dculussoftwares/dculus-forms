@@ -1,0 +1,320 @@
+{
+  "slug": "customer-complaint-form",
+  "name": "Customer Complaint",
+  "description": "Record customer complaints with what went wrong, where and when, the outcome the customer wants and how they prefer to be contacted.",
+  "category": "Customer Support",
+  "seoTitle": "Free Customer Complaint Form Template",
+  "seoDescription": "Customer complaint form template that records what went wrong, the date, location, order number, evidence and the resolution the customer expects from you.",
+  "keywords": [
+    "customer complaint form",
+    "complaint form template",
+    "customer complaint template",
+    "online complaint form",
+    "complaint registration form",
+    "service complaint form"
+  ],
+  "tags": [
+    "Feedback",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 13735967
+    },
+    {
+      "source": "pexels",
+      "id": 8475203
+    }
+  ],
+  "thumbnailAlt": "Customer Complaint form beside a photo of a smiling barista in an apron serves a customer at a cozy cafe counter",
+  "content": {
+    "intro": "A customer complaint form is a form that records what went wrong, when and where it happened, and what the customer wants done about it so a business can investigate fairly and respond within a set time. This template asks for the desired resolution in plain options (refund, replacement, apology, repair) so you know the customer's expectation before you pick up the phone.",
+    "audience": "Retail stores, restaurants, hotels, service companies, clinics' front offices and any business that needs a written complaint log for quality or regulator reviews.",
+    "useCases": [
+      "A complaints link in order confirmation and receipt emails",
+      "A QR code at the till or reception for in-person complaints",
+      "Logging phone complaints so staff record every case the same way",
+      "Building a monthly complaints register for quality reviews"
+    ],
+    "tips": [
+      "Turn on the email copy to the respondent so the customer gets a dated record of their complaint straight away.",
+      "Use the per-question charts to spot patterns, such as most complaints coming from one location or one type of issue.",
+      "Edit each response to log your outcome; the edit history shows who updated the case and when, which helps if a complaint is escalated."
+    ],
+    "faq": [
+      {
+        "question": "What should a customer complaint form include?",
+        "answer": "The customer's name and contact details, the order or reference number, the date and location of the problem, the type of complaint, a description of what happened, any evidence such as photos or receipts, the resolution they want and their preferred contact method."
+      },
+      {
+        "question": "How quickly should a business respond to a complaint?",
+        "answer": "Many businesses acknowledge a complaint within one or two working days and aim to resolve it within two to four weeks. Some industries have formal deadlines set by a regulator, so check the rules that apply to your sector and location."
+      },
+      {
+        "question": "Why ask customers what resolution they expect?",
+        "answer": "It tells you up front whether the customer wants a refund, a replacement, a repair or simply an apology. Knowing that makes the first reply more useful and often settles the complaint faster."
+      },
+      {
+        "question": "Should I keep a record of complaints?",
+        "answer": "Yes. A complaints log helps you spot repeat problems, train staff and show auditors or regulators how complaints were handled. Exporting responses to Excel or CSV gives you that log without retyping."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "ebd9320c-9ee9-5634-9510-6971b0c65205",
+        "title": "Your complaint",
+        "fields": [
+          {
+            "id": "45876d85-2669-5448-8b4e-b2be3263714b",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "dfa885e4-3b09-53b2-abce-776c47865721",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "45876d85-2669-5448-8b4e-b2be3263714b",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "1dff2f79-56c7-5e22-9b42-7f052b81c0e4",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "45876d85-2669-5448-8b4e-b2be3263714b",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "0cbdad14-6e76-54e0-8390-f94eb5da28b3",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "2664a13f-6a57-5030-a72d-a6cc4c437067",
+            "type": "text_input_field",
+            "label": "Order, booking or receipt number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "b754623d-e79f-5172-86d1-6c140a0bc19a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ed14144a-1a6e-5d57-821e-7741b2d3ad6f",
+            "type": "date_field",
+            "label": "When did it happen?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "b754623d-e79f-5172-86d1-6c140a0bc19a",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "bd2bde84-8512-5231-ac70-a43a0cc67428",
+            "type": "text_input_field",
+            "label": "Store, branch or location",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "gridId": "b754623d-e79f-5172-86d1-6c140a0bc19a",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "a34c6056-ab7f-5547-a28b-b570d2babd46",
+            "type": "radio_field",
+            "label": "What is your complaint about?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Product quality or fault",
+              "Delivery or delay",
+              "Staff behavior or service",
+              "Billing or overcharge",
+              "Website or app",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "fe8eeefd-9d2a-5db5-899d-bbc2f46eba92",
+            "type": "text_area_field",
+            "label": "What happened?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "Please include names, times and anything you were told",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 2000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "07e5bcb0-41a9-5d05-8a85-cac62a1e0975",
+            "type": "file_upload_field",
+            "label": "Photos, receipts or documents",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 4 files",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*",
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 4,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "3118e0bf-2bd2-551d-8d59-604c955f5290",
+            "type": "radio_field",
+            "label": "What would put this right for you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Full refund",
+              "Partial refund or credit",
+              "Replacement or redo",
+              "Repair",
+              "An apology and explanation",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "bb400a9a-07a3-544d-842d-5c708fe8f234",
+            "type": "radio_field",
+            "label": "Have you raised this with us before?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No, this is the first time",
+              "Yes, once",
+              "Yes, more than once"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ba744728-afc1-55f2-aebc-b7828861b681",
+            "type": "radio_field",
+            "label": "How should we contact you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Email",
+              "Phone call",
+              "Either"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L7",
+      "content": "<h1>Tell us what went wrong</h1><p>We read every complaint and reply in writing. It takes about four minutes.</p>",
+      "thankYouContent": "<h1>We have your complaint</h1><p>A member of our team will review it and contact you within two working days with next steps.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Send complaint",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

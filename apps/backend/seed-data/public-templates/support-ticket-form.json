@@ -1,0 +1,324 @@
+{
+  "slug": "support-ticket-form",
+  "name": "Support Ticket",
+  "description": "Log customer support tickets with category, priority, affected product, steps to reproduce and screenshot attachments.",
+  "category": "Customer Support",
+  "seoTitle": "Free Support Ticket Form Template",
+  "seoDescription": "Support ticket form template that collects the issue category, priority, product, steps to reproduce and screenshots, so your team can triage tickets faster.",
+  "keywords": [
+    "support ticket form",
+    "customer support ticket template",
+    "help desk ticket form",
+    "support request form",
+    "online ticket submission form",
+    "technical support form"
+  ],
+  "tags": [
+    "File Upload",
+    "Triage"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 5453809
+    },
+    {
+      "source": "pexels",
+      "id": 7709114
+    }
+  ],
+  "thumbnailAlt": "Support Ticket form beside a photo of dedicated call center agents working diligently at their desks in an office",
+  "content": {
+    "intro": "A support ticket form is a form that collects a customer's contact details, the issue category, its priority and the steps that led to the problem so a support team can route and fix it without a long back-and-forth. This template asks for the account email, product area and impact up front, then lets customers attach screenshots or log files in the same submission.",
+    "audience": "SaaS support teams, e-commerce customer service desks, agencies running client support and small product teams without a full help desk tool.",
+    "useCases": [
+      "A 'Contact support' link in your app or help center footer",
+      "Bug reports from beta testers with screenshots attached",
+      "Billing and account questions routed to a separate queue by category",
+      "Client support for agencies that maintain websites or apps"
+    ],
+    "tips": [
+      "Use conditional logic to show the 'Steps to reproduce' question only when the category is 'Bug or error', so billing questions stay short.",
+      "Connect a webhook or the Google Sheets plugin to drop each ticket into your queue, and turn on the respondent email copy so customers keep a record of what they sent.",
+      "Edit responses to add an internal status and keep the full edit history of who changed what on each ticket."
+    ],
+    "faq": [
+      {
+        "question": "What should a support ticket form include?",
+        "answer": "The customer's name and email, the account or order ID, an issue category, a priority or impact level, the product area, a clear description, steps to reproduce, and an optional screenshot or file upload. These let an agent triage the ticket on first read."
+      },
+      {
+        "question": "How should support ticket priority levels be defined?",
+        "answer": "Most teams use four levels: Urgent (the product is down or data is at risk), High (a key feature is broken with no workaround), Normal (a problem with a workaround) and Low (a question or request). Describe each level in the option text so customers pick consistently."
+      },
+      {
+        "question": "Can customers attach screenshots to a ticket?",
+        "answer": "Yes. The template includes a file upload field for up to three images or PDFs, and uploads are stored privately so only your team can open them."
+      },
+      {
+        "question": "Can I use this instead of a help desk tool?",
+        "answer": "For a small team, yes: tickets arrive by email notification, sit in a response table you can filter and export, and can be pushed to other tools by webhook. Larger teams often use the form as the intake step for an existing help desk."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "19ce7e3d-3e85-52c6-85e9-c445bd56f741",
+        "title": "Your details",
+        "fields": [
+          {
+            "id": "c942c105-ded4-551b-8ce6-54306d20ef02",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "d45940cf-525e-5fd3-8013-098e33135ddf",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "c942c105-ded4-551b-8ce6-54306d20ef02",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "33407fa4-2991-57f0-9d7f-0dde99c91405",
+            "type": "email_field",
+            "label": "Account email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "The email you sign in with",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c942c105-ded4-551b-8ce6-54306d20ef02",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "78420ed1-7093-5c6c-a269-7924c05c0cd2",
+            "type": "text_input_field",
+            "label": "Company or account name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c47e2308-50d9-5f27-93b5-2fa6a10db82f",
+            "type": "text_input_field",
+            "label": "Order or account ID",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Helps us find your account faster",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "4b728423-38b9-54da-b235-14e64ce99529",
+        "title": "The issue",
+        "fields": [
+          {
+            "id": "35a0ff39-bc96-52cf-8fa3-1b528c825317",
+            "type": "radio_field",
+            "label": "What is this about?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Bug or error",
+              "Billing or invoice",
+              "Account and login",
+              "How-to question",
+              "Feature request",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6858eb9e-c321-5bd2-8484-41206c087173",
+            "type": "select_field",
+            "label": "Which part of the product?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Dashboard",
+              "Mobile app",
+              "Integrations",
+              "Reports and exports",
+              "Notifications",
+              "Settings and permissions",
+              "Checkout",
+              "Not sure"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "03b3c173-8c9c-5379-a750-1c408dcc3dd5",
+            "type": "radio_field",
+            "label": "How much is this affecting you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Low - a question or small annoyance",
+              "Normal - something is wrong but I have a workaround",
+              "High - a key feature is broken, no workaround",
+              "Urgent - the product is down or data is at risk"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "4a3c30cd-39be-57e1-a8c7-f8c44a657ee5",
+            "type": "text_input_field",
+            "label": "Subject",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. CSV export fails with error 500",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c3c6bed0-70a1-5759-af78-fa27c8bbb8f2",
+            "type": "text_area_field",
+            "label": "Describe the problem",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "What happened, and what did you expect to happen?",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 2000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "0cbb5edd-ed70-5a96-8853-e010f432d032",
+            "type": "text_area_field",
+            "label": "Steps to reproduce",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "1. Go to...  2. Click...  3. See error",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "f99db321-6636-5dca-a5ac-a9c9ae402320",
+            "type": "radio_field",
+            "label": "Device and browser",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Desktop - Chrome",
+              "Desktop - Safari",
+              "Desktop - Edge or Firefox",
+              "iPhone or iPad",
+              "Android",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1c7fe467-7d5f-5cad-a0a9-94574848f207",
+            "type": "file_upload_field",
+            "label": "Screenshots or files",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 3 files, 10 MB each",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*",
+              "application/pdf",
+              "text/plain"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 3,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L1",
+      "content": "<h1>Open a support ticket</h1><p>Tell us what went wrong and we will get back to you. It takes about three minutes.</p>",
+      "thankYouContent": "<h1>Ticket received</h1><p>Our support team will reply by email. Urgent tickets are reviewed first, usually within a few hours.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Submit ticket",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

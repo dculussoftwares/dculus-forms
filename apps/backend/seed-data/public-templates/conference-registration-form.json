@@ -1,0 +1,462 @@
+{
+  "slug": "conference-registration-form",
+  "name": "Conference Registration",
+  "description": "Register attendees for a multi-day conference: contact details, pass type, days attending, session picks and dietary needs.",
+  "category": "Events",
+  "seoTitle": "Free Conference Registration Form Template",
+  "seoDescription": "Conference registration form template with attendee details, pass type, days attending, session picks, dietary and access needs. Register attendees online.",
+  "keywords": [
+    "conference registration form",
+    "conference registration form template",
+    "conference sign up form",
+    "summit registration form",
+    "attendee registration form"
+  ],
+  "tags": [
+    "Registration",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 9275222
+    },
+    {
+      "source": "pexels",
+      "id": 18999176
+    }
+  ],
+  "thumbnailAlt": "Conference Registration form beside a photo of audience attentively watching a presentation in a conference setting, with stage lights and speaker visible",
+  "content": {
+    "intro": "A conference registration form is a form that collects each attendee's contact and company details, pass type, the days and sessions they plan to attend, and any dietary or access needs so organizers can plan rooms, catering and badges. This template handles a multi-day event in three short pages, with session picks you can count before the doors open.",
+    "audience": "Conference organizers, professional associations, user-group meetups, academic societies and corporate event teams running one- to three-day events.",
+    "useCases": [
+      "Annual industry conference with a workshop day and two main-stage days",
+      "Academic symposium where attendees choose parallel tracks",
+      "Internal company summit that needs headcounts per day for catering",
+      "Developer conference that offers student and speaker passes"
+    ],
+    "tips": [
+      "Use conditional logic to show the workshop question only to people who pick the workshop day, so single-day attendees see a shorter form.",
+      "Turn on the email plugin with the attendee's email as the recipient so every registrant gets a copy of their choices for their records.",
+      "Set up a PDF template to generate a filled confirmation or name-badge PDF for each registration."
+    ],
+    "faq": [
+      {
+        "question": "What should a conference registration form include?",
+        "answer": "Name, email, job title and organization, pass type, which days the person will attend, their session or track choices, dietary and accessibility needs, the name to print on their badge, and any documents they need such as an invoice or visa letter."
+      },
+      {
+        "question": "How do I find out how many people want each session?",
+        "answer": "Ask for session choices with a checkbox question. The response analytics show a chart for each question, so you can see how many attendees picked each track and size rooms to match."
+      },
+      {
+        "question": "Can I stop registrations when the venue is full?",
+        "answer": "Yes. In Form Settings you can set a response limit and a closing date and time, and the form stops accepting registrations once either is reached."
+      },
+      {
+        "question": "Does this form sell tickets?",
+        "answer": "No. It records registrations only. If your conference charges a fee, collect it through your ticketing or invoicing tool and use the form for attendee details and session planning."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "945dcdb9-3616-55a7-963f-2c5461aa6e9a",
+        "title": "Attendee details",
+        "fields": [
+          {
+            "id": "be637641-397f-5de2-84eb-565b36393b8a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "563c6bd8-0318-5557-80e4-488740decaaa",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "be637641-397f-5de2-84eb-565b36393b8a",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "4f974cb2-4535-59df-bc10-0058460c41b8",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "be637641-397f-5de2-84eb-565b36393b8a",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "9d41109b-a0de-52b2-9b97-5204b26c903b",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "eb735c1b-094b-518f-a631-eba8c07c3a20",
+            "type": "email_field",
+            "label": "Work email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9d41109b-a0de-52b2-9b97-5204b26c903b",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "826f78fd-aec6-5761-952f-9c7d5e2629b9",
+            "type": "phone_number_field",
+            "label": "Mobile number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "9d41109b-a0de-52b2-9b97-5204b26c903b",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "09a5ce65-563f-5683-b7c8-75b9aa75f892",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "237ea85d-f208-5895-9f3b-1b82a5cf75d3",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "09a5ce65-563f-5683-b7c8-75b9aa75f892",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d3bfb723-b283-5753-b5fe-219f0c258531",
+            "type": "text_input_field",
+            "label": "Organization",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "09a5ce65-563f-5683-b7c8-75b9aa75f892",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "2f491061-1437-5f87-a80b-a9f15b9a06cc",
+            "type": "text_input_field",
+            "label": "Name to print on your badge",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Leave blank to use your full name",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 40
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "fc7c7012-897b-54b8-bdac-4ed0acc52caf",
+            "type": "text_input_field",
+            "label": "Country",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "97f81a9a-b060-5853-adf5-ba8664ce786d",
+        "title": "Pass and sessions",
+        "fields": [
+          {
+            "id": "80d7d970-c8b0-559d-bbb9-e6db1d34dafd",
+            "type": "radio_field",
+            "label": "Pass type",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Full conference pass",
+              "Single-day pass",
+              "Student pass",
+              "Speaker",
+              "Sponsor or exhibitor",
+              "Press"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "435f9515-bb76-570f-9c34-b3ae3c3174b8",
+            "type": "checkbox_field",
+            "label": "Which days will you attend?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Day 1: Workshops",
+              "Day 2: Keynotes and main stage",
+              "Day 3: Breakout sessions"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "3ce39890-bc44-51e2-9af2-9e30b86b6548",
+            "type": "radio_field",
+            "label": "Which hands-on workshop would you like to join?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Day 1 only. Places are limited",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Intro workshop",
+              "Advanced workshop",
+              "Leadership lab",
+              "I won't attend a workshop"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "3fd8b498-3418-53ca-92f3-73ea0e5c6c77",
+            "type": "checkbox_field",
+            "label": "Which tracks interest you most?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Choose up to three",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation",
+              "maxSelections": 3
+            },
+            "options": [
+              "Product and engineering",
+              "Marketing and growth",
+              "Data and AI",
+              "People and leadership",
+              "Operations and finance",
+              "Case studies from members"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "7d90fa31-8128-5467-abc6-e383fb98b27f",
+            "type": "radio_field",
+            "label": "Will you join the networking dinner?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No",
+              "Not sure yet"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "03c10576-954f-5626-942a-3ab1e186b569",
+        "title": "Needs and logistics",
+        "fields": [
+          {
+            "id": "bdcf6c27-4f0c-565b-bd29-e516b3a585b5",
+            "type": "radio_field",
+            "label": "Dietary requirements",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No requirements",
+              "Vegetarian",
+              "Vegan",
+              "Gluten-free",
+              "Halal",
+              "Kosher",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "9abceaf3-11e7-5393-9b2d-f5d303cc4ead",
+            "type": "text_area_field",
+            "label": "Accessibility needs or food allergies",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Tell us anything that helps you take part fully",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "608780ee-e34a-597b-a80a-370a46cf4f2d",
+            "type": "checkbox_field",
+            "label": "Do you need any of these documents?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Invoice for my employer",
+              "Visa invitation letter",
+              "Certificate of attendance"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "399e2678-71b4-5cf2-b717-50b812d76f8e",
+            "type": "radio_field",
+            "label": "How did you hear about the conference?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Email newsletter",
+              "Colleague or friend",
+              "LinkedIn or social media",
+              "Speaker or sponsor",
+              "Attended before",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "3f79c139-33b1-53bc-8eeb-3987492f9f50",
+            "type": "checkbox_field",
+            "label": "Sponsor contact",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Share my name and organization with event sponsors"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L8",
+      "content": "<h1>Register for the conference</h1><p>Pick your pass, days and sessions. It takes about four minutes.</p>",
+      "thankYouContent": "<h1>You're registered</h1><p>We've saved your place. Look out for an email with the agenda and venue details closer to the event.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Register",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

@@ -1,0 +1,532 @@
+{
+  "slug": "client-intake-form",
+  "name": "Client Intake",
+  "description": "Onboard a new client before kickoff: contacts, project scope, goals, timeline, budget range, stakeholders and brand files.",
+  "category": "Business",
+  "seoTitle": "Free Client Intake Form Template for Agencies",
+  "seoDescription": "Client intake form template that gathers contacts, project scope, goals, deadlines, budget range, decision makers and files. Start every kickoff fully briefed.",
+  "keywords": [
+    "client intake form",
+    "new client intake form",
+    "client onboarding form",
+    "client intake questionnaire",
+    "agency client intake form",
+    "consultant intake form"
+  ],
+  "tags": [
+    "Onboarding",
+    "Multi-page",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 7821711
+    },
+    {
+      "source": "pexels",
+      "id": 8441780
+    }
+  ],
+  "thumbnailAlt": "Client Intake form beside a photo of professional woman engaged in thoughtful discussion at a business meeting indoors",
+  "content": {
+    "intro": "A client intake form is a form that collects a new client's contact details, project scope, goals, timeline and budget range so an agency, consultant or freelancer can run a focused kickoff meeting. This template splits those questions into four short steps and lets clients attach brand assets and past work, so you start the first call with answers instead of a blank page.",
+    "audience": "Marketing and design agencies, IT and management consultants, freelancers, bookkeepers and coaches taking on new clients.",
+    "useCases": [
+      "Sending a link right after a signed proposal so the client fills it in before kickoff",
+      "Onboarding retainer clients for a web development or SEO agency",
+      "Scoping a fixed-fee consulting engagement before writing the statement of work",
+      "Gathering context and brand files from a client's in-house marketing team"
+    ],
+    "tips": [
+      "Use conditional logic to show the website questions only when the client picks a website or app project.",
+      "Turn on the email copy for the respondent so the client keeps a record of what they told you.",
+      "Set up a PDF template to turn each response into a one-page kickoff brief for your project manager."
+    ],
+    "faq": [
+      {
+        "question": "What should a client intake form include?",
+        "answer": "Company and main contact details, billing contact, the services needed, project goals and success measures, deadlines, budget range, decision makers, competitors, existing assets and preferred communication channel. This template covers all of these."
+      },
+      {
+        "question": "When should I send a client intake form?",
+        "answer": "Send it after the client has agreed to work with you but before the kickoff meeting. That gives you time to read the answers and prepare questions, instead of spending the first call collecting basics."
+      },
+      {
+        "question": "Should I ask for passwords or logins in an intake form?",
+        "answer": "No. Ask which tools and platforms the client uses, then share access through a password manager or the platform's own user invites. Keep credentials out of form responses."
+      },
+      {
+        "question": "How is a client intake form different from a creative brief?",
+        "answer": "A client intake form covers the whole relationship: contacts, scope, budget and how you will work together. A creative brief zooms in on one piece of work, such as a campaign or a logo, and describes the message, audience and deliverables."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "5eb86b20-1cf8-598e-aebe-efae50c57efb",
+        "title": "Your business",
+        "fields": [
+          {
+            "id": "5a85f1a2-dc89-5ade-8ed8-92c6c4797110",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c04d0fc9-3ed0-5e4a-b57a-7a88bc24e0cc",
+            "type": "text_input_field",
+            "label": "Your full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "5a85f1a2-dc89-5ade-8ed8-92c6c4797110",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "285a068f-bef6-5b2a-a041-2a96a70305f2",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "5a85f1a2-dc89-5ade-8ed8-92c6c4797110",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "3e0a6636-353e-5680-8461-0293b5fb4854",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "12697f2f-87a2-570e-a905-49d1b64abf5e",
+            "type": "email_field",
+            "label": "Work email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "3e0a6636-353e-5680-8461-0293b5fb4854",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "cd0a5162-7bba-5490-9713-ae468d29ff21",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "3e0a6636-353e-5680-8461-0293b5fb4854",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "857e7232-4bfd-5deb-a52d-86811e74b8c2",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "0a88ffd4-023d-5413-b04f-913586b74ea4",
+            "type": "text_input_field",
+            "label": "Company name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "857e7232-4bfd-5deb-a52d-86811e74b8c2",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "9c21372e-b1fd-5e8a-ba08-d94abafafac3",
+            "type": "text_input_field",
+            "label": "Website",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "https://",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "857e7232-4bfd-5deb-a52d-86811e74b8c2",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "8c83d6f7-4573-5db2-8636-ad926fd22e62",
+            "type": "select_field",
+            "label": "Industry",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Retail and e-commerce",
+              "Professional services",
+              "Healthcare",
+              "Technology and SaaS",
+              "Hospitality and food",
+              "Education",
+              "Nonprofit",
+              "Manufacturing",
+              "Real estate",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "92ba5ea6-cf4b-59cf-984c-74a5268cca76",
+            "type": "radio_field",
+            "label": "Company size",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Just me",
+              "2–10",
+              "11–50",
+              "51–200",
+              "201+"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "7eb5ea6c-68e8-5eea-b963-a845b7e7e41f",
+        "title": "Project scope",
+        "fields": [
+          {
+            "id": "25a82083-f460-5f35-b259-4b8159a91609",
+            "type": "checkbox_field",
+            "label": "Which services do you need?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "Strategy or consulting",
+              "Branding and design",
+              "Website or app",
+              "Content and copywriting",
+              "SEO",
+              "Paid ads",
+              "Social media",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "0b58197d-8db1-596f-bbb8-5a9d3d00d1dd",
+            "type": "text_area_field",
+            "label": "Describe the project in a few sentences",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "What do you need, and why now?",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "49d464d7-c958-524c-9df6-63927bbf165c",
+            "type": "text_area_field",
+            "label": "What does success look like in six months?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Numbers help, e.g. 30% more leads or launch by spring",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "3a508bdb-21dc-56af-a81d-3802e42b832d",
+            "type": "text_area_field",
+            "label": "What is in scope and what is out of scope?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "cf8026ae-0012-5a4c-b7f4-288f398318e8",
+        "title": "Timeline and budget",
+        "fields": [
+          {
+            "id": "be53b76f-1309-5d01-b51e-ab24cc1fbfbf",
+            "type": "date_field",
+            "label": "Ideal start date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "cabf1b63-1bb9-571d-99b9-9e2088d73669",
+            "type": "date_field",
+            "label": "Hard deadline",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. A launch, event or board meeting we must hit",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "470d245a-bc82-5cce-afb3-99782eeaa020",
+            "type": "radio_field",
+            "label": "Budget range",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under $5,000",
+              "$5,000–$15,000",
+              "$15,000–$50,000",
+              "$50,000+",
+              "Not sure yet"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1d60f2c8-1c99-5002-a3b9-15867da6ccf5",
+            "type": "text_area_field",
+            "label": "Who signs off on decisions?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "Names and roles of the approvers",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "4dbf0f77-3331-50fc-a0cb-dc5ab1bc5c30",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "5175ea93-05d4-56de-a076-a2573c15167d",
+            "type": "text_input_field",
+            "label": "Billing contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "4dbf0f77-3331-50fc-a0cb-dc5ab1bc5c30",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "2839d27e-bd1a-5999-a2ea-029e48973507",
+            "type": "email_field",
+            "label": "Billing contact email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "4dbf0f77-3331-50fc-a0cb-dc5ab1bc5c30",
+            "gridColumn": 1,
+            "__type": "email_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "b6817d8b-6eb5-59aa-a5bd-7c75d9aefd5d",
+        "title": "Context and files",
+        "fields": [
+          {
+            "id": "acec4cad-cd58-5cfa-9f8b-4760dcf9b022",
+            "type": "text_area_field",
+            "label": "Who are your main competitors?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "555a5d8d-4daa-52cc-b752-63cebf248fa6",
+            "type": "text_area_field",
+            "label": "Have you worked with an agency or consultant before? What worked and what didn't?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "8ab81811-b68c-56a7-80f1-4e9034fbd1a4",
+            "type": "file_upload_field",
+            "label": "Brand guidelines, logos or past reports",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 5 files",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 20,
+            "maxFiles": 5,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "238d9247-123f-55c7-bd26-20e858f14c51",
+            "type": "radio_field",
+            "label": "How do you prefer to communicate?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Email",
+              "Video calls",
+              "Slack or Teams",
+              "Phone"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L6",
+      "content": "<h1>Let's get your project started</h1><p>Tell us about your business, goals and timeline. It takes about eight minutes.</p>",
+      "thankYouContent": "<h1>Thanks, we're ready to plan</h1><p>Your project lead will review your answers and send a kickoff meeting invite within two business days.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start intake",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

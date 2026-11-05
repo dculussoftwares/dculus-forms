@@ -1,0 +1,411 @@
+{
+  "slug": "employee-satisfaction-survey",
+  "name": "Employee Satisfaction Survey",
+  "description": "Measure staff satisfaction across manager support, workload, pay, growth, culture and recognition, plus eNPS and open comments.",
+  "category": "Feedback & Surveys",
+  "seoTitle": "Free Employee Satisfaction Survey Template",
+  "seoDescription": "Employee satisfaction survey template covering manager support, workload, pay, growth, culture, recognition and eNPS. Find out why people stay or leave.",
+  "keywords": [
+    "employee satisfaction survey",
+    "staff satisfaction survey",
+    "employee engagement survey",
+    "job satisfaction survey",
+    "workplace survey template",
+    "enps survey"
+  ],
+  "tags": [
+    "HR",
+    "Survey",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 7888760
+    },
+    {
+      "source": "pexels",
+      "id": 7845232
+    }
+  ],
+  "thumbnailAlt": "Employee Satisfaction Survey form beside a photo of engaged office team in business discussion around a laptop, fostering collaboration",
+  "content": {
+    "intro": "An employee satisfaction survey is a form that asks staff to rate their manager, workload, pay, growth, culture and recognition, so HR and leaders can see what keeps people engaged and what pushes them to leave. This template groups the questions by driver and ends with an eNPS score and open comments, so results are easy to act on.",
+    "audience": "HR teams, people managers, founders and operations leads at companies from 10 to a few thousand staff.",
+    "useCases": [
+      "An annual or twice-yearly staff satisfaction pulse",
+      "Checking morale after a reorganization, merger or office move",
+      "Comparing satisfaction between teams, sites or shifts",
+      "Measuring the effect of a new benefit, hybrid policy or manager training"
+    ],
+    "tips": [
+      "Leave 'require sign-in' off and ask only for department and tenure, so answers stay anonymous and staff answer honestly.",
+      "Use per-question charts in response analytics to compare drivers side by side and pick the two lowest to work on first.",
+      "Set an open and close time window in Form Settings so the survey runs for a fixed two weeks and everyone answers in the same period."
+    ],
+    "faq": [
+      {
+        "question": "What should an employee satisfaction survey include?",
+        "answer": "Ratings on the main satisfaction drivers (manager support, workload, pay and benefits, growth, culture, recognition, tools), an employee Net Promoter Score (eNPS), basic segments like department and tenure, and open questions on what to keep and what to change."
+      },
+      {
+        "question": "Should employee satisfaction surveys be anonymous?",
+        "answer": "Usually yes. Anonymous surveys get more honest answers. Avoid asking for names and keep segments broad enough that no small group can be identified."
+      },
+      {
+        "question": "How often should you run an employee satisfaction survey?",
+        "answer": "Many companies run a full survey once or twice a year and short pulse checks quarterly. What matters more than frequency is sharing the results and acting on them before the next round."
+      },
+      {
+        "question": "What is eNPS?",
+        "answer": "Employee Net Promoter Score asks how likely staff are to recommend the company as a place to work on a 0–10 scale. It is the percentage of 9–10 answers minus the percentage of 0–6 answers."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "2ad6b692-b155-5429-99fe-eff252e2ae6a",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "00f03db9-913a-5451-b3f8-1c6469b1d97d",
+            "type": "rich_text_field",
+            "content": "<p>This survey is anonymous. We only ask for your department and tenure so we can spot patterns. Please answer honestly.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "70aa7007-0a13-56fd-b95f-a971371a1b1f",
+            "type": "select_field",
+            "label": "Department",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Engineering",
+              "Product",
+              "Sales",
+              "Marketing",
+              "Customer support",
+              "Operations",
+              "Finance",
+              "HR",
+              "Other",
+              "Prefer not to say"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "1e2213ee-0c3b-5f5d-9828-ee8242f6c02f",
+            "type": "radio_field",
+            "label": "How long have you worked here?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Less than 6 months",
+              "6–12 months",
+              "1–3 years",
+              "3–5 years",
+              "More than 5 years"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "58e03e5f-7ab4-5c76-9c3f-39dd178eae3b",
+            "type": "radio_field",
+            "label": "Where do you mostly work?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "On site",
+              "Remote",
+              "Hybrid"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "64c6710f-f99a-534b-b910-8ef33176dc10",
+        "title": "Rate your experience",
+        "fields": [
+          {
+            "id": "873fc493-9f4b-51eb-8e03-5c1d0bfbf41e",
+            "type": "rich_text_field",
+            "content": "<p>1 = strongly disagree, 5 = strongly agree.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "01418c5b-1261-5a3e-ad2f-081b11278a6c",
+            "type": "radio_field",
+            "label": "My manager supports me and gives useful feedback",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1bb4d466-592a-5f7f-a451-532ed2aa3936",
+            "type": "radio_field",
+            "label": "My workload is manageable",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5e184572-be6a-547a-a2ec-2c5cf7e0b625",
+            "type": "radio_field",
+            "label": "I am paid fairly for the work I do",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6c25ccb6-2b89-514e-b44d-d8b8a146278c",
+            "type": "radio_field",
+            "label": "I can learn and grow my career here",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "262f96a5-5aa9-546f-b182-0fb762cea83a",
+            "type": "radio_field",
+            "label": "I feel recognized when I do good work",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "ae81e289-96c4-5425-9a28-e990e74a6591",
+            "type": "radio_field",
+            "label": "I have the tools and information I need to do my job",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "64edb66f-c1ac-5223-a9bc-31c78cc60383",
+            "type": "radio_field",
+            "label": "I feel I belong and can be myself at work",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "87349e3f-7265-51cb-a8a3-c8fc6cc6515c",
+        "title": "Overall",
+        "fields": [
+          {
+            "id": "3230b6e9-b9a7-5f55-ac48-241f295185b8",
+            "type": "radio_field",
+            "label": "How likely are you to recommend this company as a place to work?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "0 = not at all likely, 10 = extremely likely",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "0fca278f-5919-5d08-bb1a-cabac8847b67",
+            "type": "radio_field",
+            "label": "Do you see yourself working here in a year?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "Probably",
+              "Not sure",
+              "Probably not",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "157f3f5c-4075-5d26-8fc7-a907fee17f1f",
+            "type": "text_area_field",
+            "label": "What is the best thing about working here?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "e83b79e4-8547-5bc1-abd5-306d40aa54d2",
+            "type": "text_area_field",
+            "label": "What one change would most improve your work life?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L7",
+      "content": "<h1>How is work going?</h1><p>Anonymous and honest. About five minutes.</p>",
+      "thankYouContent": "<h1>Thank you for your honesty</h1><p>Results are shared with the whole team as a summary once the survey closes. No individual answers are shown.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start survey",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

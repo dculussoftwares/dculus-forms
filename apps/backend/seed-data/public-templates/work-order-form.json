@@ -1,0 +1,380 @@
+{
+  "slug": "work-order-form",
+  "name": "Work Order Form",
+  "description": "Field service work order: customer and site, job type, equipment, priority, scope of work, access notes and site photos.",
+  "category": "Operations & IT",
+  "seoTitle": "Free Work Order Form Template",
+  "seoDescription": "Work order form template for field service jobs: customer and site address, job type, equipment, priority, scope of work, access notes and photos of the issue.",
+  "keywords": [
+    "work order form",
+    "work order template",
+    "service work order form",
+    "field service work order",
+    "job work order form",
+    "repair work order form"
+  ],
+  "tags": [
+    "Field Service",
+    "File Upload",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6419128
+    },
+    {
+      "source": "pexels",
+      "id": 29226620
+    }
+  ],
+  "thumbnailAlt": "Work Order Form form beside a photo of close-up of a plumber's hands installing steel pipes indoors, showcasing skilled manual work",
+  "content": {
+    "intro": "A work order form is a form that captures the customer, the job site, the type of work, the equipment involved, the priority and the scope of work so a field service team can dispatch the right technician with the right parts. This template also asks for site access details and photos, which cuts down on wasted trips and second visits.",
+    "audience": "HVAC, plumbing, electrical and appliance repair companies, facilities teams, property managers and contractors who send technicians to customer sites.",
+    "useCases": [
+      "Customers booking a repair job from your website",
+      "Office staff logging a work order during a phone call",
+      "Facilities teams raising jobs for outside contractors",
+      "Preventive maintenance visits for commercial clients"
+    ],
+    "tips": [
+      "Turn on PDF templates to generate a filled work order sheet for each job that technicians can print or open on site.",
+      "Use the file upload field for photos of the fault and the equipment rating plate so the technician brings the right parts.",
+      "Send new work orders to Google Sheets or Microsoft Sheets as a simple dispatch board, and edit each response to record the assigned technician."
+    ],
+    "faq": [
+      {
+        "question": "What should a work order form include?",
+        "answer": "The customer's name and contact details, the job site address, the type of work, the equipment or asset and its model or serial number, a priority level, a description of the scope of work, preferred visit dates, site access instructions and photos of the issue."
+      },
+      {
+        "question": "What is the difference between a work order and a service request?",
+        "answer": "A service request is the customer asking for help. A work order is the approved job that tells a technician what to do, where and when. Many teams use one form for both, then edit the response to add the technician and job status."
+      },
+      {
+        "question": "Should the work order include a cost estimate?",
+        "answer": "It can, but most teams add costs after a site visit. This template keeps the customer's side to the job details; you can add a not-to-exceed amount or purchase order number field if your commercial clients need one."
+      },
+      {
+        "question": "Can technicians fill in a work order on their phone?",
+        "answer": "Yes. The form works on any phone, so technicians or customers can submit from site and attach photos straight from the camera."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "570d4a6b-1c43-564f-b882-ff3b61568c00",
+        "title": "Customer and site",
+        "fields": [
+          {
+            "id": "df260f65-be5a-58cd-8404-ff0e8fba5c82",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "f238b199-8306-5cf9-bf3c-bc818143a0b4",
+            "type": "text_input_field",
+            "label": "Contact name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "df260f65-be5a-58cd-8404-ff0e8fba5c82",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "8b79e994-ab13-588f-85e8-7fee3c6ac79b",
+            "type": "text_input_field",
+            "label": "Company name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "gridId": "df260f65-be5a-58cd-8404-ff0e8fba5c82",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d6c01cce-e15d-5859-a6c7-5239a37c371a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "287dd368-051e-5263-b1de-8c6c38d3a4fa",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "d6c01cce-e15d-5859-a6c7-5239a37c371a",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "e169e285-1c6f-5058-aafd-0d2c7207ba75",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "d6c01cce-e15d-5859-a6c7-5239a37c371a",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "ae8fd4e8-3d6e-5b68-93b0-20dba286e71a",
+            "type": "text_area_field",
+            "label": "Job site address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "e9d117f8-0b62-55bf-97ce-3c24acff6760",
+            "type": "text_input_field",
+            "label": "PO or reference number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "dfdd71f9-08bc-52a6-ab3c-ce718ba548db",
+        "title": "Job details",
+        "fields": [
+          {
+            "id": "2a9c5246-f9cb-5697-8efd-54abfb55ba0e",
+            "type": "select_field",
+            "label": "Type of work",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "HVAC or heating",
+              "Plumbing",
+              "Electrical",
+              "Appliance repair",
+              "Carpentry or general repair",
+              "Roofing",
+              "Preventive maintenance",
+              "Installation",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "a4db6891-0f81-5f6a-a569-f836b46425f3",
+            "type": "radio_field",
+            "label": "Priority",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Emergency - same day",
+              "High - within 48 hours",
+              "Standard - this week",
+              "Planned - schedule with me"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "acea60f0-5845-52a0-9b9b-ddfca280d20c",
+            "type": "text_input_field",
+            "label": "Equipment, make and model",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "e.g. Carrier 24ACC6 condenser",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 150
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "123623bf-d4bb-5b93-84b2-6d8db3962778",
+            "type": "text_input_field",
+            "label": "Serial number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "06a2e37f-ab98-5a4b-b3d0-1a7d2d4eeb12",
+            "type": "text_area_field",
+            "label": "Scope of work",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "Describe the fault or the work needed",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "c47f6dc0-3147-529e-a66c-b0df03097b3f",
+            "type": "file_upload_field",
+            "label": "Photos of the issue or rating plate",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 5 photos",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*",
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 5,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "b50d3acd-f20b-5f2f-ab8e-9759f4221b67",
+        "title": "Scheduling and access",
+        "fields": [
+          {
+            "id": "fdeb563e-c37d-5ab9-bdd0-a0e472eea1a1",
+            "type": "date_field",
+            "label": "Preferred visit date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "2d3d3993-1a8d-50cf-b09e-bd5c8b1bc24a",
+            "type": "radio_field",
+            "label": "Preferred time window",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Morning (8am-12pm)",
+              "Afternoon (12pm-4pm)",
+              "Late (4pm-7pm)",
+              "Any time"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "e7fb4d36-63a0-5e4e-99dd-fde1f7a1a6f9",
+            "type": "text_area_field",
+            "label": "Site access notes",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "Gate codes, parking, pets, key box, who to ask for",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L5",
+      "content": "<h1>Request a service visit</h1><p>Give us the job details and we will schedule a technician. About four minutes.</p>",
+      "thankYouContent": "<h1>Work order received</h1><p>Our dispatch team will call you to confirm a visit time and any parts needed.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Create work order",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

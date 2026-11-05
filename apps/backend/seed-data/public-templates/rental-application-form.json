@@ -1,0 +1,659 @@
+{
+  "slug": "rental-application-form",
+  "name": "Rental Application",
+  "description": "Screen tenants online: applicant details, rental history, employment and income, references, occupants, pets and screening consent.",
+  "category": "Real Estate",
+  "seoTitle": "Free Rental Application Form Template for Landlords",
+  "seoDescription": "Rental application form template that collects applicant details, rental history, employer and income, references, occupants, pets and background check consent.",
+  "keywords": [
+    "rental application form",
+    "tenant application form",
+    "rental application template",
+    "apartment rental application",
+    "lease application form",
+    "tenant screening form"
+  ],
+  "tags": [
+    "Application",
+    "Multi-page",
+    "Consent"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 29871187
+    },
+    {
+      "source": "pexels",
+      "id": 31663643
+    }
+  ],
+  "thumbnailAlt": "Rental Application form beside a photo of a hand holds keys with a house keychain inside a modern, well-lit living space",
+  "content": {
+    "intro": "A rental application form is a form that collects a prospective tenant's identity, rental history, employment, income, references and consent to screening so a landlord or property manager can choose a reliable tenant. This template follows the order most landlords review in — current home, then job and income, then references — and lets applicants upload pay stubs securely.",
+    "audience": "Independent landlords, property managers, letting agents, student housing providers and housing co-ops.",
+    "useCases": [
+      "Accepting applications after a showing or open house",
+      "A link in rental listings on Zillow, Craigslist or Facebook Marketplace",
+      "Screening several roommates applying for one unit",
+      "Renewing or transferring tenants between properties in a portfolio"
+    ],
+    "tips": [
+      "Turn on save and resume so applicants can come back after finding a landlord reference or pay stub.",
+      "Use a PDF template to create a filled application file for each applicant for your records.",
+      "Set a closing time in Form Settings when the unit is taken, so applicants are not left waiting."
+    ],
+    "faq": [
+      {
+        "question": "What should a rental application form include?",
+        "answer": "The applicant's full name, date of birth and contact details; current and previous addresses with landlord contacts; employer, job title and monthly income; personal references; other occupants; pets and vehicles; the desired move-in date and lease term; and signed consent to credit and background checks."
+      },
+      {
+        "question": "Can a landlord ask for proof of income?",
+        "answer": "Yes, landlords commonly ask for recent pay stubs, an offer letter or bank statements, and many look for income of around two and a half to three times the monthly rent. Some cities and states limit income rules or protect housing vouchers, so check your local law."
+      },
+      {
+        "question": "What questions should a rental application avoid?",
+        "answer": "Under the US Fair Housing Act, avoid questions about race, color, religion, sex, national origin, familial status or disability, and some states add more protected classes. Ask the same questions of every applicant and judge them on the same written criteria."
+      },
+      {
+        "question": "Do I need the tenant's consent for a background check?",
+        "answer": "In the US, landlords generally need written permission to pull a credit report, and must give notice if they reject an applicant based on it. This template includes a consent checkbox and a typed name; run the actual check through a tenant screening service."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "e348d2e5-317c-5a37-bc08-dacc997db54e",
+        "title": "Applicant",
+        "fields": [
+          {
+            "id": "073eb89f-2b71-5e4c-8bf0-4e2f10b04c5b",
+            "type": "text_input_field",
+            "label": "Property address you are applying for",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "3de76555-844a-59f5-ab91-2f113776e676",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "8a43076b-66a6-5bae-ab82-1b7f35543a2e",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "3de76555-844a-59f5-ab91-2f113776e676",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "e92d0de1-8327-5406-ac71-eec9c2cba193",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "3de76555-844a-59f5-ab91-2f113776e676",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "ed586807-1749-5eff-b1cd-aaaeb2b4a878",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "3865d8e9-8515-5f68-bd21-771990ad5016",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "ed586807-1749-5eff-b1cd-aaaeb2b4a878",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "23132c9f-c915-5c3e-81d4-0e54454c8f3c",
+            "type": "phone_number_field",
+            "label": "Mobile number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "ed586807-1749-5eff-b1cd-aaaeb2b4a878",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "0a2cebb6-541a-57d5-903d-61c9339a4cf5",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "a9ac28ca-7d72-5d6b-978f-72864eb52872",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c277c701-8f01-5c37-85f9-6d201f687ace",
+            "type": "date_field",
+            "label": "Desired move-in date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "a9ac28ca-7d72-5d6b-978f-72864eb52872",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "2fac3455-8df4-50bb-9194-22c545604d77",
+            "type": "radio_field",
+            "label": "Lease term",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "6 months",
+              "12 months",
+              "18+ months",
+              "Month to month"
+            ],
+            "gridId": "a9ac28ca-7d72-5d6b-978f-72864eb52872",
+            "gridColumn": 1,
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "ce235588-4434-5e36-8539-78c12bcf577c",
+        "title": "Rental history",
+        "fields": [
+          {
+            "id": "9ab517eb-421b-548d-ae05-29978ea298a2",
+            "type": "text_area_field",
+            "label": "Current address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "7ee2433d-4388-50c9-9a79-0a88cd87c491",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "f62d8e2a-dde8-5afa-af31-0d3393137220",
+            "type": "number_field",
+            "label": "Time at this address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 600,
+            "suffix": "months",
+            "gridId": "7ee2433d-4388-50c9-9a79-0a88cd87c491",
+            "gridColumn": 0,
+            "__type": "number_field"
+          },
+          {
+            "id": "726b0369-352d-54e5-8f5c-d95633365e6d",
+            "type": "number_field",
+            "label": "Current monthly rent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Leave blank if you own",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 100000,
+            "suffix": "$",
+            "gridId": "7ee2433d-4388-50c9-9a79-0a88cd87c491",
+            "gridColumn": 1,
+            "__type": "number_field"
+          },
+          {
+            "id": "97ede89a-89a5-51ca-86c9-188de60cbeab",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ae90d516-3e21-5e08-aaee-22f1dc1c830e",
+            "type": "text_input_field",
+            "label": "Current landlord name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "97ede89a-89a5-51ca-86c9-188de60cbeab",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "41c0e64b-ceae-5adf-8dbe-a2c1a772f589",
+            "type": "phone_number_field",
+            "label": "Current landlord phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "97ede89a-89a5-51ca-86c9-188de60cbeab",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "d6a8571c-8321-5eb0-869c-3191a329905a",
+            "type": "text_area_field",
+            "label": "Reason for moving",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "712917ef-b7bd-5c41-bf39-ff0f3bc536ad",
+            "type": "radio_field",
+            "label": "Have you ever been evicted?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Yes"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "d1e868a1-e28f-5b34-9c01-ed767e9f2033",
+        "title": "Employment and income",
+        "fields": [
+          {
+            "id": "7d9331a0-dfe1-52db-a00a-7a9495baedce",
+            "type": "radio_field",
+            "label": "Employment status",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Employed full time",
+              "Employed part time",
+              "Self-employed",
+              "Student",
+              "Retired",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "91bb80a2-c5f8-5607-b361-bcc941b82b2e",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "4f646e1f-e514-59e8-81f9-b3925a5e0bcc",
+            "type": "text_input_field",
+            "label": "Employer",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "91bb80a2-c5f8-5607-b361-bcc941b82b2e",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "fc7f6e7f-9dc0-5928-aa82-3f9c2a288efa",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "91bb80a2-c5f8-5607-b361-bcc941b82b2e",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d32bc2da-067c-5615-b916-d6d0ae6fddbf",
+            "type": "number_field",
+            "label": "Gross monthly income",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 1000000,
+            "suffix": "$",
+            "__type": "number_field"
+          },
+          {
+            "id": "9907a988-df53-5428-b53f-e53ea595414c",
+            "type": "file_upload_field",
+            "label": "Proof of income",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Two recent pay stubs, an offer letter or bank statements",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 3,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "4b343204-7ed4-54a8-9664-d10491272b01",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "dfe9b9ad-e6ce-5ffd-8984-34303a4b77a3",
+            "type": "text_input_field",
+            "label": "Personal reference name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Not a relative",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "4b343204-7ed4-54a8-9664-d10491272b01",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "3da7c6b6-e687-5561-b5d4-5c6e319215c3",
+            "type": "phone_number_field",
+            "label": "Reference phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "4b343204-7ed4-54a8-9664-d10491272b01",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "5b1adb79-59fc-571c-9e41-3dacaa5ba826",
+        "title": "Household and consent",
+        "fields": [
+          {
+            "id": "cdb9ec28-52c8-5a15-9920-725153a9451e",
+            "type": "number_field",
+            "label": "Number of people who will live in the unit, including you",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 1,
+            "max": 12,
+            "suffix": "people",
+            "__type": "number_field"
+          },
+          {
+            "id": "1851f18e-0176-5764-ab1b-8b0263e1e1f0",
+            "type": "text_area_field",
+            "label": "Names of other adult occupants",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Each adult usually submits their own application",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 400
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "436db8f4-f7f1-5fe3-8755-a7f49653cec6",
+            "type": "radio_field",
+            "label": "Do you have pets?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Dog",
+              "Cat",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "fdae1fd2-12fa-50ad-ae07-12f3e9ec9613",
+            "type": "radio_field",
+            "label": "Do you smoke?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Yes"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5b2a85a9-c8b6-51e9-baf9-f809204f5085",
+            "type": "rich_text_field",
+            "content": "<p>I confirm the information in this application is true and complete. I authorize the landlord or property manager to verify it and to obtain credit, rental history and background reports for screening. False information may lead to rejection or ending a lease.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "16321d46-55c5-584f-a075-d5b5b653fa5b",
+            "type": "text_input_field",
+            "label": "Type your full legal name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "d18c6a60-d48e-5b88-9aae-6ded812f5039",
+            "type": "checkbox_field",
+            "label": "Consent",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I agree and authorize screening checks"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L2",
+      "content": "<h1>Apply to rent</h1><p>Tell us about you, your rental history and income. It takes about ten minutes.</p>",
+      "thankYouContent": "<h1>Application submitted</h1><p>We'll contact your references and get back to you within three business days.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Apply now",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

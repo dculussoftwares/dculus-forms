@@ -1,0 +1,525 @@
+{
+  "slug": "internship-application-form",
+  "name": "Internship Application",
+  "description": "Take internship applications with school, major, graduation year, availability, skills, resume and a short motivation answer.",
+  "category": "HR & Recruiting",
+  "seoTitle": "Free Internship Application Form Template",
+  "seoDescription": "Internship application form template with school, major, graduation date, GPA, availability, work authorization, resume upload and why-us answer. Hire faster.",
+  "keywords": [
+    "internship application form",
+    "internship application template",
+    "student internship form",
+    "intern application form",
+    "summer internship application"
+  ],
+  "tags": [
+    "File Upload",
+    "Hiring",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 6913297
+    },
+    {
+      "source": "pexels",
+      "id": 4350036
+    }
+  ],
+  "thumbnailAlt": "Internship Application form beside a photo of two women collaborating at a desk with a laptop and documents in a modern office",
+  "content": {
+    "intro": "An internship application form is a form that collects a student's contact details, school, major, graduation date, availability and resume, so an employer can shortlist interns quickly and fairly. This template asks the same questions of every applicant and keeps resumes in private storage, which makes comparing candidates simple.",
+    "audience": "Startups, agencies, nonprofits, labs and university career offices recruiting summer, semester or year-round interns.",
+    "useCases": [
+      "Summer internship hiring at a startup or agency",
+      "A university career fair, shared by QR code at the booth",
+      "Research lab or nonprofit placements for credit",
+      "A rolling, year-round internship program with several teams"
+    ],
+    "tips": [
+      "Share a QR code at career fairs so students can apply on their phone before they leave the booth.",
+      "Use conditional logic to show the 'required for credit' details only when a student says the internship is for academic credit.",
+      "Set a response limit or a close date in Form Settings so applications stop automatically at your deadline."
+    ],
+    "faq": [
+      {
+        "question": "What should an internship application form include?",
+        "answer": "Contact details, school, major, degree level and expected graduation date, availability (dates and hours per week), location preference, work authorization, relevant skills, a resume upload, links to a portfolio or LinkedIn, and a short answer on why they want the role."
+      },
+      {
+        "question": "Should I ask for GPA on an internship application?",
+        "answer": "It is common but optional. Many employers make GPA optional or skip it to avoid screening out strong candidates, and focus on skills, projects and motivation instead."
+      },
+      {
+        "question": "Can students upload their resume?",
+        "answer": "Yes. The resume field accepts PDF or Word files, and uploads are stored privately so only your team can open them."
+      },
+      {
+        "question": "Do interns need to be paid?",
+        "answer": "It depends on your country and the type of internship. In the US, for-profit employers generally must pay interns unless the program meets the Department of Labor's primary beneficiary test. Check your local rules."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "8bb8dbcd-2c99-5696-b3f9-6c2b10976419",
+        "title": "About you",
+        "fields": [
+          {
+            "id": "4baaa58a-cfef-5af7-b72a-edd7ec247bbe",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "c1e80c58-8963-5af1-9297-44a25249c07f",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "gridId": "4baaa58a-cfef-5af7-b72a-edd7ec247bbe",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "e7738d14-7fb4-562c-9806-4c4d1863b53d",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "gridId": "4baaa58a-cfef-5af7-b72a-edd7ec247bbe",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "20cb828a-e15b-53aa-a2e8-186b442e4a4b",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "f52e6946-7695-5924-8e52-8e12ad99f543",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "20cb828a-e15b-53aa-a2e8-186b442e4a4b",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "036ea783-645e-5d47-8c62-7f275682c96e",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "20cb828a-e15b-53aa-a2e8-186b442e4a4b",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "7a8dc13e-c497-5f0b-8645-bc50291c6f7f",
+            "type": "text_input_field",
+            "label": "City and state or country",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "a129f28a-2057-50e2-b9a1-e9b6762f8fd5",
+            "type": "text_input_field",
+            "label": "LinkedIn or portfolio link",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "https://",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 200
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "7eebe1c7-97a7-5e84-a1bd-2cb8682032fa",
+        "title": "Education",
+        "fields": [
+          {
+            "id": "be8a23db-f3e9-50a3-8e67-f89424fa95fb",
+            "type": "text_input_field",
+            "label": "School or university",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "62c1cfbb-1c26-5084-afc1-480ed56c401d",
+            "type": "text_input_field",
+            "label": "Major or field of study",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "80f7c2d6-152c-5e3e-95d4-d2aee956fd8c",
+            "type": "radio_field",
+            "label": "Degree level",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "High school",
+              "Associate",
+              "Bachelor's",
+              "Master's",
+              "PhD",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1a599b85-3874-5d4f-8df1-be002851b57e",
+            "type": "date_field",
+            "label": "Expected graduation date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "date_field"
+          },
+          {
+            "id": "35de5d5b-b5b6-5e84-9871-caccc5fc8c69",
+            "type": "text_input_field",
+            "label": "GPA",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "e.g. 3.6 / 4.0",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 10
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "8a2bfde4-b560-507e-b400-a6a604d354d1",
+            "type": "radio_field",
+            "label": "Is this internship for academic credit?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No",
+              "Not sure yet"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "56e2aafe-6d48-5b2e-9c6e-1aa2b759b813",
+        "title": "Role and availability",
+        "fields": [
+          {
+            "id": "592420d6-4c0a-5061-a64e-f3c52494d986",
+            "type": "select_field",
+            "label": "Which team are you applying to?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Engineering",
+              "Design",
+              "Product",
+              "Marketing",
+              "Sales",
+              "Finance",
+              "Operations",
+              "Research",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "a68b2b1a-c5c7-5488-bd3f-10258030ec3a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "4d9d38d0-d286-5736-a83e-0ea4cf709f3c",
+            "type": "date_field",
+            "label": "Earliest start date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "a68b2b1a-c5c7-5488-bd3f-10258030ec3a",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "f799d3f3-6f68-5c9f-ab9b-83f0e67b1226",
+            "type": "date_field",
+            "label": "Latest end date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "a68b2b1a-c5c7-5488-bd3f-10258030ec3a",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "8d3b0d1f-6b05-5522-9bf5-799c8f52058f",
+            "type": "number_field",
+            "label": "Hours available per week",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 5,
+            "max": 40,
+            "suffix": "hours",
+            "__type": "number_field"
+          },
+          {
+            "id": "1690a816-c86d-557e-ad13-54bc1e7790c7",
+            "type": "radio_field",
+            "label": "Where can you work?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "On site",
+              "Remote",
+              "Hybrid",
+              "Any of these"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "354729fe-1052-56d0-a0d7-5bddf20c1d5f",
+            "type": "radio_field",
+            "label": "Are you authorized to work in this country?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "Yes, with sponsorship or a student visa",
+              "No",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "5359c8ef-e4a4-5b1f-818f-e5856147a4a8",
+        "title": "Skills and motivation",
+        "fields": [
+          {
+            "id": "0fd41244-aeb8-5c06-bf61-c2862d9113ca",
+            "type": "text_area_field",
+            "label": "Relevant skills, coursework or projects",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "496b4659-f539-5178-8059-f11184b9eb83",
+            "type": "text_area_field",
+            "label": "Why do you want this internship?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "A few sentences is enough",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "669f941c-486e-5e1f-8c59-23ee2538df90",
+            "type": "file_upload_field",
+            "label": "Resume",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "application/msword",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 1,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "4d92cd82-e2c2-5f9c-9440-5a7fb96debef",
+            "type": "radio_field",
+            "label": "How did you hear about us?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Career fair",
+              "University career office",
+              "LinkedIn",
+              "Job board",
+              "Friend or referral",
+              "Other"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L2",
+      "content": "<h1>Apply for an internship</h1><p>Tell us about your studies and availability. About six minutes.</p>",
+      "thankYouContent": "<h1>Application received</h1><p>We review applications every week. If you are shortlisted, we will email you to set up a short interview.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Apply now",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

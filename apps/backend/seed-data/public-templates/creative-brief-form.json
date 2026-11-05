@@ -1,0 +1,447 @@
+{
+  "slug": "creative-brief-form",
+  "name": "Creative Brief",
+  "description": "Brief a designer or writer: objective, audience, key message, deliverables, tone, mandatories, references and deadline.",
+  "category": "Business",
+  "seoTitle": "Free Creative Brief Form Template for Design and Content",
+  "seoDescription": "Creative brief form template that captures the objective, target audience, key message, deliverables, tone, brand mandatories, references and approval dates.",
+  "keywords": [
+    "creative brief form",
+    "creative brief template",
+    "design brief form",
+    "content brief template",
+    "graphic design brief questionnaire",
+    "marketing creative brief"
+  ],
+  "tags": [
+    "File Upload",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 7763078
+    },
+    {
+      "source": "pexels",
+      "id": 5393592
+    }
+  ],
+  "thumbnailAlt": "Creative Brief form beside a photo of a woman arranging photos on a corkboard indoors, displaying creativity and inspiration",
+  "content": {
+    "intro": "A creative brief form is a form that collects the objective, target audience, key message, deliverables, tone and deadline for a piece of design or content work so the creative team can produce the right thing the first time. This template asks for one single-minded message and real reference files, which are the two things most briefs leave vague.",
+    "audience": "In-house marketing teams, design studios, content agencies, freelance designers and copywriters, and the account managers who brief them.",
+    "useCases": [
+      "Requesting a campaign key visual and social cutdowns from an in-house design team",
+      "Briefing a freelance copywriter on a product launch email series",
+      "Kicking off a logo or packaging redesign with a studio",
+      "Standardizing design requests from sales and product teams"
+    ],
+    "tips": [
+      "Share the form as your team's design request link so every job arrives with the same information.",
+      "Turn on email notifications so the creative lead sees each new brief and can assign it the same day.",
+      "Edit the response with full edit history when scope changes, so everyone can see what was added after kickoff."
+    ],
+    "faq": [
+      {
+        "question": "What should a creative brief form include?",
+        "answer": "The project name and owner, the business objective, the target audience, one key message, supporting proof points, the list of deliverables and sizes, tone of voice, brand mandatories (logo, legal lines, colors), references to follow or avoid, budget and the deadline with review dates."
+      },
+      {
+        "question": "How long should a creative brief be?",
+        "answer": "Most good briefs fit on one page. If a requester cannot state the key message in one sentence, the work usually needs more strategy before design starts."
+      },
+      {
+        "question": "Who should fill in the creative brief?",
+        "answer": "The person who owns the business goal, such as a marketing manager or account lead. The creative team then reads it, asks questions and agrees it before work begins."
+      },
+      {
+        "question": "What is a single-minded proposition?",
+        "answer": "It is the one thing you want the audience to take away, written as a short sentence. Briefs with several equal messages tend to produce cluttered work."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "b63f298f-bb45-5e83-831b-edb9a68813a8",
+        "title": "The project",
+        "fields": [
+          {
+            "id": "0c3bb045-5add-50e8-a18e-91c7b75a3cda",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "d21b6df7-3460-5293-a3b6-c51b8c4f640e",
+            "type": "text_input_field",
+            "label": "Your name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "0c3bb045-5add-50e8-a18e-91c7b75a3cda",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "0487ec04-a3f8-5e13-a1d4-686be2aec54e",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "0c3bb045-5add-50e8-a18e-91c7b75a3cda",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "fd09d89c-652c-5709-bcc6-f5c0f4fc42f7",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "d14687c2-9d9b-5bc9-a494-1b1b51c1961e",
+            "type": "text_input_field",
+            "label": "Project name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "fd09d89c-652c-5709-bcc6-f5c0f4fc42f7",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "36fcba9d-eaed-5838-989e-480693760468",
+            "type": "text_input_field",
+            "label": "Team or client",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "fd09d89c-652c-5709-bcc6-f5c0f4fc42f7",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "acf09c8a-9604-5cf2-885b-00b5159252cf",
+            "type": "radio_field",
+            "label": "Type of work",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Campaign",
+              "Brand identity",
+              "Website or landing page",
+              "Social content",
+              "Print or packaging",
+              "Video or animation"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "0d59129f-e5ca-51f9-93b1-658486b29e21",
+            "type": "text_area_field",
+            "label": "What is the business objective?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Get 500 sign-ups for the spring webinar",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "ae8c402f-e36b-5669-9faf-e96890cea6a4",
+        "title": "Audience and message",
+        "fields": [
+          {
+            "id": "cbaa61ae-45b9-5fdb-9bff-7a37532f23a9",
+            "type": "text_area_field",
+            "label": "Who is the target audience?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Who they are, what they care about and what they think of us today",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "627ac2cd-6602-5464-81d8-9bee62d4a0ca",
+            "type": "text_input_field",
+            "label": "Key message in one sentence",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "The one thing the audience should remember",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 160
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "2c2778e6-66c5-5f9f-97a2-7f57c862740d",
+            "type": "text_area_field",
+            "label": "Reasons to believe",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Facts, stats or proof that back up the message",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "3941bbc8-a575-5111-825b-c698c2fd670e",
+            "type": "checkbox_field",
+            "label": "Tone of voice",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1,
+              "maxSelections": 3
+            },
+            "options": [
+              "Friendly",
+              "Bold",
+              "Premium",
+              "Playful",
+              "Authoritative",
+              "Calm",
+              "Urgent"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "a7003ee1-8e86-587c-b331-687956944db2",
+        "title": "Deliverables",
+        "fields": [
+          {
+            "id": "5a076801-6f3f-5c09-852b-0960ff128d9b",
+            "type": "text_area_field",
+            "label": "List the deliverables, formats and sizes",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. 1080×1350 Instagram post ×3, 300×250 banner, A5 flyer (print-ready PDF)",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "84720357-3137-5d63-9e7b-5a910341670e",
+            "type": "text_area_field",
+            "label": "Mandatories",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Logo use, legal copy, hashtags, URLs or colors that must appear",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "d3677acc-7964-570a-b9a6-741417b0f93d",
+            "type": "text_area_field",
+            "label": "References you like, and anything to avoid",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Links to examples help a lot",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "d9c1d8d1-319e-5cae-9a4f-2d7db9d66dfe",
+            "type": "file_upload_field",
+            "label": "Brand guidelines, copy docs or reference images",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 5 files",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 25,
+            "maxFiles": 5,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "e71e4869-3859-567b-b810-58fb2067b1fc",
+        "title": "Timing and budget",
+        "fields": [
+          {
+            "id": "a986b190-4399-5664-a6da-cb3c2215d9b9",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "d0ce26f6-621e-512f-8b9e-ba33b7d9da41",
+            "type": "date_field",
+            "label": "First draft needed by",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "a986b190-4399-5664-a6da-cb3c2215d9b9",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "583f9546-ccbe-5b52-b854-fc82562c5187",
+            "type": "date_field",
+            "label": "Final delivery date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "a986b190-4399-5664-a6da-cb3c2215d9b9",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "fed4c2bc-12cc-54b6-92fa-92237b85a38a",
+            "type": "radio_field",
+            "label": "Budget",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Internal, no external spend",
+              "Under $2,000",
+              "$2,000–$10,000",
+              "$10,000+",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "85b7f6d8-5dde-5a61-9da9-0994327e6dd2",
+            "type": "text_area_field",
+            "label": "Who approves the final work?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L4",
+      "content": "<h1>Brief the creative team</h1><p>Share the goal, the audience and what you need made. It takes about seven minutes.</p>",
+      "thankYouContent": "<h1>Brief received</h1><p>The creative lead will review it, follow up with any questions and confirm a delivery date.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Submit brief",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

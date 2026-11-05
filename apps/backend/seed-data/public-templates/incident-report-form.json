@@ -1,0 +1,491 @@
+{
+  "slug": "incident-report-form",
+  "name": "Incident Report",
+  "description": "Workplace incident report: who was involved, when and where, injury details, witnesses, immediate actions, root cause and photos.",
+  "category": "Operations & IT",
+  "seoTitle": "Free Workplace Incident Report Form Template",
+  "seoDescription": "Incident report form template for workplace injuries, near misses and property damage: time, place, people involved, witnesses, first aid, causes and photos.",
+  "keywords": [
+    "incident report form",
+    "workplace incident report form",
+    "accident report form",
+    "near miss report form",
+    "employee injury report form",
+    "health and safety incident form"
+  ],
+  "tags": [
+    "Safety",
+    "Multi-page",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 12234106
+    },
+    {
+      "source": "pexels",
+      "id": 7018658
+    }
+  ],
+  "thumbnailAlt": "Incident Report form beside a photo of industrial worker managing inventory in a warehouse with a clipboard and checklist",
+  "content": {
+    "intro": "An incident report form is a form that records what happened in a workplace incident, when and where it occurred, who was involved or injured, who witnessed it and what was done in response so a safety team can investigate and prevent it from happening again. This template covers injuries, near misses and property damage in one form, with steps that guide the reporter from the basic facts to causes and corrective actions.",
+    "audience": "Health and safety officers, site supervisors, HR teams, warehouse and construction managers, and facility operators in schools, hospitals and retail.",
+    "useCases": [
+      "Reporting a slip, trip or fall on the shop floor",
+      "Logging near misses so hazards are fixed before someone is hurt",
+      "Recording vehicle, forklift or equipment damage",
+      "Building the records your safety committee and insurer ask for"
+    ],
+    "tips": [
+      "Put a QR code on site notice boards and in vehicles so incidents are reported from the scene while details are fresh.",
+      "Use email notifications to alert the safety lead the moment a report with an injury comes in.",
+      "Use PDF templates to produce a filled incident report for each submission to attach to insurance or investigation files."
+    ],
+    "faq": [
+      {
+        "question": "What should an incident report form include?",
+        "answer": "The reporter's details, the date, time and exact location, the type of incident, the people involved, a factual description, any injury and body part affected, first aid or medical treatment given, witnesses, immediate actions taken, likely causes, suggested corrective actions and photos of the scene."
+      },
+      {
+        "question": "Should near misses be reported?",
+        "answer": "Yes. A near miss is an event that could have caused injury or damage but did not. Reporting them shows hazards early, and many safety programs treat them as just as important as actual injuries."
+      },
+      {
+        "question": "Do I have to report workplace injuries to a regulator?",
+        "answer": "Some serious injuries and dangerous occurrences must be reported to a government body, such as OSHA in the US or HSE in the UK, often within a set number of days. The rules vary by country and industry, so check your local requirements; this form is your internal record, not an official filing."
+      },
+      {
+        "question": "How soon should an incident be reported?",
+        "answer": "As soon as it is safe to do so, ideally the same shift. Details like times, positions and witness names fade quickly, and early reports make investigations more accurate."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "825ad171-c554-56bd-aa6f-0c60057b985f",
+        "title": "Reporter",
+        "fields": [
+          {
+            "id": "a5bd0e83-a5b4-5bb0-af5c-cb2b7ddbfd7d",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "cd53f4eb-2e33-566e-99be-e92ded54d3ca",
+            "type": "text_input_field",
+            "label": "Your name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a5bd0e83-a5b4-5bb0-af5c-cb2b7ddbfd7d",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "207a6b00-315c-50dc-a32d-98c64be04de5",
+            "type": "text_input_field",
+            "label": "Job title",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 80
+            },
+            "gridId": "a5bd0e83-a5b4-5bb0-af5c-cb2b7ddbfd7d",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "cc978582-98f3-5f82-a1be-9293a3bbc34a",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "2c0d560d-2149-5044-8a41-727bcacd0734",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "cc978582-98f3-5f82-a1be-9293a3bbc34a",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "3993e70d-09ad-593e-ad66-2a9962de518f",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "cc978582-98f3-5f82-a1be-9293a3bbc34a",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "e7a3e586-030c-54b5-8bcb-2b669492a957",
+            "type": "text_input_field",
+            "label": "Department or site",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 100
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "2c5ab231-0d8c-562f-b580-d4be5f7b22f1",
+        "title": "What happened",
+        "fields": [
+          {
+            "id": "8b99596e-24f3-56db-8aa4-dabdcea976ee",
+            "type": "radio_field",
+            "label": "Type of incident",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Injury",
+              "Near miss",
+              "Property or equipment damage",
+              "Vehicle incident",
+              "Environmental spill",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "5d7e331a-2fbc-5c83-9039-77f3aeee8e7f",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "68a67595-f8d4-5c78-b58f-c0d727146532",
+            "type": "date_field",
+            "label": "Date of incident",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "5d7e331a-2fbc-5c83-9039-77f3aeee8e7f",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "0b15c670-302a-58aa-8cc3-debb2e796d2a",
+            "type": "text_input_field",
+            "label": "Time of incident",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. 14:30",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 10
+            },
+            "gridId": "5d7e331a-2fbc-5c83-9039-77f3aeee8e7f",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "79b7fc7f-8b2c-5bf1-93f9-cd52988cad33",
+            "type": "text_input_field",
+            "label": "Exact location",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. Loading bay 2, aisle 14",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 150
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "02bacddf-6332-5f81-8ac3-9b11b0d3e8e7",
+            "type": "text_area_field",
+            "label": "Describe what happened",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "Stick to facts: what the person was doing, what went wrong, the sequence of events",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 2000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "c5aae125-1b1c-5432-ae8e-ac87b0ccacbf",
+            "type": "text_area_field",
+            "label": "Names and roles of people involved",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "4bc2602a-fd6c-5dfc-a036-3ec15d114dd0",
+            "type": "file_upload_field",
+            "label": "Photos of the scene or damage",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 5 files",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*",
+              "application/pdf"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 5,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "4b5ad71c-b553-5dce-b987-15a6762b8d3d",
+        "title": "Injury and response",
+        "fields": [
+          {
+            "id": "186d73c1-4ae2-5c55-b637-dce6bcc20a8d",
+            "type": "radio_field",
+            "label": "Was anyone injured?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Yes - minor, first aid only",
+              "Yes - needed medical treatment",
+              "Yes - hospital visit or admission"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "33e52298-c23c-5b05-9c1e-a06b34d6a4f7",
+            "type": "checkbox_field",
+            "label": "Body part affected",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Only if someone was injured",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Head or face",
+              "Eyes",
+              "Neck or back",
+              "Arm or hand",
+              "Leg or foot",
+              "Torso",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "d7726143-3f92-51b8-8532-d06fbe8d2158",
+            "type": "text_area_field",
+            "label": "First aid or treatment given",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "a354ece1-7ce9-5c0d-be3e-4a396482c14c",
+            "type": "text_area_field",
+            "label": "Witnesses and their contact details",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "76c6d7a2-8186-5005-b9ae-54cb561b60bc",
+            "type": "text_area_field",
+            "label": "Immediate actions taken",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. area cordoned off, machine isolated, spill cleaned",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "95000a6e-3580-51da-8492-5cb56b9e173d",
+        "title": "Causes and prevention",
+        "fields": [
+          {
+            "id": "1ee3ec82-f0a4-56a9-8947-d22d178e57f7",
+            "type": "checkbox_field",
+            "label": "Likely contributing factors",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Choose any that apply",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Wet or uneven floor",
+              "Equipment fault",
+              "No or wrong PPE",
+              "Lack of training",
+              "Rushing or fatigue",
+              "Poor lighting",
+              "Procedure not followed",
+              "Other"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "edfd8793-8c40-5bc8-abb2-294f44844f28",
+            "type": "text_area_field",
+            "label": "What could prevent this happening again?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "50497ab2-9cb9-5499-90f4-7848e02c050a",
+            "type": "checkbox_field",
+            "label": "Declaration",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "The information I have given is true and accurate to the best of my knowledge"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L6",
+      "content": "<h1>Report an incident</h1><p>Record the facts while they are fresh. It takes about six minutes.</p>",
+      "thankYouContent": "<h1>Report submitted</h1><p>The safety lead has been notified and may contact you or the witnesses for more details.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start report",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

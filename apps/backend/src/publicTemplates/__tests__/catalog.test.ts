@@ -63,7 +63,8 @@ describe('validation rules', () => {
   it('catches duplicate slugs, file-name mismatches, shared field ids and category clashes', () => {
     const clash = { ...base, slug: 'business', category: 'Other' };
     const problems = validateCatalog([
-      { file: `${base.slug}.json`, def: base },
+      // Pin the category so the clash doesn't depend on which template sorts first.
+      { file: `${base.slug}.json`, def: { ...base, category: 'Business' } },
       { file: 'copy.json', def: base },
       { file: 'business.json', def: clash },
     ]).join('\n');

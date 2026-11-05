@@ -1,0 +1,314 @@
+{
+  "slug": "lead-generation-form",
+  "name": "Lead Generation",
+  "description": "Capture qualified B2B leads: name, company, role, team size, main need, timeline and budget, with a marketing consent box.",
+  "category": "Marketing & Sales",
+  "seoTitle": "Free Lead Generation Form Template for B2B",
+  "seoDescription": "Lead generation form template that captures name, work email, company, role, team size, main need, buying timeline and budget so sales can follow up first.",
+  "keywords": [
+    "lead generation form",
+    "lead capture form",
+    "lead gen form template",
+    "B2B lead form",
+    "sales inquiry form",
+    "contact sales form"
+  ],
+  "tags": [
+    "Lead Capture",
+    "Consent"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 36766751
+    },
+    {
+      "source": "pexels",
+      "id": 7709270
+    }
+  ],
+  "thumbnailAlt": "Lead Generation form beside a photo of smiling businessman talking on the phone while working on laptop in modern office",
+  "content": {
+    "intro": "A lead generation form is a form that collects a prospect's name, work email, company and main need so a sales or marketing team can follow up with the people most likely to buy. This template adds four short qualifying questions on role, team size, timeline and budget, so reps can sort hot leads from early researchers without a discovery call.",
+    "audience": "SaaS companies, agencies, B2B service providers, consultants and sales teams running demand-generation campaigns.",
+    "useCases": [
+      "A 'Talk to sales' or 'Book a demo' button on a pricing page",
+      "A landing page for a paid search or LinkedIn ad campaign",
+      "Gating a whitepaper, report or webinar recording",
+      "Collecting leads at a trade show booth through a QR code"
+    ],
+    "tips": [
+      "Use webhooks to send each new lead to your CRM or a Slack channel the moment it arrives.",
+      "Use conditional logic to ask budget questions only when the timeline is within three months.",
+      "Check response analytics and per-question charts to see which company sizes and needs your campaigns attract."
+    ],
+    "faq": [
+      {
+        "question": "What should a lead generation form include?",
+        "answer": "At minimum a name, work email and company. To qualify leads, add role, company size, the main problem they want solved, buying timeline and budget range, plus an optional marketing consent checkbox. This template uses exactly that set."
+      },
+      {
+        "question": "How many fields should a lead generation form have?",
+        "answer": "Fewer fields usually means more submissions, but fewer qualifying details. A common balance is three required contact fields plus three to five quick multiple-choice questions, which is what this template does."
+      },
+      {
+        "question": "Do I need consent to email leads?",
+        "answer": "It depends on where your leads are. Laws such as GDPR in the EU and CASL in Canada generally require clear consent for marketing emails, while the US CAN-SPAM Act relies on an easy opt-out. A separate, unticked consent box is the safe default; check the rules for your markets."
+      },
+      {
+        "question": "What is a marketing qualified lead (MQL)?",
+        "answer": "An MQL is a lead that matches your target customer profile and has shown buying interest, for example a manager at a 50-person company planning to buy this quarter. Qualifying questions on the form help you spot MQLs automatically."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "8890ee5f-2c53-5b97-a274-2c1a22a1826d",
+        "title": "Contact sales",
+        "fields": [
+          {
+            "id": "2add3d54-4aac-5bb0-9bc0-29864531f2f3",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "b849cbc1-4a88-5203-ba39-e2c58249c9eb",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "2add3d54-4aac-5bb0-9bc0-29864531f2f3",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "435709df-97c0-5afe-9f61-62a6d0e32245",
+            "type": "email_field",
+            "label": "Work email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "2add3d54-4aac-5bb0-9bc0-29864531f2f3",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "3af214cd-a226-59f0-9fa4-30234f5cb4b1",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "ea676a8c-15d2-50e7-a886-8aac8b94e233",
+            "type": "text_input_field",
+            "label": "Company",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "3af214cd-a226-59f0-9fa4-30234f5cb4b1",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "a21da4ee-f289-5e66-85dc-82bc842d18e5",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "3af214cd-a226-59f0-9fa4-30234f5cb4b1",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "38be1207-d62f-563e-9666-947be9cd3ecf",
+            "type": "radio_field",
+            "label": "Your role",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Founder or executive",
+              "Manager or team lead",
+              "Individual contributor",
+              "Consultant or agency",
+              "Student",
+              "Other"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "dd2db1ad-d866-5d8d-8567-935f24f89889",
+            "type": "radio_field",
+            "label": "Company size",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "1–10",
+              "11–50",
+              "51–200",
+              "201–1,000",
+              "1,000+"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "00d8ce67-4d17-58b8-9fc1-df9f0446d9ad",
+            "type": "text_area_field",
+            "label": "What are you hoping to solve?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "a29a7dcf-528b-57d5-868f-d636d75c68a3",
+            "type": "radio_field",
+            "label": "When are you looking to start?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Right away",
+              "Within 3 months",
+              "3–6 months",
+              "Just researching"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "19abedfb-60a7-5422-85c3-c49988cad2a1",
+            "type": "radio_field",
+            "label": "Estimated budget",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under $1,000",
+              "$1,000–$10,000",
+              "$10,000–$50,000",
+              "$50,000+",
+              "Not sure yet"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "38ff6963-96b5-5167-a8a0-09d1bb559349",
+            "type": "select_field",
+            "label": "How did you hear about us?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Google search",
+              "LinkedIn",
+              "Referral",
+              "Event or webinar",
+              "Podcast",
+              "Review site",
+              "AI assistant",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "b4f6cbf1-24ec-5bcf-aa71-35cd4f980a15",
+            "type": "checkbox_field",
+            "label": "Marketing emails",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Send me product news and useful guides. I can unsubscribe any time."
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L9",
+      "content": "<h1>Talk to our team</h1><p>Tell us a little about your company and what you need. It takes under two minutes.</p>",
+      "thankYouContent": "<h1>Thanks, we'll be in touch</h1><p>A specialist will email you within one business day with next steps tailored to your needs.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Contact sales",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

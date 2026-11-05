@@ -1,0 +1,436 @@
+{
+  "slug": "public-records-request-form",
+  "name": "Public Records Request",
+  "description": "FOIA-style public records request: requester, records sought, date range, department, preferred format and fee waiver details.",
+  "category": "Government",
+  "seoTitle": "Free Public Records Request Form Template (FOIA)",
+  "seoDescription": "Public records request form template for FOIA-style requests: the records sought, date range, department, format, fee limit and requester contact details.",
+  "keywords": [
+    "public records request form",
+    "foia request form",
+    "open records request form",
+    "freedom of information request template",
+    "records request form",
+    "government records request"
+  ],
+  "tags": [
+    "Government",
+    "Multi-page"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 8369203
+    },
+    {
+      "source": "pexels",
+      "id": 6814526
+    }
+  ],
+  "thumbnailAlt": "Public Records Request form beside a photo of a person reads a newspaper at a desk with a lamp, suggesting investigation work",
+  "content": {
+    "intro": "A public records request form is a form that collects a requester's contact details, a clear description of the records they want, the date range, the department that holds them and the preferred delivery format so a government agency can search for and release records under open records law. This template prompts requesters to be specific, which helps clerks find the right records and avoid long back-and-forth.",
+    "audience": "City and county clerks, records officers, school districts, police departments, public universities and other agencies that handle FOIA or open records requests.",
+    "useCases": [
+      "The online records request page on a city or county website",
+      "Police and fire departments handling report requests",
+      "School districts receiving requests for board records and emails",
+      "Small towns replacing paper request forms at the clerk's counter"
+    ],
+    "tips": [
+      "Use the response table and edit history to track each request's status and keep a dated log of when it was received and closed.",
+      "Send requesters an automatic email copy of their submission so they have a dated receipt of the request.",
+      "Embed the form on your records page next to your fee schedule and response timelines so requesters know what to expect."
+    ],
+    "faq": [
+      {
+        "question": "What should a public records request form include?",
+        "answer": "The requester's name and contact details, a specific description of the records wanted, a date range, the department or office likely to hold them, the preferred format (electronic copies, paper copies or in-person inspection), any fee limit, and whether a fee waiver is requested and why."
+      },
+      {
+        "question": "Do I have to say why I want public records?",
+        "answer": "In the US, most federal and state open records laws do not require a reason for a request, though a reason may help with a fee waiver. Rules differ between countries and states, so check the law that applies to the agency."
+      },
+      {
+        "question": "How long does an agency have to respond to a records request?",
+        "answer": "It depends on the law. The federal FOIA generally allows 20 working days, while state laws range from a few days to a 'reasonable time'. Agencies can often extend the deadline for large requests, so check your local rules."
+      },
+      {
+        "question": "How do I make a records request more likely to succeed?",
+        "answer": "Be specific: name the type of document, the people or offices involved, keywords and a narrow date range. Broad requests like 'all emails' take longer, may cost more and are more likely to be narrowed or refused."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "84703ce8-279b-5eef-81ff-507b7b923488",
+        "title": "Requester",
+        "fields": [
+          {
+            "id": "a65ebfb5-94e6-54c5-8778-c0182c6c7a0c",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "11e5a255-13f6-5da8-afc7-532563d377ca",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a65ebfb5-94e6-54c5-8778-c0182c6c7a0c",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "5a6b04cf-88b3-573a-8462-cee5f817cc32",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "a65ebfb5-94e6-54c5-8778-c0182c6c7a0c",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "681dbc29-f1ac-558d-89d1-4a5dbd889638",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "68f4a39e-39a5-55d6-b454-9ad88de92675",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "681dbc29-f1ac-558d-89d1-4a5dbd889638",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "58fa0e80-d873-5e79-bb66-df4c5cb7fee7",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "681dbc29-f1ac-558d-89d1-4a5dbd889638",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "b7bc50f9-1111-5e23-bc4d-bf1d4e20edb6",
+            "type": "text_input_field",
+            "label": "Organization",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. News outlet, company or nonprofit",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "5ef935e2-4853-5d79-94dd-19299a5fa63d",
+            "type": "text_area_field",
+            "label": "Mailing address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Only needed for paper copies",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 300
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "4a7597dc-7341-51b1-a5a5-b67b0d5a8ebb",
+            "type": "radio_field",
+            "label": "Which best describes you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Can affect fees in some places",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Member of the public",
+              "News media",
+              "Educational or research",
+              "Commercial use",
+              "Prefer not to say"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "a92ccfbd-30d3-56e1-8bfc-b86621f1b5c9",
+        "title": "Records requested",
+        "fields": [
+          {
+            "id": "727ea8d1-2d8a-5d24-9601-e1796d5d8e1f",
+            "type": "select_field",
+            "label": "Department or office",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Clerk's office",
+              "Police department",
+              "Fire department",
+              "Building and planning",
+              "Public works",
+              "Finance",
+              "Human resources",
+              "Parks and recreation",
+              "Not sure"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "e73d0d47-5a1b-5948-8d09-302894353221",
+            "type": "text_area_field",
+            "label": "Describe the records you are requesting",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "Type of document, subject, names, addresses, case or permit numbers, keywords",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 2000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "2583c521-bcab-51e0-8ab9-37c5ee552b77",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "8af7b982-0601-58a7-a60d-50009608be30",
+            "type": "date_field",
+            "label": "Records from",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "2583c521-bcab-51e0-8ab9-37c5ee552b77",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "85ea97fa-a795-53ce-ba14-3f4985975e2b",
+            "type": "date_field",
+            "label": "Records to",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "2583c521-bcab-51e0-8ab9-37c5ee552b77",
+            "gridColumn": 1,
+            "__type": "date_field"
+          },
+          {
+            "id": "d5e1c46f-aca7-513a-9a09-fb72a74f2d64",
+            "type": "file_upload_field",
+            "label": "Supporting documents",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. e.g. a prior letter or reference document",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "application/pdf",
+              "image/*"
+            ],
+            "maxFileSizeMb": 10,
+            "maxFiles": 2,
+            "__type": "file_upload_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "125b7dfa-0e10-53c0-a733-84f081da2908",
+        "title": "Delivery and fees",
+        "fields": [
+          {
+            "id": "64380d59-00c6-5339-9b14-837e6d1b7629",
+            "type": "radio_field",
+            "label": "How would you like to receive the records?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Electronic copies by email",
+              "Paper copies by mail",
+              "Inspect in person",
+              "Pick up copies"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "054343b4-f60c-5aff-861f-152b07ad68d1",
+            "type": "number_field",
+            "label": "Maximum fee you agree to without being contacted",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "min": 0,
+            "max": 10000,
+            "suffix": "USD",
+            "__type": "number_field"
+          },
+          {
+            "id": "ee8968a5-b912-5b68-a0f0-d4b4621bc939",
+            "type": "radio_field",
+            "label": "Are you requesting a fee waiver?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Yes"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "74cb1f58-4599-570b-b2cd-6c94570fdcae",
+            "type": "text_area_field",
+            "label": "Reason for fee waiver",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Only if you requested a waiver",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "a0757393-76cf-59a4-8490-efb55c8aa86a",
+            "type": "rich_text_field",
+            "content": "<p>Some records may be withheld or redacted where the law allows. Copying fees may apply; check the agency's fee schedule. Your request and contact details may themselves be a public record.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "948bb93f-97c3-57e8-a1ad-76f03399dd78",
+            "type": "checkbox_field",
+            "label": "Acknowledgement",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "I understand that records may be redacted and fees may apply"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L4",
+      "content": "<h1>Request public records</h1><p>Describe the records you need as clearly as you can. It takes about five minutes.</p>",
+      "thankYouContent": "<h1>Request received</h1><p>The records office will confirm receipt and contact you about timing, any fees or questions about your request.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Submit request",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

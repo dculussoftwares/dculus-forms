@@ -1,0 +1,293 @@
+{
+  "slug": "personality-quiz",
+  "name": "Personality Quiz",
+  "description": "A fun 'which type are you?' quiz with eight questions that map to four personalities: Adventurer, Planner, Free Spirit, Connector.",
+  "category": "Quizzes",
+  "seoTitle": "Free Personality Quiz Template: Which Type Are You?",
+  "seoDescription": "Personality quiz template with eight fun questions, each answer tied to one of four types: Adventurer, Planner, Free Spirit or Connector. Share it in minutes.",
+  "keywords": [
+    "personality quiz",
+    "personality quiz template",
+    "which type are you quiz",
+    "personality test form",
+    "fun quiz for website",
+    "buzzfeed style quiz maker"
+  ],
+  "tags": [
+    "Quiz",
+    "Fun"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 5253854
+    },
+    {
+      "source": "pexels",
+      "id": 8199196
+    }
+  ],
+  "thumbnailAlt": "Personality Quiz form beside a photo of two women happily sharing a moment while using a smartphone, laughing in a bright indoor setting",
+  "content": {
+    "intro": "A personality quiz is a form that asks light, scenario-based questions where each answer points to a personality type, so people can find out which type they are and share the result. This template has eight questions with four answers each, labeled A to D, and each letter maps to one type: Adventurer, Planner, Free Spirit or Connector.",
+    "audience": "Marketers, community managers, teachers, event hosts and creators who want a shareable quiz for engagement or icebreakers.",
+    "useCases": [
+      "A shareable quiz on social media or in a newsletter to grow engagement",
+      "An icebreaker for team offsites, workshops or classes",
+      "A lead magnet on a website that asks for an email to send the result",
+      "A themed quiz for an event, retreat or product launch"
+    ],
+    "tips": [
+      "Results work by majority: the thank-you message lists what 'mostly A, B, C or D' means, so people see their type as soon as they submit.",
+      "Add the email plugin with 'recipient from field' to send each person an email copy that includes the type descriptions.",
+      "Rename the four types and rewrite the options to match your brand, topic or event; keep each letter tied to the same type in every question."
+    ],
+    "faq": [
+      {
+        "question": "What should a personality quiz include?",
+        "answer": "Four to six clearly different personality types, six to ten everyday scenario questions, one answer per type in every question, a short description of each type, and a way to show the result, such as a thank-you message or a follow-up email."
+      },
+      {
+        "question": "How are personality quiz results calculated here?",
+        "answer": "Each answer is labeled A, B, C or D, and each letter belongs to one type. The respondent counts which letter they picked most, and the thank-you message tells them which type that is. Quiz grading is not used, because there are no right or wrong answers."
+      },
+      {
+        "question": "Is this a scientific personality test?",
+        "answer": "No. It is a fun, light quiz for engagement and conversation, not a validated psychological assessment like the Big Five. Do not use it for hiring or clinical decisions."
+      },
+      {
+        "question": "Can I collect emails with a personality quiz?",
+        "answer": "Yes. The email field is optional here; make it required if the quiz is a lead magnet, and say clearly what you will send so people know why you are asking."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "e7c60dd9-38ca-5c99-bf93-fae2eeec6202",
+        "title": "The quiz",
+        "fields": [
+          {
+            "id": "c9d16760-dd09-50f0-9249-6e92a6ba0c78",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "9de807c3-2dd6-5f35-b7a9-cdc28af2732f",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 60
+            },
+            "gridId": "c9d16760-dd09-50f0-9249-6e92a6ba0c78",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "e456a7a6-0cb6-5e15-ae25-eb4ab37c749c",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional, to get your result by email",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c9d16760-dd09-50f0-9249-6e92a6ba0c78",
+            "gridColumn": 1,
+            "__type": "email_field"
+          },
+          {
+            "id": "6c5e8bfb-bfc5-528f-b369-43a2140c3513",
+            "type": "radio_field",
+            "label": "It's a free Saturday. What are you doing?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A. Trying something I've never done, like rock climbing",
+              "B. Ticking off my to-do list, then a well-earned rest",
+              "C. Wandering wherever the day takes me",
+              "D. Brunch with friends that turns into an all-day hangout"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "fc27a50f-767e-5a27-83dc-127370d698c4",
+            "type": "radio_field",
+            "label": "Pick a holiday",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A. Backpacking somewhere off the map",
+              "B. A city break with every day mapped out",
+              "C. A cabin with art supplies and no schedule",
+              "D. A big group trip with friends or family"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "d4e2ce6b-3fbb-599f-b1a0-094bd85988f4",
+            "type": "radio_field",
+            "label": "Your phone's home screen is",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A. A mess of travel and outdoor apps",
+              "B. Neatly sorted into folders",
+              "C. A photo I took, no widgets",
+              "D. Full of group chats with unread messages"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "e179b57e-2db9-5b3a-a98d-c9bd4130a6d4",
+            "type": "radio_field",
+            "label": "A friend asks for advice. You",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A. Tell them to go for it, what's the worst that can happen?",
+              "B. Make a pros and cons list together",
+              "C. Ask how it feels and tell them to trust their gut",
+              "D. Introduce them to someone who has been through it"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "6b7eb2b8-416a-563a-9e31-a121f42a5733",
+            "type": "radio_field",
+            "label": "At a party you're usually",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A. The one suggesting the next adventure",
+              "B. The one who organized it",
+              "C. Off in a corner having a deep chat",
+              "D. Introducing everyone to everyone"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "d5fa6201-7ad2-5f99-96c1-6715adccb2f8",
+            "type": "radio_field",
+            "label": "Pick a superpower",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A. Teleportation",
+              "B. Seeing the future",
+              "C. Shape-shifting",
+              "D. Reading minds"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1b64eb50-6fd3-5aa5-8297-037ce5a14b27",
+            "type": "radio_field",
+            "label": "Your ideal job would involve",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A. Travel and new challenges every week",
+              "B. Clear goals and room to build something that lasts",
+              "C. Creative freedom and flexible hours",
+              "D. Working with people and building a community"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "00db1763-a649-5c77-8259-c2231c9e0514",
+            "type": "radio_field",
+            "label": "Which word sounds most like you?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "A. Bold",
+              "B. Reliable",
+              "C. Imaginative",
+              "D. Warm"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L8",
+      "content": "<h1>Which type are you?</h1><p>Eight quick questions, no wrong answers. About two minutes.</p>",
+      "thankYouContent": "<h1>Count your letters</h1><p>Mostly A: The Adventurer, bold and curious. Mostly B: The Planner, calm and organized. Mostly C: The Free Spirit, creative and spontaneous. Mostly D: The Connector, warm and social.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Take the quiz",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

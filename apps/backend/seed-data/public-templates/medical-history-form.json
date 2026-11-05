@@ -1,0 +1,514 @@
+{
+  "slug": "medical-history-form",
+  "name": "Medical History",
+  "description": "Collect a patient's past conditions, surgeries, current medications, allergies, family history and lifestyle before their visit.",
+  "category": "Healthcare",
+  "seoTitle": "Free Medical History Form Template",
+  "seoDescription": "Medical history form template covering past conditions, surgeries, medications, allergies, family history and lifestyle. Patients fill it in before the visit.",
+  "keywords": [
+    "medical history form",
+    "patient medical history form",
+    "health history questionnaire",
+    "new patient medical history form",
+    "medical history intake form",
+    "past medical history form"
+  ],
+  "tags": [
+    "Intake",
+    "Multi-page",
+    "Consent"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 7578799
+    },
+    {
+      "source": "pexels",
+      "id": 7578802
+    }
+  ],
+  "thumbnailAlt": "Medical History form beside a photo of doctor hands examining and pointing at medical charts in a close-up view",
+  "content": {
+    "intro": "A medical history form is a form that collects a patient's past diagnoses, surgeries, hospital stays, current medications, allergies and family history so a doctor or nurse can treat them safely without starting from scratch at the appointment. This template splits those questions into short pages, asks for medication doses and allergic reactions in the patient's own words, and closes with a consent statement.",
+    "audience": "Family practices, walk-in clinics, specialist consultants, dental offices, physiotherapy and chiropractic clinics, and occupational health teams registering new patients.",
+    "useCases": [
+      "New patients completing their history at home before a first appointment",
+      "Annual review where returning patients update medications and new diagnoses",
+      "Pre-operative assessment ahead of a day-surgery or dental procedure",
+      "Occupational health screening for new employees in physical roles"
+    ],
+    "tips": [
+      "Use conditional logic so the medication and allergy detail boxes only appear when a patient answers Yes.",
+      "Turn on save-and-resume so patients can stop to check pill bottles or ask a relative about family history.",
+      "Set up a PDF template so each completed history prints as a clean one-file record for the chart."
+    ],
+    "faq": [
+      {
+        "question": "What should a medical history form include?",
+        "answer": "Patient identity and date of birth, current and past medical conditions, past surgeries and hospital stays, current medications with doses, allergies and the reaction they cause, family history of conditions such as heart disease, diabetes and cancer, lifestyle questions on smoking, alcohol and exercise, and a statement that the information is accurate."
+      },
+      {
+        "question": "Is it safe to collect medical history with an online form?",
+        "answer": "Responses and file uploads are stored privately and only people you give access to can see them. Health data is regulated differently around the world, so check your local health-privacy rules and your own policies before collecting patient information online."
+      },
+      {
+        "question": "How often should patients update their medical history?",
+        "answer": "Most clinics ask patients to review their history at least once a year and whenever they start a new medication, have surgery or receive a new diagnosis. Sending the same form link before an annual review is an easy way to do this."
+      },
+      {
+        "question": "Can a parent fill in the form for a child?",
+        "answer": "Yes. The form asks who is completing it, so a parent or guardian can answer for a child, or a carer for an adult who needs help."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "628b92e6-ada9-5564-bbea-65e4545921fb",
+        "title": "Patient details",
+        "fields": [
+          {
+            "id": "45c6d410-d971-5fa8-a611-91fc5f7beefb",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "db8e15dc-3d16-5f92-b6bd-35e8ed637cc0",
+            "type": "text_input_field",
+            "label": "First name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "45c6d410-d971-5fa8-a611-91fc5f7beefb",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "be4a0c5d-f0f3-5355-9485-d860af2612a4",
+            "type": "text_input_field",
+            "label": "Last name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "45c6d410-d971-5fa8-a611-91fc5f7beefb",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "13ebc9f2-8889-57c3-9de5-c11df1dd4c18",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "f7f5e694-b8ed-5eb6-a922-12bc6fcca64b",
+            "type": "date_field",
+            "label": "Date of birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "13ebc9f2-8889-57c3-9de5-c11df1dd4c18",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "e65dd2b5-374a-5fab-b9a4-9300ecda0542",
+            "type": "radio_field",
+            "label": "Sex assigned at birth",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Female",
+              "Male",
+              "Intersex",
+              "Prefer not to say"
+            ],
+            "gridId": "13ebc9f2-8889-57c3-9de5-c11df1dd4c18",
+            "gridColumn": 1,
+            "__type": "radio_field"
+          },
+          {
+            "id": "7008e7e0-87e5-5c77-a9c2-0039b4003358",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "d49b0077-ec6a-5db7-8276-da36851f74ff",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "7008e7e0-87e5-5c77-a9c2-0039b4003358",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "2b9ff005-ad3d-5ae9-9ed5-b582d92f6102",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "7008e7e0-87e5-5c77-a9c2-0039b4003358",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "98e6c976-eca9-55e6-8a82-f73b251c29dd",
+            "type": "radio_field",
+            "label": "Who is filling in this form?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "The patient",
+              "Parent or guardian",
+              "Carer or family member"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "a7dd4398-ad71-595f-9298-7c273a8bdd72",
+            "type": "text_input_field",
+            "label": "Primary care doctor or clinic",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 120
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "c44acb55-4257-5419-a946-c8b0bf84581b",
+        "title": "Conditions and surgeries",
+        "fields": [
+          {
+            "id": "fbbfecb9-b03d-575f-8a3f-7fd8ac70cfc4",
+            "type": "checkbox_field",
+            "label": "Have you ever been diagnosed with any of these?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Tick all that apply",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "High blood pressure",
+              "Heart disease",
+              "Diabetes",
+              "Asthma or COPD",
+              "Thyroid disorder",
+              "Kidney or liver disease",
+              "Cancer",
+              "Stroke or seizures",
+              "Depression or anxiety",
+              "Arthritis",
+              "None of these"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "5cd2cd09-7fe4-5474-ba17-038824215cb7",
+            "type": "text_area_field",
+            "label": "Other medical conditions",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Include the year you were diagnosed",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "83450661-c7fc-54c5-94fc-e9d7dd586bc9",
+            "type": "text_area_field",
+            "label": "Past surgeries and hospital stays",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Procedure, year and hospital, for example: appendix removed, 2015, City Hospital",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1000
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "c2f5a5d2-e24b-5bc4-be1c-4de9ba9ed26f",
+            "type": "radio_field",
+            "label": "Are you pregnant or could you be pregnant?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No",
+              "Not sure",
+              "Not applicable"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      },
+      {
+        "id": "0c87c41a-9d99-5f44-b764-aac98481b1bf",
+        "title": "Medications and allergies",
+        "fields": [
+          {
+            "id": "02593289-a4d0-5c80-b22d-af5d3336545b",
+            "type": "radio_field",
+            "label": "Do you take any medications, vitamins or supplements?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "d45a3ff8-84fe-5d6f-b349-ce706a1ee35f",
+            "type": "text_area_field",
+            "label": "List each medication with its dose and how often you take it",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "For example: metformin 500 mg, twice a day",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "60ba2095-5753-5852-b9d8-a17023128f50",
+            "type": "radio_field",
+            "label": "Do you have any allergies to medicines, foods, latex or anything else?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes",
+              "No",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "3a93e03d-a7b6-591e-8d48-fa41d897cb8d",
+            "type": "text_area_field",
+            "label": "What are you allergic to, and what reaction did you have?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "For example: penicillin, hives and swelling",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 3
+      },
+      {
+        "id": "4c7fe055-e6e4-5bf3-87cb-fec6d4209fd6",
+        "title": "Family history and lifestyle",
+        "fields": [
+          {
+            "id": "0d0e7575-98fa-553a-ab4c-4f0cee0a628f",
+            "type": "checkbox_field",
+            "label": "Has a parent, brother or sister had any of these?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Heart disease before age 60",
+              "Diabetes",
+              "Cancer",
+              "Stroke",
+              "High blood pressure",
+              "Mental health conditions",
+              "None that I know of"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "0e8ec31d-c840-5854-b813-90c255349ae0",
+            "type": "radio_field",
+            "label": "Do you smoke or vape?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Never",
+              "Used to",
+              "Occasionally",
+              "Daily"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "3ad6cf4d-95db-594d-ae01-e07ba779a6ee",
+            "type": "radio_field",
+            "label": "How many alcoholic drinks do you have in a typical week?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "None",
+              "1 to 7",
+              "8 to 14",
+              "More than 14",
+              "Prefer not to say"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "09382bcf-ad60-592c-a545-ba24aa70c2cf",
+            "type": "rich_text_field",
+            "content": "<p>The information you give is used by your care team to plan safe treatment. It is kept confidential and shared only with people involved in your care, as described in our privacy notice.</p>",
+            "__type": "rich_text_field"
+          },
+          {
+            "id": "3ec45fa3-d82c-5854-82a0-8d47806a0d57",
+            "type": "checkbox_field",
+            "label": "Confirmation",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "checkbox_field_validation",
+              "minSelections": 1
+            },
+            "options": [
+              "The information I have given is complete and correct to the best of my knowledge"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 4
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L6",
+      "content": "<h1>Your medical history</h1><p>Tell us about your health before your visit. It takes about eight minutes.</p>",
+      "thankYouContent": "<h1>Thank you, your history is in</h1><p>Your care team will read it before your appointment. Please bring your medications or a list of them with you.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Start",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

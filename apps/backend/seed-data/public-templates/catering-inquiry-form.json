@@ -1,0 +1,416 @@
+{
+  "slug": "catering-inquiry-form",
+  "name": "Catering Inquiry",
+  "description": "Capture catering leads with event date, venue, guest count, service style, menu ideas, dietary needs and budget per head.",
+  "category": "Hospitality",
+  "seoTitle": "Free Catering Inquiry Form Template",
+  "seoDescription": "Catering inquiry form template with event date, venue, guest count, service style, cuisine, dietary requirements and budget per head. Quote accurately, faster.",
+  "keywords": [
+    "catering inquiry form",
+    "catering request form",
+    "catering quote form",
+    "event catering form",
+    "catering order form",
+    "catering booking inquiry"
+  ],
+  "tags": [
+    "Quote",
+    "Events"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 34321369
+    },
+    {
+      "source": "pexels",
+      "id": 12253095
+    }
+  ],
+  "thumbnailAlt": "Catering Inquiry form beside a photo of elegant catering presentation with gourmet appetizers on a tray at a social event",
+  "content": {
+    "intro": "A catering inquiry form is a form that collects an event's date, venue, guest count, service style, menu preferences, dietary requirements and budget so a caterer can check availability and send an accurate quote in one reply. This template asks about venue kitchen access, staffing and rentals up front, the details that most often change a catering price after the first quote.",
+    "audience": "Caterers, private chefs, food trucks, restaurants with a catering arm, bakeries and event venues that quote for weddings, corporate events and parties.",
+    "useCases": [
+      "A Get a Quote page on a catering website",
+      "Corporate lunch and office party orders from event planners",
+      "Wedding catering leads from bridal shows and Instagram",
+      "Food truck bookings for festivals and private parties"
+    ],
+    "tips": [
+      "Embed the form beside your sample menus with the Split layout so visitors see food and the form together.",
+      "Send inquiries to Google Sheets or use webhooks to drop them into your sales pipeline the moment they arrive.",
+      "Add the email copy to the respondent so clients have their own event details to check against your quote."
+    ],
+    "faq": [
+      {
+        "question": "What should a catering inquiry form include?",
+        "answer": "Contact details, event type and date, start time and length, venue name and address, guest count, service style (buffet, plated, family style, canapés, food truck), cuisine or menu ideas, dietary and allergy needs with numbers, whether staff, bar service or rentals are needed, kitchen access at the venue, and a budget per head or total."
+      },
+      {
+        "question": "How far in advance should people book catering?",
+        "answer": "Weddings and large events are often booked 6 to 12 months ahead, and corporate events a few weeks ahead. Smaller drop-off orders may need only a few days. Tell clients your own lead time on the form."
+      },
+      {
+        "question": "Why ask for a budget per head?",
+        "answer": "A budget lets you suggest a menu and service style that fits, instead of sending a quote that is far too high or too low. Mark it optional if clients are hesitant."
+      },
+      {
+        "question": "How do I handle allergies on catering orders?",
+        "answer": "Ask for the type of allergy and how many guests have it, then confirm in writing how you will prepare and label those dishes. Follow your local food safety and allergen labeling rules."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "35f73f19-13a7-5b1a-b0ef-64867e6bb287",
+        "title": "Your event",
+        "fields": [
+          {
+            "id": "cf82e2ff-da00-54e0-bab9-87249cc15e57",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "761be2b8-554b-53ba-a063-ff4427ca0225",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "cf82e2ff-da00-54e0-bab9-87249cc15e57",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "3770f5fa-4548-5eb6-9a4b-83d19e080f59",
+            "type": "text_input_field",
+            "label": "Company",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation"
+            },
+            "gridId": "cf82e2ff-da00-54e0-bab9-87249cc15e57",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "c200f3c9-e329-57e2-bd58-62eeda7a1fbc",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "b1af500e-c150-55d3-9217-1c2e62775478",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c200f3c9-e329-57e2-bd58-62eeda7a1fbc",
+            "gridColumn": 0,
+            "__type": "email_field"
+          },
+          {
+            "id": "1a92cb26-da30-5e7c-9bf1-3f3e681ef0d1",
+            "type": "phone_number_field",
+            "label": "Phone number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c200f3c9-e329-57e2-bd58-62eeda7a1fbc",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "c7af98d2-4b62-5a52-b317-e4e3f39a4e55",
+            "type": "select_field",
+            "label": "Type of event",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Wedding",
+              "Corporate event or meeting",
+              "Birthday or anniversary",
+              "Graduation",
+              "Funeral or memorial",
+              "Holiday party",
+              "Festival or public event",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "c7495668-dd92-50c1-8bb7-4498cb67c134",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "db8ba9fd-c01e-5630-8262-5f860906a009",
+            "type": "date_field",
+            "label": "Event date",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "c7495668-dd92-50c1-8bb7-4498cb67c134",
+            "gridColumn": 0,
+            "__type": "date_field"
+          },
+          {
+            "id": "8bcf082e-ee57-5fb8-8479-fa777b47692b",
+            "type": "text_input_field",
+            "label": "Start time and length",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "e.g. 6pm, 4 hours",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "c7495668-dd92-50c1-8bb7-4498cb67c134",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "a2e8a2dd-1795-537d-97f8-e53b3f483d59",
+            "type": "text_input_field",
+            "label": "Venue name and city",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 150
+            },
+            "__type": "text_input_field"
+          },
+          {
+            "id": "123d2fde-e66e-5c54-b67f-280ea4cee57e",
+            "type": "number_field",
+            "label": "Number of guests",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "min": 5,
+            "max": 2000,
+            "suffix": "guests",
+            "__type": "number_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 1
+      },
+      {
+        "id": "e986a039-4390-5f87-8ab6-ca7876dd335a",
+        "title": "Food and service",
+        "fields": [
+          {
+            "id": "d9e403ac-c45b-5a39-bda9-a662cd7302ea",
+            "type": "radio_field",
+            "label": "Service style",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Buffet",
+              "Plated sit-down",
+              "Family style",
+              "Canapés and finger food",
+              "Food truck or stations",
+              "Drop-off only"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "1c5e8628-cd56-5473-9e58-30a8080967cd",
+            "type": "text_area_field",
+            "label": "Cuisine or menu ideas",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Dishes you love, a theme, or a menu of ours you liked",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 800
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "b1b63dcb-ac6c-53a6-b192-42479c6f6614",
+            "type": "text_area_field",
+            "label": "Dietary needs and allergies",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. For example: 6 vegetarian, 2 gluten-free, 1 nut allergy",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 600
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "3e602f8a-d006-5515-955f-166e0a4b1ed5",
+            "type": "checkbox_field",
+            "label": "What else do you need?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "checkbox_field_validation"
+            },
+            "options": [
+              "Serving staff",
+              "Bar service",
+              "Plates, cutlery and glassware",
+              "Tables and linens",
+              "Setup and cleanup",
+              "Dessert or cake"
+            ],
+            "defaultValues": [],
+            "__type": "checkbox_field"
+          },
+          {
+            "id": "daee2d38-1b87-50ca-bc12-051a66ce66ed",
+            "type": "radio_field",
+            "label": "Does the venue have a kitchen we can use?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, full kitchen",
+              "Basic prep area only",
+              "No kitchen",
+              "Not sure"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "e93ad6e4-9e10-505d-a5a1-1ca5d14617e1",
+            "type": "radio_field",
+            "label": "Budget per guest",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Under $20",
+              "$20 to $40",
+              "$40 to $75",
+              "$75 to $120",
+              "Over $120",
+              "Not sure yet"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "873b9ea6-9473-5dba-80cc-35c0e514ee37",
+            "type": "radio_field",
+            "label": "How did you find us?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Google",
+              "Instagram",
+              "Venue recommendation",
+              "Friend or past event",
+              "Other"
+            ],
+            "__type": "radio_field"
+          }
+        ],
+        "showPageName": true,
+        "order": 2
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L5",
+      "content": "<h1>Get a catering quote</h1><p>Tell us about your event and we'll send a tailored menu and price. About three minutes.</p>",
+      "thankYouContent": "<h1>Thanks, we're on it</h1><p>We will check our calendar and send a menu proposal and quote within two business days.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Request quote",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}

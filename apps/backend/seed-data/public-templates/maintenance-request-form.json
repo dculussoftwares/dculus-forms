@@ -1,0 +1,321 @@
+{
+  "slug": "maintenance-request-form",
+  "name": "Maintenance Request",
+  "description": "Tenant maintenance request: unit, problem area, urgency, description, photos, permission to enter and best times for access.",
+  "category": "Real Estate",
+  "seoTitle": "Free Tenant Maintenance Request Form Template",
+  "seoDescription": "Maintenance request form template for tenants to report repairs: unit, problem area, urgency, photos, pets and permission to enter so you can schedule a visit.",
+  "keywords": [
+    "maintenance request form",
+    "tenant maintenance request form",
+    "rental repair request form",
+    "apartment maintenance request",
+    "property maintenance request template",
+    "landlord repair request form"
+  ],
+  "tags": [
+    "Property",
+    "File Upload"
+  ],
+  "sortOrder": 100,
+  "photo": [
+    {
+      "source": "pexels",
+      "id": 7641255
+    },
+    {
+      "source": "pexels",
+      "id": 5691515
+    }
+  ],
+  "thumbnailAlt": "Maintenance Request form beside a photo of person in plaid shirt fixing a light bulb using a toolbox in a rustic attic interior",
+  "content": {
+    "intro": "A maintenance request form is a form that lets tenants report a repair with their unit number, the problem area, how urgent it is, photos and permission to enter so a landlord or property manager can send the right person quickly. This template separates emergencies like leaks and no heat from routine fixes and records entry permission in writing.",
+    "audience": "Landlords, property management companies, HOAs, student housing and apartment communities, and building superintendents.",
+    "useCases": [
+      "A repair link in the tenant welcome pack and lease email",
+      "A QR code in the lobby, laundry room or each unit",
+      "Student housing teams handling move-in repair lists",
+      "HOAs collecting common-area maintenance reports"
+    ],
+    "tips": [
+      "Print a QR code on a sticker inside each unit's kitchen cabinet so tenants never have to hunt for the link.",
+      "Turn on the respondent email copy so tenants have a dated record of every request they submit.",
+      "Edit responses to log the vendor, visit date and completion; the edit history gives you a repair trail for each unit."
+    ],
+    "faq": [
+      {
+        "question": "What should a maintenance request form include?",
+        "answer": "The tenant's name and contact details, the property address and unit number, the area and type of problem, how urgent it is, a description, photos, whether the tenant gives permission to enter when they are out, pets on site and the best times for access."
+      },
+      {
+        "question": "What counts as an emergency maintenance request?",
+        "answer": "Problems that put people or the property at immediate risk: a gas smell, flooding or a burst pipe, no heat in freezing weather, a total power loss, a broken exterior lock or sewage backup. Tenants should also call the emergency line for these rather than only filling in a form."
+      },
+      {
+        "question": "How long does a landlord have to make repairs?",
+        "answer": "It depends on where the property is and how serious the problem is. Many places require urgent repairs within a day or a few days and other repairs within a reasonable time, often around 30 days. Check your local landlord-tenant rules."
+      },
+      {
+        "question": "Does a landlord need permission to enter for repairs?",
+        "answer": "Most places require reasonable notice before entering, except in emergencies, and the required notice period varies. Asking tenants for written permission to enter on the form makes the visit easier to arrange; check your local rules and lease terms."
+      }
+    ]
+  },
+  "formSchema": {
+    "pages": [
+      {
+        "id": "ec05172c-f67a-5397-93ce-ff5d35315e64",
+        "title": "Repair request",
+        "fields": [
+          {
+            "id": "63503030-5b30-5838-aac0-7d2e44a18119",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "b5f7ed35-55bc-5414-8ec1-4d1020565ca3",
+            "type": "text_input_field",
+            "label": "Full name",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation"
+            },
+            "gridId": "63503030-5b30-5838-aac0-7d2e44a18119",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "fca36621-57f1-5fc7-83a4-2f7e04d47067",
+            "type": "phone_number_field",
+            "label": "Phone",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "gridId": "63503030-5b30-5838-aac0-7d2e44a18119",
+            "gridColumn": 1,
+            "__type": "phone_number_field"
+          },
+          {
+            "id": "99199b1e-4665-519f-99fd-9ce29d944867",
+            "type": "email_field",
+            "label": "Email",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "name@example.com",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "__type": "email_field"
+          },
+          {
+            "id": "7e5aa8df-d699-5db1-8169-3b34db964cf3",
+            "type": "grid_field",
+            "columnWidths": [
+              50,
+              50
+            ],
+            "__type": "grid_field"
+          },
+          {
+            "id": "3e000d63-beb2-5302-9e7a-0994b652dd59",
+            "type": "text_input_field",
+            "label": "Property address",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 200
+            },
+            "gridId": "7e5aa8df-d699-5db1-8169-3b34db964cf3",
+            "gridColumn": 0,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "322e8b2c-fd28-504f-b1f3-b1b2fcc3c830",
+            "type": "text_input_field",
+            "label": "Unit or apartment number",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 20
+            },
+            "gridId": "7e5aa8df-d699-5db1-8169-3b34db964cf3",
+            "gridColumn": 1,
+            "__type": "text_input_field"
+          },
+          {
+            "id": "cf7c0c97-c560-5626-baf2-9e9149646fac",
+            "type": "select_field",
+            "label": "What area is the problem in?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Plumbing - leak, toilet, drain",
+              "Heating or air conditioning",
+              "Electrical or lighting",
+              "Kitchen appliance",
+              "Doors, windows or locks",
+              "Walls, floors or ceiling",
+              "Pests",
+              "Laundry",
+              "Common area",
+              "Other"
+            ],
+            "__type": "select_field"
+          },
+          {
+            "id": "3407e273-2d78-5161-80ae-474d88762452",
+            "type": "radio_field",
+            "label": "How urgent is it?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Emergency - risk to safety or property",
+              "Urgent - affects daily living",
+              "Routine - can wait a few days"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "be678293-fcb1-5552-b22d-27e1862dea8c",
+            "type": "text_area_field",
+            "label": "Describe the problem",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "Where exactly is it, when did it start, is it getting worse?",
+            "validation": {
+              "required": true,
+              "type": "text_field_validation",
+              "maxLength": 1500
+            },
+            "__type": "text_area_field"
+          },
+          {
+            "id": "2053dac1-35e0-5696-8d88-0e97b88e8f5d",
+            "type": "file_upload_field",
+            "label": "Photos or video of the problem",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional. Up to 4 files",
+            "placeholder": "",
+            "validation": {
+              "required": false,
+              "type": "fillable_form_field"
+            },
+            "allowedMimeTypes": [
+              "image/*",
+              "video/*"
+            ],
+            "maxFileSizeMb": 25,
+            "maxFiles": 4,
+            "__type": "file_upload_field"
+          },
+          {
+            "id": "496dc100-7f59-5a77-aedb-9ef3508e6e53",
+            "type": "radio_field",
+            "label": "May we enter if you are not home?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "Yes, you may enter",
+              "No, I want to be present"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "a42eef31-610d-50b1-a7c1-c1983b468b03",
+            "type": "radio_field",
+            "label": "Are there pets in the unit?",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "",
+            "placeholder": "",
+            "validation": {
+              "required": true,
+              "type": "fillable_form_field"
+            },
+            "options": [
+              "No",
+              "Yes - they will be secured",
+              "Yes - please call first"
+            ],
+            "__type": "radio_field"
+          },
+          {
+            "id": "d85cfe9c-db3b-5fcd-9974-978e14894cea",
+            "type": "text_input_field",
+            "label": "Best days and times for access",
+            "defaultValue": "",
+            "prefix": "",
+            "hint": "Optional",
+            "placeholder": "e.g. weekdays after 3pm",
+            "validation": {
+              "required": false,
+              "type": "text_field_validation",
+              "maxLength": 150
+            },
+            "__type": "text_input_field"
+          }
+        ],
+        "showPageName": false,
+        "order": 1
+      }
+    ],
+    "layout": {
+      "theme": "light",
+      "textColor": "#1f2937",
+      "spacing": "normal",
+      "code": "L3",
+      "content": "<h1>Request a repair</h1><p>Tell us what needs fixing in your home. It takes about three minutes.</p>",
+      "thankYouContent": "<h1>Repair request received</h1><p>We will contact you to arrange a visit. For gas smells, flooding or no heat, call the emergency line now.</p>",
+      "customBackGroundColor": "#ffffff",
+      "customCTAButtonName": "Send request",
+      "backgroundImageKey": "",
+      "pageMode": "multipage",
+      "isCustomBackgroundColorEnabled": false
+    },
+    "isShuffleEnabled": false
+  }
+}
