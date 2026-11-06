@@ -6,6 +6,7 @@ import {
   getAllFieldsAnalytics,
   type FieldAnalytics,
   type FileUploadFieldConfig,
+  type RatingFieldConfig,
   type UploadedFileSummary,
 } from '../../services/fieldAnalytics/index.js';
 import { requireAuth, type BetterAuthContext } from '../../middleware/better-auth-middleware.js';
@@ -20,7 +21,12 @@ import { checkFormAccess, PermissionLevel } from './formSharing.js';
 const getFieldInfo = (
   formSchema: any,
   fieldId: string
-): { type: FieldType; label: string; fileUploadConfig?: FileUploadFieldConfig } | null => {
+): {
+  type: FieldType;
+  label: string;
+  fileUploadConfig?: FileUploadFieldConfig;
+  ratingConfig?: RatingFieldConfig;
+} | null => {
   if (!formSchema.pages) return null;
 
   for (const page of formSchema.pages) {
@@ -35,6 +41,13 @@ const getFieldInfo = (
               maxFileSizeMb: field.maxFileSizeMb,
               maxFiles: field.maxFiles,
               allowedMimeTypes: field.allowedMimeTypes,
+            },
+          }),
+          ...(field.type === FieldType.RATING_FIELD && {
+            ratingConfig: {
+              ratingStyle: field.ratingStyle,
+              minValue: field.minValue,
+              maxValue: field.maxValue,
             },
           }),
         };
@@ -64,6 +77,7 @@ const transformAnalyticsToGraphQL = (analytics: FieldAnalytics) => {
     lastUpdated: analytics.lastUpdated.toISOString(),
     textAnalytics: null,
     numberAnalytics: null,
+    ratingAnalytics: null,
     selectionAnalytics: null,
     checkboxAnalytics: null,
     dateAnalytics: null,
@@ -104,6 +118,20 @@ const transformAnalyticsToGraphQL = (analytics: FieldAnalytics) => {
           distribution: analytics.distribution,
           trend: analytics.trend,
           percentiles: analytics.percentiles,
+        };
+      }
+      break;
+
+    case FieldType.RATING_FIELD:
+      if ('distribution' in analytics && 'isNps' in analytics) {
+        base.ratingAnalytics = {
+          ratingStyle: analytics.ratingStyle,
+          minValue: analytics.minValue,
+          maxValue: analytics.maxValue,
+          average: analytics.average,
+          distribution: analytics.distribution,
+          isNps: analytics.isNps,
+          nps: analytics.nps,
         };
       }
       break;
@@ -279,6 +307,7 @@ export const fieldAnalyticsResolvers = {
         FieldType.TEXT_INPUT_FIELD,
         FieldType.TEXT_AREA_FIELD,
         FieldType.NUMBER_FIELD,
+        FieldType.RATING_FIELD,
         FieldType.SELECT_FIELD,
         FieldType.RADIO_FIELD,
         FieldType.CHECKBOX_FIELD,
@@ -296,13 +325,11 @@ export const fieldAnalyticsResolvers = {
       }
 
       try {
-        const analytics = await getFieldAnalytics(
-          formId,
-          fieldId,
-          fieldInfo.type,
-          fieldInfo.label,
-          ...(fieldInfo.fileUploadConfig ? [fieldInfo.fileUploadConfig] : [])
-        );
+        const analytics = fieldInfo.ratingConfig
+          ? await getFieldAnalytics(formId, fieldId, fieldInfo.type, fieldInfo.label, undefined, fieldInfo.ratingConfig)
+          : fieldInfo.fileUploadConfig
+            ? await getFieldAnalytics(formId, fieldId, fieldInfo.type, fieldInfo.label, fieldInfo.fileUploadConfig)
+            : await getFieldAnalytics(formId, fieldId, fieldInfo.type, fieldInfo.label);
 
         return transformAnalyticsToGraphQL(analytics);
       } catch (error) {

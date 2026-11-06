@@ -27,6 +27,7 @@ const AI_TYPE_MAP: Record<string, FieldType> = {
   checkbox: FieldType.CHECKBOX_FIELD,
   file: FieldType.FILE_UPLOAD_FIELD,
   phone: FieldType.PHONE_NUMBER_FIELD,
+  rating: FieldType.RATING_FIELD,
 };
 
 function buildFieldData(field: {
@@ -47,6 +48,19 @@ function buildFieldData(field: {
       allowedMimeTypes: [],
       maxFileSizeMb: 5,
       maxFiles: 1,
+    };
+  }
+
+  if (fieldType === FieldType.RATING_FIELD) {
+    return {
+      label: field.label,
+      required: field.required,
+      hint: '',
+      prefix: '',
+      defaultValue: '',
+      ratingStyle: 'stars' as const,
+      minValue: 1,
+      maxValue: 5,
     };
   }
 

@@ -46,6 +46,7 @@ import {
   List,
   MoreHorizontal,
   Phone,
+  Star,
   Tag,
   Type,
   Upload,
@@ -57,6 +58,7 @@ import {
   FieldType,
   FormResponse,
   FormSchema,
+  RatingField,
 } from '@dculus/types';
 import { formatFieldValue as formatFieldValueUtil } from '@dculus/utils';
 import { getPluginColumns, PluginInstance } from '../plugins/core/registry';
@@ -134,6 +136,8 @@ const fieldIconStyle = (fieldType: FieldType): { bg: string; color: string } => 
       return { bg: '#fef3c7', color: '#b45309' };
     case FieldType.PHONE_NUMBER_FIELD:
       return { bg: '#dbeafe', color: '#1d4ed8' };
+    case FieldType.RATING_FIELD:
+      return { bg: '#fef3c7', color: '#b45309' };
     default:
       return { bg: '#dedcde', color: '#655d67' };
   }
@@ -151,6 +155,7 @@ const fieldIconNode = (fieldType: FieldType) => {
     case FieldType.EMAIL_FIELD:       return <AtSign className="h-4 w-4" />;
     case FieldType.NUMBER_FIELD:      return <Hash className="h-4 w-4" />;
     case FieldType.PHONE_NUMBER_FIELD: return <Phone className="h-4 w-4" />;
+    case FieldType.RATING_FIELD:      return <Star className="h-4 w-4" />;
     default:                          return <Type className="h-4 w-4" />;
   }
 };
@@ -214,6 +219,8 @@ const getFieldIcon = (fieldType: FieldType) => {
       return <Upload className="h-4 w-4" />;
     case FieldType.PHONE_NUMBER_FIELD:
       return <Phone className="h-4 w-4" />;
+    case FieldType.RATING_FIELD:
+      return <Star className="h-4 w-4" />;
     default:
       return <Type className="h-4 w-4" />;
   }
@@ -411,7 +418,15 @@ const createFieldColumns = (
           );
         }
 
-        const formattedValue = formatFieldValueUtil(value, field.type);
+        let formattedValue = formatFieldValueUtil(value, field.type);
+        // Stars read as "4 / 5" in the table; exports keep the plain number
+        if (
+          formattedValue &&
+          field.type === FieldType.RATING_FIELD &&
+          (field as RatingField).ratingStyle === 'stars'
+        ) {
+          formattedValue = `${formattedValue} / ${(field as RatingField).maxValue}`;
+        }
         if (!formattedValue) {
           return null;
         }

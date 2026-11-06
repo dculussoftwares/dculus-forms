@@ -20,6 +20,7 @@ import {
   RichTextFormField,
   FileUploadField,
   PhoneNumberField,
+  RatingField,
   FillableFormFieldValidation,
   TextFieldValidation,
   CheckboxFieldValidation,
@@ -49,6 +50,7 @@ export const FIELD_CONFIGS: Partial<
   [FieldType.DATE_FIELD]: { label: 'Date' },
   [FieldType.FILE_UPLOAD_FIELD]: { label: 'File Upload' },
   [FieldType.PHONE_NUMBER_FIELD]: { label: 'Phone Number' },
+  [FieldType.RATING_FIELD]: { label: 'Rating' },
   // NOTE: RICH_TEXT_FIELD omitted intentionally - it's non-fillable and shouldn't have a label
 };
 
@@ -349,6 +351,25 @@ const createFormFieldInstance = (
         fieldData.defaultCountry
       );
     }
+    case FieldType.RATING_FIELD: {
+      const validation = new FillableFormFieldValidation(
+        fieldData.required || false
+      );
+      return new RatingField(
+        fieldId,
+        label,
+        defaultValue,
+        prefix,
+        hint,
+        placeholder,
+        validation,
+        fieldData.ratingStyle,
+        fieldData.minValue,
+        fieldData.maxValue,
+        fieldData.lowLabel,
+        fieldData.highLabel
+      );
+    }
     case FieldType.RICH_TEXT_FIELD: {
       const content =
         (fieldData as RichTextFormField).content ||
@@ -596,6 +617,15 @@ export const serializeFieldToYMap = (field: FormField): Y.Map<any> => {
     maxFiles: (fillableField as FileUploadField).maxFiles,
     grading: fillableField.grading,
     defaultCountry: (fillableField as PhoneNumberField).defaultCountry,
+    ...(field.type === FieldType.RATING_FIELD
+      ? {
+          ratingStyle: (fillableField as RatingField).ratingStyle,
+          minValue: (fillableField as RatingField).minValue,
+          maxValue: (fillableField as RatingField).maxValue,
+          lowLabel: (fillableField as RatingField).lowLabel,
+          highLabel: (fillableField as RatingField).highLabel,
+        }
+      : {}),
     gridId: field.gridId,
     gridColumn: field.gridColumn,
   };

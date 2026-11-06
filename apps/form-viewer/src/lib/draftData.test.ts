@@ -18,6 +18,7 @@ const schema = {
       id: 'p2',
       fields: [
         { id: 'age', type: FieldType.NUMBER_FIELD },
+        { id: 'score', type: FieldType.RATING_FIELD, ratingStyle: 'scale', minValue: 0, maxValue: 10 },
         { id: 'gone', type: FieldType.TEXT_INPUT_FIELD, deleted: true },
       ],
     },
@@ -91,5 +92,18 @@ describe('resolveResumePageId', () => {
     expect(resolveResumePageId(schema, 'p2')).toBe('p2');
     expect(resolveResumePageId(schema, 'removed')).toBeUndefined();
     expect(resolveResumePageId(schema, null)).toBeUndefined();
+  });
+});
+
+describe('buildPageResponses: rating field', () => {
+  it('restores a whole number inside the range, including 0', () => {
+    expect(buildPageResponses(schema, { score: 0 }).p2).toEqual({ score: 0 });
+    expect(buildPageResponses(schema, { score: 10 }).p2).toEqual({ score: 10 });
+  });
+
+  it('drops a rating that no longer fits the field', () => {
+    expect(buildPageResponses(schema, { score: 11 })).toEqual({});
+    expect(buildPageResponses(schema, { score: 3.5 })).toEqual({});
+    expect(buildPageResponses(schema, { score: '7' })).toEqual({});
   });
 });

@@ -111,6 +111,40 @@ export interface DateFieldAnalytics {
   }>;
 }
 
+export interface RatingNpsBreakdown {
+  /** Ratings of 9-10 */
+  promoters: number;
+  /** Ratings of 7-8 */
+  passives: number;
+  /** Ratings of 0-6 */
+  detractors: number;
+  promoterPercentage: number;
+  passivePercentage: number;
+  detractorPercentage: number;
+  /** % promoters minus % detractors, -100..100 */
+  score: number;
+}
+
+export interface RatingFieldAnalytics {
+  totalResponses: number;
+  ratingStyle: 'stars' | 'scale';
+  minValue: number;
+  maxValue: number;
+  average: number;
+  /** One entry per value from minValue to maxValue, including values with 0 responses. */
+  distribution: Array<{ value: number; count: number; percentage: number }>;
+  /** True for a 0-10 number scale. */
+  isNps: boolean;
+  /** Present only when isNps. */
+  nps: RatingNpsBreakdown | null;
+}
+
+export interface RatingFieldConfig {
+  ratingStyle?: unknown;
+  minValue?: unknown;
+  maxValue?: unknown;
+}
+
 export type FileCategory =
   | 'image'
   | 'pdf'
@@ -231,6 +265,7 @@ export type FieldAnalytics = FieldAnalyticsBase &
           | FieldType.PHONE_NUMBER_FIELD;
       } & TextFieldAnalytics)
     | ({ fieldType: FieldType.NUMBER_FIELD } & NumberFieldAnalytics)
+    | ({ fieldType: FieldType.RATING_FIELD } & RatingFieldAnalytics)
     | ({
         fieldType: FieldType.SELECT_FIELD | FieldType.RADIO_FIELD;
       } & SelectionFieldAnalytics)

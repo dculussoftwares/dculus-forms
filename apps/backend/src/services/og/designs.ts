@@ -92,6 +92,21 @@ const inputBox = (f: MockField, o: Required<MockOptions>): OgNode => {
       text('+ Upload file', { fontSize: 22 * s, fontWeight: 600, color: dark ? C.light : C.muted })
     );
   }
+  if (f.kind === 'rating') {
+    // A row of empty rating dots, drawn with plain boxes (no glyph that a font might lack)
+    return box(
+      { height, width: '100%', alignItems: 'center', gap: 14 * s },
+      ...Array.from({ length: 5 }, () =>
+        box({
+          width: 34 * s,
+          height: 34 * s,
+          borderRadius: 17 * s,
+          border: `${3 * s}px solid ${dark ? C.light : 'rgba(81,76,84,0.35)'}`,
+          backgroundColor: dark ? 'transparent' : C.white,
+        })
+      )
+    );
+  }
   if (f.kind === 'date') {
     return box(
       base,

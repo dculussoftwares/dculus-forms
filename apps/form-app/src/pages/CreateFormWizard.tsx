@@ -143,6 +143,7 @@ const AI_TYPE_MAP: Record<string, string> = {
   checkbox: 'checkbox_field',
   file: 'file_upload_field',
   phone: 'phone_number_field',
+  rating: 'rating_field',
 };
 
 function buildFieldJson(f: AIField) {
@@ -166,6 +167,14 @@ function buildFieldJson(f: AIField) {
       options: f.options?.map(o => o.label) ?? ['Option 1', 'Option 2'],
       ...(fieldType === 'select_field' ? { multiple: false } : {}),
       ...(grading ? { grading } : {}),
+    };
+  }
+  if (fieldType === 'rating_field') {
+    // A five-star widget has no placeholder; the builder can switch it to a number scale later
+    return {
+      id: base.id, type: fieldType, label: f.label, required: f.required,
+      hint: '', prefix: '', defaultValue: '',
+      ratingStyle: 'stars', minValue: 1, maxValue: 5,
     };
   }
   if (fieldType === 'file_upload_field') {

@@ -15,6 +15,7 @@ import {
 } from '../analyticsRegistry';
 import { TextFieldAnalytics } from '../../TextFieldAnalytics';
 import { NumberFieldAnalytics } from '../../NumberFieldAnalytics';
+import { RatingFieldAnalytics } from '../../RatingFieldAnalytics';
 import { SelectionFieldAnalytics } from '../../SelectionFieldAnalytics';
 import { CheckboxFieldAnalytics } from '../../CheckboxFieldAnalytics';
 import { DateFieldAnalytics } from '../../DateFieldAnalytics';
@@ -31,6 +32,7 @@ import {
   Mail,
   Upload,
   Phone,
+  Star,
 } from 'lucide-react';
 
 describe('analyticsRegistry', () => {
@@ -94,6 +96,12 @@ describe('analyticsRegistry', () => {
       component: TextFieldAnalytics,
       dataKey: 'textAnalytics',
       icon: Phone,
+    },
+    {
+      fieldType: FieldType.RATING_FIELD,
+      component: RatingFieldAnalytics,
+      dataKey: 'ratingAnalytics',
+      icon: Star,
     },
   ] as const;
 

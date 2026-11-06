@@ -188,7 +188,9 @@ import taTextFieldAnalytics from './ta/textFieldAnalytics.json';
 import enSelectionFieldAnalytics from './en/selectionFieldAnalytics.json';
 import taSelectionFieldAnalytics from './ta/selectionFieldAnalytics.json';
 import enNumberFieldAnalytics from './en/numberFieldAnalytics.json';
+import enRatingFieldAnalytics from './en/ratingFieldAnalytics.json';
 import taNumberFieldAnalytics from './ta/numberFieldAnalytics.json';
+import taRatingFieldAnalytics from './ta/ratingFieldAnalytics.json';
 import enCheckboxFieldAnalytics from './en/checkboxFieldAnalytics.json';
 import taCheckboxFieldAnalytics from './ta/checkboxFieldAnalytics.json';
 import enDateFieldAnalytics from './en/dateFieldAnalytics.json';
@@ -385,6 +387,7 @@ const enTranslations = {
   textFieldAnalytics: enTextFieldAnalytics,
   selectionFieldAnalytics: enSelectionFieldAnalytics,
   numberFieldAnalytics: enNumberFieldAnalytics,
+  ratingFieldAnalytics: enRatingFieldAnalytics,
   checkboxFieldAnalytics: enCheckboxFieldAnalytics,
   dateFieldAnalytics: enDateFieldAnalytics,
   emailFieldAnalytics: enEmailFieldAnalytics,
@@ -532,6 +535,7 @@ const taTranslations = {
   textFieldAnalytics: taTextFieldAnalytics,
   selectionFieldAnalytics: taSelectionFieldAnalytics,
   numberFieldAnalytics: taNumberFieldAnalytics,
+  ratingFieldAnalytics: taRatingFieldAnalytics,
   checkboxFieldAnalytics: taCheckboxFieldAnalytics,
   dateFieldAnalytics: taDateFieldAnalytics,
   emailFieldAnalytics: taEmailFieldAnalytics,

@@ -732,6 +732,60 @@ export class PhoneNumberField extends FillableFormField {
   }
 }
 
+import {
+  RATING_MAX_VALUE_MIN,
+  RATING_MAX_VALUE_MAX,
+  RATING_DEFAULT_MAX_VALUE,
+  normalizeRatingConfig,
+  isNpsRatingConfig,
+} from './ratingConstants.js';
+import type { RatingStyle, RatingConfig } from './ratingConstants.js';
+export {
+  RATING_MAX_VALUE_MIN,
+  RATING_MAX_VALUE_MAX,
+  RATING_DEFAULT_MAX_VALUE,
+  normalizeRatingConfig,
+  isNpsRatingConfig,
+};
+export type { RatingStyle, RatingConfig };
+
+/**
+ * Rating field — stars (1..max) or a number scale (0/1..max), with optional labels
+ * under the two ends. The answer is stored as a plain number, like NumberField.
+ * A 0–10 scale doubles as an NPS question (see isNpsRatingConfig).
+ */
+export class RatingField extends FillableFormField {
+  ratingStyle: RatingStyle;
+  minValue: 0 | 1;
+  maxValue: number;
+  lowLabel?: string;
+  highLabel?: string;
+
+  constructor(
+    id: string,
+    label: string,
+    defaultValue: string,
+    prefix: string,
+    hint: string,
+    placeholder: string,
+    validation: FillableFormFieldValidation,
+    ratingStyle: RatingStyle = 'stars',
+    minValue: number = 1,
+    maxValue: number = 5,
+    lowLabel?: string,
+    highLabel?: string
+  ) {
+    super(id, label, defaultValue, prefix, hint, placeholder, validation);
+    this.type = FieldType.RATING_FIELD;
+    const config = normalizeRatingConfig({ ratingStyle, minValue, maxValue });
+    this.ratingStyle = config.ratingStyle;
+    this.minValue = config.minValue;
+    this.maxValue = config.maxValue;
+    if (lowLabel) this.lowLabel = lowLabel;
+    if (highLabel) this.highLabel = highLabel;
+  }
+}
+
 export enum FieldType {
   TEXT = 'text',
   TEXT_INPUT_FIELD = 'text_input_field',
@@ -744,6 +798,7 @@ export enum FieldType {
   DATE_FIELD = 'date_field',
   FILE_UPLOAD_FIELD = 'file_upload_field',
   PHONE_NUMBER_FIELD = 'phone_number_field',
+  RATING_FIELD = 'rating_field',
   RICH_TEXT_FIELD = 'rich_text_field',
   GRID_FIELD = 'grid_field',
   FORM_FIELD = 'form_field',
@@ -951,6 +1006,24 @@ const deserializeFieldByType = (data: any): FormField | null => {
           FieldType.PHONE_NUMBER_FIELD
         ) as FillableFormFieldValidation,
         data.defaultCountry
+      ));
+    case FieldType.RATING_FIELD:
+      return withGrading(new RatingField(
+        data.id,
+        data.label || '',
+        data.defaultValue || '',
+        data.prefix || '',
+        data.hint || '',
+        data.placeholder || '',
+        getValidation(
+          data,
+          FieldType.RATING_FIELD
+        ) as FillableFormFieldValidation,
+        data.ratingStyle,
+        data.minValue,
+        data.maxValue,
+        typeof data.lowLabel === 'string' ? data.lowLabel : undefined,
+        typeof data.highLabel === 'string' ? data.highLabel : undefined
       ));
     case FieldType.RICH_TEXT_FIELD: {
       const richTextContent = data.content || '';

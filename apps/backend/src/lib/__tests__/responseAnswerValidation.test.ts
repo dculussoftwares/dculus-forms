@@ -65,3 +65,52 @@ describe('validateResponseAnswers', () => {
     expect(() => validateResponseAnswers('{not json', { name: 'Bob' }, opts)).toThrow(/unavailable/);
   });
 });
+
+describe('validateResponseAnswers: rating field', () => {
+  const ratingSchema = (extra: Record<string, unknown>, required = false) => ({
+    ...schema,
+    pages: [
+      {
+        id: 'p1',
+        title: 'Page',
+        order: 0,
+        fields: [
+          { id: 'r', type: 'rating_field', label: 'Score', validation: { required }, ...extra },
+        ],
+      },
+    ],
+  });
+  const stars = ratingSchema({ ratingStyle: 'stars', minValue: 1, maxValue: 5 });
+  const nps = ratingSchema({ ratingStyle: 'scale', minValue: 0, maxValue: 10 });
+
+  it('keeps a whole number within the range, including 0 on a 0-10 scale', () => {
+    expect(validateResponseAnswers(stars, { r: 4 }, opts)).toEqual({ r: 4 });
+    expect(validateResponseAnswers(nps, { r: 0 }, opts)).toEqual({ r: 0 });
+    expect(validateResponseAnswers(nps, { r: 10 }, opts)).toEqual({ r: 10 });
+  });
+
+  it('rejects out-of-range, fractional, string and boolean answers', () => {
+    expect(() => validateResponseAnswers(stars, { r: 0 }, opts)).toThrow(/between 1 and 5/);
+    expect(() => validateResponseAnswers(stars, { r: 6 }, opts)).toThrow(/between 1 and 5/);
+    expect(() => validateResponseAnswers(nps, { r: 11 }, opts)).toThrow(/between 0 and 10/);
+    expect(() => validateResponseAnswers(stars, { r: 2.5 }, opts)).toThrow(/whole number/);
+    expect(() => validateResponseAnswers(stars, { r: '4' }, opts)).toThrow(/whole number/);
+    expect(() => validateResponseAnswers(stars, { r: true }, opts)).toThrow(/whole number/);
+  });
+
+  it('enforces required but accepts a blank optional rating', () => {
+    const required = ratingSchema({ ratingStyle: 'stars', minValue: 1, maxValue: 5 }, true);
+    expect(() => validateResponseAnswers(required, {}, opts)).toThrow(/Score/);
+    expect(() => validateResponseAnswers(required, { r: '' }, opts)).toThrow(/required/);
+    expect(validateResponseAnswers(required, {}, { ...opts, partial: true })).toEqual({});
+    expect(validateResponseAnswers(stars, {}, opts)).toEqual({});
+    expect(validateResponseAnswers(stars, { r: '' }, opts)).toEqual({ r: '' });
+  });
+
+  it('repairs a corrupt stored range instead of trusting it', () => {
+    const corrupt = ratingSchema({ ratingStyle: 'stars', minValue: 0, maxValue: 99 });
+    // Stars start at 1 and max is capped at 10
+    expect(() => validateResponseAnswers(corrupt, { r: 0 }, opts)).toThrow(/between 1 and 10/);
+    expect(validateResponseAnswers(corrupt, { r: 10 }, opts)).toEqual({ r: 10 });
+  });
+});

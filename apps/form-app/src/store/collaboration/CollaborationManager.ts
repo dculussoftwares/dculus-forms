@@ -9,6 +9,7 @@ import {
   FormField,
   FormLayout,
   FormPage,
+  normalizeRatingConfig,
   sanitizeConditions,
   sanitizeFieldGrading,
   sanitizeGridColumnWidths,
@@ -37,6 +38,12 @@ export type FieldData = {
   maxFileSizeMb?: number;
   maxFiles?: number;
   defaultCountry?: string;
+  /** Rating fields only. */
+  ratingStyle?: 'stars' | 'scale';
+  minValue?: number;
+  maxValue?: number;
+  lowLabel?: string;
+  highLabel?: string;
   deleted?: boolean;
   grading?: FieldGrading;
   /** Grid layout pointers; present only on fields that live in a grid. */
@@ -147,6 +154,20 @@ export const extractFieldData = (fieldMap: Y.Map<any>): FieldData => {
     deleted: fieldMap.get('deleted') || undefined,
     grading: extractGrading(fieldMap),
   };
+
+  if (fieldType === FieldType.RATING_FIELD) {
+    // Normalized on read so a hand-edited / stale document can never feed the UI an invalid range
+    const rating = normalizeRatingConfig({
+      ratingStyle: fieldMap.get('ratingStyle'),
+      minValue: fieldMap.get('minValue'),
+      maxValue: fieldMap.get('maxValue'),
+    });
+    result.ratingStyle = rating.ratingStyle;
+    result.minValue = rating.minValue;
+    result.maxValue = rating.maxValue;
+    result.lowLabel = fieldMap.get('lowLabel') || undefined;
+    result.highLabel = fieldMap.get('highLabel') || undefined;
+  }
 
   if (fieldType === FieldType.RICH_TEXT_FIELD) {
     result.content = fieldMap.get('content') || '';

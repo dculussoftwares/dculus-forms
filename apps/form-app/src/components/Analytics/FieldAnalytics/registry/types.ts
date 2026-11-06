@@ -9,6 +9,7 @@ import { ComponentType } from 'react';
 import {
   TextFieldAnalyticsData,
   NumberFieldAnalyticsData,
+  RatingFieldAnalyticsData,
   SelectionFieldAnalyticsData,
   CheckboxFieldAnalyticsData,
   DateFieldAnalyticsData,
@@ -37,6 +38,13 @@ export interface TextFieldAnalyticsProps extends BaseFieldAnalyticsProps {
  */
 export interface NumberFieldAnalyticsProps extends BaseFieldAnalyticsProps {
   data: NumberFieldAnalyticsData;
+}
+
+/**
+ * Props for rating field analytics
+ */
+export interface RatingFieldAnalyticsProps extends BaseFieldAnalyticsProps {
+  data: RatingFieldAnalyticsData;
 }
 
 /**
@@ -74,6 +82,7 @@ export interface EmailFieldAnalyticsProps extends BaseFieldAnalyticsProps {
 export type FieldAnalyticsComponentProps =
   | TextFieldAnalyticsProps
   | NumberFieldAnalyticsProps
+  | RatingFieldAnalyticsProps
   | SelectionFieldAnalyticsProps
   | CheckboxFieldAnalyticsProps
   | DateFieldAnalyticsProps

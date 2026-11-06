@@ -28,6 +28,7 @@ export {
   BarChart3,
   Upload,
   Phone,
+  Star,
   Columns,
 } from 'lucide-react';
 
@@ -46,6 +47,7 @@ export const FIELD_TYPE_ICON_MAP: Record<FieldType, string> = {
   [FieldType.CHECKBOX_FIELD]: 'CheckSquare',
   [FieldType.FILE_UPLOAD_FIELD]: 'Upload',
   [FieldType.PHONE_NUMBER_FIELD]: 'Phone',
+  [FieldType.RATING_FIELD]: 'Star',
   [FieldType.RICH_TEXT_FIELD]: 'FileText',
   [FieldType.GRID_FIELD]: 'Columns',
   // Base types - fallback to generic icon
@@ -87,6 +89,7 @@ export const FIELD_TYPE_TRANSLATION_KEYS: Record<FieldType, string> = {
   [FieldType.CHECKBOX_FIELD]: 'fieldTypes.checkbox_field',
   [FieldType.FILE_UPLOAD_FIELD]: 'fieldTypes.file_upload_field',
   [FieldType.PHONE_NUMBER_FIELD]: 'fieldTypes.phone_number_field',
+  [FieldType.RATING_FIELD]: 'fieldTypes.rating_field',
   [FieldType.RICH_TEXT_FIELD]: 'fieldTypes.rich_text_field',
   [FieldType.GRID_FIELD]: 'fieldTypes.grid_field',
   // Base types
@@ -137,6 +140,7 @@ export const isFillableFieldType = (fieldType: string): boolean => {
     FieldType.CHECKBOX_FIELD,
     FieldType.FILE_UPLOAD_FIELD,
     FieldType.PHONE_NUMBER_FIELD,
+    FieldType.RATING_FIELD,
   ];
   return fillableTypes.includes(fieldType as FieldType);
 };
@@ -198,6 +202,7 @@ export const getAllFillableFieldTypes = (): FieldType[] => {
     FieldType.CHECKBOX_FIELD,
     FieldType.FILE_UPLOAD_FIELD,
     FieldType.PHONE_NUMBER_FIELD,
+    FieldType.RATING_FIELD,
   ];
 };
 
@@ -217,5 +222,6 @@ export const getAnalyticsEnabledFieldTypes = (): FieldType[] => {
     FieldType.CHECKBOX_FIELD,
     FieldType.FILE_UPLOAD_FIELD,
     FieldType.PHONE_NUMBER_FIELD,
+    FieldType.RATING_FIELD,
   ];
 };

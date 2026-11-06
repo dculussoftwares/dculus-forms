@@ -67,7 +67,7 @@ export const MiniWordCloud: React.FC<{ words: Array<{ word: string; count: numbe
  * Mini Bar Chart Component
  * Displays distribution data as a bar chart
  */
-export const MiniBarChart: React.FC<{ data: Array<{ name: string; value: number }> }> = ({ data }) => {
+export const MiniBarChart: React.FC<{ data: Array<{ name: string; value: number }>; limit?: number }> = ({ data, limit = 6 }) => {
   const { t } = useTranslation('fieldAnalyticsViewer');
 
   if (!data || data.length === 0) {
@@ -84,7 +84,7 @@ export const MiniBarChart: React.FC<{ data: Array<{ name: string; value: number 
   return (
     <div className="h-full w-full p-4">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data.slice(0, 6)} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
+        <BarChart data={data.slice(0, limit)} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
           <XAxis
             dataKey="name"
             tick={{ fontSize: 10, fill: '#a09aa2' }}
@@ -222,6 +222,18 @@ export const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ fiel
         }
         break;
 
+      case 'rating_field':
+        if (field.ratingAnalytics?.distribution && field.ratingAnalytics.distribution.length > 0) {
+          return {
+            type: 'bar' as const,
+            data: field.ratingAnalytics.distribution.map(item => ({
+              name: String(item.value),
+              value: item.count
+            }))
+          };
+        }
+        break;
+
       case 'email_field':
         if (field.emailAnalytics?.domains && field.emailAnalytics.domains.length > 0) {
           return {
@@ -311,7 +323,12 @@ export const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ fiel
     case 'wordcloud':
       return <MiniWordCloud words={previewData.data as Array<{ word: string; count: number }>} />;
     case 'bar':
-      return <MiniBarChart data={previewData.data as Array<{ name: string; value: number }>} />;
+      return (
+        <MiniBarChart
+          data={previewData.data as Array<{ name: string; value: number }>}
+          limit={field.fieldType === 'rating_field' ? previewData.data.length : undefined}
+        />
+      );
     case 'pie':
       return <MiniPieChart data={previewData.data as Array<{ name: string; value: number }>} />;
     case 'list':

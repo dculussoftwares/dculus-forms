@@ -75,6 +75,7 @@ jest.mock('@dculus/types', () => {
     DATE_FIELD: 'date_field',
     FILE_UPLOAD_FIELD: 'file_upload_field',
     PHONE_NUMBER_FIELD: 'phone_number_field',
+    RATING_FIELD: 'rating_field',
     RICH_TEXT_FIELD: 'rich_text_field',
     GRID_FIELD: 'grid_field',
   };
@@ -213,6 +214,52 @@ jest.mock('@dculus/types', () => {
     }
   }
 
+  class RatingField {
+    id: string;
+    label: string;
+    defaultValue: string;
+    prefix: string;
+    hint: string;
+    placeholder: string;
+    validation: FillableFormFieldValidation;
+    ratingStyle: string;
+    minValue: number;
+    maxValue: number;
+    lowLabel?: string;
+    highLabel?: string;
+    type: string;
+
+    constructor(
+      id: string,
+      label: string,
+      defaultValue: string,
+      prefix: string,
+      hint: string,
+      placeholder: string,
+      validation: FillableFormFieldValidation,
+      ratingStyle: string = 'stars',
+      minValue: number = 1,
+      maxValue: number = 5,
+      lowLabel?: string,
+      highLabel?: string
+    ) {
+      this.id = id;
+      this.label = label;
+      this.defaultValue = defaultValue;
+      this.prefix = prefix;
+      this.hint = hint;
+      this.placeholder = placeholder;
+      this.validation = validation;
+      const config = actualRating.normalizeRatingConfig({ ratingStyle, minValue, maxValue });
+      this.ratingStyle = config.ratingStyle;
+      this.minValue = config.minValue;
+      this.maxValue = config.maxValue;
+      this.lowLabel = lowLabel;
+      this.highLabel = highLabel;
+      this.type = FieldType.RATING_FIELD;
+    }
+  }
+
   // Mock validation schema
   const textInputFieldValidationSchema = {
     safeParse: jest.fn((data: any) => {
@@ -306,6 +353,7 @@ jest.mock('@dculus/types', () => {
   // Real grid helpers (isLayoutField, sanitizers, tree builders): stubbing them would make
   // layout tests assert against fiction, same reasoning as conditions above.
   const actualGrid = jest.requireActual('../../../packages/types/src/grid');
+  const actualRating = jest.requireActual('../../../packages/types/src/ratingConstants');
 
   class GridField {
     id: string;
@@ -322,6 +370,7 @@ jest.mock('@dculus/types', () => {
   return {
     ...actualConditions,
     ...actualGrid,
+    ...actualRating,
     FieldType,
     GridField,
     TextFieldValidation,
@@ -330,6 +379,7 @@ jest.mock('@dculus/types', () => {
     TextAreaField,
     FileUploadField,
     PhoneNumberField,
+    RatingField,
     textInputFieldValidationSchema,
     getFieldValidationSchema: jest.fn(() => ({
       safeParse: (data: unknown) => ({ success: true, data }),

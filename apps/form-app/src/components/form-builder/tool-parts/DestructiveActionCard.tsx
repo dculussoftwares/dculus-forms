@@ -19,6 +19,7 @@ const TOKEN_TO_FIELD_TYPE: Record<string, FieldType> = {
   checkbox: FieldType.CHECKBOX_FIELD,
   file: FieldType.FILE_UPLOAD_FIELD,
   phone: FieldType.PHONE_NUMBER_FIELD,
+  rating: FieldType.RATING_FIELD,
 };
 
 /**

@@ -18,6 +18,7 @@ import {
   TextFieldValidation,
   RichTextFormField,
   PhoneNumberField,
+  RatingField,
   isLayoutField,
 } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
@@ -32,6 +33,7 @@ import {
   Label,
   DatePicker,
   PhoneNumberInput,
+  RatingInput,
 } from '../index';
 
 /* ── Types ── */
@@ -258,6 +260,37 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     placeholder={fillableField?.placeholder || 'Phone number'}
                     disabled={!isInteractive}
                     error={hasError}
+                  />
+                  {hasError && <ErrorMessage message={fieldState.error!.message!} />}
+                </div>
+              );
+            }
+
+            /* ─── Rating ─── */
+            case FieldType.RATING_FIELD: {
+              const rf = field as RatingField;
+              return (
+                <div>
+                  <RatingInput
+                    id={field.id}
+                    name={cf.name}
+                    ref={cf.ref}
+                    value={typeof cf.value === 'number' ? cf.value : ''}
+                    onChange={(next) => {
+                      cf.onChange(next);
+                      // A pointer/keyboard pick is a complete interaction, mark touched so validation shows
+                      cf.onBlur();
+                    }}
+                    onBlur={cf.onBlur}
+                    ratingStyle={rf.ratingStyle}
+                    minValue={rf.minValue}
+                    maxValue={rf.maxValue}
+                    lowLabel={rf.lowLabel}
+                    highLabel={rf.highLabel}
+                    allowClear={!isRequired}
+                    disabled={!isInteractive}
+                    error={hasError}
+                    aria-label={fillableField?.label}
                   />
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
                 </div>

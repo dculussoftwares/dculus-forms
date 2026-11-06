@@ -5,6 +5,7 @@ import {
   EmailField,
   PhoneNumberField,
   NumberField,
+  RatingField,
   DateField,
   SelectField,
   CheckboxField,
@@ -13,7 +14,7 @@ import {
   CheckboxFieldValidation,
   FillableFormFieldValidation,
 } from '@dculus/types';
-import { createPageSchema, validatePageData } from './zodSchemaBuilder';
+import { createPageDefaultValues, createPageSchema, validatePageData } from './zodSchemaBuilder';
 
 const required = new FillableFormFieldValidation(true);
 const optional = new FillableFormFieldValidation(false);
@@ -180,5 +181,51 @@ describe('conditional required overrides', () => {
     const overrides = new Map([['text', true]]);
     expect(createPageSchema(page, new Set(['text']), overrides).safeParse({ ...validData, text: '' }).success).toBe(true);
     expect(validatePageData(page, { ...validData, text: '' }, new Set(['text']), overrides).isValid).toBe(true);
+  });
+});
+
+describe('rating field validation', () => {
+  const ratingPage = (field: RatingField): FormPage => ({ id: 'p', title: 'P', order: 0, fields: [field] });
+  const stars = (req: boolean) =>
+    ratingPage(new RatingField('r', 'Rating', '', '', '', '', new FillableFormFieldValidation(req), 'stars', 1, 5));
+  const nps = (req: boolean) =>
+    ratingPage(new RatingField('r', 'Score', '', '', '', '', new FillableFormFieldValidation(req), 'scale', 0, 10));
+  const ok = (p: FormPage, value: unknown) => validatePageData(p, { r: value }).isValid;
+
+  it('accepts whole numbers inside the range, including 0 on a 0-10 scale', () => {
+    expect(ok(stars(true), 1)).toBe(true);
+    expect(ok(stars(true), 5)).toBe(true);
+    expect(ok(nps(true), 0)).toBe(true);
+    expect(ok(nps(true), 10)).toBe(true);
+  });
+
+  it('rejects out-of-range, fractional and non-numeric answers', () => {
+    expect(ok(stars(false), 0)).toBe(false);
+    expect(ok(stars(false), 6)).toBe(false);
+    expect(ok(nps(false), 11)).toBe(false);
+    expect(ok(nps(false), -1)).toBe(false);
+    expect(ok(stars(false), 2.5)).toBe(false);
+    expect(ok(stars(false), 'four')).toBe(false);
+  });
+
+  it('enforces required, treating 0 as an answer', () => {
+    expect(ok(stars(true), '')).toBe(false);
+    expect(ok(stars(true), undefined)).toBe(false);
+    expect(ok(nps(true), 0)).toBe(true);
+  });
+
+  it('lets an optional rating stay blank', () => {
+    expect(ok(stars(false), '')).toBe(true);
+    expect(ok(stars(false), undefined)).toBe(true);
+    expect(createPageSchema(stars(false)).safeParse({ r: '' }).success).toBe(true);
+  });
+
+  it('uses the field own range in the error message', () => {
+    const result = validatePageData(nps(false), { r: 12 });
+    expect(result.errors[0].message).toContain('between 0 and 10');
+  });
+
+  it('starts empty', () => {
+    expect(createPageDefaultValues(stars(false))).toEqual({ r: '' });
   });
 });

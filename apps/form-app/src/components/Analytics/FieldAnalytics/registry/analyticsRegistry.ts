@@ -17,9 +17,11 @@ import {
   BarChart3,
   Upload,
   Phone,
+  Star,
 } from 'lucide-react';
 import { TextFieldAnalytics } from '../TextFieldAnalytics';
 import { NumberFieldAnalytics } from '../NumberFieldAnalytics';
+import { RatingFieldAnalytics } from '../RatingFieldAnalytics';
 import { SelectionFieldAnalytics } from '../SelectionFieldAnalytics';
 import { CheckboxFieldAnalytics } from '../CheckboxFieldAnalytics';
 import { DateFieldAnalytics } from '../DateFieldAnalytics';
@@ -50,6 +52,11 @@ export const analyticsRegistry: AnalyticsRegistry = {
     component: NumberFieldAnalytics,
     dataKey: 'numberAnalytics',
     icon: Hash,
+  },
+  [FieldType.RATING_FIELD]: {
+    component: RatingFieldAnalytics,
+    dataKey: 'ratingAnalytics',
+    icon: Star,
   },
   [FieldType.SELECT_FIELD]: {
     component: SelectionFieldAnalytics,

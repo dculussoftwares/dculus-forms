@@ -261,6 +261,7 @@
     "date_field": "தேதி",
     "phone_number_field": "தொலைபேசி எண்",
     "rich_text_field": "வளமான உரை",
-    "file_upload_field": "கோப்பு பதிவேற்றம்"
+    "file_upload_field": "கோப்பு பதிவேற்றம்",
+    "rating_field": "மதிப்பீடு"
   }
 }

@@ -22,6 +22,7 @@ const AIFieldSchema = z.object({
     'checkbox',
     'file',
     'phone',
+    'rating',
   ]),
   label: z.string().describe('The question or field label shown to users'),
   // Use nullable instead of optional so every key is always present in the JSON output.
@@ -108,14 +109,15 @@ const MODE_SYSTEM_PROMPTS: Record<AIFormMode, string> = {
 Focus only on the most essential information — nothing extra.
 Use simple field types (text, email, number, textarea).
 Keep labels short and direct. Set placeholder to null unless it genuinely helps.
-Set options to null for non-choice fields.
+Set options to null for non-choice fields (including rating).
 Assign every field the same "section" name (e.g. "Details") since a quick form is a single short page.
 ${JSON_SCHEMA_RULES}`,
 
   standard: `You are a form builder assistant. Create well-balanced forms with 6–10 fields.
-Include appropriate field types (text, email, phone, number, date, select, radio, checkbox, textarea, file).
+Include appropriate field types (text, email, phone, number, date, select, radio, checkbox, textarea, file, rating).
 Mix field types naturally — use radio or select for categorical choices, textarea for long answers,
 and phone for phone/contact-number questions instead of a plain text field.
+Use rating (a 5-star scale) for satisfaction, quality or feedback questions instead of a radio list of numbers.
 Keep labels concise and user-friendly. Set placeholder to null if not needed.
 Set options to null for non-choice fields.
 Organize fields into 2-3 logical sections with short, descriptive names (e.g. "Personal Information", "Preferences") —
@@ -125,8 +127,9 @@ ${JSON_SCHEMA_RULES}`,
   professional: `You are a form builder assistant. Create comprehensive, professional forms with 10–20 fields.
 Use a rich variety of field types. Include detailed labels and helpful placeholder text where appropriate.
 Group related fields logically. Use radio/select for categorical choices, checkboxes for multi-select,
-textarea for open-ended answers, and specialized types (date, file, number, phone) where natural —
-use phone specifically for phone/contact-number questions instead of a plain text field.
+textarea for open-ended answers, and specialized types (date, file, number, phone, rating) where natural —
+use phone specifically for phone/contact-number questions instead of a plain text field,
+and rating (a 5-star scale) for satisfaction or feedback questions instead of a radio list of numbers.
 Set options to null for non-choice fields. Set placeholder to null only if truly unnecessary.
 Organize fields into 3-6 logical sections with short, descriptive names (e.g. "Personal Information",
 "Employment History", "Emergency Contact") — list fields belonging to the same section consecutively,
@@ -258,7 +261,7 @@ Rules:
 - Answer in the same language as the field label (e.g. Tamil labels get Tamil answers).
 - select/radio: copy exactly one of the listed options, verbatim.
 - checkbox: copy one or more listed options verbatim, joined with ", ".
-- date: YYYY-MM-DD. number: digits only. email/phone: plausible but clearly fictional.
+- date: YYYY-MM-DD. number: digits only. rating: a whole number from 1 to 5. email/phone: plausible but clearly fictional.
 - Keep long-text answers to one or two sentences.
 - Include every field id exactly once.`,
     prompt: `Form title: ${fields.formTitle || 'Untitled form'}\nFields:\n${fieldLines}`,

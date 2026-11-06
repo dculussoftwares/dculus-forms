@@ -270,6 +270,10 @@ export {
 } from "./phone-number-input"
 export type { CountryOption, CountryCode } from "./phone-number-input"
 
+// Rating Input
+export { RatingInput } from "./rating-input"
+export type { RatingInputProps } from "./rating-input"
+
 // Renderers
 export { LayoutRenderer } from "./renderers/LayoutRenderer"
 export { PageRenderer } from "./renderers/PageRenderer"

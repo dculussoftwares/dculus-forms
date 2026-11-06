@@ -15,6 +15,7 @@ export const FIELD_ICON_THEME: Record<string, { bg: string; color: string }> = {
   text_input_field:  { bg: '#e6f7f4', color: '#0E8C70' },
   text_area_field:   { bg: '#e6f7f4', color: '#0E8C70' },
   number_field:      { bg: '#fef3e2', color: '#D97706' },
+  rating_field:      { bg: '#fef3e2', color: '#D97706' },
   select_field:      { bg: '#f0ebff', color: '#7C3AAE' },
   radio_field:       { bg: '#f0ebff', color: '#7C3AAE' },
   checkbox_field:    { bg: '#e8f0fe', color: '#2563EB' },

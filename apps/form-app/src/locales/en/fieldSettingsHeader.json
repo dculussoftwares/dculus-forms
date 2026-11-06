@@ -12,7 +12,8 @@
     "formField": "Form Field",
     "richText": "Rich Text",
     "fileUpload": "File Upload",
-    "columns": "Columns"
+    "columns": "Columns",
+    "rating": "Rating"
   },
   "header": {
     "settings": "Settings",

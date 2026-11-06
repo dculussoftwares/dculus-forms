@@ -4,7 +4,7 @@
  * Pure — no I/O — so it is unit-tested directly.
  */
 
-export type MockFieldKind = 'text' | 'long' | 'choice' | 'multi' | 'select' | 'file' | 'date' | 'phone';
+export type MockFieldKind = 'text' | 'long' | 'choice' | 'multi' | 'select' | 'file' | 'date' | 'phone' | 'rating';
 
 export interface MockField {
   kind: MockFieldKind;
@@ -41,12 +41,14 @@ const KIND: Record<string, MockFieldKind> = {
   file_upload_field: 'file',
   date_field: 'date',
   phone_number_field: 'phone',
+  rating_field: 'rating',
 };
 
 /** Rough seconds per answer, for "about N min". */
 const SECONDS: Record<MockFieldKind, number> = {
   text: 12,
   phone: 12,
+  rating: 6,
   date: 10,
   select: 8,
   choice: 8,

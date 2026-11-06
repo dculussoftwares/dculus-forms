@@ -18,6 +18,7 @@ const FILLABLE = new Set([
   'email_field',
   'number_field',
   'phone_number_field',
+  'rating_field',
   'date_field',
   'select_field',
   'radio_field',

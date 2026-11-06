@@ -344,6 +344,7 @@ const evaluateTerm = (
     case FieldType.PHONE_NUMBER_FIELD:
       return evaluatePhoneTerm(term.operator, term.value, raw);
     case FieldType.NUMBER_FIELD:
+    case FieldType.RATING_FIELD:
       return evaluateNumberTerm(term.operator, term.value, raw);
     case FieldType.DATE_FIELD:
       return evaluateDateTerm(term.operator, term.value, raw);

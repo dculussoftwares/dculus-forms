@@ -649,6 +649,17 @@ export const getFormSchemaFromHocuspocus = async (
                       field.maxDate = fieldMap.get('maxDate');
                     if (fieldMap.has('defaultCountry'))
                       field.defaultCountry = fieldMap.get('defaultCountry');
+                    // Rating settings drive server-side answer validation and analytics,
+                    // so they must round-trip through the Y.js document too.
+                    for (const key of [
+                      'ratingStyle',
+                      'minValue',
+                      'maxValue',
+                      'lowLabel',
+                      'highLabel',
+                    ]) {
+                      if (fieldMap.has(key)) field[key] = fieldMap.get(key);
+                    }
 
                     copyLayoutKeysFromYMap(fieldMap, field);
                     if (fieldMap.get('deleted') === true) {
@@ -957,6 +968,15 @@ export const initializeHocuspocusDocument = async (
                 fieldMap.set('maxDate', field.maxDate);
               if (field.defaultCountry !== undefined)
                 fieldMap.set('defaultCountry', field.defaultCountry);
+              for (const key of [
+                'ratingStyle',
+                'minValue',
+                'maxValue',
+                'lowLabel',
+                'highLabel',
+              ]) {
+                if (field[key] !== undefined) fieldMap.set(key, field[key]);
+              }
             }
 
             logger.info(

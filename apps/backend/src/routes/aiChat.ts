@@ -127,6 +127,8 @@ const TYPE_MAP: Record<string, string> = {
   radio_field: 'radio',      RADIO_FIELD: 'radio',
   checkbox_field: 'check',   CHECKBOX_FIELD: 'check',
   file_upload_field: 'file', FILE_UPLOAD_FIELD: 'file',
+  phone_number_field: 'phone', PHONE_NUMBER_FIELD: 'phone',
+  rating_field: 'rating',    RATING_FIELD: 'rating',
 };
 
 export function countFields(schema: { pages: any[] }): number {

@@ -21,6 +21,7 @@ import {
   GripVertical,
   Upload,
   Phone,
+  Star,
   Columns2,
 } from 'lucide-react';
 
@@ -44,6 +45,7 @@ const FIELD_TYPE_LABELS: Partial<Record<FieldType, string>> = {
   [FieldType.RICH_TEXT_FIELD]: 'Rich Text',
   [FieldType.FILE_UPLOAD_FIELD]: 'File Upload',
   [FieldType.PHONE_NUMBER_FIELD]: 'Phone Number',
+  [FieldType.RATING_FIELD]: 'Rating',
   [FieldType.GRID_FIELD]: 'Columns',
 };
 
@@ -72,6 +74,8 @@ const getFieldIcon = (type: FieldType): React.ReactNode => {
       return <FileCode className={iconClass} />;
     case FieldType.PHONE_NUMBER_FIELD:
       return <Phone className={iconClass} />;
+    case FieldType.RATING_FIELD:
+      return <Star className={iconClass} />;
     case FieldType.GRID_FIELD:
       return <Columns2 className={iconClass} />;
     default:

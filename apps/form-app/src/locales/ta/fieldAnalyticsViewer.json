@@ -15,6 +15,7 @@
     "checkbox_field": "தேர்வுப்பெட்டிகள்",
     "file_upload_field": "கோப்பு பதிவேற்றம்",
     "phone_number_field": "தொலைபேசி எண்",
+    "rating_field": "மதிப்பீடு",
     "unknown": "தெரியாத புலம்"
   },
   "miniChart": {
@@ -108,7 +109,8 @@
     "selectionAnalytics": "தேர்வு பகுப்பாய்வு தரவு இல்லை",
     "checkboxAnalytics": "தேர்வுப்பெட்டி பகுப்பாய்வு தரவு இல்லை",
     "dateAnalytics": "தேதி பகுப்பாய்வு தரவு இல்லை",
-    "emailAnalytics": "மின்னஞ்சல் பகுப்பாய்வு தரவு இல்லை"
+    "emailAnalytics": "மின்னஞ்சல் பகுப்பாய்வு தரவு இல்லை",
+    "ratingAnalytics": "மதிப்பீட்டுப் பகுப்பாய்வு தரவு இல்லை"
   },
   "fieldHeader": {
     "responsesCount": "{{count}} பதில்கள்",

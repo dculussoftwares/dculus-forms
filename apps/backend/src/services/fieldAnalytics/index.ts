@@ -10,7 +10,7 @@ import { formRepository } from '../../repositories/index.js';
 import { getFormSchemaFromHocuspocus } from '../hocuspocus.js';
 
 // Import types
-import { FieldAnalytics, FileUploadFieldConfig } from './types.js';
+import { FieldAnalytics, FileUploadFieldConfig, RatingFieldConfig } from './types.js';
 
 // Import base utilities
 import { getFormResponses, extractFieldValues } from './base.js';
@@ -18,6 +18,7 @@ import { getFormResponses, extractFieldValues } from './base.js';
 // Import field processors
 import { processTextFieldAnalytics } from './textFieldAnalytics.js';
 import { processNumberFieldAnalytics } from './numberFieldAnalytics.js';
+import { processRatingFieldAnalytics } from './ratingFieldAnalytics.js';
 import { processSelectionFieldAnalytics } from './selectionFieldAnalytics.js';
 import { processCheckboxFieldAnalytics } from './checkboxFieldAnalytics.js';
 import { processDateFieldAnalytics } from './dateFieldAnalytics.js';
@@ -36,7 +37,8 @@ export const getFieldAnalytics = async (
   fieldId: string,
   fieldType: FieldType,
   fieldLabel: string,
-  fileUploadConfig?: FileUploadFieldConfig
+  fileUploadConfig?: FileUploadFieldConfig,
+  ratingConfig?: RatingFieldConfig
 ): Promise<FieldAnalytics> => {
   // Get all form responses
   const responses = await getFormResponses(formId);
@@ -72,6 +74,16 @@ export const getFieldAnalytics = async (
         fieldId,
         fieldLabel,
         totalFormResponses
+      ) as FieldAnalytics;
+      break;
+
+    case FieldType.RATING_FIELD:
+      result = processRatingFieldAnalytics(
+        fieldResponses,
+        fieldId,
+        fieldLabel,
+        totalFormResponses,
+        ratingConfig
       ) as FieldAnalytics;
       break;
 
@@ -188,6 +200,7 @@ export const getAllFieldsAnalytics = async (
     type: FieldType;
     label: string;
     fileUploadConfig?: FileUploadFieldConfig;
+    ratingConfig?: RatingFieldConfig;
   }> = [];
 
   if (formSchema.pages) {
@@ -214,6 +227,13 @@ export const getAllFieldsAnalytics = async (
                   allowedMimeTypes: field.allowedMimeTypes,
                 },
               }),
+              ...(field.type === FieldType.RATING_FIELD && {
+                ratingConfig: {
+                  ratingStyle: field.ratingStyle,
+                  minValue: field.minValue,
+                  maxValue: field.maxValue,
+                },
+              }),
             });
           }
         });
@@ -231,7 +251,9 @@ export const getAllFieldsAnalytics = async (
       batch.map((field) =>
         field.fileUploadConfig
           ? getFieldAnalytics(formId, field.id, field.type, field.label, field.fileUploadConfig)
-          : getFieldAnalytics(formId, field.id, field.type, field.label)
+          : field.ratingConfig
+            ? getFieldAnalytics(formId, field.id, field.type, field.label, undefined, field.ratingConfig)
+            : getFieldAnalytics(formId, field.id, field.type, field.label)
       )
     );
     fieldAnalytics.push(...batchResults);

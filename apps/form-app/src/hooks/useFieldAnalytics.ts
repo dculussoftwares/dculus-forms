@@ -126,6 +126,28 @@ const GET_FIELD_ANALYTICS : TypedDocumentNode<any, any> = gql`
         }
       }
 
+      ratingAnalytics {
+        ratingStyle
+        minValue
+        maxValue
+        average
+        distribution {
+          value
+          count
+          percentage
+        }
+        isNps
+        nps {
+          promoters
+          passives
+          detractors
+          promoterPercentage
+          passivePercentage
+          detractorPercentage
+          score
+        }
+      }
+
       selectionAnalytics {
         options {
           option
@@ -288,6 +310,28 @@ const GET_ALL_FIELDS_ANALYTICS : TypedDocumentNode<any, any> = gql`
           }
         }
 
+        ratingAnalytics {
+          ratingStyle
+          minValue
+          maxValue
+          average
+          distribution {
+            value
+            count
+            percentage
+          }
+          isNps
+          nps {
+            promoters
+            passives
+            detractors
+            promoterPercentage
+            passivePercentage
+            detractorPercentage
+            score
+          }
+        }
+
         selectionAnalytics {
           options {
             option
@@ -399,6 +443,7 @@ export interface FieldAnalyticsData {
   lastUpdated: string;
   textAnalytics?: TextFieldAnalyticsData;
   numberAnalytics?: NumberFieldAnalyticsData;
+  ratingAnalytics?: RatingFieldAnalyticsData;
   selectionAnalytics?: SelectionFieldAnalyticsData;
   checkboxAnalytics?: CheckboxFieldAnalyticsData;
   dateAnalytics?: DateFieldAnalyticsData;
@@ -418,6 +463,24 @@ export interface TextFieldAnalyticsData {
     submittedAt: string;
     responseId: string;
   }>;
+}
+
+export interface RatingFieldAnalyticsData {
+  ratingStyle: 'stars' | 'scale';
+  minValue: number;
+  maxValue: number;
+  average: number;
+  distribution: Array<{ value: number; count: number; percentage: number }>;
+  isNps: boolean;
+  nps?: {
+    promoters: number;
+    passives: number;
+    detractors: number;
+    promoterPercentage: number;
+    passivePercentage: number;
+    detractorPercentage: number;
+    score: number;
+  } | null;
 }
 
 export interface NumberFieldAnalyticsData {

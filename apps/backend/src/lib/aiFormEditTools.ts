@@ -13,7 +13,7 @@ import { prisma } from './prisma.js';
 import { assertOutboundUrlAllowed, UnsafeUrlError } from './urlGuard.js';
 
 // Field type tokens the AI uses (kept in sync with addField's fieldType enum).
-const FIELD_TYPE_TOKENS = ['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file', 'phone'] as const;
+const FIELD_TYPE_TOKENS = ['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file', 'phone', 'rating'] as const;
 
 // Normalize a stored field type (e.g. 'text_input_field' / 'TEXT_INPUT_FIELD') to the short token.
 const STORED_TYPE_TO_TOKEN: Record<string, string> = {
@@ -27,6 +27,7 @@ const STORED_TYPE_TO_TOKEN: Record<string, string> = {
   checkbox_field: 'checkbox', CHECKBOX_FIELD: 'checkbox',
   file_upload_field: 'file', FILE_UPLOAD_FIELD: 'file',
   phone_number_field: 'phone', PHONE_NUMBER_FIELD: 'phone',
+  rating_field: 'rating',    RATING_FIELD: 'rating',
 };
 
 function findFieldInSchema(
@@ -46,6 +47,7 @@ const CONDITION_OPERATORS_BY_TYPE: Record<string, readonly ConditionOperator[]> 
   email_field: ['equals', 'notEquals', 'contains', 'notContains', 'startsWith', 'endsWith', 'isEmpty', 'isFilled'],
   phone_number_field: ['equals', 'notEquals', 'startsWith', 'isEmpty', 'isFilled'],
   number_field: ['equals', 'notEquals', 'lessThan', 'greaterThan', 'isEmpty', 'isFilled'],
+  rating_field: ['equals', 'notEquals', 'lessThan', 'greaterThan', 'isEmpty', 'isFilled'],
   date_field: ['equals', 'notEquals', 'before', 'after', 'isEmpty', 'isFilled'],
   select_field: ['equals', 'notEquals', 'isEmpty', 'isFilled'],
   radio_field: ['equals', 'notEquals', 'isEmpty', 'isFilled'],
@@ -101,6 +103,12 @@ const updatesSchema = z.object({
   }).optional(),
   min: z.number().nullable().optional(),
   max: z.number().nullable().optional(),
+  // Rating fields only
+  ratingStyle: z.enum(['stars', 'scale']).optional(),
+  minValue: z.union([z.literal(0), z.literal(1)]).optional(),
+  maxValue: z.number().int().min(3).max(10).optional(),
+  lowLabel: z.string().nullable().optional(),
+  highLabel: z.string().nullable().optional(),
   minDate: z.string().nullable().optional(),
   maxDate: z.string().nullable().optional(),
 });
@@ -159,6 +167,7 @@ export function createFormEditTools(
           checkbox_field: 'check',   CHECKBOX_FIELD: 'check',
           file_upload_field: 'file', FILE_UPLOAD_FIELD: 'file',
           phone_number_field: 'phone', PHONE_NUMBER_FIELD: 'phone',
+          rating_field: 'rating',    RATING_FIELD: 'rating',
         };
 
         return {
@@ -210,11 +219,31 @@ export function createFormEditTools(
       inputSchema: z.object({
         pageId: z.string().describe('ID of the page to add the field to'),
         insertAfterFieldId: z.string().nullable().describe('Insert after this field ID; null to append'),
-        fieldType: z.enum(['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file', 'phone']),
+        fieldType: z.enum(['text', 'textarea', 'email', 'number', 'date', 'select', 'radio', 'checkbox', 'file', 'phone', 'rating']),
         label: z.string().describe('The question/label shown to users'),
         required: z.boolean(),
         placeholder: z.string().nullable(),
         options: z.array(z.string()).nullable().describe('For select/radio/checkbox only; null otherwise'),
+        ratingStyle: z
+          .enum(['stars', 'scale'])
+          .nullable()
+          .optional()
+          .describe('RATING ONLY: "stars" (default) or "scale" (numbered buttons). Omit for other types.'),
+        ratingMin: z
+          .union([z.literal(0), z.literal(1)])
+          .nullable()
+          .optional()
+          .describe('RATING scale only: first number, 0 or 1. Stars always start at 1. Use ratingStyle "scale" with ratingMin 0 and ratingMax 10 for an NPS question.'),
+        ratingMax: z
+          .number()
+          .int()
+          .min(3)
+          .max(10)
+          .nullable()
+          .optional()
+          .describe('RATING ONLY: highest value, 3-10 (default 5)'),
+        lowLabel: z.string().nullable().optional().describe('RATING ONLY: short label under the lowest value, e.g. "Not likely"'),
+        highLabel: z.string().nullable().optional().describe('RATING ONLY: short label under the highest value, e.g. "Very likely"'),
         correctAnswers: z
           .array(z.string())
           .nullable()
@@ -235,7 +264,7 @@ export function createFormEditTools(
 
     updateFields: tool({
       description:
-        'Update existing fields. Use ONLY for explicit edits ("rename", "change options", "make required") — never for "add" requests. Pass multiple fieldIds for batch updates. text: validation.min/maxLength. number: min/max. date: minDate/maxDate.',
+        'Update existing fields. Use ONLY for explicit edits ("rename", "change options", "make required") — never for "add" requests. Pass multiple fieldIds for batch updates. text: validation.min/maxLength. number: min/max. date: minDate/maxDate. rating: ratingStyle/minValue/maxValue/lowLabel/highLabel.',
       inputSchema: z.object({
         fieldIds: z.array(z.string()).min(1).describe('IDs of all fields to update (min 1)'),
         updates: updatesSchema,
@@ -510,7 +539,7 @@ export function createFormEditTools(
               options.find((option) => normalizeLabel(option) === normalizeLabel(String(resolvedValue)));
             if (!match) return { error: `"${String(resolvedValue)}" is not one of the options for "${field.label ?? term.field}" (${options.join(', ')}).` };
             resolvedValue = match;
-          } else if (resolvedValue !== undefined && fieldTypeToken === 'number_field') {
+          } else if (resolvedValue !== undefined && (fieldTypeToken === 'number_field' || fieldTypeToken === 'rating_field')) {
             // evaluateNumberTerm silently treats a non-finite value as "never matches" —
             // catch a non-numeric string here instead of creating a dead rule.
             const num = typeof resolvedValue === 'number' ? resolvedValue : Number(resolvedValue);
@@ -758,7 +787,7 @@ export function createFormEditTools(
 }
 
 export type FormOperation =
-  | { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null; correctAnswers?: string[] | null }
+  | { type: 'ADD_FIELD'; pageId: string; insertAfterFieldId: string | null; fieldType: string; label: string; required: boolean; placeholder: string | null; options: string[] | null; correctAnswers?: string[] | null; ratingStyle?: 'stars' | 'scale' | null; ratingMin?: 0 | 1 | null; ratingMax?: number | null; lowLabel?: string | null; highLabel?: string | null }
   | { type: 'UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> }
   | { type: 'RELOCATE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null; mode: 'move' | 'copy' }
   | { type: 'REORDER'; scope: 'fields' | 'pages'; ids: string[]; pageId?: string }
