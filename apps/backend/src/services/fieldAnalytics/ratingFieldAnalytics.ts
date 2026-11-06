@@ -43,7 +43,12 @@ export const processRatingFieldAnalytics = (
   for (const response of fieldResponses) {
     const raw = response.value;
     if (raw === null || raw === undefined || raw === '') continue;
-    const value = typeof raw === 'number' ? raw : Number(raw);
+    const value =
+      typeof raw === 'number'
+        ? raw
+        : typeof raw === 'string' && raw.trim() !== ''
+          ? Number(raw)
+          : NaN;
     if (!Number.isInteger(value) || value < minValue || value > maxValue) continue;
     counts.set(value, (counts.get(value) ?? 0) + 1);
     totalResponses += 1;

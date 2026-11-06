@@ -274,6 +274,7 @@ export const formatFieldValue = (
 
     case FieldType.RATING_FIELD: {
       // Plain number ("4"); the "4 / 5" display is a response-table concern.
+      if (typeof value === 'string' ? value.trim() === '' : typeof value !== 'number') return '';
       const ratingValue = Number(value);
       return Number.isFinite(ratingValue) ? String(ratingValue) : '';
     }

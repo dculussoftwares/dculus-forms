@@ -280,6 +280,13 @@ export function applyAIOp(
           suffix: sourceField.suffix ?? '',
           hint: sourceField.hint ?? '',
           ...(isChoice && { options: sourceField.options ?? [] }),
+          ...(fieldType === FieldType.RATING_FIELD && {
+            ratingStyle: sourceField.ratingStyle,
+            minValue: sourceField.minValue,
+            maxValue: sourceField.maxValue,
+            lowLabel: sourceField.lowLabel,
+            highLabel: sourceField.highLabel,
+          }),
         };
 
         if (op.insertAfterFieldId) {
