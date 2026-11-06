@@ -166,7 +166,7 @@ export const LogicSimulator: React.FC<LogicSimulatorProps> = ({ pages, condition
       );
     }
 
-    if (field.type === FieldType.NUMBER_FIELD) {
+    if (field.type === FieldType.NUMBER_FIELD || field.type === FieldType.RATING_FIELD) {
       return (
         <Input
           type="number"

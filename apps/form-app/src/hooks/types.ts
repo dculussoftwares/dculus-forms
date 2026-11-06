@@ -117,6 +117,17 @@ export interface PhoneNumberFieldData {
 }
 
 /**
+ * Rating field configuration (style, range and end labels)
+ */
+export interface RatingFieldData {
+  ratingStyle: 'stars' | 'scale';
+  minValue: number;
+  maxValue: number;
+  lowLabel?: string;
+  highLabel?: string;
+}
+
+/**
  * Base field data that all fields share
  */
 export interface BaseFieldData {

@@ -20,6 +20,7 @@ import {
   FileCode,
   Upload,
   Phone,
+  Star,
   Square,
   Columns2,
   Columns3,
@@ -106,6 +107,13 @@ export const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig
     label: t('fieldTypes.checkbox.label'),
     description: t('fieldTypes.checkbox.description'),
     icon: <CheckSquare className="w-5 h-5" />,
+    category: 'choice',
+  },
+  {
+    type: FieldType.RATING_FIELD,
+    label: t('fieldTypes.rating.label'),
+    description: t('fieldTypes.rating.description'),
+    icon: <Star className="w-5 h-5" />,
     category: 'choice',
   },
 

@@ -22,6 +22,10 @@ vi.mock('../numberFieldAnalytics.js', () => ({
   processNumberFieldAnalytics: vi.fn(),
 }));
 
+vi.mock('../ratingFieldAnalytics.js', () => ({
+  processRatingFieldAnalytics: vi.fn(),
+}));
+
 vi.mock('../selectionFieldAnalytics.js', () => ({
   processSelectionFieldAnalytics: vi.fn(),
 }));
@@ -51,6 +55,7 @@ import { getFormSchemaFromHocuspocus } from '../../hocuspocus.js';
 import { getFormResponses, extractFieldValues } from '../base.js';
 import { processTextFieldAnalytics } from '../textFieldAnalytics.js';
 import { processNumberFieldAnalytics } from '../numberFieldAnalytics.js';
+import { processRatingFieldAnalytics } from '../ratingFieldAnalytics.js';
 import { processSelectionFieldAnalytics } from '../selectionFieldAnalytics.js';
 import { processCheckboxFieldAnalytics } from '../checkboxFieldAnalytics.js';
 import { processDateFieldAnalytics } from '../dateFieldAnalytics.js';
@@ -101,6 +106,16 @@ describe('getFieldAnalytics', () => {
 
     expect(processNumberFieldAnalytics).toHaveBeenCalledWith(mockFieldResponses, 'f1', 'Field', 1);
     expect(result.fieldType).toBe(FieldType.NUMBER_FIELD);
+  });
+
+  it('routes RATING_FIELD to processRatingFieldAnalytics with the field config', async () => {
+    vi.mocked(processRatingFieldAnalytics).mockReturnValue({ ...baseResult, fieldType: FieldType.RATING_FIELD } as any);
+    const ratingConfig = { ratingStyle: 'scale', minValue: 0, maxValue: 10 };
+
+    const result = await getFieldAnalytics('form-1', 'f1', FieldType.RATING_FIELD, 'Field', undefined, ratingConfig);
+
+    expect(processRatingFieldAnalytics).toHaveBeenCalledWith(mockFieldResponses, 'f1', 'Field', 1, ratingConfig);
+    expect(result.fieldType).toBe(FieldType.RATING_FIELD);
   });
 
   it('routes SELECT_FIELD to processSelectionFieldAnalytics', async () => {
@@ -286,6 +301,31 @@ describe('getAllFieldsAnalytics', () => {
 
     expect(result.fields).toHaveLength(1);
     expect((result.fields[0] as any).fieldType).toBe(FieldType.TEXT_INPUT_FIELD);
+  });
+
+  it('passes a rating field its own style and range', async () => {
+    vi.mocked(processRatingFieldAnalytics).mockReturnValue({ ...baseResult, fieldType: FieldType.RATING_FIELD } as any);
+    vi.mocked(formRepository.findUnique).mockResolvedValue({ formSchema: {} } as any);
+    vi.mocked(getFormSchemaFromHocuspocus).mockResolvedValue({
+      pages: [
+        {
+          fields: [
+            { id: 'f9', type: FieldType.RATING_FIELD, label: 'NPS', ratingStyle: 'scale', minValue: 0, maxValue: 10 },
+          ],
+        },
+      ],
+    } as any);
+
+    const result = await getAllFieldsAnalytics('form-1');
+
+    expect(result.fields).toHaveLength(1);
+    expect(processRatingFieldAnalytics).toHaveBeenCalledWith(
+      mockFieldResponses,
+      'f9',
+      'NPS',
+      1,
+      { ratingStyle: 'scale', minValue: 0, maxValue: 10 }
+    );
   });
 
   it('skips a grid layout field instead of failing the whole page', async () => {

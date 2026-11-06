@@ -13,6 +13,7 @@ import {
   DateField,
   RichTextFormField,
   PhoneNumberField,
+  RatingField,
   GridField,
   FILE_UPLOAD_MAX_FILE_SIZE_MB,
 } from '@dculus/types';
@@ -35,6 +36,7 @@ import {
   DateFieldSettings,
   RichTextFieldSettings,
   PhoneNumberFieldSettings,
+  RatingFieldSettings,
   GridSettings,
 } from './field-settings-v2';
 
@@ -406,6 +408,22 @@ export const FieldSettingsV2: React.FC<FieldSettingsV2Props> = ({
         >
           <PhoneNumberFieldSettings
             field={field as PhoneNumberField}
+            isConnected={isConnected}
+            isReadOnly={isReadOnly}
+            onUpdate={updateHandler}
+          />
+        </FieldSettingsWrapper>
+      );
+
+    case FieldType.RATING_FIELD:
+      return (
+        <FieldSettingsWrapper
+          onDelete={deleteHandler}
+          isConnected={isConnected}
+          deleteButtonLabel={t('deleteField.button')}
+        >
+          <RatingFieldSettings
+            field={field as RatingField}
             isConnected={isConnected}
             isReadOnly={isReadOnly}
             onUpdate={updateHandler}

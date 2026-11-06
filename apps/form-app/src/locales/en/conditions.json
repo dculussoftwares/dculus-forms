@@ -261,6 +261,7 @@
     "date_field": "Date",
     "phone_number_field": "Phone Number",
     "rich_text_field": "Rich Text",
-    "file_upload_field": "File Upload"
+    "file_upload_field": "File Upload",
+    "rating_field": "Rating"
   }
 }

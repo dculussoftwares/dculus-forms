@@ -8,6 +8,7 @@ import {
   AtSign,
   Upload,
   Phone,
+  Star,
 } from 'lucide-react';
 import { FieldType } from '@dculus/types';
 
@@ -22,6 +23,9 @@ export const getFieldIcon = (fieldType: FieldType): React.ReactNode => {
 
     case FieldType.PHONE_NUMBER_FIELD:
       return <Phone className="h-4 w-4" />;
+
+    case FieldType.RATING_FIELD:
+      return <Star className="h-4 w-4" />;
 
     case FieldType.NUMBER_FIELD:
       return <Hash className="h-4 w-4" />;

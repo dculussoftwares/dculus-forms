@@ -66,6 +66,10 @@
     "threeColumns": {
       "label": "3 Columns",
       "description": "Place questions side by side in three columns"
+    },
+    "rating": {
+      "label": "Rating",
+      "description": "Star rating or 0-10 number scale"
     }
   }
 }

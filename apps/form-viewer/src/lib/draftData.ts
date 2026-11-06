@@ -1,4 +1,4 @@
-import { FieldType, type FormField, type FormSchema } from '@dculus/types';
+import { FieldType, normalizeRatingConfig, type FormField, type FormSchema } from '@dculus/types';
 
 export type DraftData = Record<string, unknown>;
 export type PageResponses = Record<string, Record<string, unknown>>;
@@ -69,6 +69,13 @@ function restoreAnswer(field: FormField, value: unknown, keepFiles: boolean): un
       return typeof value === 'string' && hasOptions(field) && field.options.includes(value) ? value : undefined;
     case FieldType.NUMBER_FIELD:
       return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+    case FieldType.RATING_FIELD: {
+      // A whole number still inside the field's range (the owner may have narrowed it since)
+      const { minValue, maxValue } = normalizeRatingConfig(field);
+      return typeof value === 'number' && Number.isInteger(value) && value >= minValue && value <= maxValue
+        ? value
+        : undefined;
+    }
     default:
       // Text, email, phone and date fields all hold strings.
       return typeof value === 'string' ? value : undefined;

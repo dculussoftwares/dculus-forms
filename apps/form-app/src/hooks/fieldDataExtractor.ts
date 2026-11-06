@@ -9,6 +9,7 @@ import {
   DateField,
   FileUploadField,
   PhoneNumberField,
+  RatingField,
   RichTextFormField,
   TextFieldValidation,
   CheckboxFieldValidation,
@@ -25,6 +26,7 @@ import {
   RichTextFieldData,
   FileUploadFieldData,
   PhoneNumberFieldData,
+  RatingFieldData,
 } from './types';
 
 /**
@@ -134,6 +136,20 @@ export function extractPhoneNumberData(field: FormField): PhoneNumberFieldData {
   const phoneField = field as PhoneNumberField;
   return {
     defaultCountry: phoneField.defaultCountry,
+  };
+}
+
+/**
+ * Extract rating configuration (style, range, end labels) for rating fields
+ */
+export function extractRatingData(field: FormField): RatingFieldData {
+  const ratingField = field as RatingField;
+  return {
+    ratingStyle: ratingField.ratingStyle,
+    minValue: ratingField.minValue,
+    maxValue: ratingField.maxValue,
+    lowLabel: ratingField.lowLabel || '',
+    highLabel: ratingField.highLabel || '',
   };
 }
 
@@ -261,6 +277,19 @@ const FIELD_DATA_EXTRACTORS: Partial<
       ...restBaseData,
       required,
       ...extractPhoneNumberData(field),
+      validation: {
+        required: required,
+      },
+    };
+  },
+
+  [FieldType.RATING_FIELD]: (field: FormField) => {
+    const baseData = extractBaseFieldData(field);
+    const { required, ...restBaseData } = baseData;
+    return {
+      ...restBaseData,
+      required,
+      ...extractRatingData(field),
       validation: {
         required: required,
       },

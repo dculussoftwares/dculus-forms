@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js/max';
 import { FieldType } from './index.js';
 import { fieldGradingSchema, hasQuantifiedAlternation } from './quiz.js';
+import { RATING_MAX_VALUE_MAX, RATING_MAX_VALUE_MIN } from './ratingConstants.js';
 import { MAX_GRID_COLUMNS, MIN_GRID_COLUMN_PERCENT } from './gridConstants.js';
 
 // Mirrors MAX_REGEX_PATTERN_LENGTH in apps/backend/src/services/quiz/gradingEngine.ts —
@@ -696,6 +697,46 @@ export const phoneNumberFieldValidationSchema = baseFieldValidationSchema
     }
   );
 
+// Rating field validation schema. The style/min/max combination is sanitized by
+// normalizeRatingConfig (stars always start at 1; a scale may start at 0 or 1).
+export const ratingFieldValidationSchema = z.object({
+  label: z
+    .string()
+    .min(1, 'fieldSettingsConstants:errorMessages.labelRequired')
+    .max(200, 'fieldSettingsConstants:errorMessages.labelTooLong'),
+  hint: z
+    .string()
+    .max(500, 'fieldSettingsConstants:errorMessages.hintTooLong')
+    .optional(),
+  prefix: z
+    .string()
+    .max(10, 'fieldSettingsConstants:errorMessages.prefixTooLong')
+    .optional(),
+  required: z.boolean().default(false),
+  ratingStyle: z.enum(['stars', 'scale']).default('stars'),
+  minValue: z.union([z.literal(0), z.literal(1)]).default(1),
+  maxValue: z
+    .number()
+    .int('fieldSettingsConstants:errorMessages.invalidRatingMax')
+    .min(
+      RATING_MAX_VALUE_MIN,
+      'fieldSettingsConstants:errorMessages.invalidRatingMax'
+    )
+    .max(
+      RATING_MAX_VALUE_MAX,
+      'fieldSettingsConstants:errorMessages.invalidRatingMax'
+    )
+    .default(5),
+  lowLabel: z
+    .string()
+    .max(40, 'fieldSettingsConstants:errorMessages.ratingLabelTooLong')
+    .optional(),
+  highLabel: z
+    .string()
+    .max(40, 'fieldSettingsConstants:errorMessages.ratingLabelTooLong')
+    .optional(),
+});
+
 // Rich text field validation schema
 export const richTextFieldValidationSchema = z.object({
   content: z
@@ -739,6 +780,8 @@ export function getFieldValidationSchema(fieldType: FieldType) {
       return fileUploadFieldValidationSchema;
     case FieldType.PHONE_NUMBER_FIELD:
       return phoneNumberFieldValidationSchema;
+    case FieldType.RATING_FIELD:
+      return ratingFieldValidationSchema;
     case FieldType.RICH_TEXT_FIELD:
       return richTextFieldValidationSchema;
     case FieldType.GRID_FIELD:
@@ -770,6 +813,7 @@ export type FileUploadFieldFormData = z.infer<
 export type PhoneNumberFieldFormData = z.infer<
   typeof phoneNumberFieldValidationSchema
 >;
+export type RatingFieldFormData = z.infer<typeof ratingFieldValidationSchema>;
 export type RichTextFieldFormData = z.infer<
   typeof richTextFieldValidationSchema
 >;
@@ -786,6 +830,7 @@ export type FieldFormData =
   | CheckboxFieldFormData
   | DateFieldFormData
   | PhoneNumberFieldFormData
+  | RatingFieldFormData
   | FileUploadFieldFormData
   | RichTextFieldFormData
   | GridFieldFormData;

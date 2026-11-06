@@ -51,6 +51,7 @@ export const TRIGGER_OPERATORS: Partial<Record<FieldType, ConditionOperator[]>> 
   ],
   [FieldType.PHONE_NUMBER_FIELD]: ['equals', 'notEquals', 'startsWith', 'isEmpty', 'isFilled'],
   [FieldType.NUMBER_FIELD]: ['equals', 'notEquals', 'lessThan', 'greaterThan', 'isEmpty', 'isFilled'],
+  [FieldType.RATING_FIELD]: ['equals', 'notEquals', 'lessThan', 'greaterThan', 'isEmpty', 'isFilled'],
   [FieldType.DATE_FIELD]: ['equals', 'notEquals', 'before', 'after', 'isEmpty', 'isFilled'],
   [FieldType.SELECT_FIELD]: ['equals', 'notEquals', 'isEmpty', 'isFilled'],
   [FieldType.RADIO_FIELD]: ['equals', 'notEquals', 'isEmpty', 'isFilled'],
@@ -68,6 +69,7 @@ export const getValueInputKind = (
   if (operator === 'isEmpty' || operator === 'isFilled') return 'none';
   switch (fieldType) {
     case FieldType.NUMBER_FIELD:
+    case FieldType.RATING_FIELD:
       return 'number';
     case FieldType.DATE_FIELD:
       return 'date';

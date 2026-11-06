@@ -13,6 +13,7 @@
     "checkbox_field": "Checkboxes",
     "file_upload_field": "File Upload",
     "phone_number_field": "Phone Number",
+    "rating_field": "Rating",
     "unknown": "Unknown Field"
   },
   "miniChart": {
@@ -106,7 +107,8 @@
     "selectionAnalytics": "No selection analytics data available",
     "checkboxAnalytics": "No checkbox analytics data available",
     "dateAnalytics": "No date analytics data available",
-    "emailAnalytics": "No email analytics data available"
+    "emailAnalytics": "No email analytics data available",
+    "ratingAnalytics": "No rating analytics data available"
   },
   "fieldHeader": {
     "responsesCount": "{{count}} responses",

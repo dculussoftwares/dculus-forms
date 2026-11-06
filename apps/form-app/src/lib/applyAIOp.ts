@@ -24,6 +24,7 @@ const AI_TYPE_MAP: Record<string, FieldType> = {
   checkbox: FieldType.CHECKBOX_FIELD,
   file: FieldType.FILE_UPLOAD_FIELD,
   phone: FieldType.PHONE_NUMBER_FIELD,
+  rating: FieldType.RATING_FIELD,
   // Full store type names used by copyField (sourceField.type from Y.js)
   text_input_field: FieldType.TEXT_INPUT_FIELD,
   TEXT_INPUT_FIELD: FieldType.TEXT_INPUT_FIELD,
@@ -45,6 +46,8 @@ const AI_TYPE_MAP: Record<string, FieldType> = {
   FILE_UPLOAD_FIELD: FieldType.FILE_UPLOAD_FIELD,
   phone_number_field: FieldType.PHONE_NUMBER_FIELD,
   PHONE_NUMBER_FIELD: FieldType.PHONE_NUMBER_FIELD,
+  rating_field: FieldType.RATING_FIELD,
+  RATING_FIELD: FieldType.RATING_FIELD,
 };
 
 const CHOICE_TYPES = new Set([FieldType.SELECT_FIELD, FieldType.RADIO_FIELD, FieldType.CHECKBOX_FIELD]);
@@ -102,6 +105,13 @@ export function applyAIOp(
         hint: '',
         ...(isChoice && { options: op.options ?? ['Option 1', 'Option 2'] }),
         ...(grading ? { grading } : {}),
+        ...(fieldType === FieldType.RATING_FIELD && {
+          ratingStyle: op.ratingStyle ?? 'stars',
+          minValue: op.ratingMin ?? 1,
+          maxValue: op.ratingMax ?? 5,
+          lowLabel: op.lowLabel || undefined,
+          highLabel: op.highLabel || undefined,
+        }),
       };
 
       if (op.insertAfterFieldId) {
@@ -137,7 +147,10 @@ export function applyAIOp(
       for (const fieldId of fieldIds) {
         const pageId = findPageForField(store.pages, fieldId);
         if (pageId) {
-          store.updateField(pageId, fieldId, op.updates);
+          const updates = { ...op.updates };
+          // Stars always start at 1, so switching to stars pins the start value
+          if (updates.ratingStyle === 'stars') updates.minValue = 1;
+          store.updateField(pageId, fieldId, updates);
           lastUpdatedId = fieldId;
         }
       }

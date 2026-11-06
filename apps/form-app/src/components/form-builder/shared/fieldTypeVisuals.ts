@@ -10,6 +10,7 @@ import {
   Hash,
   Mail,
   Phone,
+  Star,
   Type,
   Upload,
 } from 'lucide-react';
@@ -36,6 +37,7 @@ export const getFieldTypeConfig = (
     select_field: { icon: ChevronDown, category: 'choice', label: 'Dropdown' },
     radio_field: { icon: Circle, category: 'choice', label: 'Multiple Choice' },
     checkbox_field: { icon: CheckSquare, category: 'choice', label: 'Checkboxes' },
+    rating_field: { icon: Star, category: 'choice', label: 'Rating' },
     date_field: { icon: Calendar, category: 'input', label: 'Date' },
     phone_number_field: { icon: Phone, category: 'input', label: 'Phone Number' },
     rich_text_field: { icon: FileCode, category: 'content', label: 'Rich Text' },

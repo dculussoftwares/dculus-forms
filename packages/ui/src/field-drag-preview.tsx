@@ -20,6 +20,7 @@ import {
   FileCode,
   Upload,
   Phone,
+  Star,
   Columns2,
 } from 'lucide-react';
 
@@ -77,6 +78,8 @@ export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({
         return 'File Upload';
       case FieldType.PHONE_NUMBER_FIELD:
         return 'Phone Number';
+      case FieldType.RATING_FIELD:
+        return 'Rating';
       case FieldType.RICH_TEXT_FIELD:
         return 'Rich Text';
       case FieldType.GRID_FIELD:
@@ -108,6 +111,8 @@ export const FieldDragPreview: React.FC<FieldDragPreviewProps> = ({
         return <Upload className="w-4 h-4" />;
       case FieldType.PHONE_NUMBER_FIELD:
         return <Phone className="w-4 h-4" />;
+      case FieldType.RATING_FIELD:
+        return <Star className="w-4 h-4" />;
       case FieldType.RICH_TEXT_FIELD:
         return <FileCode className="w-4 h-4" />;
       case FieldType.GRID_FIELD:

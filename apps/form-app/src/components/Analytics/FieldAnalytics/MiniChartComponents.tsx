@@ -222,6 +222,18 @@ export const MiniPreviewChart: React.FC<{ field: FieldAnalyticsData }> = ({ fiel
         }
         break;
 
+      case 'rating_field':
+        if (field.ratingAnalytics?.distribution && field.ratingAnalytics.distribution.length > 0) {
+          return {
+            type: 'bar' as const,
+            data: field.ratingAnalytics.distribution.map(item => ({
+              name: String(item.value),
+              value: item.count
+            }))
+          };
+        }
+        break;
+
       case 'email_field':
         if (field.emailAnalytics?.domains && field.emailAnalytics.domains.length > 0) {
           return {

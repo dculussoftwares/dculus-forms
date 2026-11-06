@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FormField, FieldType, RichTextFormField, PhoneNumberField, FILE_UPLOAD_MAX_FILE_SIZE_MB } from '@dculus/types';
+import { FormField, FieldType, RichTextFormField, PhoneNumberField, RatingField, FILE_UPLOAD_MAX_FILE_SIZE_MB } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { Upload } from 'lucide-react';
 import {
@@ -17,6 +17,7 @@ import {
   RadioGroup,
   RadioGroupItem,
   PhoneNumberInput,
+  RatingInput,
 } from './index';
 
 interface FieldPreviewProps {
@@ -51,6 +52,8 @@ const getDefaultLabel = (type: FieldType): string => {
       return 'File Upload';
     case FieldType.PHONE_NUMBER_FIELD:
       return 'Phone Number';
+    case FieldType.RATING_FIELD:
+      return 'Rating';
     case FieldType.RICH_TEXT_FIELD:
       return 'Rich Text';
     default:
@@ -243,6 +246,22 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             onChange={() => {}} // Disabled preview - no actual interaction
             defaultCountry={phoneField.defaultCountry as any}
             placeholder={placeholder || 'Phone number'}
+            disabled={disabled}
+          />
+        );
+      }
+
+      case FieldType.RATING_FIELD: {
+        const ratingField = field as RatingField;
+        return (
+          <RatingInput
+            id={inputId}
+            ratingStyle={ratingField.ratingStyle}
+            minValue={ratingField.minValue}
+            maxValue={ratingField.maxValue}
+            lowLabel={ratingField.lowLabel}
+            highLabel={ratingField.highLabel}
+            aria-label={fieldData.label}
             disabled={disabled}
           />
         );

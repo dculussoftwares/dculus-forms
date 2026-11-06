@@ -20,7 +20,7 @@ import {
   barcodes,
 } from '@pdfme/schemas';
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max';
-import { FieldType, isLayoutField } from '@dculus/types';
+import { FieldType, isLayoutField, normalizeRatingConfig } from '@dculus/types';
 import { substitutePlaceholdersPlainText, createFieldLabelsMap } from '@dculus/utils';
 import { downloadFileBuffer } from './fileUploadService.js';
 import { pdfTemplateRepository, createPdfTemplateRepository } from '../repositories/index.js';
@@ -352,6 +352,10 @@ export function buildSampleResponseData(deserializedSchema: any): Record<string,
         case FieldType.PHONE_NUMBER_FIELD:
           data[field.id] = '+14155552671';
           break;
+        case FieldType.RATING_FIELD:
+          // Within the field's own range; a 3-star field can't sample 4
+          data[field.id] = Math.min(4, normalizeRatingConfig(field).maxValue);
+          break;
         case FieldType.SELECT_FIELD:
         case FieldType.RADIO_FIELD:
           data[field.id] = options[0] ?? 'Option 1';
@@ -426,6 +430,12 @@ export function coerceAiSampleData(
           const cleaned = value.replace(/[^\d.-]/g, '');
           const num = Number(cleaned);
           if (cleaned !== '' && Number.isFinite(num)) data[field.id] = num;
+          break;
+        }
+        case FieldType.RATING_FIELD: {
+          const { minValue, maxValue } = normalizeRatingConfig(field);
+          const num = Number(value);
+          if (Number.isInteger(num) && num >= minValue && num <= maxValue) data[field.id] = num;
           break;
         }
         case FieldType.DATE_FIELD:

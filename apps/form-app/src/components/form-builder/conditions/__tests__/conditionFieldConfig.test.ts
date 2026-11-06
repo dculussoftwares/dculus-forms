@@ -1,5 +1,11 @@
 import { ConditionalRule, FieldType, FormPage } from '@dculus/types';
-import { checkBackwardReference, checkRuleReferences, getTargetFieldOptions } from '../conditionFieldConfig';
+import {
+  checkBackwardReference,
+  checkRuleReferences,
+  getTargetFieldOptions,
+  getValueInputKind,
+  TRIGGER_OPERATORS,
+} from '../conditionFieldConfig';
 
 const makeRule = (overrides: Partial<ConditionalRule>): ConditionalRule => ({
   id: 'rule-1',
@@ -157,5 +163,19 @@ describe('getTargetFieldOptions', () => {
       ['field-a', 'Name'],
       ['field-b', 'Email'],
     ]);
+  });
+});
+
+describe('rating field as a condition trigger', () => {
+  it('offers the same numeric operators as a number field', () => {
+    expect(TRIGGER_OPERATORS[FieldType.RATING_FIELD]).toEqual(TRIGGER_OPERATORS[FieldType.NUMBER_FIELD]);
+    expect(TRIGGER_OPERATORS[FieldType.RATING_FIELD]).toEqual(
+      expect.arrayContaining(['equals', 'notEquals', 'lessThan', 'greaterThan', 'isEmpty', 'isFilled'])
+    );
+  });
+
+  it('edits the comparison value as a number', () => {
+    expect(getValueInputKind(FieldType.RATING_FIELD, 'lessThan')).toBe('number');
+    expect(getValueInputKind(FieldType.RATING_FIELD, 'isEmpty')).toBe('none');
   });
 });

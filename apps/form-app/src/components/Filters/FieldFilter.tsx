@@ -55,6 +55,7 @@ const getOperatorOptions = (
       ];
 
     case FieldType.NUMBER_FIELD:
+    case FieldType.RATING_FIELD:
       return [
         { value: 'EQUALS', label: t('operators.equals') },
         { value: 'NOT_EQUALS', label: t('operators.notEquals') },
@@ -154,6 +155,7 @@ const renderFilterInput = (
       );
 
     case FieldType.NUMBER_FIELD:
+    case FieldType.RATING_FIELD:
       if (filter.operator === 'BETWEEN') {
         return (
           <div className="space-y-2">

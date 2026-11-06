@@ -4,6 +4,7 @@ import {
   deserializeFormSchema,
   evaluateConditions,
   isLayoutField,
+  normalizeRatingConfig,
   type FormField,
   type FormPage,
   type FormResponsesByPage,
@@ -37,6 +38,7 @@ const ANSWERABLE_TYPES = new Set<string>([
   FieldType.DATE_FIELD,
   FieldType.FILE_UPLOAD_FIELD,
   FieldType.PHONE_NUMBER_FIELD,
+  FieldType.RATING_FIELD,
 ]);
 
 export interface ValidateAnswersOptions {
@@ -75,6 +77,18 @@ const checkNumber = (field: AnswerField, value: unknown): void => {
   if (typeof numeric !== 'number' || !Number.isFinite(numeric)) return fail(field, 'must be a valid number');
   if (typeof field.min === 'number' && numeric < field.min) return fail(field, `must be at least ${field.min}`);
   if (typeof field.max === 'number' && numeric > field.max) return fail(field, `must be no more than ${field.max}`);
+};
+
+// The field was deserialized, so its range is already normalized; re-normalizing keeps this safe
+// for any caller that hands in a raw schema object. A rating is stored as a plain whole number.
+const checkRating = (field: AnswerField, value: unknown): void => {
+  const { minValue, maxValue } = normalizeRatingConfig(field);
+  if (typeof value !== 'number' || !Number.isInteger(value)) {
+    return fail(field, `must be a whole number between ${minValue} and ${maxValue}`);
+  }
+  if (value < minValue || value > maxValue) {
+    return fail(field, `must be between ${minValue} and ${maxValue}`);
+  }
 };
 
 const checkDate = (field: AnswerField, value: unknown): void => {
@@ -147,6 +161,8 @@ const checkField = (
       return;
     case FieldType.NUMBER_FIELD:
       return checkNumber(field, value);
+    case FieldType.RATING_FIELD:
+      return checkRating(field, value);
     case FieldType.DATE_FIELD:
       return checkDate(field, value);
     case FieldType.SELECT_FIELD:

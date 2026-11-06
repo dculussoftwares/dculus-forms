@@ -1064,6 +1064,9 @@ export const typeDefs = gql`
     # Number field analytics
     numberAnalytics: NumberFieldAnalytics
 
+    # Rating field analytics (stars / number scale, NPS for 0-10)
+    ratingAnalytics: RatingFieldAnalytics
+
     # Selection field analytics (Select/Radio)
     selectionAnalytics: SelectionFieldAnalytics
 
@@ -1121,6 +1124,32 @@ export const typeDefs = gql`
     distribution: [NumberDistribution!]!
     trend: [NumberTrend!]!
     percentiles: NumberPercentiles!
+  }
+
+  type RatingFieldAnalytics {
+    ratingStyle: String!
+    minValue: Int!
+    maxValue: Int!
+    average: Float!
+    distribution: [RatingDistributionEntry!]!
+    isNps: Boolean!
+    nps: RatingNpsBreakdown
+  }
+
+  type RatingDistributionEntry {
+    value: Int!
+    count: Int!
+    percentage: Float!
+  }
+
+  type RatingNpsBreakdown {
+    promoters: Int!
+    passives: Int!
+    detractors: Int!
+    promoterPercentage: Float!
+    passivePercentage: Float!
+    detractorPercentage: Float!
+    score: Float!
   }
 
   type NumberDistribution {

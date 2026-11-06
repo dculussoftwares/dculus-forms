@@ -1,0 +1,30 @@
+{
+  "emptyState": {
+    "title": "மதிப்பீட்டுத் தரவு இல்லை",
+    "subtitle": "இந்த மதிப்பீட்டு புலத்திற்கு இதுவரை பதில்கள் வரவில்லை."
+  },
+  "stats": {
+    "responses": "பதில்கள்",
+    "ofFormResponses": "{{count}} படிவ பதில்களில்",
+    "average": "சராசரி மதிப்பீடு",
+    "onScale": "{{scale}} அளவுகோலில்",
+    "npsScore": "NPS மதிப்பெண்",
+    "npsRange": "ஆதரவாளர்கள் % கழித்தல் விமர்சகர்கள் %"
+  },
+  "distribution": {
+    "title": "மதிப்பீட்டுப் பகிர்வு",
+    "xAxis": "மதிப்பீடு",
+    "yAxis": "பதில்கள்"
+  },
+  "nps": {
+    "title": "நெட் ப்ரோமோட்டர் ஸ்கோர் விவரம்",
+    "barLabel": "{{detractors}}% விமர்சகர்கள், {{passives}}% நடுநிலையாளர்கள், {{promoters}}% ஆதரவாளர்கள்",
+    "detractors": "விமர்சகர்கள்",
+    "detractorsRange": "மதிப்பீடுகள் 0 முதல் 6 வரை",
+    "passives": "நடுநிலையாளர்கள்",
+    "passivesRange": "மதிப்பீடுகள் 7 முதல் 8 வரை",
+    "promoters": "ஆதரவாளர்கள்",
+    "promotersRange": "மதிப்பீடுகள் 9 முதல் 10 வரை",
+    "countAndPercentage": "{{count}} பதில்கள் ({{percentage}}%)"
+  }
+}

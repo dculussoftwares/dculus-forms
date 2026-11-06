@@ -118,6 +118,8 @@ export const FieldChangeCard: React.FC<FieldChangeCardProps> = ({
         return String(value);
       case 'number_field':
         return isNaN(Number(value)) ? String(value) : Number(value).toLocaleString();
+      case 'rating_field':
+        return String(value);
       default:
         return String(value);
     }

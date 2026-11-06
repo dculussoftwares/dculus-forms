@@ -46,6 +46,20 @@ export const useFieldCreation = () => {
       };
     }
 
+    // Rating field: five stars by default; no placeholder (it's a widget, not a text box)
+    if (fieldType.type === FieldType.RATING_FIELD) {
+      return {
+        label: fieldType.label,
+        required: false,
+        hint: '',
+        prefix: '',
+        defaultValue: '',
+        ratingStyle: 'stars' as const,
+        minValue: 1,
+        maxValue: 5,
+      };
+    }
+
     // Rich text field has different structure (non-fillable)
     if (fieldType.type === FieldType.RICH_TEXT_FIELD) {
       return {

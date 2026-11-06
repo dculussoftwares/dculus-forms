@@ -50,8 +50,10 @@ function getDefaultValueForField(field: FormField): any {
     // Handle different field types for default values
     switch (field.type) {
       case FieldType.NUMBER_FIELD:
+      case FieldType.RATING_FIELD: {
         const numValue = parseFloat(field.defaultValue);
         return isNaN(numValue) ? undefined : numValue;
+      }
       case FieldType.SELECT_FIELD:
         return field.defaultValue;
       default:
@@ -64,6 +66,7 @@ function getDefaultValueForField(field: FormField): any {
     case FieldType.SELECT_FIELD:
       return '';
     case FieldType.NUMBER_FIELD:
+    case FieldType.RATING_FIELD:
       return undefined;
     default:
       return '';
@@ -101,6 +104,7 @@ export function transformFormDataForSubmission(
     // Handle field-specific transformations
     switch (field.type) {
       case FieldType.NUMBER_FIELD:
+      case FieldType.RATING_FIELD:
         // Ensure numbers are properly typed
         transformed[field.id] = value === '' ? null : value;
         break;

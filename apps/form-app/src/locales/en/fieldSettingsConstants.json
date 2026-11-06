@@ -34,7 +34,9 @@
     "minFilesInvalid": "Must allow at least 1 file",
     "maxFilesExceeded": "Cannot allow more than 10 files",
     "invalidPhoneNumber": "Enter a valid phone number",
-    "invalidCountryCode": "Select a valid country"
+    "invalidCountryCode": "Select a valid country",
+    "invalidRatingMax": "Highest value must be a whole number from 3 to 10",
+    "ratingLabelTooLong": "Label must be 40 characters or fewer"
   },
   "placeholders": {
     "fieldLabel": "Field label",
@@ -50,7 +52,9 @@
     "optionPlaceholder": "Option {{index}}",
     "selectDefaultOption": "Select default option",
     "richTextContent": "Enter rich text content...",
-    "selectCountry": "Select country"
+    "selectCountry": "Select country",
+    "ratingLowLabel": "e.g. Not likely",
+    "ratingHighLabel": "e.g. Very likely"
   },
   "sectionTitles": {
     "basicSettings": "Basic Settings",
@@ -61,7 +65,8 @@
     "dateRange": "Date Range",
     "prefixSettings": "Prefix Settings",
     "fileUploadSettings": "Upload Constraints",
-    "phoneSettings": "Phone Settings"
+    "phoneSettings": "Phone Settings",
+    "ratingSettings": "Rating Settings"
   },
   "labels": {
     "label": "Label",
@@ -81,7 +86,12 @@
     "allowedFileTypes": "Allowed File Types",
     "maxFileSizeMb": "Max File Size (MB)",
     "maxFiles": "Max Files Allowed",
-    "defaultCountry": "Default Country"
+    "defaultCountry": "Default Country",
+    "ratingStyle": "Style",
+    "ratingStartValue": "Start at",
+    "ratingMaxValue": "Highest value",
+    "ratingLowLabel": "Low end label",
+    "ratingHighLabel": "High end label"
   },
   "buttons": {
     "add": "Add",
@@ -96,5 +106,12 @@
     "selectFieldToEdit": "Select a field to edit its settings",
     "maxFileSizeHint": "Respondents upload anonymously, so each file can be at most {{max}} MB, even if you enter a higher value.",
     "maxFileSizeOverLimit": "This value is above the {{max}} MB upload limit. Respondents will only be able to upload files up to {{max}} MB."
+  },
+  "ratingStyle": {
+    "stars": "Stars",
+    "scale": "Numbers"
+  },
+  "ratingSettings": {
+    "npsNote": "A 0 to 10 number scale is treated as an NPS question, and its analytics show promoters, passives and detractors."
   }
 }

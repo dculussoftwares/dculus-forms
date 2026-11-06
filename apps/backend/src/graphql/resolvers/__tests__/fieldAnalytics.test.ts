@@ -236,6 +236,62 @@ describe('Field Analytics Resolvers', () => {
       expect(result.textAnalytics).toBeNull();
     });
 
+    it('should return rating analytics (with NPS) and pass the field config', async () => {
+      const mockRatingAnalytics: fieldAnalyticsService.FieldAnalytics = {
+        fieldId: 'field-rating-1',
+        fieldType: FieldType.RATING_FIELD,
+        fieldLabel: 'Recommend us',
+        totalResponses: 10,
+        responseRate: 100,
+        lastUpdated: new Date('2024-01-01T12:00:00Z'),
+        ratingStyle: 'scale',
+        minValue: 0,
+        maxValue: 10,
+        average: 7.5,
+        distribution: [{ value: 0, count: 1, percentage: 10 }],
+        isNps: true,
+        nps: {
+          promoters: 5,
+          passives: 3,
+          detractors: 2,
+          promoterPercentage: 50,
+          passivePercentage: 30,
+          detractorPercentage: 20,
+          score: 30,
+        },
+      };
+      vi.mocked(formSharingModule.checkFormAccess).mockResolvedValue({ hasAccess: true, permission: 'VIEWER' as any, form: mockForm as any });
+      vi.mocked(hocuspocusService.getFormSchemaFromHocuspocus).mockResolvedValue({
+        pages: [
+          {
+            fields: [
+              { id: 'field-rating-1', type: FieldType.RATING_FIELD, label: 'Recommend us', ratingStyle: 'scale', minValue: 0, maxValue: 10 },
+            ],
+          },
+        ],
+      } as any);
+      vi.mocked(fieldAnalyticsService.getFieldAnalytics).mockResolvedValue(mockRatingAnalytics);
+
+      const result = await fieldAnalyticsResolvers.Query.fieldAnalytics(
+        {},
+        { formId: 'form-123', fieldId: 'field-rating-1' },
+        mockContext
+      );
+
+      expect(fieldAnalyticsService.getFieldAnalytics).toHaveBeenCalledWith(
+        'form-123',
+        'field-rating-1',
+        FieldType.RATING_FIELD,
+        'Recommend us',
+        undefined,
+        { ratingStyle: 'scale', minValue: 0, maxValue: 10 }
+      );
+      expect(result.fieldType).toBe(FieldType.RATING_FIELD);
+      expect(result.ratingAnalytics).toMatchObject({ isNps: true, average: 7.5, minValue: 0, maxValue: 10 });
+      expect(result.ratingAnalytics.nps.score).toBe(30);
+      expect(result.numberAnalytics).toBeNull();
+    });
+
     it('should return analytics for select field', async () => {
       const mockSelectAnalytics: fieldAnalyticsService.FieldAnalytics = {
         fieldId: 'field-select-1',

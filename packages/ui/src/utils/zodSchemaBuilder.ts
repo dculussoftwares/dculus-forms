@@ -7,6 +7,8 @@ import {
   FieldType,
   FillableFormField,
   NumberField,
+  RatingField,
+  normalizeRatingConfig,
   DateField,
   CheckboxField,
   FileUploadField,
@@ -156,6 +158,31 @@ export const createFieldSchema = (field: FormField): z.ZodTypeAny => {
         );
       }
       return z.union([z.literal(''), phoneSchema]).optional();
+    }
+
+    case FieldType.RATING_FIELD: {
+      // Stored answer is a plain integer within minValue..maxValue. The widget
+      // clears to '' (not required only), which becomes undefined here.
+      // Same rules as backend lib/responseAnswerValidation.ts.
+      const { minValue, maxValue } = normalizeRatingConfig(field as RatingField);
+      const label = fillableField.label;
+      const ratingSchema = z
+        .union([
+          z.string().length(0),
+          z.number({ message: `${label} must be a number between ${minValue} and ${maxValue}` }),
+        ])
+        .transform((val) => (val === '' ? undefined : (val as number)))
+        .refine(
+          (val) =>
+            val === undefined ||
+            (Number.isInteger(val) && val >= minValue && val <= maxValue),
+          { message: `${label} must be a whole number between ${minValue} and ${maxValue}` }
+        );
+
+      if (!isRequired) return ratingSchema.optional();
+      return ratingSchema.refine((val) => val !== undefined, {
+        message: `${label} is required`,
+      });
     }
 
     case FieldType.NUMBER_FIELD: {
@@ -436,6 +463,7 @@ export const createPageDefaultValues = (
         defaultValues[field.id] = fillableField?.defaultValue || '';
         break;
       case FieldType.NUMBER_FIELD:
+      case FieldType.RATING_FIELD:
         defaultValues[field.id] = fillableField?.defaultValue
           ? Number(fillableField.defaultValue)
           : '';

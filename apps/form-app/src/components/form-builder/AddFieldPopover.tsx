@@ -20,6 +20,7 @@ import {
   Calendar,
   Upload,
   Phone,
+  Star,
 } from 'lucide-react';
 
 const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
@@ -84,6 +85,13 @@ const getFieldTypesConfig = (t: (key: string) => string): FieldTypeConfig[] => [
     label: t('fieldTypes.checkbox.label'),
     description: t('fieldTypes.checkbox.description'),
     icon: Check,
+    category: 'Choice',
+  },
+  {
+    type: FieldType.RATING_FIELD,
+    label: t('fieldTypes.rating.label'),
+    description: t('fieldTypes.rating.description'),
+    icon: Star,
     category: 'Choice',
   },
   {

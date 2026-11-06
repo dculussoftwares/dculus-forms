@@ -272,6 +272,12 @@ export const formatFieldValue = (
         options?.numberOptions
       );
 
+    case FieldType.RATING_FIELD: {
+      // Plain number ("4"); the "4 / 5" display is a response-table concern.
+      const ratingValue = Number(value);
+      return Number.isFinite(ratingValue) ? String(ratingValue) : '';
+    }
+
     case FieldType.EMAIL_FIELD:
       return formatEmailFieldValue(value);
 
@@ -386,6 +392,11 @@ export const parseFormattedValue = (
       // Parse number from string
       const numValue = parseFloat(formattedValue);
       return isNaN(numValue) ? null : numValue;
+    }
+
+    case FieldType.RATING_FIELD: {
+      const ratingValue = parseFloat(formattedValue);
+      return isNaN(ratingValue) ? null : ratingValue;
     }
 
     case FieldType.PHONE_NUMBER_FIELD: {
