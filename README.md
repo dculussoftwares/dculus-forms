@@ -90,12 +90,10 @@ Use the free managed cloud, or self-host it and own your data.
 |---|:---:|:---:|:---:|:---:|
 | Open source (GPLv3) | ✅ | ❌ | ❌ | ❌ |
 | Self-host and own your data | ✅ | ❌ | ❌ | ❌ |
-| Edit a form by chatting with AI | ✅ | ❌ | ❌ | ❌ |
-| Live co-editing | ✅ | ❌ | ❌ | ❌ |
 | Team collaboration on every plan | ✅ | 1–5 seats | Single user below Enterprise | 1–100 users by tier |
 | Free plan | ✅ | ✅ | ✅ | ✅ |
 
-<sub>Competitor details taken from vendor pricing pages, November 2026. See [dculus.com](https://dculus.com/#pricing) for current Dculus plans.</sub>
+<sub>Seat limits checked against the vendors' pricing pages ([Typeform](https://www.typeform.com/pricing), [Jotform](https://www.jotform.com/pricing/), [Zoho Forms](https://www.zoho.com/forms/pricing.html)) in November 2026; plans change, so check them before deciding. Other vendors also offer AI and collaboration features, so compare on what matters to you. See [dculus.com](https://dculus.com/#pricing) for current Dculus plans.</sub>
 
 ## Form templates
 
@@ -132,6 +130,7 @@ pnpm install
 cp apps/backend/.env.example apps/backend/.env
 
 # 3. Start PostgreSQL and set up the database
+#    (pnpm docker:up runs `docker-compose`; with only the Compose plugin, use `docker compose up -d`)
 pnpm docker:up
 pnpm db:generate
 pnpm db:push
@@ -150,6 +149,15 @@ pnpm dev
 | Backend API | http://localhost:4000 |
 | GraphQL endpoint | http://localhost:4000/graphql |
 | pgAdmin | http://localhost:5050 |
+
+The `.env.example` defaults let the apps start, but some features need real credentials in `apps/backend/.env`:
+
+| Feature | What to configure |
+|---|---|
+| Sign-up and password emails | SMTP settings (`SMTP_*`). Email verification is required outside the test environment. |
+| File upload fields | S3-compatible storage (AWS S3, MinIO, Spaces, B2): set the endpoint, keys, and a **public** and a **private** bucket (`PUBLIC_S3_*`, `PRIVATE_S3_BUCKET_NAME`). The placeholder values will not work. |
+| AI form builder | Model credentials (`AI_PRIMARY_*`, `AI_FAST_*`). AI chat is also checked against a credit allowance tied to the billing setup, so AI needs a configured plan allowance as well. See [The AI form editor](docs/architecture/08-ai-form-editor.md) and [Plans, usage and billing](docs/architecture/10-plans-usage-billing.md). |
+| Billing and plans | Chargebee (`CHARGEBEE_*`). Optional for basic local development. |
 
 <details>
 <summary><b>More scripts</b></summary>
@@ -221,9 +229,9 @@ dculus-forms/
 11. [File storage](docs/architecture/11-file-storage.md)
 12. [The field type system](docs/architecture/12-field-type-system.md)
 
-### Embed the form renderer in your own app
+### Preview forms in your own React app
 
-The renderer used by the form viewer is published as [`@dculus/form-renderer`](https://www.npmjs.com/package/@dculus/form-renderer):
+[`@dculus/form-renderer`](https://www.npmjs.com/package/@dculus/form-renderer) renders a Dculus form schema as an interactive, **read-only preview** (it powers the [template gallery](https://dculus.com/forms/templates)). It never submits responses; to collect responses, share or [embed](https://forms.dculus.com) a live form from the builder. See the [package guide](packages/form-renderer/README.md).
 
 ```bash
 npm install @dculus/form-renderer
@@ -239,16 +247,7 @@ Dculus Forms runs on a single small server: a Node.js backend (Docker image), st
 
 The frontends are static and run on any static host (Cloudflare Pages, Netlify, Vercel, S3 + CloudFront, Azure Static Web Apps, nginx).
 
-<details>
-<summary><b>Cut a release</b></summary>
-
-```bash
-git tag -a v1.2.0 -m "Release v1.2.0" && git push origin v1.2.0
-```
-
-The release workflow builds every frontend, attaches the ZIPs to a GitHub Release and pushes the backend Docker image.
-
-</details>
+Maintainers cut releases from **Actions → Release → Run workflow** on `main`. See [Creating a Release](docs/deployment/DEPLOYMENT_GUIDE.md#creating-a-release).
 
 ## FAQ
 
