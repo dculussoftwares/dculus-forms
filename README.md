@@ -90,7 +90,7 @@ Use the free managed cloud, or self-host it and own your data.
 |---|:---:|:---:|:---:|:---:|
 | Open source (GPLv3) | ✅ | ❌ | ❌ | ❌ |
 | Self-host and own your data | ✅ | ❌ | ❌ | ❌ |
-| Team collaboration on every plan | ✅ | 1–5 seats | Single user below Enterprise | 1–100 users by tier |
+| Team collaboration on every plan | ✅ | 1–5 seats (6+ on Enterprise) | Single user below Enterprise | 1–100 users by tier |
 | Free plan | ✅ | ✅ | ✅ | ✅ |
 
 <sub>Seat limits checked against the vendors' pricing pages ([Typeform](https://www.typeform.com/pricing), [Jotform](https://www.jotform.com/pricing/), [Zoho Forms](https://www.zoho.com/forms/pricing.html)) in November 2026; plans change, so check them before deciding. Other vendors also offer AI and collaboration features, so compare on what matters to you. See [dculus.com](https://dculus.com/#pricing) for current Dculus plans.</sub>
@@ -150,13 +150,14 @@ pnpm dev
 | GraphQL endpoint | http://localhost:4000/graphql |
 | pgAdmin | http://localhost:5050 |
 
-The `.env.example` defaults let the apps start, but some features need real credentials in `apps/backend/.env`:
+The `.env.example` defaults let the apps start, but you must change some values in `apps/backend/.env`:
 
 | Feature | What to configure |
 |---|---|
+| Auth secret (**required**) | Set `BETTER_AUTH_SECRET` to a unique value (`openssl rand -hex 32`). The example value is public, so anyone could forge session cookies against a server that keeps it. |
 | Sign-up and password emails | SMTP settings (`SMTP_*`). Email verification is required outside the test environment. |
 | App URLs | Set `FORM_APP_URL` and `FRONTEND_URL` to `http://localhost:3000` and `FORM_VIEWER_URL` to `http://localhost:5173`. The defaults are `yourdomain.com` placeholders, so invitation and magic-link emails would point to the wrong place. |
-| File upload fields | S3-compatible storage with region `auto` (Cloudflare R2, MinIO and similar; AWS S3 is not supported because the storage client does not use `S3_REGION`): set the endpoint, keys, and a **public** and a **private** bucket (`PUBLIC_S3_*`, `PRIVATE_S3_BUCKET_NAME`). The placeholder values will not work. |
+| File upload fields | S3-compatible storage with region `auto` (Cloudflare R2, MinIO and similar; AWS S3 is not supported because the storage client does not use `S3_REGION`): set the endpoint, keys, and a **public** and a **private** bucket (`PUBLIC_S3_*`, `PRIVATE_S3_BUCKET_NAME`), and set `PUBLIC_S3_CDN_URL` to the public bucket's accessible URL. The placeholder values will not work. |
 | AI form builder | Model credentials (`AI_PRIMARY_*`, `AI_FAST_*`). AI chat is also checked against a credit allowance tied to the billing setup, so AI needs a configured plan allowance as well. See [The AI form editor](docs/architecture/08-ai-form-editor.md) and [Plans, usage and billing](docs/architecture/10-plans-usage-billing.md). |
 | Billing and plans | Chargebee (`CHARGEBEE_*`). Optional for basic local development. |
 
