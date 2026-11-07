@@ -1,476 +1,321 @@
+<div align="center">
+
+<a href="https://dculus.com">
+  <img src="https://dculus.com/favicon.svg" alt="Dculus Forms logo" width="72" height="72">
+</a>
+
 # Dculus Forms
 
-A modern form builder and management system built with Express.js + GraphQL backend and React + shadcn/ui frontend applications.
+### The open-source AI form builder your whole team can build together
 
-[![Build Pipeline](https://github.com/dculussoftwares/dculus-forms/actions/workflows/build.yml/badge.svg)](https://github.com/dculussoftwares/dculus-forms/actions/workflows/build.yml)
+Describe a form and AI builds it. Refine it by chat or drag and drop, co-edit it live with your team, and send every response into logic, automations, PDFs and analytics.
+Use the free managed cloud, or self-host it and own your data.
 
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.md)
+[![Build](https://github.com/dculussoftwares/dculus-forms/actions/workflows/build.yml/badge.svg)](https://github.com/dculussoftwares/dculus-forms/actions/workflows/build.yml)
+[![CodeQL](https://github.com/dculussoftwares/dculus-forms/actions/workflows/codeql.yml/badge.svg)](https://github.com/dculussoftwares/dculus-forms/actions/workflows/codeql.yml)
+[![npm @dculus/form-renderer](https://img.shields.io/npm/v/@dculus/form-renderer?label=%40dculus%2Fform-renderer)](https://www.npmjs.com/package/@dculus/form-renderer)
+[![GitHub stars](https://img.shields.io/github/stars/dculussoftwares/dculus-forms?style=social)](https://github.com/dculussoftwares/dculus-forms/stargazers)
+[![Last commit](https://img.shields.io/github/last-commit/dculussoftwares/dculus-forms)](https://github.com/dculussoftwares/dculus-forms/commits/main)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#contributing)
 
-## 🏗️ Architecture
+**[Try it free](https://forms.dculus.com)** · **[Website](https://dculus.com)** · **[Templates](https://dculus.com/forms/templates)** · **[Self-hosting](https://dculus.com/docs/self-hosting)** · **[Docs](https://dculus.com/docs)** · **[Architecture](docs/architecture/)**
 
-This is a monorepo structure with the following components:
+</div>
 
-- **Backend**: Express.js with Apollo GraphQL (code-first approach)
-- **Form App**: React form builder application with shadcn/ui components
-- **Form Viewer**: React form viewer application with shared UI components
-- **Shared Packages**: Common types, utilities, and UI components
-- **Package Manager**: pnpm for efficient dependency management
+---
 
-📖 **[How Dculus Works](docs/architecture/)** — Interactive architecture documentation with 12 guides covering submission flows, integrations, storage, billing, collaboration, authorization, and more. Perfect for onboarding new developers.
+> ⭐ **If Dculus Forms is useful to you, star the repo.** It helps other teams find an open-source alternative to closed form builders.
 
-## 📁 Project Structure
+## Table of contents
+
+- [What is Dculus Forms?](#what-is-dculus-forms)
+- [Features](#features)
+- [How it compares](#how-it-compares-to-typeform-jotform-and-zoho-forms)
+- [Form templates](#form-templates)
+- [Quick start](#quick-start)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Self-hosting and deployment](#self-hosting-and-deployment)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [License](#license)
+
+## What is Dculus Forms?
+
+**Dculus Forms is a free, open-source (GPLv3) AI-powered form builder and survey tool.** You type what you need ("a job application form with a CV upload") and it generates the form. You then edit it by chatting with the AI or by drag and drop, while teammates edit the same form in real time. It is a self-hostable alternative to **Typeform, Jotform, Google Forms and Zoho Forms**, built with React, GraphQL, PostgreSQL and Y.js.
+
+- **Cloud:** sign up free at [forms.dculus.com](https://forms.dculus.com). Team collaboration is on every plan.
+- **Self-hosted:** run the whole stack on a single small server and keep every response on your own infrastructure.
+
+> **Status:** Dculus Forms is in **public beta**. It's used in production and under active development.
+
+## Features
+
+### 🤖 AI form builder
+- **Generate a form from a prompt**: describe it in plain language and get pages, fields and validation.
+- **Edit forms by chat**: "make the phone number optional", "add a rating question after page 2".
+- **AI auto-tagging of responses** so you can sort and filter feedback without reading every answer.
+
+### 👥 Built for teams
+- **Live co-editing** (Google Docs-style) powered by Y.js and Hocuspocus.
+- **Organizations and per-form permissions** (view / edit / own).
+- **Response edit history** with per-field diffs.
+
+### 🧩 Form building
+- **13 field types**: short text, long text, email, number, phone, date, dropdown, radio, checkbox, grid, file upload, rating (stars, numbers and NPS) and rich text.
+- **Conditional logic**: show or hide questions and whole pages.
+- **Quizzes** with automatic grading.
+- **9 layouts** and a **theme editor**, multi-page forms and custom endings.
+- **CAPTCHA** and **e-signature**.
+
+### ⚡ Automations and integrations
+- **Workflow automations** with triggers, delays, conditions, run history and retries.
+- **Email notifications** and **webhooks**.
+- **Google Sheets** and **Microsoft Sheets (Excel Online)** plugins.
+
+### 📄 Responses, PDFs and analytics
+- **PDF generated from each response** with a visual template designer (pdfme), including Tamil font support.
+- **Excel and CSV export**, advanced response filters.
+- **Analytics**: views, submissions, completion time, device, location and per-field charts (including NPS).
+
+### 🌐 Share anywhere
+- **Embed** as a link, inline, popup, drawer or full page.
+- **60+ ready-made templates** across HR, education, events, healthcare, feedback and more.
+- UI in **English and Tamil**, billing in **USD and INR**.
+
+## How it compares to Typeform, Jotform and Zoho Forms
+
+| | **Dculus Forms** | Typeform | Jotform | Zoho Forms |
+|---|:---:|:---:|:---:|:---:|
+| Open source (GPLv3) | ✅ | ❌ | ❌ | ❌ |
+| Self-host and own your data | ✅ | ❌ | ❌ | ❌ |
+| Edit a form by chatting with AI | ✅ | ❌ | ❌ | ❌ |
+| Live co-editing | ✅ | ❌ | ❌ | ❌ |
+| Team collaboration on every plan | ✅ | 1–5 seats | Single user below Enterprise | 1–100 users by tier |
+| Free plan | ✅ | ✅ | ✅ | ✅ |
+
+<sub>Competitor details taken from vendor pricing pages, November 2026. See [dculus.com](https://dculus.com/#pricing) for current Dculus plans.</sub>
+
+## Form templates
+
+Start from a template and customize it with AI. Browse all of them in the [form template gallery](https://dculus.com/forms/templates).
+
+<table>
+  <tr>
+    <td align="center"><a href="https://dculus.com/forms/templates/contact-form"><img src="https://form-services.dculus.com/og/templates/contact-form/card.png?v=2.mw2im4fq" width="200" alt="Contact form template"><br><sub><b>Contact form</b></sub></a></td>
+    <td align="center"><a href="https://dculus.com/forms/templates/job-application-form"><img src="https://form-services.dculus.com/og/templates/job-application-form/card.png?v=2.mw2imeqf" width="200" alt="Job application form template"><br><sub><b>Job application form</b></sub></a></td>
+    <td align="center"><a href="https://dculus.com/forms/templates/event-registration-form"><img src="https://form-services.dculus.com/og/templates/event-registration-form/card.png?v=2.mw4whrfq" width="200" alt="Event registration form template"><br><sub><b>Event registration form</b></sub></a></td>
+    <td align="center"><a href="https://dculus.com/forms/templates/customer-satisfaction-survey"><img src="https://form-services.dculus.com/og/templates/customer-satisfaction-survey/card.png?v=2.mw4whkji" width="200" alt="Customer satisfaction survey template"><br><sub><b>Customer satisfaction survey</b></sub></a></td>
+  </tr>
+</table>
+
+Want to add a public template? See the [template authoring guide](docs/templates/TEMPLATE_AUTHORING.md).
+
+## Quick start
+
+### Option 1: Use the cloud (fastest)
+
+Sign up free at **[forms.dculus.com](https://forms.dculus.com)**. No install needed.
+
+### Option 2: Run it locally
+
+**Prerequisites:** Node.js ≥ 22.12, pnpm ≥ 8, Docker (for PostgreSQL).
+
+```bash
+# 1. Clone and install
+git clone https://github.com/dculussoftwares/dculus-forms.git
+cd dculus-forms
+pnpm install
+
+# 2. Configure the backend
+cp apps/backend/.env.example apps/backend/.env
+
+# 3. Start PostgreSQL and set up the database
+pnpm docker:up
+pnpm db:generate
+pnpm db:push
+pnpm db:seed        # optional sample data
+
+# 4. Build shared packages, then start everything
+pnpm build
+pnpm dev
+```
+
+| App | URL |
+|---|---|
+| Form builder (`form-app`) | http://localhost:3000 |
+| Form viewer (`form-viewer`) | http://localhost:5173 |
+| Admin dashboard (`admin-app`) | http://localhost:3002 |
+| Backend API | http://localhost:4000 |
+| GraphQL endpoint | http://localhost:4000/graphql |
+| pgAdmin | http://localhost:5050 |
+
+<details>
+<summary><b>More scripts</b></summary>
+
+```bash
+pnpm backend:dev          # backend only
+pnpm form-app:dev         # form builder only
+pnpm form-viewer:dev      # form viewer only
+
+pnpm lint                 # lint all packages
+pnpm type-check           # type-check all packages
+pnpm test:unit            # backend unit tests (Vitest)
+pnpm test:integration     # API integration tests (Cucumber)
+pnpm test:e2e             # end-to-end tests (Playwright + Cucumber)
+
+pnpm db:studio            # Prisma Studio
+pnpm db:migrate:dev       # create a migration
+pnpm docker:down          # stop PostgreSQL
+```
+
+</details>
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React, TypeScript, Vite, Tailwind CSS, shadcn/ui, Apollo Client |
+| Backend | Node.js, Express, Apollo Server (GraphQL), Prisma |
+| Database | PostgreSQL |
+| Real-time collaboration | Y.js, Hocuspocus |
+| Auth | Better Auth |
+| PDFs | pdfme |
+| Rich text | Lexical |
+| Testing | Vitest, Cucumber, Playwright |
+| Infra | Docker, Terraform, Azure Container Apps, Cloudflare Pages and R2 |
+
+## Project structure
 
 ```
 dculus-forms/
 ├── apps/
-│   ├── backend/                # Express.js + GraphQL API
-│   │   ├── src/
-│   │   │   ├── graphql/       # GraphQL schema and resolvers
-│   │   │   ├── routes/        # REST API routes
-│   │   │   ├── services/      # Business logic
-│   │   │   ├── lib/           # Better-auth configuration
-│   │   │   ├── middleware/    # Error handling, auth middleware
-│   │   │   └── scripts/       # Database seeding scripts
-│   │   ├── prisma/
-│   │   │   └── schema.prisma  # Database schema
-│   │   └── package.json
-│   ├── form-app/              # React form builder app
-│   │   ├── src/
-│   │   │   ├── components/    # App-specific components
-│   │   │   │   ├── Dashboard.tsx
-│   │   │   │   ├── app-sidebar.tsx
-│   │   │   │   └── Header.tsx
-│   │   │   ├── pages/         # Page components
-│   │   │   ├── contexts/      # React contexts (Auth)
-│   │   │   ├── graphql/       # GraphQL queries/mutations
-│   │   │   ├── lib/           # Auth client configuration
-│   │   │   └── services/      # Apollo client setup
-│   │   └── package.json
-│   └── form-viewer/           # React form viewer app
-│       ├── src/
-│       │   ├── components/    # App-specific components
-│       │   └── pages/         # Page components
-│       └── package.json
+│   ├── backend/        # Express + Apollo GraphQL API, Prisma, Hocuspocus
+│   ├── form-app/       # Form builder (React)
+│   ├── form-viewer/    # Public form renderer and submission (React)
+│   └── admin-app/      # Admin dashboard (React)
 ├── packages/
-│   ├── ui/                    # Shared UI components
-│   │   ├── src/
-│   │   │   ├── button.tsx     # shadcn/ui button component
-│   │   │   ├── card.tsx       # shadcn/ui card component
-│   │   │   ├── input.tsx      # shadcn/ui input component
-│   │   │   ├── sidebar.tsx    # shadcn/ui sidebar component
-│   │   │   ├── dropdown-menu.tsx # shadcn/ui dropdown component
-│   │   │   ├── avatar.tsx     # shadcn/ui avatar component
-│   │   │   ├── rich-text-editor/ # Lexical rich text editor components
-│   │   │   └── index.ts       # Component exports
-│   │   └── package.json
-│   ├── utils/                 # Shared utilities and constants
-│   │   ├── src/
-│   │   │   ├── index.ts       # Utility functions (generateId, cn, etc.)
-│   │   │   └── constants.ts   # Shared constants and API endpoints
-│   │   └── package.json
-│   └── types/                 # Common TypeScript types
-│       ├── src/
-│       │   └── index.ts       # Type definitions
-│       └── package.json
-├── scripts/
-│   └── setup-db.sh           # Database setup script
-├── docker-compose.yml         # MongoDB setup
-├── package.json               # Root package.json
-├── pnpm-workspace.yaml        # pnpm workspace config
-└── tsconfig.json             # Root TypeScript config
+│   ├── form-renderer/  # @dculus/form-renderer, published to npm
+│   ├── plugins/        # Integrations: email, webhooks, sheets, quiz grading
+│   ├── types/          # Shared TypeScript types and field models
+│   ├── ui/             # Shared shadcn/ui components and rich text editor
+│   └── utils/          # Shared utilities and constants
+├── infrastructure/     # Terraform for cloud deployments
+├── docs/               # Architecture guides, specs and deployment docs
+└── test/               # Integration and E2E test suites
 ```
 
-## 🚀 Quick Start
+**New to the codebase?** Read [How Dculus Works](docs/architecture/): 12 guides with diagrams, each answering "what actually happens when...?":
 
-### Prerequisites
+1. [The life of a submission](docs/architecture/01-submission-lifecycle.md)
+2. [One event, three listeners](docs/architecture/02-event-fanout.md)
+3. [Request anatomy](docs/architecture/03-request-anatomy.md)
+4. [Automations](docs/architecture/04-automations.md)
+5. [The plugin pipeline](docs/architecture/05-plugin-pipeline.md)
+6. [PDF generation](docs/architecture/06-pdf-generation.md)
+7. [Real-time collaboration](docs/architecture/07-realtime-collaboration.md)
+8. [The AI form editor](docs/architecture/08-ai-form-editor.md)
+9. [Authorization](docs/architecture/09-authorization.md)
+10. [Plans, usage and billing](docs/architecture/10-plans-usage-billing.md)
+11. [File storage](docs/architecture/11-file-storage.md)
+12. [The field type system](docs/architecture/12-field-type-system.md)
 
-- Node.js >= 18.0.0
-- pnpm >= 8.0.0
+### Embed the form renderer in your own app
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd dculus-forms
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Build shared packages**
-   ```bash
-   pnpm run build
-   ```
-
-4. **Set up the database**
-   ```bash
-   # Start PostgreSQL using Docker
-   pnpm docker:up
-   
-   # Generate Prisma client
-   pnpm db:generate
-   
-   # Push database schema
-   pnpm db:push
-   
-   # Seed with sample data (optional)
-   pnpm db:seed
-   ```
-
-### Development
-
-#### Start all services (recommended)
-```bash
-pnpm dev
-```
-
-This will start backend, form-app, and form-viewer in development mode.
-
-#### Start services individually
-
-**Backend only:**
-```bash
-pnpm backend:dev
-```
-
-**Form App (form builder) only:**
-```bash
-pnpm form-app:dev
-```
-
-**Form Viewer only:**
-```bash
-pnpm form-viewer:dev
-```
-
-### Production Build
+The renderer used by the form viewer is published as [`@dculus/form-renderer`](https://www.npmjs.com/package/@dculus/form-renderer):
 
 ```bash
-# Build all packages
-pnpm build
-
-# Start backend
-pnpm backend:start
-
-# Start form-app (serve built files)
-pnpm form-app:preview
-
-# Start form-viewer (serve built files)
-pnpm form-viewer:preview
+npm install @dculus/form-renderer
 ```
 
-## 🌐 Access Points
+## Self-hosting and deployment
 
-### Local
-- **Form App (Builder)**: http://localhost:3000
-- **Form Viewer**: http://localhost:5173
-- **Backend API**: http://localhost:4000
-- **GraphQL Playground**: http://localhost:4000/graphql
-- **Health Check**: http://localhost:4000/health
-- **Mongo Express (Database UI)**: http://localhost:8081 (admin/password123)
+Dculus Forms runs on a single small server: a Node.js backend (Docker image), static frontends and PostgreSQL.
 
-### Development
-- **Form App (Builder)**: https://dculus-forms-app.pages.dev/
-- **Form Viewer**: https://dculus-forms-viewer-app.pages.dev/
-- **Backend API**: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io
-- **GraphQL Playground**: https://dculus-forms-backend.reddune-e5ba9473.eastus.azurecontainerapps.io/graphql
+- **Self-hosting guide:** [dculus.com/docs/self-hosting](https://dculus.com/docs/self-hosting)
+- **Step-by-step deployment guide:** [docs/deployment/DEPLOYMENT_GUIDE.md](docs/deployment/DEPLOYMENT_GUIDE.md)
+- **Pre-built artifacts:** every [GitHub Release](https://github.com/dculussoftwares/dculus-forms/releases) ships ZIPs of the form builder, form viewer and admin app, plus a backend Docker image.
 
-## 🗄️ Database
+The frontends are static and run on any static host (Cloudflare Pages, Netlify, Vercel, S3 + CloudFront, Azure Static Web Apps, nginx).
 
-This project uses **MongoDB** with **Prisma** as the ORM.
-
-### Database Commands
+<details>
+<summary><b>Cut a release</b></summary>
 
 ```bash
-# Docker commands
-pnpm docker:up          # Start MongoDB
-pnpm docker:down        # Stop MongoDB
-pnpm docker:logs        # View MongoDB logs
-
-# Database commands
-pnpm db:generate        # Generate Prisma client
-pnpm db:push           # Push schema to database
-pnpm db:studio         # Open Prisma Studio
-pnpm db:seed           # Seed with sample data
+git tag -a v1.2.0 -m "Release v1.2.0" && git push origin v1.2.0
 ```
 
-### Database Access
+The release workflow builds every frontend, attaches the ZIPs to a GitHub Release and pushes the backend Docker image.
 
-- **MongoDB Connection**: `mongodb://admin:password123@localhost:27017/dculus_forms?authSource=admin`
-- **Mongo Express**: http://localhost:8081 (Web-based MongoDB admin interface)
-  - Username: `admin`
-  - Password: `password123`
-- **Prisma Studio**: Run `pnpm db:studio` for a visual database editor
+</details>
 
-## 📚 API Endpoints
+## FAQ
 
-### REST API
-Legacy REST handlers for forms, responses, and templates have been removed—GraphQL is now the only supported surface for these resources.
+<details>
+<summary><b>Is Dculus Forms free?</b></summary>
 
-### GraphQL
-The GraphQL schema includes queries and mutations for forms and responses. Access the GraphQL Playground at http://localhost:4000/graphql for interactive documentation.
+Yes. The source code is free under GPLv3 and you can self-host it at no cost. The managed cloud at [forms.dculus.com](https://forms.dculus.com) has a free plan. Paid plans add higher limits ([pricing](https://dculus.com/#pricing)).
+</details>
 
-## 🛠️ Development
+<details>
+<summary><b>Is Dculus Forms a good open-source alternative to Typeform, Jotform or Google Forms?</b></summary>
 
-### Available Scripts
+Yes, if you want AI form generation, live team co-editing and the option to self-host. It covers multi-page forms, conditional logic, quizzes, file uploads, automations, webhooks, Google Sheets and Microsoft Sheets sync, PDFs and analytics. It does not take payments.
+</details>
 
-```bash
-# Root level
-pnpm dev              # Start all services in development
-pnpm build            # Build all packages
-pnpm clean            # Clean all build artifacts
-pnpm lint             # Lint all packages
-pnpm type-check       # Type check all packages
+<details>
+<summary><b>Can I self-host Dculus Forms?</b></summary>
 
-# Backend specific
-pnpm backend:dev      # Start backend in development
-pnpm backend:build    # Build backend
-pnpm backend:start    # Start backend in production
+Yes. It runs on one small server with PostgreSQL. Follow the [self-hosting guide](https://dculus.com/docs/self-hosting) or the [deployment guide](docs/deployment/DEPLOYMENT_GUIDE.md).
+</details>
 
-# Form App specific
-pnpm form-app:dev     # Start form-app in development
-pnpm form-app:build   # Build form-app
-pnpm form-app:preview # Preview built form-app
+<details>
+<summary><b>How does the AI form builder work?</b></summary>
 
-# Form Viewer specific
-pnpm form-viewer:dev     # Start form-viewer in development
-pnpm form-viewer:build   # Build form-viewer
-pnpm form-viewer:preview # Preview built form-viewer
-```
+You describe the form in plain language, and the AI proposes a structured form schema with pages, fields and validation. You keep editing it by chat or by hand. The backend never edits a form behind your back: every AI change goes through the same collaborative editor as a human edit. Details: [The AI form editor](docs/architecture/08-ai-form-editor.md).
+</details>
 
-### Code Structure
+<details>
+<summary><b>Where is my data stored?</b></summary>
 
-#### Backend
-- **GraphQL**: Code-first approach with Apollo Server
-- **REST API**: Express.js routes for additional endpoints
-- **Services**: Business logic separated from routes
-- **Middleware**: Error handling, CORS, security
+Self-hosted: wherever you deploy it. On the managed cloud, data is stored in India.
+</details>
 
-#### Form App (Form Builder)
-- **React Router**: Client-side routing
-- **shadcn/ui**: Modern, accessible UI components
-- **Apollo Client**: GraphQL client for data fetching
-- **TypeScript**: Full type safety
-- **Tailwind CSS**: Utility-first CSS framework
+<details>
+<summary><b>Can I move my forms from another form builder?</b></summary>
 
-#### Form Viewer
-- **React**: Form viewing and submission interface
-- **Shared Components**: Uses shared UI components from packages/shared
-- **TypeScript**: Full type safety
-- **Tailwind CSS**: Utility-first CSS framework
+There are no importers yet. Describe the form to the AI builder or start from a [template](https://dculus.com/forms/templates) to rebuild it in minutes. Email [hello@dculus.com](mailto:hello@dculus.com) if you need help.
+</details>
 
-#### Shared Packages
-- **@dculus/types**: Common TypeScript interfaces and type definitions
-- **@dculus/ui**: Shared UI components and rich text editor components
-  - **Components**: Reusable shadcn/ui components (Button, Card, Input, Sidebar, etc.)
-  - **Rich Text Editor**: Lexical-based rich text editing components
-- **@dculus/utils**: Shared utilities, constants, and helper functions
-  - **Utils**: Common utility functions (generateId, cn, createApiResponse, etc.)
-  - **Constants**: Application-wide constants and API endpoints
+## Contributing
 
-## 🧩 UI Component Architecture
+Contributions are welcome: bug reports, feature ideas, docs and code.
 
-All UI components are centralized in the `@dculus/ui` package to ensure consistency across applications:
+1. Check [open issues](https://github.com/dculussoftwares/dculus-forms/issues) or open a new one using the [bug report](.github/ISSUE_TEMPLATE/bug_report.md) or [feature request](.github/ISSUE_TEMPLATE/feature_request.md) template.
+2. Fork the repo and create a branch from `main`.
+3. Follow the local setup above and read the relevant [architecture guide](docs/architecture/).
+4. Add tests where it makes sense, and run `pnpm lint` and `pnpm type-check`.
+5. Open a pull request describing the change.
 
-- **Single Source of Truth**: All shadcn/ui components are defined once in the UI package
-- **No Duplication**: Apps no longer contain duplicate UI component definitions
-- **Consistent Design System**: Unified styling and behavior across all applications
-- **Easy Maintenance**: Updates to UI components only need to be made in one place
-- **Shared Utilities**: Common utilities and constants are centralized in `@dculus/utils`
+## Star history
 
-### Usage Example
+[![Star History Chart](https://api.star-history.com/svg?repos=dculussoftwares/dculus-forms&type=Date)](https://star-history.com/#dculussoftwares/dculus-forms&Date)
 
-```typescript
-// Import components from the UI package
-import { 
-  Button, 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle,
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger 
-} from '@dculus/ui';
+## License
 
-// Import utilities from the utils package
-import { generateId, cn } from '@dculus/utils';
+Dculus Forms is licensed under the [GNU General Public License v3.0](LICENSE.md).
 
-export function MyComponent() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>My Form</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Button>Submit</Button>
-      </CardContent>
-    </Card>
-  );
-}
-```
-
-## 🔧 Configuration
-
-### Recent Repository Improvements
-
-This repository has been recently cleaned up to follow best practices for monorepo structure:
-
-✅ **Centralized UI Components**: All shadcn/ui components moved to `@dculus/ui` package  
-✅ **Shared Utilities**: Common utilities and constants moved to `@dculus/utils` package  
-✅ **Eliminated Duplication**: Removed duplicate component definitions from individual apps  
-✅ **Consistent Imports**: All apps now import UI components from `@dculus/ui` and utilities from `@dculus/utils`  
-✅ **Proper Separation**: App-specific components remain in their respective apps  
-✅ **Type Safety**: Full TypeScript support with proper type definitions  
-
-### Environment Variables
-
-Create a `.env` file in the backend directory:
-
-```env
-NODE_ENV=development
-PORT=4000
-```
-
-### TypeScript Configuration
-
-The project uses a shared TypeScript configuration with workspace-specific overrides for different module systems (CommonJS for backend, ESNext for frontend apps).
-
-### Shared Components
-
-Both React apps use shared UI components from `packages/ui/src` with the `@dculus/ui` import and utilities from `packages/utils/src` with the `@dculus/utils` import:
-
-```typescript
-import { Button, Card, Input, SidebarProvider, useSidebar } from '@dculus/ui';
-import { generateId, cn } from '@dculus/utils';
-```
-
-The UI package includes all shadcn/ui components:
-- Core components: Button, Card, Input, Label, Textarea
-- Layout components: Sidebar, SidebarProvider, SidebarInset, SidebarTrigger
-- Navigation components: Breadcrumb, DropdownMenu, Avatar
-- Utility components: Separator, Collapsible
-- And many more...
-
-## 📦 Deployment
-
-### Using Pre-built Release Artifacts (Recommended)
-
-The easiest way to deploy Dculus Forms is to use the pre-built artifacts from GitHub Releases:
-
-1. **Download Release Artifacts**
-   - Go to [GitHub Releases](https://github.com/your-org/dculus-forms/releases)
-   - Download the desired application ZIP file:
-     - `form-app-build-v{version}.zip` - Form Builder Application
-     - `form-viewer-build-v{version}.zip` - Form Viewer Application
-     - `admin-app-build-v{version}.zip` - Admin Dashboard Application
-
-2. **Extract and Deploy**
-   ```bash
-   unzip form-app-build-v1.0.0.zip
-   # Deploy the dist/ folder to any static hosting provider
-   ```
-
-3. **Backend Docker Image**
-   ```bash
-   docker pull dculus/forms-backend:v1.0.0
-   docker run -d -p 4000:4000 \
-     -e DATABASE_URL='your-postgresql-url' \
-     -e BETTER_AUTH_SECRET='your-secret' \
-     dculus/forms-backend:v1.0.0
-   ```
-
-**Supported Hosting Providers:**
-- AWS S3 + CloudFront
-- Azure Static Web Apps
-- Cloudflare Pages
-- Netlify
-- Vercel
-- nginx (self-hosted)
-- Google Cloud Storage
-
-**📚 For detailed deployment instructions for each platform, see [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)**
-
-### Creating a New Release
-
-To create a new release with build artifacts:
-
-```bash
-# Create and push a version tag (annotated tag with message)
-git tag -a v1.2.0 -m "Release v1.2.0" && \
-git push origin v1.2.0
-```
-
-The GitHub Actions workflow will automatically:
-- Build all frontend applications
-- Create ZIP archives
-- Create a GitHub Release with downloadable artifacts
-- Build and push the backend Docker image
-
-### Building from Source
-
-If you need to build with custom environment variables:
-
-**Backend:**
-```bash
-pnpm backend:build
-# Deploy dist/ folder or use Docker
-```
-
-**Form App:**
-```bash
-VITE_API_URL=https://your-api.com \
-VITE_GRAPHQL_URL=https://your-api.com/graphql \
-VITE_FORM_VIEWER_URL=https://your-viewer.com \
-pnpm form-app:build
-# Deploy apps/form-app/dist/ to static hosting
-```
-
-**Form Viewer:**
-```bash
-pnpm form-viewer:build
-# Deploy apps/form-viewer/dist/ to static hosting
-```
-
-**Admin App:**
-```bash
-VITE_API_URL=https://your-api.com \
-VITE_GRAPHQL_URL=https://your-api.com/graphql \
-pnpm admin-app:build
-# Deploy apps/admin-app/dist/ to static hosting
-```
-
-## 🔮 Future Enhancements
-
-- [ ] Authentication and authorization
-- [ ] Database integration (PostgreSQL/MongoDB)
-- [ ] File upload support
-- [ ] Advanced form builder with drag-and-drop
-- [ ] Real-time form responses
-- [ ] Analytics and reporting
-- [ ] Email notifications
-- [ ] Multi-tenant support
-- [ ] API rate limiting
-- [ ] Comprehensive testing suite
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the GNU (GENERAL PUBLIC LICENSE) License.
-
-## 🙏 Acknowledgements
+## Acknowledgements
 
 Product analytics for Dculus Forms is powered by [OpenPanel](https://openpanel.dev), an open-source analytics platform.
 
-## 🆘 Support
+## Support
 
-For support and questions, please open an issue in the repository. 
+- 🐛 Bugs and feature requests: [GitHub Issues](https://github.com/dculussoftwares/dculus-forms/issues)
+- ✉️ Email: [hello@dculus.com](mailto:hello@dculus.com)
+- 🌐 Website: [dculus.com](https://dculus.com)
+
+<div align="center">
+<sub>Keywords: open-source form builder · AI form builder · self-hosted form builder · Typeform alternative · Jotform alternative · Google Forms alternative · Zoho Forms alternative · online survey tool · quiz maker · form automation · React · GraphQL · PostgreSQL</sub>
+</div>
