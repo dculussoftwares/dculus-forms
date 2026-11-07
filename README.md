@@ -155,7 +155,8 @@ The `.env.example` defaults let the apps start, but some features need real cred
 | Feature | What to configure |
 |---|---|
 | Sign-up and password emails | SMTP settings (`SMTP_*`). Email verification is required outside the test environment. |
-| File upload fields | S3-compatible storage (AWS S3, MinIO, Spaces, B2): set the endpoint, keys, and a **public** and a **private** bucket (`PUBLIC_S3_*`, `PRIVATE_S3_BUCKET_NAME`). The placeholder values will not work. |
+| App URLs | Set `FORM_APP_URL` and `FRONTEND_URL` to `http://localhost:3000` and `FORM_VIEWER_URL` to `http://localhost:5173`. The defaults are `yourdomain.com` placeholders, so invitation and magic-link emails would point to the wrong place. |
+| File upload fields | S3-compatible storage with region `auto` (Cloudflare R2, MinIO and similar; AWS S3 is not supported because the storage client does not use `S3_REGION`): set the endpoint, keys, and a **public** and a **private** bucket (`PUBLIC_S3_*`, `PRIVATE_S3_BUCKET_NAME`). The placeholder values will not work. |
 | AI form builder | Model credentials (`AI_PRIMARY_*`, `AI_FAST_*`). AI chat is also checked against a credit allowance tied to the billing setup, so AI needs a configured plan allowance as well. See [The AI form editor](docs/architecture/08-ai-form-editor.md) and [Plans, usage and billing](docs/architecture/10-plans-usage-billing.md). |
 | Billing and plans | Chargebee (`CHARGEBEE_*`). Optional for basic local development. |
 
