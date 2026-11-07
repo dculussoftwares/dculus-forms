@@ -467,6 +467,10 @@ pnpm admin-app:build
 
 This project is licensed under the GNU (GENERAL PUBLIC LICENSE) License.
 
+## 🙏 Acknowledgements
+
+Product analytics for Dculus Forms is powered by [OpenPanel](https://openpanel.dev), an open-source analytics platform.
+
 ## 🆘 Support
 
 For support and questions, please open an issue in the repository. 
