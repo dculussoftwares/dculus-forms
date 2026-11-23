@@ -35,7 +35,7 @@ overrides:
   better-auth: '>=1.6.23'
   better-call: 1.3.7
   '@better-fetch/fetch': 1.3.1
-  effect: '>=3.20.0'
+  effect: ^3.22.1
   lodash: '>=4.17.23'
   nodemailer: ^10.1.4
   drizzle-orm: '>=0.45.2'
@@ -5409,7 +5409,7 @@ packages:
     dependencies:
       c12: 3.1.0
       deepmerge-ts: 7.1.5
-      effect: 3.22.0
+      effect: 3.22.5
       empathic: 2.0.0
     transitivePeerDependencies:
       - magicast
@@ -11476,8 +11476,8 @@ packages:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
     dev: false
 
-  /effect@3.22.0:
-    resolution: {integrity: sha512-jhYFe0zTlIRqYFrKTS+6luhmS/Tm0f+JLo0K9KUxvtFab1SUGEszQi2ehOP6QzAZvy831lDmTwwzvVDZSPNz3g==}
+  /effect@3.22.5:
+    resolution: {integrity: sha512-AdIU4llI19BzhJ4xUBZix7kS8oiYSlCsJ61j3UM3UyJw9ecDrsrrweDFm/Ku1nHbJWMLoynK+1Me4it3Zkmjpw==}
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
