@@ -2,7 +2,7 @@ name: Release
 
 # Promotes a commit that is already verified on dev to production:
 #   prepare (validate + next version) -> approve (once) -> publish (retag image, tag, GitHub Release) -> deploy
-# No rebuild: the production backend runs the same image dev ran (sha-<commit> retagged vX.Y.Z).
+# No rebuild: the production backend runs the same image dev ran (sha-<commit> retagged vX.Y.Z by the infra repo's deploy).
 
 on:
   workflow_dispatch:
@@ -35,7 +35,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE: dculus/forms-backend
+  IMAGE: ghcr.io/dculussoftwares/dculus-forms-backend
 
 jobs:
   prepare:
@@ -100,14 +100,6 @@ jobs:
             exit 1
           fi
 
-          # Runs built before deploy-dev existed deployed via a separate workflow, so require the job itself.
-          DEV_OK=$(gh run view "$GREEN_RUN" --repo "$GITHUB_REPOSITORY" --json jobs \
-            --jq '[.jobs[] | select((.name | startswith("Deploy to Dev / 8.1.")) and .conclusion == "success")] | length')
-          if [ "$DEV_OK" = "0" ]; then
-            echo "❌ Run $GREEN_RUN has no successful dev deployment + health check for $SRC"
-            exit 1
-          fi
-
           # Frontends are promoted from this run's artifacts, so they must exist and be runtime-configurable.
           if ! git cat-file -e "${SRC}:scripts/write-runtime-config.sh" 2>/dev/null; then
             echo "❌ $SRC predates runtime frontend config; release a newer commit"
@@ -121,13 +113,13 @@ jobs:
           fi
 
           if ! docker manifest inspect "${IMAGE}:sha-${SRC}" > /dev/null 2>&1; then
-            echo "❌ Image ${IMAGE}:sha-${SRC} not found on Docker Hub"
+            echo "❌ Image ${IMAGE}:sha-${SRC} not found on GHCR"
             exit 1
           fi
 
           ALREADY=$(git tag --points-at "$SRC" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
           if [ -n "$ALREADY" ]; then
-            echo "❌ $SRC is already released as $ALREADY (use the Multi-Cloud Deployment workflow to redeploy a tag)"
+            echo "❌ $SRC is already released as $ALREADY (deploy a tag from the private infra repo)"
             exit 1
           fi
 
@@ -189,15 +181,17 @@ jobs:
     permissions:
       contents: write
       actions: read
+      packages: write
     steps:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Log in to Docker Hub
+      - name: Log in to GitHub Container Registry
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Retag image by verified digest (no rebuild)
         env:
@@ -302,17 +296,3 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.prepare.outputs.version }}
         run: gh release upload "$VERSION" ./*-build-"${VERSION}".zip --repo "$GITHUB_REPOSITORY"
-
-  deploy:
-    name: Deploy to Production
-    needs: [prepare, publish, package-assets]
-    permissions:
-      id-token: write
-      contents: read
-    uses: ./.github/workflows/multi-cloud-deployment.yml
-    secrets: inherit
-    with:
-      environment: production
-      release_tag: ${{ needs.prepare.outputs.version }}
-      release_commit: ${{ needs.prepare.outputs.source_sha }}
-      approved: true

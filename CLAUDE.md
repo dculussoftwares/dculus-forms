@@ -392,10 +392,10 @@ See each app's `.env.example` for the full list.
 - `apps/backend/prisma/schema.prisma` — canonical source for all data models
 - `docs/deployment/` — Azure and Cloudflare deployment guides
 - `PGBOUNCER-MIGRATION.md` — PgBouncer connection pooling setup notes
-- `.github/workflows/` — CI/CD: `build.yml` (build + auto-deploy to dev on main), `release.yml` (manual: pick bump, approve once, promote the dev-verified image to production), `multi-cloud-deployment.yml` (reusable deploy; also manual for redeploy/rollback), `codeql.yml`
+- `.github/workflows/` — CI/CD: `build.yml` (build + test + push the backend image to GHCR), `release.yml` (manual: pick bump, approve once, retag the verified image vX.Y.Z and attach frontend build archives), `codeql.yml`. **Deployment and cloud infrastructure live in the private `dculus-infra` repo**, not here.
 - `docker-compose.yml` — local Postgres (:5433) + pgAdmin (:5050)
 
-> **IMPORTANT ** : Use gh and azure cli for read and debug purpose, don't create resource using azure cli, create resource using terrafrom
+> **IMPORTANT**: Use gh and azure cli for read and debug purposes only. All cloud resources are created with Terraform in the private `dculus-infra` repo.
 ---
 
 ## GBrain Configuration (configured by /setup-gbrain)
