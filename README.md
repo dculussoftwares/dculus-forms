@@ -194,7 +194,7 @@ pnpm docker:down          # stop PostgreSQL
 | PDFs | pdfme |
 | Rich text | Lexical |
 | Testing | Vitest, Cucumber, Playwright |
-| Infra | Docker, Terraform, Azure Container Apps, Cloudflare Pages and R2 |
+| Hosting | Docker image on GHCR; deployed to Azure Container Apps, Cloudflare Pages and R2 by a separate private infrastructure repo |
 
 ## Project structure
 
@@ -211,7 +211,6 @@ dculus-forms/
 │   ├── types/          # Shared TypeScript types and field models
 │   ├── ui/             # Shared shadcn/ui components and rich text editor
 │   └── utils/          # Shared utilities and constants
-├── infrastructure/     # Terraform for cloud deployments
 ├── docs/               # Architecture guides, specs and deployment docs
 └── test/               # Integration and E2E test suites
 ```
