@@ -719,6 +719,28 @@ jobs:
           echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
+  # Deploys the image built above to dev through the private infra repo (no cloud credentials live here).
+  deploy-dev:
+    name: Deploy to Dev
+    needs: [build-and-push, build-form-app, build-form-viewer, build-admin-app, e2e-local]
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Start the infra deploy (dev)
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5; do
+            gh workflow run deploy.yml -R dculussoftwares/dculus-infra -f app=forms -f env=dev -f version="sha-${SHA}" && exit 0
+            sleep 15
+          done
+          echo "could not start the infra deploy"; exit 1
+
   build-summary:
     name: Build Summary
     runs-on: ubuntu-latest

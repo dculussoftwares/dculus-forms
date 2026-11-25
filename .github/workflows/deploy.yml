@@ -1,0 +1,48 @@
+name: Deploy
+
+# Manual deploy button. Starts the deploy workflow in the private infra repo, which holds the cloud credentials.
+# Production requires approval (production-approval environment). Rollback: deploy an older version.
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Environment"
+        required: true
+        type: choice
+        options: [dev, prod]
+      version:
+        description: "sha-<40 hex> or vX.Y.Z, or 'latest' (newest green build on main)"
+        required: true
+        type: string
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  approve:
+    name: Approve production deploy
+    if: inputs.env == 'prod'
+    runs-on: ubuntu-latest
+    environment: production-approval
+    steps:
+      - run: echo "approved production deploy of ${{ inputs.version }}"
+
+  deploy:
+    name: Start infra deploy
+    needs: approve
+    if: always() && (needs.approve.result == 'success' || needs.approve.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+          ENV_NAME: ${{ inputs.env }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^(latest|sha-[0-9a-f]{40}|v[0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "bad version"; exit 1; }
+          for i in 1 2 3 4 5; do
+            gh workflow run deploy.yml -R dculussoftwares/dculus-infra -f app=forms -f env="$ENV_NAME" -f version="$VERSION" && exit 0
+            sleep 15
+          done
+          echo "could not start the infra deploy"; exit 1

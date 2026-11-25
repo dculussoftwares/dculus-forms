@@ -296,3 +296,25 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.prepare.outputs.version }}
         run: gh release upload "$VERSION" ./*-build-"${VERSION}".zip --repo "$GITHUB_REPOSITORY"
+
+  # Deploys the released version to production through the private infra repo. The Release workflow is already
+  # gated by the production-approval environment (job "approve"), so no second approval is needed here.
+  deploy:
+    name: Deploy to Production
+    needs: [prepare, publish, package-assets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Start the infra deploy (prod)
+        env:
+          GH_TOKEN: ${{ secrets.INFRA_DEPLOY_TOKEN }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          set -euo pipefail
+          for i in 1 2 3 4 5; do
+            gh workflow run deploy.yml -R dculussoftwares/dculus-infra -f app=forms -f env=prod -f version="${VERSION}" && exit 0
+            sleep 15
+          done
+          echo "could not start the infra deploy"; exit 1
