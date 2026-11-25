@@ -26,3 +26,16 @@ export function getGraphQLUrl(): string {
 export function getAuthUrl(): string {
   return `${getApiBaseUrl()}/api/auth`;
 }
+/**
+ * OpenPanel product analytics client id. Empty (e.g. local dev) disables analytics.
+ */
+export function getOpenPanelClientId(): string {
+  return getRuntimeConfig('VITE_OPENPANEL_CLIENT_ID', import.meta.env.VITE_OPENPANEL_CLIENT_ID) || '';
+}
+
+/**
+ * First-party OpenPanel path on this site's own domain (forwarded to the OpenPanel API).
+ */
+export function getOpenPanelApiUrl(): string {
+  return getRuntimeConfig('VITE_OPENPANEL_API_URL', import.meta.env.VITE_OPENPANEL_API_URL) || '/_e';
+}

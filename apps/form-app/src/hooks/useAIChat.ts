@@ -4,6 +4,7 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { toastError } from '@dculus/ui';
+import { trackEvent } from '@dculus/utils';
 import { useTranslation } from './useTranslation';
 
 // Mirrors the backend's MAX_CHAT_MESSAGE_CHARS (routes/aiChat.ts).
@@ -257,6 +258,7 @@ export function useAIChat({
       undoDepthBeforeRef.current = getUndoStackDepth(); // always 0 after clear = correct baseline
       beginBatch();
       sendMessage({ text: content });
+      trackEvent('ai_assist_used', { surface: 'builder_chat' });
     },
     [chatConversationId, status, clearBatch, beginBatch, sendMessage, getUndoStackDepth]
   );

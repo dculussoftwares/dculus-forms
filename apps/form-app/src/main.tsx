@@ -3,10 +3,11 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { ApolloProvider } from '@apollo/client/react';
 import * as Sentry from '@sentry/react';
-import { getRuntimeConfig } from '@dculus/utils';
+import { getRuntimeConfig, initOpenPanel } from '@dculus/utils';
 import App from './App';
 import { client } from './services/apolloClient';
 import { capturePendingTemplateFromUrl } from './lib/pendingTemplate';
+import { getOpenPanelApiUrl, getOpenPanelClientId } from './lib/config';
 import './index.css';
 import './styles.css';
 
@@ -19,6 +20,9 @@ if (sentryDsn) {
     tracesSampleRate: 0.1,
   });
 }
+
+// Product analytics (no-op without VITE_OPENPANEL_CLIENT_ID).
+initOpenPanel({ clientId: getOpenPanelClientId(), apiUrl: getOpenPanelApiUrl(), app: 'form-app' });
 
 // Before routing: remember ?template=<slug> from dculus.com template pages.
 capturePendingTemplateFromUrl();

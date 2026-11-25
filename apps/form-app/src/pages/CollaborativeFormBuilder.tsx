@@ -37,6 +37,7 @@ import {
 import { ConditionsTab } from '../components/form-builder/conditions/ConditionsTab';
 import { PreviewOverlay } from '../components/form-builder/PreviewOverlay';
 import { TooltipProvider } from '@dculus/ui';
+import { trackEvent } from '@dculus/utils';
 import Automations from './Automations';
 import AutomationBuilder from './AutomationBuilder';
 import AutomationRuns from './AutomationRuns';
@@ -185,6 +186,11 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
     updateLayout,
     getSelectedField,
   } = useFormBuilderStore();
+
+  // Product analytics: once per builder visit (no form content).
+  useEffect(() => {
+    if (formId) trackEvent('builder_opened');
+  }, [formId]);
 
   // Re-arm the sync-lost banner once reconnected, so a dismiss only silences
   // the current disconnect episode rather than suppressing every future one.
@@ -342,6 +348,8 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
         id: formId,
         input: { isPublished: true },
       },
+    }).then((result) => {
+      if (result.data?.updateForm?.isPublished) trackEvent('form_published', { surface: 'builder' });
     });
   }, [formId, updateForm]);
 

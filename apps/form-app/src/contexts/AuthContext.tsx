@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { useLocation } from 'react-router';
 import { useQuery } from '@apollo/client/react';
 import { useSession } from '../lib/auth-client';
 import { gql } from '@apollo/client';
 import type { TypedDocumentNode } from '@apollo/client';
 import { toastError } from '@dculus/ui';
+import { clearAnalyticsUser, identifyUser } from '@dculus/utils';
 import { useTranslation } from '../hooks/useTranslation';
 import {
   GRAPHQL_ERROR_CODES,
@@ -87,6 +88,20 @@ export const AuthProvider = ({
     skip: !session?.user,
     errorPolicy: 'all',
   });
+
+  // Product analytics: identify by internal user id only (no email/name); clear on sign-out.
+  const sessionUserId = session?.user?.id ?? null;
+  const identifiedUserId = useRef<string | null>(null);
+  useEffect(() => {
+    if (isPending) return;
+    if (sessionUserId && sessionUserId !== identifiedUserId.current) {
+      identifyUser(sessionUserId);
+      identifiedUserId.current = sessionUserId;
+    } else if (!sessionUserId && identifiedUserId.current) {
+      clearAnalyticsUser();
+      identifiedUserId.current = null;
+    }
+  }, [sessionUserId, isPending]);
 
   // Handle organization query errors
   useEffect(() => {

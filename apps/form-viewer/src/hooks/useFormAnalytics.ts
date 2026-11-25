@@ -4,6 +4,7 @@ import type { TypedDocumentNode } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
 import { getOrCreateSessionId } from '../lib/sessionId';
 import { embedAttribution } from '../lib/embedBridge';
+import { trackEvent } from '@dculus/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TRACK_FORM_VIEW: TypedDocumentNode<any, any> = gql`
@@ -61,6 +62,9 @@ export const useFormAnalytics = ({ formId, enabled = true }: UseFormAnalyticsOpt
         embedContext,
         embedHost
       };
+
+      // Product analytics (OpenPanel): ids only, no respondent data.
+      trackEvent('form_viewed', { form_id: formId, embed_context: embedContext });
 
       // Track the form view
       await trackFormView({

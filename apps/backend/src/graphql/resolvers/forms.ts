@@ -22,6 +22,7 @@ import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { sanitizeQuizSettings, type FormSettings } from '@dculus/types';
 import { checkUsageExceeded } from '../../subscriptions/usageService.js';
 import { logger } from '../../lib/logger.js';
+import { trackServerEvent } from '../../lib/productAnalytics.js';
 import { enforceTimeWindow } from '../../lib/timeWindowEnforcement.js';
 import { resolveAccessStatus, requiresRespondentIdentity } from '../../lib/accessControlEnforcement.js';
 import { toRespondentForm } from '../../lib/respondentAccess.js';
@@ -460,6 +461,15 @@ export const formsResolvers = {
       // Create the form first (this creates the database record)
       const newForm = await createForm(formData, formSchema);
 
+      trackServerEvent('form_created', {
+        profileId: context.auth.user!.id,
+        properties: {
+          form_id: newFormId,
+          organization_id: input.organizationId,
+          source: hasTemplateId ? 'template' : 'schema',
+        },
+      });
+
       // NOW create the FormFile record after the form exists in the database
       if (copiedFileInfo) {
         try {
@@ -652,7 +662,14 @@ export const formsResolvers = {
         ...input,
         updatedAt: new Date(),
       };
-      return await updateForm(id, updateData, context.auth.user!.id);
+      const updatedForm = await updateForm(id, updateData, context.auth.user!.id);
+      if (input.isPublished === true && !accessCheck.form.isPublished) {
+        trackServerEvent('form_published', {
+          profileId: context.auth.user!.id,
+          properties: { form_id: id, organization_id: accessCheck.form.organizationId },
+        });
+      }
+      return updatedForm;
     },
     deleteForm: async (_: any, { id }: { id: string }, context: { auth: BetterAuthContext }) => {
       requireAuth(context.auth);

@@ -1,5 +1,6 @@
 import { createAuthClient } from 'better-auth/react';
 import { emailOTPClient, magicLinkClient, organizationClient } from 'better-auth/client/plugins';
+import { clearAnalyticsUser } from '@dculus/utils';
 import { getApiBaseUrl } from './config';
 
 const baseUrl = getApiBaseUrl();
@@ -45,6 +46,7 @@ export const authClient = createAuthClient({
 // Create a custom signOut function that clears the token
 const customSignOut = async (options?: any) => {
   sessionStorage.removeItem(TOKEN_KEY);
+  clearAnalyticsUser();
   return authClient.signOut(options);
 };
 
