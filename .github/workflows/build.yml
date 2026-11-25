@@ -26,8 +26,8 @@ permissions:
 
 env:
   NODE_VERSION: '22.14.0'
-  REGISTRY: docker.io
-  IMAGE_NAME: dculus/forms-backend
+  REGISTRY: ghcr.io
+  IMAGE_NAME: dculussoftwares/dculus-forms-backend
 
 jobs:
   security-scan:
@@ -595,6 +595,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
+      packages: write
     timeout-minutes: 20
 
     steps:
@@ -608,13 +609,13 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
 
-      - name: Log in to Docker Hub
+      - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
@@ -703,7 +704,7 @@ jobs:
       - name: Summary
         if: github.event_name != 'pull_request'
         run: |
-          echo "## 🚀 Docker Hub Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Image Published to GHCR!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Image**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
           echo "**Platforms**: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
@@ -717,32 +718,6 @@ jobs:
           echo "  -e BETTER_AUTH_SECRET='your-auth-secret' \\" >> $GITHUB_STEP_SUMMARY
           echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-  # Deploys the image built above (sha-<commit>) to dev. Production is promoted
-  # from this same image by release.yml.
-  deploy-dev:
-    name: Deploy to Dev
-    needs:
-      - security-scan
-      - lint-and-type-check
-      - build-backend
-      - unit-tests-backend
-      - integration-tests
-      - build-form-app
-      - build-form-viewer
-      - build-admin-app
-      - e2e-local
-      - build-and-push
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
-    permissions:
-      id-token: write
-      contents: read
-    uses: ./.github/workflows/multi-cloud-deployment.yml
-    secrets: inherit
-    with:
-      environment: dev
-      release_tag: sha-${{ github.sha }}
-      release_commit: ${{ github.sha }}
 
   build-summary:
     name: Build Summary
@@ -769,8 +744,8 @@ jobs:
 
           if [[ "${{ needs.build-and-push.result }}" == "success" ]]; then
             echo "### 🐳 Docker Image Built" >> $GITHUB_STEP_SUMMARY
-            echo "✅ Backend Docker image built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
-            echo "📦 Deployed to dev via multi-cloud-deployment.yml; promote to production with the Release workflow" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Backend Docker image built and pushed to GHCR" >> $GITHUB_STEP_SUMMARY
+            echo "📦 Deploy by bumping the image tag in the private infra repo" >> $GITHUB_STEP_SUMMARY
           elif [[ "${{ needs.build-and-push.result }}" == "skipped" ]]; then
             echo "### ℹ️ Docker Build Skipped" >> $GITHUB_STEP_SUMMARY
             echo "Docker images are only built on the main branch" >> $GITHUB_STEP_SUMMARY
