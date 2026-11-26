@@ -8,7 +8,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --parallel --filter backend --filter form-app --filter form-viewer --filter admin-app --filter ui run dev",
+    "dev": "./scripts/dev.sh dev:apps",
+    "dev:apps": "pnpm --parallel --filter backend --filter form-app --filter form-viewer --filter admin-app --filter ui run dev",
     "prod": "./scripts/local-prod.sh",
     "build": "pnpm run --recursive build",
     "clean": "pnpm run --recursive clean",
@@ -19,7 +20,8 @@
     "test:unit:ui": "pnpm --filter backend test:ui",
     "test:unit:coverage": "pnpm --filter backend test:coverage",
     "type-check": "pnpm run --recursive type-check",
-    "backend:dev": "pnpm --filter backend dev",
+    "backend:dev": "./scripts/dev.sh backend:dev:app",
+    "backend:dev:app": "pnpm --filter backend dev",
     "backend:build": "pnpm --filter backend build",
     "backend:start": "pnpm --filter backend start",
     "form-app:dev": "pnpm --filter form-app dev",
