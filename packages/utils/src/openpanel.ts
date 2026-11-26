@@ -9,7 +9,8 @@
  * (no `VITE_OPENPANEL_CLIENT_ID`) and tests never load the script or send anything.
  *
  * Privacy: identify with the internal user id only, and never pass emails, names or form
- * answers as event properties.
+ * answers as event properties. The SDK attaches full page URLs on its own, so every outgoing
+ * payload is passed through `sanitizeAnalyticsUrl` first.
  */
 
 export type AnalyticsProperties = Record<string, string | number | boolean | null | undefined>;
@@ -24,6 +25,10 @@ export interface OpenPanelBrowserConfig {
 }
 
 type OpenPanelQueue = ((...args: unknown[]) => void) & { q?: unknown[][] };
+
+interface OutgoingEvent {
+  payload?: { properties?: Record<string, unknown> };
+}
 
 interface BrowserGlobals {
   op?: OpenPanelQueue;
@@ -49,6 +54,48 @@ export function analyticsEnvironment(hostname: string | undefined): 'dev' | 'loc
   return host.includes('-dev.') ? 'dev' : 'prod';
 }
 
+const URL_PROPERTIES = ['__path', '__referrer'] as const;
+
+/**
+ * Removes everything from a URL that can carry secrets or personal data: the query string
+ * (magic-link, reset and one-time sign-in tokens, emails, AI chat text, search terms), the
+ * fragment (OAuth values) and invitation ids in the path. `utm_*` parameters are kept for
+ * campaign attribution.
+ */
+export function sanitizeAnalyticsUrl(url: string): string {
+  const [withoutHash = ''] = url.split('#');
+  const queryStart = withoutHash.indexOf('?');
+  const base = queryStart === -1 ? withoutHash : withoutHash.slice(0, queryStart);
+  const query = queryStart === -1 ? '' : withoutHash.slice(queryStart + 1);
+  const campaign = query
+    .split('&')
+    .filter((pair) => pair.startsWith('utm_'))
+    .join('&');
+  const path = base.replace(/\/invite\/[^/]+/, '/invite/redacted');
+  return campaign ? `${path}?${campaign}` : path;
+}
+
+/**
+ * SDK `filter` hook. The SDK sends the same object it passes here, so cleaning it in place
+ * is what keeps raw URLs off the wire. Always returns true: no event is dropped.
+ */
+function sanitizeOutgoingEvent(event: OutgoingEvent): boolean {
+  const properties = event?.payload?.properties;
+  if (properties) {
+    for (const key of URL_PROPERTIES) {
+      const value = properties[key];
+      if (typeof value === 'string') properties[key] = sanitizeAnalyticsUrl(value);
+    }
+  }
+  return true;
+}
+
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '/') end -= 1;
+  return value.slice(0, end);
+}
+
 function call(method: string, ...args: unknown[]): void {
   if (!enabled) return;
   try {
@@ -60,8 +107,8 @@ function call(method: string, ...args: unknown[]): void {
 
 /**
  * Loads the OpenPanel script and initialises tracking. Page views (including SPA route
- * changes, via history patching in the SDK), outgoing links and `data-track` attributes are
- * tracked automatically. Returns whether analytics is enabled.
+ * changes, via history patching in the SDK) are tracked automatically. Returns whether
+ * analytics is enabled.
  */
 export function initOpenPanel(config: OpenPanelBrowserConfig): boolean {
   const g = browser();
@@ -69,7 +116,7 @@ export function initOpenPanel(config: OpenPanelBrowserConfig): boolean {
   if (!config.clientId || !g.document) return false;
 
   try {
-    const apiUrl = (config.apiUrl || DEFAULT_OPENPANEL_API_URL).replace(/\/+$/, '');
+    const apiUrl = trimTrailingSlashes(config.apiUrl || DEFAULT_OPENPANEL_API_URL);
 
     // Queue stub: calls made before the script loads are replayed by it.
     if (!g.op) {
@@ -83,8 +130,11 @@ export function initOpenPanel(config: OpenPanelBrowserConfig): boolean {
       apiUrl,
       clientId: config.clientId,
       trackScreenViews: true,
-      trackOutgoingLinks: true,
-      trackAttributes: true,
+      // Off on purpose: both send link targets, link text or element attributes, which in
+      // these apps can contain respondents' answers.
+      trackOutgoingLinks: false,
+      trackAttributes: false,
+      filter: sanitizeOutgoingEvent,
     });
     g.op('setGlobalProperties', {
       app: config.app,

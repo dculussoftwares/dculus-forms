@@ -5,6 +5,7 @@ import {
   clearAnalyticsUser,
   identifyUser,
   initOpenPanel,
+  sanitizeAnalyticsUrl,
   trackEvent,
 } from '@dculus/utils';
 
@@ -41,8 +42,9 @@ describe('OpenPanel browser analytics', () => {
         apiUrl: '/_e',
         clientId: 'cid',
         trackScreenViews: true,
-        trackOutgoingLinks: true,
-        trackAttributes: true,
+        trackOutgoingLinks: false,
+        trackAttributes: false,
+        filter: expect.any(Function),
       },
     ]);
     expect(queue[1]).toEqual(['setGlobalProperties', { app: 'form-viewer', environment: 'local' }]);
@@ -69,6 +71,42 @@ describe('OpenPanel browser analytics', () => {
       ['identify', { profileId: 'user-1' }],
       ['clear'],
     ]);
+  });
+
+  it.each([
+    ['https://x.dculus.com/magic-link/verify?token=secret', 'https://x.dculus.com/magic-link/verify'],
+    ['https://x.dculus.com/forgot-password?email=a%40b.com&token=t', 'https://x.dculus.com/forgot-password'],
+    ['https://x.dculus.com/oauth/google/sheets#access_token=t', 'https://x.dculus.com/oauth/google/sheets'],
+    ['https://x.dculus.com/invite/abc123', 'https://x.dculus.com/invite/redacted'],
+    ['https://x.dculus.com/signup?utm_source=ad&email=a%40b.com&utm_medium=cpc#x', 'https://x.dculus.com/signup?utm_source=ad&utm_medium=cpc'],
+    ['https://x.dculus.com/dashboard', 'https://x.dculus.com/dashboard'],
+    ['', ''],
+  ])('sanitizes %s', (input, expected) => {
+    expect(sanitizeAnalyticsUrl(input)).toBe(expected);
+  });
+
+  it('strips secrets from URL properties of every outgoing event without dropping it', () => {
+    initOpenPanel({ clientId: 'cid', app: 'form-app' });
+    const options = win.op?.q?.[0]?.[1] as { filter: (event: unknown) => boolean };
+    const event = {
+      type: 'track',
+      payload: {
+        name: 'screen_view',
+        properties: {
+          __path: 'https://x.dculus.com/auth/callback?ott=secret',
+          __referrer: 'https://x.dculus.com/forgot-password?token=secret',
+          app: 'form-app',
+        },
+      },
+    };
+
+    expect(options.filter(event)).toBe(true);
+    expect(event.payload.properties).toEqual({
+      __path: 'https://x.dculus.com/auth/callback',
+      __referrer: 'https://x.dculus.com/forgot-password',
+      app: 'form-app',
+    });
+    expect(options.filter({ type: 'identify', payload: {} })).toBe(true);
   });
 
   it('derives the environment from the hostname', () => {

@@ -113,7 +113,7 @@ describe('productAnalytics', () => {
     process.env.OPENPANEL_CLIENT_ID = 'client';
     process.env.OPENPANEL_CLIENT_SECRET = 'secret';
     track.mockRejectedValue(new Error('network down'));
-    expect(trackServerEvent('response_submitted')).toBeUndefined();
+    expect(() => trackServerEvent('response_submitted')).not.toThrow();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(logger.debug).toHaveBeenCalled();
   });
@@ -141,7 +141,8 @@ describe('productAnalytics', () => {
     expect(serverEnvironment('https://form-services-dev.dculus.com')).toBe('dev');
     expect(serverEnvironment('https://form-services.dculus.com')).toBe('prod');
     expect(serverEnvironment('http://localhost:4000')).toBe('local');
-    expect(serverEnvironment(undefined)).toBe('local');
+    // Empty string, not undefined: undefined would fall back to the ambient BETTER_AUTH_URL.
+    expect(serverEnvironment('')).toBe('local');
     expect(serverEnvironment('not a url')).toBe('local');
   });
 });

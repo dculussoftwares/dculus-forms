@@ -327,7 +327,7 @@ Checkout via Chargebee hosted pages; webhooks handled at `/chargebee-webhooks`.
 - Date: earliest, latest, distribution
 - File Upload: total files, responses with/without files
 
-**Product analytics (OpenPanel)**: separate from the in-app analytics above. Browser: `initOpenPanel` / `trackEvent` / `identifyUser` from `@dculus/utils` (first-party `/_e` path, page views automatic). Backend: fire-and-forget `trackServerEvent` in `apps/backend/src/lib/productAnalytics.ts`. Identify by internal user id only; never send emails, names or response answers.
+**Product analytics (OpenPanel)**: separate from the in-app analytics above. Browser: `initOpenPanel` / `trackEvent` / `identifyUser` from `@dculus/utils` (first-party `/_e` path, page views automatic; URLs are stripped of query, fragment and invitation id by `sanitizeAnalyticsUrl`, and outgoing-link and `data-track` auto-tracking stay off). Backend: fire-and-forget `trackServerEvent` in `apps/backend/src/lib/productAnalytics.ts`. Identify by internal user id only; never send emails, names or response answers.
 
 Analytics visualizations in form-app: `ViewsOverTimeChart`, `GeographicChart`, `WorldMapVisualization`, `BrowserOSCharts`, `CompletionTimeChart`, `CompletionTimePercentiles`, `FieldAnalytics/*`.
 
