@@ -56,11 +56,14 @@ export function analyticsEnvironment(hostname: string | undefined): 'dev' | 'loc
 
 const URL_PROPERTIES = ['__path', '__referrer'] as const;
 
+/** Standard campaign keys with a plain value: no `@` or percent-encoding, so no emails. */
+const SAFE_CAMPAIGN_PARAM = /^utm_(?:source|medium|campaign|term|content)=[\w.+~-]{1,100}$/;
+
 /**
  * Removes everything from a URL that can carry secrets or personal data: the query string
  * (magic-link, reset and one-time sign-in tokens, emails, AI chat text, search terms), the
- * fragment (OAuth values) and invitation ids in the path. `utm_*` parameters are kept for
- * campaign attribution.
+ * fragment (OAuth values) and invitation ids in the path. Standard `utm_*` parameters with
+ * plain values are kept for campaign attribution.
  */
 export function sanitizeAnalyticsUrl(url: string): string {
   const [withoutHash = ''] = url.split('#');
@@ -69,7 +72,7 @@ export function sanitizeAnalyticsUrl(url: string): string {
   const query = queryStart === -1 ? '' : withoutHash.slice(queryStart + 1);
   const campaign = query
     .split('&')
-    .filter((pair) => pair.startsWith('utm_'))
+    .filter((pair) => SAFE_CAMPAIGN_PARAM.test(pair))
     .join('&');
   const path = base.replace(/\/invite\/[^/]+/, '/invite/redacted');
   return campaign ? `${path}?${campaign}` : path;

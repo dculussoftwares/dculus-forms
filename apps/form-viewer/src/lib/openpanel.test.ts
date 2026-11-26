@@ -79,6 +79,8 @@ describe('OpenPanel browser analytics', () => {
     ['https://x.dculus.com/oauth/google/sheets#access_token=t', 'https://x.dculus.com/oauth/google/sheets'],
     ['https://x.dculus.com/invite/abc123', 'https://x.dculus.com/invite/redacted'],
     ['https://x.dculus.com/signup?utm_source=ad&email=a%40b.com&utm_medium=cpc#x', 'https://x.dculus.com/signup?utm_source=ad&utm_medium=cpc'],
+    ['https://x.dculus.com/?utm_source=user%40example.com&utm_medium=email', 'https://x.dculus.com/?utm_medium=email'],
+    ['https://x.dculus.com/?utm_campaign=a@b.com&utm_token=secret', 'https://x.dculus.com/'],
     ['https://x.dculus.com/dashboard', 'https://x.dculus.com/dashboard'],
     ['', ''],
   ])('sanitizes %s', (input, expected) => {
@@ -94,7 +96,7 @@ describe('OpenPanel browser analytics', () => {
         name: 'screen_view',
         properties: {
           __path: 'https://x.dculus.com/auth/callback?ott=secret',
-          __referrer: 'https://x.dculus.com/forgot-password?token=secret',
+          __referrer: 'https://x.dculus.com/forgot-password?token=secret&utm_term=a%40b.com',
           app: 'form-app',
         },
       },
