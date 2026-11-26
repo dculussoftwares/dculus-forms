@@ -314,7 +314,7 @@ jobs:
         run: |
           set -euo pipefail
           for i in 1 2 3 4 5; do
-            gh workflow run deploy.yml -R dculussoftwares/dculus-infra -f app=forms -f env=prod -f version="${VERSION}" && exit 0
+            gh workflow run deploy.yml -R dculussoftwares/dculus-infra --ref main -f app=forms -f env=prod -f version="${VERSION}" && exit 0
             sleep 15
           done
           echo "could not start the infra deploy"; exit 1
