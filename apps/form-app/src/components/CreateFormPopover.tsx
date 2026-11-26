@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router';
 import { useAppConfig } from '@/hooks';
 import { useTranslation } from '../hooks/useTranslation';
 import { getErrorDetails } from '../utils/graphqlErrors';
-import { generateRandomString } from '@dculus/utils';
+import { generateRandomString, trackEvent } from '@dculus/utils';
 
 interface CreateFormData {
   title: string;
@@ -47,6 +47,7 @@ export const CreateFormPopover: React.FC<CreateFormPopoverProps> = ({ onFormCrea
       setFormData({ title: '', description: '' });
       setErrors({});
       onFormCreated?.();
+      trackEvent('form_created', { source: 'blank' });
       // Navigate to form builder with the new form ID
       navigate(`/forms/${data.createForm.id}/edit`);
     },

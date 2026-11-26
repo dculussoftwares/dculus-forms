@@ -62,6 +62,7 @@ import {
 } from '../../services/fakeResponseService.js';
 import { checkAITokenBudget, recordAITokenUsage } from '../../services/aiUsageService.js';
 import { sendResponseCopyIfEnabled } from '../../services/responseCopyService.js';
+import { trackServerEvent } from '../../lib/productAnalytics.js';
 import { responseGradeRepository } from '../../repositories/index.js';
 
 interface ResponseParent {
@@ -695,6 +696,15 @@ export const responsesResolvers = {
         // Log error but don't fail the response submission
         logger.error('Error emitting form.submitted event:', error);
       }
+
+      // Product analytics (OpenPanel): ids only — never answers or respondent identity.
+      trackServerEvent('response_submitted', {
+        properties: {
+          form_id: input.formId,
+          organization_id: form.organizationId,
+          is_preview: Boolean(input.isPreview),
+        },
+      });
 
       // Emit subscription event for usage tracking. Builder preview submissions
       // are not billable usage and must not consume the org's submission quota.

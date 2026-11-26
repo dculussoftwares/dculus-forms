@@ -14,7 +14,7 @@ import {
   isSaveProgressEnabled,
 } from '@dculus/types';
 import type { RespondentGradeView } from '@dculus/types';
-import { RendererMode } from '@dculus/utils';
+import { RendererMode, trackEvent } from '@dculus/utils';
 import { GRAPHQL_ERROR_CODES } from '@dculus/types/graphql.js';
 import { EDIT_MY_RESPONSE, GET_FORM_BY_SHORT_URL, SUBMIT_RESPONSE, type MyResponseData } from '../graphql/queries';
 import { useFormAnalytics } from '../hooks/useFormAnalytics';
@@ -499,6 +499,8 @@ const FormViewer: React.FC<FormViewerProps> = ({
       }
 
       setSubmissionState('success');
+      // Product analytics (OpenPanel): ids only, never answers.
+      trackEvent('form_submitted', { form_id: formId });
       clearPendingAnswers(formId);
       // The server deleted the draft along with storing the response.
       seedDraft(null);

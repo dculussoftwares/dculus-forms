@@ -3,6 +3,7 @@ import express, { Router } from 'express';
 import { logger } from '../lib/logger.js';
 import { chargebeeConfig } from '../lib/env.js';
 import { webhookEventRepository } from '../repositories/webhookEventRepository.js';
+import { trackServerEvent } from '../lib/productAnalytics.js';
 import {
   syncSubscriptionFromWebhook,
   handleSubscriptionRenewal,
@@ -91,6 +92,7 @@ router.post('/webhooks/chargebee', async (req, res) => {
       throw processingError;
     }
 
+    trackSubscriptionChange(event);
     res.status(200).json({ received: true });
   } catch (error: any) {
     logger.error('[Chargebee Webhook] Error processing webhook:', error);
@@ -98,6 +100,34 @@ router.post('/webhooks/chargebee', async (req, res) => {
     res.status(500).json({ received: false, error: error.message });
   }
 });
+
+interface ChargebeeSubscriptionLike {
+  status?: unknown;
+  customer_id?: unknown;
+  subscription_items?: Array<{ item_type?: unknown; item_price_id?: unknown }>;
+}
+
+/** Product analytics (OpenPanel) for processed subscription lifecycle events. Ids and status only. */
+function trackSubscriptionChange(event: {
+  event_type?: unknown;
+  content?: { subscription?: ChargebeeSubscriptionLike };
+}): void {
+  const subscription = event?.content?.subscription;
+  const eventType = String(event?.event_type ?? '');
+  if (!subscription || !eventType.startsWith('subscription_')) return;
+  const customerId = typeof subscription.customer_id === 'string' ? subscription.customer_id : '';
+  const planItem = Array.isArray(subscription.subscription_items)
+    ? subscription.subscription_items.find((item) => item?.item_type === 'plan')
+    : undefined;
+  trackServerEvent('subscription_changed', {
+    properties: {
+      chargebee_event: eventType,
+      status: typeof subscription.status === 'string' ? subscription.status : undefined,
+      organization_id: customerId.startsWith('org_') ? customerId.slice('org_'.length) : undefined,
+      plan_item_price_id: typeof planItem?.item_price_id === 'string' ? planItem.item_price_id : undefined,
+    },
+  });
+}
 
 async function processEvent(event: any): Promise<void> {
   const subscription = event.content?.subscription;

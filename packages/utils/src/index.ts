@@ -290,3 +290,5 @@ export * from './emailList.js';
 
 // Re-export deploy-time runtime config reader
 export * from './runtimeConfig.js';
+// Re-export browser product analytics (OpenPanel)
+export * from './openpanel.js';

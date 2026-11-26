@@ -327,6 +327,8 @@ Checkout via Chargebee hosted pages; webhooks handled at `/chargebee-webhooks`.
 - Date: earliest, latest, distribution
 - File Upload: total files, responses with/without files
 
+**Product analytics (OpenPanel)**: separate from the in-app analytics above. Browser: `initOpenPanel` / `trackEvent` / `identifyUser` from `@dculus/utils` (first-party `/_e` path, page views automatic; URLs are stripped of query, fragment and invitation id by `sanitizeAnalyticsUrl`, and outgoing-link and `data-track` auto-tracking stay off). Backend: fire-and-forget `trackServerEvent` in `apps/backend/src/lib/productAnalytics.ts`. Identify by internal user id only; never send emails, names or response answers.
+
 Analytics visualizations in form-app: `ViewsOverTimeChart`, `GeographicChart`, `WorldMapVisualization`, `BrowserOSCharts`, `CompletionTimeChart`, `CompletionTimePercentiles`, `FieldAnalytics/*`.
 
 ---
@@ -373,6 +375,11 @@ CHARGEBEE_API_KEY=
 
 # Error monitoring (optional)
 SENTRY_DSN=
+
+# Product analytics via self-hosted OpenPanel (optional; no-op when unset)
+OPENPANEL_CLIENT_ID=
+OPENPANEL_CLIENT_SECRET=
+OPENPANEL_API_URL=        # Default: https://analytics.dculus.com/api
 ```
 
 ### Frontend apps (`apps/{form-app,form-viewer,admin-app}/.env`)
@@ -381,6 +388,8 @@ SENTRY_DSN=
 VITE_API_URL=             # Backend URL (e.g. http://localhost:4000)
 VITE_GRAPHQL_URL=         # GraphQL endpoint (e.g. http://localhost:4000/graphql)
 VITE_FORM_VIEWER_URL=     # Form viewer app URL (for sharing links)
+VITE_OPENPANEL_CLIENT_ID= # OpenPanel client id (optional; analytics is a no-op when empty)
+VITE_OPENPANEL_API_URL=   # First-party OpenPanel path (default: /_e)
 ```
 
 See each app's `.env.example` for the full list.

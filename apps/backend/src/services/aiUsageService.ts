@@ -1,5 +1,6 @@
 import { tokensToMilliCredits, type AIModelTier } from '../lib/ai.js';
 import { logger } from '../lib/logger.js';
+import { trackServerEvent } from '../lib/productAnalytics.js';
 import { emitUsageLimitReached, emitUsageLimitExceeded } from '../subscriptions/events.js';
 import { aiUsageRepository } from '../repositories/aiUsageRepository.js';
 import { subscriptionRepository } from '../repositories/subscriptionRepository.js';
@@ -327,6 +328,10 @@ export async function recordAITokenUsage(
       tokensUsed,
       creditsUsedMilli
     );
+
+    trackServerEvent('ai_credits_used', {
+      properties: { organization_id: organizationId, credits: creditsUsedMilli / 1000, tokens: tokensUsed, tier },
+    });
 
     const limitCredits = await effectiveCreditLimit(subscription);
     checkAICreditLimits(organizationId, previousMilli, updated.creditsUsedMilli, limitCredits);

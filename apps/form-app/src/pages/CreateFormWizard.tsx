@@ -9,7 +9,7 @@ import {
   toastError,
   Badge,
 } from '@dculus/ui';
-import { cn, generateRandomString } from '@dculus/utils';
+import { cn, generateRandomString, trackEvent } from '@dculus/utils';
 import type { LayoutCode, GradeRelease } from '@dculus/types';
 import { DEFAULT_QUIZ_SETTINGS, buildAnswerKeyGrading } from '@dculus/types/quiz.js';
 import {
@@ -542,6 +542,7 @@ const CreateFormWizard: React.FC = () => {
       });
 
       const formId = formData.createForm.id;
+      trackEvent('form_created', { source: creationSource });
       let pendingBgKey: string | undefined;
       let pendingBgVideoKey: string | undefined;
       let pendingBgDominantColor: string | undefined;
@@ -600,6 +601,7 @@ const CreateFormWizard: React.FC = () => {
           },
         },
       });
+      trackEvent('form_created', { source: 'template' });
       navigate(`/dashboard/form/${formData.createForm.id}`);
     } catch (err: any) {
       setIsCreatingFromTemplate(false);

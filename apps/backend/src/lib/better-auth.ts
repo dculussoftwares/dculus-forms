@@ -7,6 +7,7 @@ import { authConfig, googleConfig, proxyConfig } from './env.js';
 import { authAdminRoles, authRateLimitRules } from './authAccess.js';
 import { logger } from '../lib/logger.js';
 import { audit } from './audit.js';
+import { trackServerEvent } from './productAnalytics.js';
 import { buildAuthAuditEvent, isAuditedAuthPath } from './authAudit.js';
 import { assertUserOwnsNoForms } from './userDeletionGuard.js';
 import { anonymizeUserData } from './userDataErasure.js';
@@ -149,6 +150,10 @@ export const auth = betterAuth({
           }
         },
         afterCreateOrganization: async ({ organization, user }: any) => {
+          trackServerEvent('organization_created', {
+            profileId: user?.id,
+            properties: { organization_id: organization?.id },
+          });
           // Update active sessions with the new organizationId
           try {
             await prisma.session.updateMany({
@@ -265,6 +270,12 @@ export const auth = betterAuth({
   },
   databaseHooks: {
     user: {
+      create: {
+        // Product analytics (OpenPanel): internal id only, no email/name.
+        after: async (user) => {
+          trackServerEvent('user_signed_up', { profileId: user.id });
+        },
+      },
       delete: {
         // S14-01: never let a user deletion take the user's forms (and every
         // response collected through them) with it.

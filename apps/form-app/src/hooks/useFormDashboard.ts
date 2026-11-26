@@ -5,6 +5,7 @@ import { GET_FORM_BY_ID } from '../graphql/queries';
 import { DELETE_FORM, UPDATE_FORM } from '../graphql/mutations';
 import { getFormViewerUrl } from '@/lib/config';
 import { toastError } from '@dculus/ui';
+import { trackEvent } from '@dculus/utils';
 
 interface DashboardStats {
   totalResponses: number;
@@ -122,7 +123,11 @@ export const useFormDashboard = (formId: string | undefined) => {
         id: formId,
         input: { isPublished: true }
       }
-    });
+    })
+      .then((result) => {
+        if (result.data?.updateForm?.isPublished) trackEvent('form_published', { surface: 'dashboard' });
+      })
+      .catch(() => { /* failures are surfaced by the mutation's onError */ });
   };
 
   const handleUnpublish = () => {
