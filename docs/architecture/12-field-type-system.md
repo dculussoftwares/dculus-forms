@@ -21,10 +21,12 @@ hand a class instance to something that persists. Cross the boundary through
 ## The hierarchy
 
 ```
-  FormField                       id, type, deleted
+  FormField                       id, type, deleted,
+  │                               gridId?, gridColumn? (grid placement)
   │
   ├── FillableFormField           label, required, placeholder, hint,
-  │   │                           defaultValue, prefix, validation
+  │   │                           defaultValue, prefix, suffix?, grading?,
+  │   │                           validation
   │   │
   │   ├── TextInputField          TextFieldValidation (minLength, maxLength)
   │   ├── TextAreaField           TextFieldValidation
@@ -35,11 +37,14 @@ hand a class instance to something that persists. Cross the boundary through
   │   ├── RadioField              + options[]
   │   ├── CheckboxField           CheckboxFieldValidation
   │   │                             (minSelections, maxSelections)
-  │   ├── FileUploadField
-  │   └── PhoneNumberField        + defaultCountry
+  │   ├── FileUploadField         + allowedMimeTypes, maxFileSizeMb, maxFiles
+  │   ├── PhoneNumberField        + defaultCountry
+  │   └── RatingField             + ratingStyle, minValue, maxValue,
+  │                                 lowLabel, highLabel
   │
   └── NonFillableFormField
-      └── RichTextFormField       content
+      ├── RichTextFormField       content
+      └── GridField               columnWidths (layout container, no label)
 
   Validation is its own parallel tree:
 
@@ -48,7 +53,7 @@ hand a class instance to something that persists. Cross the boundary through
   └── CheckboxFieldValidation     + minSelections, maxSelections
 ```
 
-Eleven concrete field types. `FieldType` also carries entries for the abstract
+Thirteen concrete field types. `FieldType` also carries entries for the abstract
 bases and the validation classes, which are not usable field types — the enum is
 broader than the set of things you can put on a form.
 
@@ -69,6 +74,10 @@ the source comment.
 Deserialization is the opposite: a `switch` over every type, each branch calling
 the right constructor with the right arguments. Adding a field type means editing
 this switch, and forgetting to is the failure mode described below.
+
+Fillable branches are wrapped in `withGrading`, which restores the quiz `grading`
+and `suffix` props (they aren't constructor arguments). A layout post-step then
+copies `gridId` / `gridColumn` onto every field except the grid itself.
 
 ### The discriminator is doubled
 
@@ -214,9 +223,15 @@ None. No env vars, no flags — a pure library.
   `FILLABLE_FORM_FIELD`, `NON_FILLABLE_FORM_FIELD`, and the two validation types
   are in the enum but aren't usable field types. Don't iterate the enum to build a
   field-type picker.
-- **`PhoneNumberField` exists.** `CLAUDE.md`'s hierarchy predates it and lists ten
-  types; there are eleven.
+- **`CLAUDE.md`'s hierarchy is out of date.** It predates `PhoneNumberField`,
+  `RatingField` and `GridField` and lists ten types; there are thirteen.
 - **Y.js stores plain data, not instances.** A class written into a `Y.Map` comes
   back as a plain object. This is the boundary people cross accidentally.
 - **`__type` and `type` can disagree** on hand-edited or partially-migrated data.
   `type` wins.
+- **The deserializer is only the first of 100+ sites.** Adding a field type also
+  touches renderers, server answer validation, the Y.js and Hocuspocus property
+  whitelists, analytics, filters, the AI maps and i18n. Almost none of them are
+  compile-checked. Use the `new-field-generator` agent
+  ([`.claude/agents/new-field-generator.md`](../../.claude/agents/new-field-generator.md)),
+  which holds the verified checklist.
