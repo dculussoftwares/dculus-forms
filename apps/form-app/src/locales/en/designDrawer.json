@@ -53,6 +53,12 @@
       "darken": "Darken",
       "surface": "Text color contrast on the surface is {{ratio}}:1 (needs 4.5:1)."
     },
+    "canvasStyle": {
+      "title": "Style page title",
+      "input": "Style inputs",
+      "surface": "Style form card",
+      "hint": "Click to style"
+    },
     "compare": {
       "hold": "Preview without brand style",
       "showing": "Showing without brand style · click to restore"

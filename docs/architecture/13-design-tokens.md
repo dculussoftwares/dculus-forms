@@ -80,6 +80,13 @@ it does not block saving.
   hovering/focusing a preset, dragging the native colour picker (saved on release or
   blur; hex text and swatches save immediately), and the **Preview without brand style**
   before/after toggle. The store is cleared on commit and when the drawer unmounts.
+- **Click-to-style popovers** (`design/CanvasStylePopover.tsx`, `store/useCanvasStyleStore.ts`):
+  clicking the page title (heading font, brand colour), the form card's empty space
+  (surface colour, body font, corners) or the input of an already-selected fillable field
+  (input style, corners, brand colour) opens a popover with just those controls, built from
+  `BrandStyleControls` with its `sections` prop. One popover at a time; re-clicking the
+  element closes it. Edits use the same layout update path and local previews as the drawer.
+  Hidden for users without layout-edit permission.
 - Entry points: toolbar **Design** and **Brand** buttons, and a "Brand & style"
   shortcut on the Welcome panel. **Brand** opens the drawer scrolled to the
   section (`focusSection="brand"`).

@@ -10,6 +10,8 @@ import { useQuizMode } from '../../../contexts/QuizModeContext';
 import { hasAnswerKey } from '../../../utils/quizGrading';
 import type { GridTarget } from '../../../store/types/store.types';
 import { CompactCardMenu } from './CompactCardMenu';
+import { CanvasStylePopover } from '../design/CanvasStylePopover';
+import { useCanvasStyleStore } from '../../../store/useCanvasStyleStore';
 
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import {
@@ -109,6 +111,7 @@ export const FieldCard: React.FC<{
   const isFillable = !isLayoutField(field) && 'validation' in field;
   const isRequired = isFillable && Boolean((field as FillableFormField).validation?.required);
   const hasLabel = 'label' in field;
+  const toggleCanvasStyle = useCanvasStyleStore((s) => s.toggle);
 
   const [isEditingLabel, setIsEditingLabel] = React.useState(false);
   const [draftLabel, setDraftLabel] = React.useState(label);
@@ -494,10 +497,14 @@ export const FieldCard: React.FC<{
                 )}
 
                 {/* Field Input (label suppressed if hasLabel to eliminate duplicate) */}
+                <CanvasStylePopover target="input">
                 <div
+                  data-testid={`field-input-style-target-${field.id}`}
                   onBlur={() => {
                     flushContentChange();
                   }}
+                  // Selecting happens on the first click; a click on an already-selected field's input opens the style popover.
+                  onClick={() => isSelected && isFillable && toggleCanvasStyle('input')}
                 >
                   <FieldPreview
                     field={field}
@@ -509,6 +516,7 @@ export const FieldCard: React.FC<{
                     richTextPlaceholder={t('fieldCard.richTextPlaceholder', { defaultValue: 'Type rich text content here...' })}
                   />
                 </div>
+                </CanvasStylePopover>
               </div>
             </div>
 

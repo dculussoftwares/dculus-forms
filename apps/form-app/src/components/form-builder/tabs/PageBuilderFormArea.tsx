@@ -5,6 +5,8 @@ import { cn } from '@dculus/utils';
 import { Plus } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useEffectiveTokens } from '../../../store/useBrandPreviewStore';
+import { useCanvasStyleStore } from '../../../store/useCanvasStyleStore';
+import { CanvasStylePopover } from '../design/CanvasStylePopover';
 import { useTranslation } from '../../../hooks';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
@@ -391,6 +393,8 @@ export const PageHeader: React.FC<{
   headingFont?: boolean;
 }> = ({ selectedPage, headingFont = false }) => {
   const { t } = useTranslation('pageBuilderTab');
+  const { t: tDesign } = useTranslation('designDrawer');
+  const toggleCanvasStyle = useCanvasStyleStore((s) => s.toggle);
 
   if (!selectedPage) {
     return (
@@ -406,12 +410,22 @@ export const PageHeader: React.FC<{
 
   return (
     <div className="mb-4 flex items-baseline gap-3">
-      <h1
-        className="text-xl font-semibold text-[#3c323e] dark:text-white"
-        style={headingFont ? { fontFamily: 'var(--df-font-heading)' } : undefined}
-      >
-        {selectedPage.title || t('formArea.untitledPage')}
-      </h1>
+      <CanvasStylePopover target="title">
+        <h1
+          className="text-xl font-semibold text-[#3c323e] dark:text-white"
+          style={headingFont ? { fontFamily: 'var(--df-font-heading)' } : undefined}
+        >
+          <button
+            type="button"
+            title={tDesign('brandStyle.canvasStyle.hint')}
+            data-testid="canvas-style-title"
+            onClick={() => toggleCanvasStyle('title')}
+            className="rounded text-left hover:bg-black/5 focus-visible:outline focus-visible:outline-2 dark:hover:bg-white/10"
+          >
+            {selectedPage.title || t('formArea.untitledPage')}
+          </button>
+        </h1>
+      </CanvasStylePopover>
       <span className="text-xs text-[#655d67] dark:text-gray-400">
         {t(questionCount === 1 ? 'formArea.fieldCount' : 'formArea.fieldCount_plural', {
           values: { count: questionCount },
@@ -458,6 +472,7 @@ export const FormArea: React.FC<{
     () => resolveFormTheme(tokens, isDarkChrome ? 'dark' : 'light'),
     [tokens, isDarkChrome]
   );
+  const toggleCanvasStyle = useCanvasStyleStore((s) => s.toggle);
   const deleteGridWithUndo = useDeleteGridWithUndo(permissions.canEditFields());
   const selectedPage = pages.find((p) => p.id === selectedPageId);
 
@@ -616,8 +631,11 @@ export const FormArea: React.FC<{
 
             {/* Form Fields Container - Drop Zone */}
             <FormThemeContext.Provider value={brandTheme}>
+            <CanvasStylePopover target="surface">
             <div
               ref={setNodeRef}
+              // Only clicks on the card's own padding/empty space; fields and their controls keep their behaviour.
+              onClick={(e) => e.target === e.currentTarget && toggleCanvasStyle('surface')}
               className={`
                 min-h-[400px] p-4 bg-white dark:bg-card rounded-xl
                 transition-all duration-150
@@ -647,6 +665,7 @@ export const FormArea: React.FC<{
                 <EmptyFormAreaPlaceholder isConnected={isConnected} pageId={selectedPage?.id} />
               )}
             </div>
+            </CanvasStylePopover>
             </FormThemeContext.Provider>
           </div>
         </div>

@@ -37,7 +37,23 @@ interface BrandStyleControlsProps {
   /** Removes `layout.tokens` entirely (undefined writes are ignored by updateLayout). */
   onReset: () => void;
   t: Translate;
+  /** Render only these sections (canvas popovers); omitted renders everything. */
+  sections?: BrandSection[];
 }
+
+export type BrandSection =
+  | 'preview'
+  | 'compare'
+  | 'presets'
+  | 'brandColor'
+  | 'surfaceColor'
+  | 'headingFont'
+  | 'bodyFont'
+  | 'corners'
+  | 'inputStyle'
+  | 'buttonStyle'
+  | 'contrast'
+  | 'reset';
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 const MIN_CONTRAST = 4.5;
@@ -274,7 +290,9 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
   onLayoutUpdate,
   onReset,
   t,
+  sections,
 }) => {
+  const show = (section: BrandSection) => !sections || sections.includes(section);
   const tokens = layout.tokens;
   const disabled = !canEditLayout;
   const brand = tokens?.primaryColor;
@@ -347,17 +365,18 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
 
   return (
     <div className="space-y-5" data-testid="brand-style-controls">
-      <BrandPreviewCard
-        tokens={previewTokens}
-        title={t('brandStyle.preview.title')}
-        nameLabel={t('brandStyle.preview.nameLabel')}
-        namePlaceholder={t('brandStyle.preview.namePlaceholder')}
-        optionLabel={t('brandStyle.preview.option')}
-        primaryLabel={t('brandStyle.preview.primary')}
-        secondaryLabel={t('brandStyle.preview.secondary')}
-      />
-
-      {tokens && (
+      {show('preview') && (
+        <BrandPreviewCard
+          tokens={previewTokens}
+          title={t('brandStyle.preview.title')}
+          nameLabel={t('brandStyle.preview.nameLabel')}
+          namePlaceholder={t('brandStyle.preview.namePlaceholder')}
+          optionLabel={t('brandStyle.preview.option')}
+          primaryLabel={t('brandStyle.preview.primary')}
+          secondaryLabel={t('brandStyle.preview.secondary')}
+        />
+      )}
+      {show('compare') && tokens && (
         <Button
           type="button"
           variant="outline"
@@ -371,150 +390,159 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
         </Button>
       )}
 
-      <div className="space-y-2">
-        <Label className="block text-xs text-foreground dark:text-gray-400">
-          {t('brandStyle.presets.label')}
-        </Label>
-        <div className="grid grid-cols-2 gap-1.5" role="group" aria-label={t('brandStyle.presets.label')}>
-          {BRAND_PRESETS.map((preset) => (
-            <PresetButton
-              key={preset.id}
-              preset={preset}
-              label={t(`brandStyle.presets.${preset.id}`)}
-              active={matchesPreset(tokens, preset)}
-              disabled={disabled}
-              onApply={applyPreset}
-              onPreview={previewPreset}
-            />
-          ))}
-        </div>
-      </div>
-
-      <ColorField
-        label={t('brandStyle.brandColor.label')}
-        value={brand}
-        placeholder={t('brandStyle.brandColor.placeholder')}
-        clearLabel={t('brandStyle.clear')}
-        swatches={QUICK_SWATCHES}
-        disabled={disabled}
-        onChange={(hex) => setToken('primaryColor', hex)}
-        onPreview={(hex) => previewToken('primaryColor', hex)}
-      />
-
-      <ColorField
-        label={t('brandStyle.surfaceColor.label')}
-        value={surface}
-        placeholder={t('brandStyle.surfaceColor.placeholder')}
-        clearLabel={t('brandStyle.clear')}
-        helper={t('brandStyle.surfaceColor.helper')}
-        disabled={disabled}
-        onChange={(hex) => setToken('surfaceColor', hex)}
-        onPreview={(hex) => previewToken('surfaceColor', hex)}
-      />
-
-      <FontField
-        label={t('brandStyle.headingFont.label')}
-        value={tokens?.headingFont}
-        defaultLabel={t('brandStyle.fontDefault')}
-        tamilBadge={t('brandStyle.tamil')}
-        disabled={disabled}
-        onChange={(id) => setToken('headingFont', id)}
-      />
-      <FontField
-        label={t('brandStyle.bodyFont.label')}
-        value={tokens?.bodyFont}
-        defaultLabel={t('brandStyle.fontDefault')}
-        tamilBadge={t('brandStyle.tamil')}
-        disabled={disabled}
-        onChange={(id) => setToken('bodyFont', id)}
-      />
-
-      <div className="space-y-2">
-        <Label className="block text-xs text-foreground dark:text-gray-400">
-          {t('brandStyle.corners.label')}
-        </Label>
-        <div className="grid grid-cols-5 gap-1.5" role="group" aria-label={t('brandStyle.corners.label')}>
-          {RADII.map((radius) => (
-            <button
-              key={radius}
-              type="button"
-              disabled={disabled}
-              aria-pressed={tokens?.radius === radius}
-              onClick={() => setToken('radius', radius)}
-              className={optionButtonClass(tokens?.radius === radius)}
-            >
-              <span
-                className="h-5 w-5 border-2 border-current"
-                style={{ borderRadius: RADIUS_PREVIEW[radius] }}
+      {show('presets') && (
+        <div className="space-y-2">
+          <Label className="block text-xs text-foreground dark:text-gray-400">
+            {t('brandStyle.presets.label')}
+          </Label>
+          <div className="grid grid-cols-2 gap-1.5" role="group" aria-label={t('brandStyle.presets.label')}>
+            {BRAND_PRESETS.map((preset) => (
+              <PresetButton
+                key={preset.id}
+                preset={preset}
+                label={t(`brandStyle.presets.${preset.id}`)}
+                active={matchesPreset(tokens, preset)}
+                disabled={disabled}
+                onApply={applyPreset}
+                onPreview={previewPreset}
               />
-              {t(`brandStyle.corners.${radius}`)}
-            </button>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="block text-xs text-foreground dark:text-gray-400">
-          {t('brandStyle.inputStyle.label')}
-        </Label>
-        <div className="grid grid-cols-3 gap-1.5" role="group" aria-label={t('brandStyle.inputStyle.label')}>
-          {INPUT_STYLES.map((style) => (
-            <button
-              key={style}
-              type="button"
-              disabled={disabled}
-              aria-pressed={tokens?.inputStyle === style}
-              onClick={() => setToken('inputStyle', style)}
-              className={optionButtonClass(tokens?.inputStyle === style)}
-            >
-              <span
-                className="block h-5 w-full"
-                style={{
-                  border: style === 'outlined' ? `1.5px solid ${previewColor}` : undefined,
-                  borderBottom: style === 'underline' ? `2px solid ${previewColor}` : undefined,
-                  backgroundColor: style === 'filled' ? 'rgba(0,0,0,0.08)' : undefined,
-                  borderRadius: style === 'underline' ? 0 : 4,
-                }}
-              />
-              {t(`brandStyle.inputStyle.${style}`)}
-            </button>
-          ))}
+      )}
+      {show('brandColor') && (
+        <ColorField
+          label={t('brandStyle.brandColor.label')}
+          value={brand}
+          placeholder={t('brandStyle.brandColor.placeholder')}
+          clearLabel={t('brandStyle.clear')}
+          swatches={QUICK_SWATCHES}
+          disabled={disabled}
+          onChange={(hex) => setToken('primaryColor', hex)}
+          onPreview={(hex) => previewToken('primaryColor', hex)}
+        />
+      )}
+      {show('surfaceColor') && (
+        <ColorField
+          label={t('brandStyle.surfaceColor.label')}
+          value={surface}
+          placeholder={t('brandStyle.surfaceColor.placeholder')}
+          clearLabel={t('brandStyle.clear')}
+          helper={t('brandStyle.surfaceColor.helper')}
+          disabled={disabled}
+          onChange={(hex) => setToken('surfaceColor', hex)}
+          onPreview={(hex) => previewToken('surfaceColor', hex)}
+        />
+      )}
+      {show('headingFont') && (
+        <FontField
+          label={t('brandStyle.headingFont.label')}
+          value={tokens?.headingFont}
+          defaultLabel={t('brandStyle.fontDefault')}
+          tamilBadge={t('brandStyle.tamil')}
+          disabled={disabled}
+          onChange={(id) => setToken('headingFont', id)}
+        />
+      )}
+      {show('bodyFont') && (
+        <FontField
+          label={t('brandStyle.bodyFont.label')}
+          value={tokens?.bodyFont}
+          defaultLabel={t('brandStyle.fontDefault')}
+          tamilBadge={t('brandStyle.tamil')}
+          disabled={disabled}
+          onChange={(id) => setToken('bodyFont', id)}
+        />
+      )}
+      {show('corners') && (
+        <div className="space-y-2">
+          <Label className="block text-xs text-foreground dark:text-gray-400">
+            {t('brandStyle.corners.label')}
+          </Label>
+          <div className="grid grid-cols-5 gap-1.5" role="group" aria-label={t('brandStyle.corners.label')}>
+            {RADII.map((radius) => (
+              <button
+                key={radius}
+                type="button"
+                disabled={disabled}
+                aria-pressed={tokens?.radius === radius}
+                onClick={() => setToken('radius', radius)}
+                className={optionButtonClass(tokens?.radius === radius)}
+              >
+                <span
+                  className="h-5 w-5 border-2 border-current"
+                  style={{ borderRadius: RADIUS_PREVIEW[radius] }}
+                />
+                {t(`brandStyle.corners.${radius}`)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="block text-xs text-foreground dark:text-gray-400">
-          {t('brandStyle.buttonStyle.label')}
-        </Label>
-        <div className="grid grid-cols-3 gap-1.5" role="group" aria-label={t('brandStyle.buttonStyle.label')}>
-          {BUTTON_STYLES.map((style) => (
-            <button
-              key={style}
-              type="button"
-              disabled={disabled}
-              aria-pressed={tokens?.buttonStyle === style}
-              onClick={() => setToken('buttonStyle', style)}
-              className={optionButtonClass(tokens?.buttonStyle === style)}
-            >
-              <span
-                className="block h-5 w-full rounded"
-                style={{
-                  backgroundColor:
-                    style === 'solid'
-                      ? previewColor
-                      : style === 'soft'
-                        ? `${previewColor}33`
-                        : 'transparent',
-                  border: style === 'outline' ? `1.5px solid ${previewColor}` : undefined,
-                }}
-              />
-              {t(`brandStyle.buttonStyle.${style}`)}
-            </button>
-          ))}
+      )}
+      {show('inputStyle') && (
+        <div className="space-y-2">
+          <Label className="block text-xs text-foreground dark:text-gray-400">
+            {t('brandStyle.inputStyle.label')}
+          </Label>
+          <div className="grid grid-cols-3 gap-1.5" role="group" aria-label={t('brandStyle.inputStyle.label')}>
+            {INPUT_STYLES.map((style) => (
+              <button
+                key={style}
+                type="button"
+                disabled={disabled}
+                aria-pressed={tokens?.inputStyle === style}
+                onClick={() => setToken('inputStyle', style)}
+                className={optionButtonClass(tokens?.inputStyle === style)}
+              >
+                <span
+                  className="block h-5 w-full"
+                  style={{
+                    border: style === 'outlined' ? `1.5px solid ${previewColor}` : undefined,
+                    borderBottom: style === 'underline' ? `2px solid ${previewColor}` : undefined,
+                    backgroundColor: style === 'filled' ? 'rgba(0,0,0,0.08)' : undefined,
+                    borderRadius: style === 'underline' ? 0 : 4,
+                  }}
+                />
+                {t(`brandStyle.inputStyle.${style}`)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-
-      {(lowPrimary || lowSurface) && (
+      )}
+      {show('buttonStyle') && (
+        <div className="space-y-2">
+          <Label className="block text-xs text-foreground dark:text-gray-400">
+            {t('brandStyle.buttonStyle.label')}
+          </Label>
+          <div className="grid grid-cols-3 gap-1.5" role="group" aria-label={t('brandStyle.buttonStyle.label')}>
+            {BUTTON_STYLES.map((style) => (
+              <button
+                key={style}
+                type="button"
+                disabled={disabled}
+                aria-pressed={tokens?.buttonStyle === style}
+                onClick={() => setToken('buttonStyle', style)}
+                className={optionButtonClass(tokens?.buttonStyle === style)}
+              >
+                <span
+                  className="block h-5 w-full rounded"
+                  style={{
+                    backgroundColor:
+                      style === 'solid'
+                        ? previewColor
+                        : style === 'soft'
+                          ? `${previewColor}33`
+                          : 'transparent',
+                    border: style === 'outline' ? `1.5px solid ${previewColor}` : undefined,
+                  }}
+                />
+                {t(`brandStyle.buttonStyle.${style}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {show('contrast') && (lowPrimary || lowSurface) && (
         <div
           role="alert"
           className="space-y-1.5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"
@@ -542,16 +570,18 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
         </div>
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="w-full"
-        disabled={disabled || !tokens}
-        onClick={() => !disabled && onReset()}
-      >
-        {t('brandStyle.reset')}
-      </Button>
+      {show('reset') && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
+          disabled={disabled || !tokens}
+          onClick={() => !disabled && onReset()}
+        >
+          {t('brandStyle.reset')}
+        </Button>
+      )}
     </div>
   );
 };
