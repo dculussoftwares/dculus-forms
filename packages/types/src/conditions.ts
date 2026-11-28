@@ -9,7 +9,7 @@
 
 import { z } from 'zod';
 import { FieldType, type FormPage } from './index.js';
-import { isLayoutField } from './grid.js';
+import { getGridChildren, isLayoutField } from './grid.js';
 
 export type ConditionOperator =
   | 'equals'
@@ -140,6 +140,29 @@ const isWellFormedAction = (action: unknown): action is ConditionAction => {
       return false;
   }
 };
+
+/**
+ * gridId → live child field ids. A show/hide action aimed at a grid applies to
+ * every question inside it (grid targeting, strategy §11 v1.1): children are the
+ * unit the evaluator, validation and `stripHiddenResponses` already understand.
+ */
+const collectGridChildIds = (pages: readonly FormPage[]): Map<string, string[]> => {
+  const byGrid = new Map<string, string[]>();
+  for (const page of pages) {
+    const fields = page.fields ?? [];
+    for (const field of fields) {
+      if (field.deleted || !isLayoutField(field)) continue;
+      const children = getGridChildren(fields, field.id).map((child) => child.id);
+      if (children.length > 0) byGrid.set(field.id, children);
+    }
+  }
+  return byGrid;
+};
+
+const expandGridTargets = (
+  fieldIds: readonly string[],
+  gridChildIds: ReadonlyMap<string, string[]>
+): string[] => fieldIds.flatMap((id) => gridChildIds.get(id) ?? [id]);
 
 // Rule-side value coercion. A term whose value is missing or of the wrong
 // shape for its operator evaluates to false (misconfigured rules never match,
@@ -402,6 +425,8 @@ export const stripHiddenResponses = (
  *       page rule (trigger field on the same page as the action) is intentional
  *       by design — the user wants the page gone. The PageRenderer clamp guard
  *       handles the resulting "current page hidden" state safely.
+ * - show/hide actions aimed at a grid apply to every live child of that grid;
+ *   require/unrequire never expand (a grid has no required state).
  * - A page is also hidden when it has ≥1 field and all of them are hidden
  *   (auto-skip, §9.8). Terms referencing unknown/deleted fields are false;
  *   disabled, term-less, or action-less rules are inactive (§9.9).
@@ -415,6 +440,7 @@ export const evaluateConditions = (
   const pageFieldIds = new Map<string, string[]>();
   const pageOrderMap = new Map<string, number>();
   const pages = schema.pages ?? [];
+  const gridChildIds = collectGridChildIds(pages);
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
     pageOrderMap.set(page.id, i);
@@ -446,7 +472,7 @@ export const evaluateConditions = (
   for (const rule of activeRules) {
     for (const action of rule.actions) {
       if (action.type === 'showField') {
-        for (const id of action.fieldIds) defaultHiddenFields.add(id);
+        for (const id of expandGridTargets(action.fieldIds, gridChildIds)) defaultHiddenFields.add(id);
       } else if (action.type === 'showPage') {
         defaultHiddenPages.add(action.pageId);
       }
@@ -485,10 +511,10 @@ export const evaluateConditions = (
       for (const action of rule.actions) {
         switch (action.type) {
           case 'showField':
-            for (const id of action.fieldIds) nextFields.delete(id);
+            for (const id of expandGridTargets(action.fieldIds, gridChildIds)) nextFields.delete(id);
             break;
           case 'hideField':
-            for (const id of action.fieldIds) nextFields.add(id);
+            for (const id of expandGridTargets(action.fieldIds, gridChildIds)) nextFields.add(id);
             break;
           case 'showPage':
             nextPages.delete(action.pageId);
@@ -642,6 +668,7 @@ export const detectConditionCycles = (
   const pageOrderMap = new Map<string, number>();
 
   const pages = schema?.pages ?? [];
+  const gridChildIds = collectGridChildIds(pages);
   for (let i = 0; i < pages.length; i++) {
     const page = pages[i];
     pageOrderMap.set(page.id, i);
@@ -684,7 +711,9 @@ export const detectConditionCycles = (
     for (const action of rule.actions) {
       if (!isWellFormedAction(action)) continue;
       if (action.type === 'showField' || action.type === 'hideField' || action.type === 'requireField' || action.type === 'unrequireField') {
-        for (const fid of action.fieldIds) {
+        const isVisibility = action.type === 'showField' || action.type === 'hideField';
+        const targets = isVisibility ? expandGridTargets(action.fieldIds, gridChildIds) : action.fieldIds;
+        for (const fid of targets) {
           if (typeof fid === 'string' && fid.length > 0) {
             set.add(fid);
           }

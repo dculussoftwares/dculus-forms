@@ -218,6 +218,11 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
 
   const triggerOptions = useMemo(() => getTriggerFieldOptions(pages), [pages]);
   const targetOptions = useMemo(() => getTargetFieldOptions(pages, t('chip.untitledField')), [pages, t]);
+  // Only show/hide can address a whole column group; "required" is a per-question property.
+  const visibilityTargetOptions = useMemo(
+    () => getTargetFieldOptions(pages, t('chip.untitledField'), { includeGroups: true }),
+    [pages, t]
+  );
   const logicIndex = useMemo(() => buildLogicIndex(pages), [pages]);
 
   const fieldById = useMemo(
@@ -862,7 +867,11 @@ export const RuleInspector: React.FC<RuleInspectorProps> = ({
                     </Select>
                   ) : (
                     <TargetFieldPicker
-                      options={targetOptions}
+                      options={
+                        action.type === 'showField' || action.type === 'hideField'
+                          ? visibilityTargetOptions
+                          : targetOptions
+                      }
                       selectedIds={action.fieldIds}
                       pages={pages}
                       disabled={!canEdit}

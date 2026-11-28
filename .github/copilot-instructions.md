@@ -244,8 +244,9 @@ FormField (base: id, type)
 │   ├── RadioField (options[])
 │   ├── CheckboxField (options[], minSelections, maxSelections)
 │   └── DateField (minDate/maxDate)
-└── NonFillableFormField
-    └── RichTextFormField (Lexical editor content)
+├── NonFillableFormField
+│   └── RichTextFormField (Lexical editor content)
+└── GridField (columnWidths[]; layout container, children link via gridId/gridColumn)
 ```
 
 ### Serialization (CRITICAL)

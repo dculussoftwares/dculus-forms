@@ -14,9 +14,9 @@
  * palette the Content workspace uses. No new palette is introduced here.
  */
 
-import { ConditionAction, ConditionalRule, FormField, FormPage } from '@dculus/types';
+import { ConditionAction, ConditionalRule, FormField, FormPage, getGridChildren, isLayoutField } from '@dculus/types';
 import { getFieldTypeConfig, getCategoryColor } from '../shared/fieldTypeVisuals';
-import { fieldDisplayLabel } from './conditionFieldConfig';
+import { fieldDisplayLabel, gridGroupLabel } from './conditionFieldConfig';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reference resolution
@@ -48,18 +48,22 @@ export interface PageRef {
 export interface LogicIndex {
   fieldById: Map<string, { field: FormField; pageNumber: number; pageId: string }>;
   pageById: Map<string, { page: FormPage; pageNumber: number }>;
+  /** Live children per grid id, so a grid reference can be named after its questions. */
+  gridChildren: Map<string, FormField[]>;
 }
 
 export const buildLogicIndex = (pages: FormPage[]): LogicIndex => {
   const fieldById = new Map<string, { field: FormField; pageNumber: number; pageId: string }>();
   const pageById = new Map<string, { page: FormPage; pageNumber: number }>();
+  const gridChildren = new Map<string, FormField[]>();
   pages.forEach((page, index) => {
     pageById.set(page.id, { page, pageNumber: index + 1 });
     page.fields.forEach((field) => {
       fieldById.set(field.id, { field, pageNumber: index + 1, pageId: page.id });
+      if (isLayoutField(field)) gridChildren.set(field.id, getGridChildren(page.fields, field.id));
     });
   });
-  return { fieldById, pageById };
+  return { fieldById, pageById, gridChildren };
 };
 
 export const resolveFieldRef = (
@@ -76,7 +80,12 @@ export const resolveFieldRef = (
     kind: 'field',
     id: fieldId,
     missing: false,
-    label: fieldDisplayLabel(entry.field, untitledLabel),
+    label: isLayoutField(entry.field)
+      ? gridGroupLabel(
+          (index.gridChildren.get(fieldId) ?? []).map((child) => fieldDisplayLabel(child, untitledLabel)),
+          untitledLabel
+        )
+      : fieldDisplayLabel(entry.field, untitledLabel),
     pageNumber: entry.pageNumber,
     field: entry.field,
   };

@@ -146,6 +146,8 @@
     "selectPage": "Select a page",
     "selectPage_all": "Select all",
     "deselectPage": "Clear",
+    "groupBadge": "Columns",
+    "groupTargetHint": "Applies to every question in this column group",
     "removeTarget": "Remove {{field}}",
     "valuePlaceholder": "Value",
     "numberPlaceholder": "Enter a number",
@@ -262,6 +264,7 @@
     "phone_number_field": "Phone Number",
     "rich_text_field": "Rich Text",
     "file_upload_field": "File Upload",
-    "rating_field": "Rating"
+    "rating_field": "Rating",
+    "grid_field": "Column group"
   }
 }

@@ -166,7 +166,11 @@ export const TargetFieldPicker: React.FC<TargetFieldPickerProps> = ({
                 return (
                   <label
                     key={option.field.id}
-                    className="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1.5 text-sm hover:bg-[var(--tf-faint)] dark:hover:bg-gray-800"
+                    className={cn(
+                      'flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1.5 text-sm hover:bg-[var(--tf-faint)] dark:hover:bg-gray-800',
+                      option.parentGridId && 'ml-5'
+                    )}
+                    title={option.isGroup ? t('editor.groupTargetHint') : undefined}
                   >
                     <Checkbox
                       checked={selectedIds.includes(option.field.id)}
@@ -183,6 +187,11 @@ export const TargetFieldPicker: React.FC<TargetFieldPickerProps> = ({
                       <visual.Icon className="h-3 w-3" />
                     </span>
                     <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                    {option.isGroup && (
+                      <span className="shrink-0 rounded bg-[var(--tf-faint)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--tf-light-muted)] dark:bg-gray-800 dark:text-gray-400">
+                        {t('editor.groupBadge')}
+                      </span>
+                    )}
                   </label>
                 );
               })}

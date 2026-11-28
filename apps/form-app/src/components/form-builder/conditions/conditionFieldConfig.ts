@@ -15,6 +15,7 @@ import {
   FormField,
   FormPage,
   RichTextFormField,
+  getGridChildren,
   isLayoutField,
 } from '@dculus/types';
 
@@ -106,6 +107,10 @@ export interface TargetFieldOption {
   label: string;
   page: FormPage;
   pageIndex: number;
+  /** True for a column-group entry: targeting it shows/hides every question inside the grid. */
+  isGroup?: boolean;
+  /** Set on a group's children so the picker can indent them beneath it. */
+  parentGridId?: string;
 }
 
 /**
@@ -125,16 +130,56 @@ export const fieldDisplayLabel = (field: FormField, untitledLabel: string): stri
   return untitledLabel;
 };
 
-/** Every field targetable on the DO side — including RichText info blocks, excluding layout containers. */
+const MAX_GROUP_LABEL_FIELDS = 3;
+
+/**
+ * A grid has no label of its own, so it is named after the questions inside it
+ * ("Name, Email, Phone…"). Built from the children's labels, which are already
+ * user content, so it needs no translation.
+ */
+export const gridGroupLabel = (childLabels: string[], untitledLabel: string): string => {
+  if (childLabels.length === 0) return untitledLabel;
+  const shown = childLabels.slice(0, MAX_GROUP_LABEL_FIELDS).join(', ');
+  return childLabels.length > MAX_GROUP_LABEL_FIELDS ? `${shown}…` : shown;
+};
+
+/**
+ * Every field targetable on the DO side — including RichText info blocks. Layout
+ * containers are excluded unless `includeGroups` is set (show/hide only): then each
+ * non-empty grid is offered as a group entry directly above its children.
+ */
 export const getTargetFieldOptions = (
   pages: FormPage[],
-  untitledLabel: string
+  untitledLabel: string,
+  { includeGroups = false }: { includeGroups?: boolean } = {}
 ): TargetFieldOption[] => {
   const options: TargetFieldOption[] = [];
   pages.forEach((page, pageIndex) => {
     page.fields.forEach((field) => {
-      if (isLayoutField(field)) return;
-      options.push({ field, label: fieldDisplayLabel(field, untitledLabel), page, pageIndex });
+      if (isLayoutField(field)) {
+        if (!includeGroups || field.deleted) return;
+        const children = getGridChildren(page.fields, field.id);
+        if (children.length === 0) return;
+        options.push({
+          field,
+          label: gridGroupLabel(
+            children.map((child) => fieldDisplayLabel(child, untitledLabel)),
+            untitledLabel
+          ),
+          page,
+          pageIndex,
+          isGroup: true,
+        });
+        return;
+      }
+      const parentGridId = includeGroups && field.gridId ? field.gridId : undefined;
+      options.push({
+        field,
+        label: fieldDisplayLabel(field, untitledLabel),
+        page,
+        pageIndex,
+        ...(parentGridId ? { parentGridId } : {}),
+      });
     });
   });
   return options;

@@ -705,8 +705,10 @@ Follows [.claude/agents/new-field-generator.md](../.claude/agents/new-field-gene
 - **Page auto-hide.** `evaluateConditions` / `detectConditionCycles` build `pageFieldIds` **excluding layout fields**, so a page whose real fields are all hidden still auto-hides. Rich text stays in the list (unchanged behaviour, R2). Children are ordinary ids in `hiddenFieldIds`, `stripHiddenResponses` and `requiredOverrides`; nothing else changes.
 - **Viewer.** A grid with no visible children renders nothing. Hidden columns collapse, and widths renormalize among the remaining columns (D4).
 
-### v1.1 (phase 5, optional)
+### v1.1 (phase 5) — implemented
 Allow `showField` / `hideField` on a grid id: expand to children inside `evaluateConditions` before the fixed-point loop (treat a hidden grid as hiding all its children so validation and `stripHiddenResponses` see them). Requires: UI target picker entry ("Group: …"), `LogicSimulator`/`logicVisuals` labels, cycle-detection expansion (`ruleAffects` includes children), and tests for oscillation with expanded targets.
+
+**As built:** the evaluator and `detectConditionCycles` expand a grid id to its live children for `showField`/`hideField` only (`requireField`/`unrequireField` are never expanded; required is per question). The picker lists each non-empty grid as a "Columns" group row above its indented children for show/hide, named after its first three questions (`gridGroupLabel`).
 
 ---
 
@@ -1040,9 +1042,9 @@ Four PRs, in this order. Line numbers are as of `main` @ 5a67554.
 **Rollback:** revert the PR; phase 3 behaviour remains.
 
 ### Phase 5 — Integrations (independent, optional PRs)
-- Condition targeting of grids (§11 v1.1).
+- Condition targeting of grids (§11 v1.1) — **done**.
 - AI regression tests; optional `addGrid` tool (§13).
-- Grid-aware templates (e.g. "Contact details" 2-col); grouped display in the individual-response view.
+- Grid-aware templates (e.g. "Contact details" 2-col); grouped display in the individual-response view (decided against: the detail side panel is a narrow flat list of answers, so grouping adds nothing).
 
 **Exit gate (each PR):** its own tests plus the §15 gates; conditions changes must leave every existing `conditional-logic-*.feature` and `conditions.*.test.ts` unedited and green.
 

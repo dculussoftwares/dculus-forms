@@ -3,6 +3,7 @@ import {
   checkBackwardReference,
   checkRuleReferences,
   getTargetFieldOptions,
+  gridGroupLabel,
   getValueInputKind,
   TRIGGER_OPERATORS,
 } from '../conditionFieldConfig';
@@ -163,6 +164,37 @@ describe('getTargetFieldOptions', () => {
       ['field-a', 'Name'],
       ['field-b', 'Email'],
     ]);
+  });
+});
+
+describe('getTargetFieldOptions with column groups', () => {
+  const gridPage = {
+    id: 'page-1',
+    title: 'page-1',
+    order: 0,
+    fields: [
+      { id: 'g1', type: FieldType.GRID_FIELD, columnWidths: [50, 50] },
+      { id: 'field-a', type: FieldType.TEXT_INPUT_FIELD, label: 'Name', gridId: 'g1', gridColumn: 0 },
+      { id: 'field-b', type: FieldType.EMAIL_FIELD, label: 'Email', gridId: 'g1', gridColumn: 1 },
+      { id: 'g2', type: FieldType.GRID_FIELD, columnWidths: [100] },
+      { id: 'field-c', type: FieldType.TEXT_INPUT_FIELD, label: 'Solo' },
+    ],
+  } as unknown as FormPage;
+
+  it('offers each non-empty grid as a group above its indented children', () => {
+    const options = getTargetFieldOptions([gridPage], 'Untitled', { includeGroups: true });
+
+    expect(options.map((option) => [option.field.id, option.label, option.isGroup ?? false, option.parentGridId])).toEqual([
+      ['g1', 'Name, Email', true, undefined],
+      ['field-a', 'Name', false, 'g1'],
+      ['field-b', 'Email', false, 'g1'],
+      ['field-c', 'Solo', false, undefined],
+    ]);
+  });
+
+  it('abbreviates long group labels', () => {
+    expect(gridGroupLabel(['A', 'B', 'C', 'D'], 'Untitled')).toBe('A, B, C…');
+    expect(gridGroupLabel([], 'Untitled')).toBe('Untitled');
   });
 });
 

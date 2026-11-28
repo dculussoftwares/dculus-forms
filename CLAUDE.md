@@ -155,8 +155,9 @@ FormField (base)
 │   ├── RadioField           + options[]
 │   ├── CheckboxField        CheckboxFieldValidation (minSelections, maxSelections)
 │   └── FileUploadField
-└── NonFillableFormField
-    └── RichTextFormField
+├── NonFillableFormField
+│   └── RichTextFormField
+└── GridField                columnWidths[]; layout container (`grid_field`). Children are ordinary fields in the same flat list pointing at it via `gridId`/`gridColumn`; see `docs/grid-layout-strategy.md`
 ```
 
 Fields are stored as plain JSON (database + Y.js). Always use the serialization helpers when persisting or syncing:
