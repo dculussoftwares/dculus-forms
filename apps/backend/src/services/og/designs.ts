@@ -8,7 +8,7 @@
  *
  * Colours are the product palette (CTA = --primary, hsl(290 11% 22%)).
  */
-import { mixWithWhite } from '@dculus/utils';
+import { mixWithWhite, readableOn } from '@dculus/utils';
 import { box, img, text, truncate, type OgChild, type OgNode } from './element.js';
 import type { MockField, SchemaSummary } from './describe.js';
 
@@ -174,15 +174,19 @@ const fieldRows = (fields: MockField[], budget: number, o: Required<MockOptions>
   return out;
 };
 
-const cta = (label: string, s: number, light = false): OgNode =>
+const cta = (label: string, s: number, light = false, brand?: string): OgNode =>
   box(
     {
       alignSelf: 'flex-start',
       padding: `${16 * s}px ${30 * s}px`,
       borderRadius: 12 * s,
-      backgroundColor: light ? C.white : C.ink,
+      backgroundColor: brand ?? (light ? C.white : C.ink),
     },
-    text(truncate(label, 22), { fontSize: 24 * s, fontWeight: 700, color: light ? C.ink : C.white })
+    text(truncate(label, 22), {
+      fontSize: 24 * s,
+      fontWeight: 700,
+      color: brand ? readableOn(brand) : light ? C.ink : C.white,
+    })
   );
 
 interface PanelInput {
@@ -229,7 +233,7 @@ const formPanel = (p: PanelInput): OgNode => {
       { flexDirection: 'column', gap: 18 * s, width: '100%', marginTop: 6 * s },
       ...fieldRows(p.summary.fields, p.budget, o)
     ),
-    cta(p.ctaLabel ?? p.summary.ctaLabel ?? 'Submit', s)
+    cta(p.ctaLabel ?? p.summary.ctaLabel ?? 'Submit', s, false, p.summary.brand)
   );
 };
 
@@ -489,7 +493,7 @@ export const formShare = ({ summary, title, description, photo: src }: FormShare
   const sub = description ?? summary.intro;
   return box(
     { width, height, position: 'relative', backgroundColor: C.ink, fontFamily: FONT, overflow: 'hidden' },
-    box({ position: 'absolute', top: 0, left: 0, width, height }, photo(src, {}, summary.tint)),
+    box({ position: 'absolute', top: 0, left: 0, width, height }, photo(src, {}, summary.tint ?? summary.brand)),
     box({
       position: 'absolute',
       top: 0,
@@ -529,6 +533,7 @@ export const formShare = ({ summary, title, description, photo: src }: FormShare
           { position: 'absolute', top: 92, right: 64, width: 350 },
           card({ width: 350, padding: '28px 30px' }, formPanel({ summary, title: summary.headline ?? title, budget: 270, s: 0.66 }))
         )
-      : null
+      : null,
+    summary.brand ? box({ position: 'absolute', top: 0, left: 0, width: 14, height, backgroundColor: summary.brand }) : null
   );
 };

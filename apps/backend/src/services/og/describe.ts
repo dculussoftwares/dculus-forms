@@ -27,6 +27,8 @@ export interface SchemaSummary {
   backgroundImageKey?: string;
   /** Hex sampled from the background photo, if the builder stored one. */
   tint?: string;
+  /** `layout.tokens.primaryColor`, when the form is branded. */
+  brand?: string;
   dark: boolean;
 }
 
@@ -104,6 +106,9 @@ export const describeSchema = (schema: any): SchemaSummary => {
     (c) => typeof c === 'string' && HEX.test(c) && c.toLowerCase() !== '#ffffff'
   );
 
+  const primary = layout.tokens?.primaryColor;
+  const brand = typeof primary === 'string' && HEX.test(primary) ? primary.toLowerCase() : undefined;
+
   return {
     layoutCode: typeof layout.code === 'string' ? layout.code : 'L1',
     headline,
@@ -118,6 +123,7 @@ export const describeSchema = (schema: any): SchemaSummary => {
         ? layout.backgroundImageKey.trim()
         : undefined,
     tint,
+    brand,
     dark: theme === 'dark',
   };
 };
