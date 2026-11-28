@@ -13,6 +13,7 @@ import {
 import { FormRenderer } from '@dculus/ui';
 import { Columns2 } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import { useBrandPreviewStore } from '../../../store/useBrandPreviewStore';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
 import { useTranslation } from '../../../hooks/useTranslation';
 import {
@@ -178,10 +179,12 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
 
   // Same formSchema shape PreviewTab builds for its FormRenderer preview — kept in
   // sync here so intro/thankYou rail selections render the exact same screens.
+  const previewActive = useBrandPreviewStore((s) => s.active);
+  const previewTokens = useBrandPreviewStore((s) => s.tokens);
   const formSchema: FormSchema = useMemo(
     () => ({
       pages: pages || [],
-      layout: layout || {
+      layout: (layout ? (previewActive ? { ...layout, tokens: previewTokens } : layout) : {
         code: 'L1',
         theme: 'light' as const,
         textColor: '#1f2937',
@@ -191,10 +194,10 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
         customBackGroundColor: '',
         backgroundImageKey: '',
         pageMode: 'multipage' as const,
-      },
+      }) as FormLayout,
       isShuffleEnabled: false,
     }),
-    [pages, layout]
+    [pages, layout, previewActive, previewTokens]
   );
 
   const { createFieldData } = useFieldCreation();

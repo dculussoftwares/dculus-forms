@@ -4,6 +4,7 @@ import { FormPage, FormField, FieldType, buildPageTree, countQuestionFields, isL
 import { cn } from '@dculus/utils';
 import { Plus } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import { useEffectiveTokens } from '../../../store/useBrandPreviewStore';
 import { useTranslation } from '../../../hooks';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
@@ -449,12 +450,13 @@ export const FormArea: React.FC<{
     layout,
   } = useFormBuilderStore();
   // Brand tokens drive the canvas too, so Design-drawer changes show live; unbranded forms keep the legacy look.
-  useFormFonts(layout?.tokens);
+  const tokens = useEffectiveTokens(layout?.tokens);
+  useFormFonts(tokens);
   const isDarkChrome =
     typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const brandTheme = useMemo(
-    () => resolveFormTheme(layout?.tokens, isDarkChrome ? 'dark' : 'light'),
-    [layout?.tokens, isDarkChrome]
+    () => resolveFormTheme(tokens, isDarkChrome ? 'dark' : 'light'),
+    [tokens, isDarkChrome]
   );
   const deleteGridWithUndo = useDeleteGridWithUndo(permissions.canEditFields());
   const selectedPage = pages.find((p) => p.id === selectedPageId);
@@ -610,7 +612,7 @@ export const FormArea: React.FC<{
         <div className="p-6 pb-36">
           <div className="max-w-3xl mx-auto" style={brandTheme.branded ? brandTheme.cssVars : undefined}>
             {/* Page Header */}
-            <PageHeader selectedPage={selectedPage} headingFont={!!layout?.tokens?.headingFont} />
+            <PageHeader selectedPage={selectedPage} headingFont={!!tokens?.headingFont} />
 
             {/* Form Fields Container - Drop Zone */}
             <FormThemeContext.Provider value={brandTheme}>
@@ -623,7 +625,7 @@ export const FormArea: React.FC<{
               `}
               style={{
                 ...(brandTheme.hasSurface ? { backgroundColor: 'var(--df-surface)' } : null),
-                ...(layout?.tokens?.bodyFont ? { fontFamily: 'var(--df-font-body)' } : null),
+                ...(tokens?.bodyFont ? { fontFamily: 'var(--df-font-body)' } : null),
                 border: isOver
                   ? '2px dashed rgba(60,50,62,0.25)'
                   : '1px solid rgba(81,76,84,0.10)',

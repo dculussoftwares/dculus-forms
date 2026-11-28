@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import type {
   FormButtonStyle,
   FormDesignTokens,
@@ -25,6 +25,7 @@ import {
   readableOn,
 } from '@dculus/utils';
 import { BrandPreviewCard } from './BrandPreviewCard';
+import { useBrandPreviewStore, useEffectiveTokens } from '../../../store/useBrandPreviewStore';
 import { BRAND_PRESETS, matchesPreset, type BrandPreset } from './brandPresets';
 
 type Translate = (key: string, options?: { values?: Record<string, string | number> }) => string;
@@ -88,7 +89,8 @@ const PresetButton: React.FC<{
   active: boolean;
   disabled: boolean;
   onApply: (preset: BrandPreset) => void;
-}> = ({ preset, label, active, disabled, onApply }) => {
+  onPreview: (preset: BrandPreset | null) => void;
+}> = ({ preset, label, active, disabled, onApply, onPreview }) => {
   const { primaryColor, headingFont, radius } = preset.tokens;
   return (
     <button
@@ -98,6 +100,10 @@ const PresetButton: React.FC<{
       aria-label={label}
       data-testid={`brand-preset-${preset.id}`}
       onClick={() => onApply(preset)}
+      onPointerEnter={() => onPreview(preset)}
+      onPointerLeave={() => onPreview(null)}
+      onFocus={() => onPreview(preset)}
+      onBlur={() => onPreview(null)}
       className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         active
           ? 'border-foreground bg-muted font-medium text-foreground'
@@ -129,9 +135,34 @@ const ColorField: React.FC<{
   swatches?: string[];
   disabled: boolean;
   onChange: (hex: string | undefined) => void;
-}> = ({ label, value, placeholder, clearLabel, helper, swatches, disabled, onChange }) => {
+  /** Called while the native picker is being dragged; nothing is saved until the picker is released. */
+  onPreview: (hex: string | undefined) => void;
+}> = ({ label, value, placeholder, clearLabel, helper, swatches, disabled, onChange, onPreview }) => {
   const [draft, setDraft] = useState(value ?? '');
   useEffect(() => setDraft(value ?? ''), [value]);
+  const pickerRef = useRef<HTMLInputElement>(null);
+  const pending = useRef<string | undefined>(undefined);
+
+  const commitPending = () => {
+    const hex = pending.current;
+    pending.current = undefined;
+    if (hex) onChange(hex);
+    else onPreview(undefined);
+  };
+
+  // React maps onChange to the continuous `input` event; the native `change` event fires on release.
+  useEffect(() => {
+    const el = pickerRef.current;
+    if (!el) return;
+    el.addEventListener('change', commitPending);
+    return () => el.removeEventListener('change', commitPending);
+  });
+
+  const drag = (hex: string) => {
+    setDraft(hex);
+    pending.current = hex.toLowerCase();
+    onPreview(hex.toLowerCase());
+  };
 
   const commit = (next: string) => {
     setDraft(next);
@@ -143,10 +174,12 @@ const ColorField: React.FC<{
       <Label className="block text-xs text-foreground dark:text-gray-400">{label}</Label>
       <div className="flex items-center gap-2">
         <input
+          ref={pickerRef}
           type="color"
           aria-label={label}
           value={value ?? '#000000'}
-          onChange={(e) => commit(e.target.value)}
+          onChange={(e) => drag(e.target.value)}
+          onBlur={commitPending}
           disabled={disabled}
           className="h-8 w-8 cursor-pointer rounded border border-[var(--tf-border-strong)] disabled:cursor-not-allowed disabled:opacity-50"
         />
@@ -258,11 +291,35 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
     document.head.appendChild(link);
   }, []);
 
+  const { setPreview, clearPreview } = useBrandPreviewStore();
+  const previewTokens = useEffectiveTokens(tokens);
+  const comparing = useBrandPreviewStore((s) => s.active && s.tokens === undefined);
+
+  // Leaving the drawer must never leave a transient preview on the canvas.
+  useEffect(() => clearPreview, [clearPreview]);
+
+  const previewToken = (key: 'primaryColor' | 'surfaceColor', hex: string | undefined) => {
+    if (disabled || !hex) {
+      clearPreview();
+      return;
+    }
+    setPreview({ ...tokens, version: 1, [key]: hex } as FormDesignTokens);
+  };
+
+  const previewPreset = (preset: BrandPreset | null) => {
+    if (disabled || !preset) {
+      clearPreview();
+      return;
+    }
+    setPreview({ version: 1, ...preset.tokens } as FormDesignTokens);
+  };
+
   const setToken = <K extends keyof Omit<FormDesignTokens, 'version'>>(
     key: K,
     value: FormDesignTokens[K] | undefined
   ) => {
     if (disabled) return;
+    clearPreview();
     const next: Record<string, unknown> = { ...tokens, version: 1 };
     if (value === undefined) delete next[key];
     else next[key] = value;
@@ -275,6 +332,7 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
 
   const applyPreset = (preset: BrandPreset) => {
     if (disabled) return;
+    clearPreview();
     onLayoutUpdate({ tokens: { version: 1, ...preset.tokens } as FormDesignTokens });
   };
 
@@ -290,7 +348,7 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
   return (
     <div className="space-y-5" data-testid="brand-style-controls">
       <BrandPreviewCard
-        tokens={tokens}
+        tokens={previewTokens}
         title={t('brandStyle.preview.title')}
         nameLabel={t('brandStyle.preview.nameLabel')}
         namePlaceholder={t('brandStyle.preview.namePlaceholder')}
@@ -298,6 +356,20 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
         primaryLabel={t('brandStyle.preview.primary')}
         secondaryLabel={t('brandStyle.preview.secondary')}
       />
+
+      {tokens && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-8 w-full text-xs"
+          aria-pressed={comparing}
+          data-testid="brand-compare-toggle"
+          onClick={() => (comparing ? clearPreview() : setPreview(undefined))}
+        >
+          {comparing ? t('brandStyle.compare.showing') : t('brandStyle.compare.hold')}
+        </Button>
+      )}
 
       <div className="space-y-2">
         <Label className="block text-xs text-foreground dark:text-gray-400">
@@ -312,6 +384,7 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
               active={matchesPreset(tokens, preset)}
               disabled={disabled}
               onApply={applyPreset}
+              onPreview={previewPreset}
             />
           ))}
         </div>
@@ -325,6 +398,7 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
         swatches={QUICK_SWATCHES}
         disabled={disabled}
         onChange={(hex) => setToken('primaryColor', hex)}
+        onPreview={(hex) => previewToken('primaryColor', hex)}
       />
 
       <ColorField
@@ -335,6 +409,7 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
         helper={t('brandStyle.surfaceColor.helper')}
         disabled={disabled}
         onChange={(hex) => setToken('surfaceColor', hex)}
+        onPreview={(hex) => previewToken('surfaceColor', hex)}
       />
 
       <FontField

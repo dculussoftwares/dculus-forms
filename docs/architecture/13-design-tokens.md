@@ -74,12 +74,20 @@ it does not block saving.
   clicks do not close it; Escape and the close button do.
 - `BrandPreviewCard` (top of Brand & style) renders a sample form with the current
   tokens; `brandPresets.ts` holds one-click token sets (active preset = exact match).
+- **Transient previews** (`store/useBrandPreviewStore.ts`) never write to Y.js. The canvas
+  (`PageBuilderFormArea`, intro/thank-you via `PageBuilderTab`) reads
+  `useEffectiveTokens(layout.tokens)`, which returns the preview while active:
+  hovering/focusing a preset, dragging the native colour picker (saved on release or
+  blur; hex text and swatches save immediately), and the **Preview without brand style**
+  before/after toggle. The store is cleared on commit and when the drawer unmounts.
 - Entry points: toolbar **Design** and **Brand** buttons, and a "Brand & style"
   shortcut on the Welcome panel. **Brand** opens the drawer scrolled to the
   section (`focusSection="brand"`).
 - **Viewer / embed**: `LayoutRenderer` via form-viewer, no extra wiring.
 - **Published renderer**: `@dculus/form-renderer` (README documents the CSP needs).
-- **Not yet**: OG share images (`services/og`) could read `tokens.primaryColor`.
+- **OG share images** (`services/og`): `describe.ts` reads a valid `tokens.primaryColor`
+  into `SchemaSummary.brand`; `designs.ts` uses it for the form-share CTA, an accent bar
+  and (without a photo) the gradient. Unbranded images are unchanged.
 
 ## Failure modes
 

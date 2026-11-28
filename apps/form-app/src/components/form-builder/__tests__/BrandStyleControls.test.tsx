@@ -1,5 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { FormLayout } from '@dculus/types';
+import { act } from 'react';
+import { useBrandPreviewStore } from '../../../store/useBrandPreviewStore';
 import { BrandStyleControls, darkenToContrast } from '../design/BrandStyleControls';
 import { contrastRatio } from '@dculus/utils';
 import en from '../../../locales/en/designDrawer.json';
@@ -24,6 +26,9 @@ jest.mock('@dculus/ui', () => {
     SelectValue: () => null,
   };
 });
+
+// zustand is globally stubbed in setupTests; use the real one so the transient preview store works.
+jest.mock('zustand', () => jest.requireActual('zustand'));
 
 // The preview card renders real field classes from @dculus/types (globally mocked in jest).
 jest.mock('../design/BrandPreviewCard', () => ({ BrandPreviewCard: () => null }));
@@ -55,6 +60,44 @@ const setup = (layout: FormLayout = baseLayout, canEditLayout = true) => {
 };
 
 describe('BrandStyleControls', () => {
+  afterEach(() => act(() => useBrandPreviewStore.getState().clearPreview()));
+
+  it('previews a preset on hover without saving, and clears on leave', () => {
+    const { onLayoutUpdate } = setup();
+    fireEvent.pointerEnter(screen.getByTestId('brand-preset-ocean'));
+    expect(useBrandPreviewStore.getState()).toMatchObject({
+      active: true,
+      tokens: expect.objectContaining({ primaryColor: '#2563eb' }),
+    });
+    fireEvent.pointerLeave(screen.getByTestId('brand-preset-ocean'));
+    expect(useBrandPreviewStore.getState().active).toBe(false);
+    expect(onLayoutUpdate).not.toHaveBeenCalled();
+  });
+
+  it('previews the colour picker locally and saves only on release', () => {
+    const { onLayoutUpdate } = setup();
+    const picker = screen.getByLabelText(en.brandStyle.brandColor.label, { selector: 'input[type="color"]' });
+    fireEvent.change(picker, { target: { value: '#ff0000' } });
+    expect(onLayoutUpdate).not.toHaveBeenCalled();
+    expect(useBrandPreviewStore.getState().tokens).toMatchObject({ primaryColor: '#ff0000' });
+    fireEvent.blur(picker);
+    expect(onLayoutUpdate).toHaveBeenCalledWith({ tokens: { version: 1, primaryColor: '#ff0000' } });
+    expect(useBrandPreviewStore.getState().active).toBe(false);
+  });
+
+  it('toggles an unbranded before/after view only when tokens exist', () => {
+    const { unmount } = render(
+      <BrandStyleControls layout={baseLayout} canEditLayout onLayoutUpdate={jest.fn()} onReset={jest.fn()} t={t} />
+    );
+    expect(screen.queryByTestId('brand-compare-toggle')).toBeNull();
+    unmount();
+    setup({ ...baseLayout, tokens: { version: 1, primaryColor: '#2563eb' } } as FormLayout);
+    fireEvent.click(screen.getByTestId('brand-compare-toggle'));
+    expect(useBrandPreviewStore.getState()).toMatchObject({ active: true, tokens: undefined });
+    fireEvent.click(screen.getByTestId('brand-compare-toggle'));
+    expect(useBrandPreviewStore.getState().active).toBe(false);
+  });
+
   it('merges a quick swatch into layout.tokens', () => {
     const { onLayoutUpdate } = setup();
     fireEvent.click(screen.getByLabelText('#2563eb'));
