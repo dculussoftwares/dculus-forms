@@ -714,6 +714,12 @@ describe('updateLayout', () => {
     const result = await tools.updateLayout.execute!({ content: '<h1>Hello</h1>', customCTAButtonName: 'Submit' }, { messages: [], toolCallId: 'test' });
     expect(result).toEqual({ type: 'UPDATE_LAYOUT', content: '<h1>Hello</h1>', customCTAButtonName: 'Submit' });
   });
+
+  it('passes design tokens through', async () => {
+    const tools = makeFullTools();
+    const result = await tools.updateLayout.execute!({ tokens: { primaryColor: '#ea580c', radius: 'lg' } }, { messages: [], toolCallId: 'test' });
+    expect(result).toEqual({ type: 'UPDATE_LAYOUT', tokens: { primaryColor: '#ea580c', radius: 'lg' } });
+  });
 });
 
 describe('renamePage', () => {

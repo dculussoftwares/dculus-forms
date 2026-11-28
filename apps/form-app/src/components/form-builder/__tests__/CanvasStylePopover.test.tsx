@@ -65,6 +65,24 @@ describe('CanvasStylePopover', () => {
     expect(useCanvasStyleStore.getState().target).toBeNull();
   });
 
+  it('opens only the clicked field when several inputs share a target', () => {
+    render(
+      <>
+        {['a', 'b', 'c'].map((id) => (
+          <CanvasStylePopover key={id} target="input" instanceId={id}>
+            <button onClick={() => useCanvasStyleStore.getState().toggle('input', id)}>{id}</button>
+          </CanvasStylePopover>
+        ))}
+      </>
+    );
+    fireEvent.click(screen.getByText('b'));
+    expect(screen.getAllByTestId('sections')).toHaveLength(1);
+    fireEvent.click(screen.getByText('c'));
+    expect(screen.getAllByTestId('sections')).toHaveLength(1);
+    fireEvent.click(screen.getByText('c'));
+    expect(screen.queryByTestId('sections')).toBeNull();
+  });
+
   it('renders the bare element for read-only viewers', () => {
     canEditLayout = false;
     render(<Canvas target="title" />);

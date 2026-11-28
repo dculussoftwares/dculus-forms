@@ -1,4 +1,4 @@
-import { FieldType, sanitizeConditions } from '@dculus/types';
+import { FieldType, sanitizeConditions, sanitizeDesignTokens } from '@dculus/types';
 import { buildAnswerKeyGrading } from '@dculus/types/quiz.js';
 import type { FormBuilderState } from '../store/types/store.types';
 import { getApiBaseUrl } from './config';
@@ -72,7 +72,7 @@ export function applyAIOp(
   op: any,
   store: Pick<
     FormBuilderState,
-    | 'pages' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField'
+    | 'pages' | 'layout' | 'addField' | 'addFieldAtIndex' | 'updateField' | 'removeField'
     | 'reorderFields' | 'updateLayout' | 'updatePageTitle' | 'reorderPages'
     | 'addPageAtPosition' | 'removePage' | 'setSelectedPage'
     | 'setAIHighlightedFieldId' | 'setPendingValidationSuggestions' | 'addPendingConditionSuggestion'
@@ -238,6 +238,11 @@ export function applyAIOp(
       const updates: Record<string, unknown> = {};
       if (op.content !== undefined) updates.content = op.content;
       if (op.customCTAButtonName !== undefined) updates.customCTAButtonName = op.customCTAButtonName;
+      if (op.tokens !== undefined) {
+        // AI sends only changed tokens; merge over the current look and re-validate.
+        const merged = sanitizeDesignTokens({ ...(store.layout?.tokens ?? {}), ...op.tokens });
+        if (merged) updates.tokens = merged;
+      }
       store.updateLayout(updates);
       break;
     }

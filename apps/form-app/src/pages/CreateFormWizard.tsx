@@ -10,7 +10,7 @@ import {
   Badge,
 } from '@dculus/ui';
 import { cn, generateRandomString, trackEvent } from '@dculus/utils';
-import type { LayoutCode, GradeRelease } from '@dculus/types';
+import type { LayoutCode, GradeRelease, FormDesignTokens } from '@dculus/types';
 import { DEFAULT_QUIZ_SETTINGS, buildAnswerKeyGrading } from '@dculus/types/quiz.js';
 import {
   LayoutTemplate,
@@ -39,6 +39,8 @@ import { useTranslation } from '../hooks/useTranslation';
 import { getErrorDetails } from '../utils/graphqlErrors';
 import { extractSearchKeyword } from '../utils/mediaSearch';
 import { getCdnEndpoint } from '../lib/config';
+import { useOrgBrandKit } from '../hooks/useOrgBrandKit';
+import { LookPicker } from '../components/form-builder/design/LookPicker';
 import { LayoutThumbnails } from '../components/form-builder/tabs/layout/LayoutThumbnails';
 import {
   searchPexelsImages, downloadPexelsImage,
@@ -190,12 +192,14 @@ function buildFormSchema(
   fields: AIField[],
   pageMode: PageMode,
   layoutCode: LayoutCode = 'L1',
-  layoutOverrides?: { content?: string; customCTAButtonName?: string }
+  layoutOverrides?: { content?: string; customCTAButtonName?: string },
+  tokens?: FormDesignTokens
 ) {
   const layout = {
     theme: 'LIGHT', primaryColor: '#3b82f6',
     backgroundColor: '#ffffff', textColor: '#000000', spacing: 'NORMAL',
     code: layoutCode,
+    ...(tokens ? { tokens } : {}),
     ...(layoutOverrides?.content ? { content: layoutOverrides.content } : {}),
     ...(layoutOverrides?.customCTAButtonName ? { customCTAButtonName: layoutOverrides.customCTAButtonName } : {}),
   };
@@ -319,6 +323,16 @@ const CreateFormWizard: React.FC = () => {
 
   // Appearance step
   const [selectedLayoutCode, setSelectedLayoutCode] = useState<LayoutCode>('L1');
+  const [brandTokens, setBrandTokens] = useState<FormDesignTokens | undefined>(undefined);
+  const { kitTokens: orgKitTokens } = useOrgBrandKit();
+  const orgKitSeeded = useRef(false);
+  // New forms start in the organisation's brand until the creator picks another look.
+  useEffect(() => {
+    if (orgKitTokens && !orgKitSeeded.current) {
+      orgKitSeeded.current = true;
+      setBrandTokens(orgKitTokens);
+    }
+  }, [orgKitTokens]);
   const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(null);
   const [mediaType, setMediaType] = useState<MediaType>('photo');
   const [imageTab, setImageTab] = useState<'pexels' | 'pixabay'>('pexels');
@@ -515,7 +529,7 @@ const CreateFormWizard: React.FC = () => {
     setIsCreatingForm(true);
 
     try {
-      const formSchema = buildFormSchema(aiGeneratedFields, pageMode, selectedLayoutCode, aiGeneratedLayout ?? undefined);
+      const formSchema = buildFormSchema(aiGeneratedFields, pageMode, selectedLayoutCode, aiGeneratedLayout ?? undefined, brandTokens);
 
       const input: Record<string, unknown> = {
         title: aiSuggestedTitle,
@@ -581,7 +595,7 @@ const CreateFormWizard: React.FC = () => {
       const { messageKey } = getErrorDetails(err);
       toastError(t('appearance.errors.failed'), tErr(messageKey) || t('appearance.errors.failedDesc'));
     }
-  }, [aiGeneratedFields, aiSuggestedTitle, aiGeneratedLayout, pageMode, selectedLayoutCode, selectedMedia, organizationId, createForm, navigate, t, tErr, creationSource, quizDescription, quizPassThreshold, quizGradeRelease]);
+  }, [aiGeneratedFields, aiSuggestedTitle, aiGeneratedLayout, pageMode, selectedLayoutCode, brandTokens, selectedMedia, organizationId, createForm, navigate, t, tErr, creationSource, quizDescription, quizPassThreshold, quizGradeRelease]);
 
   const handleCreateFromTemplate = useCallback(async () => {
     if (!templateTitle.trim()) {
@@ -986,6 +1000,12 @@ const CreateFormWizard: React.FC = () => {
                 <h1 className="text-2xl font-bold text-foreground">{t('appearance.heading')}</h1>
               </div>
               <p className="text-sm text-muted-foreground">{t('appearance.subheading')}</p>
+            </div>
+
+            <div className="mb-6" data-testid="wizard-look-section">
+              <h2 className="text-sm font-semibold text-foreground">{t('appearance.lookLabel')}</h2>
+              <p className="text-xs text-muted-foreground mb-3">{t('appearance.lookHint')}</p>
+              <LookPicker value={brandTokens} onChange={setBrandTokens} source="wizard" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">

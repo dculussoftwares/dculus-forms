@@ -35,7 +35,7 @@ import { useFormPermissions } from '../../../hooks/useFormPermissions';
 import { useBuilderSelectionUrlSync } from '../../../hooks/useBuilderSelectionUrlSync';
 import { getCdnEndpoint, isGridLayoutEnabled } from '../../../lib/config';
 import { GridLayoutFlagContext } from '../../../contexts/GridLayoutFlagContext';
-import { RendererMode, cn } from '@dculus/utils';
+import { RendererMode, cn, trackEvent } from '@dculus/utils';
 import { FieldTypeDisplay, type FieldTypeConfig } from '../FieldTypesPanel';
 import { FieldLibrary } from '../field-library/FieldLibrary';
 import { recordRecentFieldType } from '../field-library/fieldLibraryStorage';
@@ -43,6 +43,7 @@ import { JourneyRail } from '../rail/JourneyRail';
 import { FieldCard } from './PageBuilderFieldCard';
 import { FormArea } from './PageBuilderFormArea';
 import { RightSidebar } from './PageBuilderSidebar';
+import { useDesignDrawerRequestStore } from '../../../store/useDesignDrawerRequestStore';
 import { CanvasToolbar, type CanvasDevice } from '../CanvasToolbar';
 import { QuizSummaryStrip } from '../QuizSummaryStrip';
 import { useQuizMode } from '../../../contexts/QuizModeContext';
@@ -95,10 +96,18 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
   // Canvas toolbar state: 🎨 Design drawer open/closed, desktop/mobile device frame.
   const [isDesignDrawerOpen, setIsDesignDrawerOpen] = useState(false);
   const [designFocus, setDesignFocus] = useState<'brand' | null>(null);
-  const openDesignDrawer = useCallback((focus: 'brand' | null = null) => {
+  const openDesignDrawer = useCallback((focus: 'brand' | null = null, source = 'unknown') => {
+    if (focus === 'brand') trackEvent('brand_opened', { source });
     setDesignFocus(focus);
     setIsDesignDrawerOpen(true);
   }, []);
+  const pendingBrandSource = useDesignDrawerRequestStore((s) => s.pendingSource);
+  const consumeBrandRequest = useDesignDrawerRequestStore((s) => s.consume);
+  useEffect(() => {
+    if (!pendingBrandSource) return;
+    openDesignDrawer('brand', pendingBrandSource);
+    consumeBrandRequest();
+  }, [pendingBrandSource, openDesignDrawer, consumeBrandRequest]);
   const [device, setDevice] = useState<CanvasDevice>('desktop');
   // Track the currently dragged field type (from sidebar)
   const [activeFieldType, setActiveFieldType] =
@@ -570,7 +579,11 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <CanvasToolbar
               onOpenDesign={() => openDesignDrawer()}
-              onOpenBrand={() => openDesignDrawer('brand')}
+              onOpenBrand={() => openDesignDrawer('brand', 'toolbar')}
+              layout={layout}
+              canEditLayout={canEditLayout}
+              onLayoutUpdate={handleLayoutUpdate}
+              onTokensReset={handleTokensReset}
               device={device}
               onDeviceChange={setDevice}
               onOpenPreview={() => onOpenPreview?.()}
@@ -617,7 +630,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
           <RightSidebar
             width={sidebarWidth}
             onWidthChange={setSidebarWidth}
-            onOpenBrand={() => openDesignDrawer('brand')}
+            onOpenBrand={() => openDesignDrawer('brand', 'sidebar')}
           />
         </div>
 

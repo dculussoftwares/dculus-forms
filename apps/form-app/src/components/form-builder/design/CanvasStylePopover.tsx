@@ -14,9 +14,12 @@ const TARGET_SECTIONS: Record<CanvasStyleTarget, BrandSection[]> = {
 };
 
 export const CANVAS_STYLE_ANCHOR_ATTR = 'data-canvas-style-anchor';
+const CANVAS_STYLE_INSTANCE_ATTR = 'data-canvas-style-instance';
 
 interface CanvasStylePopoverProps {
   target: CanvasStyleTarget;
+  /** Required when several elements share a target (e.g. one input per field); must match the id passed to `toggle`. */
+  instanceId?: string;
   /** Single element the popover anchors to; its own click handler calls `toggle(target)`. */
   children: React.ReactElement;
 }
@@ -26,12 +29,12 @@ interface CanvasStylePopoverProps {
  * design-token controls relevant to it. Edits go through the same layout update path
  * as the Design drawer, so previews, Y.js sync and permissions behave identically.
  */
-export const CanvasStylePopover: React.FC<CanvasStylePopoverProps> = ({ target, children }) => {
+export const CanvasStylePopover: React.FC<CanvasStylePopoverProps> = ({ target, instanceId, children }) => {
   const { t } = useTranslation('designDrawer');
   const permissions = useFormPermissions();
   const canEditLayout = permissions.canEditLayout();
   const { layout, updateLayout, clearLayoutKey } = useFormBuilderStore();
-  const open = useCanvasStyleStore((s) => s.target === target);
+  const open = useCanvasStyleStore((s) => s.target === target && s.instanceId === (instanceId ?? null));
   const close = useCanvasStyleStore((s) => s.close);
 
   if (!layout || !canEditLayout) return children;
@@ -39,7 +42,10 @@ export const CanvasStylePopover: React.FC<CanvasStylePopoverProps> = ({ target, 
   return (
     <Popover open={open} onOpenChange={(next) => !next && close()}>
       <PopoverAnchor asChild>
-        {React.cloneElement(children, { [CANVAS_STYLE_ANCHOR_ATTR]: target } as Record<string, string>)}
+        {React.cloneElement(children, {
+          [CANVAS_STYLE_ANCHOR_ATTR]: target,
+          ...(instanceId ? { [CANVAS_STYLE_INSTANCE_ATTR]: instanceId } : {}),
+        } as Record<string, string>)}
       </PopoverAnchor>
       <PopoverContent
         align="start"
@@ -49,7 +55,8 @@ export const CanvasStylePopover: React.FC<CanvasStylePopoverProps> = ({ target, 
         // Re-clicking the element toggles it closed instead of closing and instantly reopening.
         onPointerDownOutside={(e) => {
           const el = e.target as Element | null;
-          if (el?.closest(`[${CANVAS_STYLE_ANCHOR_ATTR}="${target}"]`)) e.preventDefault();
+          const anchor = el?.closest(`[${CANVAS_STYLE_ANCHOR_ATTR}="${target}"]`);
+          if (anchor && (!instanceId || anchor.getAttribute(CANVAS_STYLE_INSTANCE_ATTR) === instanceId)) e.preventDefault();
         }}
       >
         <p className="mb-3 text-sm font-medium text-foreground">{t(`brandStyle.canvasStyle.${target}`)}</p>

@@ -107,7 +107,9 @@
     "errors": {
       "failed": "Failed to create form",
       "failedDesc": "Something went wrong. Please try again."
-    }
+    },
+    "lookLabel": "Pick a look",
+    "lookHint": "Optional — choose a theme now, fine-tune it anytime in Style."
   },
   "template": {
     "heading": "Choose a Template",

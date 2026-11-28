@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
  * yet in the dismissed list is the active one.
  */
 
-export const COACH_MARK_ORDER = ['rail', 'design', 'gear'] as const;
+export const COACH_MARK_ORDER = ['rail', 'brand', 'gear'] as const;
 export type CoachMarkId = (typeof COACH_MARK_ORDER)[number];
 
 const DISMISSED_KEY = 'dculus.coachmarks.dismissed';

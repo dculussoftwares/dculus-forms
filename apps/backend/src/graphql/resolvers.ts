@@ -17,6 +17,7 @@ import { pdfGeneratorsResolvers } from './resolvers/pdfGenerators.js';
 import { responseFilesResolvers } from './resolvers/responseFiles.js';
 import { subscriptionResolvers } from './resolvers/subscriptions.js';
 import { tagResolvers } from './resolvers/tags.js';
+import { brandKitResolvers } from './resolvers/brandKit.js';
 import { responseDraftsResolvers } from './resolvers/responseDrafts.js';
 import { myResponseResolvers } from './resolvers/myResponse.js';
 import { aiResolvers } from './resolvers/ai.js';
@@ -59,6 +60,7 @@ export const resolvers = {
     ...responseFilesResolvers.Query,
     ...subscriptionResolvers.Query,
     ...tagResolvers.Query,
+    ...brandKitResolvers.Query,
   },
   Mutation: {
     ...aiChatResolvers.Mutation,
@@ -79,11 +81,13 @@ export const resolvers = {
     ...responseFilesResolvers.Mutation,
     ...subscriptionResolvers.Mutation,
     ...tagResolvers.Mutation,
+    ...brandKitResolvers.Mutation,
     ...responseDraftsResolvers.Mutation,
     ...myResponseResolvers.Mutation,
     ...adminResolvers.Mutation,
   },
   PublicTemplate: templatesResolvers.PublicTemplate,
+  OrganizationBrandKit: brandKitResolvers.OrganizationBrandKit,
   Form: {
     ...formsResolvers.Form,
     ...formSharingResolvers.Form,

@@ -27,3 +27,4 @@ export * from './userRepository.js';
 export * from './auditLogRepository.js';
 export * from './systemRepository.js';
 export * from './webhookEventRepository.js';
+export * from './brandKitRepository.js';

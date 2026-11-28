@@ -330,6 +330,14 @@ export const typeDefs = gql`
     permissions: [FormPermission!]!
   }
 
+  type OrganizationBrandKit {
+    id: ID!
+    organizationId: ID!
+    tokens: JSON!
+    updatedAt: String!
+    updatedById: ID
+  }
+
   type ResponseTag {
     id: ID!
     formId: ID!
@@ -1825,6 +1833,9 @@ export const typeDefs = gql`
     # Response Edit Tracking Queries
     responseEditHistory(responseId: ID!): [ResponseEditHistory!]!
 
+    # Organization Brand Kit Queries
+    organizationBrandKit(organizationId: ID!): OrganizationBrandKit
+
     # Response Tag Queries
     formTags(formId: ID!): [ResponseTag!]!
 
@@ -2122,6 +2133,10 @@ export const typeDefs = gql`
     releaseResponseGrades(formId: ID!, ids: [ID!]!): ReleaseResponseGradesResult!
     generateFakeResponses(formId: ID!, count: Int!): Int!
     deleteAiGeneratedResponses(formId: ID!): Int!
+
+    # Organization Brand Kit Mutations
+    saveOrganizationBrandKit(organizationId: ID!, tokens: JSON!): OrganizationBrandKit!
+    deleteOrganizationBrandKit(organizationId: ID!): Boolean!
 
     # Response Tag Mutations
     createTag(formId: ID!, name: String!, color: String): ResponseTag!

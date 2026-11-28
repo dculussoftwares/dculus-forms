@@ -1,5 +1,11 @@
 import { FieldType } from '@dculus/types';
 
+// The barrel's circular validation import leaves this undefined under jest's CJS runner.
+jest.mock('@dculus/types', () => ({
+  ...jest.requireActual('@dculus/types'),
+  sanitizeDesignTokens: jest.requireActual('@dculus/types/validation').sanitizeDesignTokens,
+}));
+
 // Mock config so the test never evaluates import.meta.env (Jest can't parse it).
 jest.mock('../config', () => ({ getApiBaseUrl: () => 'http://localhost:4000' }));
 // fetch is called fire-and-forget on real mutations; stub it.
@@ -286,6 +292,17 @@ describe('applyAIOp — UPDATE_LAYOUT', () => {
     applyAIOp({ type: 'UPDATE_LAYOUT', customCTAButtonName: 'Submit' }, store as any);
     const callArg = (store.updateLayout as jest.Mock).mock.calls[0][0];
     expect(callArg).toEqual({ customCTAButtonName: 'Submit' });
+  });
+});
+
+describe('applyAIOp — UPDATE_LAYOUT tokens', () => {
+  it('merges AI tokens over existing tokens and drops invalid values', () => {
+    const store = makeStore();
+    (store as any).layout = { tokens: { version: 1, primaryColor: '#111111', radius: 'md' } };
+    applyAIOp({ type: 'UPDATE_LAYOUT', tokens: { primaryColor: '#ea580c', headingFont: 'not-a-font' } }, store as any);
+    expect(store.updateLayout).toHaveBeenCalledWith({
+      tokens: { version: 1, primaryColor: '#ea580c', radius: 'md' },
+    });
   });
 });
 

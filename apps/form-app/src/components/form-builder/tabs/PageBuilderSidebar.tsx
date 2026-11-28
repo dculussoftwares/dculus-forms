@@ -1,16 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import { FormLayout } from '@dculus/types';
-import { ScrollArea } from '@dculus/ui';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useFormPermissions } from '../../../hooks/useFormPermissions';
-import { useTranslation } from '../../../hooks';
 import FieldSettingsV2 from '../FieldSettingsV2';
 import { IntroSettingsPanel } from '../panels/IntroSettingsPanel';
 import { EndingSettingsPanel } from '../panels/EndingSettingsPanel';
 import { PageSettingsPanel } from '../panels/PageSettingsPanel';
+import { FormGlancePanel } from '../panels/FormGlancePanel';
 import { FieldLogicSummaryRow } from '../panels/FieldLogicSummaryRow';
 
-import { GripHorizontal, Settings } from 'lucide-react';
+import { GripHorizontal } from 'lucide-react';
 
 // =============================================================================
 // RightSidebar
@@ -29,7 +28,6 @@ export const RightSidebar: React.FC<{
   /** Opens the Design drawer scrolled to Brand & style. */
   onOpenBrand?: () => void;
 }> = ({ width, onWidthChange, onOpenBrand }) => {
-  const { t } = useTranslation('pageBuilderTab');
   const permissions = useFormPermissions();
   const [isResizing, setIsResizing] = useState(false);
 
@@ -159,15 +157,9 @@ export const RightSidebar: React.FC<{
     }
 
     return (
-      <ScrollArea className="min-h-0 flex-1">
-        <div className="flex flex-col items-center justify-center h-64 p-8 text-center">
-          <div className="w-10 h-10 rounded-xl bg-[var(--tf-icon-gray)] flex items-center justify-center mb-3">
-            <Settings className="w-4.5 h-4.5 text-[#655d67]" />
-          </div>
-          <p className="text-sm font-medium text-[#4c414e] dark:text-gray-300">{t('emptyState.title')}</p>
-          <p className="text-xs text-[#655d67] dark:text-gray-500 mt-1">{t('emptyState.description')}</p>
-        </div>
-      </ScrollArea>
+      <FormGlancePanel
+        onOpenBrand={permissions.canEditLayout() ? onOpenBrand : undefined}
+      />
     );
   };
 

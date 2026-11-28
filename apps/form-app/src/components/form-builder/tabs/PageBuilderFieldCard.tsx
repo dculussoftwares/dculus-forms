@@ -193,6 +193,7 @@ export const FieldCard: React.FC<{
   // Logic cross-reference chip — see issue #168
   const { t } = useTranslation('pageBuilderTab');
   const { t: tQuiz } = useTranslation('quizGrading');
+  const { t: tDesign } = useTranslation('designDrawer');
   const navigate = useNavigate();
   const location = useLocation();
   const { formId } = useParams<{ formId: string }>();
@@ -497,15 +498,16 @@ export const FieldCard: React.FC<{
                 )}
 
                 {/* Field Input (label suppressed if hasLabel to eliminate duplicate) */}
-                <CanvasStylePopover target="input">
+                <CanvasStylePopover target="input" instanceId={field.id}>
                 <div
                   data-testid={`field-input-style-target-${field.id}`}
+                  title={isSelected && isFillable ? tDesign('brandStyle.canvasStyle.hint') : undefined}
                   className="relative"
                   onBlur={() => {
                     flushContentChange();
                   }}
                   // Selecting happens on the first click; a click on an already-selected field's input opens the style popover.
-                  onClick={() => isSelected && isFillable && toggleCanvasStyle('input')}
+                  onClick={() => isSelected && isFillable && toggleCanvasStyle('input', field.id)}
                 >
                   {/* Disabled controls swallow clicks, so this overlay lets them reach the card and this wrapper. */}
                   {isFillable && <div aria-hidden="true" className="absolute inset-0 z-10 cursor-pointer" />}

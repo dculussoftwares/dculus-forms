@@ -1,9 +1,11 @@
 import React from 'react';
-import { Palette, Paintbrush, Monitor, Smartphone, Play } from 'lucide-react';
+import { Palette, Monitor, Smartphone, Play } from 'lucide-react';
+import type { FormLayout } from '@dculus/types';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../hooks/useTranslation';
 import { CoachMark } from './coachmarks/CoachMark';
+import { ThemeStrip } from './design/ThemeStrip';
 
 export type CanvasDevice = 'desktop' | 'mobile';
 
@@ -13,6 +15,10 @@ interface CanvasToolbarProps {
   onOpenDesign: () => void;
   /** Opens the Design drawer scrolled to Brand & style. */
   onOpenBrand?: () => void;
+  layout: FormLayout;
+  canEditLayout: boolean;
+  onLayoutUpdate: (updates: Partial<FormLayout>) => void;
+  onTokensReset: () => void;
   device: CanvasDevice;
   onDeviceChange: (device: CanvasDevice) => void;
   /** ▶ Preview — relocated here from FormBuilderHeader per the prototype (ticket #231). */
@@ -20,13 +26,17 @@ interface CanvasToolbarProps {
 }
 
 /**
- * CanvasToolbar — slim bar atop the Content canvas: 🎨 Design · device toggle
+ * CanvasToolbar — slim bar atop the Content canvas: 🎨 Style · theme strip · device toggle
  * · ▶ Preview. See docs/form-builder-redesign.md §2.4 and the prototype's
  * `.canvas .toolbar` markup.
  */
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   onOpenDesign,
   onOpenBrand,
+  layout,
+  canEditLayout,
+  onLayoutUpdate,
+  onTokensReset,
   device,
   onDeviceChange,
   onOpenPreview,
@@ -39,31 +49,25 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
       style={{ borderBottom: '1px solid var(--tf-border-medium)' }}
       data-testid="canvas-toolbar"
     >
-      <CoachMark id="design" side="bottom" align="start">
+      <CoachMark id="brand" side="bottom" align="start">
         <Button
           variant="ghost"
           size="sm"
-          onClick={onOpenDesign}
+          onClick={onOpenBrand ?? onOpenDesign}
           className="h-8 px-3 text-xs"
           data-testid="canvas-toolbar-design-button"
         >
           <Palette className="w-3.5 h-3.5 mr-1.5" />
-          {t('buttons.design')}
+          {t('buttons.style')}
         </Button>
       </CoachMark>
 
-      {onOpenBrand && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onOpenBrand}
-          className="h-8 px-3 text-xs"
-          data-testid="canvas-toolbar-brand-button"
-        >
-          <Paintbrush className="w-3.5 h-3.5 mr-1.5" />
-          {t('buttons.brand')}
-        </Button>
-      )}
+      <ThemeStrip
+        layout={layout}
+        canEditLayout={canEditLayout}
+        onLayoutUpdate={onLayoutUpdate}
+        onReset={onTokensReset}
+      />
 
       <span className="flex-1" />
 

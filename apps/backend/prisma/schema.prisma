@@ -100,6 +100,7 @@ model Organization {
   subscription        Subscription?
   aiUsages            AIUsage[]
   aiChatConversations AIChatConversation[]
+  brandKit            OrganizationBrandKit?
 
   metadata String?
 
@@ -943,4 +944,17 @@ model AIChatMessage {
 
   @@index([conversationId])
   @@map("ai_chat_message")
+}
+
+model OrganizationBrandKit {
+  id             String   @id @default(cuid())
+  organizationId String   @unique
+  tokens         Json
+  updatedById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("organization_brand_kit")
 }

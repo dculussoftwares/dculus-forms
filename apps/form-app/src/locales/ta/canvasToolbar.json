@@ -2,7 +2,8 @@
   "buttons": {
     "design": "வடிவமைப்பு",
     "preview": "முன்னோட்டம்",
-    "brand": "பிராண்ட்"
+    "brand": "பிராண்ட்",
+    "style": "ஸ்டைல்"
   },
   "deviceToggle": {
     "ariaLabel": "கேன்வாஸ் சாதன முன்னோட்டம்",

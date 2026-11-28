@@ -12,6 +12,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
     Input,
     Progress,
@@ -20,12 +21,14 @@ import {
 } from '@dculus/ui';
 import {
     ArrowLeft,
+    ChevronDown,
     Code,
     Copy,
     Edit3,
     Eye,
     EyeOff,
     ExternalLink,
+    Link2,
     Inbox,
     MoreVertical,
     Settings,
@@ -38,6 +41,8 @@ import { useFormPermissions } from '../../hooks/useFormPermissions';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ShareModal } from '../sharing/ShareModal';
 import { PermissionBadge } from './PermissionBadge';
+import { BrandChip } from './BrandChip';
+import { PublishPreflightDialog } from './PublishPreflightDialog';
 import { SettingsTab } from './tabs';
 import { CoachMark } from './coachmarks/CoachMark';
 import { JSONPreview } from './JSONPreview';
@@ -64,6 +69,8 @@ interface FormBuilderHeaderProps {
     /** ⚙ Settings gear — full-screen dialog hosting SettingsTab unchanged. Hidden for VIEWER. */
     isSettingsOpen?: boolean;
     onSettingsOpenChange?: (open: boolean) => void;
+    /** Opens the Design drawer on Brand & style (switching to the Content tab if needed). */
+    onOpenBrand?: () => void;
 }
 
 export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
@@ -83,6 +90,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     centerContent,
     isSettingsOpen = false,
     onSettingsOpenChange,
+    onOpenBrand,
 }) => {
     const { t } = useTranslation('formBuilderHeader');
     const [formTitle, setFormTitle] = useState(initialFormTitle || t('defaultTitle'));
@@ -91,6 +99,7 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
     const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
     const [duplicateProgress, setDuplicateProgress] = useState(0);
     const [isJsonDebugOpen, setIsJsonDebugOpen] = useState(false);
+    const [showPreflight, setShowPreflight] = useState(false);
     const permissions = useFormPermissions();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -171,6 +180,21 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
             toastError(t('toasts.duplicateError.title'), t('toasts.duplicateError.description'));
             setDuplicateProgress(0);
         }
+    };
+
+    const handleCopyLink = async () => {
+        if (!formShortUrl) return;
+        try {
+            await navigator.clipboard.writeText(getFormViewerUrl(formShortUrl));
+            toastSuccess(t('toasts.linkCopied.title'), t('toasts.linkCopied.description'));
+        } catch {
+            toastError(t('toasts.linkCopyError.title'), t('toasts.linkCopyError.description'));
+        }
+    };
+
+    const handleConfirmPublish = () => {
+        onPublish?.();
+        setShowPreflight(false);
     };
 
     const handleViewLiveForm = () => {
@@ -258,7 +282,10 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                 </div>
 
                 {/* ── Right: publish + view + share + more ── */}
-                <div className="flex items-center gap-1.5 px-3 w-72 shrink-0 justify-end">
+                <div className="flex items-center gap-1.5 px-3 min-w-72 shrink-0 justify-end">
+                    {/* Brand chip — always-visible entry point to the design-token system */}
+                    {onOpenBrand && permissions.canEdit && <BrandChip onClick={onOpenBrand} />}
+
                     {/* Responses */}
                     <Button
                         variant="ghost"
@@ -270,42 +297,51 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                         {t('buttons.viewResponses')}
                     </Button>
 
-                    {/* Publish / Unpublish */}
+                    {/* Publish (with pre-flight) / Live menu */}
                     {permissions.canEdit && (
                         isPublished ? (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={onUnpublish}
-                                disabled={updateLoading}
-                                className="h-8 px-3 text-xs"
-                            >
-                                <EyeOff className="w-3.5 h-3.5 mr-1.5" />
-                                {updateLoading ? t('buttons.unpublishing') : t('buttons.unpublishForm')}
-                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={updateLoading}
+                                        className="h-8 px-3 text-xs"
+                                        data-testid="header-live-menu-trigger"
+                                    >
+                                        <span className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: 'var(--tf-green)' }} />
+                                        {updateLoading ? t('buttons.unpublishing') : t('buttons.published')}
+                                        <ChevronDown className="w-3 h-3 ml-1" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuItem onClick={handleCopyLink} disabled={!formShortUrl}>
+                                        <Link2 className="w-4 h-4 mr-2" />
+                                        {t('menu.copyLink')}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleViewLiveForm} disabled={!formShortUrl}>
+                                        <ExternalLink className="w-4 h-4 mr-2" />
+                                        {t('buttons.viewLiveForm')}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={onUnpublish} data-testid="header-unpublish-item">
+                                        <EyeOff className="w-4 h-4 mr-2" />
+                                        {t('buttons.unpublishForm')}
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         ) : (
                             <Button
                                 size="sm"
-                                onClick={onPublish}
+                                onClick={() => setShowPreflight(true)}
                                 disabled={updateLoading}
                                 className="h-8 px-3 text-xs"
+                                data-testid="header-publish-button"
                             >
                                 <Eye className="w-3.5 h-3.5 mr-1.5" />
                                 {updateLoading ? t('buttons.publishing') : t('buttons.publishForm')}
                             </Button>
                         )
-                    )}
-
-                    {/* View live */}
-                    {isPublished && formShortUrl && (
-                        <Button
-                            variant="ghost"
-                            onClick={handleViewLiveForm}
-                            className="h-8 w-8 flex items-center justify-center rounded-lg p-0"
-                            title={t('tooltips.viewLiveFormTooltip')}
-                        >
-                            <ExternalLink className="w-4 h-4" />
-                        </Button>
                     )}
 
                     {/* Collaborate — teammate access, not respondent
@@ -366,6 +402,15 @@ export const FormBuilderHeader: React.FC<FormBuilderHeaderProps> = ({
                     </DropdownMenu>
                 </div>
             </header>
+
+            <PublishPreflightDialog
+                open={showPreflight}
+                onOpenChange={setShowPreflight}
+                formTitle={formTitle}
+                loading={updateLoading}
+                onConfirm={handleConfirmPublish}
+                onStyle={() => onOpenBrand?.()}
+            />
 
             {/* Share Modal */}
             {showShareModal && organizationId && currentUserId && formShortUrl && (

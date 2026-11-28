@@ -27,6 +27,8 @@ module.exports = {
     // — import it directly to dodge the circular @dculus/types barrel that
     // leaves quiz.ts's runtime consts `undefined` under jest's CJS runner.
     '^@dculus/types/quiz(\\.js)?$': '<rootDir>/../../packages/types/src/quiz',
+    // Same circular-barrel reason: sanitizeDesignTokens is read off the barrel as undefined under CJS.
+    '^@dculus/types/validation(\\.js)?$': '<rootDir>/../../packages/types/src/validation',
     '^@dculus/(.*)$': '<rootDir>/../../packages/$1/src',
     '^@dculus/type$': '<rootDir>/../../packages/types/src/index',
     '^(\\.{1,2}/.*)\\.js$': '$1',

@@ -3,9 +3,9 @@
     "title": "Your form, start to finish",
     "description": "Intro, pages, and Thank You all live in this rail now — click any card to edit it."
   },
-  "design": {
-    "title": "Design moved here",
-    "description": "Theme, colors, and background now live in this Design drawer instead of a separate tab."
+  "brand": {
+    "title": "Make it yours",
+    "description": "Pick a theme, brand color and fonts in Style. Hover a color dot to preview it on your form instantly."
   },
   "gear": {
     "title": "Settings moved here",

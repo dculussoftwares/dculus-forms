@@ -96,6 +96,59 @@ function computeDominantColor(data: Uint8ClampedArray): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+const MIN_PALETTE_DISTANCE = 60; // RGB distance below which two swatches look like the same colour
+
+function averageHex(bucket: Bucket): string {
+  return `#${toHex(bucket.r / bucket.count)}${toHex(bucket.g / bucket.count)}${toHex(bucket.b / bucket.count)}`;
+}
+
+/** Top distinct colours, most prominent (chroma-weighted) first; near-white and near-black are skipped. */
+function computePalette(data: Uint8ClampedArray, limit: number): string[] {
+  const scored = [...buildBuckets(data, true).values()]
+    .map((bucket) => {
+      const r = bucket.r / bucket.count;
+      const g = bucket.g / bucket.count;
+      const b = bucket.b / bucket.count;
+      const chroma = Math.max(r, g, b) - Math.min(r, g, b);
+      return { bucket, rgb: [r, g, b], score: bucket.count * (1 + chroma / 255) };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const picked: typeof scored = [];
+  for (const candidate of scored) {
+    const distinct = picked.every(
+      (p) => Math.hypot(...p.rgb.map((v, i) => v - candidate.rgb[i])) >= MIN_PALETTE_DISTANCE
+    );
+    if (distinct) picked.push(candidate);
+    if (picked.length >= limit) break;
+  }
+  return picked.map((p) => averageHex(p.bucket));
+}
+
+/** Brand-colour candidates extracted from a logo/image file; empty when it can't be decoded. */
+export async function computePaletteFromImageBlob(blob: Blob, limit = 4): Promise<string[]> {
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image for palette extraction'));
+      img.src = objectUrl;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = SAMPLE_SIZE;
+    canvas.height = SAMPLE_SIZE;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return [];
+    ctx.drawImage(img, 0, 0, SAMPLE_SIZE, SAMPLE_SIZE);
+    return computePalette(ctx.getImageData(0, 0, SAMPLE_SIZE, SAMPLE_SIZE).data, limit);
+  } catch {
+    return [];
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 function sampleFromCanvasSource(source: CanvasImageSource): string {
   const canvas = document.createElement('canvas');
   canvas.width = SAMPLE_SIZE;

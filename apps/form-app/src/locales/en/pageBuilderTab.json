@@ -75,5 +75,17 @@
     "keyboardSaveHint": "Enter ↵ to save · Shift+Enter for new line · Esc to cancel",
     "requiredFieldTooltip": "Required field",
     "richTextPlaceholder": "Type rich text content here..."
+  },
+  "glance": {
+    "title": "Your form at a glance",
+    "subtitle": "Select a page or question to edit it, or style the whole form below.",
+    "pages": "Pages",
+    "questions": "Questions",
+    "layout": "Layout",
+    "brand": "Brand",
+    "brandDefault": "Default · not branded",
+    "brandCustom": "Custom",
+    "makeItYours": "Make it yours",
+    "editBrand": "Edit brand & style"
   }
 }

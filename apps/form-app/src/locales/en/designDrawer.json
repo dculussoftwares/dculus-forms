@@ -118,5 +118,27 @@
       "recentLabel": "Recently used"
     },
     "clearButton": "Clear Background"
+  },
+  "themeStrip": {
+    "label": "Theme",
+    "default": "No theme (default look)"
+  },
+  "lookPicker": {
+    "default": "Default",
+    "fromLogo": "Match my logo",
+    "useColor": "Use {{color}} as brand color",
+    "noColors": "Couldn't find a brand color in that image."
+  },
+  "orgBrand": {
+    "title": "Organisation brand",
+    "hasKit": "Your organisation has a brand kit. Apply it to match every other form.",
+    "noKit": "Save this look as your organisation's brand so new forms can start with it.",
+    "apply": "Apply org brand",
+    "save": "Save as org brand",
+    "update": "Update org brand",
+    "remove": "Remove",
+    "saved": "Organisation brand saved",
+    "removed": "Organisation brand removed",
+    "error": "Couldn't update the organisation brand"
   }
 }

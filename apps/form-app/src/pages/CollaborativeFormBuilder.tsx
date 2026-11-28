@@ -38,6 +38,7 @@ import { ConditionsTab } from '../components/form-builder/conditions/ConditionsT
 import { PreviewOverlay } from '../components/form-builder/PreviewOverlay';
 import { TooltipProvider } from '@dculus/ui';
 import { trackEvent } from '@dculus/utils';
+import { useDesignDrawerRequestStore } from '@/store/useDesignDrawerRequestStore';
 import Automations from './Automations';
 import AutomationBuilder from './AutomationBuilder';
 import AutomationRuns from './AutomationRuns';
@@ -349,7 +350,11 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
         input: { isPublished: true },
       },
     }).then((result) => {
-      if (result.data?.updateForm?.isPublished) trackEvent('form_published', { surface: 'builder' });
+      if (result.data?.updateForm?.isPublished) {
+        const tokens = useFormBuilderStore.getState().layout?.tokens;
+        const branded = Boolean(tokens && Object.keys(tokens).some((k) => k !== 'version'));
+        trackEvent('form_published', { surface: 'builder', branded });
+      }
     });
   }, [formId, updateForm]);
 
@@ -362,6 +367,14 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
       },
     });
   }, [formId, updateForm]);
+
+  const handleOpenBrand = useCallback(() => {
+    if (!formId) return;
+    useDesignDrawerRequestStore.getState().requestBrand('header_chip');
+    if (activeTab !== 'content') {
+      navigate(`/dashboard/form/${formId}/builder/content${location.search}`);
+    }
+  }, [formId, activeTab, navigate, location.search]);
 
   const autoSelectFirstPage = useCallback(() => {
     // Read live store state rather than this closure's captured pages/selectedPageId/
@@ -698,6 +711,7 @@ const CollaborativeFormBuilder: React.FC<CollaborativeFormBuilderProps> = ({
               onUnpublish={handleUnpublish}
               updateLoading={updateLoading}
               isSettingsOpen={isSettingsOpen}
+              onOpenBrand={handleOpenBrand}
               onSettingsOpenChange={(open) => (open ? setIsSettingsOpen(true) : handleCloseSettings())}
               centerContent={
                 <TabNavigation

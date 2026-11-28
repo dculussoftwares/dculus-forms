@@ -266,3 +266,19 @@ svg.lucide {
 [data-pdf-designer-canvas] [class*="pdfme-designer-bulk-"] {
   display: none !important;
 }
+
+/* Click-to-style affordance: stylable canvas elements outline on hover so the
+   brand/design-token controls are discoverable (see CanvasStylePopover). */
+[data-canvas-style-anchor] {
+  transition: outline-color 120ms ease;
+  outline: 2px dashed transparent;
+  outline-offset: 3px;
+}
+[data-canvas-style-anchor]:hover {
+  outline-color: hsl(221 83% 53% / 0.55);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-canvas-style-anchor] {
+    transition: none;
+  }
+}

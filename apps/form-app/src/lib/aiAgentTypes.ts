@@ -80,8 +80,8 @@ export interface UpdateLayoutToolPart {
   type: 'tool-updateLayout';
   toolCallId: string;
   state: ToolState;
-  input?: { content?: string; customCTAButtonName?: string };
-  output?: { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string };
+  input?: { content?: string; customCTAButtonName?: string; tokens?: Record<string, string> };
+  output?: { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string; tokens?: Record<string, string> };
 }
 
 export interface RenamePageToolPart {

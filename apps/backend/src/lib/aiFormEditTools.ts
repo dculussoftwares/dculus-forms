@@ -1,5 +1,10 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+
+const DESIGN_FONT_IDS = [
+  'inter', 'roboto', 'poppins', 'lora', 'playfair', 'merriweather',
+  'space-grotesk', 'dm-sans', 'noto-sans-tamil', 'mukta-malar', 'system',
+] as const;
 import {
   conditionalRuleSchema,
   isLayoutField,
@@ -344,10 +349,22 @@ export function createFormEditTools(
     }),
 
     updateLayout: tool({
-      description: 'Update the form intro content (HTML) or the CTA button label.',
+      description: 'Update intro HTML, CTA label, or brand look tokens (merged).',
       inputSchema: z.object({
         content: z.string().optional().describe('HTML intro: <h1> title + <p> description only'),
         customCTAButtonName: z.string().optional().describe('Short CTA button label, max 4 words'),
+        tokens: z
+          .object({
+            primaryColor: z.string().optional().describe('Brand colour as #RRGGBB'),
+            surfaceColor: z.string().optional().describe('Light page/card background as #RRGGBB'),
+            headingFont: z.enum(DESIGN_FONT_IDS).optional(),
+            bodyFont: z.enum(DESIGN_FONT_IDS).optional(),
+            radius: z.enum(['none', 'sm', 'md', 'lg', 'pill']).optional(),
+            inputStyle: z.enum(['outlined', 'filled', 'underline']).optional(),
+            buttonStyle: z.enum(['solid', 'outline', 'soft']).optional(),
+          })
+          .optional()
+          .describe('Brand look: colour, fonts, corner radius, input and button style'),
       }),
       execute: async (args) => ({ type: 'UPDATE_LAYOUT' as const, ...args }),
     }),
@@ -791,7 +808,7 @@ export type FormOperation =
   | { type: 'UPDATE_FIELDS'; fieldIds: string[]; updates: Record<string, unknown> }
   | { type: 'RELOCATE_FIELD'; fieldId: string; targetPageId: string; insertAfterFieldId: string | null; mode: 'move' | 'copy' }
   | { type: 'REORDER'; scope: 'fields' | 'pages'; ids: string[]; pageId?: string }
-  | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string }
+  | { type: 'UPDATE_LAYOUT'; content?: string; customCTAButtonName?: string; tokens?: Record<string, string> }
   | { type: 'RENAME_PAGE'; pageId: string; newTitle: string }
   | { type: 'ADD_PAGE'; pageId: string; title: string; insertAfterPageId: string | null }
   | { type: 'NAVIGATE_TO_PAGE'; pageId: string }

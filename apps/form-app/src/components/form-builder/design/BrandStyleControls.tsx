@@ -23,6 +23,7 @@ import {
   contrastRatio,
   getGoogleFontsHref,
   readableOn,
+  trackEvent,
 } from '@dculus/utils';
 import { BrandPreviewCard } from './BrandPreviewCard';
 import { useBrandPreviewStore, useEffectiveTokens } from '../../../store/useBrandPreviewStore';
@@ -338,6 +339,7 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
   ) => {
     if (disabled) return;
     clearPreview();
+    trackEvent('brand_token_changed', { token: String(key) });
     const next: Record<string, unknown> = { ...tokens, version: 1 };
     if (value === undefined) delete next[key];
     else next[key] = value;
@@ -351,6 +353,7 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
   const applyPreset = (preset: BrandPreset) => {
     if (disabled) return;
     clearPreview();
+    trackEvent('brand_preset_applied', { preset: preset.id, source: 'drawer' });
     onLayoutUpdate({ tokens: { version: 1, ...preset.tokens } as FormDesignTokens });
   };
 

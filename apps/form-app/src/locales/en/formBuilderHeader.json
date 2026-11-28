@@ -14,13 +14,15 @@
     "publishForm": "Publish",
     "unpublishForm": "Unpublish",
     "publishing": "Publishing...",
-    "unpublishing": "Unpublishing..."
+    "unpublishing": "Unpublishing...",
+    "published": "Live"
   },
   "menu": {
     "formSettings": "Form Settings",
     "design": "Design",
     "duplicateForm": "Duplicate Form",
-    "jsonDebug": "JSON debug"
+    "jsonDebug": "JSON debug",
+    "copyLink": "Copy link"
   },
   "tooltips": {
     "back": "Back",
@@ -49,6 +51,14 @@
     "updateTitleError": {
       "title": "Failed to update form name",
       "description": "Something went wrong while updating the form name. Please try again."
+    },
+    "linkCopied": {
+      "title": "Link copied",
+      "description": "Share it with anyone who should fill in this form"
+    },
+    "linkCopyError": {
+      "title": "Couldn't copy link",
+      "description": "Copy it from the live form instead."
     }
   },
   "duplicateDialog": {
@@ -58,5 +68,36 @@
     "cancel": "Cancel",
     "confirm": "Duplicate",
     "working": "Duplicating..."
+  },
+  "brandChip": {
+    "empty": "Make it yours",
+    "custom": "Custom brand",
+    "tooltip": "Brand & style — theme, color, fonts"
+  },
+  "preflight": {
+    "title": "Ready to publish?",
+    "descriptionReady": "Everything looks good. Publishing makes this form available to respondents.",
+    "descriptionWarnings": "A few things could be better. You can still publish now and change them anytime.",
+    "cancel": "Keep editing",
+    "publishAnyway": "Publish anyway",
+    "styleNow": "Style it",
+    "checks": {
+      "title": {
+        "label": "Form has a name",
+        "hint": "Give your form a clear name — it appears in browser tabs and shared links."
+      },
+      "questions": {
+        "label": "Form has questions",
+        "hint": "Add at least one question so respondents have something to fill in."
+      },
+      "thankYou": {
+        "label": "Thank-you screen customized",
+        "hint": "Using the default thank-you message. Personalize it in the Ending screen."
+      },
+      "brand": {
+        "label": "Brand & style applied",
+        "hint": "Your form uses the default look. Pick a theme to match your brand."
+      }
+    }
   }
 }

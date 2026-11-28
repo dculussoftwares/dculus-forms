@@ -5,6 +5,7 @@ import { useTranslation } from '../../../hooks/useTranslation';
 import { LayoutThumbnails } from '../tabs/layout/LayoutThumbnails';
 import { BackgroundControls } from '../shared/BackgroundControls';
 import { BrandStyleControls } from './BrandStyleControls';
+import { OrgBrandKitCard } from './OrgBrandKitCard';
 
 interface DesignDrawerProps {
   isOpen: boolean;
@@ -97,6 +98,12 @@ export const DesignDrawer: React.FC<DesignDrawerProps> = ({
                 canEditLayout={canEditLayout}
                 onLayoutUpdate={onLayoutUpdate}
                 onReset={onTokensReset}
+                t={t}
+              />
+              <OrgBrandKitCard
+                tokens={layout.tokens}
+                canEditLayout={canEditLayout}
+                onApply={(tokens) => onLayoutUpdate({ tokens })}
                 t={t}
               />
             </div>

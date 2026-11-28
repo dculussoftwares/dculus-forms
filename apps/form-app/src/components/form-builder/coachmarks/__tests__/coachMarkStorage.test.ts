@@ -15,9 +15,9 @@ describe('coachMarkStorage', () => {
     const { result } = renderHook(() => useActiveCoachMark());
 
     act(() => result.current.dismiss('rail'));
-    expect(result.current.activeId).toBe('design');
+    expect(result.current.activeId).toBe('brand');
 
-    act(() => result.current.dismiss('design'));
+    act(() => result.current.dismiss('brand'));
     expect(result.current.activeId).toBe('gear');
 
     act(() => result.current.dismiss('gear'));
@@ -26,12 +26,12 @@ describe('coachMarkStorage', () => {
 
   it('persists dismissal to localStorage and syncs across independently-mounted hook instances', () => {
     const rail = renderHook(() => useActiveCoachMark());
-    const design = renderHook(() => useActiveCoachMark());
+    const brand = renderHook(() => useActiveCoachMark());
 
     act(() => rail.result.current.dismiss('rail'));
 
     expect(JSON.parse(localStorage.getItem('dculus.coachmarks.dismissed')!)).toEqual(['rail']);
-    expect(design.result.current.activeId).toBe('design');
+    expect(brand.result.current.activeId).toBe('brand');
   });
 
   it('is a no-op when dismissing an id that is already dismissed', () => {
