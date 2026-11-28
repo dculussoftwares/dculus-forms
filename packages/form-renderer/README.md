@@ -19,6 +19,13 @@ import '@dculus/form-renderer/style.css';
 - Styles are bundled and scoped to `.dculus-form-renderer` (plus Radix popover
   layers), so they don't leak into the host page. Tailwind's global reset is not
   included.
+- Per-form design tokens (`layout.tokens`: brand/surface color, heading/body font,
+  corner radius, input and button style) are honored. They are applied as `--df-*`
+  CSS variables on the renderer wrapper only, never on the host page. Fonts other
+  than `inter` and `system` are fetched from Google Fonts (`fonts.googleapis.com`)
+  through a single deduped `<link data-df-fonts>` in `document.head`; a host with a
+  strict CSP must allow `fonts.googleapis.com` (style) and `fonts.gstatic.com` (font).
+  A schema without tokens renders exactly as before.
 - A schema without pages or a layout renders nothing (`isTemplateFormSchema` checks the shape).
 - `react` and `react-dom` are peer dependencies; everything else is bundled.
 

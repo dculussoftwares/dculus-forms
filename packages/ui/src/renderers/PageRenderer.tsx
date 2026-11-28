@@ -1,12 +1,18 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { FormPage, evaluateConditions, stripHiddenResponses } from '@dculus/types';
-import { RendererMode } from '@dculus/utils';
+import { RendererMode, cn } from '@dculus/utils';
 import { SinglePageForm, LayoutStyles } from './SinglePageForm';
 import { useFormResponseStore } from '../stores/useFormResponseStore';
 import { FormValidationState, FormNavigationState } from '../types/validation';
 import { useFormResponseContext } from './FormResponseContext';
 import { Checkbox } from '../checkbox';
 import { Loader2 } from 'lucide-react';
+import {
+  themedButtonClass,
+  themedSurfaceClass,
+  useFormTheme,
+  type ResolvedFormTheme,
+} from '../layouts/shared/tokens';
 
 export type { LayoutStyles } from './SinglePageForm';
 
@@ -25,6 +31,17 @@ interface PageRendererProps {
   initialPageId?: string;
 }
 
+const CTA_BUTTON_CLASS =
+  'flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed';
+
+const NAV_FOOTER_CLASS =
+  'sticky bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800 mt-4 sm:mt-10 z-10';
+
+const PROGRESS_CLASS = 'h-full bg-primary transition-all duration-500 ease-out rounded-full';
+
+const themedProgressClass = (theme: ResolvedFormTheme) =>
+  theme.hasPrimary ? cn(PROGRESS_CLASS, 'bg-[var(--df-primary)]') : PROGRESS_CLASS;
+
 export const PageRenderer: React.FC<PageRendererProps> = ({
   pages,
   className = '',
@@ -38,6 +55,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
   showValidationSummary = true,
   initialPageId,
 }) => {
+  const theme = useFormTheme();
   const store = useFormResponseStore();
   const {
     onFormSubmit,
@@ -275,7 +293,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
         <div className="flex items-center gap-3 mb-4 sm:mb-8">
           <div className="flex-1 h-0.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
+              className={themedProgressClass(theme)}
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -370,7 +388,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
 
       {/* Typeform-style navigation footer */}
       {showPageNavigation && (
-        <div className="sticky bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-100 dark:border-gray-800 mt-4 sm:mt-10 z-10">
+        <div className={themedSurfaceClass(NAV_FOOTER_CLASS, theme)}>
           <div className="max-w-4xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               {/* Ghost previous button */}
@@ -394,7 +412,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                     onClick={goToNextPage}
                     disabled={isNavigating}
                     aria-busy={isNavigating}
-                    className="flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                    className={themedButtonClass(CTA_BUTTON_CLASS, theme)}
                   >
                     {contextMode === RendererMode.EDIT ? 'Update Response' : 'Submit'}
                     {isNavigating ? (
@@ -410,7 +428,7 @@ export const PageRenderer: React.FC<PageRendererProps> = ({
                     data-testid="viewer-next-button"
                     onClick={goToNextPage}
                     disabled={isNavigating}
-                    className="flex items-center gap-2.5 px-8 py-3.5 text-sm font-semibold text-white bg-primary hover:bg-primary/90 rounded-full shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                    className={themedButtonClass(CTA_BUTTON_CLASS, theme)}
                   >
                     OK
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

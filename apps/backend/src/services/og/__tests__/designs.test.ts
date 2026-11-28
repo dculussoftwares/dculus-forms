@@ -40,6 +40,14 @@ describe('generated images', () => {
     expect(pngSize(share)).toEqual(SHARE_SIZE);
     expect(pngSize(form)).toEqual(SHARE_SIZE);
   });
+
+  it('draws a branded form share image differently from an unbranded one', async () => {
+    const summary = summaryFor('L1');
+    const plain = await renderPng(formShare({ summary, title: 'Brand' }), SHARE_SIZE);
+    const branded = await renderPng(formShare({ summary: { ...summary, brand: '#db2777' }, title: 'Brand' }), SHARE_SIZE);
+    expect(pngSize(branded)).toEqual(SHARE_SIZE);
+    expect(branded.equals(plain)).toBe(false);
+  });
 });
 
 describe('truncate', () => {

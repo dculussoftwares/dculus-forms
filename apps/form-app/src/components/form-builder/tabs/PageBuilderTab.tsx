@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import {
   FieldType,
   FormField,
@@ -13,6 +13,7 @@ import {
 import { FormRenderer } from '@dculus/ui';
 import { Columns2 } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
+import { useBrandPreviewStore } from '../../../store/useBrandPreviewStore';
 import { useFieldCreation } from '../../../hooks/useFieldCreation';
 import { useTranslation } from '../../../hooks/useTranslation';
 import {
@@ -93,6 +94,11 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
 
   // Canvas toolbar state: 🎨 Design drawer open/closed, desktop/mobile device frame.
   const [isDesignDrawerOpen, setIsDesignDrawerOpen] = useState(false);
+  const [designFocus, setDesignFocus] = useState<'brand' | null>(null);
+  const openDesignDrawer = useCallback((focus: 'brand' | null = null) => {
+    setDesignFocus(focus);
+    setIsDesignDrawerOpen(true);
+  }, []);
   const [device, setDevice] = useState<CanvasDevice>('desktop');
   // Track the currently dragged field type (from sidebar)
   const [activeFieldType, setActiveFieldType] =
@@ -132,6 +138,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     layout,
     formId,
     updateLayout,
+    clearLayoutKey,
   } = useFormBuilderStore();
 
   const cdnEndpoint = getCdnEndpoint();
@@ -164,14 +171,20 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     if (canEditLayout) updateLayout(updates);
   };
 
+  const handleTokensReset = () => {
+    if (canEditLayout) clearLayoutKey('tokens');
+  };
+
   const handleLayoutSelect = (code: LayoutCode) => handleLayoutUpdate({ code });
 
   // Same formSchema shape PreviewTab builds for its FormRenderer preview — kept in
   // sync here so intro/thankYou rail selections render the exact same screens.
+  const previewActive = useBrandPreviewStore((s) => s.active);
+  const previewTokens = useBrandPreviewStore((s) => s.tokens);
   const formSchema: FormSchema = useMemo(
     () => ({
       pages: pages || [],
-      layout: layout || {
+      layout: (layout ? (previewActive ? { ...layout, tokens: previewTokens } : layout) : {
         code: 'L1',
         theme: 'light' as const,
         textColor: '#1f2937',
@@ -181,10 +194,10 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
         customBackGroundColor: '',
         backgroundImageKey: '',
         pageMode: 'multipage' as const,
-      },
+      }) as FormLayout,
       isShuffleEnabled: false,
     }),
-    [pages, layout]
+    [pages, layout, previewActive, previewTokens]
   );
 
   const { createFieldData } = useFieldCreation();
@@ -556,7 +569,8 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
           {/* Center: Canvas with toolbar */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <CanvasToolbar
-              onOpenDesign={() => setIsDesignDrawerOpen(true)}
+              onOpenDesign={() => openDesignDrawer()}
+              onOpenBrand={() => openDesignDrawer('brand')}
               device={device}
               onDeviceChange={setDevice}
               onOpenPreview={() => onOpenPreview?.()}
@@ -600,17 +614,23 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
           </div>
 
           {/* Right: Field Settings with Resizable Width */}
-          <RightSidebar width={sidebarWidth} onWidthChange={setSidebarWidth} />
+          <RightSidebar
+            width={sidebarWidth}
+            onWidthChange={setSidebarWidth}
+            onOpenBrand={() => openDesignDrawer('brand')}
+          />
         </div>
 
         <DesignDrawer
           isOpen={isDesignDrawerOpen}
           onClose={() => setIsDesignDrawerOpen(false)}
+          focusSection={designFocus}
           layout={layout}
           formId={formId || ''}
           canEditLayout={canEditLayout}
           onLayoutSelect={handleLayoutSelect}
           onLayoutUpdate={handleLayoutUpdate}
+          onTokensReset={handleTokensReset}
         />
 
         {/* Drag Overlay - follows cursor during drag */}

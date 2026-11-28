@@ -146,6 +146,8 @@ export interface LayoutSlice {
 
   // Actions
   updateLayout: (layoutUpdates: Partial<FormLayout>) => void;
+  /** Deletes an optional layout key from state and Y.js (updateLayout ignores `undefined`). */
+  clearLayoutKey: (key: 'tokens') => void;
 
   // Internal helpers
   _getDefaultLayout: () => FormLayout;

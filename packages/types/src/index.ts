@@ -210,6 +210,34 @@ export type LayoutCode =
   | 'L8'
   | 'L9';
 
+export type FormRadius = 'none' | 'sm' | 'md' | 'lg' | 'pill';
+export type FormInputStyle = 'outlined' | 'filled' | 'underline';
+export type FormButtonStyle = 'solid' | 'outline' | 'soft';
+export type FormFontId =
+  | 'inter'
+  | 'roboto'
+  | 'poppins'
+  | 'lora'
+  | 'playfair'
+  | 'merriweather'
+  | 'space-grotesk'
+  | 'dm-sans'
+  | 'noto-sans-tamil'
+  | 'mukta-malar'
+  | 'system';
+
+/** All optional: an unset token means "use the layout's built-in look". */
+export interface FormDesignTokens {
+  version: 1;
+  primaryColor?: string; // #RRGGBB — buttons, CTA, checked states, focus ring, progress, links
+  surfaceColor?: string; // #RRGGBB — page/field card background (light scheme only)
+  headingFont?: FormFontId;
+  bodyFont?: FormFontId;
+  radius?: FormRadius;
+  inputStyle?: FormInputStyle;
+  buttonStyle?: FormButtonStyle;
+}
+
 export interface FormLayout {
   theme: ThemeType;
   textColor: string;
@@ -224,6 +252,7 @@ export interface FormLayout {
   backgroundDominantColor?: string; // Hex color sampled from the applied background image/video, used for the outer-area wash
   pageMode: PageModeType; // Page navigation mode
   isCustomBackgroundColorEnabled?: boolean; // Toggle between custom color overlay vs blur background
+  tokens?: FormDesignTokens; // Design tokens; absent = legacy look (zero regression)
 }
 
 // Literal default shown on the thank-you screen until a form owner edits it.

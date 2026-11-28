@@ -19,6 +19,13 @@ import {
   PhoneNumberInput,
   RatingInput,
 } from './index';
+import {
+  checkboxTokenClass,
+  inputTokenClass,
+  radioTokenClass,
+  ratingTokenClass,
+  useFormTheme,
+} from './layouts/shared/tokens';
 
 interface FieldPreviewProps {
   field: FormField;
@@ -70,6 +77,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
   onContentChange,
   richTextPlaceholder,
 }) => {
+  const theme = useFormTheme();
   // Memoize field data extraction to make it reactive to field changes
   const fieldData = useMemo(() => {
     const getFieldLabel = (): string => {
@@ -206,7 +214,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             placeholder={placeholder}
             defaultValue={defaultValue}
             disabled={disabled}
-            className="text-sm"
+            className={cn('text-sm', inputTokenClass(theme))}
           />
         );
 
@@ -219,7 +227,8 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             placeholder={placeholder}
             defaultValue={defaultValue}
             disabled={disabled}
-            className="text-sm min-h-[80px] resize-none"
+            className={inputTokenClass(theme, 'textarea')}
+            controlClassName="text-sm min-h-[80px] resize-none"
           />
         );
 
@@ -233,7 +242,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             placeholder={placeholder || 'Enter your email'}
             defaultValue={defaultValue}
             disabled={disabled}
-            className="text-sm"
+            className={cn('text-sm', inputTokenClass(theme))}
           />
         );
 
@@ -247,6 +256,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             defaultCountry={phoneField.defaultCountry as any}
             placeholder={placeholder || 'Phone number'}
             disabled={disabled}
+            controlClassName={inputTokenClass(theme)}
           />
         );
       }
@@ -263,6 +273,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             highLabel={ratingField.highLabel}
             aria-label={fieldData.label}
             disabled={disabled}
+            className={ratingField.ratingStyle !== 'stars' ? ratingTokenClass(theme) || undefined : undefined}
           />
         );
       }
@@ -281,7 +292,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             max={numberField.max}
             step="any"
             disabled={disabled}
-            className="text-sm"
+            className={cn('text-sm', inputTokenClass(theme))}
           />
         );
       }
@@ -293,7 +304,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             value={fieldData.defaultValue || undefined}
             onValueChange={() => {}}
           >
-            <SelectTrigger className="text-sm">
+            <SelectTrigger className={cn('text-sm', inputTokenClass(theme, 'select'))}>
               <SelectValue placeholder={placeholder || 'Choose an option'} />
             </SelectTrigger>
             <SelectContent>
@@ -329,6 +340,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
                     <RadioGroupItem
                       value={option}
                       id={`${field.id}-${index}`}
+                      className={radioTokenClass(theme)}
                     />
                     <label
                       htmlFor={`${field.id}-${index}`}
@@ -358,6 +370,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
                   <div key={index} className="flex items-center space-x-2">
                     <Checkbox
                       id={`${field.id}-${index}`}
+                      className={checkboxTokenClass(theme)}
                       checked={isChecked}
                       disabled={disabled}
                       onCheckedChange={() => {}} // Disabled preview - no actual interaction
@@ -390,7 +403,7 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             min={dateField.minDate}
             max={dateField.maxDate}
             disabled={disabled}
-            className="text-sm"
+            className={cn('text-sm', inputTokenClass(theme))}
           />
         );
       }

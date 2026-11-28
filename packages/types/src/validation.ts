@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { isValidPhoneNumber } from 'libphonenumber-js/max';
-import { FieldType } from './index.js';
+import { FieldType, type FormDesignTokens } from './index.js';
 import { fieldGradingSchema, hasQuantifiedAlternation } from './quiz.js';
 import { RATING_MAX_VALUE_MAX, RATING_MAX_VALUE_MIN } from './ratingConstants.js';
 import { MAX_GRID_COLUMNS, MIN_GRID_COLUMN_PERCENT } from './gridConstants.js';
@@ -835,6 +835,74 @@ export type FieldFormData =
   | RichTextFieldFormData
   | GridFieldFormData;
 
+const designTokenHexSchema = z
+  .string()
+  .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format');
+
+const FORM_FONT_IDS = [
+  'inter',
+  'roboto',
+  'poppins',
+  'lora',
+  'playfair',
+  'merriweather',
+  'space-grotesk',
+  'dm-sans',
+  'noto-sans-tamil',
+  'mukta-malar',
+  'system',
+] as const;
+
+const designTokenFontSchema = z.enum(FORM_FONT_IDS);
+const designTokenRadiusSchema = z.enum(['none', 'sm', 'md', 'lg', 'pill']);
+const designTokenInputStyleSchema = z.enum(['outlined', 'filled', 'underline']);
+const designTokenButtonStyleSchema = z.enum(['solid', 'outline', 'soft']);
+
+// Form design tokens validation schema (all token keys optional)
+export const formDesignTokensSchema = z.object({
+  version: z.literal(1),
+  primaryColor: designTokenHexSchema.optional(),
+  surfaceColor: designTokenHexSchema.optional(),
+  headingFont: designTokenFontSchema.optional(),
+  bodyFont: designTokenFontSchema.optional(),
+  radius: designTokenRadiusSchema.optional(),
+  inputStyle: designTokenInputStyleSchema.optional(),
+  buttonStyle: designTokenButtonStyleSchema.optional(),
+});
+
+const DESIGN_TOKEN_KEY_SCHEMAS = {
+  primaryColor: designTokenHexSchema,
+  surfaceColor: designTokenHexSchema,
+  headingFont: designTokenFontSchema,
+  bodyFont: designTokenFontSchema,
+  radius: designTokenRadiusSchema,
+  inputStyle: designTokenInputStyleSchema,
+  buttonStyle: designTokenButtonStyleSchema,
+} as const;
+
+/**
+ * Validates untrusted design tokens (Y.js / DB / client input). Never throws:
+ * invalid keys are dropped individually, and `undefined` is returned when
+ * nothing valid remains (so the form keeps its legacy look).
+ */
+export function sanitizeDesignTokens(input: unknown): FormDesignTokens | undefined {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return undefined;
+  }
+  const raw = input as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+  for (const [key, schema] of Object.entries(DESIGN_TOKEN_KEY_SCHEMAS)) {
+    const parsed = schema.safeParse(raw[key]);
+    if (parsed.success) {
+      result[key] = parsed.data;
+    }
+  }
+  if (Object.keys(result).length === 0) {
+    return undefined;
+  }
+  return { version: 1, ...result } as FormDesignTokens;
+}
+
 // Form layout validation schema
 export const formLayoutValidationSchema = z
   .object({
@@ -868,6 +936,7 @@ export const formLayoutValidationSchema = z
       )
       .optional(),
     pageMode: z.enum(['multipage']),
+    tokens: formDesignTokensSchema.optional(),
   })
   // Only one background source is ever active at a time — the builder UI clears the
   // other key when applying an image or video (see LayoutSidebar.tsx), so both being

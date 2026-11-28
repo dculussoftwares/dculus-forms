@@ -59,6 +59,12 @@ describe('describeSchema', () => {
     expect(describeSchema(schema([], { customBackGroundColor: '#ffffff', backgroundDominantColor: 'red' })).tint).toBeUndefined();
   });
 
+  it('reads a valid brand colour from layout.tokens and ignores bad values', () => {
+    expect(describeSchema(schema([], { tokens: { version: 1, primaryColor: '#2563EB' } })).brand).toBe('#2563eb');
+    expect(describeSchema(schema([], { tokens: { version: 1, primaryColor: 'blue' } })).brand).toBeUndefined();
+    expect(describeSchema(schema([])).brand).toBeUndefined();
+  });
+
   it('survives an empty or broken schema', () => {
     expect(describeSchema(null)).toMatchObject({ fields: [], questionCount: 0, pageCount: 0, layoutCode: 'L1' });
   });

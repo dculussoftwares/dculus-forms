@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FormLayout, LayoutCode } from '@dculus/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, Label, ScrollArea } from '@dculus/ui';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { LayoutThumbnails } from '../tabs/layout/LayoutThumbnails';
 import { BackgroundControls } from '../shared/BackgroundControls';
+import { BrandStyleControls } from './BrandStyleControls';
 
 interface DesignDrawerProps {
   isOpen: boolean;
@@ -13,6 +14,9 @@ interface DesignDrawerProps {
   canEditLayout: boolean;
   onLayoutSelect: (layoutCode: LayoutCode) => void;
   onLayoutUpdate: (updates: Partial<FormLayout>) => void;
+  onTokensReset: () => void;
+  /** When set, the drawer scrolls that section into view on open. */
+  focusSection?: 'brand' | null;
 }
 
 /**
@@ -30,16 +34,32 @@ export const DesignDrawer: React.FC<DesignDrawerProps> = ({
   canEditLayout,
   onLayoutSelect,
   onLayoutUpdate,
+  onTokensReset,
+  focusSection = null,
 }) => {
   const { t } = useTranslation('designDrawer');
   const currentLayoutCode = layout?.code || 'L1';
+  const brandSectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen || focusSection !== 'brand') return;
+    // Wait a frame so the Sheet content has mounted before scrolling.
+    const id = requestAnimationFrame(() =>
+      brandSectionRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    );
+    return () => cancelAnimationFrame(id);
+  }, [isOpen, focusSection]);
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    // Non-modal with no dimming overlay: the canvas stays visible and live-themed
+    // while tokens change. Escape and the close button still dismiss it.
+    <Sheet modal={false} open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-md p-0 flex flex-col gap-0"
+        hideOverlay
+        className="w-full sm:max-w-sm p-0 flex flex-col gap-0 shadow-2xl"
         data-testid="design-drawer"
+        onInteractOutside={(event) => event.preventDefault()}
       >
         <SheetHeader className="p-4 space-y-1" style={{ borderBottom: '1px solid var(--tf-border-medium)' }}>
           <SheetTitle>{t('header.title')}</SheetTitle>
@@ -60,6 +80,24 @@ export const DesignDrawer: React.FC<DesignDrawerProps> = ({
                 onLayoutSelect={onLayoutSelect}
                 disabled={!canEditLayout}
                 scrollAreaClassName="h-auto"
+              />
+            </div>
+
+            {/* Brand & style (design tokens) */}
+            <div
+              ref={brandSectionRef}
+              data-testid="design-drawer-brand-section"
+              className="pb-6 border-b border-[var(--tf-border-medium)] dark:border-gray-700 scroll-mt-4"
+            >
+              <Label className="block text-sm font-medium text-foreground dark:text-gray-300 mb-3">
+                {t('brandStyle.label')}
+              </Label>
+              <BrandStyleControls
+                layout={layout}
+                canEditLayout={canEditLayout}
+                onLayoutUpdate={onLayoutUpdate}
+                onReset={onTokensReset}
+                t={t}
               />
             </div>
 

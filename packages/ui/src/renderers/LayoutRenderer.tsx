@@ -3,6 +3,11 @@ import { LayoutCode } from '@dculus/types';
 import { RendererMode } from '@dculus/utils';
 import { LayoutProps } from '../types';
 import { useResolvedColorScheme } from '../layouts/shared/theme';
+import {
+  FormThemeContext,
+  useFormFonts,
+  useResolvedFormTheme,
+} from '../layouts/shared/tokens';
 import { L1ClassicLayout } from '../layouts/L1ClassicLayout';
 import { L2ModernLayout } from '../layouts/L2ModernLayout';
 import { L3CardLayout } from '../layouts/L3CardLayout';
@@ -84,19 +89,31 @@ export const LayoutRenderer: React.FC<LayoutRendererProps> = ({
   // `dark:` utilities already throughout the layouts; `--form-fg` carries the
   // custom body text colour (light mode only — see `textColorStyle`).
   const scheme = useResolvedColorScheme(layout?.theme);
-  const wrapperStyle =
+  const theme = useResolvedFormTheme(layout?.tokens, scheme);
+  useFormFonts(layout?.tokens);
+  const customFg =
     layout?.textColor && scheme === 'light'
       ? ({ ['--form-fg' as string]: layout.textColor } as React.CSSProperties)
       : undefined;
+  const wrapperStyle: React.CSSProperties | undefined = theme.branded
+    ? {
+        ...customFg,
+        ...theme.cssVars,
+        ...(layout?.tokens?.bodyFont ? { fontFamily: 'var(--df-font-body)' } : null),
+      }
+    : customFg;
 
   // Embedded: the wrapper must not impose a height either, or the layout's
   // content-height shell is clipped back to its (auto = 0) parent.
   return (
-    <div
-      className={`${embedded ? 'w-full' : 'w-full h-full'} ${scheme === 'dark' ? 'dark' : ''}`}
-      style={wrapperStyle}
-    >
-      {renderLayout()}
-    </div>
+    <FormThemeContext.Provider value={theme}>
+      <div
+        className={`${embedded ? 'w-full' : 'w-full h-full'} ${scheme === 'dark' ? 'dark' : ''} ${theme.className}`.trimEnd()}
+        style={wrapperStyle}
+        data-df-branded={theme.branded ? '' : undefined}
+      >
+        {renderLayout()}
+      </div>
+    </FormThemeContext.Provider>
   );
 };

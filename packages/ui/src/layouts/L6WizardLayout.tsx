@@ -10,6 +10,7 @@ import { layoutShell } from './shared/embedShell';
 import { buildOuterBackgroundStyle, BackgroundLayers, HeroMedia, SURFACE } from './shared/surface';
 import { useIntroContentEditing, IntroEditToolbar, IntroEditor } from './shared/introContent';
 import { useResolvedColorScheme, spacingClasses, withSpacing, textColorStyle } from './shared/theme';
+import { themedSurfaceClass, useFormTheme, withTokens } from './shared/tokens';
 import { useScrollReset } from './shared/useScrollReset';
 
 /**
@@ -54,7 +55,9 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
     layoutCode: 'L6',
   });
 
-  const layoutStyles = withSpacing(
+  const theme = useFormTheme();
+  const cardBg = themedSurfaceClass('bg-white dark:bg-gray-800', theme);
+  const layoutStyles = withTokens(withSpacing(
     {
       field: {
         container: 'mb-6',
@@ -69,7 +72,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
       submitButton: 'w-full h-12 bg-primary rounded-lg flex items-center justify-center',
     },
     layout?.spacing
-  );
+  ), theme);
 
   return (
     <div className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}>
@@ -84,7 +87,7 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
           <div ref={paneRef} className={`${shell.screenPane} relative z-10 px-4 sm:px-8 ${spacing.screenPaddingY}`}>
             <div className={`w-full max-w-3xl mx-auto flex flex-col gap-4 sm:gap-6 ${shell.minHFull}`} style={textStyle}>
               {showThankYou ? (
-                <div className={`bg-white dark:bg-gray-800 ${SURFACE.panel}`}>
+                <div className={`${cardBg} ${SURFACE.panel}`}>
                   <ThankYouScreen
                     content={thankYouMessage || layout?.thankYouContent || DEFAULT_THANK_YOU_CONTENT}
                     mode={mode}
@@ -109,14 +112,14 @@ export const L6WizardLayout: React.FC<LayoutProps> = ({
                     />
                   </div>
 
-                  <div className={`bg-white dark:bg-gray-800 ${SURFACE.panel} ${spacing.cardPadding}`}>
+                  <div className={`${cardBg} ${SURFACE.panel} ${spacing.cardPadding}`}>
                     <IntroEditToolbar editing={editing} mode={mode} />
                     <div className="min-h-24">
                       <IntroEditor editing={editing} mode={mode} />
                     </div>
                   </div>
 
-                  <div className={`bg-white dark:bg-gray-800 ${SURFACE.panel} ${spacing.cardPadding}`}>
+                  <div className={`${cardBg} ${SURFACE.panel} ${spacing.cardPadding}`}>
                     <PageRenderer
                       pages={pages}
                       layoutStyles={layoutStyles}

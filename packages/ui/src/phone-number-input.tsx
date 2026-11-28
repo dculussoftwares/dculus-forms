@@ -100,6 +100,9 @@ export interface CountrySelectProps {
   onChange: (value: CountryCode) => void;
   disabled?: boolean;
   className?: string;
+  /** Extra classes / inline style for the popup (rendered in a portal, outside any themed wrapper). */
+  contentClassName?: string;
+  contentStyle?: React.CSSProperties;
   /** Compact mode shows flag + dial code only (used inside PhoneNumberInput); full mode shows flag + name + dial code (used standalone, e.g. the "Default Country" setting). */
   compact?: boolean;
   placeholder?: string;
@@ -111,6 +114,8 @@ export const CountrySelect: React.FC<CountrySelectProps> = ({
   onChange,
   disabled,
   className,
+  contentClassName,
+  contentStyle,
   compact = false,
   placeholder = 'Select country',
   'aria-label': ariaLabel,
@@ -148,7 +153,7 @@ export const CountrySelect: React.FC<CountrySelectProps> = ({
           <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[260px] p-0" align="start">
+      <PopoverContent className={cn('w-[260px] p-0', contentClassName)} style={contentStyle} align="start">
         <Command
           filter={(itemValue, search) =>
             itemValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
@@ -205,6 +210,10 @@ export interface PhoneNumberInputProps {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  /** Classes merged onto the country trigger and the number input (design tokens). */
+  controlClassName?: string;
+  contentClassName?: string;
+  contentStyle?: React.CSSProperties;
   error?: boolean;
   id?: string;
   name?: string;
@@ -242,6 +251,9 @@ export const PhoneNumberInput = React.forwardRef<
       disabled,
       placeholder,
       className,
+      controlClassName,
+      contentClassName,
+      contentStyle,
       error,
       id,
       name,
@@ -360,6 +372,9 @@ export const PhoneNumberInput = React.forwardRef<
           value={country}
           onChange={handleCountryChange}
           disabled={disabled}
+          className={controlClassName}
+          contentClassName={contentClassName}
+          contentStyle={contentStyle}
           aria-label="Country code"
         />
         <Input
@@ -376,6 +391,7 @@ export const PhoneNumberInput = React.forwardRef<
           disabled={disabled}
           className={cn(
             'flex-1',
+            controlClassName,
             error && 'border-[#ce5d55] focus-visible:border-[#ce5d55]'
           )}
         />

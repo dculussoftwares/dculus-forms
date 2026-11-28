@@ -1,7 +1,8 @@
 {
   "buttons": {
     "design": "Design",
-    "preview": "Preview"
+    "preview": "Preview",
+    "brand": "Brand"
   },
   "deviceToggle": {
     "ariaLabel": "Canvas device preview",

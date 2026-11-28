@@ -3,6 +3,7 @@ import { RendererMode } from '@dculus/utils';
 import type { FormLayout } from '@dculus/types';
 import { LexicalRichTextEditor } from '../../rich-text-editor/LexicalRichTextEditor';
 import { RICH_TEXT_DARK_FIX } from './theme';
+import { themedButtonClass, useFormTheme } from './tokens';
 
 /**
  * The intro screen's editable rich-text headline + the builder's edit / save /
@@ -147,12 +148,18 @@ export const IntroCta: React.FC<{
   label: string;
   onClick: () => void;
   className?: string;
-}> = ({ label, onClick, className = '' }) => (
-  <button
-    onClick={onClick}
-    data-testid="viewer-cta-button"
-    className={`inline-flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-7 rounded-xl shadow-sm hover:shadow transition-all active:scale-[0.99] ${className}`}
-  >
-    {label}
-  </button>
-);
+}> = ({ label, onClick, className = '' }) => {
+  const theme = useFormTheme();
+  return (
+    <button
+      onClick={onClick}
+      data-testid="viewer-cta-button"
+      className={themedButtonClass(
+        `inline-flex items-center justify-center bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-7 rounded-xl shadow-sm hover:shadow transition-all active:scale-[0.99] ${className}`,
+        theme
+      )}
+    >
+      {label}
+    </button>
+  );
+};
