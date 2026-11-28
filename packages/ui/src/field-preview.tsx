@@ -227,7 +227,8 @@ export const FieldPreview: React.FC<FieldPreviewProps> = ({
             placeholder={placeholder}
             defaultValue={defaultValue}
             disabled={disabled}
-            className={cn('text-sm min-h-[80px] resize-none', inputTokenClass(theme, 'textarea'))}
+            className={inputTokenClass(theme, 'textarea')}
+            controlClassName="text-sm min-h-[80px] resize-none"
           />
         );
 

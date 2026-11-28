@@ -128,17 +128,24 @@ const AffixedInput = React.forwardRef<HTMLInputElement, InputProps & AffixProps>
 )
 AffixedInput.displayName = "AffixedInput"
 
-/** Textarea counterpart of `AffixedInput`; addons align with the first line. */
-const AffixedTextarea = React.forwardRef<
-  HTMLTextAreaElement,
-  TextareaProps & AffixProps
->(
+interface AffixedTextareaProps extends TextareaProps, AffixProps {
+  /** Sizing classes for the inner `<textarea>`; `className` styles the outer frame when addons are present. */
+  controlClassName?: string
+}
+
+/**
+ * Textarea counterpart of `AffixedInput`; addons align with the first line.
+ * As with `AffixedInput`, `className` (border, radius, fill) lands on the frame
+ * that draws the border, so design-token styles match the addon-less textarea.
+ */
+const AffixedTextarea = React.forwardRef<HTMLTextAreaElement, AffixedTextareaProps>(
   (
     {
       prefixText,
       suffixText,
       invalid,
       className,
+      controlClassName,
       disabled,
       "aria-describedby": ariaDescribedBy,
       ...props
@@ -152,7 +159,7 @@ const AffixedTextarea = React.forwardRef<
         <Textarea
           ref={ref}
           disabled={disabled}
-          className={className}
+          className={cn(className, controlClassName)}
           aria-describedby={ariaDescribedBy}
           {...props}
         />
@@ -165,7 +172,8 @@ const AffixedTextarea = React.forwardRef<
         className={cn(
           "flex w-full items-start rounded-xl border-2 border-gray-200 bg-white transition-colors duration-150 focus-within:border-primary dark:bg-gray-900 dark:border-gray-700",
           invalid && INVALID_BORDER,
-          disabled && "cursor-not-allowed opacity-50"
+          disabled && "cursor-not-allowed opacity-50",
+          className
         )}
       >
         {prefixText && (
@@ -181,7 +189,7 @@ const AffixedTextarea = React.forwardRef<
             "min-w-0 flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:border-0 disabled:opacity-100 dark:bg-transparent",
             prefixText && "pl-2",
             suffixText && "pr-2",
-            className
+            controlClassName
           )}
           {...props}
         />
