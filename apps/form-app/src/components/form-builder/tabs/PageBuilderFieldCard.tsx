@@ -500,12 +500,15 @@ export const FieldCard: React.FC<{
                 <CanvasStylePopover target="input">
                 <div
                   data-testid={`field-input-style-target-${field.id}`}
+                  className="relative"
                   onBlur={() => {
                     flushContentChange();
                   }}
                   // Selecting happens on the first click; a click on an already-selected field's input opens the style popover.
                   onClick={() => isSelected && isFillable && toggleCanvasStyle('input')}
                 >
+                  {/* Disabled controls swallow clicks, so this overlay lets them reach the card and this wrapper. */}
+                  {isFillable && <div aria-hidden="true" className="absolute inset-0 z-10 cursor-pointer" />}
                   <FieldPreview
                     field={field}
                     disabled={true}

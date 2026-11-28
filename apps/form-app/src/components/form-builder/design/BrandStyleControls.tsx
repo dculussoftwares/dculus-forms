@@ -497,8 +497,12 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
                 <span
                   className="block h-5 w-full"
                   style={{
-                    border: style === 'outlined' ? `1.5px solid ${previewColor}` : undefined,
-                    borderBottom: style === 'underline' ? `2px solid ${previewColor}` : undefined,
+                    borderStyle: style === 'outlined' || style === 'underline' ? 'solid' : 'none',
+                    borderColor: previewColor,
+                    borderTopWidth: style === 'outlined' ? 1.5 : 0,
+                    borderLeftWidth: style === 'outlined' ? 1.5 : 0,
+                    borderRightWidth: style === 'outlined' ? 1.5 : 0,
+                    borderBottomWidth: style === 'underline' ? 2 : style === 'outlined' ? 1.5 : 0,
                     backgroundColor: style === 'filled' ? 'rgba(0,0,0,0.08)' : undefined,
                     borderRadius: style === 'underline' ? 0 : 4,
                   }}
