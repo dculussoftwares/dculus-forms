@@ -16,8 +16,8 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.11"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
   },
   "dependencies": {
     "@dculus/types": "workspace:*",
