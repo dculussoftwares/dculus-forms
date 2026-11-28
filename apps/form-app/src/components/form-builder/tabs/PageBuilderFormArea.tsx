@@ -1,8 +1,8 @@
 import React, { useMemo, useEffect } from 'react';
-import { ScrollArea, Button, toast, resolveFormTheme, useFormFonts, FormThemeContext } from '@dculus/ui';
+import { ScrollArea, Button, toast, resolveFormTheme, useFormFonts, FormThemeContext, buttonTokenClass } from '@dculus/ui';
 import { FormPage, FormField, FieldType, buildPageTree, countQuestionFields, isLayoutField, pageHasGrid } from '@dculus/types';
 import { cn } from '@dculus/utils';
-import { Plus } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useFormBuilderStore } from '../../../store/useFormBuilderStore';
 import { useEffectiveTokens } from '../../../store/useBrandPreviewStore';
 import { useCanvasStyleStore } from '../../../store/useCanvasStyleStore';
@@ -409,10 +409,10 @@ export const PageHeader: React.FC<{
   const questionCount = countQuestionFields(selectedPage.fields);
 
   return (
-    <div className="mb-4 flex items-baseline gap-3">
+    <div className="mb-4 flex items-baseline gap-3 sm:mb-6">
       <CanvasStylePopover target="title">
         <h1
-          className="text-xl font-semibold text-[#3c323e] dark:text-white"
+          className="text-3xl font-bold tracking-tight text-[#3c323e] dark:text-white"
           style={headingFont ? { fontFamily: 'var(--df-font-heading)' } : undefined}
         >
           <button
@@ -436,6 +436,126 @@ export const PageHeader: React.FC<{
 };
 
 // =============================================================================
+// PageProgress / PageNavFooter
+// =============================================================================
+
+/**
+ * PageProgress - Viewer-style progress bar with a "Page X of Y" counter
+ */
+export const PageProgress: React.FC<{
+  pageCount: number;
+  currentIndex: number;
+  themed: boolean;
+}> = ({ pageCount, currentIndex, themed }) => {
+  const { t } = useTranslation('pageBuilderTab');
+  if (pageCount < 2 || currentIndex < 0) return null;
+
+  return (
+    <div className="mb-4 flex items-center gap-3" data-testid="page-progress">
+      <div className="h-0.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+        <div
+          className={cn(
+            'h-full rounded-full bg-primary transition-all duration-500 ease-out motion-reduce:transition-none',
+            themed && 'bg-[var(--df-primary)]'
+          )}
+          style={{ width: `${Math.round(((currentIndex + 1) / pageCount) * 100)}%` }}
+        />
+      </div>
+      <span
+        className="flex-shrink-0 text-xs tabular-nums text-gray-400 dark:text-gray-500"
+        data-testid="page-indicator"
+      >
+        {t('pageNavigator.position', { values: { current: currentIndex + 1, total: pageCount } })}
+      </span>
+    </div>
+  );
+};
+
+const NAV_PILL_CLASS =
+  'flex items-center gap-2.5 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none';
+
+/**
+ * BackToIntro - Viewer-style link at the top of the page card that returns to the intro screen
+ */
+export const BackToIntro: React.FC<{ onClick: () => void }> = ({ onClick }) => {
+  const { t } = useTranslation('pageBuilderTab');
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      data-testid="page-back-to-intro"
+      className="mb-5 flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+    >
+      <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+      {t('pageNavigator.backToIntro')}
+    </button>
+  );
+};
+
+/**
+ * PageNavFooter - Viewer-style footer: ghost "Prev" on the left, pill "Next" on the right.
+ * On the last page the pill reads "Submit" and is disabled, since the builder never submits.
+ */
+export const PageNavFooter: React.FC<{
+  pages: FormPage[];
+  selectedPageId: string | null;
+  onSelectPage: (pageId: string) => void;
+  brandTheme: ReturnType<typeof resolveFormTheme>;
+}> = ({ pages, selectedPageId, onSelectPage, brandTheme }) => {
+  const { t } = useTranslation('pageBuilderTab');
+  const currentIndex = pages.findIndex((p) => p.id === selectedPageId);
+
+  if (currentIndex === -1) return null;
+
+  const prevPage = pages[currentIndex - 1];
+  const nextPage = pages[currentIndex + 1];
+  const pillClass = cn(NAV_PILL_CLASS, buttonTokenClass(brandTheme));
+
+  return (
+    <nav
+      aria-label={t('pageNavigator.label')}
+      className="mt-6 border-t border-gray-100 pt-4 dark:border-gray-800"
+      data-testid="page-navigator"
+    >
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => prevPage && onSelectPage(prevPage.id)}
+          disabled={!prevPage}
+          data-testid="page-navigator-prev"
+          className="flex items-center gap-1.5 text-sm font-medium text-gray-400 transition-colors hover:text-gray-700 disabled:pointer-events-none disabled:opacity-0 dark:hover:text-gray-300"
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          {t('pageNavigator.previous')}
+        </button>
+        {nextPage ? (
+          <button
+            type="button"
+            onClick={() => onSelectPage(nextPage.id)}
+            data-testid="page-navigator-next"
+            className={pillClass}
+          >
+            {t('pageNavigator.next')}
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled
+            title={t('pageNavigator.submitHint')}
+            data-testid="page-navigator-submit"
+            className={pillClass}
+          >
+            {t('pageNavigator.submit')}
+            <Check className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </nav>
+  );
+};
+
+// =============================================================================
 // FormArea
 // =============================================================================
 
@@ -454,6 +574,8 @@ export const FormArea: React.FC<{
     pages,
     selectedPageId,
     selectedFieldId,
+    setSelectedPage,
+    setSelection,
     setSelectedField,
     removeField,
     restoreField,
@@ -626,44 +748,56 @@ export const FormArea: React.FC<{
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <div className="p-6 pb-36">
           <div className="max-w-3xl mx-auto" style={brandTheme.branded ? brandTheme.cssVars : undefined}>
-            {/* Page Header */}
-            <PageHeader selectedPage={selectedPage} headingFont={!!tokens?.headingFont} />
-
-            {/* Form Fields Container - Drop Zone */}
+            {/* One page card, like the form viewer: back link, progress, title, fields, prev/next */}
             <FormThemeContext.Provider value={brandTheme}>
             <CanvasStylePopover target="surface">
             <div
-              ref={setNodeRef}
               // Only clicks on the card's own padding/empty space; fields and their controls keep their behaviour.
               onClick={(e) => e.target === e.currentTarget && toggleCanvasStyle('surface')}
-              className={`
-                min-h-[400px] p-4 bg-white dark:bg-card rounded-xl
-                transition-all duration-150
-                ${isOver ? 'ring-2 ring-[rgba(60,50,62,0.12)]' : ''}
-              `}
+              className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-black/5 dark:bg-card sm:p-8"
               style={{
                 ...(brandTheme.hasSurface ? { backgroundColor: 'var(--df-surface)' } : null),
                 ...(tokens?.bodyFont ? { fontFamily: 'var(--df-font-body)' } : null),
-                border: isOver
-                  ? '2px dashed rgba(60,50,62,0.25)'
-                  : '1px solid rgba(81,76,84,0.10)',
-                boxShadow: isOver
-                  ? undefined
-                  : '0 1px 4px rgba(60,50,62,0.06)',
               }}
-              data-testid="droppable-page"
+              data-testid="page-card"
             >
-              {selectedPage && selectedPage.fields.length > 0 ? (
-                <FieldListWithDropZones
-                  fields={selectedPage.fields}
-                  pageId={selectedPage.id}
-                  recentlyDroppedFieldId={recentlyDroppedFieldId}
-                  isDelayingExpansion={isDelayingExpansion}
-                  isAnyDragActive={isAnyDragActive}
-                />
-              ) : (
-                <EmptyFormAreaPlaceholder isConnected={isConnected} pageId={selectedPage?.id} />
-              )}
+              <BackToIntro onClick={() => setSelection({ kind: 'intro' })} />
+
+              <PageProgress
+                pageCount={pages.length}
+                currentIndex={pages.findIndex((p) => p.id === selectedPageId)}
+                themed={brandTheme.hasPrimary}
+              />
+
+              <PageHeader selectedPage={selectedPage} headingFont={!!tokens?.headingFont} />
+
+              {/* Form Fields Container - Drop Zone */}
+              <div
+                ref={setNodeRef}
+                onClick={(e) => e.target === e.currentTarget && toggleCanvasStyle('surface')}
+                className={`min-h-[240px] rounded-xl transition-all duration-150 ${isOver ? 'ring-2 ring-[rgba(60,50,62,0.12)]' : ''}`}
+                style={isOver ? { border: '2px dashed rgba(60,50,62,0.25)' } : undefined}
+                data-testid="droppable-page"
+              >
+                {selectedPage && selectedPage.fields.length > 0 ? (
+                  <FieldListWithDropZones
+                    fields={selectedPage.fields}
+                    pageId={selectedPage.id}
+                    recentlyDroppedFieldId={recentlyDroppedFieldId}
+                    isDelayingExpansion={isDelayingExpansion}
+                    isAnyDragActive={isAnyDragActive}
+                  />
+                ) : (
+                  <EmptyFormAreaPlaceholder isConnected={isConnected} pageId={selectedPage?.id} />
+                )}
+              </div>
+
+              <PageNavFooter
+                pages={pages}
+                selectedPageId={selectedPageId}
+                onSelectPage={setSelectedPage}
+                brandTheme={brandTheme}
+              />
             </div>
             </CanvasStylePopover>
             </FormThemeContext.Provider>

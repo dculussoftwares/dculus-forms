@@ -13,6 +13,15 @@
       "noPages": "No pages yet"
     }
   },
+  "pageNavigator": {
+    "label": "பக்க வழிசெலுத்தல்",
+    "backToIntro": "அறிமுகத்திற்குத் திரும்பு",
+    "previous": "முந்தைய",
+    "next": "அடுத்தது",
+    "submit": "சமர்ப்பி",
+    "submitHint": "பதிலளிப்பவர்கள் இங்கே சமர்ப்பிப்பார்கள். பில்டரில் முடக்கப்பட்டுள்ளது.",
+    "position": "பக்கம் {{current}} / {{total}}"
+  },
   "formArea": {
     "untitledPage": "தலைப்பிடப்படாத பக்கம்",
     "noPageSelected": "பக்கம் எதுவும் தேர்ந்தெடுக்கப்படவில்லை",

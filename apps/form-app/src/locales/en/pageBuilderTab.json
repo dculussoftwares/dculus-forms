@@ -13,6 +13,15 @@
       "noPages": "No pages yet"
     }
   },
+  "pageNavigator": {
+    "label": "Page navigation",
+    "backToIntro": "Back to Intro",
+    "previous": "Prev",
+    "next": "Next",
+    "submit": "Submit",
+    "submitHint": "Respondents submit here. Disabled in the builder.",
+    "position": "Page {{current}} of {{total}}"
+  },
   "formArea": {
     "untitledPage": "Untitled Page",
     "noPageSelected": "No page selected",
