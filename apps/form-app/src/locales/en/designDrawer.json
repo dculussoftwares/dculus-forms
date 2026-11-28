@@ -72,13 +72,27 @@
       "secondary": "Back"
     },
     "presets": {
-      "label": "Presets",
+      "label": "Themes",
       "ocean": "Ocean",
       "sunset": "Sunset",
       "editorial": "Editorial",
       "forest": "Forest",
       "berry": "Berry",
-      "violet": "Violet"
+      "violet": "Violet",
+      "slate": "Slate",
+      "mint": "Mint",
+      "sky": "Sky",
+      "lavender": "Lavender",
+      "blush": "Blush",
+      "sand": "Sand",
+      "neoBrutal": "Neo-brutal",
+      "terminal": "Terminal",
+      "wedding": "Wedding",
+      "royal": "Royal",
+      "crimson": "Crimson",
+      "citrus": "Citrus",
+      "magazine": "Magazine",
+      "tamilClassic": "Tamil classic"
     }
   },
   "globalBackground": {
@@ -121,7 +135,8 @@
   },
   "themeStrip": {
     "label": "Theme",
-    "default": "No theme (default look)"
+    "default": "No theme (default look)",
+    "more": "More themes"
   },
   "lookPicker": {
     "default": "Default",
@@ -140,5 +155,20 @@
     "saved": "Organisation brand saved",
     "removed": "Organisation brand removed",
     "error": "Couldn't update the organisation brand"
+  },
+  "themeGallery": {
+    "openButton": "Show all {{count}} themes",
+    "filterLabel": "Theme category",
+    "all": "All",
+    "categories": {
+      "clean": "Clean",
+      "soft": "Soft",
+      "bold": "Bold",
+      "elegant": "Elegant"
+    },
+    "closeButton": "Show fewer themes",
+    "sampleHeading": "Contact us",
+    "sampleInput": "Your name",
+    "sampleButton": "Submit"
   }
 }

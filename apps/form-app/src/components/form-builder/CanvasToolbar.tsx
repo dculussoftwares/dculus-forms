@@ -15,6 +15,8 @@ interface CanvasToolbarProps {
   onOpenDesign: () => void;
   /** Opens the Design drawer scrolled to Brand & style. */
   onOpenBrand?: () => void;
+  /** Opens the Design drawer with the full theme gallery expanded. */
+  onOpenThemes?: () => void;
   layout: FormLayout;
   canEditLayout: boolean;
   onLayoutUpdate: (updates: Partial<FormLayout>) => void;
@@ -33,6 +35,7 @@ interface CanvasToolbarProps {
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   onOpenDesign,
   onOpenBrand,
+  onOpenThemes,
   layout,
   canEditLayout,
   onLayoutUpdate,
@@ -67,6 +70,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         canEditLayout={canEditLayout}
         onLayoutUpdate={onLayoutUpdate}
         onReset={onTokensReset}
+        onMore={onOpenThemes ?? onOpenBrand ?? onOpenDesign}
       />
 
       <span className="flex-1" />

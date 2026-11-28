@@ -3,6 +3,7 @@ import type { FormLayout } from '@dculus/types';
 import { act } from 'react';
 import { useBrandPreviewStore } from '../../../store/useBrandPreviewStore';
 import { BrandStyleControls, darkenToContrast } from '../design/BrandStyleControls';
+import { BRAND_PRESETS } from '../design/brandPresets';
 import { contrastRatio } from '@dculus/utils';
 import en from '../../../locales/en/designDrawer.json';
 
@@ -24,6 +25,7 @@ jest.mock('@dculus/ui', () => {
     SelectItem: passthrough('div'),
     SelectTrigger: passthrough('div'),
     SelectValue: () => null,
+    useFormFonts: () => undefined,
   };
 });
 
@@ -129,6 +131,31 @@ describe('BrandStyleControls', () => {
     setup(layout);
     expect(screen.getByTestId('brand-preset-ocean')).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('brand-preset-sunset')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('shows the featured themes first and reveals every theme on expand', () => {
+    setup();
+    expect(screen.getByTestId('brand-preset-ocean')).toBeInTheDocument();
+    expect(screen.queryByTestId('brand-preset-slate')).not.toBeInTheDocument();
+    const toggle = screen.getByTestId('theme-gallery-toggle');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByTestId('brand-preset-slate')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('theme-gallery-filter-bold'));
+    expect(screen.queryByTestId('brand-preset-slate')).not.toBeInTheDocument();
+    expect(screen.getByTestId('brand-preset-neoBrutal')).toBeInTheDocument();
+  });
+
+  it('keeps an active non-featured theme visible while collapsed', () => {
+    const layout = {
+      ...baseLayout,
+      tokens: { version: 1, ...BRAND_PRESETS.find((p) => p.id === 'slate')!.tokens },
+    } as FormLayout;
+    setup(layout);
+    expect(screen.getByTestId('brand-preset-slate')).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('ignores incomplete hex input', () => {

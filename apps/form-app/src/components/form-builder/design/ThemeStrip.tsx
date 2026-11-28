@@ -1,15 +1,18 @@
 import React from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import type { FormDesignTokens, FormLayout } from '@dculus/types';
 import { cn, trackEvent } from '@dculus/utils';
 import { useTranslation } from '../../../hooks/useTranslation';
 import { useBrandPreviewStore } from '../../../store/useBrandPreviewStore';
-import { BRAND_PRESETS, matchesPreset, type BrandPreset } from './brandPresets';
+import { BRAND_PRESETS, FEATURED_BRAND_PRESETS, matchesPreset, type BrandPreset } from './brandPresets';
 
 interface ThemeStripProps {
   layout: FormLayout;
   canEditLayout: boolean;
   onLayoutUpdate: (updates: Partial<FormLayout>) => void;
   onReset: () => void;
+  /** Opens the Design drawer at Brand & style, where every theme is available. */
+  onMore?: () => void;
   className?: string;
 }
 
@@ -23,6 +26,7 @@ export const ThemeStrip: React.FC<ThemeStripProps> = ({
   canEditLayout,
   onLayoutUpdate,
   onReset,
+  onMore,
   className,
 }) => {
   const { t } = useTranslation('designDrawer');
@@ -30,6 +34,9 @@ export const ThemeStrip: React.FC<ThemeStripProps> = ({
   const tokens = layout.tokens;
   const hasBrand = Boolean(tokens && Object.keys(tokens).some((k) => k !== 'version'));
   const activePreset = BRAND_PRESETS.find((p) => matchesPreset(tokens, p));
+  // A theme picked from the full gallery may not be featured; keep it visible in the strip.
+  const swatches =
+    activePreset && !activePreset.featured ? [...FEATURED_BRAND_PRESETS, activePreset] : FEATURED_BRAND_PRESETS;
 
   const preview = (preset: BrandPreset | null) => {
     if (!canEditLayout || !preset) {
@@ -80,7 +87,7 @@ export const ThemeStrip: React.FC<ThemeStripProps> = ({
           !hasBrand && 'ring-2 ring-offset-1 ring-foreground/60'
         )}
       />
-      {BRAND_PRESETS.map((preset) => {
+      {swatches.map((preset) => {
         const label = t(`brandStyle.presets.${preset.id}`);
         const active = activePreset?.id === preset.id;
         return (
@@ -105,6 +112,18 @@ export const ThemeStrip: React.FC<ThemeStripProps> = ({
           />
         );
       })}
+      {onMore && (
+        <button
+          type="button"
+          onClick={onMore}
+          title={t('themeStrip.more')}
+          aria-label={t('themeStrip.more')}
+          data-testid="theme-strip-more"
+          className="flex h-5 w-5 items-center justify-center rounded-full border border-muted-foreground/40 text-muted-foreground transition-transform hover:scale-110 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <MoreHorizontal className="h-3 w-3" />
+        </button>
+      )}
     </div>
   );
 };

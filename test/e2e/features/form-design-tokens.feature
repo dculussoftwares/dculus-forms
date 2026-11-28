@@ -69,3 +69,15 @@ Feature: Per-form design tokens (brand color & style)
     Then I should see the form in the viewer
     When I click the CTA button to start the form
     Then the viewer form should not be branded
+
+  @design-tokens-gallery
+  Scenario: A theme picked from the gallery persists after reloading the builder
+    When I click the canvas toolbar Design button
+    And I apply the "Neo-brutal" theme from the theme gallery
+    Then the design drawer brand color should be "#000000"
+    And the design drawer brand style "Corners" should be "None"
+    When I close the design drawer
+    And I reload the builder page
+    And I click the canvas toolbar Design button
+    Then the design drawer brand color should be "#000000"
+    And the design drawer brand style "Input style" should be "Outlined"

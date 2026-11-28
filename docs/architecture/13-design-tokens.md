@@ -73,7 +73,7 @@ it does not block saving.
   `SheetContent hideOverlay`), so the canvas stays visible and updates live. Outside
   clicks do not close it; Escape and the close button do.
 - `BrandPreviewCard` (top of Brand & style) renders a sample form with the current
-  tokens; `brandPresets.ts` holds one-click token sets (active preset = exact match).
+  tokens; `brandPresets.ts` holds 20 curated one-click token sets in four categories (active preset = exact match, so every preset must stay a unique token set; a test enforces this plus sanitizer-validity and contrast). Six are `featured` (toolbar strip + drawer grid); `ThemeGallery.tsx` is the drawer's theme picker: the six featured themes up front (plus the active one if it isn't featured), and "Show all N themes" expands the same grid in place to every theme with category chips; hovering a theme previews it on the canvas. The "⋯" swatch at the end of the toolbar `ThemeStrip` opens the drawer with the list expanded (`focusSection='themes'` + `themesRequest` counter → `expandSignal`). Presets use only the existing tokens (light surfaces; no dark/glass looks until tokens grow). Adding one: entry in `brandPresets.ts` + name in `designDrawer.json` en and ta.
 - **Transient previews** (`store/useBrandPreviewStore.ts`) never write to Y.js. The canvas
   (`PageBuilderFormArea`, intro/thank-you via `PageBuilderTab`) reads
   `useEffectiveTokens(layout.tokens)`, which returns the preview while active:

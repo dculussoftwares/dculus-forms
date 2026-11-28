@@ -87,6 +87,18 @@ When(
   }
 );
 
+When(
+  'I apply the {string} theme from the theme gallery',
+  async function (this: CustomWorld, themeName: string) {
+    await expect(brandControls(this)).toBeVisible({ timeout: 10_000 });
+    const toggle = brandControls(this).getByTestId('theme-gallery-toggle');
+    if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+    const card = brandControls(this).getByRole('button', { name: themeName, exact: true });
+    await card.click();
+    await expect(card).toHaveAttribute('aria-pressed', 'true', { timeout: 10_000 });
+  }
+);
+
 When('I reset the brand style in the design drawer', async function (this: CustomWorld) {
   // The button is disabled while no tokens exist, so a successful click also
   // proves branding was actually present beforehand.

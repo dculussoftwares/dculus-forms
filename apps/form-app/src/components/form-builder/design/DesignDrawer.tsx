@@ -17,7 +17,9 @@ interface DesignDrawerProps {
   onLayoutUpdate: (updates: Partial<FormLayout>) => void;
   onTokensReset: () => void;
   /** When set, the drawer scrolls that section into view on open. */
-  focusSection?: 'brand' | null;
+  focusSection?: 'brand' | 'themes' | null;
+  /** Increments on each "more themes" request; expands the theme gallery when focusSection is 'themes'. */
+  themesRequest?: number;
 }
 
 /**
@@ -37,6 +39,7 @@ export const DesignDrawer: React.FC<DesignDrawerProps> = ({
   onLayoutUpdate,
   onTokensReset,
   focusSection = null,
+  themesRequest = 0,
 }) => {
   const { t } = useTranslation('designDrawer');
   const currentLayoutCode = layout?.code || 'L1';
@@ -98,6 +101,7 @@ export const DesignDrawer: React.FC<DesignDrawerProps> = ({
                 canEditLayout={canEditLayout}
                 onLayoutUpdate={onLayoutUpdate}
                 onReset={onTokensReset}
+                expandThemesSignal={focusSection === 'themes' ? themesRequest : 0}
                 t={t}
               />
               <OrgBrandKitCard

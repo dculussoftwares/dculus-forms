@@ -72,13 +72,27 @@
       "secondary": "பின்செல்"
     },
     "presets": {
-      "label": "முன்அமைவுகள்",
+      "label": "தீம்கள்",
       "ocean": "கடல்",
       "sunset": "அந்தி",
       "editorial": "இதழ்",
       "forest": "வனம்",
       "berry": "பெர்ரி",
-      "violet": "ஊதா"
+      "violet": "ஊதா",
+      "slate": "சாம்பல்",
+      "mint": "புதினா",
+      "sky": "வானம்",
+      "lavender": "இளஞ்சாயம்",
+      "blush": "ரோஜா",
+      "sand": "மணல்",
+      "neoBrutal": "நியோ-புருடல்",
+      "terminal": "டெர்மினல்",
+      "wedding": "திருமணம்",
+      "royal": "அரச நீலம்",
+      "crimson": "செம்மை",
+      "citrus": "எலுமிச்சை",
+      "magazine": "பத்திரிகை",
+      "tamilClassic": "தமிழ் செவ்வியல்"
     }
   },
   "globalBackground": {
@@ -121,7 +135,8 @@
   },
   "themeStrip": {
     "label": "தீம்",
-    "default": "தீம் இல்லை (இயல்புநிலை)"
+    "default": "தீம் இல்லை (இயல்புநிலை)",
+    "more": "மேலும் தீம்கள்"
   },
   "lookPicker": {
     "default": "இயல்புநிலை",
@@ -140,5 +155,20 @@
     "saved": "நிறுவன பிராண்ட் சேமிக்கப்பட்டது",
     "removed": "நிறுவன பிராண்ட் நீக்கப்பட்டது",
     "error": "நிறுவன பிராண்டைப் புதுப்பிக்க முடியவில்லை"
+  },
+  "themeGallery": {
+    "openButton": "அனைத்து {{count}} தீம்களையும் காட்டு",
+    "filterLabel": "தீம் வகை",
+    "all": "அனைத்தும்",
+    "categories": {
+      "clean": "எளிமை",
+      "soft": "மென்மை",
+      "bold": "துணிவு",
+      "elegant": "நளினம்"
+    },
+    "closeButton": "குறைவான தீம்களைக் காட்டு",
+    "sampleHeading": "எங்களை தொடர்பு கொள்ள",
+    "sampleInput": "உங்கள் பெயர்",
+    "sampleButton": "சமர்ப்பி"
   }
 }

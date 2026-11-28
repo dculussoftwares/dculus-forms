@@ -27,7 +27,8 @@ import {
 } from '@dculus/utils';
 import { BrandPreviewCard } from './BrandPreviewCard';
 import { useBrandPreviewStore, useEffectiveTokens } from '../../../store/useBrandPreviewStore';
-import { BRAND_PRESETS, matchesPreset, type BrandPreset } from './brandPresets';
+import { RADIUS_PREVIEW, type BrandPreset } from './brandPresets';
+import { ThemeGallery } from './ThemeGallery';
 
 type Translate = (key: string, options?: { values?: Record<string, string | number> }) => string;
 
@@ -38,6 +39,8 @@ interface BrandStyleControlsProps {
   /** Removes `layout.tokens` entirely (undefined writes are ignored by updateLayout). */
   onReset: () => void;
   t: Translate;
+  /** Non-zero values expand the theme gallery (and scroll it into view) each time they change. */
+  expandThemesSignal?: number;
   /** Render only these sections (canvas popovers); omitted renders everything. */
   sections?: BrandSection[];
 }
@@ -69,13 +72,6 @@ const QUICK_SWATCHES = [
   '#111827',
 ];
 const RADII: FormRadius[] = ['none', 'sm', 'md', 'lg', 'pill'];
-const RADIUS_PREVIEW: Record<FormRadius, string> = {
-  none: '0px',
-  sm: '3px',
-  md: '6px',
-  lg: '10px',
-  pill: '999px',
-};
 const INPUT_STYLES: FormInputStyle[] = ['outlined', 'filled', 'underline'];
 const BUTTON_STYLES: FormButtonStyle[] = ['solid', 'outline', 'soft'];
 const PREVIEW_FALLBACK_COLOR = '#374151';
@@ -99,49 +95,6 @@ const optionButtonClass = (active: boolean) =>
       ? 'border-foreground bg-muted font-medium text-foreground'
       : 'border-[var(--tf-border-strong)] text-muted-foreground hover:bg-muted/60'
   }`;
-
-const PresetButton: React.FC<{
-  preset: BrandPreset;
-  label: string;
-  active: boolean;
-  disabled: boolean;
-  onApply: (preset: BrandPreset) => void;
-  onPreview: (preset: BrandPreset | null) => void;
-}> = ({ preset, label, active, disabled, onApply, onPreview }) => {
-  const { primaryColor, headingFont, radius } = preset.tokens;
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      aria-pressed={active}
-      aria-label={label}
-      data-testid={`brand-preset-${preset.id}`}
-      onClick={() => onApply(preset)}
-      onPointerEnter={() => onPreview(preset)}
-      onPointerLeave={() => onPreview(null)}
-      onFocus={() => onPreview(preset)}
-      onBlur={() => onPreview(null)}
-      className={`flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        active
-          ? 'border-foreground bg-muted font-medium text-foreground'
-          : 'border-[var(--tf-border-strong)] text-muted-foreground hover:bg-muted/60'
-      }`}
-    >
-      <span
-        className="flex h-6 w-6 shrink-0 items-center justify-center text-[11px] font-semibold"
-        style={{
-          backgroundColor: primaryColor,
-          color: primaryColor ? readableOn(primaryColor) : undefined,
-          borderRadius: radius ? RADIUS_PREVIEW[radius] : '6px',
-          fontFamily: headingFont ? FONT_CATALOG[headingFont].stack : undefined,
-        }}
-      >
-        Aa
-      </span>
-      <span className="truncate">{label}</span>
-    </button>
-  );
-};
 
 const ColorField: React.FC<{
   label: string;
@@ -291,6 +244,7 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
   onLayoutUpdate,
   onReset,
   t,
+  expandThemesSignal,
   sections,
 }) => {
   const show = (section: BrandSection) => !sections || sections.includes(section);
@@ -350,10 +304,10 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
     onLayoutUpdate({ tokens: next as unknown as FormDesignTokens });
   };
 
-  const applyPreset = (preset: BrandPreset) => {
+  const applyPreset = (preset: BrandPreset, track = true) => {
     if (disabled) return;
     clearPreview();
-    trackEvent('brand_preset_applied', { preset: preset.id, source: 'drawer' });
+    if (track) trackEvent('brand_preset_applied', { preset: preset.id, source: 'drawer' });
     onLayoutUpdate({ tokens: { version: 1, ...preset.tokens } as FormDesignTokens });
   };
 
@@ -398,19 +352,15 @@ export const BrandStyleControls: React.FC<BrandStyleControlsProps> = ({
           <Label className="block text-xs text-foreground dark:text-gray-400">
             {t('brandStyle.presets.label')}
           </Label>
-          <div className="grid grid-cols-2 gap-1.5" role="group" aria-label={t('brandStyle.presets.label')}>
-            {BRAND_PRESETS.map((preset) => (
-              <PresetButton
-                key={preset.id}
-                preset={preset}
-                label={t(`brandStyle.presets.${preset.id}`)}
-                active={matchesPreset(tokens, preset)}
-                disabled={disabled}
-                onApply={applyPreset}
-                onPreview={previewPreset}
-              />
-            ))}
-          </div>
+          <ThemeGallery
+            t={t}
+            tokens={tokens}
+            disabled={disabled}
+            source="drawer"
+            expandSignal={expandThemesSignal}
+            onApply={(preset) => applyPreset(preset, false)}
+            onPreview={previewPreset}
+          />
         </div>
       )}
       {show('brandColor') && (

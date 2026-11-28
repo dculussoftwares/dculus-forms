@@ -61,7 +61,7 @@ The same foundation also powers theme presets, the AI "make it beautiful" button
 
 ## Builder design features
 
-1. **Theme presets gallery:** about 20 curated looks (Editorial, Neo-brutal, Glass, Soft pastel, Terminal, Wedding serif), each a token bundle. Applying one is a single click, and it syncs over Y.js.
+1. **Theme presets gallery (shipped: 20 looks within the current token set; Glass needs new tokens):** about 20 curated looks (Editorial, Neo-brutal, Glass, Soft pastel, Terminal, Wedding serif), each a token bundle. Applying one is a single click, and it syncs over Y.js.
 2. **Live device preview rail:** phone, tablet and desktop frames shown side by side while editing, plus an "embedded in a page" mock.
 3. **Field style variants:** inputs as underline, outlined, filled or pill. Options as plain list, cards with icons, image tiles or chips. These are set per field, with a form-wide default.
 4. **Image and emoji choice options:** radio and checkbox options with images or emoji. Great for surveys and quizzes, and they make strong template thumbnails. Route through the `new-field-generator` agent.

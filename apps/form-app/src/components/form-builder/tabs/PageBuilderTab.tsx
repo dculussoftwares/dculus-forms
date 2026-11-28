@@ -95,9 +95,12 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
 
   // Canvas toolbar state: 🎨 Design drawer open/closed, desktop/mobile device frame.
   const [isDesignDrawerOpen, setIsDesignDrawerOpen] = useState(false);
-  const [designFocus, setDesignFocus] = useState<'brand' | null>(null);
-  const openDesignDrawer = useCallback((focus: 'brand' | null = null, source = 'unknown') => {
-    if (focus === 'brand') trackEvent('brand_opened', { source });
+  const [designFocus, setDesignFocus] = useState<'brand' | 'themes' | null>(null);
+  // Bumped on every "more themes" request so an already-open drawer expands the gallery again.
+  const [themesRequest, setThemesRequest] = useState(0);
+  const openDesignDrawer = useCallback((focus: 'brand' | 'themes' | null = null, source = 'unknown') => {
+    if (focus) trackEvent('brand_opened', { source });
+    if (focus === 'themes') setThemesRequest((n) => n + 1);
     setDesignFocus(focus);
     setIsDesignDrawerOpen(true);
   }, []);
@@ -580,6 +583,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
             <CanvasToolbar
               onOpenDesign={() => openDesignDrawer()}
               onOpenBrand={() => openDesignDrawer('brand', 'toolbar')}
+              onOpenThemes={() => openDesignDrawer('themes', 'theme_strip')}
               layout={layout}
               canEditLayout={canEditLayout}
               onLayoutUpdate={handleLayoutUpdate}
@@ -638,6 +642,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
           isOpen={isDesignDrawerOpen}
           onClose={() => setIsDesignDrawerOpen(false)}
           focusSection={designFocus}
+          themesRequest={themesRequest}
           layout={layout}
           formId={formId || ''}
           canEditLayout={canEditLayout}
