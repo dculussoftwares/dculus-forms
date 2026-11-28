@@ -219,6 +219,36 @@ export function mixWithWhite(hex: string, ratio: number): string {
 }
 
 /**
+ * WCAG 2.1 relative luminance of a "#rrggbb" color (0 = black, 1 = white).
+ * Returns 0 for an invalid hex color.
+ */
+export function relativeLuminance(hex: string): number {
+  const match = /^#([0-9A-Fa-f]{6})$/.exec(hex);
+  if (!match) return 0;
+  const channel = (offset: number) => {
+    const c = parseInt(match[1].slice(offset, offset + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+}
+
+/** WCAG 2.1 contrast ratio between two "#rrggbb" colors (1 to 21). */
+export function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  const lighter = Math.max(la, lb);
+  const darker = Math.min(la, lb);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Returns "#ffffff" or "#111111", whichever reads better on the given background color. */
+export function readableOn(hex: string): '#ffffff' | '#111111' {
+  return contrastRatio(hex, '#ffffff') >= contrastRatio(hex, '#111111')
+    ? '#ffffff'
+    : '#111111';
+}
+
+/**
  * Strips HTML tags from text and truncates with ellipsis
  * @param html - HTML string to process
  * @param maxLength - Maximum length before truncation (default: 50)
@@ -278,6 +308,9 @@ export * from './constants.js';
 
 // Re-export mention substitution utilities
 export * from './mentionSubstitution.js';
+
+// Re-export font catalog for design tokens
+export * from './fonts.js';
 
 // Re-export field type utilities
 export * from './fieldTypeUtils.js';

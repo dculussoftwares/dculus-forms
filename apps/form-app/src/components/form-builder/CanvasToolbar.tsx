@@ -1,5 +1,5 @@
 import React from 'react';
-import { Palette, Monitor, Smartphone, Play } from 'lucide-react';
+import { Palette, Paintbrush, Monitor, Smartphone, Play } from 'lucide-react';
 import { Button } from '@dculus/ui';
 import { cn } from '@dculus/utils';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -11,6 +11,8 @@ interface CanvasToolbarProps {
   /** Opens the global Design drawer. Stays visible for VIEWER — the drawer's
    * own controls are what get disabled, per docs/form-builder-redesign.md §2.4. */
   onOpenDesign: () => void;
+  /** Opens the Design drawer scrolled to Brand & style. */
+  onOpenBrand?: () => void;
   device: CanvasDevice;
   onDeviceChange: (device: CanvasDevice) => void;
   /** ▶ Preview — relocated here from FormBuilderHeader per the prototype (ticket #231). */
@@ -24,6 +26,7 @@ interface CanvasToolbarProps {
  */
 export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   onOpenDesign,
+  onOpenBrand,
   device,
   onDeviceChange,
   onOpenPreview,
@@ -48,6 +51,19 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
           {t('buttons.design')}
         </Button>
       </CoachMark>
+
+      {onOpenBrand && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onOpenBrand}
+          className="h-8 px-3 text-xs"
+          data-testid="canvas-toolbar-brand-button"
+        >
+          <Paintbrush className="w-3.5 h-3.5 mr-1.5" />
+          {t('buttons.brand')}
+        </Button>
+      )}
 
       <span className="flex-1" />
 

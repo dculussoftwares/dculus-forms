@@ -13,6 +13,7 @@ import { useIntroContentEditing } from './introContent';
 import { LayoutScreenShell, BackToIntro } from './ScreenShell';
 import { useResolvedColorScheme, spacingClasses, withSpacing, textColorStyle } from './theme';
 import { useScrollReset } from './useScrollReset';
+import { themedSurfaceClass, useFormTheme, withTokens } from './tokens';
 
 /**
  * The shared body of the seven intro layouts (L1–L5, L7, L8). Each of those
@@ -75,7 +76,9 @@ export const StandardIntroLayout: React.FC<StandardIntroLayoutProps> = ({
     hasVideoBackground,
     layoutCode,
   });
-  const layoutStyles = withSpacing(fieldStyles, layout?.spacing);
+  const theme = useFormTheme();
+  const layoutStyles = withTokens(withSpacing(fieldStyles, layout?.spacing), theme);
+  const cardBg = themedSurfaceClass('bg-white dark:bg-gray-800', theme);
 
   return (
     <div
@@ -114,7 +117,7 @@ export const StandardIntroLayout: React.FC<StandardIntroLayoutProps> = ({
             paneRef={paneRef}
           >
             <div
-              className={`max-w-2xl mx-auto bg-white dark:bg-gray-800 ${SURFACE.panel} ${spacing.cardPadding}`}
+              className={`max-w-2xl mx-auto ${cardBg} ${SURFACE.panel} ${spacing.cardPadding}`}
               style={textStyle}
             >
               <BackToIntro onClick={() => setScreen('intro')} />
@@ -140,7 +143,7 @@ export const StandardIntroLayout: React.FC<StandardIntroLayoutProps> = ({
             paneRef={paneRef}
           >
             <div
-              className={`max-w-2xl w-full mx-auto bg-white dark:bg-gray-800 ${SURFACE.panel}`}
+              className={`max-w-2xl w-full mx-auto ${cardBg} ${SURFACE.panel}`}
               style={textStyle}
             >
               <ThankYouScreen

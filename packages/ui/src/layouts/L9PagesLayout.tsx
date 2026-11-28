@@ -10,6 +10,7 @@ import { layoutShell } from './shared/embedShell';
 import { buildOuterBackgroundStyle, SURFACE } from './shared/surface';
 import { LayoutScreenShell } from './shared/ScreenShell';
 import { useResolvedColorScheme, spacingClasses, withSpacing, textColorStyle } from './shared/theme';
+import { themedSurfaceClass, useFormTheme, withTokens } from './shared/tokens';
 import { useScrollReset } from './shared/useScrollReset';
 
 /**
@@ -48,7 +49,9 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
     layoutCode: 'L9',
   });
 
-  const layoutStyles = withSpacing(
+  const theme = useFormTheme();
+  const cardBg = themedSurfaceClass('bg-white dark:bg-gray-800', theme);
+  const layoutStyles = withTokens(withSpacing(
     {
       field: {
         container: 'mb-6',
@@ -63,7 +66,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
       submitButton: 'w-full h-12 bg-primary rounded-lg flex items-center justify-center',
     },
     layout?.spacing
-  );
+  ), theme);
 
   return (
     <div className={`w-full ${shell.root} bg-white dark:bg-gray-900 flex flex-col ${className}`}>
@@ -82,7 +85,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
         >
           {showThankYou ? (
             <div
-              className={`max-w-2xl w-full mx-auto bg-white dark:bg-gray-800 ${SURFACE.panel}`}
+              className={`max-w-2xl w-full mx-auto ${cardBg} ${SURFACE.panel}`}
               style={textStyle}
             >
               <ThankYouScreen
@@ -99,7 +102,7 @@ export const L9PagesLayout: React.FC<LayoutProps> = ({
             </div>
           ) : (
             <div
-              className={`max-w-2xl mx-auto bg-white dark:bg-gray-800 ${SURFACE.panel} ${spacing.cardPadding}`}
+              className={`max-w-2xl mx-auto ${cardBg} ${SURFACE.panel} ${spacing.cardPadding}`}
               style={textStyle}
             >
               <PageRenderer

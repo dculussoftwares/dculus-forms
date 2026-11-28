@@ -21,7 +21,15 @@ import {
   RatingField,
   isLayoutField,
 } from '@dculus/types';
-import { RendererMode } from '@dculus/utils';
+import { RendererMode, cn } from '@dculus/utils';
+import {
+  calendarTokenClass,
+  checkboxTokenClass,
+  inputTokenClass,
+  radioTokenClass,
+  ratingTokenClass,
+  useFormTheme,
+} from '../layouts/shared/tokens';
 import { FileUploadInput } from './FileUploadInput';
 import { LexicalRichTextEditor } from '../rich-text-editor/LexicalRichTextEditor';
 import {
@@ -96,6 +104,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
   mode = RendererMode.PREVIEW,
   requiredOverride,
 }) => {
+  const theme = useFormTheme();
   // Layout containers render through GridRenderer; the fillable heuristic below would treat them as inputs
   if (isLayoutField(field)) return null;
 
@@ -155,7 +164,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               render={({ fieldState }) => {
                 if (!fieldState.isTouched) return <span />;
                 return (
-                  <span className="shrink-0 text-xs" style={{ color: fieldState.error ? '#ce5d55' : '#177767' }}>
+                  <span className="shrink-0 text-xs" style={{ color: fieldState.error ? '#ce5d55' : theme.hasPrimary ? 'var(--df-primary)' : '#177767' }}>
                     {fieldState.error ? '✕' : '✓'}
                   </span>
                 );
@@ -173,6 +182,10 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
           const hasError = !!(fieldState.error && (fieldState.isTouched || formState.isSubmitted));
           /* Error className — appended to Input/Textarea/SelectTrigger for consistent red border */
           const errCls = hasError ? 'border-[#ce5d55] focus-visible:border-[#ce5d55]' : '';
+          /* Design-token classes sit before errCls so the semantic red border wins */
+          const inputCls = cn(inputTokenClass(theme, 'input'), errCls);
+          const textareaCls = cn(inputTokenClass(theme, 'textarea'), errCls);
+          const selectCls = cn(inputTokenClass(theme, 'select'), errCls);
 
           switch (field.type) {
 
@@ -192,7 +205,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     placeholder={fillableField?.placeholder || 'Type your answer here…'}
                     maxLength={v?.maxLength}
                     disabled={!isInteractive}
-                    className={errCls}
+                    className={inputCls}
                   />
                   {(v?.minLength || v?.maxLength) && <CharCount current={len} min={v?.minLength} max={v?.maxLength} />}
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
@@ -215,7 +228,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     placeholder={fillableField?.placeholder || 'Type your answer here…'}
                     maxLength={v?.maxLength}
                     disabled={!isInteractive}
-                    className={errCls}
+                    className={textareaCls}
                   />
                   {(v?.minLength || v?.maxLength) && <CharCount current={len} min={v?.minLength} max={v?.maxLength} />}
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
@@ -236,7 +249,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     invalid={hasError}
                     placeholder={fillableField?.placeholder || 'name@example.com'}
                     disabled={!isInteractive}
-                    className={errCls}
+                    className={inputCls}
                   />
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
                 </div>
@@ -260,6 +273,8 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     placeholder={fillableField?.placeholder || 'Phone number'}
                     disabled={!isInteractive}
                     error={hasError}
+                    controlClassName={inputTokenClass(theme, 'input')}
+                    contentStyle={theme.portalStyle}
                   />
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
                 </div>
@@ -290,6 +305,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     allowClear={!isRequired}
                     disabled={!isInteractive}
                     error={hasError}
+                    className={rf.ratingStyle !== 'stars' ? ratingTokenClass(theme) || undefined : undefined}
                     aria-label={fillableField?.label}
                   />
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
@@ -318,7 +334,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     step="any"
                     placeholder={fillableField?.placeholder || '0'}
                     disabled={!isInteractive}
-                    className={errCls}
+                    className={inputCls}
                     onChange={(e) => cf.onChange(e.target.value === '' ? '' : Number(e.target.value))}
                   />
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
@@ -331,10 +347,10 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
               return (
                 <div>
                   <Select value={cf.value ?? ''} onValueChange={cf.onChange} disabled={!isInteractive}>
-                    <SelectTrigger onBlur={cf.onBlur} className={errCls}>
+                    <SelectTrigger onBlur={cf.onBlur} className={selectCls}>
                       <SelectValue placeholder={fillableField?.placeholder || 'Select an option…'} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent style={theme.portalStyle}>
                       {(fillableField as any)?.options?.map((opt: string, i: number) => (
                         <SelectItem key={i} value={opt}>{opt}</SelectItem>
                       ))}
@@ -360,6 +376,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                         <RadioGroupItem
                           value={option}
                           id={`${field.id}-radio-${i}`}
+                          className={radioTokenClass(theme)}
                           style={hasError && !cf.value ? { borderColor: '#ce5d55' } : {}}
                         />
                         <Label
@@ -390,6 +407,7 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                         <div key={i} className="flex items-center gap-2.5">
                           <Checkbox
                             id={`${field.id}-cb-${i}`}
+                            className={checkboxTokenClass(theme)}
                             checked={checked}
                             onCheckedChange={(val) => {
                               if (!isInteractive) return;
@@ -435,6 +453,9 @@ export const FormFieldRenderer: React.FC<FormFieldRendererProps> = ({
                     placeholder={fillableField?.placeholder || 'Pick a date'}
                     disabled={!isInteractive}
                     error={hasError}
+                    className={inputTokenClass(theme, 'input')}
+                    contentClassName={calendarTokenClass(theme)}
+                    contentStyle={theme.portalStyle}
                   />
                   {hasError && <ErrorMessage message={fieldState.error!.message!} />}
                 </div>

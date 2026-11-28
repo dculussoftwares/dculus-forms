@@ -66,6 +66,24 @@ export const createLayoutSlice: SliceCreator<LayoutSlice> = (set, get) => {
     },
 
     /**
+     * Remove an optional layout key entirely (local state and Y.js).
+     * `updateLayout` skips `undefined`, so reset flows need this explicit delete.
+     */
+    clearLayoutKey: (key: 'tokens') => {
+      const { layout } = get();
+      const rest: Partial<FormLayout> = { ...layout };
+      delete rest[key];
+      set({ layout: rest as FormLayout });
+
+      const { _getYDoc, _isYJSReady } = get() as any;
+      const ydoc = _getYDoc();
+      if (ydoc && _isYJSReady()) {
+        const layoutMap = ydoc.getMap('formSchema').get('layout') as Y.Map<any> | undefined;
+        layoutMap?.delete(key);
+      }
+    },
+
+    /**
      * Internal helper: Get default layout
      */
     _getDefaultLayout: () => DEFAULT_LAYOUT,

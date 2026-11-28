@@ -14,6 +14,7 @@ import {
   IntroCta,
 } from './introContent';
 import { useContainerBreakpoint } from './useContainerBreakpoint';
+import { themedSurfaceClass, useFormTheme } from './tokens';
 
 /**
  * One responsive hero for all seven intro layouts (L1–L5, L7, L8).
@@ -77,14 +78,16 @@ const mediaProps = (p: IntroHeroProps) => ({
 
 /* ------------------------------- mobile ---------------------------------- */
 
-const MobileSheet: React.FC<IntroHeroProps> = (p) => (
+const MobileSheet: React.FC<IntroHeroProps> = (p) => {
+  const theme = useFormTheme();
+  return (
   <section className={`relative flex flex-col ${p.growClass}`} style={p.outerBackgroundStyle}>
     <div className="relative shrink-0 h-[260px] w-full overflow-hidden">
       <HeroMedia {...mediaProps(p)} />
       <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/15 to-transparent" />
     </div>
 
-    <div className="relative z-[1] -mt-8 flex-1 flex flex-col rounded-t-[28px] bg-white dark:bg-gray-900 px-6 pt-8 pb-10 shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.22)]">
+    <div className={`relative z-[1] -mt-8 flex-1 flex flex-col rounded-t-[28px] ${themedSurfaceClass('bg-white dark:bg-gray-900', theme)} px-6 pt-8 pb-10 shadow-[0_-12px_40px_-12px_rgba(0,0,0,0.22)]`}>
       <IntroEditToolbar editing={p.editing} mode={p.mode} />
       <div className="flex flex-col py-2" style={p.textStyle}>
         <div className="w-full max-w-xl">
@@ -96,7 +99,8 @@ const MobileSheet: React.FC<IntroHeroProps> = (p) => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 /* ------------------------------ desktop --------------------------------- */
 
@@ -131,7 +135,8 @@ const ContentBody: React.FC<{
 
 const DesktopHero: React.FC<IntroHeroProps> = (p) => {
   const frameBase = 'relative h-full flex overflow-hidden rounded-2xl ring-1 ring-black/5';
-  const surfaceCard = 'bg-white dark:bg-gray-900';
+  const theme = useFormTheme();
+  const surfaceCard = themedSurfaceClass('bg-white dark:bg-gray-900', theme);
 
   let frame: React.ReactNode;
 

@@ -7,6 +7,70 @@
   "layoutFamily": {
     "label": "Layout family"
   },
+  "brandStyle": {
+    "label": "Brand & style",
+    "clear": "Clear",
+    "reset": "Reset brand style",
+    "fontDefault": "Default",
+    "tamil": "Tamil",
+    "brandColor": {
+      "label": "Brand color",
+      "placeholder": "#2563eb"
+    },
+    "surfaceColor": {
+      "label": "Surface color",
+      "placeholder": "#ffffff",
+      "helper": "Light theme only"
+    },
+    "headingFont": {
+      "label": "Heading font"
+    },
+    "bodyFont": {
+      "label": "Body font"
+    },
+    "corners": {
+      "label": "Corners",
+      "none": "None",
+      "sm": "Small",
+      "md": "Medium",
+      "lg": "Large",
+      "pill": "Pill"
+    },
+    "inputStyle": {
+      "label": "Input style",
+      "outlined": "Outlined",
+      "filled": "Filled",
+      "underline": "Underline"
+    },
+    "buttonStyle": {
+      "label": "Button style",
+      "solid": "Solid",
+      "outline": "Outline",
+      "soft": "Soft"
+    },
+    "contrast": {
+      "primary": "Button text contrast is {{ratio}}:1 (needs 4.5:1).",
+      "darken": "Darken",
+      "surface": "Text color contrast on the surface is {{ratio}}:1 (needs 4.5:1)."
+    },
+    "preview": {
+      "title": "Welcome aboard",
+      "nameLabel": "Full name",
+      "namePlaceholder": "Type your answer",
+      "option": "I agree to the terms",
+      "primary": "Submit",
+      "secondary": "Back"
+    },
+    "presets": {
+      "label": "Presets",
+      "ocean": "Ocean",
+      "sunset": "Sunset",
+      "editorial": "Editorial",
+      "forest": "Forest",
+      "berry": "Berry",
+      "violet": "Violet"
+    }
+  },
   "globalBackground": {
     "label": "Global background"
   },

@@ -4,6 +4,7 @@ import * as Y from 'yjs';
 import {
   canonicalizeFields,
   sanitizeConditions,
+  sanitizeDesignTokens,
   sanitizeFieldGrading,
   sanitizeGridColumnWidths,
   DEFAULT_THANK_YOU_CONTENT,
@@ -697,6 +698,9 @@ export const getFormSchemaFromHocuspocus = async (
         convertedLayout.pageMode = layout.get('pageMode');
         convertedLayout.isCustomBackgroundColorEnabled =
           layout.get('isCustomBackgroundColorEnabled') || false;
+        // Set only when present so legacy forms keep their exact persisted shape
+        const tokens = sanitizeDesignTokens(layout.get('tokens'));
+        if (tokens) convertedLayout.tokens = tokens;
       }
 
       // Conditional logic rules are stored as a Y.Array of plain JSON rules;
@@ -1024,6 +1028,8 @@ export const initializeHocuspocusDocument = async (
     layoutMap.set('backgroundVideoKey', layout.backgroundVideoKey || '');
     layoutMap.set('backgroundDominantColor', layout.backgroundDominantColor || '');
     layoutMap.set('pageMode', layout.pageMode || 'multipage');
+    const designTokens = sanitizeDesignTokens(layout.tokens);
+    if (designTokens) layoutMap.set('tokens', designTokens);
     layoutMap.set(
       'isCustomBackgroundColorEnabled',
       layout.isCustomBackgroundColorEnabled || false

@@ -135,6 +135,10 @@ Real-time collaboration syncs store state to Y.js documents. Y.js document names
 - Subscription: `Pricing`, `subscription/success`, `subscription/cancel`
 - Admin views: `Templates`, `Settings`
 
+### Design Tokens (`FormLayout.tokens`)
+
+Optional per-form branding (brand/surface colour, heading/body font, radius, input/button style) lives at `layout.tokens`, is sanitized by `sanitizeDesignTokens`, and is rendered by `LayoutRenderer` as `--df-*` variables on its wrapper (never `--primary`/`--radius`). Forms without tokens must render exactly as before. See `docs/architecture/13-design-tokens.md`.
+
 ### Field Class Hierarchy (`@dculus/types`)
 
 All fields extend a class hierarchy — do not use plain objects:

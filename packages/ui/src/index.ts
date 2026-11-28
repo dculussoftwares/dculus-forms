@@ -276,6 +276,15 @@ export type { RatingInputProps } from "./rating-input"
 
 // Renderers
 export { LayoutRenderer } from "./renderers/LayoutRenderer"
+export {
+  resolveFormTheme,
+  useFormTheme,
+  useFormFonts,
+  withTokens,
+  FormThemeContext,
+  buttonTokenClass,
+  type ResolvedFormTheme,
+} from "./layouts/shared/tokens"
 export { PageRenderer } from "./renderers/PageRenderer"
 export { FormFieldRenderer } from "./renderers/FormFieldRenderer"
 export { FormRenderer, useFormResponseContext } from "./renderers/FormRenderer"

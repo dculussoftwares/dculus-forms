@@ -7,6 +7,70 @@
   "layoutFamily": {
     "label": "தளவமைப்பு வகை"
   },
+  "brandStyle": {
+    "label": "பிராண்ட் & பாணி",
+    "clear": "அழி",
+    "reset": "பிராண்ட் பாணியை மீட்டமை",
+    "fontDefault": "இயல்புநிலை",
+    "tamil": "தமிழ்",
+    "brandColor": {
+      "label": "பிராண்ட் நிறம்",
+      "placeholder": "#2563eb"
+    },
+    "surfaceColor": {
+      "label": "மேற்பரப்பு நிறம்",
+      "placeholder": "#ffffff",
+      "helper": "ஒளி தீமில் மட்டும்"
+    },
+    "headingFont": {
+      "label": "தலைப்பு எழுத்துரு"
+    },
+    "bodyFont": {
+      "label": "உரை எழுத்துரு"
+    },
+    "corners": {
+      "label": "மூலைகள்",
+      "none": "இல்லை",
+      "sm": "சிறியது",
+      "md": "நடுத்தரம்",
+      "lg": "பெரியது",
+      "pill": "வட்டம்"
+    },
+    "inputStyle": {
+      "label": "உள்ளீட்டு பாணி",
+      "outlined": "வெளிக்கோடு",
+      "filled": "நிரப்பியது",
+      "underline": "அடிக்கோடு"
+    },
+    "buttonStyle": {
+      "label": "பொத்தான் பாணி",
+      "solid": "திடம்",
+      "outline": "வெளிக்கோடு",
+      "soft": "மென்மை"
+    },
+    "contrast": {
+      "primary": "பொத்தான் உரை மாறுபாடு {{ratio}}:1 (4.5:1 தேவை).",
+      "darken": "கருமையாக்கு",
+      "surface": "மேற்பரப்பில் உரை நிற மாறுபாடு {{ratio}}:1 (4.5:1 தேவை)."
+    },
+    "preview": {
+      "title": "வரவேற்கிறோம்",
+      "nameLabel": "முழு பெயர்",
+      "namePlaceholder": "உங்கள் பதிலை உள்ளிடவும்",
+      "option": "விதிமுறைகளை ஏற்கிறேன்",
+      "primary": "சமர்ப்பி",
+      "secondary": "பின்செல்"
+    },
+    "presets": {
+      "label": "முன்அமைவுகள்",
+      "ocean": "கடல்",
+      "sunset": "அந்தி",
+      "editorial": "இதழ்",
+      "forest": "வனம்",
+      "berry": "பெர்ரி",
+      "violet": "ஊதா"
+    }
+  },
   "globalBackground": {
     "label": "பொதுவான பின்னணி"
   },

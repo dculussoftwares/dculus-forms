@@ -15,6 +15,9 @@ interface DatePickerProps {
   placeholder?: string
   disabled?: boolean
   className?: string
+  /** Extra classes / inline style for the popup (it renders in a portal, outside any themed wrapper). */
+  contentClassName?: string
+  contentStyle?: React.CSSProperties
   error?: boolean | string
   /** HTML id attribute for the hidden input (for E2E testing and form labels) */
   id?: string
@@ -45,6 +48,8 @@ export function DatePicker({
   placeholder = "Pick a date",
   disabled = false,
   className,
+  contentClassName,
+  contentStyle,
   error = false,
   id,
   name,
@@ -98,7 +103,7 @@ export function DatePicker({
             {date ? format(date, "PPP") : <span>{placeholder}</span>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
+        <PopoverContent className={cn("w-auto p-0", contentClassName)} style={contentStyle}>
           <Calendar
             mode="single"
             captionLayout="dropdown"

@@ -2,10 +2,11 @@ import React, { useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { Check, Copy } from 'lucide-react';
 import type { RespondentGradeView } from '@dculus/types';
-import { RendererMode } from '@dculus/utils';
+import { RendererMode, cn } from '@dculus/utils';
 import { LexicalRichTextEditor } from '../../rich-text-editor/LexicalRichTextEditor';
 import type { MentionFieldOption } from '../../utils/mentionFields';
 import { QuizResultScreen, type QuizResultScreenLabels } from '../../renderers/QuizResultScreen';
+import { themedButtonClass, useFormTheme } from './tokens';
 
 export interface ThankYouScreenProps {
   /** Resolved (mention-substituted) message when available, else the raw layout.thankYouContent template. */
@@ -48,13 +49,26 @@ export interface ThankYouScreenProps {
   };
 }
 
-const SuccessIcon: React.FC = () => (
-  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-    <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
-  </div>
-);
+const SuccessIcon: React.FC = () => {
+  const theme = useFormTheme();
+  return (
+    <div
+      className={cn(
+        'w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6',
+        theme.hasPrimary && 'bg-[var(--df-primary-soft)]'
+      )}
+    >
+      <svg
+        className={cn('w-8 h-8 text-primary', theme.hasPrimary && 'text-[color:var(--df-primary)]')}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+      </svg>
+    </div>
+  );
+};
 
 /**
  * Shared thank-you screen content rendered inside every layout's own background/video
@@ -73,6 +87,7 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
   quizResultLabels,
   resultLink,
 }) => {
+  const theme = useFormTheme();
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempContent, setTempContent] = useState(content);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -218,7 +233,10 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
             <button
               type="button"
               onClick={handleCopyResultLink}
-              className="inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              className={themedButtonClass(
+                'inline-flex shrink-0 items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90',
+                theme
+              )}
               data-testid="thank-you-result-link-copy"
             >
               {resultLinkCopied ? (
@@ -233,7 +251,10 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
           </div>
           <a
             href={resultLink.href}
-            className="mt-3 inline-block text-xs font-medium text-primary hover:underline"
+            className={cn(
+              'mt-3 inline-block text-xs font-medium text-primary hover:underline',
+              theme.hasPrimary && 'text-[color:var(--df-primary)]'
+            )}
             data-testid="thank-you-result-link-open"
           >
             {resultLink.openLabel ?? 'Open results page'}
@@ -251,7 +272,10 @@ export const ThankYouScreen: React.FC<ThankYouScreenProps> = ({
         <button
           onClick={onSubmitAnother}
           data-testid="thank-you-submit-another-button"
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-6 rounded-lg transition-colors shadow-md"
+          className={themedButtonClass(
+            'bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3 px-6 rounded-lg transition-colors shadow-md',
+            theme
+          )}
         >
           Submit another response
         </button>

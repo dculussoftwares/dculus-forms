@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import {
   FieldType,
   FormField,
@@ -93,6 +93,11 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
 
   // Canvas toolbar state: 🎨 Design drawer open/closed, desktop/mobile device frame.
   const [isDesignDrawerOpen, setIsDesignDrawerOpen] = useState(false);
+  const [designFocus, setDesignFocus] = useState<'brand' | null>(null);
+  const openDesignDrawer = useCallback((focus: 'brand' | null = null) => {
+    setDesignFocus(focus);
+    setIsDesignDrawerOpen(true);
+  }, []);
   const [device, setDevice] = useState<CanvasDevice>('desktop');
   // Track the currently dragged field type (from sidebar)
   const [activeFieldType, setActiveFieldType] =
@@ -132,6 +137,7 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
     layout,
     formId,
     updateLayout,
+    clearLayoutKey,
   } = useFormBuilderStore();
 
   const cdnEndpoint = getCdnEndpoint();
@@ -162,6 +168,10 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
 
   const handleLayoutUpdate = (updates: Partial<FormLayout>) => {
     if (canEditLayout) updateLayout(updates);
+  };
+
+  const handleTokensReset = () => {
+    if (canEditLayout) clearLayoutKey('tokens');
   };
 
   const handleLayoutSelect = (code: LayoutCode) => handleLayoutUpdate({ code });
@@ -556,7 +566,8 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
           {/* Center: Canvas with toolbar */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
             <CanvasToolbar
-              onOpenDesign={() => setIsDesignDrawerOpen(true)}
+              onOpenDesign={() => openDesignDrawer()}
+              onOpenBrand={() => openDesignDrawer('brand')}
               device={device}
               onDeviceChange={setDevice}
               onOpenPreview={() => onOpenPreview?.()}
@@ -600,17 +611,23 @@ export const PageBuilderTab: React.FC<PageBuilderTabProps> = ({
           </div>
 
           {/* Right: Field Settings with Resizable Width */}
-          <RightSidebar width={sidebarWidth} onWidthChange={setSidebarWidth} />
+          <RightSidebar
+            width={sidebarWidth}
+            onWidthChange={setSidebarWidth}
+            onOpenBrand={() => openDesignDrawer('brand')}
+          />
         </div>
 
         <DesignDrawer
           isOpen={isDesignDrawerOpen}
           onClose={() => setIsDesignDrawerOpen(false)}
+          focusSection={designFocus}
           layout={layout}
           formId={formId || ''}
           canEditLayout={canEditLayout}
           onLayoutSelect={handleLayoutSelect}
           onLayoutUpdate={handleLayoutUpdate}
+          onTokensReset={handleTokensReset}
         />
 
         {/* Drag Overlay - follows cursor during drag */}

@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect } from 'react';
-import { ScrollArea, Button, toast } from '@dculus/ui';
+import { ScrollArea, Button, toast, resolveFormTheme, useFormFonts, FormThemeContext } from '@dculus/ui';
 import { FormPage, FormField, FieldType, buildPageTree, countQuestionFields, isLayoutField, pageHasGrid } from '@dculus/types';
 import { cn } from '@dculus/utils';
 import { Plus } from 'lucide-react';
@@ -387,7 +387,8 @@ export const FieldListWithDropZones: React.FC<{
  */
 export const PageHeader: React.FC<{
   selectedPage: FormPage | undefined;
-}> = ({ selectedPage }) => {
+  headingFont?: boolean;
+}> = ({ selectedPage, headingFont = false }) => {
   const { t } = useTranslation('pageBuilderTab');
 
   if (!selectedPage) {
@@ -404,7 +405,10 @@ export const PageHeader: React.FC<{
 
   return (
     <div className="mb-4 flex items-baseline gap-3">
-      <h1 className="text-xl font-semibold text-[#3c323e] dark:text-white">
+      <h1
+        className="text-xl font-semibold text-[#3c323e] dark:text-white"
+        style={headingFont ? { fontFamily: 'var(--df-font-heading)' } : undefined}
+      >
         {selectedPage.title || t('formArea.untitledPage')}
       </h1>
       <span className="text-xs text-[#655d67] dark:text-gray-400">
@@ -442,7 +446,16 @@ export const FormArea: React.FC<{
     duplicateGrid,
     reorderFields,
     placeField,
+    layout,
   } = useFormBuilderStore();
+  // Brand tokens drive the canvas too, so Design-drawer changes show live; unbranded forms keep the legacy look.
+  useFormFonts(layout?.tokens);
+  const isDarkChrome =
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const brandTheme = useMemo(
+    () => resolveFormTheme(layout?.tokens, isDarkChrome ? 'dark' : 'light'),
+    [layout?.tokens, isDarkChrome]
+  );
   const deleteGridWithUndo = useDeleteGridWithUndo(permissions.canEditFields());
   const selectedPage = pages.find((p) => p.id === selectedPageId);
 
@@ -595,11 +608,12 @@ export const FormArea: React.FC<{
           spilled past the frame's right edge. A block box keeps the content at the canvas width. */}
       <ScrollArea className="min-h-0 flex-1 [&_[data-radix-scroll-area-viewport]>div]:!block">
         <div className="p-6 pb-36">
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-3xl mx-auto" style={brandTheme.branded ? brandTheme.cssVars : undefined}>
             {/* Page Header */}
-            <PageHeader selectedPage={selectedPage} />
+            <PageHeader selectedPage={selectedPage} headingFont={!!layout?.tokens?.headingFont} />
 
             {/* Form Fields Container - Drop Zone */}
+            <FormThemeContext.Provider value={brandTheme}>
             <div
               ref={setNodeRef}
               className={`
@@ -608,6 +622,8 @@ export const FormArea: React.FC<{
                 ${isOver ? 'ring-2 ring-[rgba(60,50,62,0.12)]' : ''}
               `}
               style={{
+                ...(brandTheme.hasSurface ? { backgroundColor: 'var(--df-surface)' } : null),
+                ...(layout?.tokens?.bodyFont ? { fontFamily: 'var(--df-font-body)' } : null),
                 border: isOver
                   ? '2px dashed rgba(60,50,62,0.25)'
                   : '1px solid rgba(81,76,84,0.10)',
@@ -629,6 +645,7 @@ export const FormArea: React.FC<{
                 <EmptyFormAreaPlaceholder isConnected={isConnected} pageId={selectedPage?.id} />
               )}
             </div>
+            </FormThemeContext.Provider>
           </div>
         </div>
       </ScrollArea>

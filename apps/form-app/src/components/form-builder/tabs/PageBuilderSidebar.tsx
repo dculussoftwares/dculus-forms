@@ -26,7 +26,9 @@ import { GripHorizontal, Settings } from 'lucide-react';
 export const RightSidebar: React.FC<{
   width: number;
   onWidthChange: (width: number) => void;
-}> = ({ width, onWidthChange }) => {
+  /** Opens the Design drawer scrolled to Brand & style. */
+  onOpenBrand?: () => void;
+}> = ({ width, onWidthChange, onOpenBrand }) => {
   const { t } = useTranslation('pageBuilderTab');
   const permissions = useFormPermissions();
   const [isResizing, setIsResizing] = useState(false);
@@ -120,6 +122,7 @@ export const RightSidebar: React.FC<{
           canEditLayout={permissions.canEditLayout()}
           onLayoutSelect={(code) => handleLayoutUpdate({ code })}
           onLayoutUpdate={handleLayoutUpdate}
+          onOpenBrand={onOpenBrand}
         />
       );
     }

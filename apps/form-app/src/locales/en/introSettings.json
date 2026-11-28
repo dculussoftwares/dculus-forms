@@ -43,5 +43,10 @@
       "recentLabel": "Recently used"
     },
     "clearButton": "Clear Background"
+  },
+  "brand": {
+    "title": "Brand & style",
+    "description": "Colors, fonts and corners with a live preview",
+    "action": "Customize"
   }
 }

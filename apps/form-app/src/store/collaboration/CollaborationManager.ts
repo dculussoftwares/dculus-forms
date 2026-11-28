@@ -11,6 +11,7 @@ import {
   FormPage,
   normalizeRatingConfig,
   sanitizeConditions,
+  sanitizeDesignTokens,
   sanitizeFieldGrading,
   sanitizeGridColumnWidths,
 } from '@dculus/types';
@@ -632,6 +633,7 @@ export class CollaborationManager {
         pageMode: layoutMap.get('pageMode') || DEFAULT_LAYOUT.pageMode,
         isCustomBackgroundColorEnabled:
           layoutMap.get('isCustomBackgroundColorEnabled') ?? DEFAULT_LAYOUT.isCustomBackgroundColorEnabled,
+        tokens: sanitizeDesignTokens(layoutMap.get('tokens')),
       };
     }
 
