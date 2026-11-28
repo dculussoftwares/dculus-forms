@@ -24,7 +24,6 @@ vi.hoisted(() => {
   })) as unknown as typeof window.matchMedia;
 });
 
-import React from 'react';
 import { render } from '@testing-library/react';
 import {
   type FormLayout,
